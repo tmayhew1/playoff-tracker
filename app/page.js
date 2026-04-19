@@ -688,10 +688,19 @@ function CurrentView() {
 
   return (
     <div>
-      <div className="flex items-start justify-end mb-3">
-        <button onClick={() => syncLive(true)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50 shrink-0">
-          {syncing ? "Syncing…" : "↻ Sync"}
-        </button>
+            <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
+          {syncedAt ? (<>Live synced <span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : (<>Not synced yet</>)}
+          {syncError && <div className="text-red-600 normal-case mt-0.5 tracking-normal">{syncError}</div>}
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button onClick={() => syncLive(true)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50">
+            {syncing ? "Syncing…" : "↻ Sync"}
+          </button>
+          <button onClick={resetAll} className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border border-stone-300 px-2 py-1.5 bg-white">
+            Reset
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -731,13 +740,6 @@ function CurrentView() {
         <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
       </div>
 
-      <div className="mt-6 pt-4 border-t border-stone-300 flex justify-between items-center gap-3">
-        <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
-          {syncedAt ? (<>Live synced<br /><span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : (<>Not synced yet</>)}
-          {syncError && <div className="text-red-600 normal-case mt-1 tracking-normal">{syncError}</div>}
-        </div>
-        <button onClick={resetAll} className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border border-stone-300 px-2 py-1 shrink-0">Reset</button>
-      </div>
     </div>
   );
 }
