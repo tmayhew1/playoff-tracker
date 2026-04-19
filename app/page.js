@@ -285,7 +285,7 @@ function CombinedBoxscore({ box, isLive }) {
               </span>
               <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
                 <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
-                {p.name}{isLive && p.oncourt && <span className="ml-1 text-red-600">●</span>}
+                {p.name}
               </span>
               <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
               <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
