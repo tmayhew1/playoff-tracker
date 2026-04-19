@@ -49,33 +49,40 @@ export async function GET() {
     gameWins[id] = { [a]: 0, [b]: 0 };
   }
 
-  let gotSeriesData = false;
+  // --- 1. Pull the full season schedule (includes every playoff game) ---
+  let scheduleGames = [];
   try {
-    const url = "https://stats.nba.com/stats/playoffseriesbyround?LeagueID=00&Season=2025-26&RoundNumber=1";
-    const data = await fetchJson(url, 4500);
-    const rs = data.resultSets?.[0];
-    if (rs) {
-      const cols = rs.headers;
-      const idx = (n) => cols.indexOf(n);
-      const highTri = idx("HIGH_SEED_TEAM_TRICODE");
-      const lowTri = idx("LOW_SEED_TEAM_TRICODE");
-      const highWins = idx("HIGH_SEED_WINS");
-      const lowWins = idx("LOW_SEED_WINS");
-      for (const row of rs.rowSet) {
-        const hTri = row[highTri], lTri = row[lowTri];
-        const sid = findSeriesId(hTri, lTri);
-        if (sid && TRICODE_MAP[hTri] && TRICODE_MAP[lTri]) {
-          gameWins[sid] = { [TRICODE_MAP[hTri]]: row[highWins] ?? 0, [TRICODE_MAP[lTri]]: row[lowWins] ?? 0 };
-          gotSeriesData = true;
-        }
+    const url = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json";
+    const data = await fetchJson(url, 6000);
+    const gameDates = data?.leagueSchedule?.gameDates || [];
+    for (const gd of gameDates) {
+      for (const g of gd.games || []) {
+        // Only playoff games: seriesText is set for playoff games (e.g. "First Round")
+        const hasSeries = g.seriesText || g.seriesGameNumber > 0;
+        if (!hasSeries) continue;
+        const home = g.homeTeam?.teamTricode;
+        const away = g.awayTeam?.teamTricode;
+        const sid = findSeriesId(home, away);
+        if (!sid) continue;
+        const homeScore = g.homeTeam?.score ?? 0;
+        const awayScore = g.awayTeam?.score ?? 0;
+        scheduleGames.push({
+          seriesId: sid,
+          gameId: g.gameId,
+          gameStatus: g.gameStatus, // 1=scheduled, 2=in-progress, 3=final
+          gameStatusText: g.gameStatusText,
+          gameDateTimeUTC: g.gameDateTimeUTC,
+          home: { tri: home, score: homeScore },
+          away: { tri: away, score: awayScore },
+        });
       }
     }
   } catch (e) {
-    errors.push(`series: ${e.message}`);
+    errors.push(`schedule: ${e.message}`);
   }
 
-  let liveGames = [];
-  let todaysFinals = [];
+  // --- 2. Pull today's live scoreboard for in-progress scores (overrides schedule) ---
+  let liveToday = [];
   try {
     const url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json";
     const data = await fetchJson(url, 4500);
@@ -85,35 +92,42 @@ export async function GET() {
       const away = g.awayTeam?.teamTricode;
       const sid = findSeriesId(home, away);
       if (!sid) continue;
-      const homeScore = g.homeTeam?.score ?? 0;
-      const awayScore = g.awayTeam?.score ?? 0;
-      liveGames.push({
+      liveToday.push({
         seriesId: sid,
         gameId: g.gameId,
         gameStatus: g.gameStatus,
         gameStatusText: g.gameStatusText,
         period: g.period,
         gameClock: g.gameClock,
-        home: { tri: home, score: homeScore },
-        away: { tri: away, score: awayScore },
+        home: { tri: home, score: g.homeTeam?.score ?? 0 },
+        away: { tri: away, score: g.awayTeam?.score ?? 0 },
       });
-      if (g.gameStatus === 3 && homeScore !== awayScore) {
-        todaysFinals.push({ sid, winnerTri: homeScore > awayScore ? home : away });
-      }
     }
   } catch (e) {
     errors.push(`scoreboard: ${e.message}`);
   }
 
-  if (!gotSeriesData && todaysFinals.length > 0) {
-    for (const f of todaysFinals) {
-      const code = TRICODE_MAP[f.winnerTri];
-      if (code && gameWins[f.sid]) {
-        gameWins[f.sid][code] = Math.max(gameWins[f.sid][code], 1);
-      }
+  // --- 3. Merge: schedule provides history, scoreboard overrides today's data ---
+  const liveById = new Map(liveToday.map((g) => [g.gameId, g]));
+  const liveGames = scheduleGames.map((g) => liveById.get(g.gameId) || g);
+
+  // Also include any live games that somehow weren't in the schedule yet
+  for (const lg of liveToday) {
+    if (!liveGames.some((g) => g.gameId === lg.gameId)) {
+      liveGames.push(lg);
     }
-    const idx = errors.findIndex((e) => e.startsWith("series:"));
-    if (idx >= 0) errors.splice(idx, 1);
+  }
+
+  // --- 4. Derive gameWins from finalized games in the schedule ---
+  const finals = liveGames.filter(
+    (g) => g.gameStatus === 3 && g.home.score !== g.away.score
+  );
+  for (const f of finals) {
+    const winnerTri = f.home.score > f.away.score ? f.home.tri : f.away.tri;
+    const code = TRICODE_MAP[winnerTri];
+    if (code && gameWins[f.seriesId]) {
+      gameWins[f.seriesId][code] = (gameWins[f.seriesId][code] || 0) + 1;
+    }
   }
 
   return new Response(JSON.stringify({ gameWins, liveGames, errors, fetchedAt: new Date().toISOString() }), {
