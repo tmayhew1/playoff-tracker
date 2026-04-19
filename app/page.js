@@ -49,6 +49,44 @@ const ROUND_BASE = { r1: 1, r2: 2, r3: 4, r4: 8 };
 const ROUND_LABEL = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
 const STORAGE_KEY = "playoff-draft-v1";
 
+// 2025-26 league averages used in the Value Added calculation.
+// These mirror Trey's `lga` tibble in app.R — edit if new season values are available.
+const LGA = {
+  la3P: 0.366,       // 3P%
+  la2P: 0.545,       // 2P%
+  laFT: 0.786,       // FT%
+  laFG: 0.471,       // FG%
+  laPTSperM: 0.548,  // pts per minute (league)
+  laASTperM: 0.119,
+  laSTLperM: 0.032,
+  laBLKperM: 0.024,
+  laTOVperM: 0.068,
+  laDRBperM: 0.152,
+  laORBperM: 0.045,
+  laPTSperMake: 2.216,
+  laPTSperPoss: 1.135,
+  laDRBrate: 0.765,
+  laORBrate: 0.235,
+};
+
+function valueAdd(p) {
+  const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
+  if (!mp || mp <= 0) return 0;
+  const twoPm = fgm - tpm, twoPa = fga - tpa;
+  const tpAdd = ((tpm / (tpa || 1)) - LGA.la3P) * tpa;
+  const twoAdd = ((twoPm / (twoPa || 1)) - LGA.la2P) * twoPa;
+  const ftAdd = ((ftm / (fta || 1)) - LGA.laFT) * fta;
+  const volume = ((pts / mp) - LGA.laPTSperM) * mp;
+  const efficiency = 3 * tpAdd + 2 * twoAdd + ftAdd;
+  const astVal = ((ast / mp) - LGA.laASTperM) * mp * LGA.laPTSperMake * (1 - LGA.laFG);
+  const stlVal = ((stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss;
+  const blkVal = ((blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
+  const tovVal = -((tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss;
+  const drbVal = ((drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate;
+  const orbVal = ((orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
+  return volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal;
+}
+
 function computeMatchups(winners) {
   const t = {};
   BRACKET.r1.forEach((s) => (t[s.id] = s.teams.slice()));
@@ -118,6 +156,7 @@ function computePoints(winners, gameWins) {
 const ownerColor = (o) => o === "Spencer" ? "text-amber-700" : "text-teal-700";
 const ownerBg = (o) => o === "Spencer" ? "bg-amber-50 border-amber-300" : "bg-teal-50 border-teal-300";
 const ownerDot = (o) => o === "Spencer" ? "bg-amber-600" : "bg-teal-600";
+const ownerBadge = (o) => o === "Spencer" ? "bg-amber-100 text-amber-800" : o === "Trey" ? "bg-teal-100 text-teal-800" : "bg-stone-100 text-stone-600";
 
 function GameStepper({ value, onChange, disabled, color }) {
   return (
@@ -129,37 +168,53 @@ function GameStepper({ value, onChange, disabled, color }) {
   );
 }
 
-function PlayerRow({ p }) {
-  return (
-    <div className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
-      <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
-        {p.name}{p.oncourt && <span className="ml-1 text-red-600">●</span>}
-      </span>
-      <span className="tabular-nums text-stone-500 w-8 text-right">{p.min}</span>
-      <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
-      <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
-      <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
-    </div>
-  );
-}
+function CombinedBoxscore({ box, isLive }) {
+  if (!box) return null;
+  // Flatten both teams into one array, tag each row with team tri
+  const rows = [
+    ...(box.away?.players || []).map((p) => ({ ...p, team: box.away.tri })),
+    ...(box.home?.players || []).map((p) => ({ ...p, team: box.home.tri })),
+  ]
+    .filter((p) => (p.mp || 0) > 0) // drop anyone who didn't play
+    .map((p) => ({ ...p, va: valueAdd(p) }))
+    .sort((a, b) => b.pts - a.pts);
 
-function TeamBoxscore({ team }) {
-  if (!team) return null;
-  const players = [...(team.players || [])].sort((a, b) => b.pts - a.pts);
+  if (rows.length === 0) {
+    return <div className="py-2 text-[10px] text-stone-500 italic text-center">No player stats yet</div>;
+  }
+
   return (
     <div className="mt-2">
-      <div className="flex items-baseline justify-between mb-1">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-stone-800">{team.tri}</div>
-        <div className="text-sm font-black tabular-nums text-stone-900">{team.score}</div>
-      </div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+        <span className="w-10">Team</span>
         <span className="flex-1">Player</span>
-        <span className="w-8 text-right">MIN</span>
+        <span className="w-7 text-right">MIN</span>
         <span className="w-6 text-right">PTS</span>
         <span className="w-5 text-right">REB</span>
         <span className="w-5 text-right">AST</span>
+        <span className="w-8 text-right">VA</span>
       </div>
-      {players.map((p, i) => <PlayerRow key={i} p={p} />)}
+      {rows.map((p, i) => {
+        const teamInfo = TEAMS[p.team];
+        const owner = teamInfo?.owner;
+        return (
+          <div key={i} className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
+            <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${ownerBadge(owner)}`}>
+              {p.team}
+            </span>
+            <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
+              {p.name}{isLive && p.oncourt && <span className="ml-1 text-red-600">●</span>}
+            </span>
+            <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
+            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
+            <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
+            <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
+            <span className={`tabular-nums w-8 text-right font-semibold ${p.va > 0 ? "text-stone-900" : "text-stone-400"}`}>
+              {p.va.toFixed(1)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -197,7 +252,6 @@ function LiveGameBanner({ liveGame }) {
   }, [expanded, liveGame?.gameId, liveGame?.gameStatus, loadBox]);
 
   if (!liveGame) return null;
-
   const { home, away, gameStatus, gameStatusText, gameId } = liveGame;
   const isLive = gameStatus === 2;
   const isFinal = gameStatus === 3;
@@ -225,12 +279,7 @@ function LiveGameBanner({ liveGame }) {
         <div className="px-2 pb-2 border-t border-stone-200">
           {loading && !box && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading stats…</div>}
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
-          {box && (
-            <>
-              <TeamBoxscore team={box.away} />
-              <TeamBoxscore team={box.home} />
-            </>
-          )}
+          {box && <CombinedBoxscore box={box} isLive={isLive} />}
         </div>
       )}
     </div>
@@ -534,7 +583,7 @@ export default function PlayoffTracker() {
             <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
             <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
             <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
-            <div className="text-stone-400 italic">Live scores auto-sync. Tap a game banner for box score. Use +/− to override manually.</div>
+            <div className="text-stone-400 italic">Tap a game banner for box score with VA. Red dots (●) mark players currently on the court.</div>
           </div>
         </details>
 
