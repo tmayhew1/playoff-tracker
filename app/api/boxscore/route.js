@@ -20,22 +20,38 @@ async function fetchJson(url, timeoutMs = 5000) {
   }
 }
 
+// Parse ISO 8601 duration like "PT38M12.00S" to total minutes (as float)
+function parseMinutes(iso) {
+  if (!iso) return 0;
+  const m = /PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/.exec(iso);
+  if (!m) return 0;
+  const mins = parseInt(m[1] || "0", 10);
+  const secs = parseFloat(m[2] || "0");
+  return mins + secs / 60;
+}
+
 function mapPlayer(p) {
   const s = p.statistics || {};
+  const mp = parseMinutes(s.minutesCalculated || s.minutes);
   return {
     name: p.name || `${p.firstName || ""} ${p.familyName || ""}`.trim(),
     starter: !!p.starter,
     oncourt: !!p.oncourt,
-    min: s.minutesCalculated || s.minutes || "",
+    mp,
     pts: s.points ?? 0,
     reb: (s.reboundsDefensive ?? 0) + (s.reboundsOffensive ?? 0),
+    drb: s.reboundsDefensive ?? 0,
+    orb: s.reboundsOffensive ?? 0,
     ast: s.assists ?? 0,
     stl: s.steals ?? 0,
     blk: s.blocks ?? 0,
-    to: s.turnovers ?? 0,
-    fg: `${s.fieldGoalsMade ?? 0}/${s.fieldGoalsAttempted ?? 0}`,
-    tp: `${s.threePointersMade ?? 0}/${s.threePointersAttempted ?? 0}`,
-    ft: `${s.freeThrowsMade ?? 0}/${s.freeThrowsAttempted ?? 0}`,
+    tov: s.turnovers ?? 0,
+    fgm: s.fieldGoalsMade ?? 0,
+    fga: s.fieldGoalsAttempted ?? 0,
+    tpm: s.threePointersMade ?? 0,
+    tpa: s.threePointersAttempted ?? 0,
+    ftm: s.freeThrowsMade ?? 0,
+    fta: s.freeThrowsAttempted ?? 0,
     plusMinus: s.plusMinusPoints ?? 0,
   };
 }
@@ -43,9 +59,7 @@ function mapPlayer(p) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("gameId");
-  if (!gameId) {
-    return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
-  }
+  if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
   try {
     const url = `https://cdn.nba.com/static/json/liveData/boxscore/boxscore_${gameId}.json`;
     const data = await fetchJson(url, 5000);
@@ -54,15 +68,14 @@ export async function GET(req) {
     const body = {
       gameId,
       status: game.gameStatusText,
+      gameStatus: game.gameStatus,
       home: {
         tri: game.homeTeam?.teamTricode,
-        name: game.homeTeam?.teamName,
         score: game.homeTeam?.score ?? 0,
         players: (game.homeTeam?.players || []).map(mapPlayer),
       },
       away: {
         tri: game.awayTeam?.teamTricode,
-        name: game.awayTeam?.teamName,
         score: game.awayTeam?.score ?? 0,
         players: (game.awayTeam?.players || []).map(mapPlayer),
       },
