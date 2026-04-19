@@ -321,10 +321,26 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   }, [expanded, liveGame?.gameId, liveGame?.gameStatus, loadBox]);
 
   if (!liveGame) return null;
-  const { home, away, gameStatus, gameStatusText, gameId } = liveGame;
+  const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC } = liveGame;
   const isLive = gameStatus === 2;
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
+
+  // Format status for upcoming games: "Today 7:30 PM" or "4/22 7:30 PM"
+  let displayStatus = gameStatusText;
+  if (gameStatus === 1 && gameDateTimeUTC) {
+    const d = new Date(gameDateTimeUTC);
+    const now = new Date();
+    const isSameDay = d.getFullYear() === now.getFullYear() &&
+                      d.getMonth() === now.getMonth() &&
+                      d.getDate() === now.getDate();
+    const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    if (isSameDay) {
+      displayStatus = `Today ${timeStr}`;
+    } else {
+      displayStatus = `${d.getMonth() + 1}/${d.getDate()} ${timeStr}`;
+    }
+  }
 
   let finalClasses = "bg-stone-100 border-stone-300";
   if (isFinal && home.score !== away.score) {
@@ -344,7 +360,7 @@ function LiveGameBanner({ liveGame, gameLabel }) {
         <div className="flex items-center gap-1.5">
           {isLive && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
           <span className={`font-bold uppercase tracking-wider ${isLive ? "text-red-700" : "text-stone-600"}`}>
-            {isLive ? "LIVE" : isFinal ? "FINAL" : (gameStatusText || "SOON")}
+            {isLive ? "LIVE" : isFinal ? "FINAL" : (displayStatus || "SOON")}
           </span>
           {gameLabel && (
             <span className="text-[9px] font-semibold uppercase tracking-wider text-stone-500 px-1 py-0.5 bg-white border border-stone-300">
@@ -572,7 +588,6 @@ function CurrentView() {
         if (saved.winners) setWinners(saved.winners);
         if (saved.gameWins) setGameWins(saved.gameWins);
         if (saved.liveGames) {
-          // Migrate old single-game-per-series format to array format
           const migrated = {};
           for (const [sid, val] of Object.entries(saved.liveGames)) {
             migrated[sid] = Array.isArray(val) ? val : [val];
@@ -600,7 +615,6 @@ function CurrentView() {
       if (!res.ok) throw new Error(`Proxy ${res.status}`);
       const data = await res.json();
 
-      // Merge new games with previously-seen games per series.
       setLiveGamesBySeries((prev) => {
         const next = { ...prev };
         (data.liveGames || []).forEach((g) => {
