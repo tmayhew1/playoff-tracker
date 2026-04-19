@@ -177,7 +177,7 @@ function CombinedBoxscore({ box, isLive }) {
   ]
     .filter((p) => (p.mp || 0) > 0) // drop anyone who didn't play
     .map((p) => ({ ...p, va: valueAdd(p) }))
-    .sort((a, b) => b.pts - a.pts);
+    .sort((a, b) => b.va - a.va);
 
   if (rows.length === 0) {
     return <div className="py-2 text-[10px] text-stone-500 italic text-center">No player stats yet</div>;
