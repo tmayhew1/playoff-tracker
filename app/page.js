@@ -50,21 +50,21 @@ const ROUND_LABEL = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4
 const STORAGE_KEY = "playoff-draft-v1";
 
 const LGA = {
-  la3P: 0.366,
-  la2P: 0.545,
-  laFT: 0.786,
-  laFG: 0.471,
-  laPTSperM: 0.548,
-  laASTperM: 0.119,
-  laSTLperM: 0.032,
-  laBLKperM: 0.024,
-  laTOVperM: 0.068,
-  laDRBperM: 0.152,
-  laORBperM: 0.045,
-  laPTSperMake: 2.216,
-  laPTSperPoss: 1.135,
-  laDRBrate: 0.765,
-  laORBrate: 0.235,
+  la3P: 0.359686938670772,
+  la2P: 0.548356161904934,
+  laFT: 0.788506191950464,
+  laFG: 0.470335430881713,
+  laPTSperM: 0.408655965562845,
+  laASTperM: 0.0827805842301779,
+  laSTLperM: 0.032258064516129,
+  laBLKperM: 0.0143884892086331,
+  laTOVperM: 0.0516272842803455,
+  laDRBperM: 0.121786420566908,
+  laORBperM: 0.0384615384615385,
+  laPTSperMake: 2.31624664395461,
+  laPTSperPoss: 1.01391216652376,
+  laDRBrate: 0.738162582316744,
+  laORBrate: 0.261837417683256,
 };
 
 function valueAdd(p) {
