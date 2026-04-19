@@ -49,7 +49,6 @@ export async function GET() {
     gameWins[id] = { [a]: 0, [b]: 0 };
   }
 
-  // Try primary source: playoff series summary (sometimes blocks edge/serverless)
   let gotSeriesData = false;
   try {
     const url = "https://stats.nba.com/stats/playoffseriesbyround?LeagueID=00&Season=2025-26&RoundNumber=1";
@@ -75,7 +74,6 @@ export async function GET() {
     errors.push(`series: ${e.message}`);
   }
 
-  // Pull today's games (lightweight CDN, very reliable)
   let liveGames = [];
   let todaysFinals = [];
   try {
@@ -91,6 +89,7 @@ export async function GET() {
       const awayScore = g.awayTeam?.score ?? 0;
       liveGames.push({
         seriesId: sid,
+        gameId: g.gameId,
         gameStatus: g.gameStatus,
         gameStatusText: g.gameStatusText,
         period: g.period,
@@ -99,19 +98,13 @@ export async function GET() {
         away: { tri: away, score: awayScore },
       });
       if (g.gameStatus === 3 && homeScore !== awayScore) {
-        todaysFinals.push({
-          sid,
-          winnerTri: homeScore > awayScore ? home : away,
-        });
+        todaysFinals.push({ sid, winnerTri: homeScore > awayScore ? home : away });
       }
     }
   } catch (e) {
     errors.push(`scoreboard: ${e.message}`);
   }
 
-  // Fallback: if we didn't get series data but we have today's finals,
-  // nudge the winning team's count up by 1 above the baseline.
-  // (This only covers today — series data is needed for full history.)
   if (!gotSeriesData && todaysFinals.length > 0) {
     for (const f of todaysFinals) {
       const code = TRICODE_MAP[f.winnerTri];
@@ -119,6 +112,8 @@ export async function GET() {
         gameWins[f.sid][code] = Math.max(gameWins[f.sid][code], 1);
       }
     }
+    const idx = errors.findIndex((e) => e.startsWith("series:"));
+    if (idx >= 0) errors.splice(idx, 1);
   }
 
   return new Response(JSON.stringify({ gameWins, liveGames, errors, fetchedAt: new Date().toISOString() }), {
