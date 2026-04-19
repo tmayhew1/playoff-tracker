@@ -129,22 +129,110 @@ function GameStepper({ value, onChange, disabled, color }) {
   );
 }
 
+function PlayerRow({ p }) {
+  return (
+    <div className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
+      <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
+        {p.name}{p.oncourt && <span className="ml-1 text-red-600">●</span>}
+      </span>
+      <span className="tabular-nums text-stone-500 w-8 text-right">{p.min}</span>
+      <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
+      <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
+      <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
+    </div>
+  );
+}
+
+function TeamBoxscore({ team }) {
+  if (!team) return null;
+  const players = [...(team.players || [])].sort((a, b) => b.pts - a.pts);
+  return (
+    <div className="mt-2">
+      <div className="flex items-baseline justify-between mb-1">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-stone-800">{team.tri}</div>
+        <div className="text-sm font-black tabular-nums text-stone-900">{team.score}</div>
+      </div>
+      <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+        <span className="flex-1">Player</span>
+        <span className="w-8 text-right">MIN</span>
+        <span className="w-6 text-right">PTS</span>
+        <span className="w-5 text-right">REB</span>
+        <span className="w-5 text-right">AST</span>
+      </div>
+      {players.map((p, i) => <PlayerRow key={i} p={p} />)}
+    </div>
+  );
+}
+
 function LiveGameBanner({ liveGame }) {
+  const [expanded, setExpanded] = useState(false);
+  const [box, setBox] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const loadBox = useCallback(async () => {
+    if (!liveGame?.gameId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setBox(data);
+    } catch (e) {
+      setError(e.message || "Load failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [liveGame?.gameId]);
+
+  useEffect(() => {
+    if (!expanded || !liveGame?.gameId) return;
+    loadBox();
+    if (liveGame.gameStatus === 2) {
+      const id = setInterval(loadBox, 45000);
+      return () => clearInterval(id);
+    }
+  }, [expanded, liveGame?.gameId, liveGame?.gameStatus, loadBox]);
+
   if (!liveGame) return null;
-  const { home, away, gameStatus, gameStatusText } = liveGame;
+
+  const { home, away, gameStatus, gameStatusText, gameId } = liveGame;
   const isLive = gameStatus === 2;
   const isFinal = gameStatus === 3;
+  const canExpand = !!gameId && (isLive || isFinal);
+
   return (
-    <div className={`mt-1 px-2 py-1 text-[10px] border flex items-center justify-between gap-2 ${isLive ? "bg-red-50 border-red-300" : isFinal ? "bg-stone-100 border-stone-300" : "bg-stone-50 border-stone-200"}`}>
-      <div className="flex items-center gap-1.5">
-        {isLive && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
-        <span className={`font-bold uppercase tracking-wider ${isLive ? "text-red-700" : "text-stone-600"}`}>
-          {isLive ? "LIVE" : isFinal ? "FINAL" : (gameStatusText || "SOON")}
-        </span>
-      </div>
-      <div className="tabular-nums font-semibold text-stone-700">
-        {away.tri} {away.score} — {home.score} {home.tri}
-      </div>
+    <div className={`mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? "bg-stone-100 border-stone-300" : "bg-stone-50 border-stone-200"}`}>
+      <button
+        onClick={() => canExpand && setExpanded(!expanded)}
+        disabled={!canExpand}
+        className="w-full px-2 py-1 text-[10px] flex items-center justify-between gap-2"
+      >
+        <div className="flex items-center gap-1.5">
+          {isLive && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
+          <span className={`font-bold uppercase tracking-wider ${isLive ? "text-red-700" : "text-stone-600"}`}>
+            {isLive ? "LIVE" : isFinal ? "FINAL" : (gameStatusText || "SOON")}
+          </span>
+          {canExpand && <span className="text-stone-400">{expanded ? "▾" : "▸"}</span>}
+        </div>
+        <div className="tabular-nums font-semibold text-stone-700">
+          {away.tri} {away.score} — {home.score} {home.tri}
+        </div>
+      </button>
+      {expanded && (
+        <div className="px-2 pb-2 border-t border-stone-200">
+          {loading && !box && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading stats…</div>}
+          {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
+          {box && (
+            <>
+              <TeamBoxscore team={box.away} />
+              <TeamBoxscore team={box.home} />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -415,7 +503,7 @@ export default function PlayoffTracker() {
             <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Draft Tracker</h1>
             <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
           </div>
-          <button onClick={() => syncLive(false)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50 shrink-0">
+          <button onClick={() => syncLive(true)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50 shrink-0">
             {syncing ? "Syncing…" : "↻ Sync"}
           </button>
         </header>
@@ -446,7 +534,7 @@ export default function PlayoffTracker() {
             <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
             <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
             <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
-            <div className="text-stone-400 italic">Live scores auto-sync. Use +/− to override manually. A team at 4 clinches.</div>
+            <div className="text-stone-400 italic">Live scores auto-sync. Tap a game banner for box score. Use +/− to override manually.</div>
           </div>
         </details>
 
