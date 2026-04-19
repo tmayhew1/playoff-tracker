@@ -157,12 +157,27 @@ const ownerBg = (o) => o === "Spencer" ? "bg-amber-50 border-amber-300" : "bg-te
 const ownerDot = (o) => o === "Spencer" ? "bg-amber-600" : "bg-teal-600";
 const ownerBadge = (o) => o === "Spencer" ? "bg-amber-100 text-amber-800" : o === "Trey" ? "bg-teal-100 text-teal-800" : "bg-stone-100 text-stone-600";
 
-function GameStepper({ value, onChange, disabled, color }) {
+function WinCircles({ value, onChange, disabled, owner }) {
+  const fillColor = owner === "Spencer" ? "bg-amber-500 border-amber-600" : "bg-teal-500 border-teal-600";
   return (
     <div className="flex items-center gap-1 mt-1">
-      <button onClick={(e) => { e.stopPropagation(); if (!disabled && value > 0) onChange(value - 1); }} disabled={disabled || value === 0} className="w-5 h-5 flex items-center justify-center border border-stone-300 bg-white text-stone-600 text-sm leading-none disabled:opacity-30">−</button>
-      <span className={`text-xs font-bold tabular-nums w-4 text-center ${color}`}>{value}</span>
-      <button onClick={(e) => { e.stopPropagation(); if (!disabled && value < 4) onChange(value + 1); }} disabled={disabled || value >= 4} className="w-5 h-5 flex items-center justify-center border border-stone-300 bg-white text-stone-600 text-sm leading-none disabled:opacity-30">+</button>
+      {[1, 2, 3, 4].map((n) => {
+        const filled = value >= n;
+        return (
+          <button
+            key={n}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (disabled) return;
+              // Tap filled circle to decrement (set to n-1); tap empty to set to n
+              onChange(filled ? n - 1 : n);
+            }}
+            disabled={disabled}
+            className={`w-3.5 h-3.5 rounded-full border transition-colors ${filled ? fillColor : "bg-white border-stone-300"} disabled:opacity-40`}
+            aria-label={filled ? `Win ${n} (tap to remove)` : `Add win ${n}`}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -326,7 +341,7 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
 
-  // Format status for upcoming games: "Today 7:30 PM" or "4/22 7:30 PM"
+  // Upcoming: "Today 7:30 PM" if same day, else just "4/22"
   let displayStatus = gameStatusText;
   if (gameStatus === 1 && gameDateTimeUTC) {
     const d = new Date(gameDateTimeUTC);
@@ -334,11 +349,11 @@ function LiveGameBanner({ liveGame, gameLabel }) {
     const isSameDay = d.getFullYear() === now.getFullYear() &&
                       d.getMonth() === now.getMonth() &&
                       d.getDate() === now.getDate();
-    const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     if (isSameDay) {
+      const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
       displayStatus = `Today ${timeStr}`;
     } else {
-      displayStatus = `${d.getMonth() + 1}/${d.getDate()} ${timeStr}`;
+      displayStatus = `${d.getMonth() + 1}/${d.getDate()}`;
     }
   }
 
@@ -384,6 +399,28 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   );
 }
 
+function TbdCard({ gameNumbers }) {
+  if (!gameNumbers || gameNumbers.length === 0) return null;
+  let label;
+  if (gameNumbers.length === 1) {
+    label = `Game ${gameNumbers[0]} TBD`;
+  } else if (gameNumbers.length === 2) {
+    label = `Games ${gameNumbers[0]} & ${gameNumbers[1]} TBD`;
+  } else {
+    const last = gameNumbers[gameNumbers.length - 1];
+    const rest = gameNumbers.slice(0, -1).join(", ");
+    label = `Games ${rest} & ${last} TBD`;
+  }
+  return (
+    <div className="mt-1 border bg-stone-300 border-stone-400">
+      <div className="w-full px-2 py-1 text-[10px] flex items-center justify-between gap-2">
+        <span className="font-bold uppercase tracking-wider text-stone-700">{label}</span>
+        <span className="text-[9px] uppercase tracking-wider text-stone-600 italic">If necessary</span>
+      </div>
+    </div>
+  );
+}
+
 function TeamButton({ code, selected, disabled, onClick, gamesWon, onGamesChange, seriesDecided }) {
   if (!code) {
     return <div className="flex-1 px-3 py-2.5 text-xs uppercase tracking-widest text-stone-400 italic border border-dashed border-stone-300 bg-stone-50 text-center">TBD</div>;
@@ -403,7 +440,7 @@ function TeamButton({ code, selected, disabled, onClick, gamesWon, onGamesChange
           <span className="text-stone-500">{t.owner}</span>
         </div>
       </button>
-      {!seriesDecided && <GameStepper value={gamesWon || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} color={ownerColor(t.owner)} />}
+      {!seriesDecided && <WinCircles value={gamesWon || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} owner={t.owner} />}
     </div>
   );
 }
@@ -417,6 +454,28 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   const seriesGames = (liveGame || []).slice().sort((x, y) =>
     (x.gameId || "").localeCompare(y.gameId || "")
   );
+
+  // Separate scheduled/final/live games from TBD (conditional) games.
+  // A game is "TBD" if it has no confirmed date — the schedule gives these
+  // a placeholder status text like "PPD" or missing gameDateTimeUTC, and
+  // typically gameDateTimeUTC will be null or far in the future.
+  const realGames = [];
+  const tbdGames = [];
+  for (const g of seriesGames) {
+    const hasRealDate = !!g.gameDateTimeUTC && !isNaN(new Date(g.gameDateTimeUTC).getTime());
+    // A "TBD" game in NBA schedule JSON has gameDateTimeUTC set to a
+    // placeholder far-future date (often year 2050+) or missing entirely.
+    const isTbd = !hasRealDate || new Date(g.gameDateTimeUTC).getFullYear() > 2040;
+    if (g.gameStatus === 1 && isTbd) {
+      tbdGames.push(g);
+    } else {
+      realGames.push(g);
+    }
+  }
+
+  // Game numbers: real games get numbered first in order, then TBDs continue.
+  const tbdGameNumbers = tbdGames.map((_, i) => realGames.length + i + 1).filter((n) => n <= 7);
+
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
@@ -424,11 +483,12 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
       </div>
-      {seriesGames.map((g, i) => {
+      {realGames.map((g, i) => {
         const num = i + 1;
         const gameLabel = num <= 7 ? `Game ${num}` : null;
         return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} />;
       })}
+      <TbdCard gameNumbers={tbdGameNumbers} />
     </div>
   );
 }
@@ -772,7 +832,7 @@ function CurrentView() {
           <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
           <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
           <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
-          <div className="text-stone-400 italic">Tap a game banner for box score. Tap any player row for VA breakdown.</div>
+          <div className="text-stone-400 italic">Tap a win circle to count or remove a series win. Tap a game banner for box score. Tap any player row for VA breakdown.</div>
         </div>
       </details>
 
