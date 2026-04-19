@@ -456,25 +456,30 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   );
 
   // Separate scheduled/final/live games from TBD (conditional) games.
-  // A game is "TBD" if it has no confirmed date — the schedule gives these
-  // a placeholder status text like "PPD" or missing gameDateTimeUTC, and
-  // typically gameDateTimeUTC will be null or far in the future.
+  // A game is "TBD" if game number > (4 + fewer of the two win counts).
+  // - 0-0, 1-0, 2-0, 3-0, 4-0: only 4 games guaranteed
+  // - any 1 win by trailing team: up to game 5 guaranteed
+  // - any 2 wins by trailing team: up to game 6 guaranteed
+  // - 3-3: all 7 games guaranteed
+  const winsA = games[a] || 0;
+  const winsB = games[b] || 0;
+  const minWins = Math.min(winsA, winsB);
+  const lastGuaranteed = seriesDecided ? 0 : 4 + minWins;
+
   const realGames = [];
   const tbdGames = [];
-  for (const g of seriesGames) {
-    const hasRealDate = !!g.gameDateTimeUTC && !isNaN(new Date(g.gameDateTimeUTC).getTime());
-    // A "TBD" game in NBA schedule JSON has gameDateTimeUTC set to a
-    // placeholder far-future date (often year 2050+) or missing entirely.
-    const isTbd = !hasRealDate || new Date(g.gameDateTimeUTC).getFullYear() > 2040;
-    if (g.gameStatus === 1 && isTbd) {
+  seriesGames.forEach((g, i) => {
+    const gameNumber = i + 1;
+    if (g.gameStatus === 1 && gameNumber > lastGuaranteed) {
       tbdGames.push(g);
     } else {
       realGames.push(g);
     }
-  }
+  });
 
-  // Game numbers: real games get numbered first in order, then TBDs continue.
+  // Game numbers for TBDs continue from after the real games.
   const tbdGameNumbers = tbdGames.map((_, i) => realGames.length + i + 1).filter((n) => n <= 7);
+
 
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
