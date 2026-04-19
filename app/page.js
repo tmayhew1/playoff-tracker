@@ -2,155 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory } from "./historical";
-
-const TEAMS = {
-  SAS: { name: "Spurs",    seed: 2, owner: "Spencer", conf: "W" },
-  DEN: { name: "Nuggets",  seed: 3, owner: "Spencer", conf: "W" },
-  CLE: { name: "Cavs",     seed: 4, owner: "Spencer", conf: "E" },
-  HOU: { name: "Rockets",  seed: 5, owner: "Spencer", conf: "W" },
-  NYK: { name: "Knicks",   seed: 3, owner: "Spencer", conf: "E" },
-  ORL: { name: "Magic",    seed: 8, owner: "Spencer", conf: "E" },
-  PHI: { name: "76ers",    seed: 7, owner: "Spencer", conf: "E" },
-  PHX: { name: "Suns",     seed: 8, owner: "Spencer", conf: "W" },
-  OKC: { name: "Thunder",  seed: 1, owner: "Trey",    conf: "W" },
-  BOS: { name: "Celtics",  seed: 2, owner: "Trey",    conf: "E" },
-  MIN: { name: "Wolves",   seed: 6, owner: "Trey",    conf: "W" },
-  DET: { name: "Pistons",  seed: 1, owner: "Trey",    conf: "E" },
-  ATL: { name: "Hawks",    seed: 6, owner: "Trey",    conf: "E" },
-  LAL: { name: "Lakers",   seed: 4, owner: "Trey",    conf: "W" },
-  TOR: { name: "Raptors",  seed: 5, owner: "Trey",    conf: "E" },
-  POR: { name: "Blazers",  seed: 7, owner: "Trey",    conf: "W" },
-};
-
-const BRACKET = {
-  r1: [
-    { id: "E1", teams: ["DET", "ORL"], conf: "E" },
-    { id: "E4", teams: ["CLE", "TOR"], conf: "E" },
-    { id: "E3", teams: ["NYK", "ATL"], conf: "E" },
-    { id: "E2", teams: ["BOS", "PHI"], conf: "E" },
-    { id: "W1", teams: ["OKC", "PHX"], conf: "W" },
-    { id: "W4", teams: ["LAL", "HOU"], conf: "W" },
-    { id: "W3", teams: ["DEN", "MIN"], conf: "W" },
-    { id: "W2", teams: ["SAS", "POR"], conf: "W" },
-  ],
-  r2: [
-    { id: "ES1", from: ["E1", "E4"], conf: "E" },
-    { id: "ES2", from: ["E2", "E3"], conf: "E" },
-    { id: "WS1", from: ["W1", "W4"], conf: "W" },
-    { id: "WS2", from: ["W2", "W3"], conf: "W" },
-  ],
-  r3: [
-    { id: "ECF", from: ["ES1", "ES2"], conf: "E" },
-    { id: "WCF", from: ["WS1", "WS2"], conf: "W" },
-  ],
-  r4: [{ id: "F", from: ["ECF", "WCF"], conf: "F" }],
-};
-
-const ROUND_BASE = { r1: 1, r2: 2, r3: 4, r4: 8 };
-const ROUND_LABEL = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
-const STORAGE_KEY = "playoff-draft-v1";
-
-const LGA = {
-  la3P: 0.359686938670772,
-  la2P: 0.548356161904934,
-  laFT: 0.788506191950464,
-  laFG: 0.470335430881713,
-  laPTSperM: 0.408655965562845,
-  laASTperM: 0.0827805842301779,
-  laSTLperM: 0.032258064516129,
-  laBLKperM: 0.0143884892086331,
-  laTOVperM: 0.0516272842803455,
-  laDRBperM: 0.121786420566908,
-  laORBperM: 0.0384615384615385,
-  laPTSperMake: 2.31624664395461,
-  laPTSperPoss: 1.01391216652376,
-  laDRBrate: 0.738162582316744,
-  laORBrate: 0.261837417683256,
-};
-
-function valueAdd(p) {
-  const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
-  if (!mp || mp <= 0) return 0;
-  const twoPm = fgm - tpm, twoPa = fga - tpa;
-  const tpAdd = ((tpm / (tpa || 1)) - LGA.la3P) * tpa;
-  const twoAdd = ((twoPm / (twoPa || 1)) - LGA.la2P) * twoPa;
-  const ftAdd = ((ftm / (fta || 1)) - LGA.laFT) * fta;
-  const volume = ((pts / mp) - LGA.laPTSperM) * mp;
-  const efficiency = 3 * tpAdd + 2 * twoAdd + ftAdd;
-  const astVal = ((ast / mp) - LGA.laASTperM) * mp * LGA.laPTSperMake * (1 - LGA.laFG);
-  const stlVal = ((stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss;
-  const blkVal = ((blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
-  const tovVal = -((tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss;
-  const drbVal = ((drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate;
-  const orbVal = ((orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
-  return volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal;
-}
-
-function computeMatchups(winners) {
-  const t = {};
-  BRACKET.r1.forEach((s) => (t[s.id] = s.teams.slice()));
-  const resolve = (id) => winners[id];
-  BRACKET.r2.forEach((s) => (t[s.id] = s.from.map(resolve)));
-  BRACKET.r3.forEach((s) => (t[s.id] = s.from.map(resolve)));
-  BRACKET.r4.forEach((s) => (t[s.id] = s.from.map(resolve)));
-  return t;
-}
-
-function potentialPoints(winTeam, loseTeam, roundKey) {
-  const base = ROUND_BASE[roundKey];
-  const diff = winTeam.seed - loseTeam.seed;
-  const bonus = diff > 0 ? diff : 0;
-  return { base, bonus, total: base + bonus };
-}
-
-function computePoints(winners, gameWins) {
-  const matchups = computeMatchups(winners);
-  const breakdown = { Spencer: [], Trey: [] };
-  const projections = { Spencer: [], Trey: [] };
-  const rounds = [
-    { key: "r1", series: BRACKET.r1 },
-    { key: "r2", series: BRACKET.r2 },
-    { key: "r3", series: BRACKET.r3 },
-    { key: "r4", series: BRACKET.r4 },
-  ];
-  rounds.forEach(({ key, series }) => {
-    series.forEach((s) => {
-      const [a, b] = matchups[s.id] || [];
-      if (!a || !b) return;
-      const winCode = winners[s.id];
-      if (winCode) {
-        const winTeam = TEAMS[winCode];
-        const loseCode = a === winCode ? b : a;
-        const loseTeam = TEAMS[loseCode];
-        if (!winTeam || !loseTeam) return;
-        const { base, bonus, total } = potentialPoints(winTeam, loseTeam, key);
-        breakdown[winTeam.owner].push({ round: ROUND_LABEL[key], roundKey: key, team: winTeam, opp: loseTeam, base, bonus, total });
-      } else {
-        const games = gameWins[s.id] || { [a]: 0, [b]: 0 };
-        [a, b].forEach((code) => {
-          const team = TEAMS[code];
-          const oppCode = code === a ? b : a;
-          const opp = TEAMS[oppCode];
-          if (!team || !opp) return;
-          const gamesWon = games[code] || 0;
-          if (gamesWon === 0) return;
-          const { total } = potentialPoints(team, opp, key);
-          const projected = total * (gamesWon / 4);
-          projections[team.owner].push({ round: ROUND_LABEL[key], roundKey: key, team, opp, gamesWon, total, projected });
-        });
-      }
-    });
-  });
-  const totals = {
-    Spencer: breakdown.Spencer.reduce((a, x) => a + x.total, 0),
-    Trey: breakdown.Trey.reduce((a, x) => a + x.total, 0),
-  };
-  const projectedTotals = {
-    Spencer: totals.Spencer + projections.Spencer.reduce((a, x) => a + x.projected, 0),
-    Trey: totals.Trey + projections.Trey.reduce((a, x) => a + x.projected, 0),
-  };
-  return { breakdown, totals, projections, projectedTotals, matchups };
-}
+import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
+import { LGA, valueAdd, computePoints } from "./scoring";
 
 const ownerColor = (o) => o === "Spencer" ? "text-amber-700" : "text-teal-700";
 const ownerBg = (o) => o === "Spencer" ? "bg-amber-50 border-amber-300" : "bg-teal-50 border-teal-300";
@@ -169,7 +22,6 @@ function WinCircles({ value, onChange, disabled, owner }) {
             onClick={(e) => {
               e.stopPropagation();
               if (disabled) return;
-              // Tap filled circle to decrement (set to n-1); tap empty to set to n
               onChange(filled ? n - 1 : n);
             }}
             disabled={disabled}
@@ -341,38 +193,35 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
 
-    // Upcoming: "Today 7:30 PM" if same day, else just "4/22"
-  // When gameStatusText is "TBD", the UTC timestamp uses 04:00:00Z as a
-  // placeholder — that's midnight ET = the correct calendar date in ET.
-  // Otherwise we use the device's local timezone to decide the date.
+  // Format status for upcoming games
   let displayStatus = gameStatusText;
   if (gameStatus === 1 && gameDateTimeUTC) {
     const d = new Date(gameDateTimeUTC);
     const isTbd = gameStatusText === "TBD";
-    // Compute the display date in ET for TBD games, local time otherwise.
-    const displayDate = isTbd
-      ? new Date(d.getTime() - 4 * 60 * 60 * 1000) // shift UTC back 4h → ET calendar date
-      : d;
     const now = new Date();
-    const isSameDay = displayDate.getUTCFullYear() === now.getFullYear() &&
-                      displayDate.getUTCMonth() === now.getMonth() &&
-                      displayDate.getUTCDate() === now.getDate();
 
     if (isTbd) {
-      // For TBD games, just show the date — no time yet
-      if (isSameDay) {
-        displayStatus = "Today";
-      } else {
-        displayStatus = `${displayDate.getUTCMonth() + 1}/${displayDate.getUTCDate()}`;
-      }
-    } else if (isSameDay) {
-      const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-      displayStatus = `Today ${timeStr}`;
+      // TBD games use 04:00:00Z = midnight ET. Shift to get ET calendar date.
+      const etDate = new Date(d.getTime() - 4 * 60 * 60 * 1000);
+      const sameDay = etDate.getUTCFullYear() === now.getFullYear() &&
+                      etDate.getUTCMonth() === now.getMonth() &&
+                      etDate.getUTCDate() === now.getDate();
+      displayStatus = sameDay
+        ? "Today"
+        : `${etDate.getUTCMonth() + 1}/${etDate.getUTCDate()}`;
     } else {
-      displayStatus = `${d.getMonth() + 1}/${d.getDate()}`;
+      // Real tipoff — compare in local timezone
+      const sameDay = d.getFullYear() === now.getFullYear() &&
+                      d.getMonth() === now.getMonth() &&
+                      d.getDate() === now.getDate();
+      if (sameDay) {
+        const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        displayStatus = `Today ${timeStr}`;
+      } else {
+        displayStatus = `${d.getMonth() + 1}/${d.getDate()}`;
+      }
     }
   }
-
 
   let finalClasses = "bg-stone-100 border-stone-300";
   if (isFinal && home.score !== away.score) {
@@ -472,12 +321,6 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
     (x.gameId || "").localeCompare(y.gameId || "")
   );
 
-  // Separate scheduled/final/live games from TBD (conditional) games.
-  // A game is "TBD" if game number > (4 + fewer of the two win counts).
-  // - 0-0, 1-0, 2-0, 3-0, 4-0: only 4 games guaranteed
-  // - any 1 win by trailing team: up to game 5 guaranteed
-  // - any 2 wins by trailing team: up to game 6 guaranteed
-  // - 3-3: all 7 games guaranteed
   const winsA = games[a] || 0;
   const winsB = games[b] || 0;
   const minWins = Math.min(winsA, winsB);
@@ -494,9 +337,7 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
     }
   });
 
-  // Game numbers for TBDs continue from after the real games.
   const tbdGameNumbers = tbdGames.map((_, i) => realGames.length + i + 1).filter((n) => n <= 7);
-
 
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
@@ -516,7 +357,7 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
 }
 
 function RoundSection({ roundKey, title, series, matchups, winners, gameWins, onPick, onGamesChange, liveGamesBySeries }) {
-  // Sort series: live games first, then by most recent game time (descending).
+  // Sort series: live games first, then by most recent completed game (descending).
   const sortedSeries = series.slice().sort((a, b) => {
     const aGames = liveGamesBySeries?.[a.id] || [];
     const bGames = liveGamesBySeries?.[b.id] || [];
@@ -526,17 +367,19 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, on
     if (aHasLive && !bHasLive) return -1;
     if (!aHasLive && bHasLive) return 1;
 
-    // Use the latest-scheduled/played game's timestamp as the key
-        const latestTime = (games) => {
-      const times = games
-        .filter((g) => g.gameStatus === 3 && g.gameDateTimeUTC)
-        .map((g) => new Date(g.gameDateTimeUTC).getTime())
+    const latestTime = (games) => {
+      const finals = games.filter((g) => g.gameStatus === 3);
+      if (finals.length === 0) return 0;
+      const withTime = finals
+        .map((g) => g.gameDateTimeUTC ? new Date(g.gameDateTimeUTC).getTime() : 0)
         .filter((t) => t > 0);
-      return times.length ? Math.max(...times) : 0;
+      if (withTime.length > 0) return Math.max(...withTime);
+      const ids = finals.map((g) => parseInt(g.gameId, 10) || 0);
+      return Math.max(...ids);
     };
     const aTime = latestTime(aGames);
     const bTime = latestTime(bGames);
-    return bTime - aTime; // descending
+    return bTime - aTime;
   });
 
   return (
@@ -551,7 +394,6 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, on
     </div>
   );
 }
-
 
 function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown, readOnly }) {
   const leading = projectedTotal > opponentProjected;
