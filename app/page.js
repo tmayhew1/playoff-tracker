@@ -49,14 +49,12 @@ const ROUND_BASE = { r1: 1, r2: 2, r3: 4, r4: 8 };
 const ROUND_LABEL = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
 const STORAGE_KEY = "playoff-draft-v1";
 
-// 2025-26 league averages used in the Value Added calculation.
-// These mirror Trey's `lga` tibble in app.R — edit if new season values are available.
 const LGA = {
-  la3P: 0.366,       // 3P%
-  la2P: 0.545,       // 2P%
-  laFT: 0.786,       // FT%
-  laFG: 0.471,       // FG%
-  laPTSperM: 0.548,  // pts per minute (league)
+  la3P: 0.366,
+  la2P: 0.545,
+  laFT: 0.786,
+  laFG: 0.471,
+  laPTSperM: 0.548,
   laASTperM: 0.119,
   laSTLperM: 0.032,
   laBLKperM: 0.024,
@@ -168,14 +166,75 @@ function GameStepper({ value, onChange, disabled, color }) {
   );
 }
 
+function VABreakdown({ p }) {
+  const mp = p.mp || 0;
+  if (mp <= 0) return null;
+
+  const twoPm = p.fgm - p.tpm, twoPa = p.fga - p.tpa;
+  const tpAdd = ((p.tpm / (p.tpa || 1)) - LGA.la3P) * p.tpa;
+  const twoAdd = ((twoPm / (twoPa || 1)) - LGA.la2P) * twoPa;
+  const ftAdd = ((p.ftm / (p.fta || 1)) - LGA.laFT) * p.fta;
+
+  const categories = [
+    { key: "Scoring (Volume)", value: ((p.pts / mp) - LGA.laPTSperM) * mp, label: `${p.pts} PTS` },
+    { key: "Efficiency (3P)", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
+    { key: "Efficiency (2P)", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
+    { key: "Efficiency (FT)", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
+    { key: "Assists", value: ((p.ast / mp) - LGA.laASTperM) * mp * LGA.laPTSperMake * (1 - LGA.laFG), label: `${p.ast} AST` },
+    { key: "Steals", value: ((p.stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss, label: `${p.stl} STL` },
+    { key: "Blocks", value: ((p.blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.blk} BLK` },
+    { key: "Turnovers", value: -((p.tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss, label: `${p.tov} TOV` },
+    { key: "Rebounds (D)", value: ((p.drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate, label: `${p.drb} DRB` },
+    { key: "Rebounds (O)", value: ((p.orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.orb} ORB` },
+  ].sort((a, b) => b.value - a.value);
+
+  const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
+  const owner = TEAMS[p.team]?.owner;
+  const posColor = owner === "Spencer" ? "bg-amber-500" : "bg-teal-500";
+
+  return (
+    <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
+      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between">
+        <span>Value Added Breakdown</span>
+        <span className="tabular-nums font-bold text-stone-700">Total: {p.va.toFixed(2)}</span>
+      </div>
+      <div className="space-y-0.5">
+        {categories.map((c, i) => {
+          const pct = (Math.abs(c.value) / maxAbs) * 45;
+          const isPos = c.value >= 0;
+          return (
+            <div key={i} className="flex items-center gap-2 text-[10px]">
+              <span className="w-20 text-stone-600 text-right truncate">{c.key}</span>
+              <div className="flex-1 flex items-center relative h-4">
+                <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300"></div>
+                <div
+                  className={`absolute inset-y-0.5 ${isPos ? posColor : "bg-stone-400"}`}
+                  style={{
+                    left: isPos ? "50%" : `${50 - pct}%`,
+                    width: `${pct}%`,
+                  }}
+                ></div>
+              </div>
+              <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
+              <span className="w-12 text-[9px] text-stone-500 text-right">{c.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[9px] text-stone-400 mt-2 text-center italic">Bars show contribution above/below league average</div>
+    </div>
+  );
+}
+
 function CombinedBoxscore({ box, isLive }) {
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
+
   if (!box) return null;
-  // Flatten both teams into one array, tag each row with team tri
   const rows = [
     ...(box.away?.players || []).map((p) => ({ ...p, team: box.away.tri })),
     ...(box.home?.players || []).map((p) => ({ ...p, team: box.home.tri })),
   ]
-    .filter((p) => (p.mp || 0) > 0) // drop anyone who didn't play
+    .filter((p) => (p.mp || 0) > 0)
     .map((p) => ({ ...p, va: valueAdd(p) }))
     .sort((a, b) => b.va - a.va);
 
@@ -197,21 +256,30 @@ function CombinedBoxscore({ box, isLive }) {
       {rows.map((p, i) => {
         const teamInfo = TEAMS[p.team];
         const owner = teamInfo?.owner;
+        const rowKey = `${p.team}-${p.name}-${i}`;
+        const isExpanded = expandedPlayer === rowKey;
         return (
-          <div key={i} className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
-            <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${ownerBadge(owner)}`}>
-              {p.team}
-            </span>
-            <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
-              {p.name}{isLive && p.oncourt && <span className="ml-1 text-red-600">●</span>}
-            </span>
-            <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
-            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
-            <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
-            <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
-            <span className={`tabular-nums w-8 text-right font-semibold ${p.va > 0 ? "text-stone-900" : "text-stone-400"}`}>
-              {p.va.toFixed(1)}
-            </span>
+          <div key={rowKey} className="border-b border-stone-100 last:border-0">
+            <button
+              onClick={() => setExpandedPlayer(isExpanded ? null : rowKey)}
+              className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
+            >
+              <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${ownerBadge(owner)}`}>
+                {p.team}
+              </span>
+              <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
+                <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
+                {p.name}{isLive && p.oncourt && <span className="ml-1 text-red-600">●</span>}
+              </span>
+              <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
+              <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
+              <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
+              <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
+              <span className={`tabular-nums w-8 text-right font-semibold ${p.va > 0 ? "text-stone-900" : "text-stone-400"}`}>
+                {p.va.toFixed(1)}
+              </span>
+            </button>
+            {isExpanded && <VABreakdown p={p} />}
           </div>
         );
       })}
@@ -583,7 +651,7 @@ export default function PlayoffTracker() {
             <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
             <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
             <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
-            <div className="text-stone-400 italic">Tap a game banner for box score with VA. Red dots (●) mark players currently on the court.</div>
+            <div className="text-stone-400 italic">Tap a game banner for box score. Tap any player row for VA breakdown.</div>
           </div>
         </details>
 
