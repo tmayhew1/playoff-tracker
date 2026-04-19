@@ -341,21 +341,38 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
 
-  // Upcoming: "Today 7:30 PM" if same day, else just "4/22"
+    // Upcoming: "Today 7:30 PM" if same day, else just "4/22"
+  // When gameStatusText is "TBD", the UTC timestamp uses 04:00:00Z as a
+  // placeholder — that's midnight ET = the correct calendar date in ET.
+  // Otherwise we use the device's local timezone to decide the date.
   let displayStatus = gameStatusText;
   if (gameStatus === 1 && gameDateTimeUTC) {
     const d = new Date(gameDateTimeUTC);
+    const isTbd = gameStatusText === "TBD";
+    // Compute the display date in ET for TBD games, local time otherwise.
+    const displayDate = isTbd
+      ? new Date(d.getTime() - 4 * 60 * 60 * 1000) // shift UTC back 4h → ET calendar date
+      : d;
     const now = new Date();
-    const isSameDay = d.getFullYear() === now.getFullYear() &&
-                      d.getMonth() === now.getMonth() &&
-                      d.getDate() === now.getDate();
-    if (isSameDay) {
+    const isSameDay = displayDate.getUTCFullYear() === now.getFullYear() &&
+                      displayDate.getUTCMonth() === now.getMonth() &&
+                      displayDate.getUTCDate() === now.getDate();
+
+    if (isTbd) {
+      // For TBD games, just show the date — no time yet
+      if (isSameDay) {
+        displayStatus = "Today";
+      } else {
+        displayStatus = `${displayDate.getUTCMonth() + 1}/${displayDate.getUTCDate()}`;
+      }
+    } else if (isSameDay) {
       const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
       displayStatus = `Today ${timeStr}`;
     } else {
       displayStatus = `${d.getMonth() + 1}/${d.getDate()}`;
     }
   }
+
 
   let finalClasses = "bg-stone-100 border-stone-300";
   if (isFinal && home.score !== away.score) {
