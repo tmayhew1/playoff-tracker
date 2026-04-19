@@ -510,10 +510,11 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, on
     if (!aHasLive && bHasLive) return 1;
 
     // Use the latest-scheduled/played game's timestamp as the key
-    const latestTime = (games) => {
+        const latestTime = (games) => {
       const times = games
-        .map((g) => g.gameDateTimeUTC ? new Date(g.gameDateTimeUTC).getTime() : 0)
-        .filter((t) => t > 0 && t < new Date("2040-01-01").getTime());
+        .filter((g) => g.gameStatus === 3 && g.gameDateTimeUTC)
+        .map((g) => new Date(g.gameDateTimeUTC).getTime())
+        .filter((t) => t > 0);
       return times.length ? Math.max(...times) : 0;
     };
     const aTime = latestTime(aGames);
