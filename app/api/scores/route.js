@@ -108,10 +108,18 @@ export async function GET() {
   }
 
   // --- 3. Merge: schedule provides history, scoreboard overrides today's data ---
+  // Preserve gameDateTimeUTC from the schedule even when overriding with live data.
+  const scheduleById = new Map(scheduleGames.map((g) => [g.gameId, g]));
   const liveById = new Map(liveToday.map((g) => [g.gameId, g]));
-  const liveGames = scheduleGames.map((g) => liveById.get(g.gameId) || g);
 
-  // Also include any live games that somehow weren't in the schedule yet
+  const liveGames = scheduleGames.map((g) => {
+    const live = liveById.get(g.gameId);
+    if (!live) return g;
+    // Merge: live data wins for scores/status, but keep scheduled date
+    return { ...live, gameDateTimeUTC: g.gameDateTimeUTC };
+  });
+
+  // Also include any live games that weren't in the schedule yet
   for (const lg of liveToday) {
     if (!liveGames.some((g) => g.gameId === lg.gameId)) {
       liveGames.push(lg);
