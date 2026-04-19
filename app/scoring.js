@@ -34,8 +34,8 @@ export function valueAdd(p) {
   const stlVal = ((stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss;
   const blkVal = ((blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
   const tovVal = -((tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss;
-  const drbVal = ((drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate;
-  const orbVal = ((orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
+  const drbVal = ((drb / mp) - LGA.laDRBperM) * ( 5 / 4 ) * mp * LGA.laPTSperPoss * LGA.laORBrate;
+  const orbVal = ((orb / mp) - LGA.laORBperM)* ( 5 / 4 ) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
   return volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal;
 }
 
@@ -56,51 +56,100 @@ export function potentialPoints(winTeam, loseTeam, roundKey) {
   return { base, bonus, total: base + bonus };
 }
 
-export function computePoints(winners, gameWins) {
+// Separates real results (from NBA feed) from user "what-if" speculation.
+// - actualWins: { seriesId: { teamCode: wins } } derived from live games
+// - actualWinners: { seriesId: teamCode } derived from series that clinched
+export function computePoints(winners, gameWins, actualWins = {}, actualWinners = {}) {
   const matchups = computeMatchups(winners);
-  const breakdown = { Spencer: [], Trey: [] };
-  const projections = { Spencer: [], Trey: [] };
+  const breakdown = { Spencer: [], Trey: [] };       // locked, actual series wins
+  const whatIfClinched = { Spencer: [], Trey: [] };  // user-selected winners not yet real
+  const projections = { Spencer: [], Trey: [] };     // in-progress, from actual wins
+  const whatIfProj = { Spencer: [], Trey: [] };      // user-added wins beyond actual
+
   const rounds = [
     { key: "r1", series: BRACKET.r1 },
     { key: "r2", series: BRACKET.r2 },
     { key: "r3", series: BRACKET.r3 },
     { key: "r4", series: BRACKET.r4 },
   ];
+
   rounds.forEach(({ key, series }) => {
     series.forEach((s) => {
       const [a, b] = matchups[s.id] || [];
       if (!a || !b) return;
+
       const winCode = winners[s.id];
+      const actualWinCode = actualWinners[s.id];
+      const games = gameWins[s.id] || { [a]: 0, [b]: 0 };
+      const actualGames = actualWins[s.id] || { [a]: 0, [b]: 0 };
+
       if (winCode) {
+        // Series has a user-selected winner
         const winTeam = TEAMS[winCode];
         const loseCode = a === winCode ? b : a;
         const loseTeam = TEAMS[loseCode];
         if (!winTeam || !loseTeam) return;
         const { base, bonus, total } = potentialPoints(winTeam, loseTeam, key);
-        breakdown[winTeam.owner].push({ round: ROUND_LABEL[key], roundKey: key, team: winTeam, opp: loseTeam, base, bonus, total });
+        const item = { round: ROUND_LABEL[key], roundKey: key, team: winTeam, opp: loseTeam, base, bonus, total };
+        // Actual if real-life agrees; otherwise it's speculation
+        if (actualWinCode === winCode) {
+          breakdown[winTeam.owner].push(item);
+        } else {
+          whatIfClinched[winTeam.owner].push(item);
+        }
       } else {
-        const games = gameWins[s.id] || { [a]: 0, [b]: 0 };
+        // Series in progress — split wins into real vs. speculated
         [a, b].forEach((code) => {
           const team = TEAMS[code];
           const oppCode = code === a ? b : a;
           const opp = TEAMS[oppCode];
           if (!team || !opp) return;
-          const gamesWon = games[code] || 0;
-          if (gamesWon === 0) return;
+          const userWins = games[code] || 0;
+          const realWins = actualGames[code] || 0;
+          if (userWins === 0) return;
           const { total } = potentialPoints(team, opp, key);
-          const projected = total * (gamesWon / 4);
-          projections[team.owner].push({ round: ROUND_LABEL[key], roundKey: key, team, opp, gamesWon, total, projected });
+
+          // Real wins → in-progress projection
+          if (realWins > 0) {
+            projections[team.owner].push({
+              round: ROUND_LABEL[key], roundKey: key, team, opp,
+              gamesWon: realWins, total, projected: total * (realWins / 4),
+            });
+          }
+          // User-added wins beyond real → what-if
+          if (userWins > realWins) {
+            whatIfProj[team.owner].push({
+              round: ROUND_LABEL[key], roundKey: key, team, opp,
+              gamesWon: userWins, realWins, total,
+              projected: total * ((userWins - realWins) / 4),
+            });
+          }
         });
       }
     });
   });
+
   const totals = {
     Spencer: breakdown.Spencer.reduce((a, x) => a + x.total, 0),
     Trey: breakdown.Trey.reduce((a, x) => a + x.total, 0),
   };
-  const projectedTotals = {
+  const realProjectedTotals = {
     Spencer: totals.Spencer + projections.Spencer.reduce((a, x) => a + x.projected, 0),
     Trey: totals.Trey + projections.Trey.reduce((a, x) => a + x.projected, 0),
   };
-  return { breakdown, totals, projections, projectedTotals, matchups };
+  const whatIfTotals = {
+    Spencer: whatIfClinched.Spencer.reduce((a, x) => a + x.total, 0)
+           + whatIfProj.Spencer.reduce((a, x) => a + x.projected, 0),
+    Trey: whatIfClinched.Trey.reduce((a, x) => a + x.total, 0)
+        + whatIfProj.Trey.reduce((a, x) => a + x.projected, 0),
+  };
+  const projectedTotals = {
+    Spencer: realProjectedTotals.Spencer + whatIfTotals.Spencer,
+    Trey: realProjectedTotals.Trey + whatIfTotals.Trey,
+  };
+  return {
+    breakdown, whatIfClinched, projections, whatIfProj,
+    totals, realProjectedTotals, projectedTotals, whatIfTotals,
+    matchups,
+  };
 }
