@@ -176,16 +176,16 @@ function VABreakdown({ p }) {
   const ftAdd = ((p.ftm / (p.fta || 1)) - LGA.laFT) * p.fta;
 
   const categories = [
-    { key: "Scoring (Volume)", value: ((p.pts / mp) - LGA.laPTSperM) * mp, label: `${p.pts} PTS` },
-    { key: "Efficiency (3P)", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
-    { key: "Efficiency (2P)", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
-    { key: "Efficiency (FT)", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
+    { key: "Scoring", value: ((p.pts / mp) - LGA.laPTSperM) * mp, label: `${p.pts} PTS` },
+    { key: "3-Pointers", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
+    { key: "2-Pointers", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
+    { key: "Free Throws", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
     { key: "Assists", value: ((p.ast / mp) - LGA.laASTperM) * mp * LGA.laPTSperMake * (1 - LGA.laFG), label: `${p.ast} AST` },
     { key: "Steals", value: ((p.stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss, label: `${p.stl} STL` },
     { key: "Blocks", value: ((p.blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.blk} BLK` },
     { key: "Turnovers", value: -((p.tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss, label: `${p.tov} TOV` },
-    { key: "Rebounds (D)", value: ((p.drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate, label: `${p.drb} DRB` },
-    { key: "Rebounds (O)", value: ((p.orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.orb} ORB` },
+    { key: "D Rebounds", value: ((p.drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate, label: `${p.drb} DRB` },
+    { key: "O Rebounds", value: ((p.orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.orb} ORB` },
   ].sort((a, b) => b.value - a.value);
 
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
