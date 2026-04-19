@@ -176,16 +176,16 @@ function VABreakdown({ p }) {
   const ftAdd = ((p.ftm / (p.fta || 1)) - LGA.laFT) * p.fta;
 
   const categories = [
-    { key: "Scoring", value: ((p.pts / mp) - LGA.laPTSperM) * mp, label: `${p.pts} PTS` },
-    { key: "3-Pointers", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
-    { key: "2-Pointers", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
-    { key: "Free Throws", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
+    { key: "Scoring (Volume)", value: ((p.pts / mp) - LGA.laPTSperM) * mp, label: `${p.pts} PTS` },
+    { key: "Efficiency (3P)", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
+    { key: "Efficiency (2P)", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
+    { key: "Efficiency (FT)", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
     { key: "Assists", value: ((p.ast / mp) - LGA.laASTperM) * mp * LGA.laPTSperMake * (1 - LGA.laFG), label: `${p.ast} AST` },
     { key: "Steals", value: ((p.stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss, label: `${p.stl} STL` },
     { key: "Blocks", value: ((p.blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.blk} BLK` },
     { key: "Turnovers", value: -((p.tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss, label: `${p.tov} TOV` },
-    { key: "D Rebounds", value: ((p.drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate, label: `${p.drb} DRB` },
-    { key: "O Rebounds", value: ((p.orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.orb} ORB` },
+    { key: "Rebounds (D)", value: ((p.drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate, label: `${p.drb} DRB` },
+    { key: "Rebounds (O)", value: ((p.orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.orb} ORB` },
   ].sort((a, b) => b.value - a.value);
 
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
@@ -287,7 +287,7 @@ function CombinedBoxscore({ box, isLive }) {
   );
 }
 
-function LiveGameBanner({ liveGame }) {
+function LiveGameBanner({ liveGame, gameLabel }) {
   const [expanded, setExpanded] = useState(false);
   const [box, setBox] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -325,8 +325,17 @@ function LiveGameBanner({ liveGame }) {
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
 
+  // For finals, color the banner by the winning team's owner
+  let finalClasses = "bg-stone-100 border-stone-300";
+  if (isFinal && home.score !== away.score) {
+    const winnerTri = home.score > away.score ? home.tri : away.tri;
+    const winnerOwner = TEAMS[winnerTri]?.owner;
+    if (winnerOwner === "Spencer") finalClasses = "bg-amber-50 border-amber-400";
+    else if (winnerOwner === "Trey") finalClasses = "bg-teal-50 border-teal-400";
+  }
+
   return (
-    <div className={`mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? "bg-stone-100 border-stone-300" : "bg-stone-50 border-stone-200"}`}>
+    <div className={`mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? finalClasses : "bg-stone-50 border-stone-200"}`}>
       <button
         onClick={() => canExpand && setExpanded(!expanded)}
         disabled={!canExpand}
@@ -337,6 +346,11 @@ function LiveGameBanner({ liveGame }) {
           <span className={`font-bold uppercase tracking-wider ${isLive ? "text-red-700" : "text-stone-600"}`}>
             {isLive ? "LIVE" : isFinal ? "FINAL" : (gameStatusText || "SOON")}
           </span>
+          {gameLabel && (
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-stone-500 px-1 py-0.5 bg-white border border-stone-300">
+              {gameLabel}
+            </span>
+          )}
           {canExpand && <span className="text-stone-400">{expanded ? "▾" : "▸"}</span>}
         </div>
         <div className="tabular-nums font-semibold text-stone-700">
@@ -384,6 +398,13 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   const canPick = a && b;
   const games = gameWins[series.id] || {};
   const seriesDecided = !!winner;
+  // Compute the current game number from total series wins so far
+  const totalGamesPlayed = (games[a] || 0) + (games[b] || 0);
+  let gameLabel = null;
+  if (liveGame) {
+    const num = liveGame.gameStatus === 3 ? totalGamesPlayed : totalGamesPlayed + 1;
+    if (num > 0 && num <= 7) gameLabel = `Game ${num}`;
+  }
   return (
     <div className="mb-2">
       <div className="flex gap-1.5 items-stretch">
@@ -391,7 +412,7 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
       </div>
-      <LiveGameBanner liveGame={liveGame} />
+      <LiveGameBanner liveGame={liveGame} gameLabel={gameLabel} />
     </div>
   );
 }
