@@ -499,18 +499,41 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
 }
 
 function RoundSection({ roundKey, title, series, matchups, winners, gameWins, onPick, onGamesChange, liveGamesBySeries }) {
+  // Sort series: live games first, then by most recent game time (descending).
+  const sortedSeries = series.slice().sort((a, b) => {
+    const aGames = liveGamesBySeries?.[a.id] || [];
+    const bGames = liveGamesBySeries?.[b.id] || [];
+
+    const aHasLive = aGames.some((g) => g.gameStatus === 2);
+    const bHasLive = bGames.some((g) => g.gameStatus === 2);
+    if (aHasLive && !bHasLive) return -1;
+    if (!aHasLive && bHasLive) return 1;
+
+    // Use the latest-scheduled/played game's timestamp as the key
+    const latestTime = (games) => {
+      const times = games
+        .map((g) => g.gameDateTimeUTC ? new Date(g.gameDateTimeUTC).getTime() : 0)
+        .filter((t) => t > 0 && t < new Date("2040-01-01").getTime());
+      return times.length ? Math.max(...times) : 0;
+    };
+    const aTime = latestTime(aGames);
+    const bTime = latestTime(bGames);
+    return bTime - aTime; // descending
+  });
+
   return (
     <div className="mb-6">
       <div className="flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900">
         <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900">{title}</h3>
         <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
       </div>
-      {series.map((s) => (
+      {sortedSeries.map((s) => (
         <SeriesRow key={s.id} series={s} matchups={matchups} winners={winners} gameWins={gameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
       ))}
     </div>
   );
 }
+
 
 function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown, readOnly }) {
   const leading = projectedTotal > opponentProjected;
