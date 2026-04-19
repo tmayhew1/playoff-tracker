@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { HISTORY, scoreHistory } from "./historical";
 
 const TEAMS = {
   SAS: { name: "Spurs",    seed: 2, owner: "Spencer", conf: "W" },
@@ -325,7 +326,6 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
 
-  // For finals, color the banner by the winning team's owner
   let finalClasses = "bg-stone-100 border-stone-300";
   if (isFinal && home.score !== away.score) {
     const winnerTri = home.score > away.score ? home.tri : away.tri;
@@ -398,7 +398,6 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   const canPick = a && b;
   const games = gameWins[series.id] || {};
   const seriesDecided = !!winner;
-  // Compute the current game number from total series wins so far
   const totalGamesPlayed = (games[a] || 0) + (games[b] || 0);
   let gameLabel = null;
   if (liveGame) {
@@ -431,10 +430,10 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, on
   );
 }
 
-function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown }) {
+function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown, readOnly }) {
   const leading = projectedTotal > opponentProjected;
   const tied = projectedTotal === opponentProjected;
-  const hasProjection = Math.abs(projectedTotal - total) > 0.001;
+  const hasProjection = !readOnly && Math.abs(projectedTotal - total) > 0.001;
   return (
     <div className={`flex-1 p-3 border-2 ${owner === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
       <div className="flex items-center justify-between mb-1">
@@ -442,10 +441,10 @@ function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown 
           <span className={`w-2 h-2 rounded-full ${ownerDot(owner)}`}></span>
           <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{owner}</span>
         </div>
-        {leading && !tied && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">LEAD</span>}
+        {leading && !tied && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{readOnly ? "WINNER" : "LEAD"}</span>}
       </div>
       <div className={`text-4xl font-black tabular-nums ${ownerColor(owner)}`}>{total}</div>
-      <div className="text-[10px] text-stone-500 uppercase tracking-wider mt-0.5">{breakdown.length} win{breakdown.length === 1 ? "" : "s"} · locked</div>
+      <div className="text-[10px] text-stone-500 uppercase tracking-wider mt-0.5">{breakdown.length} win{breakdown.length === 1 ? "" : "s"}{readOnly ? "" : " · locked"}</div>
       {hasProjection && (
         <div className="mt-2 pt-2 border-t border-stone-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500">Projected</div>
@@ -499,7 +498,62 @@ function ProjectionList({ projections, owner }) {
   );
 }
 
-export default function PlayoffTracker() {
+function HistoryView({ season }) {
+  const data = scoreHistory(season);
+  const [showBreakdown, setShowBreakdown] = useState(null);
+  if (!data) return <div className="text-stone-500 text-xs italic">No data for {season}</div>;
+  const { breakdown, totals, meta } = data;
+
+  return (
+    <div>
+      <div className="mb-4 p-3 bg-white border border-stone-300">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">Champion</div>
+        <div className="text-lg font-bold text-stone-900">{meta.champion}</div>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setShowBreakdown(showBreakdown === "Spencer" ? null : "Spencer")} className="flex-1 text-left">
+          <ScoreCard owner="Spencer" total={totals.Spencer} projectedTotal={totals.Spencer} opponentProjected={totals.Trey} breakdown={breakdown.Spencer} readOnly />
+        </button>
+        <button onClick={() => setShowBreakdown(showBreakdown === "Trey" ? null : "Trey")} className="flex-1 text-left">
+          <ScoreCard owner="Trey" total={totals.Trey} projectedTotal={totals.Trey} opponentProjected={totals.Spencer} breakdown={breakdown.Trey} readOnly />
+        </button>
+      </div>
+
+      {showBreakdown && (
+        <div className="mb-5 p-3 bg-white border border-stone-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-bold uppercase tracking-widest text-stone-900">{showBreakdown}'s Points</div>
+            <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
+          </div>
+          <BreakdownList breakdown={breakdown[showBreakdown]} owner={showBreakdown} />
+        </div>
+      )}
+
+      <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Rosters</div>
+      <div className="grid grid-cols-2 gap-2 mb-5">
+        {["Spencer", "Trey"].map((owner) => {
+          const teams = Object.entries(meta.teams).filter(([, t]) => t.owner === owner);
+          return (
+            <div key={owner} className={`p-2 border ${ownerBg(owner)}`}>
+              <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${ownerColor(owner)}`}>{owner}</div>
+              <div className="space-y-0.5">
+                {teams.map(([code, t]) => (
+                  <div key={code} className="text-xs flex items-baseline gap-1">
+                    <span className="text-[10px] text-stone-500 tabular-nums w-4">{t.seed}</span>
+                    <span className="font-semibold text-stone-800">{t.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CurrentView() {
   const [winners, setWinners] = useState({});
   const [gameWins, setGameWins] = useState({});
   const [loaded, setLoaded] = useState(false);
@@ -629,67 +683,97 @@ export default function PlayoffTracker() {
   );
 
   if (!loaded) {
-    return <div className="min-h-screen flex items-center justify-center bg-stone-100 text-stone-500 text-xs uppercase tracking-widest">Loading…</div>;
+    return <div className="text-stone-500 text-xs uppercase tracking-widest py-12 text-center">Loading…</div>;
   }
+
+  return (
+    <div>
+      <div className="flex items-start justify-end mb-3">
+        <button onClick={() => syncLive(true)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50 shrink-0">
+          {syncing ? "Syncing…" : "↻ Sync"}
+        </button>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setShowBreakdown(showBreakdown === "Spencer" ? null : "Spencer")} className="flex-1 text-left">
+          <ScoreCard owner="Spencer" total={totals.Spencer} projectedTotal={projectedTotals.Spencer} opponentProjected={projectedTotals.Trey} breakdown={breakdown.Spencer} />
+        </button>
+        <button onClick={() => setShowBreakdown(showBreakdown === "Trey" ? null : "Trey")} className="flex-1 text-left">
+          <ScoreCard owner="Trey" total={totals.Trey} projectedTotal={projectedTotals.Trey} opponentProjected={projectedTotals.Spencer} breakdown={breakdown.Trey} />
+        </button>
+      </div>
+
+      {showBreakdown && (
+        <div className="mb-5 p-3 bg-white border border-stone-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-bold uppercase tracking-widest text-stone-900">{showBreakdown}'s Points</div>
+            <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
+          </div>
+          <BreakdownList breakdown={breakdown[showBreakdown]} owner={showBreakdown} />
+          <ProjectionList projections={projections[showBreakdown]} owner={showBreakdown} />
+        </div>
+      )}
+
+      <details className="mb-5 text-xs text-stone-600 border-l-2 border-stone-300 pl-3">
+        <summary className="cursor-pointer font-semibold uppercase tracking-wider text-stone-700 text-[10px]">Scoring rules</summary>
+        <div className="mt-2 space-y-1 leading-relaxed">
+          <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
+          <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
+          <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
+          <div className="text-stone-400 italic">Tap a game banner for box score. Tap any player row for VA breakdown.</div>
+        </div>
+      </details>
+
+      <div>
+        <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r2" title="Conference Semifinals" series={BRACKET.r2} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r3" title="Conference Finals" series={BRACKET.r3} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-stone-300 flex justify-between items-center gap-3">
+        <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
+          {syncedAt ? (<>Live synced<br /><span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : (<>Not synced yet</>)}
+          {syncError && <div className="text-red-600 normal-case mt-1 tracking-normal">{syncError}</div>}
+        </div>
+        <button onClick={resetAll} className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border border-stone-300 px-2 py-1 shrink-0">Reset</button>
+      </div>
+    </div>
+  );
+}
+
+export default function PlayoffTracker() {
+  const [tab, setTab] = useState("current");
+  const seasons = Object.keys(HISTORY);
 
   return (
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <header className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">2026 NBA Playoffs</div>
-            <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Draft Tracker</h1>
-            <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
-          </div>
-          <button onClick={() => syncLive(true)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50 shrink-0">
-            {syncing ? "Syncing…" : "↻ Sync"}
-          </button>
+        <header className="mb-4">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Playoff</div>
+          <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Draft Tracker</h1>
+          <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
         </header>
 
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => setShowBreakdown(showBreakdown === "Spencer" ? null : "Spencer")} className="flex-1 text-left">
-            <ScoreCard owner="Spencer" total={totals.Spencer} projectedTotal={projectedTotals.Spencer} opponentProjected={projectedTotals.Trey} breakdown={breakdown.Spencer} />
+        <div className="flex border-b-2 border-stone-900 mb-5">
+          <button
+            onClick={() => setTab("current")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest ${tab === "current" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            2025-26
           </button>
-          <button onClick={() => setShowBreakdown(showBreakdown === "Trey" ? null : "Trey")} className="flex-1 text-left">
-            <ScoreCard owner="Trey" total={totals.Trey} projectedTotal={projectedTotals.Trey} opponentProjected={projectedTotals.Spencer} breakdown={breakdown.Trey} />
-          </button>
+          {seasons.map((s) => (
+            <button
+              key={s}
+              onClick={() => setTab(s)}
+              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest ${tab === s ? "bg-stone-900 text-white" : "text-stone-500"}`}
+            >
+              {s}
+            </button>
+          ))}
         </div>
 
-        {showBreakdown && (
-          <div className="mb-5 p-3 bg-white border border-stone-300">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs font-bold uppercase tracking-widest text-stone-900">{showBreakdown}'s Points</div>
-              <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
-            </div>
-            <BreakdownList breakdown={breakdown[showBreakdown]} owner={showBreakdown} />
-            <ProjectionList projections={projections[showBreakdown]} owner={showBreakdown} />
-          </div>
-        )}
-
-        <details className="mb-5 text-xs text-stone-600 border-l-2 border-stone-300 pl-3">
-          <summary className="cursor-pointer font-semibold uppercase tracking-wider text-stone-700 text-[10px]">Scoring rules</summary>
-          <div className="mt-2 space-y-1 leading-relaxed">
-            <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
-            <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
-            <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
-            <div className="text-stone-400 italic">Tap a game banner for box score. Tap any player row for VA breakdown.</div>
-          </div>
-        </details>
-
-        <div>
-          <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-          <RoundSection roundKey="r2" title="Conference Semifinals" series={BRACKET.r2} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-          <RoundSection roundKey="r3" title="Conference Finals" series={BRACKET.r3} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-          <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-stone-300 flex justify-between items-center gap-3">
-          <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
-            {syncedAt ? (<>Live synced<br /><span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : (<>Not synced yet</>)}
-            {syncError && <div className="text-red-600 normal-case mt-1 tracking-normal">{syncError}</div>}
-          </div>
-          <button onClick={resetAll} className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border border-stone-300 px-2 py-1 shrink-0">Reset</button>
-        </div>
+        {tab === "current" ? <CurrentView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );
