@@ -398,20 +398,21 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   const canPick = a && b;
   const games = gameWins[series.id] || {};
   const seriesDecided = !!winner;
-  const totalGamesPlayed = (games[a] || 0) + (games[b] || 0);
-  let gameLabel = null;
-  if (liveGame) {
-    const num = liveGame.gameStatus === 3 ? totalGamesPlayed : totalGamesPlayed + 1;
-    if (num > 0 && num <= 7) gameLabel = `Game ${num}`;
-  }
+  const seriesGames = (liveGame || []).slice().sort((x, y) =>
+    (x.gameId || "").localeCompare(y.gameId || "")
+  );
   return (
-    <div className="mb-2">
+    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
         <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
       </div>
-      <LiveGameBanner liveGame={liveGame} gameLabel={gameLabel} />
+      {seriesGames.map((g, i) => {
+        const num = i + 1;
+        const gameLabel = num <= 7 ? `Game ${num}` : null;
+        return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} />;
+      })}
     </div>
   );
 }
@@ -570,13 +571,25 @@ function CurrentView() {
         const saved = JSON.parse(raw);
         if (saved.winners) setWinners(saved.winners);
         if (saved.gameWins) setGameWins(saved.gameWins);
+        if (saved.liveGames) {
+          // Migrate old single-game-per-series format to array format
+          const migrated = {};
+          for (const [sid, val] of Object.entries(saved.liveGames)) {
+            migrated[sid] = Array.isArray(val) ? val : [val];
+          }
+          setLiveGamesBySeries(migrated);
+        }
       }
     } catch (e) {}
     setLoaded(true);
   }, []);
 
   const persist = useCallback((w, g) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ winners: w, gameWins: g })); } catch (e) {}
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const saved = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...saved, winners: w, gameWins: g }));
+    } catch (e) {}
   }, []);
 
   const syncLive = useCallback(async (override = false) => {
@@ -586,9 +599,29 @@ function CurrentView() {
       const res = await fetch("/api/scores", { cache: "no-store" });
       if (!res.ok) throw new Error(`Proxy ${res.status}`);
       const data = await res.json();
-      const liveMap = {};
-      (data.liveGames || []).forEach((g) => { liveMap[g.seriesId] = g; });
-      setLiveGamesBySeries(liveMap);
+
+      // Merge new games with previously-seen games per series.
+      setLiveGamesBySeries((prev) => {
+        const next = { ...prev };
+        (data.liveGames || []).forEach((g) => {
+          const existing = next[g.seriesId] || [];
+          const idx = existing.findIndex((x) => x.gameId === g.gameId);
+          if (idx >= 0) {
+            const updated = [...existing];
+            updated[idx] = g;
+            next[g.seriesId] = updated;
+          } else {
+            next[g.seriesId] = [...existing, g];
+          }
+        });
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const saved = raw ? JSON.parse(raw) : {};
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...saved, liveGames: next }));
+        } catch (e) {}
+        return next;
+      });
+
       setGameWins((prev) => {
         const next = { ...prev };
         Object.entries(data.gameWins || {}).forEach(([sid, liveWins]) => {
@@ -621,7 +654,9 @@ function CurrentView() {
   useEffect(() => { if (loaded) syncLive(false); }, [loaded, syncLive]);
 
   useEffect(() => {
-    const hasLive = Object.values(liveGamesBySeries).some((g) => g.gameStatus === 2);
+    const hasLive = Object.values(liveGamesBySeries).some((arr) =>
+      (arr || []).some((g) => g.gameStatus === 2)
+    );
     if (!hasLive) return;
     const id = setInterval(() => syncLive(false), 60000);
     return () => clearInterval(id);
@@ -673,7 +708,10 @@ function CurrentView() {
     if (confirm("Reset all picks and re-sync from live data?")) {
       setWinners({});
       setGameWins({});
-      persist({}, {});
+      setLiveGamesBySeries({});
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ winners: {}, gameWins: {}, liveGames: {} }));
+      } catch (e) {}
       syncLive(true);
     }
   };
@@ -750,7 +788,7 @@ export default function PlayoffTracker() {
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Playoff Teams</div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Playoff</div>
           <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Draft Tracker</h1>
           <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
         </header>
