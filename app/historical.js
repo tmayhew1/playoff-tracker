@@ -1,5 +1,4 @@
-// Historical past-year draft results. Each entry's `winners` object encodes
-// who won each series. Teams include seed and owner for display & scoring.
+// Historical past-year draft results.
 
 export const HISTORY = {
   "2024-25": {
@@ -15,7 +14,7 @@ export const HISTORY = {
       MIN: { name: "Wolves",   seed: 6, owner: "Spencer", conf: "W" },
       MEM: { name: "Grizzlies", seed: 8, owner: "Spencer", conf: "W" },
       ORL: { name: "Magic",    seed: 7, owner: "Spencer", conf: "E" },
-      // Trey (had 7 teams including both Lakers & Thunder from round 1)
+      // Trey
       LAL: { name: "Lakers",   seed: 3, owner: "Trey",    conf: "W" },
       OKC: { name: "Thunder",  seed: 1, owner: "Trey",    conf: "W" },
       GSW: { name: "Warriors", seed: 7, owner: "Trey",    conf: "W" },
@@ -25,7 +24,6 @@ export const HISTORY = {
       MIA: { name: "Heat",     seed: 8, owner: "Trey",    conf: "E" },
       IND: { name: "Pacers",   seed: 4, owner: "Trey",    conf: "E" },
     },
-    // Bracket structure with winners baked in
     bracket: {
       r1: [
         { teams: ["CLE", "MIA"], winner: "CLE" },
@@ -49,6 +47,56 @@ export const HISTORY = {
       ],
       r4: [
         { teams: ["OKC", "IND"], winner: "OKC" },
+      ],
+    },
+  },
+
+  "2023-24": {
+    label: "2023-24 Season",
+    champion: "Boston Celtics",
+    teams: {
+      // Spencer
+      BOS: { name: "Celtics",  seed: 1, owner: "Spencer", conf: "E" },
+      PHI: { name: "76ers",    seed: 7, owner: "Spencer", conf: "E" },
+      PHX: { name: "Suns",     seed: 6, owner: "Spencer", conf: "W" },
+      LAC: { name: "Clippers", seed: 4, owner: "Spencer", conf: "W" },
+      IND: { name: "Pacers",   seed: 6, owner: "Spencer", conf: "E" },
+      OKC: { name: "Thunder",  seed: 1, owner: "Spencer", conf: "W" },
+      CLE: { name: "Cavs",     seed: 4, owner: "Spencer", conf: "E" },
+      ORL: { name: "Magic",    seed: 5, owner: "Spencer", conf: "E" },
+      // Trey
+      DEN: { name: "Nuggets",  seed: 2, owner: "Trey",    conf: "W" },
+      DAL: { name: "Mavericks", seed: 5, owner: "Trey",    conf: "W" },
+      LAL: { name: "Lakers",   seed: 7, owner: "Trey",    conf: "W" },
+      MIN: { name: "Wolves",   seed: 3, owner: "Trey",    conf: "W" },
+      NYK: { name: "Knicks",   seed: 2, owner: "Trey",    conf: "E" },
+      MIL: { name: "Bucks",    seed: 3, owner: "Trey",    conf: "E" },
+      NOP: { name: "Pelicans", seed: 8, owner: "Trey",    conf: "W" },
+      MIA: { name: "Heat",     seed: 8, owner: "Trey",    conf: "E" },
+    },
+    bracket: {
+      r1: [
+        { teams: ["BOS", "MIA"], winner: "BOS" },
+        { teams: ["NYK", "PHI"], winner: "NYK" },
+        { teams: ["MIL", "IND"], winner: "IND" },
+        { teams: ["CLE", "ORL"], winner: "CLE" },
+        { teams: ["OKC", "NOP"], winner: "OKC" },
+        { teams: ["DEN", "LAL"], winner: "DEN" },
+        { teams: ["MIN", "PHX"], winner: "MIN" },
+        { teams: ["LAC", "DAL"], winner: "DAL" },
+      ],
+      r2: [
+        { teams: ["BOS", "CLE"], winner: "BOS" },
+        { teams: ["NYK", "IND"], winner: "IND" },
+        { teams: ["OKC", "DAL"], winner: "DAL" },
+        { teams: ["DEN", "MIN"], winner: "MIN" },
+      ],
+      r3: [
+        { teams: ["BOS", "IND"], winner: "BOS" },
+        { teams: ["DAL", "MIN"], winner: "DAL" },
+      ],
+      r4: [
+        { teams: ["BOS", "DAL"], winner: "BOS" },
       ],
     },
   },
