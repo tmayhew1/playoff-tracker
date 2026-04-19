@@ -34,8 +34,8 @@ export function valueAdd(p) {
   const stlVal = ((stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss;
   const blkVal = ((blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
   const tovVal = -((tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss;
-  const drbVal = ((drb / mp) - LGA.laDRBperM) * ( 5 / 4 ) * mp * LGA.laPTSperPoss * LGA.laORBrate;
-  const orbVal = ((orb / mp) - LGA.laORBperM)* ( 5 / 4 ) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
+  const drbVal = ((drb / mp) - LGA.laDRBperM) * ( 1.25 ) * mp * LGA.laPTSperPoss * LGA.laORBrate;
+  const orbVal = ((orb / mp) - LGA.laORBperM)* ( 1.25 ) * mp * LGA.laPTSperPoss * LGA.laDRBrate;
   return volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal;
 }
 
