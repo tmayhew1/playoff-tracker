@@ -10,12 +10,16 @@ const ownerBg = (o) => o === "Spencer" ? "bg-amber-50 border-amber-300" : "bg-te
 const ownerDot = (o) => o === "Spencer" ? "bg-amber-600" : "bg-teal-600";
 const ownerBadge = (o) => o === "Spencer" ? "bg-amber-100 text-amber-800" : o === "Trey" ? "bg-teal-100 text-teal-800" : "bg-stone-100 text-stone-600";
 
-function WinCircles({ value, onChange, disabled, owner }) {
+function WinCircles({ value, actualValue, onChange, disabled, owner }) {
   const fillColor = owner === "Spencer" ? "bg-amber-500 border-amber-600" : "bg-teal-500 border-teal-600";
+  const whatIfColor = owner === "Spencer" ? "bg-amber-200 border-amber-400" : "bg-teal-200 border-teal-400";
   return (
     <div className="flex items-center gap-1 mt-1">
       {[1, 2, 3, 4].map((n) => {
         const filled = value >= n;
+        const isReal = n <= (actualValue || 0);
+        let cls = "bg-white border-stone-300";
+        if (filled) cls = isReal ? fillColor : whatIfColor;
         return (
           <button
             key={n}
@@ -25,7 +29,7 @@ function WinCircles({ value, onChange, disabled, owner }) {
               onChange(filled ? n - 1 : n);
             }}
             disabled={disabled}
-            className={`w-3.5 h-3.5 rounded-full border transition-colors ${filled ? fillColor : "bg-white border-stone-300"} disabled:opacity-40`}
+            className={`w-3.5 h-3.5 rounded-full border transition-colors ${cls} disabled:opacity-40`}
             aria-label={filled ? `Win ${n} (tap to remove)` : `Add win ${n}`}
           />
         );
@@ -193,7 +197,6 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
 
-  // Format status for upcoming games
   let displayStatus = gameStatusText;
   if (gameStatus === 1 && gameDateTimeUTC) {
     const d = new Date(gameDateTimeUTC);
@@ -201,7 +204,6 @@ function LiveGameBanner({ liveGame, gameLabel }) {
     const now = new Date();
 
     if (isTbd) {
-      // TBD games use 04:00:00Z = midnight ET. Shift to get ET calendar date.
       const etDate = new Date(d.getTime() - 4 * 60 * 60 * 1000);
       const sameDay = etDate.getUTCFullYear() === now.getFullYear() &&
                       etDate.getUTCMonth() === now.getMonth() &&
@@ -210,7 +212,6 @@ function LiveGameBanner({ liveGame, gameLabel }) {
         ? "Today"
         : `${etDate.getUTCMonth() + 1}/${etDate.getUTCDate()}`;
     } else {
-      // Real tipoff — compare in local timezone
       const sameDay = d.getFullYear() === now.getFullYear() &&
                       d.getMonth() === now.getMonth() &&
                       d.getDate() === now.getDate();
@@ -287,7 +288,7 @@ function TbdCard({ gameNumbers }) {
   );
 }
 
-function TeamButton({ code, selected, disabled, onClick, gamesWon, onGamesChange, seriesDecided }) {
+function TeamButton({ code, selected, disabled, onClick, gamesWon, actualWins, onGamesChange, seriesDecided }) {
   if (!code) {
     return <div className="flex-1 px-3 py-2.5 text-xs uppercase tracking-widest text-stone-400 italic border border-dashed border-stone-300 bg-stone-50 text-center">TBD</div>;
   }
@@ -306,16 +307,17 @@ function TeamButton({ code, selected, disabled, onClick, gamesWon, onGamesChange
           <span className="text-stone-500">{t.owner}</span>
         </div>
       </button>
-      {!seriesDecided && <WinCircles value={gamesWon || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} owner={t.owner} />}
+      {!seriesDecided && <WinCircles value={gamesWon || 0} actualValue={actualWins || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} owner={t.owner} />}
     </div>
   );
 }
 
-function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange, liveGame }) {
+function SeriesRow({ series, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGame }) {
   const [a, b] = matchups[series.id] || [];
   const winner = winners[series.id];
   const canPick = a && b;
   const games = gameWins[series.id] || {};
+  const actualGames = actualGameWins?.[series.id] || {};
   const seriesDecided = !!winner;
   const seriesGames = (liveGame || []).slice().sort((x, y) =>
     (x.gameId || "").localeCompare(y.gameId || "")
@@ -342,9 +344,9 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
-        <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
+        <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} actualWins={actualGames[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
-        <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
+        <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
       </div>
       {realGames.map((g, i) => {
         const num = i + 1;
@@ -356,8 +358,7 @@ function SeriesRow({ series, matchups, winners, gameWins, onPick, onGamesChange,
   );
 }
 
-function RoundSection({ roundKey, title, series, matchups, winners, gameWins, onPick, onGamesChange, liveGamesBySeries }) {
-  // Sort series: live games first, then by most recent completed game (descending).
+function RoundSection({ roundKey, title, series, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGamesBySeries }) {
   const sortedSeries = series.slice().sort((a, b) => {
     const aGames = liveGamesBySeries?.[a.id] || [];
     const bGames = liveGamesBySeries?.[b.id] || [];
@@ -389,16 +390,18 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, on
         <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
       </div>
       {sortedSeries.map((s) => (
-        <SeriesRow key={s.id} series={s} matchups={matchups} winners={winners} gameWins={gameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
+        <SeriesRow key={s.id} series={s} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
       ))}
     </div>
   );
 }
 
-function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown, readOnly }) {
+function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, whatIfTotal, opponentProjected, breakdown, readOnly }) {
   const leading = projectedTotal > opponentProjected;
   const tied = projectedTotal === opponentProjected;
-  const hasProjection = !readOnly && Math.abs(projectedTotal - total) > 0.001;
+  const realProj = realProjectedTotal ?? projectedTotal;
+  const hasRealProjection = !readOnly && Math.abs(realProj - total) > 0.001;
+  const hasWhatIf = !readOnly && whatIfTotal && whatIfTotal > 0.001;
   return (
     <div className={`flex-1 p-3 border-2 ${owner === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
       <div className="flex items-center justify-between mb-1">
@@ -410,10 +413,16 @@ function ScoreCard({ owner, total, projectedTotal, opponentProjected, breakdown,
       </div>
       <div className={`text-4xl font-black tabular-nums ${ownerColor(owner)}`}>{total}</div>
       <div className="text-[10px] text-stone-500 uppercase tracking-wider mt-0.5">{breakdown.length} win{breakdown.length === 1 ? "" : "s"}{readOnly ? "" : " · locked"}</div>
-      {hasProjection && (
+      {hasRealProjection && (
         <div className="mt-2 pt-2 border-t border-stone-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500">Projected</div>
-          <div className={`text-lg font-bold tabular-nums ${ownerColor(owner)}`}>{projectedTotal.toFixed(2)}</div>
+          <div className={`text-lg font-bold tabular-nums ${ownerColor(owner)}`}>{realProj.toFixed(2)}</div>
+        </div>
+      )}
+      {hasWhatIf && (
+        <div className="mt-1">
+          <div className="text-[9px] uppercase tracking-widest text-stone-400">What If?</div>
+          <div className="text-sm font-semibold tabular-nums text-stone-500">+{whatIfTotal.toFixed(2)}</div>
         </div>
       )}
     </div>
@@ -440,21 +449,44 @@ function BreakdownList({ breakdown, owner }) {
   );
 }
 
-function ProjectionList({ projections, owner }) {
-  if (projections.length === 0) return null;
+function ProjectionList({ projections, owner, label, muted }) {
+  if (!projections || projections.length === 0) return null;
   return (
     <div className="mt-3">
-      <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5">In-Progress Projections</div>
+      <div className={`text-[10px] uppercase tracking-widest mb-1.5 ${muted ? "text-stone-400" : "text-stone-500"}`}>{label}</div>
       <div className="space-y-1.5">
         {projections.map((item, i) => (
-          <div key={i} className="flex items-center justify-between text-xs px-2 py-1.5 bg-white border border-dashed border-stone-300">
+          <div key={i} className={`flex items-center justify-between text-xs px-2 py-1.5 border border-dashed border-stone-300 ${muted ? "bg-stone-50" : "bg-white"}`}>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-stone-900 truncate">({item.team.seed}) {item.team.name}</div>
+              <div className={`font-semibold truncate ${muted ? "text-stone-600" : "text-stone-900"}`}>({item.team.seed}) {item.team.name}</div>
               <div className="text-[10px] text-stone-500 uppercase tracking-wider">{item.round} · {item.gamesWon}/4 vs ({item.opp.seed}) {item.opp.name}</div>
             </div>
             <div className="text-right ml-2 tabular-nums">
-              <div className={`font-bold text-sm ${ownerColor(owner)}`}>{item.projected.toFixed(2)}</div>
+              <div className={`font-bold text-sm ${muted ? "text-stone-600" : ownerColor(owner)}`}>{item.projected.toFixed(2)}</div>
               <div className="text-[9px] text-stone-500">of {item.total}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WhatIfClinchedList({ items }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="mt-3">
+      <div className="text-[10px] uppercase tracking-widest text-stone-400 mb-1.5">Speculated Series Wins</div>
+      <div className="space-y-1.5">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between text-xs px-2 py-1.5 bg-stone-50 border border-dashed border-stone-300">
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-stone-600 truncate">({item.team.seed}) {item.team.name}</div>
+              <div className="text-[10px] text-stone-500 uppercase tracking-wider">{item.round} · beat ({item.opp.seed}) {item.opp.name}</div>
+            </div>
+            <div className="text-right ml-2 tabular-nums">
+              <div className="font-bold text-sm text-stone-600">{item.total}</div>
+              {item.bonus > 0 && <div className="text-[9px] text-stone-500">{item.base}+{item.bonus}</div>}
             </div>
           </div>
         ))}
@@ -527,6 +559,8 @@ function CurrentView() {
   const [syncedAt, setSyncedAt] = useState(null);
   const [syncError, setSyncError] = useState(null);
   const [liveGamesBySeries, setLiveGamesBySeries] = useState({});
+  const [actualGameWins, setActualGameWins] = useState({});
+  const [actualWinners, setActualWinners] = useState({});
 
   useEffect(() => {
     try {
@@ -584,9 +618,20 @@ function CurrentView() {
         return next;
       });
 
+      // Track the authoritative (actual) wins separately
+      const actualWinsNext = { ...(data.gameWins || {}) };
+      const actualWinnersNext = {};
+      Object.entries(actualWinsNext).forEach(([sid, w]) => {
+        Object.entries(w).forEach(([team, wins]) => {
+          if (wins >= 4) actualWinnersNext[sid] = team;
+        });
+      });
+      setActualGameWins(actualWinsNext);
+      setActualWinners(actualWinnersNext);
+
       setGameWins((prev) => {
         const next = { ...prev };
-        Object.entries(data.gameWins || {}).forEach(([sid, liveWins]) => {
+        Object.entries(actualWinsNext).forEach(([sid, liveWins]) => {
           const cur = prev[sid];
           const curSum = cur ? Object.values(cur).reduce((a, b) => a + b, 0) : 0;
           const liveSum = Object.values(liveWins).reduce((a, b) => a + b, 0);
@@ -678,8 +723,9 @@ function CurrentView() {
     }
   };
 
-  const { breakdown, totals, projections, projectedTotals, matchups } = useMemo(
-    () => computePoints(winners, gameWins), [winners, gameWins]
+  const { breakdown, whatIfClinched, projections, whatIfProj, totals, realProjectedTotals, projectedTotals, whatIfTotals, matchups } = useMemo(
+    () => computePoints(winners, gameWins, actualGameWins, actualWinners),
+    [winners, gameWins, actualGameWins, actualWinners]
   );
 
   if (!loaded) {
@@ -688,7 +734,7 @@ function CurrentView() {
 
   return (
     <div>
-            <div className="flex items-center justify-between gap-3 mb-3">
+      <div className="flex items-center justify-between gap-3 mb-3">
         <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
           {syncedAt ? (<>Live synced <span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : (<>Not synced yet</>)}
           {syncError && <div className="text-red-600 normal-case mt-0.5 tracking-normal">{syncError}</div>}
@@ -705,10 +751,10 @@ function CurrentView() {
 
       <div className="flex gap-2 mb-4">
         <button onClick={() => setShowBreakdown(showBreakdown === "Spencer" ? null : "Spencer")} className="flex-1 text-left">
-          <ScoreCard owner="Spencer" total={totals.Spencer} projectedTotal={projectedTotals.Spencer} opponentProjected={projectedTotals.Trey} breakdown={breakdown.Spencer} />
+          <ScoreCard owner="Spencer" total={totals.Spencer} projectedTotal={projectedTotals.Spencer} realProjectedTotal={realProjectedTotals.Spencer} whatIfTotal={whatIfTotals.Spencer} opponentProjected={projectedTotals.Trey} breakdown={breakdown.Spencer} />
         </button>
         <button onClick={() => setShowBreakdown(showBreakdown === "Trey" ? null : "Trey")} className="flex-1 text-left">
-          <ScoreCard owner="Trey" total={totals.Trey} projectedTotal={projectedTotals.Trey} opponentProjected={projectedTotals.Spencer} breakdown={breakdown.Trey} />
+          <ScoreCard owner="Trey" total={totals.Trey} projectedTotal={projectedTotals.Trey} realProjectedTotal={realProjectedTotals.Trey} whatIfTotal={whatIfTotals.Trey} opponentProjected={projectedTotals.Spencer} breakdown={breakdown.Trey} />
         </button>
       </div>
 
@@ -718,8 +764,21 @@ function CurrentView() {
             <div className="text-xs font-bold uppercase tracking-widest text-stone-900">{showBreakdown}'s Points</div>
             <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
           </div>
+
+          <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5">Actual Results</div>
           <BreakdownList breakdown={breakdown[showBreakdown]} owner={showBreakdown} />
-          <ProjectionList projections={projections[showBreakdown]} owner={showBreakdown} />
+          <ProjectionList projections={projections[showBreakdown]} owner={showBreakdown} label="In-Progress Projections" />
+
+          {(whatIfClinched[showBreakdown].length > 0 || whatIfProj[showBreakdown].length > 0) && (
+            <div className="mt-4 pt-3 border-t-2 border-dashed border-stone-300">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500">What If?</div>
+                <div className="text-[10px] tabular-nums font-bold text-stone-500">+{whatIfTotals[showBreakdown].toFixed(2)} pts</div>
+              </div>
+              <WhatIfClinchedList items={whatIfClinched[showBreakdown]} />
+              <ProjectionList projections={whatIfProj[showBreakdown]} owner={showBreakdown} label="Speculated Game Wins" muted />
+            </div>
+          )}
         </div>
       )}
 
@@ -729,17 +788,16 @@ function CurrentView() {
           <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
           <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>
           <div>Projection: series-win value × (games won ÷ 4) for any in-progress series.</div>
-          <div className="text-stone-400 italic">Tap a win circle to count or remove a series win. Tap a game banner for box score. Tap any player row for VA breakdown.</div>
+          <div className="text-stone-400 italic">Solid circles = actual series wins. Pale circles = your speculation. Tap a game banner for box score. Tap any player row for VA breakdown.</div>
         </div>
       </details>
 
       <div>
-        <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        <RoundSection roundKey="r2" title="Conference Semifinals" series={BRACKET.r2} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        <RoundSection roundKey="r3" title="Conference Finals" series={BRACKET.r3} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r2" title="Conference Semifinals" series={BRACKET.r2} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r3" title="Conference Finals" series={BRACKET.r3} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
       </div>
-
     </div>
   );
 }
