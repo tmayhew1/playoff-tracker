@@ -401,7 +401,7 @@ function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, whatIfTot
   const tied = projectedTotal === opponentProjected;
   const realProj = realProjectedTotal ?? projectedTotal;
   const hasRealProjection = !readOnly && Math.abs(realProj - total) > 0.001;
-  const hasWhatIf = !readOnly && whatIfTotal && whatIfTotal > 0.001;
+  const hasWhatIf = !readOnly && (whatIfTotal || 0) > 0.001;
   return (
     <div className={`flex-1 p-3 border-2 ${owner === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
       <div className="flex items-center justify-between mb-1">
