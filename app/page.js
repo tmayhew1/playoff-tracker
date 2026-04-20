@@ -759,9 +759,10 @@ function CurrentView() {
       </div>
 
       {showBreakdown && (
-        <div className="mb-5 p-3 bg-white border border-stone-300">
+        <div className={`mb-5 p-3 border-2 ${showBreakdown === "Spencer" ? "bg-amber-50 border-amber-600" : "bg-teal-50 border-teal-600"}`}>
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-bold uppercase tracking-widest text-stone-900">{showBreakdown}'s Points</div>
+            <div className={`text-xs font-bold uppercase tracking-widest ${ownerColor(showBreakdown)}`}>{showBreakdown}'s Points</div>
+
             <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
           </div>
 
