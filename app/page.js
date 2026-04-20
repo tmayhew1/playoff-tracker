@@ -192,10 +192,32 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   }, [expanded, liveGame?.gameId, liveGame?.gameStatus, loadBox]);
 
   if (!liveGame) return null;
-  const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC } = liveGame;
+  const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC, period, gameClock } = liveGame;
   const isLive = gameStatus === 2;
   const isFinal = gameStatus === 3;
   const canExpand = !!gameId && (isLive || isFinal);
+
+  // Format period as Q1–Q4, OT, OT2, etc.
+  const formatPeriod = (p) => {
+    if (!p || p < 1) return "";
+    if (p <= 4) return `Q${p}`;
+    if (p === 5) return "OT";
+    return `OT${p - 4}`;
+  };
+
+  // Parse ISO 8601 duration like "PT01M01.00S" → "1:01"
+  const formatClock = (iso) => {
+    if (!iso) return "";
+    const m = iso.match(/PT(\d+)M([\d.]+)S/);
+    if (!m) return "";
+    const mins = parseInt(m[1], 10);
+    const secs = Math.floor(parseFloat(m[2]));
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const liveLabel = isLive
+    ? [formatPeriod(period), formatClock(gameClock)].filter(Boolean).join(" ")
+    : null;
 
   let displayStatus = gameStatusText;
   if (gameStatus === 1 && gameDateTimeUTC) {
@@ -242,7 +264,7 @@ function LiveGameBanner({ liveGame, gameLabel }) {
         <div className="flex items-center gap-1.5">
           {isLive && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
           <span className={`font-bold uppercase tracking-wider ${isLive ? "text-red-700" : "text-stone-600"}`}>
-            {isLive ? "LIVE" : isFinal ? "FINAL" : (displayStatus || "SOON")}
+            {isLive ? (liveLabel || "LIVE") : isFinal ? "FINAL" : (displayStatus || "SOON")}
           </span>
           {gameLabel && (
             <span className="text-[9px] font-semibold uppercase tracking-wider text-stone-500 px-1 py-0.5 bg-white border border-stone-300">
@@ -618,7 +640,6 @@ function CurrentView() {
         return next;
       });
 
-      // Track the authoritative (actual) wins separately
       const actualWinsNext = { ...(data.gameWins || {}) };
       const actualWinnersNext = {};
       Object.entries(actualWinsNext).forEach(([sid, w]) => {
@@ -762,7 +783,6 @@ function CurrentView() {
         <div className={`mb-5 p-3 border-2 ${showBreakdown === "Spencer" ? "bg-amber-50 border-amber-600" : "bg-teal-50 border-teal-600"}`}>
           <div className="flex items-center justify-between mb-2">
             <div className={`text-xs font-bold uppercase tracking-widest ${ownerColor(showBreakdown)}`}>{showBreakdown}'s Points</div>
-
             <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
           </div>
 
