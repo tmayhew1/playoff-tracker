@@ -550,7 +550,7 @@ function UpcomingTodayBanner({ liveGamesBySeries }) {
   const allGames = [];
   for (const [sid, games] of Object.entries(liveGamesBySeries || {})) {
     for (const g of games || []) {
-      if (g.gameStatus !== 1) continue;
+      if (g.gameStatus !== 1) continue; // Only upcoming games
       if (!g.gameDateTimeUTC) continue;
       if (g.gameStatusText === "TBD") continue;
       const d = new Date(g.gameDateTimeUTC);
@@ -574,14 +574,18 @@ function UpcomingTodayBanner({ liveGamesBySeries }) {
           const homeOwner = TEAMS[g.home.tri]?.owner;
           const awayOwner = TEAMS[g.away.tri]?.owner;
           const timeStr = g.tipTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          const tv = (g.broadcasters || []).join(", ");
           return (
             <div key={g.gameId} className="flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="tabular-nums text-[10px] text-stone-500 w-14 shrink-0">{timeStr}</span>
                 <span className={`font-semibold tabular-nums ${ownerColor(awayOwner)}`}>{g.away.tri}</span>
                 <span className="text-stone-400">@</span>
                 <span className={`font-semibold tabular-nums ${ownerColor(homeOwner)}`}>{g.home.tri}</span>
               </div>
+              {tv && (
+                <span className="text-[9px] uppercase tracking-wider text-stone-500 shrink-0">{tv}</span>
+              )}
             </div>
           );
         })}
@@ -822,10 +826,6 @@ function CurrentView() {
     [winners, gameWins, actualGameWins, actualWinners]
   );
 
-  const hasLiveGame = Object.values(liveGamesBySeries).some((arr) =>
-    (arr || []).some((g) => g.gameStatus === 2)
-  );
-
   if (!loaded) {
     return <div className="text-stone-500 text-xs uppercase tracking-widest py-12 text-center">Loading…</div>;
   }
@@ -890,7 +890,7 @@ function CurrentView() {
         </div>
       </details>
 
-      {!hasLiveGame && <UpcomingTodayBanner liveGamesBySeries={liveGamesBySeries} />}
+      <UpcomingTodayBanner liveGamesBySeries={liveGamesBySeries} />
 
       <div>
         <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
