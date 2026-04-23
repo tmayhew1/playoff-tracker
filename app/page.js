@@ -192,8 +192,6 @@ function LiveGameBanner({ liveGame, gameLabel }) {
   const isLive = liveGame?.gameStatus === 2;
   const isFinal = liveGame?.gameStatus === 3;
 
-  // Auto-load box score for LIVE games (to show top 5). For finals,
-  // only load when user expands.
   useEffect(() => {
     if (!liveGame?.gameId) return;
     if (isLive) {
@@ -295,7 +293,7 @@ function LiveGameBanner({ liveGame, gameLabel }) {
 
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
-          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
+          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by VA</div>
           <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} />
         </div>
       )}
@@ -547,6 +545,51 @@ function WhatIfClinchedList({ items }) {
   );
 }
 
+function UpcomingTodayBanner({ liveGamesBySeries }) {
+  const now = new Date();
+  const allGames = [];
+  for (const [sid, games] of Object.entries(liveGamesBySeries || {})) {
+    for (const g of games || []) {
+      if (g.gameStatus !== 1) continue;
+      if (!g.gameDateTimeUTC) continue;
+      if (g.gameStatusText === "TBD") continue;
+      const d = new Date(g.gameDateTimeUTC);
+      const sameDay = d.getFullYear() === now.getFullYear() &&
+                      d.getMonth() === now.getMonth() &&
+                      d.getDate() === now.getDate();
+      if (!sameDay || d.getTime() < now.getTime() - 30 * 60 * 1000) continue;
+      allGames.push({ ...g, seriesId: sid, tipTime: d });
+    }
+  }
+
+  if (allGames.length === 0) return null;
+
+  allGames.sort((a, b) => a.tipTime.getTime() - b.tipTime.getTime());
+
+  return (
+    <div className="mb-5 p-3 bg-white border border-stone-300">
+      <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-2">Today's Upcoming Games</div>
+      <div className="space-y-1">
+        {allGames.map((g) => {
+          const homeOwner = TEAMS[g.home.tri]?.owner;
+          const awayOwner = TEAMS[g.away.tri]?.owner;
+          const timeStr = g.tipTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          return (
+            <div key={g.gameId} className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="tabular-nums text-[10px] text-stone-500 w-14 shrink-0">{timeStr}</span>
+                <span className={`font-semibold tabular-nums ${ownerColor(awayOwner)}`}>{g.away.tri}</span>
+                <span className="text-stone-400">@</span>
+                <span className={`font-semibold tabular-nums ${ownerColor(homeOwner)}`}>{g.home.tri}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function HistoryView({ season }) {
   const data = scoreHistory(season);
   const [showBreakdown, setShowBreakdown] = useState(null);
@@ -779,6 +822,10 @@ function CurrentView() {
     [winners, gameWins, actualGameWins, actualWinners]
   );
 
+  const hasLiveGame = Object.values(liveGamesBySeries).some((arr) =>
+    (arr || []).some((g) => g.gameStatus === 2)
+  );
+
   if (!loaded) {
     return <div className="text-stone-500 text-xs uppercase tracking-widest py-12 text-center">Loading…</div>;
   }
@@ -842,6 +889,8 @@ function CurrentView() {
           <div className="text-stone-400 italic">Solid circles = actual series wins. Pale circles = your speculation. Tap a game banner for box score. Tap any player row for VA breakdown.</div>
         </div>
       </details>
+
+      {!hasLiveGame && <UpcomingTodayBanner liveGamesBySeries={liveGamesBySeries} />}
 
       <div>
         <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
