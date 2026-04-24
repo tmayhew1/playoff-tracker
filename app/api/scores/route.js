@@ -57,7 +57,6 @@ export async function GET() {
     const gameDates = data?.leagueSchedule?.gameDates || [];
     for (const gd of gameDates) {
       for (const g of gd.games || []) {
-        // Only playoff games: seriesText is set for playoff games (e.g. "First Round")
         const hasSeries = g.seriesText || g.seriesGameNumber > 0;
         if (!hasSeries) continue;
         const home = g.homeTeam?.teamTricode;
@@ -67,26 +66,11 @@ export async function GET() {
         const homeScore = g.homeTeam?.score ?? 0;
         const awayScore = g.awayTeam?.score ?? 0;
 
-        // Try every plausible broadcaster field path and collect anything
-        // that looks like a TV/streaming service name.
-        const collectBroadcasters = (obj) => {
-          const names = [];
-          const walk = (v) => {
-            if (!v) return;
-            if (Array.isArray(v)) { v.forEach(walk); return; }
-            if (typeof v === "object") {
-              const name = v.broadcasterDisplay || v.broadcasterAbbreviation ||
-                           v.broadcasterName || v.broadcasterScope;
-              if (name && typeof name === "string") names.push(name);
-              Object.values(v).forEach(walk);
-            }
-          };
-          walk(obj);
-          return [...new Set(names)];
-        };
-        const broadcasters = collectBroadcasters(g.broadcasters || g.tvBroadcasters || g);
-        // Debug: capture the raw broadcaster block so we can inspect the schema
-        const _bcRaw = g.broadcasters || null;
+        // Pull national TV + national streaming only (skip radio & local markets)
+        const bc = g.broadcasters || {};
+        const natTv = (bc.nationalBroadcasters || []).map((b) => b.broadcasterDisplay).filter(Boolean);
+        const natOtt = (bc.nationalOttBroadcasters || []).map((b) => b.broadcasterDisplay).filter(Boolean);
+        const broadcasters = [...new Set([...natTv, ...natOtt])];
 
         scheduleGames.push({
           seriesId: sid,
@@ -97,7 +81,6 @@ export async function GET() {
           home: { tri: home, score: homeScore },
           away: { tri: away, score: awayScore },
           broadcasters,
-          _bcRaw, // temporary debug field
         });
       }
     }
@@ -131,20 +114,17 @@ export async function GET() {
     errors.push(`scoreboard: ${e.message}`);
   }
 
-  // --- 3. Merge: schedule provides history, scoreboard overrides today's data ---
-  // Preserve gameDateTimeUTC and broadcaster info from the schedule even when
-  // overriding with live data.
-  const scheduleById = new Map(scheduleGames.map((g) => [g.gameId, g]));
+  // --- 3. Merge: schedule provides history + broadcasters, scoreboard overrides today's live data ---
   const liveById = new Map(liveToday.map((g) => [g.gameId, g]));
 
   const liveGames = scheduleGames.map((g) => {
     const live = liveById.get(g.gameId);
     if (!live) return g;
+    // Merge: live data wins for scores/status, but keep schedule's date + broadcasters
     return {
       ...live,
       gameDateTimeUTC: g.gameDateTimeUTC,
       broadcasters: g.broadcasters,
-      _bcRaw: g._bcRaw,
     };
   });
 
