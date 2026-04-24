@@ -66,6 +66,28 @@ export async function GET() {
         if (!sid) continue;
         const homeScore = g.homeTeam?.score ?? 0;
         const awayScore = g.awayTeam?.score ?? 0;
+
+        // Try every plausible broadcaster field path and collect anything
+        // that looks like a TV/streaming service name.
+        const collectBroadcasters = (obj) => {
+          const names = [];
+          const walk = (v) => {
+            if (!v) return;
+            if (Array.isArray(v)) { v.forEach(walk); return; }
+            if (typeof v === "object") {
+              const name = v.broadcasterDisplay || v.broadcasterAbbreviation ||
+                           v.broadcasterName || v.broadcasterScope;
+              if (name && typeof name === "string") names.push(name);
+              Object.values(v).forEach(walk);
+            }
+          };
+          walk(obj);
+          return [...new Set(names)];
+        };
+        const broadcasters = collectBroadcasters(g.broadcasters || g.tvBroadcasters || g);
+        // Debug: capture the raw broadcaster block so we can inspect the schema
+        const _bcRaw = g.broadcasters || null;
+
         scheduleGames.push({
           seriesId: sid,
           gameId: g.gameId,
@@ -74,6 +96,8 @@ export async function GET() {
           gameDateTimeUTC: g.gameDateTimeUTC,
           home: { tri: home, score: homeScore },
           away: { tri: away, score: awayScore },
+          broadcasters,
+          _bcRaw, // temporary debug field
         });
       }
     }
@@ -108,15 +132,20 @@ export async function GET() {
   }
 
   // --- 3. Merge: schedule provides history, scoreboard overrides today's data ---
-  // Preserve gameDateTimeUTC from the schedule even when overriding with live data.
+  // Preserve gameDateTimeUTC and broadcaster info from the schedule even when
+  // overriding with live data.
   const scheduleById = new Map(scheduleGames.map((g) => [g.gameId, g]));
   const liveById = new Map(liveToday.map((g) => [g.gameId, g]));
 
   const liveGames = scheduleGames.map((g) => {
     const live = liveById.get(g.gameId);
     if (!live) return g;
-    // Merge: live data wins for scores/status, but keep scheduled date
-    return { ...live, gameDateTimeUTC: g.gameDateTimeUTC };
+    return {
+      ...live,
+      gameDateTimeUTC: g.gameDateTimeUTC,
+      broadcasters: g.broadcasters,
+      _bcRaw: g._bcRaw,
+    };
   });
 
   // Also include any live games that weren't in the schedule yet
