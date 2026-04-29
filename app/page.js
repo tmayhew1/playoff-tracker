@@ -545,10 +545,11 @@ function WhatIfClinchedList({ items }) {
   );
 }
 
-function UpcomingTodayBanner({ liveGamesBySeries }) {
+function UpcomingTodayBanner({ liveGamesBySeries, actualWinners }) {
   const now = new Date();
   const allGames = [];
   for (const [sid, games] of Object.entries(liveGamesBySeries || {})) {
+    if (actualWinners?.[sid]) continue; // Skip clinched series
     for (const g of games || []) {
       if (g.gameStatus !== 1) continue; // Only upcoming games
       if (!g.gameDateTimeUTC) continue;
@@ -890,7 +891,7 @@ function CurrentView() {
         </div>
       </details>
 
-      <UpcomingTodayBanner liveGamesBySeries={liveGamesBySeries} />
+      <UpcomingTodayBanner liveGamesBySeries={liveGamesBySeries} actualWinners={actualWinners} />
 
       <div>
         <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
