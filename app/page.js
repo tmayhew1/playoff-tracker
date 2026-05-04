@@ -286,14 +286,19 @@ function LiveGameBanner({ liveGame, gameLabel }) {
           )}
           {canExpand && <span className="text-stone-400">{expanded ? "▾" : "▸"}</span>}
         </div>
-        <div className="tabular-nums font-semibold text-stone-700">
+        {isLive && liveGame.broadcasters && liveGame.broadcasters.length > 0 && (
+          <span className="text-[9px] uppercase tracking-wider text-stone-500 truncate text-center flex-1 min-w-0">
+            {liveGame.broadcasters.join(", ")}
+          </span>
+        )}
+        <div className="tabular-nums font-semibold text-stone-700 shrink-0">
           {away.tri} {away.score} — {home.score} {home.tri}
         </div>
       </button>
 
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
-          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
+          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by VA</div>
           <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} />
         </div>
       )}
@@ -408,7 +413,7 @@ function SeriesRow({ series, matchups, winners, gameWins, actualGameWins, onPick
   );
 }
 
-function RoundSection({ roundKey, title, series, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGamesBySeries }) {
+function RoundSection({ roundKey, title, series, matchups, winners, gameWins, actualGameWins, actualWinners, onPick, onGamesChange, liveGamesBySeries }) {
   const sortedSeries = series.slice().sort((a, b) => {
     const aGames = liveGamesBySeries?.[a.id] || [];
     const bGames = liveGamesBySeries?.[b.id] || [];
@@ -433,13 +438,28 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, ac
     return bTime - aTime;
   });
 
+  // Round is "complete" when every series has a clinched winner from real games
+  const allClinched = series.every((s) => actualWinners?.[s.id]);
+
+  // Default open; collapsed if all series in this round are clinched
+  const [collapsed, setCollapsed] = useState(allClinched);
+  // Re-sync collapse state if the round transitions to fully-clinched
+  useEffect(() => { setCollapsed(allClinched); }, [allClinched]);
+
   return (
     <div className="mb-6">
-      <div className="flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900">
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900">{title}</h3>
+      <button
+        onClick={() => setCollapsed((c) => !c)}
+        className="w-full flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900 text-left"
+      >
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[10px]">{collapsed ? "▸" : "▾"}</span>
+          {title}
+          {allClinched && <span className="text-[9px] uppercase tracking-wider text-stone-500 font-normal">Complete</span>}
+        </h3>
         <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
-      </div>
-      {sortedSeries.map((s) => (
+      </button>
+      {!collapsed && sortedSeries.map((s) => (
         <SeriesRow key={s.id} series={s} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
       ))}
     </div>
@@ -894,10 +914,10 @@ function CurrentView() {
       <UpcomingTodayBanner liveGamesBySeries={liveGamesBySeries} actualWinners={actualWinners} />
 
       <div>
-        <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        <RoundSection roundKey="r2" title="Conference Semifinals" series={BRACKET.r2} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        <RoundSection roundKey="r3" title="Conference Finals" series={BRACKET.r3} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
-        <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r1" title="First Round" series={BRACKET.r1} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} actualWinners={actualWinners} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r2" title="Conference Semifinals" series={BRACKET.r2} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} actualWinners={actualWinners} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r3" title="Conference Finals" series={BRACKET.r3} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} actualWinners={actualWinners} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
+        <RoundSection roundKey="r4" title="NBA Finals" series={BRACKET.r4} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} actualWinners={actualWinners} onPick={setWinner} onGamesChange={setSeriesGames} liveGamesBySeries={liveGamesBySeries} />
       </div>
     </div>
   );
