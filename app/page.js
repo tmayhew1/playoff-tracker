@@ -690,9 +690,20 @@ function CurrentView() {
         if (saved.winners) setWinners(saved.winners);
         if (saved.gameWins) setGameWins(saved.gameWins);
         if (saved.liveGames) {
+          // Drop stale cached games: anything not from the current April-June window.
+          // Otherwise prior-season playoff games that once slipped past the API
+          // filter will haunt the UI until the user hits Reset.
+          const cutoff = Date.now() - 120 * 24 * 60 * 60 * 1000;
           const migrated = {};
           for (const [sid, val] of Object.entries(saved.liveGames)) {
-            migrated[sid] = Array.isArray(val) ? val : [val];
+            const arr = Array.isArray(val) ? val : [val];
+            const fresh = arr.filter((g) => {
+              if (!g.gameDateTimeUTC) return false;
+              const d = new Date(g.gameDateTimeUTC);
+              const m = d.getUTCMonth();
+              return m >= 3 && m <= 5 && d.getTime() >= cutoff;
+            });
+            if (fresh.length) migrated[sid] = fresh;
           }
           setLiveGamesBySeries(migrated);
         }
