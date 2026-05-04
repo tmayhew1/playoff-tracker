@@ -690,9 +690,20 @@ function CurrentView() {
         if (saved.winners) setWinners(saved.winners);
         if (saved.gameWins) setGameWins(saved.gameWins);
         if (saved.liveGames) {
+          // Drop stale cached games: anything not from the current April-June window.
+          // Otherwise prior-season playoff games that once slipped past the API
+          // filter will haunt the UI until the user hits Reset.
+          const cutoff = Date.now() - 120 * 24 * 60 * 60 * 1000;
           const migrated = {};
           for (const [sid, val] of Object.entries(saved.liveGames)) {
-            migrated[sid] = Array.isArray(val) ? val : [val];
+            const arr = Array.isArray(val) ? val : [val];
+            const fresh = arr.filter((g) => {
+              if (!g.gameDateTimeUTC) return false;
+              const d = new Date(g.gameDateTimeUTC);
+              const m = d.getUTCMonth();
+              return m >= 3 && m <= 5 && d.getTime() >= cutoff;
+            });
+            if (fresh.length) migrated[sid] = fresh;
           }
           setLiveGamesBySeries(migrated);
         }
@@ -717,18 +728,13 @@ function CurrentView() {
       if (!res.ok) throw new Error(`Proxy ${res.status}`);
       const data = await res.json();
 
-      setLiveGamesBySeries((prev) => {
-        const next = { ...prev };
+      setLiveGamesBySeries(() => {
+        // Treat the API response as authoritative so stale games (e.g. ones a
+        // tightened filter no longer matches) drop out instead of lingering.
+        const next = {};
         (data.liveGames || []).forEach((g) => {
-          const existing = next[g.seriesId] || [];
-          const idx = existing.findIndex((x) => x.gameId === g.gameId);
-          if (idx >= 0) {
-            const updated = [...existing];
-            updated[idx] = g;
-            next[g.seriesId] = updated;
-          } else {
-            next[g.seriesId] = [...existing, g];
-          }
+          if (!next[g.seriesId]) next[g.seriesId] = [];
+          next[g.seriesId].push(g);
         });
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
