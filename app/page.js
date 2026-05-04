@@ -717,18 +717,13 @@ function CurrentView() {
       if (!res.ok) throw new Error(`Proxy ${res.status}`);
       const data = await res.json();
 
-      setLiveGamesBySeries((prev) => {
-        const next = { ...prev };
+      setLiveGamesBySeries(() => {
+        // Treat the API response as authoritative so stale games (e.g. ones a
+        // tightened filter no longer matches) drop out instead of lingering.
+        const next = {};
         (data.liveGames || []).forEach((g) => {
-          const existing = next[g.seriesId] || [];
-          const idx = existing.findIndex((x) => x.gameId === g.gameId);
-          if (idx >= 0) {
-            const updated = [...existing];
-            updated[idx] = g;
-            next[g.seriesId] = updated;
-          } else {
-            next[g.seriesId] = [...existing, g];
-          }
+          if (!next[g.seriesId]) next[g.seriesId] = [];
+          next[g.seriesId].push(g);
         });
         try {
           const raw = localStorage.getItem(STORAGE_KEY);

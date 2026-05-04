@@ -84,11 +84,16 @@ export async function GET() {
     const gameDates = data?.leagueSchedule?.gameDates || [];
     for (const gd of gameDates) {
       for (const g of gd.games || []) {
-        const hasSeries = g.seriesText || g.seriesGameNumber > 0;
-        if (!hasSeries) continue;
+        // Match only postseason rounds. seriesGameNumber alone isn't enough —
+        // NBA Cup group/knockout games and Play-In games also set it, and once
+        // R2 matchups exist (e.g. NYK vs PHI) those would leak in.
+        const seriesText = g.seriesText || "";
+        const isPlayoffSeries = /^(First Round|Conf(erence)?\.?\s*(Semi)?finals?|NBA Finals)\b/i.test(seriesText);
+        const seriesGameNum = g.seriesGameNumber || 0;
+        if (!isPlayoffSeries || seriesGameNum < 1 || seriesGameNum > 7) continue;
         const home = g.homeTeam?.teamTricode;
         const away = g.awayTeam?.teamTricode;
-        // Restrict to the 16 teams in our bracket (skips play-in, etc.)
+        // Restrict to the 16 teams in our bracket
         if (!TRICODE_MAP[home] || !TRICODE_MAP[away]) continue;
         const homeScore = g.homeTeam?.score ?? 0;
         const awayScore = g.awayTeam?.score ?? 0;
