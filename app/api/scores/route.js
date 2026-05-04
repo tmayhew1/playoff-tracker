@@ -91,6 +91,17 @@ export async function GET() {
         const isPlayoffSeries = /^(First Round|Conf(erence)?\.?\s*(Semi)?finals?|NBA Finals)\b/i.test(seriesText);
         const seriesGameNum = g.seriesGameNumber || 0;
         if (!isPlayoffSeries || seriesGameNum < 1 || seriesGameNum > 7) continue;
+        // Belt-and-suspenders date guard: NBA playoffs only run April–June. Excludes
+        // any leftover prior-season playoff games still in the feed (e.g. last year's
+        // NYK/PHI first round) which would otherwise pass the seriesText check.
+        if (!g.gameDateTimeUTC) continue;
+        const gameDate = new Date(g.gameDateTimeUTC);
+        const now = new Date();
+        const month = gameDate.getUTCMonth(); // 0 = Jan
+        if (month < 3 || month > 5) continue;
+        // Same calendar year as today (or within ~30 days, in case of UTC slop)
+        const daysAway = Math.abs(gameDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysAway > 120) continue;
         const home = g.homeTeam?.teamTricode;
         const away = g.awayTeam?.teamTricode;
         // Restrict to the 16 teams in our bracket
