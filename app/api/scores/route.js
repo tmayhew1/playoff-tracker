@@ -1,3 +1,5 @@
+import { BRACKET } from "../../teams";
+
 export const runtime = "nodejs";
 export const maxDuration = 15;
 export const revalidate = 30;
@@ -30,27 +32,52 @@ const TRICODE_MAP = {
   MIN: "MIN", DET: "DET", ATL: "ATL", LAL: "LAL", TOR: "TOR", POR: "POR",
 };
 
-const SERIES_MATCHUPS = {
+const R1_MATCHUPS = {
   E1: ["DET", "ORL"], E4: ["CLE", "TOR"], E3: ["NYK", "ATL"], E2: ["BOS", "PHI"],
   W1: ["OKC", "PHX"], W4: ["LAL", "HOU"], W3: ["DEN", "MIN"], W2: ["SAS", "POR"],
 };
 
-function findSeriesId(tri1, tri2) {
-  for (const [id, teams] of Object.entries(SERIES_MATCHUPS)) {
-    if ((teams[0] === tri1 && teams[1] === tri2) || (teams[0] === tri2 && teams[1] === tri1)) return id;
+// Iteratively derive matchups for later rounds from R1 finals already on the schedule.
+// As R1 series clinch, we know the R2 pairs; as R2 clinches, we know R3; etc.
+function buildSeriesMatchups(playoffGames) {
+  const matchups = { ...R1_MATCHUPS };
+  const winners = {};
+  const finals = playoffGames.filter((g) => g.gameStatus === 3 && g.home.score !== g.away.score);
+
+  const computeWinners = () => {
+    for (const [sid, [a, b]] of Object.entries(matchups)) {
+      if (winners[sid]) continue;
+      let aw = 0, bw = 0;
+      for (const f of finals) {
+        const ht = f.home.tri, at = f.away.tri;
+        if ((ht === a && at === b) || (ht === b && at === a)) {
+          const winT = f.home.score > f.away.score ? ht : at;
+          if (winT === a) aw++;
+          else if (winT === b) bw++;
+        }
+      }
+      if (aw >= 4) winners[sid] = a;
+      else if (bw >= 4) winners[sid] = b;
+    }
+  };
+
+  for (const round of [BRACKET.r2, BRACKET.r3, BRACKET.r4]) {
+    computeWinners();
+    for (const s of round) {
+      if (matchups[s.id]) continue;
+      const a = winners[s.from[0]], b = winners[s.from[1]];
+      if (a && b) matchups[s.id] = [a, b];
+    }
   }
-  return null;
+
+  return matchups;
 }
 
 export async function GET() {
-  const gameWins = {};
   const errors = [];
-  for (const [id, [a, b]] of Object.entries(SERIES_MATCHUPS)) {
-    gameWins[id] = { [a]: 0, [b]: 0 };
-  }
 
   // --- 1. Pull the full season schedule (includes every playoff game) ---
-  let scheduleGames = [];
+  let rawPlayoffGames = [];
   try {
     const url = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json";
     const data = await fetchJson(url, 6000);
@@ -61,8 +88,8 @@ export async function GET() {
         if (!hasSeries) continue;
         const home = g.homeTeam?.teamTricode;
         const away = g.awayTeam?.teamTricode;
-        const sid = findSeriesId(home, away);
-        if (!sid) continue;
+        // Restrict to the 16 teams in our bracket (skips play-in, etc.)
+        if (!TRICODE_MAP[home] || !TRICODE_MAP[away]) continue;
         const homeScore = g.homeTeam?.score ?? 0;
         const awayScore = g.awayTeam?.score ?? 0;
 
@@ -72,8 +99,7 @@ export async function GET() {
         const natOtt = (bc.nationalOttBroadcasters || []).map((b) => b.broadcasterDisplay).filter(Boolean);
         const broadcasters = [...new Set([...natTv, ...natOtt])];
 
-        scheduleGames.push({
-          seriesId: sid,
+        rawPlayoffGames.push({
           gameId: g.gameId,
           gameStatus: g.gameStatus, // 1=scheduled, 2=in-progress, 3=final
           gameStatusText: g.gameStatusText,
@@ -88,7 +114,28 @@ export async function GET() {
     errors.push(`schedule: ${e.message}`);
   }
 
-  // --- 2. Pull today's live scoreboard for in-progress scores (overrides schedule) ---
+  // --- 2. Build dynamic series matchups (R1 + later rounds as they clinch) ---
+  const SERIES_MATCHUPS = buildSeriesMatchups(rawPlayoffGames);
+
+  const findSeriesId = (tri1, tri2) => {
+    for (const [id, teams] of Object.entries(SERIES_MATCHUPS)) {
+      if ((teams[0] === tri1 && teams[1] === tri2) || (teams[0] === tri2 && teams[1] === tri1)) return id;
+    }
+    return null;
+  };
+
+  const gameWins = {};
+  for (const [id, [a, b]] of Object.entries(SERIES_MATCHUPS)) {
+    gameWins[id] = { [a]: 0, [b]: 0 };
+  }
+
+  // Annotate schedule games with seriesId, drop ones we can't place yet
+  // (e.g. R2 game whose feeding R1 series hasn't clinched yet)
+  const scheduleGames = rawPlayoffGames
+    .map((g) => ({ ...g, seriesId: findSeriesId(g.home.tri, g.away.tri) }))
+    .filter((g) => g.seriesId);
+
+  // --- 3. Pull today's live scoreboard for in-progress scores (overrides schedule) ---
   let liveToday = [];
   try {
     const url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json";
@@ -114,7 +161,7 @@ export async function GET() {
     errors.push(`scoreboard: ${e.message}`);
   }
 
-  // --- 3. Merge: schedule provides history + broadcasters, scoreboard overrides today's live data ---
+  // --- 4. Merge: schedule provides history + broadcasters, scoreboard overrides today's live data ---
   const liveById = new Map(liveToday.map((g) => [g.gameId, g]));
 
   const liveGames = scheduleGames.map((g) => {
@@ -135,7 +182,7 @@ export async function GET() {
     }
   }
 
-  // --- 4. Derive gameWins from finalized games in the schedule ---
+  // --- 5. Derive gameWins from finalized games ---
   const finals = liveGames.filter(
     (g) => g.gameStatus === 3 && g.home.score !== g.away.score
   );
