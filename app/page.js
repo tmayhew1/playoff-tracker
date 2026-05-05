@@ -3,16 +3,30 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory } from "./historical";
 import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, computePoints } from "./scoring";
+import { LGA, valueAdd, computePoints, potentialPoints } from "./scoring";
 
-const ownerColor = (o) => o === "Spencer" ? "text-amber-700" : "text-teal-700";
+// `dim` = lighten owner styling when both teams in a matchup share an owner,
+// to flag the side that wins the series for fewer points (no upset bonus).
+const ownerColor = (o, dim) => {
+  if (o === "Spencer") return dim ? "text-amber-400" : "text-amber-700";
+  if (o === "Trey") return dim ? "text-teal-400" : "text-teal-700";
+  return "";
+};
 const ownerBg = (o) => o === "Spencer" ? "bg-amber-50 border-amber-300" : "bg-teal-50 border-teal-300";
-const ownerDot = (o) => o === "Spencer" ? "bg-amber-600" : "bg-teal-600";
+const ownerDot = (o, dim) => {
+  if (o === "Spencer") return dim ? "bg-amber-300" : "bg-amber-600";
+  if (o === "Trey") return dim ? "bg-teal-300" : "bg-teal-600";
+  return "";
+};
 const ownerBadge = (o) => o === "Spencer" ? "bg-amber-100 text-amber-800" : o === "Trey" ? "bg-teal-100 text-teal-800" : "bg-stone-100 text-stone-600";
 
-function WinCircles({ value, actualValue, onChange, disabled, owner }) {
-  const fillColor = owner === "Spencer" ? "bg-amber-500 border-amber-600" : "bg-teal-500 border-teal-600";
-  const whatIfColor = owner === "Spencer" ? "bg-amber-200 border-amber-400" : "bg-teal-200 border-teal-400";
+function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
+  const fillColor = owner === "Spencer"
+    ? (dim ? "bg-amber-300 border-amber-400" : "bg-amber-500 border-amber-600")
+    : (dim ? "bg-teal-300 border-teal-400" : "bg-teal-500 border-teal-600");
+  const whatIfColor = owner === "Spencer"
+    ? (dim ? "bg-amber-100 border-amber-200" : "bg-amber-200 border-amber-400")
+    : (dim ? "bg-teal-100 border-teal-200" : "bg-teal-200 border-teal-400");
   return (
     <div className="flex items-center gap-1 mt-1">
       {[1, 2, 3, 4].map((n) => {
@@ -343,7 +357,7 @@ function TbdCard({ gameNumbers }) {
   );
 }
 
-function TeamButton({ code, selected, disabled, onClick, gamesWon, actualWins, onGamesChange, seriesDecided }) {
+function TeamButton({ code, selected, disabled, onClick, gamesWon, actualWins, onGamesChange, seriesDecided, dim, pointValue }) {
   if (!code) {
     return <div className="flex-1 px-3 py-2.5 text-xs uppercase tracking-widest text-stone-400 italic border border-dashed border-stone-300 bg-stone-50 text-center">TBD</div>;
   }
@@ -354,20 +368,29 @@ function TeamButton({ code, selected, disabled, onClick, gamesWon, actualWins, o
       <button onClick={() => !disabled && onClick(code)} disabled={disabled} className="w-full text-left">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
-          <span className={`text-sm font-semibold ${isSel ? ownerColor(t.owner) : "text-stone-900"}`}>{t.name}</span>
+          <span className={`text-sm font-semibold ${isSel ? ownerColor(t.owner, dim) : "text-stone-900"}`}>{t.name}</span>
           {isSel && <span className="ml-auto text-xs">✓</span>}
         </div>
         <div className="text-[10px] uppercase tracking-wider mt-0.5 flex items-center gap-1">
-          <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner)}`}></span>
+          <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner, dim)}`}></span>
           <span className="text-stone-500">{t.owner}</span>
         </div>
       </button>
-      {!seriesDecided && <WinCircles value={gamesWon || 0} actualValue={actualWins || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} owner={t.owner} />}
+      {!seriesDecided && (
+        <>
+          <WinCircles value={gamesWon || 0} actualValue={actualWins || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} owner={t.owner} dim={dim} />
+          {pointValue != null && (
+            <div className={`text-[9px] uppercase tracking-wider mt-1 tabular-nums font-semibold ${ownerColor(t.owner, dim)}`}>
+              +{pointValue} pt{pointValue === 1 ? "" : "s"}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function SeriesRow({ series, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGame }) {
+function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGame }) {
   const [a, b] = matchups[series.id] || [];
   const winner = winners[series.id];
   const canPick = a && b;
@@ -377,6 +400,15 @@ function SeriesRow({ series, matchups, winners, gameWins, actualGameWins, onPick
   const seriesGames = (liveGame || []).slice().sort((x, y) =>
     (x.gameId || "").localeCompare(y.gameId || "")
   );
+
+  const teamA = a ? TEAMS[a] : null;
+  const teamB = b ? TEAMS[b] : null;
+  const ptsA = teamA && teamB ? potentialPoints(teamA, teamB, roundKey).total : null;
+  const ptsB = teamA && teamB ? potentialPoints(teamB, teamA, roundKey).total : null;
+  // When both teams share an owner, dim the side whose win is worth fewer points.
+  const sameOwner = teamA && teamB && teamA.owner === teamB.owner;
+  const dimA = sameOwner && ptsA < ptsB;
+  const dimB = sameOwner && ptsB < ptsA;
 
   const winsA = games[a] || 0;
   const winsB = games[b] || 0;
@@ -399,9 +431,9 @@ function SeriesRow({ series, matchups, winners, gameWins, actualGameWins, onPick
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
-        <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} actualWins={actualGames[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
+        <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} actualWins={actualGames[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimA} pointValue={ptsA} />
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
-        <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} />
+        <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimB} pointValue={ptsB} />
       </div>
       {realGames.map((g, i) => {
         const num = i + 1;
@@ -460,7 +492,7 @@ function RoundSection({ roundKey, title, series, matchups, winners, gameWins, ac
         <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
       </button>
       {!collapsed && sortedSeries.map((s) => (
-        <SeriesRow key={s.id} series={s} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
+        <SeriesRow key={s.id} series={s} roundKey={roundKey} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
       ))}
     </div>
   );
