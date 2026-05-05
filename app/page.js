@@ -123,16 +123,18 @@ function getSortedPlayers(box) {
     .sort((a, b) => b.va - a.va);
 }
 
-function PlayerRow({ p, isExpanded, onToggle }) {
+function PlayerRow({ p, isExpanded, onToggle, dimTeam }) {
   const teamInfo = TEAMS[p.team];
   const owner = teamInfo?.owner;
+  const isDim = p.team === dimTeam;
+  const badgeClass = isDim ? "bg-white text-stone-500 border border-stone-200" : ownerBadge(owner);
   return (
     <div className="border-b border-stone-100 last:border-0">
       <button
         onClick={onToggle}
         className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
       >
-        <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${ownerBadge(owner)}`}>
+        <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
           {p.team}
         </span>
         <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
@@ -152,7 +154,7 @@ function PlayerRow({ p, isExpanded, onToggle }) {
   );
 }
 
-function BoxscoreTable({ rows, expandedKey, setExpandedKey }) {
+function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam }) {
   return (
     <div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
@@ -172,6 +174,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey }) {
             p={p}
             isExpanded={expandedKey === rowKey}
             onToggle={() => setExpandedKey(expandedKey === rowKey ? null : rowKey)}
+            dimTeam={dimTeam}
           />
         );
       })}
@@ -179,7 +182,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey }) {
   );
 }
 
-function LiveGameBanner({ liveGame, gameLabel }) {
+function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [box, setBox] = useState(null);
@@ -313,7 +316,7 @@ function LiveGameBanner({ liveGame, gameLabel }) {
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by VA</div>
-          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} />
+          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} />
         </div>
       )}
 
@@ -323,7 +326,7 @@ function LiveGameBanner({ liveGame, gameLabel }) {
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
@@ -409,6 +412,7 @@ function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWi
   const sameOwner = teamA && teamB && teamA.owner === teamB.owner;
   const dimA = sameOwner && ptsA < ptsB;
   const dimB = sameOwner && ptsB < ptsA;
+  const dimTeam = dimA ? a : dimB ? b : null;
 
   const winsA = games[a] || 0;
   const winsB = games[b] || 0;
@@ -438,7 +442,7 @@ function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWi
       {realGames.map((g, i) => {
         const num = i + 1;
         const gameLabel = num <= 7 ? `Game ${num}` : null;
-        return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} />;
+        return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} dimTeam={dimTeam} />;
       })}
       <TbdCard gameNumbers={tbdGameNumbers} />
     </div>
