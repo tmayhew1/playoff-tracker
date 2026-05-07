@@ -35,8 +35,9 @@ function mapPlayer(p) {
   const mp = parseMinutes(s.minutesCalculated || s.minutes);
   return {
     name: p.name || `${p.firstName || ""} ${p.familyName || ""}`.trim(),
-    starter: !!p.starter,
-    oncourt: !!p.oncourt,
+    starter: String(p.starter) === "1" || p.starter === true,
+    // NBA returns oncourt as a string ("1"/"0"), so a plain !! coerces "0" to true.
+    oncourt: String(p.oncourt) === "1" || p.oncourt === true,
     mp,
     pts: s.points ?? 0,
     reb: (s.reboundsDefensive ?? 0) + (s.reboundsOffensive ?? 0),

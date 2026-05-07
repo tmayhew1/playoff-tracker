@@ -154,30 +154,61 @@ function PlayerRow({ p, isExpanded, onToggle, dimTeam }) {
   );
 }
 
-function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam }) {
+function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt }) {
+  const renderRow = (p, i) => {
+    const rowKey = `${p.team}-${p.name}-${i}`;
+    return (
+      <PlayerRow
+        key={rowKey}
+        p={p}
+        isExpanded={expandedKey === rowKey}
+        onToggle={() => setExpandedKey(expandedKey === rowKey ? null : rowKey)}
+        dimTeam={dimTeam}
+      />
+    );
+  };
+
+  const header = (
+    <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+      <span className="w-10">Team</span>
+      <span className="flex-1">Player</span>
+      <span className="w-7 text-right">MIN</span>
+      <span className="w-6 text-right">PTS</span>
+      <span className="w-5 text-right">REB</span>
+      <span className="w-5 text-right">AST</span>
+      <span className="w-8 text-right">VA</span>
+    </div>
+  );
+
+  if (partitionOnCourt) {
+    const onCourt = rows.filter((p) => p.oncourt);
+    const bench = rows.filter((p) => !p.oncourt);
+    return (
+      <div>
+        {header}
+        {onCourt.length > 0 && (
+          <>
+            <div className="text-[9px] uppercase tracking-widest text-red-600 font-semibold pt-1.5 pb-0.5 flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              On Court
+            </div>
+            {onCourt.map(renderRow)}
+          </>
+        )}
+        {bench.length > 0 && (
+          <>
+            <div className="text-[9px] uppercase tracking-widest text-stone-500 pt-2 pb-0.5">Bench</div>
+            {bench.map(renderRow)}
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
-        <span className="w-10">Team</span>
-        <span className="flex-1">Player</span>
-        <span className="w-7 text-right">MIN</span>
-        <span className="w-6 text-right">PTS</span>
-        <span className="w-5 text-right">REB</span>
-        <span className="w-5 text-right">AST</span>
-        <span className="w-8 text-right">VA</span>
-      </div>
-      {rows.map((p, i) => {
-        const rowKey = `${p.team}-${p.name}-${i}`;
-        return (
-          <PlayerRow
-            key={rowKey}
-            p={p}
-            isExpanded={expandedKey === rowKey}
-            onToggle={() => setExpandedKey(expandedKey === rowKey ? null : rowKey)}
-            dimTeam={dimTeam}
-          />
-        );
-      })}
+      {header}
+      {rows.map(renderRow)}
     </div>
   );
 }
@@ -326,7 +357,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
