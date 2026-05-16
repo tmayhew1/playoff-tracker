@@ -16,11 +16,33 @@ async function fetchJson(url, timeoutMs = 8000) {
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
+  } catch (e) {
+    throw new Error(e.name === "AbortError" ? "timeout" : e.message);
   } finally {
     clearTimeout(t);
   }
+}
+
+// Try several known schedule hosts; NBA shuffles which ones are reachable
+// server-side. Returns the first that works, else throws with every attempt.
+async function fetchSchedule(startYear) {
+  const candidates = [
+    `https://data.nba.com/data/10s/prod/v1/${startYear}/schedule.json`,
+    `https://data.nba.com/prod/v1/${startYear}/schedule.json`,
+    `https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_${startYear}.json`,
+  ];
+  const errors = [];
+  for (const url of candidates) {
+    try {
+      const json = await fetchJson(url);
+      return { json, url };
+    } catch (e) {
+      errors.push(`${url} -> ${e.message}`);
+    }
+  }
+  throw new Error(`all schedule sources failed: ${errors.join(" | ")}`);
 }
 
 const SEASON_RE = /^\d{4}-\d{2}$/;
@@ -34,32 +56,66 @@ export async function GET(req) {
   const startYear = season.slice(0, 4); // "2024-25" -> "2024"
 
   try {
-    // data.nba.com is CDN-backed and reachable server-side (unlike stats.nba.com).
-    const url = `https://data.nba.com/prod/v1/${startYear}/schedule.json`;
-    const data = await fetchJson(url);
-    const standard = data?.league?.standard || [];
+    const { json: data, url: usedUrl } = await fetchSchedule(startYear);
+
+    // Normalize the two possible shapes into one game list.
+    // A) data.nba.com: { league: { standard: [ { gameId, gameUrlCode,
+    //    startTimeUTC, hTeam:{score}, vTeam:{score} } ] } }
+    // B) scheduleLeagueV2: { leagueSchedule: { gameDates: [ { games: [
+    //    { gameId, gameCode, gameDateTimeUTC, homeTeam:{teamTricode,score},
+    //    awayTeam:{teamTricode,score} } ] } ] } }
+    const raw = [];
+    if (data?.league?.standard) {
+      for (const g of data.league.standard) {
+        const [datePart, codePart] = (g.gameUrlCode || "").split("/");
+        raw.push({
+          gameId: g.gameId || "",
+          datePart,
+          codePart,
+          startTimeUTC: g.startTimeUTC || null,
+          hTri: null,
+          vTri: null,
+          hScore: Number(g.hTeam?.score),
+          vScore: Number(g.vTeam?.score),
+        });
+      }
+    } else if (data?.leagueSchedule?.gameDates) {
+      for (const gd of data.leagueSchedule.gameDates) {
+        for (const g of gd.games || []) {
+          const [datePart, codePart] = (g.gameCode || "").split("/");
+          raw.push({
+            gameId: g.gameId || "",
+            datePart,
+            codePart,
+            startTimeUTC: g.gameDateTimeUTC || null,
+            hTri: g.homeTeam?.teamTricode || null,
+            vTri: g.awayTeam?.teamTricode || null,
+            hScore: Number(g.homeTeam?.score),
+            vScore: Number(g.awayTeam?.score),
+          });
+        }
+      }
+    } else {
+      throw new Error(`unrecognized schedule shape from ${usedUrl}`);
+    }
 
     const all = [];
-    for (const g of standard) {
-      const gameId = g.gameId || "";
-      // seasonStageId 4 = postseason; gameId "004…" = main bracket (excludes
-      // Play-In "005…", regular season "002…", preseason "001…").
-      if (g.seasonStageId !== 4 || !gameId.startsWith("004")) continue;
-      // gameUrlCode: "YYYYMMDD/AWAYHOME" e.g. "20250420/MIACLE"
-      const [datePart, codePart] = (g.gameUrlCode || "").split("/");
-      if (!datePart || !codePart || codePart.length !== 6) continue;
-      const away = codePart.slice(0, 3);
-      const home = codePart.slice(3, 6);
-      const hScore = Number(g.hTeam?.score);
-      const vScore = Number(g.vTeam?.score);
-      if (!Number.isFinite(hScore) || !Number.isFinite(vScore)) continue;
+    for (const g of raw) {
+      // gameId "004…" = main playoff bracket (excludes Play-In "005…",
+      // regular season "002…", preseason "001…").
+      if (!g.gameId.startsWith("004")) continue;
+      if (!g.datePart) continue;
+      const away = g.vTri || (g.codePart?.length === 6 ? g.codePart.slice(0, 3) : null);
+      const home = g.hTri || (g.codePart?.length === 6 ? g.codePart.slice(3, 6) : null);
+      if (!away || !home) continue;
+      if (!Number.isFinite(g.hScore) || !Number.isFinite(g.vScore) || (g.hScore === 0 && g.vScore === 0)) continue;
       all.push({
-        gameId,
-        gameCode: datePart,
-        startTimeUTC: g.startTimeUTC || null,
-        date: datePart,
-        home: { tri: home, score: hScore, win: hScore > vScore },
-        away: { tri: away, score: vScore, win: vScore > hScore },
+        gameId: g.gameId,
+        gameCode: g.datePart,
+        startTimeUTC: g.startTimeUTC,
+        date: g.datePart,
+        home: { tri: home, score: g.hScore, win: g.hScore > g.vScore },
+        away: { tri: away, score: g.vScore, win: g.vScore > g.hScore },
       });
     }
 
