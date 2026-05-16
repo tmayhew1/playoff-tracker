@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { HISTORY, scoreHistory } from "./historical";
+import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, computePoints, potentialPoints } from "./scoring";
+import { LGA, valueAdd, computePoints, potentialPoints, lgaForSeason } from "./scoring";
 
 // `dim` = lighten owner styling when both teams in a matchup share an owner,
 // to flag the side that wins the series for fewer points (no upset bonus).
@@ -52,30 +52,30 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function VABreakdown({ p }) {
+function VABreakdown({ p, lga = LGA, teams = TEAMS }) {
   const mp = p.mp || 0;
   if (mp <= 0) return null;
 
   const twoPm = p.fgm - p.tpm, twoPa = p.fga - p.tpa;
-  const tpAdd = ((p.tpm / (p.tpa || 1)) - LGA.la3P) * p.tpa;
-  const twoAdd = ((twoPm / (twoPa || 1)) - LGA.la2P) * twoPa;
-  const ftAdd = ((p.ftm / (p.fta || 1)) - LGA.laFT) * p.fta;
+  const tpAdd = ((p.tpm / (p.tpa || 1)) - lga.la3P) * p.tpa;
+  const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
+  const ftAdd = ((p.ftm / (p.fta || 1)) - lga.laFT) * p.fta;
 
   const categories = [
-    { key: "Scoring", value: ((p.pts / mp) - LGA.laPTSperM) * mp, label: `${p.pts} PTS` },
+    { key: "Scoring", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: `${p.pts} PTS` },
     { key: "3-Pointers", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
     { key: "2-Pointers", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
     { key: "Free Throws", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
-    { key: "Assists", value: ((p.ast / mp) - LGA.laASTperM) * mp * LGA.laPTSperMake * (1 - LGA.laFG), label: `${p.ast} AST` },
-    { key: "Steals", value: ((p.stl / mp) - LGA.laSTLperM) * mp * LGA.laPTSperPoss, label: `${p.stl} STL` },
-    { key: "Blocks", value: ((p.blk / mp) - LGA.laBLKperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.blk} BLK` },
-    { key: "Turnovers", value: -((p.tov / mp) - LGA.laTOVperM) * mp * LGA.laPTSperPoss, label: `${p.tov} TOV` },
-    { key: "D Rebounds", value: ((p.drb / mp) - LGA.laDRBperM) * mp * LGA.laPTSperPoss * LGA.laORBrate, label: `${p.drb} DRB` },
-    { key: "O Rebounds", value: ((p.orb / mp) - LGA.laORBperM) * mp * LGA.laPTSperPoss * LGA.laDRBrate, label: `${p.orb} ORB` },
+    { key: "Assists", value: ((p.ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG), label: `${p.ast} AST` },
+    { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: `${p.stl} STL` },
+    { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: `${p.blk} BLK` },
+    { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: `${p.tov} TOV` },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: `${p.drb} DRB` },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: `${p.orb} ORB` },
   ].sort((a, b) => b.value - a.value);
 
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
-  const owner = TEAMS[p.team]?.owner;
+  const owner = teams[p.team]?.owner;
   const posColor = owner === "Spencer" ? "bg-amber-500" : "bg-teal-500";
 
   return (
@@ -112,19 +112,19 @@ function VABreakdown({ p }) {
   );
 }
 
-function getSortedPlayers(box) {
+function getSortedPlayers(box, lga = LGA) {
   if (!box) return [];
   return [
     ...(box.away?.players || []).map((p) => ({ ...p, team: box.away.tri })),
     ...(box.home?.players || []).map((p) => ({ ...p, team: box.home.tri })),
   ]
     .filter((p) => (p.mp || 0) > 0)
-    .map((p) => ({ ...p, va: valueAdd(p) }))
+    .map((p) => ({ ...p, va: valueAdd(p, lga) }))
     .sort((a, b) => b.va - a.va);
 }
 
-function PlayerRow({ p, isExpanded, onToggle, dimTeam }) {
-  const teamInfo = TEAMS[p.team];
+function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS }) {
+  const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
   const badgeClass = isDim ? "bg-white text-stone-500 border border-stone-200" : ownerBadge(owner);
@@ -149,12 +149,12 @@ function PlayerRow({ p, isExpanded, onToggle, dimTeam }) {
           {p.va.toFixed(1)}
         </span>
       </button>
-      {isExpanded && <VABreakdown p={p} />}
+      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} />}
     </div>
   );
 }
 
-function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt }) {
+function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS }) {
   const renderRow = (p, i) => {
     const rowKey = `${p.team}-${p.name}-${i}`;
     return (
@@ -164,6 +164,8 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
         isExpanded={expandedKey === rowKey}
         onToggle={() => setExpandedKey(expandedKey === rowKey ? null : rowKey)}
         dimTeam={dimTeam}
+        lga={lga}
+        teams={teams}
       />
     );
   };
@@ -213,10 +215,10 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
   );
 }
 
-function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
+function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS }) {
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
-  const [box, setBox] = useState(null);
+  const [box, setBox] = useState(staticBox || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -241,7 +243,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
   const isFinal = liveGame?.gameStatus === 3;
 
   useEffect(() => {
-    if (!liveGame?.gameId) return;
+    if (staticBox || !liveGame?.gameId) return; // historical box is supplied inline
     if (isLive) {
       loadBox();
       const id = setInterval(loadBox, 45000);
@@ -250,7 +252,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
     if (isFinal && expanded) {
       loadBox();
     }
-  }, [liveGame?.gameId, isLive, isFinal, expanded, loadBox]);
+  }, [staticBox, liveGame?.gameId, isLive, isFinal, expanded, loadBox]);
 
   if (!liveGame) return null;
   const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC, period, gameClock } = liveGame;
@@ -306,12 +308,12 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
   let finalClasses = "bg-stone-100 border-stone-300";
   if (isFinal && home.score !== away.score) {
     const winnerTri = home.score > away.score ? home.tri : away.tri;
-    const winnerOwner = TEAMS[winnerTri]?.owner;
+    const winnerOwner = teams[winnerTri]?.owner;
     if (winnerOwner === "Spencer") finalClasses = "bg-amber-50 border-amber-400";
     else if (winnerOwner === "Trey") finalClasses = "bg-teal-50 border-teal-400";
   }
 
-  const sortedPlayers = useMemo(() => getSortedPlayers(box), [box]);
+  const sortedPlayers = useMemo(() => getSortedPlayers(box, lga), [box, lga]);
   const top5 = sortedPlayers.slice(0, 5);
   const showTop5 = isLive && sortedPlayers.length > 0 && !expanded;
 
@@ -347,7 +349,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by VA</div>
-          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} />
+          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} />
         </div>
       )}
 
@@ -357,7 +359,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam }) {
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} lga={lga} teams={teams} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
@@ -682,11 +684,100 @@ function UpcomingTodayBanner({ liveGamesBySeries, actualWinners }) {
   );
 }
 
+function HistoryGameList({ games, teamsMap, lga }) {
+  return games.map((g, i) => {
+    const liveGame = {
+      gameId: g.gameId,
+      gameStatus: 3,
+      gameStatusText: "Final",
+      gameDateTimeUTC: g.gameDateTimeUTC,
+      home: { tri: g.home.tri, score: g.home.score },
+      away: { tri: g.away.tri, score: g.away.score },
+    };
+    const staticBox = g.box
+      ? {
+          gameId: g.gameId,
+          gameStatus: 3,
+          home: { tri: g.home.tri, score: g.home.score, players: g.box.home?.players || [] },
+          away: { tri: g.away.tri, score: g.away.score, players: g.box.away?.players || [] },
+        }
+      : null;
+    return (
+      <LiveGameBanner
+        key={g.gameId || i}
+        liveGame={liveGame}
+        gameLabel={`Game ${i + 1}`}
+        staticBox={staticBox}
+        lga={lga}
+        teams={teamsMap}
+      />
+    );
+  });
+}
+
+function HistorySeriesRow({ s, teamsMap, lga }) {
+  const teamCell = (code) => {
+    const t = teamsMap[code];
+    if (!t) return <div className="flex-1 px-2 py-1.5 border border-stone-200 bg-white text-xs text-stone-400">{code}</div>;
+    const isWinner = s.winner === code;
+    return (
+      <div className={`flex-1 px-2 py-1.5 border ${isWinner ? `${ownerBg(t.owner)} border-2` : "bg-white border-stone-200"}`}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
+          <span className={`text-xs font-semibold ${isWinner ? ownerColor(t.owner) : "text-stone-900"}`}>{t.name}</span>
+          {isWinner && <span className="ml-auto text-[10px]">✓</span>}
+        </div>
+        <div className="text-[9px] uppercase tracking-wider mt-0.5 flex items-center gap-1">
+          <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner)}`}></span>
+          <span className="text-stone-500">{t.owner}</span>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
+      <div className="flex gap-1.5 items-stretch">
+        {teamCell(s.teams[0])}
+        <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
+        {teamCell(s.teams[1])}
+      </div>
+      {s.games.length > 0 ? (
+        <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} />
+      ) : (
+        <div className="mt-1 text-[10px] text-stone-400 italic text-center py-1">Game data not available</div>
+      )}
+    </div>
+  );
+}
+
+function HistoryRoundSection({ round, teamsMap, lga }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
+      >
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+          {round.label}
+        </h3>
+      </button>
+      {open && round.series.map((s, i) => (
+        <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} />
+      ))}
+    </div>
+  );
+}
+
 function HistoryView({ season }) {
   const data = scoreHistory(season);
   const [showBreakdown, setShowBreakdown] = useState(null);
   if (!data) return <div className="text-stone-500 text-xs italic">No data for {season}</div>;
   const { breakdown, totals, meta } = data;
+  const rounds = historyRounds(season);
+  const lga = lgaForSeason(season);
+  const hasGames = rounds?.some((r) => r.series.some((s) => s.games.length > 0));
 
   return (
     <div>
@@ -733,6 +824,15 @@ function HistoryView({ season }) {
           );
         })}
       </div>
+
+      {hasGames && (
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Game Results</div>
+          {rounds.map((r) => (
+            <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
