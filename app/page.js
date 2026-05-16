@@ -785,11 +785,13 @@ function HistoryView({ season }) {
     setGamesError(null);
     setGamesLoading(true);
     fetch(`/api/history?season=${season}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
       .then((d) => {
-        if (cancelled) return;
-        if (d.error) throw new Error(d.error);
-        setHistGames(d);
+        if (!cancelled) setHistGames(d);
       })
       .catch((e) => !cancelled && setGamesError(e.message || "Load failed"))
       .finally(() => !cancelled && setGamesLoading(false));
@@ -854,7 +856,7 @@ function HistoryView({ season }) {
           <div className="text-[10px] text-stone-500 italic py-2 text-center">Loading games…</div>
         )}
         {gamesError && !gamesLoading && (
-          <div className="text-[10px] text-red-600 py-2 text-center">Couldn’t load games ({gamesError})</div>
+          <div className="text-[10px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load games — {gamesError}</div>
         )}
         {!gamesLoading && !gamesError && !hasGames && (
           <div className="text-[10px] text-stone-400 italic py-2 text-center">No game data</div>
