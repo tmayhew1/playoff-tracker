@@ -30,80 +30,72 @@ function parseMinutes(iso) {
   return mins + secs / 60;
 }
 
-// stats.nba.com needs richer headers than the live CDN.
-const STATS_HEADERS = {
-  ...HEADERS,
-  "Accept-Language": "en-US,en;q=0.9",
-  "x-nba-stats-origin": "stats",
-  "x-nba-stats-token": "true",
-};
-
-// "34:12" or "34.000000:12" -> minutes (float)
+// "34:12" -> minutes (float)
 function parseClockMinutes(min) {
   if (!min) return 0;
   const [m, s] = String(min).split(":");
   return (parseInt(m, 10) || 0) + (parseFloat(s) || 0) / 60;
 }
 
-// Fallback for old games (live CDN only keeps recent games): pull the
-// traditional box score from stats.nba.com and reshape to match.
-async function fetchStatsBox(gameId) {
-  const url =
-    `https://stats.nba.com/stats/boxscoretraditionalv2?GameID=${gameId}` +
-    `&StartPeriod=0&EndPeriod=10&StartRange=0&EndRange=0&RangeType=0`;
+// Fallback for old games (live CDN only keeps recent games): pull the box
+// score from data.nba.com (CDN-backed, reachable server-side). Needs the
+// game date (YYYYMMDD), supplied by /api/history as gameCode.
+async function fetchArchiveBox(gameId, date) {
+  if (!date) throw new Error("date required for archive box");
+  const url = `https://data.nba.com/prod/v1/${date}/${gameId}_boxscore.json`;
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 7000);
   let data;
   try {
-    const res = await fetch(url, { headers: STATS_HEADERS, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`stats ${res.status}`);
+    const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) throw new Error(`archive ${res.status}`);
     data = await res.json();
   } finally {
     clearTimeout(t);
   }
-  const ps = (data.resultSets || []).find((r) => r.name === "PlayerStats");
-  if (!ps) throw new Error("no PlayerStats");
-  const col = {};
-  ps.headers.forEach((h, i) => (col[h] = i));
-  const teams = [];
+  const basic = data?.basicGameData || {};
+  const stats = data?.stats;
+  if (!stats?.activePlayers) throw new Error("no activePlayers");
+  const triById = {};
+  if (basic.hTeam?.teamId) triById[basic.hTeam.teamId] = basic.hTeam.triCode;
+  if (basic.vTeam?.teamId) triById[basic.vTeam.teamId] = basic.vTeam.triCode;
+
+  const mapP = (pl) => ({
+    name: `${pl.firstName || ""} ${pl.lastName || ""}`.trim(),
+    starter: !!pl.pos, // starting position only set for starters
+    oncourt: false,
+    mp: parseClockMinutes(pl.min),
+    pts: Number(pl.points) || 0,
+    reb: Number(pl.totReb) || 0,
+    drb: Number(pl.defReb) || 0,
+    orb: Number(pl.offReb) || 0,
+    ast: Number(pl.assists) || 0,
+    stl: Number(pl.steals) || 0,
+    blk: Number(pl.blocks) || 0,
+    tov: Number(pl.turnovers) || 0,
+    fgm: Number(pl.fgm) || 0,
+    fga: Number(pl.fga) || 0,
+    tpm: Number(pl.tpm) || 0,
+    tpa: Number(pl.tpa) || 0,
+    ftm: Number(pl.ftm) || 0,
+    fta: Number(pl.fta) || 0,
+    plusMinus: Number(pl.plusMinus) || 0,
+  });
+
   const byTeam = {};
-  for (const row of ps.rowSet) {
-    const tri = row[col.TEAM_ABBREVIATION];
-    if (!byTeam[tri]) {
-      byTeam[tri] = [];
-      teams.push(tri);
-    }
-    byTeam[tri].push({
-      name: row[col.PLAYER_NAME],
-      starter: !!row[col.START_POSITION],
-      oncourt: false,
-      mp: parseClockMinutes(row[col.MIN]),
-      pts: row[col.PTS] ?? 0,
-      reb: row[col.REB] ?? 0,
-      drb: row[col.DREB] ?? 0,
-      orb: row[col.OREB] ?? 0,
-      ast: row[col.AST] ?? 0,
-      stl: row[col.STL] ?? 0,
-      blk: row[col.BLK] ?? 0,
-      tov: row[col.TO] ?? 0,
-      fgm: row[col.FGM] ?? 0,
-      fga: row[col.FGA] ?? 0,
-      tpm: row[col.FG3M] ?? 0,
-      tpa: row[col.FG3A] ?? 0,
-      ftm: row[col.FTM] ?? 0,
-      fta: row[col.FTA] ?? 0,
-      plusMinus: row[col.PLUS_MINUS] ?? 0,
-    });
+  for (const pl of stats.activePlayers) {
+    const tri = triById[pl.teamId];
+    if (!tri) continue;
+    (byTeam[tri] = byTeam[tri] || []).push(mapP(pl));
   }
-  // Scores aren't shown inside the table (the banner shows them from the
-  // games list), so home/away assignment here is cosmetic.
-  const [a, b] = teams;
+  const homeTri = basic.hTeam?.triCode;
+  const awayTri = basic.vTeam?.triCode;
   return {
     gameId,
     status: "Final",
     gameStatus: 3,
-    home: { tri: a, score: 0, players: byTeam[a] || [] },
-    away: { tri: b, score: 0, players: byTeam[b] || [] },
+    home: { tri: homeTri, score: Number(basic.hTeam?.score) || 0, players: byTeam[homeTri] || [] },
+    away: { tri: awayTri, score: Number(basic.vTeam?.score) || 0, players: byTeam[awayTri] || [] },
     fetchedAt: new Date().toISOString(),
   };
 }
@@ -138,6 +130,7 @@ function mapPlayer(p) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("gameId");
+  const date = searchParams.get("date"); // YYYYMMDD, for archived games
   if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
   let body = null;
   let liveCache = true;
@@ -163,9 +156,9 @@ export async function GET(req) {
       fetchedAt: new Date().toISOString(),
     };
   } catch (e) {
-    // Old game: live CDN 404s. Fall back to stats.nba.com.
+    // Old game: live CDN 404s. Fall back to data.nba.com archive.
     try {
-      body = await fetchStatsBox(gameId);
+      body = await fetchArchiveBox(gameId, date);
       liveCache = false;
     } catch (e2) {
       return new Response(JSON.stringify({ error: `${e.message} / ${e2.message}` }), { status: 500 });

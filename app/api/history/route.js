@@ -7,11 +7,8 @@ const HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
   Accept: "application/json, text/plain, */*",
-  "Accept-Language": "en-US,en;q=0.9",
   Referer: "https://www.nba.com/",
   Origin: "https://www.nba.com",
-  "x-nba-stats-origin": "stats",
-  "x-nba-stats-token": "true",
 };
 
 async function fetchJson(url, timeoutMs = 8000) {
@@ -34,35 +31,39 @@ export async function GET(req) {
   if (!season || !SEASON_RE.test(season)) {
     return new Response(JSON.stringify({ error: "valid season required (e.g. 2024-25)" }), { status: 400 });
   }
+  const startYear = season.slice(0, 4); // "2024-25" -> "2024"
 
   try {
-    const url =
-      `https://stats.nba.com/stats/leaguegamelog?Counter=1000&Direction=ASC` +
-      `&LeagueID=00&PlayerOrTeam=T&Season=${season}&SeasonType=Playoffs&Sorter=DATE`;
+    // data.nba.com is CDN-backed and reachable server-side (unlike stats.nba.com).
+    const url = `https://data.nba.com/prod/v1/${startYear}/schedule.json`;
     const data = await fetchJson(url);
-    const set = (data.resultSets || []).find((r) => r.name === "LeagueGameLog") || data.resultSets?.[0];
-    if (!set) throw new Error("no LeagueGameLog");
-    const col = {};
-    set.headers.forEach((h, i) => (col[h] = i));
+    const standard = data?.league?.standard || [];
 
-    // Two rows per game (one per team) -> one merged game record.
-    const games = new Map();
-    for (const row of set.rowSet) {
-      const gameId = row[col.GAME_ID];
-      const tri = row[col.TEAM_ABBREVIATION];
-      const matchup = row[col.MATCHUP]; // "CLE vs. MIA" home | "MIA @ CLE" away
-      const pts = row[col.PTS];
-      const win = row[col.WL] === "W";
-      const date = row[col.GAME_DATE];
-      const g = games.get(gameId) || { gameId, date, home: null, away: null };
-      const side = matchup.includes(" vs. ") ? "home" : "away";
-      g[side] = { tri, score: pts, win };
-      games.set(gameId, g);
+    const all = [];
+    for (const g of standard) {
+      const gameId = g.gameId || "";
+      // seasonStageId 4 = postseason; gameId "004…" = main bracket (excludes
+      // Play-In "005…", regular season "002…", preseason "001…").
+      if (g.seasonStageId !== 4 || !gameId.startsWith("004")) continue;
+      // gameUrlCode: "YYYYMMDD/AWAYHOME" e.g. "20250420/MIACLE"
+      const [datePart, codePart] = (g.gameUrlCode || "").split("/");
+      if (!datePart || !codePart || codePart.length !== 6) continue;
+      const away = codePart.slice(0, 3);
+      const home = codePart.slice(3, 6);
+      const hScore = Number(g.hTeam?.score);
+      const vScore = Number(g.vTeam?.score);
+      if (!Number.isFinite(hScore) || !Number.isFinite(vScore)) continue;
+      all.push({
+        gameId,
+        gameCode: datePart,
+        startTimeUTC: g.startTimeUTC || null,
+        date: datePart,
+        home: { tri: home, score: hScore, win: hScore > vScore },
+        away: { tri: away, score: vScore, win: vScore > hScore },
+      });
     }
 
-    const all = [...games.values()]
-      .filter((g) => g.home && g.away)
-      .sort((a, b) => new Date(a.date) - new Date(b.date) || a.gameId.localeCompare(b.gameId));
+    all.sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId));
 
     // Cluster by team pair; order series by start; standard 8/4/2/1 bracket.
     const byPair = new Map();
@@ -72,8 +73,8 @@ export async function GET(req) {
       byPair.get(key).push(g);
     }
     const seriesList = [...byPair.values()]
-      .map((gs) => ({ games: gs, start: new Date(gs[0].date) }))
-      .sort((a, b) => a.start - b.start);
+      .map((gs) => ({ games: gs, start: gs[0].date }))
+      .sort((a, b) => a.start.localeCompare(b.start));
     const roundForIndex = (i) => (i < 8 ? "r1" : i < 12 ? "r2" : i < 14 ? "r3" : "r4");
 
     const series = seriesList.map((s, i) => {
@@ -89,7 +90,8 @@ export async function GET(req) {
         winner,
         games: s.games.map((g) => ({
           gameId: g.gameId,
-          gameDateTimeUTC: new Date(g.date).toISOString(),
+          gameCode: g.gameCode,
+          gameDateTimeUTC: g.startTimeUTC,
           home: { tri: g.home.tri, score: g.home.score },
           away: { tri: g.away.tri, score: g.away.score },
         })),
