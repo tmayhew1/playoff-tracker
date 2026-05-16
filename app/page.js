@@ -773,9 +773,30 @@ function HistoryRoundSection({ round, teamsMap, lga }) {
 function HistoryView({ season }) {
   const data = scoreHistory(season);
   const [showBreakdown, setShowBreakdown] = useState(null);
+  const [histGames, setHistGames] = useState(null);
+  const [gamesError, setGamesError] = useState(null);
+  const [gamesLoading, setGamesLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHistGames(null);
+    setGamesError(null);
+    setGamesLoading(true);
+    fetch(`/api/history?season=${season}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
+      .then((d) => {
+        if (cancelled) return;
+        if (d.error) throw new Error(d.error);
+        setHistGames(d);
+      })
+      .catch((e) => !cancelled && setGamesError(e.message || "Load failed"))
+      .finally(() => !cancelled && setGamesLoading(false));
+    return () => { cancelled = true; };
+  }, [season]);
+
   if (!data) return <div className="text-stone-500 text-xs italic">No data for {season}</div>;
   const { breakdown, totals, meta } = data;
-  const rounds = historyRounds(season);
+  const rounds = historyRounds(season, histGames);
   const lga = lgaForSeason(season);
   const hasGames = rounds?.some((r) => r.series.some((s) => s.games.length > 0));
 
@@ -825,14 +846,21 @@ function HistoryView({ season }) {
         })}
       </div>
 
-      {hasGames && (
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Game Results</div>
-          {rounds.map((r) => (
-            <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} />
-          ))}
-        </div>
-      )}
+      <div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Game Results</div>
+        {gamesLoading && (
+          <div className="text-[10px] text-stone-500 italic py-2 text-center">Loading games…</div>
+        )}
+        {gamesError && !gamesLoading && (
+          <div className="text-[10px] text-red-600 py-2 text-center">Couldn’t load games ({gamesError})</div>
+        )}
+        {!gamesLoading && !gamesError && !hasGames && (
+          <div className="text-[10px] text-stone-400 italic py-2 text-center">No game data</div>
+        )}
+        {hasGames && rounds.map((r) => (
+          <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} />
+        ))}
+      </div>
     </div>
   );
 }

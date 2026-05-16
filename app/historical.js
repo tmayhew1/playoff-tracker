@@ -149,14 +149,15 @@ export function scoreHistory(season) {
 
 const teamPairKey = (round, teams) => `${round}:${[...teams].sort().join("-")}`;
 
-// Returns the bracket rounds for a season with each series' baked games
-// (scores + box scores) attached, or [] games where data isn't available yet.
-export function historyRounds(season) {
+// Returns the bracket rounds for a season with each series' games attached.
+// `gamesData` (from /api/history) takes precedence; falls back to any baked
+// JSON, else empty games (UI degrades gracefully).
+export function historyRounds(season, gamesData) {
   const h = HISTORY[season];
   if (!h) return null;
-  const baked = HISTORY_GAMES[season];
+  const source = gamesData?.series ? gamesData : HISTORY_GAMES[season];
   const bySeries = {};
-  for (const s of baked?.series || []) {
+  for (const s of source?.series || []) {
     bySeries[teamPairKey(s.round, s.teams)] = s.games || [];
   }
   return ["r1", "r2", "r3", "r4"].map((key) => ({
