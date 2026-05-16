@@ -348,7 +348,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
 
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
-          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by VA</div>
+          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
           <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} />
         </div>
       )}
