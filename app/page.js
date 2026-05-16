@@ -685,7 +685,7 @@ function UpcomingTodayBanner({ liveGamesBySeries, actualWinners }) {
   );
 }
 
-function HistoryGameList({ games, teamsMap, lga }) {
+function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
   return games.map((g, i) => {
     const liveGame = {
       gameId: g.gameId,
@@ -712,25 +712,38 @@ function HistoryGameList({ games, teamsMap, lga }) {
         staticBox={staticBox}
         lga={lga}
         teams={teamsMap}
+        dimTeam={dimTeam}
       />
     );
   });
 }
 
-function HistorySeriesRow({ s, teamsMap, lga }) {
+function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
+  const ta = teamsMap[s.teams[0]];
+  const tb = teamsMap[s.teams[1]];
+  const sameOwner = ta && tb && ta.owner === tb.owner;
+  const ptsA = ta && tb ? potentialPoints(ta, tb, roundKey).total : null;
+  const ptsB = ta && tb ? potentialPoints(tb, ta, roundKey).total : null;
+  const dimA = sameOwner && ptsA < ptsB;
+  const dimB = sameOwner && ptsB < ptsA;
+  const dimTeam = dimA ? s.teams[0] : dimB ? s.teams[1] : null;
+
   const teamCell = (code) => {
     const t = teamsMap[code];
     if (!t) return <div className="flex-1 px-2 py-1.5 border border-stone-200 bg-white text-xs text-stone-400">{code}</div>;
     const isWinner = s.winner === code;
+    const dim = code === dimTeam;
+    // Dimmed (top seed in a same-owner series) gets a white card even when it won.
+    const cellBg = isWinner ? (dim ? "bg-white border-stone-300 border-2" : `${ownerBg(t.owner)} border-2`) : "bg-white border-stone-200";
     return (
-      <div className={`flex-1 px-2 py-1.5 border ${isWinner ? `${ownerBg(t.owner)} border-2` : "bg-white border-stone-200"}`}>
+      <div className={`flex-1 px-2 py-1.5 border ${cellBg}`}>
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
-          <span className={`text-xs font-semibold ${isWinner ? ownerColor(t.owner) : "text-stone-900"}`}>{t.name}</span>
+          <span className={`text-xs font-semibold ${isWinner ? ownerColor(t.owner, dim) : "text-stone-900"}`}>{t.name}</span>
           {isWinner && <span className="ml-auto text-[10px]">✓</span>}
         </div>
         <div className="text-[9px] uppercase tracking-wider mt-0.5 flex items-center gap-1">
-          <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner)}`}></span>
+          <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner, dim)}`}></span>
           <span className="text-stone-500">{t.owner}</span>
         </div>
       </div>
@@ -744,7 +757,7 @@ function HistorySeriesRow({ s, teamsMap, lga }) {
         {teamCell(s.teams[1])}
       </div>
       {s.games.length > 0 ? (
-        <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} />
+        <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
       ) : (
         <div className="mt-1 text-[10px] text-stone-400 italic text-center py-1">Game data not available</div>
       )}
@@ -766,7 +779,7 @@ function HistoryRoundSection({ round, teamsMap, lga }) {
         </h3>
       </button>
       {open && round.series.map((s, i) => (
-        <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} />
+        <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} roundKey={round.key} />
       ))}
     </div>
   );
