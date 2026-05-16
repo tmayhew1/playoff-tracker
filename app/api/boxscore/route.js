@@ -30,72 +30,72 @@ function parseMinutes(iso) {
   return mins + secs / 60;
 }
 
-// "34:12" -> minutes (float)
-function parseClockMinutes(min) {
-  if (!min) return 0;
-  const [m, s] = String(min).split(":");
-  return (parseInt(m, 10) || 0) + (parseFloat(s) || 0) / 60;
-}
+const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
+const toNba = (a) => ESPN_TO_NBA[a] || a;
+const splitMade = (v) => {
+  const [m, a] = String(v || "0-0").split("-");
+  return [Number(m) || 0, Number(a) || 0];
+};
 
-// Fallback for old games (live CDN only keeps recent games): pull the box
-// score from data.nba.com (CDN-backed, reachable server-side). Needs the
-// game date (YYYYMMDD), supplied by /api/history as gameCode.
-async function fetchArchiveBox(gameId, date) {
-  if (!date) throw new Error("date required for archive box");
-  const url = `https://data.nba.com/prod/v1/${date}/${gameId}_boxscore.json`;
+// Fallback for old games (live CDN only keeps recent ones): NBA blocks
+// server-side historical requests, so use ESPN's summary endpoint. The
+// gameId here is an ESPN event id (supplied by /api/history).
+async function fetchEspnBox(eventId) {
+  const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`;
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 7000);
+  const t = setTimeout(() => ctrl.abort(), 8000);
   let data;
   try {
-    const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`archive ${res.status}`);
+    const res = await fetch(url, { headers: { ...HEADERS, Referer: undefined, Origin: undefined }, signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) throw new Error(`espn ${res.status}`);
     data = await res.json();
   } finally {
     clearTimeout(t);
   }
-  const basic = data?.basicGameData || {};
-  const stats = data?.stats;
-  if (!stats?.activePlayers) throw new Error("no activePlayers");
-  const triById = {};
-  if (basic.hTeam?.teamId) triById[basic.hTeam.teamId] = basic.hTeam.triCode;
-  if (basic.vTeam?.teamId) triById[basic.vTeam.teamId] = basic.vTeam.triCode;
+  const teamsBox = data?.boxscore?.players || [];
+  if (teamsBox.length < 2) throw new Error("no boxscore players");
 
-  const mapP = (pl) => ({
-    name: `${pl.firstName || ""} ${pl.lastName || ""}`.trim(),
-    starter: !!pl.pos, // starting position only set for starters
-    oncourt: false,
-    mp: parseClockMinutes(pl.min),
-    pts: Number(pl.points) || 0,
-    reb: Number(pl.totReb) || 0,
-    drb: Number(pl.defReb) || 0,
-    orb: Number(pl.offReb) || 0,
-    ast: Number(pl.assists) || 0,
-    stl: Number(pl.steals) || 0,
-    blk: Number(pl.blocks) || 0,
-    tov: Number(pl.turnovers) || 0,
-    fgm: Number(pl.fgm) || 0,
-    fga: Number(pl.fga) || 0,
-    tpm: Number(pl.tpm) || 0,
-    tpa: Number(pl.tpa) || 0,
-    ftm: Number(pl.ftm) || 0,
-    fta: Number(pl.fta) || 0,
-    plusMinus: Number(pl.plusMinus) || 0,
-  });
+  const teamOut = (tb) => {
+    const tri = toNba(tb.team?.abbreviation);
+    const grp = (tb.statistics || [])[0] || {};
+    const names = grp.names || [];
+    const idx = {};
+    names.forEach((n, i) => (idx[n] = i));
+    const players = [];
+    for (const a of grp.athletes || []) {
+      const st = a.stats || [];
+      if (!st.length || a.didNotPlay) continue;
+      const [fgm, fga] = splitMade(st[idx.FG]);
+      const [tpm, tpa] = splitMade(st[idx["3PT"]]);
+      const [ftm, fta] = splitMade(st[idx.FT]);
+      players.push({
+        name: a.athlete?.displayName || "",
+        starter: !!a.starter,
+        oncourt: false,
+        mp: Number(st[idx.MIN]) || 0,
+        pts: Number(st[idx.PTS]) || 0,
+        reb: Number(st[idx.REB]) || 0,
+        drb: Number(st[idx.DREB]) || 0,
+        orb: Number(st[idx.OREB]) || 0,
+        ast: Number(st[idx.AST]) || 0,
+        stl: Number(st[idx.STL]) || 0,
+        blk: Number(st[idx.BLK]) || 0,
+        tov: Number(st[idx.TO]) || 0,
+        fgm, fga, tpm, tpa, ftm, fta,
+        plusMinus: Number(String(st[idx["+/-"]] || "0").replace("+", "")) || 0,
+      });
+    }
+    return { tri, players };
+  };
 
-  const byTeam = {};
-  for (const pl of stats.activePlayers) {
-    const tri = triById[pl.teamId];
-    if (!tri) continue;
-    (byTeam[tri] = byTeam[tri] || []).push(mapP(pl));
-  }
-  const homeTri = basic.hTeam?.triCode;
-  const awayTri = basic.vTeam?.triCode;
+  const a = teamOut(teamsBox[0]);
+  const b = teamOut(teamsBox[1]);
   return {
-    gameId,
+    gameId: String(eventId),
     status: "Final",
     gameStatus: 3,
-    home: { tri: homeTri, score: Number(basic.hTeam?.score) || 0, players: byTeam[homeTri] || [] },
-    away: { tri: awayTri, score: Number(basic.vTeam?.score) || 0, players: byTeam[awayTri] || [] },
+    home: { tri: b.tri, score: 0, players: b.players },
+    away: { tri: a.tri, score: 0, players: a.players },
     fetchedAt: new Date().toISOString(),
   };
 }
@@ -130,7 +130,6 @@ function mapPlayer(p) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("gameId");
-  const date = searchParams.get("date"); // YYYYMMDD, for archived games
   if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
   let body = null;
   let liveCache = true;
@@ -156,9 +155,10 @@ export async function GET(req) {
       fetchedAt: new Date().toISOString(),
     };
   } catch (e) {
-    // Old game: live CDN 404s. Fall back to data.nba.com archive.
+    // Old game: live CDN 404s. Fall back to ESPN (NBA blocks server-side
+    // historical requests). gameId is then an ESPN event id.
     try {
-      body = await fetchArchiveBox(gameId, date);
+      body = await fetchEspnBox(gameId);
       liveCache = false;
     } catch (e2) {
       return new Response(JSON.stringify({ error: `${e.message} / ${e2.message}` }), { status: 500 });
