@@ -227,7 +227,8 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}`, { cache: "no-store" });
+      const dq = liveGame.gameCode ? `&date=${liveGame.gameCode}` : "";
+      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -688,6 +689,7 @@ function HistoryGameList({ games, teamsMap, lga }) {
   return games.map((g, i) => {
     const liveGame = {
       gameId: g.gameId,
+      gameCode: g.gameCode,
       gameStatus: 3,
       gameStatusText: "Final",
       gameDateTimeUTC: g.gameDateTimeUTC,
