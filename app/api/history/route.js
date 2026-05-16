@@ -42,17 +42,24 @@ export async function GET(req) {
   try {
     // NBA blocks server-side requests for past seasons (403). ESPN's public
     // scoreboard does not. Date range covers any playoff window; seasontype=3
-    // restricts to the postseason.
+    // dates range + seasontype=3. Note: ESPN ignores seasontype when an
+    // explicit date range is given, so it also returns early-April regular
+    // season games — we filter those out by the playoff series note below.
     const url =
       `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard` +
       `?dates=${endYear}0401-${endYear}0720&seasontype=3&limit=1000`;
     const data = await fetchJson(url);
     const events = data?.events || [];
 
+    const seen = new Set();
     const all = [];
     for (const ev of events) {
       const comp = ev.competitions?.[0];
       if (!comp || !(comp.status?.type?.completed ?? ev.status?.type?.completed)) continue;
+      // Playoff games carry a series note ("West 1st Round - Game 1", etc.).
+      // Regular-season games don't; Play-In games say "Play-In".
+      const note = (comp.notes?.[0]?.headline || comp.notes?.[0]?.type || "").toString();
+      if (!note || /play[- ]?in/i.test(note)) continue;
       const cs = comp.competitors || [];
       const h = cs.find((c) => c.homeAway === "home");
       const a = cs.find((c) => c.homeAway === "away");
@@ -60,9 +67,12 @@ export async function GET(req) {
       const hScore = Number(h.score);
       const aScore = Number(a.score);
       if (!Number.isFinite(hScore) || !Number.isFinite(aScore)) continue;
+      const id = String(ev.id);
+      if (seen.has(id)) continue; // ESPN can repeat an event across pages
+      seen.add(id);
       const iso = ev.date || comp.date;
       all.push({
-        gameId: String(ev.id),
+        gameId: id,
         gameDateTimeUTC: iso,
         date: (iso || "").slice(0, 10),
         home: { tri: toNba(h.team.abbreviation), score: hScore, win: hScore > aScore },

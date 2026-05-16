@@ -147,7 +147,9 @@ export function scoreHistory(season) {
   return { breakdown, totals, meta: h };
 }
 
-const teamPairKey = (round, teams) => `${round}:${[...teams].sort().join("-")}`;
+// Two teams meet at most once in a postseason, so the unordered team pair
+// is a unique series key — independent of how the data source labels rounds.
+const teamPairKey = (teams) => [...teams].sort().join("-");
 
 // Returns the bracket rounds for a season with each series' games attached.
 // `gamesData` (from /api/history) takes precedence; falls back to any baked
@@ -158,7 +160,7 @@ export function historyRounds(season, gamesData) {
   const source = gamesData?.series ? gamesData : HISTORY_GAMES[season];
   const bySeries = {};
   for (const s of source?.series || []) {
-    bySeries[teamPairKey(s.round, s.teams)] = s.games || [];
+    bySeries[teamPairKey(s.teams)] = s.games || [];
   }
   return ["r1", "r2", "r3", "r4"].map((key) => ({
     key,
@@ -169,7 +171,7 @@ export function historyRounds(season, gamesData) {
         teams: s.teams,
         winner: s.winner,
         loser,
-        games: bySeries[teamPairKey(key, s.teams)] || [],
+        games: bySeries[teamPairKey(s.teams)] || [],
       };
     }),
   }));
