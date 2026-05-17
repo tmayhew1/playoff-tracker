@@ -473,6 +473,7 @@ function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWi
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimB} pointValue={ptsB} />
       </div>
+      <SeriesAverages games={seriesGames} teamsMap={TEAMS} lga={LGA} dimTeam={dimTeam} />
       {realGames.map((g, i) => {
         const num = i + 1;
         const gameLabel = num <= 7 ? `Game ${num}` : null;
@@ -718,11 +719,16 @@ function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
   });
 }
 
-function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
+function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+
+  // Only completed games contribute. History games carry no gameStatus
+  // (all final); live games do, so require final (3).
+  const finalGames = (games || []).filter((g) => g.gameStatus === undefined || g.gameStatus === 3);
 
   useEffect(() => {
     // Deps are intentionally just [open]: including `loading` makes
@@ -732,11 +738,12 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    const q = boxSrc ? `&src=${boxSrc}` : "";
     Promise.all(
-      games.map((g) => {
+      finalGames.map((g) => {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 12000);
-        return fetch(`/api/boxscore?gameId=${g.gameId}&src=espn`, { signal: ctrl.signal })
+        return fetch(`/api/boxscore?gameId=${g.gameId}${q}`, { signal: ctrl.signal })
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null)
           .finally(() => clearTimeout(timer));
@@ -759,16 +766,20 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
           for (const p of players) {
             if (!(p.mp > 0)) continue;
             const key = `${p.team}:${p.name}`;
-            const a = agg[key] || (agg[key] = { name: p.name, team: p.team, gp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, va: 0, eff: 0 });
+            const a =
+              agg[key] ||
+              (agg[key] = {
+                name: p.name, team: p.team, gp: 0, va: 0, eff: 0,
+                mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+                fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
+              });
             const { va, efficiency } = valueAddParts(p, lga);
             a.gp += 1;
-            a.pts += p.pts || 0;
-            a.reb += p.reb || 0;
-            a.ast += p.ast || 0;
-            a.stl += p.stl || 0;
-            a.blk += p.blk || 0;
             a.va += va;
             a.eff += efficiency;
+            for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
+              a[k] += p[k] || 0;
+            }
           }
         }
         const list = Object.values(agg)
@@ -790,6 +801,8 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  if (finalGames.length === 0) return null;
 
   return (
     <div className="mt-1 border border-stone-300 bg-white">
@@ -823,23 +836,33 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
                 const owner = teamsMap[p.team]?.owner;
                 const isDim = p.team === dimTeam;
                 const badge = isDim ? "bg-white text-stone-500 border border-stone-200" : ownerBadge(owner);
+                const isOpen = expanded === i;
                 return (
-                  <div key={i} className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
-                    <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
-                    <span className="flex-1 truncate text-stone-800">{p.name}</span>
-                    <span className="hidden sm:block w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
-                    <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
-                    <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg >= 0 ? "text-stone-700" : "text-stone-400"}`}>{p.effpg.toFixed(1)}</span>
-                    <span className="w-8 text-right tabular-nums text-stone-600">{p.rpg.toFixed(1)}</span>
-                    <span className="w-8 text-right tabular-nums text-stone-600">{p.apg.toFixed(1)}</span>
-                    <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
-                    <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
-                    <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
-                    <span className={`hidden sm:block w-10 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
+                  <div key={i} className="border-b border-stone-100 last:border-0">
+                    <button
+                      onClick={() => setExpanded(isOpen ? null : i)}
+                      className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isOpen ? "bg-stone-100" : ""}`}
+                    >
+                      <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
+                      <span className="flex-1 truncate text-stone-800">
+                        <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
+                        {p.name}
+                      </span>
+                      <span className="hidden sm:block w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
+                      <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
+                      <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg >= 0 ? "text-stone-700" : "text-stone-400"}`}>{p.effpg.toFixed(1)}</span>
+                      <span className="w-8 text-right tabular-nums text-stone-600">{p.rpg.toFixed(1)}</span>
+                      <span className="w-8 text-right tabular-nums text-stone-600">{p.apg.toFixed(1)}</span>
+                      <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
+                      <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
+                      <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
+                      <span className={`hidden sm:block w-10 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
+                    </button>
+                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} />}
                   </div>
                 );
               })}
-              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by total Value Added · STK = steals + blocks</div>
+              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by total Value Added · STK = steals + blocks · tap a row for VA breakdown</div>
             </div>
           )}
           {rows && rows.length === 0 && !error && (
