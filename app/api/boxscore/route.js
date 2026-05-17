@@ -130,9 +130,29 @@ function mapPlayer(p) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("gameId");
+  const src = searchParams.get("src"); // "espn" -> skip the live-CDN attempt
   if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
   let body = null;
   let liveCache = true;
+
+  if (src === "espn") {
+    // Historical games are ESPN ids; the CDN always 404s for them, so the
+    // detour just adds ~5s of latency per game. Go straight to ESPN.
+    try {
+      body = await fetchEspnBox(gameId);
+      liveCache = false;
+    } catch (e) {
+      return new Response(JSON.stringify({ error: `espn: ${e.message}` }), { status: 500 });
+    }
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    });
+  }
+
   try {
     const url = `https://cdn.nba.com/static/json/liveData/boxscore/boxscore_${gameId}.json`;
     const data = await fetchJson(url, 5000);

@@ -725,22 +725,33 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!open || rows || loading) return;
+    // Deps are intentionally just [open]: including `loading` makes
+    // setLoading(true) re-run the effect, whose cleanup flips `cancelled`
+    // and strands it in the loading state forever.
+    if (!open || rows) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
     Promise.all(
-      games.map((g) =>
-        fetch(`/api/boxscore?gameId=${g.gameId}`)
-          .then((r) => r.json())
+      games.map((g) => {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 12000);
+        return fetch(`/api/boxscore?gameId=${g.gameId}&src=espn`, { signal: ctrl.signal })
+          .then((r) => (r.ok ? r.json() : null))
           .catch(() => null)
-      )
+          .finally(() => clearTimeout(timer));
+      })
     )
       .then((boxes) => {
         if (cancelled) return;
+        const ok = boxes.filter((b) => b && !b.error);
+        if (ok.length === 0) {
+          setError("Box scores unavailable");
+          setRows([]);
+          return;
+        }
         const agg = {};
-        for (const box of boxes) {
-          if (!box || box.error) continue;
+        for (const box of ok) {
           const players = [
             ...(box.away?.players || []).map((p) => ({ ...p, team: box.away.tri })),
             ...(box.home?.players || []).map((p) => ({ ...p, team: box.home.tri })),
@@ -776,7 +787,8 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [open, rows, loading, games, lga]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return (
     <div className="mt-1 border border-stone-300 bg-white">
