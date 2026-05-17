@@ -64,9 +64,11 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 
 export const lgaForSeason = (season) => LEAGUE_AVERAGES[season] || LGA;
 
-export function valueAdd(p, lga = LGA) {
+// Returns the total Value Added plus its efficiency component
+// (3·tpAdd + 2·twoAdd + ftAdd), so callers can aggregate either.
+export function valueAddParts(p, lga = LGA) {
   const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
-  if (!mp || mp <= 0) return 0;
+  if (!mp || mp <= 0) return { va: 0, efficiency: 0 };
   const twoPm = fgm - tpm, twoPa = fga - tpa;
   const tpAdd = ((tpm / (tpa || 1)) - lga.la3P) * tpa;
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
@@ -79,7 +81,11 @@ export function valueAdd(p, lga = LGA) {
   const tovVal = -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss;
   const drbVal = ((drb / mp) - lga.laDRBperM) * ( 1.25 ) * mp * lga.laPTSperPoss * lga.laORBrate;
   const orbVal = ((orb / mp) - lga.laORBperM)* ( 1.25 ) * mp * lga.laPTSperPoss * lga.laDRBrate;
-  return volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal;
+  return { va: volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal, efficiency };
+}
+
+export function valueAdd(p, lga = LGA) {
+  return valueAddParts(p, lga).va;
 }
 
 export function computeMatchups(winners) {

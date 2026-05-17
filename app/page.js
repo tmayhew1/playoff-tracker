@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, computePoints, potentialPoints, lgaForSeason } from "./scoring";
+import { LGA, valueAdd, valueAddParts, computePoints, potentialPoints, lgaForSeason } from "./scoring";
 
 // `dim` = lighten owner styling when both teams in a matchup share an owner,
 // to flag the side that wins the series for fewer points (no upset bonus).
@@ -718,6 +718,120 @@ function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
   });
 }
 
+function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!open || rows || loading) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    Promise.all(
+      games.map((g) =>
+        fetch(`/api/boxscore?gameId=${g.gameId}`)
+          .then((r) => r.json())
+          .catch(() => null)
+      )
+    )
+      .then((boxes) => {
+        if (cancelled) return;
+        const agg = {};
+        for (const box of boxes) {
+          if (!box || box.error) continue;
+          const players = [
+            ...(box.away?.players || []).map((p) => ({ ...p, team: box.away.tri })),
+            ...(box.home?.players || []).map((p) => ({ ...p, team: box.home.tri })),
+          ];
+          for (const p of players) {
+            if (!(p.mp > 0)) continue;
+            const key = `${p.team}:${p.name}`;
+            const a = agg[key] || (agg[key] = { name: p.name, team: p.team, gp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, va: 0, eff: 0 });
+            const { va, efficiency } = valueAddParts(p, lga);
+            a.gp += 1;
+            a.pts += p.pts || 0;
+            a.reb += p.reb || 0;
+            a.ast += p.ast || 0;
+            a.stl += p.stl || 0;
+            a.blk += p.blk || 0;
+            a.va += va;
+            a.eff += efficiency;
+          }
+        }
+        const list = Object.values(agg)
+          .map((a) => ({
+            ...a,
+            ppg: a.pts / a.gp,
+            effpg: a.eff / a.gp,
+            rpg: a.reb / a.gp,
+            apg: a.ast / a.gp,
+            spg: a.stl / a.gp,
+            bpg: a.blk / a.gp,
+          }))
+          .sort((x, y) => y.va - x.va);
+        setRows(list);
+      })
+      .catch((e) => !cancelled && setError(e.message || "Load failed"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [open, rows, loading, games, lga]);
+
+  return (
+    <div className="mt-1 border border-stone-300 bg-white">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-2 py-1.5 text-[10px] uppercase tracking-widest text-stone-600 font-semibold flex items-center gap-1"
+      >
+        <span className="text-stone-400">{open ? "▾" : "▸"}</span>
+        Series Averages
+      </button>
+      {open && (
+        <div className="px-2 pb-2">
+          {loading && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading…</div>}
+          {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
+          {rows && rows.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+                <span className="w-10">Team</span>
+                <span className="flex-1">Player</span>
+                <span className="w-8 text-right">PPG</span>
+                <span className="w-9 text-right">EFF</span>
+                <span className="w-8 text-right">RPG</span>
+                <span className="w-8 text-right">APG</span>
+                <span className="w-8 text-right">SPG</span>
+                <span className="w-8 text-right">BPG</span>
+              </div>
+              {rows.map((p, i) => {
+                const owner = teamsMap[p.team]?.owner;
+                const isDim = p.team === dimTeam;
+                const badge = isDim ? "bg-white text-stone-500 border border-stone-200" : ownerBadge(owner);
+                return (
+                  <div key={i} className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
+                    <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
+                    <span className="flex-1 truncate text-stone-800">{p.name}</span>
+                    <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
+                    <span className={`w-9 text-right tabular-nums font-semibold ${p.effpg >= 0 ? "text-stone-700" : "text-stone-400"}`}>{p.effpg.toFixed(1)}</span>
+                    <span className="w-8 text-right tabular-nums text-stone-600">{p.rpg.toFixed(1)}</span>
+                    <span className="w-8 text-right tabular-nums text-stone-600">{p.apg.toFixed(1)}</span>
+                    <span className="w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
+                    <span className="w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
+                  </div>
+                );
+              })}
+              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by total Value Added across the series</div>
+            </div>
+          )}
+          {rows && rows.length === 0 && !error && (
+            <div className="py-2 text-[10px] text-stone-500 italic text-center">No stats</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
   const ta = teamsMap[s.teams[0]];
   const tb = teamsMap[s.teams[1]];
@@ -757,7 +871,10 @@ function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
         {teamCell(s.teams[1])}
       </div>
       {s.games.length > 0 ? (
-        <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
+        <>
+          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
+          <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
+        </>
       ) : (
         <div className="mt-1 text-[10px] text-stone-400 italic text-center py-1">Game data not available</div>
       )}
