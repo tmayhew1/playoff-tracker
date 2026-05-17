@@ -780,6 +780,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
             apg: a.ast / a.gp,
             spg: a.stl / a.gp,
             bpg: a.blk / a.gp,
+            stk: (a.stl + a.blk) / a.gp,
           }))
           .sort((x, y) => y.va - x.va);
         setRows(list);
@@ -808,12 +809,15 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-10">Team</span>
                 <span className="flex-1">Player</span>
+                <span className="hidden sm:block w-6 text-right">G</span>
                 <span className="w-8 text-right">PPG</span>
-                <span className="w-9 text-right">EFF</span>
+                <span className="hidden sm:block w-9 text-right">EFF</span>
                 <span className="w-8 text-right">RPG</span>
                 <span className="w-8 text-right">APG</span>
-                <span className="w-8 text-right">SPG</span>
-                <span className="w-8 text-right">BPG</span>
+                <span className="hidden sm:block w-8 text-right">SPG</span>
+                <span className="hidden sm:block w-8 text-right">BPG</span>
+                <span className="sm:hidden w-9 text-right">STK</span>
+                <span className="hidden sm:block w-10 text-right">TOT</span>
               </div>
               {rows.map((p, i) => {
                 const owner = teamsMap[p.team]?.owner;
@@ -823,16 +827,19 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam }) {
                   <div key={i} className="flex items-center gap-2 text-[10px] py-1 border-b border-stone-100 last:border-0">
                     <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                     <span className="flex-1 truncate text-stone-800">{p.name}</span>
+                    <span className="hidden sm:block w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
                     <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
-                    <span className={`w-9 text-right tabular-nums font-semibold ${p.effpg >= 0 ? "text-stone-700" : "text-stone-400"}`}>{p.effpg.toFixed(1)}</span>
+                    <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg >= 0 ? "text-stone-700" : "text-stone-400"}`}>{p.effpg.toFixed(1)}</span>
                     <span className="w-8 text-right tabular-nums text-stone-600">{p.rpg.toFixed(1)}</span>
                     <span className="w-8 text-right tabular-nums text-stone-600">{p.apg.toFixed(1)}</span>
-                    <span className="w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
-                    <span className="w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
+                    <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
+                    <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
+                    <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
+                    <span className={`hidden sm:block w-10 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
                   </div>
                 );
               })}
-              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by total Value Added across the series</div>
+              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by total Value Added · STK = steals + blocks</div>
             </div>
           )}
           {rows && rows.length === 0 && !error && (
