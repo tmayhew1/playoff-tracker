@@ -52,7 +52,7 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function VABreakdown({ p, lga = LGA, teams = TEAMS }) {
+function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
   const mp = p.mp || 0;
   if (mp <= 0) return null;
 
@@ -61,22 +61,30 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS }) {
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((p.ftm / (p.fta || 1)) - lga.laFT) * p.fta;
 
+  // For series: counting stats as per-36, shooting as made/att (pct%).
+  const r36 = (v, tag) => `${(mp > 0 ? (v / mp) * 36 : 0).toFixed(1)} ${tag}/36`;
+  const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
+  const cnt = (v, tag) => (rate ? r36(v, tag) : `${v} ${tag}`);
+  const shoot = (m, att, tag) => (rate ? shot(m, att) : `${m}/${att} ${tag}`);
+
   const categories = [
-    { key: "Scoring", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: `${p.pts} PTS` },
-    { key: "3-Pointers", value: 3 * tpAdd, label: `${p.tpm}/${p.tpa} 3P` },
-    { key: "2-Pointers", value: 2 * twoAdd, label: `${twoPm}/${twoPa} 2P` },
-    { key: "Free Throws", value: ftAdd, label: `${p.ftm}/${p.fta} FT` },
-    { key: "Assists", value: ((p.ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG), label: `${p.ast} AST` },
-    { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: `${p.stl} STL` },
-    { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: `${p.blk} BLK` },
-    { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: `${p.tov} TOV` },
-    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: `${p.drb} DRB` },
-    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: `${p.orb} ORB` },
+    { key: "Scoring", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
+    { key: "3-Pointers", value: 3 * tpAdd, label: shoot(p.tpm, p.tpa, "3P") },
+    { key: "2-Pointers", value: 2 * twoAdd, label: shoot(twoPm, twoPa, "2P") },
+    { key: "Free Throws", value: ftAdd, label: shoot(p.ftm, p.fta, "FT") },
+    { key: "Assists", value: ((p.ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG), label: cnt(p.ast, "AST") },
+    { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
+    { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
+    { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => b.value - a.value);
 
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
   const owner = teams[p.team]?.owner;
   const posColor = owner === "Spencer" ? "bg-amber-500" : "bg-teal-500";
+  const keyW = rate ? "w-16" : "w-20";
+  const labelW = rate ? "w-[5.25rem]" : "w-12";
 
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
@@ -90,7 +98,7 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS }) {
           const isPos = c.value >= 0;
           return (
             <div key={i} className="flex items-center gap-2 text-[10px]">
-              <span className="w-20 text-stone-600 text-right truncate">{c.key}</span>
+              <span className={`${keyW} text-stone-600 text-right truncate`}>{c.key}</span>
               <div className="flex-1 flex items-center relative h-4">
                 <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300"></div>
                 <div
@@ -102,7 +110,7 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS }) {
                 ></div>
               </div>
               <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
-              <span className="w-12 text-[9px] text-stone-500 text-right">{c.label}</span>
+              <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
             </div>
           );
         })}
@@ -858,7 +866,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
                       <span className={`hidden sm:block w-10 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
                     </button>
-                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} />}
+                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate />}
                   </div>
                 );
               })}
