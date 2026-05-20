@@ -52,7 +52,7 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
+function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber }) {
   const mp = p.mp || 0;
   if (mp <= 0) return null;
 
@@ -92,8 +92,8 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
         <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">{rate ? "Series Breakdown" : "Value Added Breakdown"}</div>
         <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
           <div className="flex flex-col justify-end text-center">
-            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Games</div>
-            <div className="tabular-nums text-base font-semibold text-stone-700">{p.gp || 1}</div>
+            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{gameNumber ? "Game" : "Games"}</div>
+            <div className="tabular-nums text-base font-semibold text-stone-700">{gameNumber || p.gp || 1}</div>
           </div>
           <div className="flex flex-col justify-end text-center">
             <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
@@ -158,7 +158,7 @@ function getSortedPlayers(box, lga = LGA) {
     .sort((a, b) => b.va - a.va);
 }
 
-function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS }) {
+function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS, gameNumber }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -184,12 +184,12 @@ function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS 
           {p.va.toFixed(1)}
         </span>
       </button>
-      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} />}
+      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} />}
     </div>
   );
 }
 
-function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS }) {
+function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber }) {
   const renderRow = (p, i) => {
     const rowKey = `${p.team}-${p.name}-${i}`;
     return (
@@ -201,6 +201,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
         dimTeam={dimTeam}
         lga={lga}
         teams={teams}
+        gameNumber={gameNumber}
       />
     );
   };
@@ -251,6 +252,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
 }
 
 function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS }) {
+  const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [box, setBox] = useState(staticBox || null);
@@ -385,7 +387,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
-          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} />
+          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} gameNumber={gameNumber} />
         </div>
       )}
 
@@ -395,7 +397,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} lga={lga} teams={teams} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
