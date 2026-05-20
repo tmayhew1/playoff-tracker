@@ -89,15 +89,25 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
       {rate ? (
-        <div className="mb-2 text-[9px] uppercase tracking-widest text-stone-500">
-          <div>Series Breakdown</div>
-          <div className="flex justify-between mt-1 tabular-nums text-stone-600">
-            <span>Games: {p.gp}</span>
-            <span>MIN: {(mp / (p.gp || 1)).toFixed(1)}</span>
-          </div>
-          <div className="flex justify-between tabular-nums font-bold text-stone-700">
-            <span>Total VA: {p.va.toFixed(2)}</span>
-            <span>VA/G: {(p.va / (p.gp || 1)).toFixed(2)}</span>
+        <div className="mb-3">
+          <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">Series Breakdown</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500">Games</div>
+              <div className="tabular-nums text-base font-semibold text-stone-700">{p.gp}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500">MIN</div>
+              <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500">Total VA</div>
+              <div className="tabular-nums text-lg font-black text-stone-900">{p.va.toFixed(2)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500">VA / Game</div>
+              <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / (p.gp || 1)).toFixed(2)}</div>
+            </div>
           </div>
         </div>
       ) : (
