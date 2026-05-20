@@ -90,7 +90,9 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
         <span>Value Added Breakdown</span>
-        <span className="tabular-nums font-semibold text-stone-600">MIN: {Math.round(mp)}</span>
+        {rate && (
+          <span className="tabular-nums font-semibold text-stone-600">MIN: {(mp / (p.gp || 1)).toFixed(1)}</span>
+        )}
         <span className="tabular-nums font-bold text-stone-700">Total: {p.va.toFixed(2)}</span>
       </div>
       <div className="space-y-0.5">
