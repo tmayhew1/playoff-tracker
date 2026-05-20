@@ -88,36 +88,29 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
 
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
-      {rate ? (
-        <div className="mb-3">
-          <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">Series Breakdown</div>
-          <div className={`grid gap-2 items-end ${p.gp > 1 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
-            <div className="flex flex-col justify-end text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Games</div>
-              <div className="tabular-nums text-base font-semibold text-stone-700">{p.gp}</div>
-            </div>
-            <div className="flex flex-col justify-end text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
-              <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
-            </div>
-            <div className="flex flex-col justify-end text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
-              <div className="tabular-nums text-lg font-black text-stone-900">{p.va.toFixed(2)}</div>
-            </div>
-            {p.gp > 1 && (
-              <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
-                <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / p.gp).toFixed(2)}</div>
-              </div>
-            )}
+      <div className="mb-3">
+        <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">{rate ? "Series Breakdown" : "Value Added Breakdown"}</div>
+        <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
+          <div className="flex flex-col justify-end text-center">
+            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Games</div>
+            <div className="tabular-nums text-base font-semibold text-stone-700">{p.gp || 1}</div>
           </div>
+          <div className="flex flex-col justify-end text-center">
+            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
+            <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
+          </div>
+          <div className="flex flex-col justify-end text-center">
+            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
+            <div className="tabular-nums text-lg font-black text-stone-900">{p.va.toFixed(2)}</div>
+          </div>
+          {(p.gp || 1) > 1 && (
+            <div className="flex flex-col justify-end text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
+              <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / p.gp).toFixed(2)}</div>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
-          <span>Value Added Breakdown</span>
-          <span className="tabular-nums font-bold text-stone-700">Total: {p.va.toFixed(2)}</span>
-        </div>
-      )}
+      </div>
       <div className="space-y-0.5">
         {categories.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
