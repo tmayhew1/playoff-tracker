@@ -91,7 +91,7 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
         <span>Value Added Breakdown</span>
         {rate && (
-          <span className="tabular-nums font-semibold text-stone-600">Minutes: {(mp / (p.gp || 1)).toFixed(1)}</span>
+          <span className="tabular-nums font-semibold text-stone-600">MIN: {(mp / (p.gp || 1)).toFixed(1)}</span>
         )}
         <span className="tabular-nums font-bold text-stone-700">Total: {p.va.toFixed(2)}</span>
       </div>
