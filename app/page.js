@@ -91,21 +91,21 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
       {rate ? (
         <div className="mb-3">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">Series Breakdown</div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500">Games</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+            <div className="flex flex-col justify-end text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Games</div>
               <div className="tabular-nums text-base font-semibold text-stone-700">{p.gp}</div>
             </div>
-            <div className="text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500">MIN</div>
+            <div className="flex flex-col justify-end text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
               <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
             </div>
-            <div className="text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500">Total VA</div>
+            <div className="flex flex-col justify-end text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
               <div className="tabular-nums text-lg font-black text-stone-900">{p.va.toFixed(2)}</div>
             </div>
-            <div className="text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500">VA / Game</div>
+            <div className="flex flex-col justify-end text-center">
+              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
               <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / (p.gp || 1)).toFixed(2)}</div>
             </div>
           </div>
@@ -133,7 +133,15 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
                   }}
                 ></div>
               </div>
-              <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
+              {rate ? (
+                <>
+                  <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(1)}</span>
+                  <span className="text-stone-300 select-none">|</span>
+                  <span className="w-12 tabular-nums text-right font-semibold text-stone-700">{(c.value / (p.gp || 1)).toFixed(2)}</span>
+                </>
+              ) : (
+                <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
+              )}
               <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
             </div>
           );
@@ -862,7 +870,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                 <span className="hidden sm:block w-8 text-right">SPG</span>
                 <span className="hidden sm:block w-8 text-right">BPG</span>
                 <span className="sm:hidden w-9 text-right">STK</span>
-                <span className="hidden sm:block w-10 text-right">TOT</span>
+                <span className="hidden sm:block w-12 text-right">TOT VA</span>
               </div>
               {rows.map((p, i) => {
                 const owner = teamsMap[p.team]?.owner;
@@ -888,7 +896,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
                       <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
-                      <span className={`hidden sm:block w-10 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
+                      <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
                     </button>
                     {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate />}
                   </div>
