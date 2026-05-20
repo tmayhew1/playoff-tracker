@@ -88,13 +88,24 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
 
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
-      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
-        <span>Value Added Breakdown</span>
-        {rate && (
-          <span className="tabular-nums font-semibold text-stone-600">MIN: {(mp / (p.gp || 1)).toFixed(1)}</span>
-        )}
-        <span className="tabular-nums font-bold text-stone-700">Total: {p.va.toFixed(2)}</span>
-      </div>
+      {rate ? (
+        <div className="mb-2 text-[9px] uppercase tracking-widest text-stone-500">
+          <div>Series Breakdown</div>
+          <div className="flex justify-between mt-1 tabular-nums text-stone-600">
+            <span>Games: {p.gp}</span>
+            <span>MIN: {(mp / (p.gp || 1)).toFixed(1)}</span>
+          </div>
+          <div className="flex justify-between tabular-nums font-bold text-stone-700">
+            <span>Total VA: {p.va.toFixed(2)}</span>
+            <span>VA/G: {(p.va / (p.gp || 1)).toFixed(2)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
+          <span>Value Added Breakdown</span>
+          <span className="tabular-nums font-bold text-stone-700">Total: {p.va.toFixed(2)}</span>
+        </div>
+      )}
       <div className="space-y-0.5">
         {categories.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
