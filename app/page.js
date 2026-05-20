@@ -91,7 +91,7 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
       {rate ? (
         <div className="mb-3">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">Series Breakdown</div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+          <div className={`grid gap-2 items-end ${p.gp > 1 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
             <div className="flex flex-col justify-end text-center">
               <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Games</div>
               <div className="tabular-nums text-base font-semibold text-stone-700">{p.gp}</div>
@@ -104,10 +104,12 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
               <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
               <div className="tabular-nums text-lg font-black text-stone-900">{p.va.toFixed(2)}</div>
             </div>
-            <div className="flex flex-col justify-end text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
-              <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / (p.gp || 1)).toFixed(2)}</div>
-            </div>
+            {p.gp > 1 && (
+              <div className="flex flex-col justify-end text-center">
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
+                <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / p.gp).toFixed(2)}</div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -133,11 +135,11 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false }) {
                   }}
                 ></div>
               </div>
-              {rate ? (
+              {rate && p.gp > 1 ? (
                 <>
                   <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(1)}</span>
                   <span className="text-stone-300 select-none">|</span>
-                  <span className="w-12 tabular-nums text-right font-semibold text-stone-700">{(c.value / (p.gp || 1)).toFixed(2)}</span>
+                  <span className="w-12 tabular-nums text-right font-semibold text-stone-700">{(c.value / p.gp).toFixed(2)}</span>
                 </>
               ) : (
                 <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
