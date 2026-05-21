@@ -53,16 +53,17 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
 }
 
 function GameVAChart({ values, owner }) {
-  const n = values.length;
-  if (n < 2) return null;
-  const W = 320, H = 90;
-  const pad = { l: 14, r: 10, t: 14, b: 18 };
+  // Always show at least 4 game slots; pad with nulls so G1..G4 render even
+  // for 1- or 2-game series.
+  const n = Math.max(values.length, 4);
+  const padded = values.length >= n ? values : [...values, ...Array(n - values.length).fill(null)];
+  const W = 320, H = 110;
+  const pad = { l: 14, r: 10, t: 22, b: 18 };
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
-  const nums = values.filter((v) => v != null);
-  if (nums.length === 0) return null;
-  let vMin = Math.min(0, ...nums);
-  let vMax = Math.max(0, ...nums);
+  const nums = padded.filter((v) => v != null);
+  let vMin = Math.min(0, ...(nums.length ? nums : [0]));
+  let vMax = Math.max(0, ...(nums.length ? nums : [0]));
   if (vMin === vMax) { vMin -= 1; vMax += 1; }
   const x = (i) => pad.l + (i / (n - 1)) * innerW;
   const y = (v) => pad.t + (1 - (v - vMin) / (vMax - vMin)) * innerH;
@@ -70,8 +71,8 @@ function GameVAChart({ values, owner }) {
 
   let d = "";
   for (let i = 0; i < n; i++) {
-    if (values[i] == null) continue;
-    d += `${(i === 0 || values[i - 1] == null) ? "M" : "L"} ${x(i)} ${y(values[i])} `;
+    if (padded[i] == null) continue;
+    d += `${(i === 0 || padded[i - 1] == null) ? "M" : "L"} ${x(i)} ${y(padded[i])} `;
   }
 
   return (
@@ -80,13 +81,13 @@ function GameVAChart({ values, owner }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
         <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        {values.map((v, i) => v == null ? null : (
+        {padded.map((v, i) => v == null ? null : (
           <g key={i}>
             <circle cx={x(i)} cy={y(v)} r="3.5" fill={stroke} />
             <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
           </g>
         ))}
-        {values.map((_, i) => (
+        {padded.map((_, i) => (
           <text key={i} x={x(i)} y={H - 4} fontSize="9" textAnchor="middle" fill="#78716c">G{i + 1}</text>
         ))}
       </svg>
@@ -153,7 +154,7 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber, ga
           )}
         </div>
       </div>
-      {rate && gameSeries && gameSeries.length > 1 && (
+      {rate && gameSeries && gameSeries.length > 0 && (
         <GameVAChart values={gameSeries} owner={teams[p.team]?.owner} />
       )}
       <div className="space-y-0.5">
