@@ -76,14 +76,14 @@ function GameVAChart({ values, owner }) {
 
   return (
     <div className="mt-2 mb-3">
-      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">VA by Game</div>
+      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">By Game</div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
         <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         {values.map((v, i) => v == null ? null : (
           <g key={i}>
             <circle cx={x(i)} cy={y(v)} r="3.5" fill={stroke} />
-            <text x={x(i)} y={y(v) - 6} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
+            <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
           </g>
         ))}
         {values.map((_, i) => (
