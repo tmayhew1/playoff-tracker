@@ -52,7 +52,49 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber }) {
+function GameVAChart({ values, owner }) {
+  const n = values.length;
+  if (n < 2) return null;
+  const W = 320, H = 90;
+  const pad = { l: 14, r: 10, t: 14, b: 18 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  const nums = values.filter((v) => v != null);
+  if (nums.length === 0) return null;
+  let vMin = Math.min(0, ...nums);
+  let vMax = Math.max(0, ...nums);
+  if (vMin === vMax) { vMin -= 1; vMax += 1; }
+  const x = (i) => pad.l + (i / (n - 1)) * innerW;
+  const y = (v) => pad.t + (1 - (v - vMin) / (vMax - vMin)) * innerH;
+  const stroke = owner === "Spencer" ? "#d97706" : owner === "Trey" ? "#0d9488" : "#57534e";
+
+  let d = "";
+  for (let i = 0; i < n; i++) {
+    if (values[i] == null) continue;
+    d += `${(i === 0 || values[i - 1] == null) ? "M" : "L"} ${x(i)} ${y(values[i])} `;
+  }
+
+  return (
+    <div className="mt-2 mb-3">
+      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">VA by Game</div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
+        <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
+        <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        {values.map((v, i) => v == null ? null : (
+          <g key={i}>
+            <circle cx={x(i)} cy={y(v)} r="3.5" fill={stroke} />
+            <text x={x(i)} y={y(v) - 6} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
+          </g>
+        ))}
+        {values.map((_, i) => (
+          <text key={i} x={x(i)} y={H - 4} fontSize="9" textAnchor="middle" fill="#78716c">G{i + 1}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries }) {
   const mp = p.mp || 0;
   if (mp <= 0) return null;
 
@@ -111,6 +153,9 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber }) 
           )}
         </div>
       </div>
+      {rate && gameSeries && gameSeries.length > 1 && (
+        <GameVAChart values={gameSeries} owner={teams[p.team]?.owner} />
+      )}
       <div className="space-y-0.5">
         {categories.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
@@ -795,7 +840,9 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
           return;
         }
         const agg = {};
-        for (const box of ok) {
+        const N = finalGames.length;
+        boxes.forEach((box, idx) => {
+          if (!box || box.error) return;
           const players = [
             ...(box.away?.players || []).map((p) => ({ ...p, team: box.away.tri })),
             ...(box.home?.players || []).map((p) => ({ ...p, team: box.home.tri })),
@@ -809,16 +856,18 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                 name: p.name, team: p.team, gp: 0, va: 0, eff: 0,
                 mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
                 fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
+                games: new Array(N).fill(null),
               });
             const { va, efficiency } = valueAddParts(p, lga);
             a.gp += 1;
             a.va += va;
             a.eff += efficiency;
+            a.games[idx] = va;
             for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
               a[k] += p[k] || 0;
             }
           }
-        }
+        });
         const list = Object.values(agg)
           .map((a) => ({
             ...a,
@@ -895,7 +944,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
                       <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
                     </button>
-                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate />}
+                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate gameSeries={p.games} />}
                   </div>
                 );
               })}
