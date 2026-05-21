@@ -52,7 +52,7 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function GameVAChart({ values, owner }) {
+function GameVAChart({ values, owner, selected, onSelect }) {
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series.
   const n = Math.max(values.length, 4);
@@ -83,19 +83,47 @@ function GameVAChart({ values, owner }) {
         <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         {padded.map((v, i) => v == null ? null : (
           <g key={i}>
-            <circle cx={x(i)} cy={y(v)} r="3.5" fill={stroke} />
+            <circle cx={x(i)} cy={y(v)} r={selected === i + 1 ? 5 : 3.5} fill={stroke} stroke={selected === i + 1 ? "#1c1917" : "none"} strokeWidth="1" />
             <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
           </g>
         ))}
-        {padded.map((_, i) => (
-          <text key={i} x={x(i)} y={H - 4} fontSize="9" textAnchor="middle" fill="#78716c">G{i + 1}</text>
-        ))}
+        {padded.map((v, i) => {
+          const hasData = v != null;
+          const tappable = hasData && !!onSelect;
+          const isSel = selected === i + 1;
+          return (
+            <g
+              key={i}
+              onClick={tappable ? () => onSelect(isSel ? null : i + 1) : undefined}
+              className={tappable ? "cursor-pointer" : ""}
+            >
+              <rect x={x(i) - 16} y={H - 15} width="32" height="13" fill="transparent" />
+              <text
+                x={x(i)}
+                y={H - 4}
+                fontSize="9"
+                textAnchor="middle"
+                fill={isSel ? stroke : hasData ? "#78716c" : "#a8a29e"}
+                fontWeight={isSel ? "700" : "400"}
+              >
+                G{i + 1}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
 }
 
-function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame }) {
+  // Tap a game label in the chart to swap in that game's single-game stats.
+  const [selectedGame, setSelectedGame] = useState(null);
+  const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
+  const selectedSnapshot = canSelect && selectedGame ? byGame[selectedGame - 1] : null;
+  const p = selectedSnapshot || pSeries;
+  const effectiveGameNumber = selectedGame || gameNumber;
+
   const mp = p.mp || 0;
   if (mp <= 0) return null;
 
@@ -132,11 +160,16 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber, ga
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
       <div className="mb-3">
-        <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2">{rate ? "Series Breakdown" : "Value Added Breakdown"}</div>
+        <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
+          <span>{rate ? (selectedGame ? `Game ${selectedGame} Breakdown` : "Series Breakdown") : "Value Added Breakdown"}</span>
+          {selectedGame && (
+            <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back to series</button>
+          )}
+        </div>
         <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
           <div className="flex flex-col justify-end text-center">
-            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{gameNumber ? "Game" : "Games"}</div>
-            <div className="tabular-nums text-base font-semibold text-stone-700">{gameNumber || p.gp || 1}</div>
+            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? "Game" : "Games"}</div>
+            <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
           </div>
           <div className="flex flex-col justify-end text-center">
             <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
@@ -155,7 +188,12 @@ function VABreakdown({ p, lga = LGA, teams = TEAMS, rate = false, gameNumber, ga
         </div>
       </div>
       {rate && gameSeries && gameSeries.length > 0 && (
-        <GameVAChart values={gameSeries} owner={teams[p.team]?.owner} />
+        <GameVAChart
+          values={gameSeries}
+          owner={teams[p.team]?.owner}
+          selected={selectedGame}
+          onSelect={canSelect ? setSelectedGame : undefined}
+        />
       )}
       <div className="space-y-0.5">
         {categories.map((c, i) => {
@@ -858,12 +896,21 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                 mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
                 fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
                 games: new Array(N).fill(null),
+                byGame: new Array(N).fill(null),
               });
             const { va, efficiency } = valueAddParts(p, lga);
             a.gp += 1;
             a.va += va;
             a.eff += efficiency;
             a.games[idx] = va;
+            // Single-game snapshot for the tap-to-drill-in flow.
+            a.byGame[idx] = {
+              team: p.team, name: p.name, gp: 1, va, eff: efficiency,
+              mp: p.mp || 0, pts: p.pts || 0, reb: p.reb || 0, ast: p.ast || 0,
+              stl: p.stl || 0, blk: p.blk || 0, tov: p.tov || 0,
+              fgm: p.fgm || 0, fga: p.fga || 0, tpm: p.tpm || 0, tpa: p.tpa || 0,
+              ftm: p.ftm || 0, fta: p.fta || 0, drb: p.drb || 0, orb: p.orb || 0,
+            };
             for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
               a[k] += p[k] || 0;
             }
@@ -945,7 +992,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
                       <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
                     </button>
-                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate gameSeries={p.games} />}
+                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate gameSeries={p.games} byGame={p.byGame} />}
                   </div>
                 );
               })}
