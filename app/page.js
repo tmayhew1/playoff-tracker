@@ -127,6 +127,11 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const mp = p.mp || 0;
   if (mp <= 0) return null;
 
+  // When the user drills into one game we want raw single-game labels
+  // ("33 PTS", "3/5 3P"), matching the per-game box-row breakdown — not
+  // the per-36 / pct view used for the series aggregate.
+  const effectiveRate = rate && !selectedGame;
+
   const twoPm = p.fgm - p.tpm, twoPa = p.fga - p.tpa;
   const tpAdd = ((p.tpm / (p.tpa || 1)) - lga.la3P) * p.tpa;
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
@@ -135,8 +140,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // For series: counting stats as per-36, shooting as made/att (pct%).
   const r36 = (v, tag) => `${(mp > 0 ? (v / mp) * 36 : 0).toFixed(1)} ${tag}/36`;
   const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
-  const cnt = (v, tag) => (rate ? r36(v, tag) : `${v} ${tag}`);
-  const shoot = (m, att, tag) => (rate ? shot(m, att) : `${m}/${att} ${tag}`);
+  const cnt = (v, tag) => (effectiveRate ? r36(v, tag) : `${v} ${tag}`);
+  const shoot = (m, att, tag) => (effectiveRate ? shot(m, att) : `${m}/${att} ${tag}`);
 
   const categories = [
     { key: "Scoring", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
@@ -154,8 +159,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
   const owner = teams[p.team]?.owner;
   const posColor = owner === "Spencer" ? "bg-amber-500" : "bg-teal-500";
-  const keyW = rate ? "w-16" : "w-20";
-  const labelW = rate ? "w-[5.25rem]" : "w-12";
+  const keyW = effectiveRate ? "w-16" : "w-20";
+  const labelW = effectiveRate ? "w-[5.25rem]" : "w-12";
 
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
