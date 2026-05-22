@@ -210,8 +210,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const labelW = effectiveRate ? "w-[5.25rem]" : "w-12";
 
   // Nav: in single-game series view, advance within byGame; otherwise hand
-  // off to the parent's prev/next (player navigation).
+  // off to the parent's prev/next (player navigation). Series-aggregate
+  // view hides the nav entirely — chevrons there were too cluttered.
   const inGameNav = canSelect && selectedGame != null;
+  const showNav = !rate || inGameNav;
   const findGameWithData = (start, step) => {
     for (let i = start; i >= 0 && i < byGame.length; i += step) {
       if (byGame[i]) return i + 1;
@@ -228,15 +230,17 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
       <div className="flex items-stretch gap-1">
-        <button
-          type="button"
-          disabled={!canPrev}
-          onClick={handlePrev}
-          aria-label={inGameNav ? "Previous game" : "Previous player"}
-          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-        >
-          ‹
-        </button>
+        {showNav && (
+          <button
+            type="button"
+            disabled={!canPrev}
+            onClick={handlePrev}
+            aria-label={inGameNav ? "Previous game" : "Previous player"}
+            className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+          >
+            ‹
+          </button>
+        )}
         <div className="flex-1 min-w-0">
       <div className="mb-3">
         <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
@@ -310,15 +314,17 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       </div>
       <div className="text-[9px] text-stone-400 mt-2 text-center italic">Bars show contribution above/below league average</div>
         </div>
-        <button
-          type="button"
-          disabled={!canNext}
-          onClick={handleNext}
-          aria-label={inGameNav ? "Next game" : "Next player"}
-          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-        >
-          ›
-        </button>
+        {showNav && (
+          <button
+            type="button"
+            disabled={!canNext}
+            onClick={handleNext}
+            aria-label={inGameNav ? "Next game" : "Next player"}
+            className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+          >
+            ›
+          </button>
+        )}
       </div>
     </div>
   );
