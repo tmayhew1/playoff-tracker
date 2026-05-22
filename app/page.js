@@ -4,6 +4,15 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
 import { LGA, valueAdd, valueAddParts, computePoints, potentialPoints, lgaForSeason } from "./scoring";
+import TEAM_COLORS from "./data/team-colors.json";
+
+// Per-team primary color (hex). Used in Explore and anywhere we don't have
+// an owner mapping (e.g. defunct/renamed franchises in old seasons).
+const teamColor = (tri) => TEAM_COLORS[tri] || "#78716c";
+const withAlpha = (hex, alpha) => {
+  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255).toString(16).padStart(2, "0");
+  return hex + a;
+};
 
 // `dim` = lighten owner styling when both teams in a matchup share an owner,
 // to flag the side that wins the series for fewer points (no upset bonus).
@@ -251,14 +260,21 @@ function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS,
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
-  const badgeClass = isDim ? "bg-white text-stone-500 border border-stone-200" : ownerBadge(owner);
+  const useTeamColor = !isDim && !owner;
+  const badgeClass = isDim
+    ? "bg-white text-stone-500 border border-stone-200"
+    : owner ? ownerBadge(owner) : "border";
+  const tc = useTeamColor ? teamColor(p.team) : null;
+  const badgeStyle = useTeamColor
+    ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
+    : undefined;
   return (
     <div className="border-b border-stone-100 last:border-0">
       <button
         onClick={onToggle}
         className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
       >
-        <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
+        <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
           {p.team}
         </span>
         <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
@@ -433,11 +449,18 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
   }
 
   let finalClasses = "bg-stone-100 border-stone-300";
+  let finalStyle = undefined;
   if (isFinal && home.score !== away.score) {
     const winnerTri = home.score > away.score ? home.tri : away.tri;
     const winnerOwner = teams[winnerTri]?.owner;
     if (winnerOwner === "Spencer") finalClasses = "bg-amber-50 border-amber-400";
     else if (winnerOwner === "Trey") finalClasses = "bg-teal-50 border-teal-400";
+    else {
+      // No owner context (Explore): tint with the winner's team color.
+      const tc = teamColor(winnerTri);
+      finalClasses = "border";
+      finalStyle = { backgroundColor: withAlpha(tc, 0.08), borderColor: withAlpha(tc, 0.5) };
+    }
   }
 
   const sortedPlayers = useMemo(() => getSortedPlayers(box, lga), [box, lga]);
@@ -445,7 +468,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
   const showTop5 = isLive && sortedPlayers.length > 0 && !expanded;
 
   return (
-    <div className={`mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? finalClasses : "bg-stone-50 border-stone-200"}`}>
+    <div style={isFinal ? finalStyle : undefined} className={`mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? finalClasses : "bg-stone-50 border-stone-200"}`}>
       <button
         onClick={() => canExpand && setExpanded(!expanded)}
         disabled={!canExpand}
@@ -974,7 +997,14 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
               {rows.map((p, i) => {
                 const owner = teamsMap[p.team]?.owner;
                 const isDim = p.team === dimTeam;
-                const badge = isDim ? "bg-white text-stone-500 border border-stone-200" : ownerBadge(owner);
+                const useTeamColor = !isDim && !owner;
+                const badge = isDim
+                  ? "bg-white text-stone-500 border border-stone-200"
+                  : owner ? ownerBadge(owner) : "border";
+                const tc = useTeamColor ? teamColor(p.team) : null;
+                const badgeStyle = useTeamColor
+                  ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
+                  : undefined;
                 const isOpen = expanded === i;
                 return (
                   <div key={i} className="border-b border-stone-100 last:border-0">
@@ -982,7 +1012,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       onClick={() => setExpanded(isOpen ? null : i)}
                       className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isOpen ? "bg-stone-100" : ""}`}
                     >
-                      <span className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
+                      <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
                         {p.name}
@@ -1183,14 +1213,24 @@ function HistoryView({ season }) {
 const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
 
 function ExploreSeriesRow({ s, lga }) {
-  const teamCell = (code, isWinner) => (
-    <div className={`flex-1 px-2 py-1.5 border ${isWinner ? "bg-stone-100 border-stone-400 border-2" : "bg-white border-stone-200"}`}>
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-stone-900">{code}</span>
-        {isWinner && <span className="ml-auto text-[10px]">✓</span>}
+  const teamCell = (code, isWinner) => {
+    const c = teamColor(code);
+    const style = isWinner
+      ? { backgroundColor: withAlpha(c, 0.14), borderColor: c }
+      : { backgroundColor: "#ffffff", borderColor: withAlpha(c, 0.35) };
+    return (
+      <div
+        style={style}
+        className={`flex-1 px-2 py-1.5 border ${isWinner ? "border-2" : ""}`}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c }} />
+          <span className="text-sm font-semibold" style={{ color: isWinner ? c : "#1c1917" }}>{code}</span>
+          {isWinner && <span className="ml-auto text-[10px]" style={{ color: c }}>✓</span>}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
