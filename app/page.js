@@ -88,36 +88,64 @@ function GameVAChart({ values, owner, selected, onSelect }) {
     <div className="mt-2 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">By Game</div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
+        {/* Selected column shading sits behind everything else */}
+        {selected != null && padded[selected - 1] != null && (() => {
+          const colW = innerW / (n - 1);
+          return (
+            <rect
+              x={x(selected - 1) - colW / 2}
+              y={0}
+              width={colW}
+              height={H}
+              fill={withAlpha(stroke, 0.12)}
+              stroke={withAlpha(stroke, 0.35)}
+              strokeWidth="1"
+            />
+          );
+        })()}
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
         <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         {padded.map((v, i) => v == null ? null : (
-          <g key={i}>
+          <g key={`dot-${i}`}>
             <circle cx={x(i)} cy={y(v)} r={selected === i + 1 ? 5 : 3.5} fill={stroke} stroke={selected === i + 1 ? "#1c1917" : "none"} strokeWidth="1" />
             <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
           </g>
         ))}
+        {/* X-axis labels */}
         {padded.map((v, i) => {
           const hasData = v != null;
-          const tappable = hasData && !!onSelect;
           const isSel = selected === i + 1;
           return (
-            <g
-              key={i}
-              onClick={tappable ? () => onSelect(isSel ? null : i + 1) : undefined}
-              className={tappable ? "cursor-pointer" : ""}
+            <text
+              key={`lab-${i}`}
+              x={x(i)}
+              y={H - 4}
+              fontSize="9"
+              textAnchor="middle"
+              fill={isSel ? stroke : hasData ? "#78716c" : "#a8a29e"}
+              fontWeight={isSel ? "700" : "400"}
             >
-              <rect x={x(i) - 16} y={H - 15} width="32" height="13" fill="transparent" />
-              <text
-                x={x(i)}
-                y={H - 4}
-                fontSize="9"
-                textAnchor="middle"
-                fill={isSel ? stroke : hasData ? "#78716c" : "#a8a29e"}
-                fontWeight={isSel ? "700" : "400"}
-              >
-                G{i + 1}
-              </text>
-            </g>
+              G{i + 1}
+            </text>
+          );
+        })}
+        {/* Full-height column hit zones, layered last so they capture taps */}
+        {padded.map((v, i) => {
+          const hasData = v != null;
+          if (!hasData || !onSelect) return null;
+          const isSel = selected === i + 1;
+          const colW = innerW / (n - 1);
+          return (
+            <rect
+              key={`hit-${i}`}
+              x={x(i) - colW / 2}
+              y={0}
+              width={colW}
+              height={H}
+              fill="transparent"
+              className="cursor-pointer"
+              onClick={() => onSelect(isSel ? null : i + 1)}
+            />
           );
         })}
       </svg>
@@ -125,7 +153,17 @@ function GameVAChart({ values, owner, selected, onSelect }) {
   );
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame }) {
+// Fixed display order for the breakdown rows. Partition dividers go AFTER
+// each key in PARTITIONS_AFTER (shooting / playmaking / rebounding groups).
+const VA_CATEGORY_ORDER = [
+  "Scoring", "2-Pointers", "3-Pointers", "Free Throws",
+  "Assists", "Turnovers",
+  "D Rebounds", "O Rebounds",
+  "Blocks", "Steals",
+];
+const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebounds"]);
+
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, onPrev, onNext }) {
   // Tap a game label in the chart to swap in that game's single-game stats.
   const [selectedGame, setSelectedGame] = useState(null);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
@@ -163,7 +201,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
     { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
-  ].sort((a, b) => b.value - a.value);
+  ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
 
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
   const owner = teams[p.team]?.owner;
@@ -171,8 +209,35 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const keyW = effectiveRate ? "w-16" : "w-20";
   const labelW = effectiveRate ? "w-[5.25rem]" : "w-12";
 
+  // Nav: in single-game series view, advance within byGame; otherwise hand
+  // off to the parent's prev/next (player navigation).
+  const inGameNav = canSelect && selectedGame != null;
+  const findGameWithData = (start, step) => {
+    for (let i = start; i >= 0 && i < byGame.length; i += step) {
+      if (byGame[i]) return i + 1;
+    }
+    return null;
+  };
+  const gameNavPrev = inGameNav ? findGameWithData(selectedGame - 2, -1) : null;
+  const gameNavNext = inGameNav ? findGameWithData(selectedGame, 1) : null;
+  const canPrev = inGameNav ? gameNavPrev != null : !!onPrev;
+  const canNext = inGameNav ? gameNavNext != null : !!onNext;
+  const handlePrev = () => inGameNav ? setSelectedGame(gameNavPrev) : onPrev && onPrev();
+  const handleNext = () => inGameNav ? setSelectedGame(gameNavNext) : onNext && onNext();
+
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
+      <div className="flex items-stretch gap-1">
+        <button
+          type="button"
+          disabled={!canPrev}
+          onClick={handlePrev}
+          aria-label={inGameNav ? "Previous game" : "Previous player"}
+          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+        >
+          ‹
+        </button>
+        <div className="flex-1 min-w-0">
       <div className="mb-3">
         <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
           <span>{rate ? (selectedGame ? `Game ${selectedGame} Breakdown` : "Series Breakdown") : "Value Added Breakdown"}</span>
@@ -214,33 +279,47 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           const pct = (Math.abs(c.value) / maxAbs) * 45;
           const isPos = c.value >= 0;
           return (
-            <div key={i} className="flex items-center gap-2 text-[10px]">
-              <span className={`${keyW} text-stone-600 text-right truncate`}>{c.key}</span>
-              <div className="flex-1 flex items-center relative h-4">
-                <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300"></div>
-                <div
-                  className={`absolute inset-y-0.5 ${isPos ? posColor : "bg-stone-400"}`}
-                  style={{
-                    left: isPos ? "50%" : `${50 - pct}%`,
-                    width: `${pct}%`,
-                  }}
-                ></div>
+            <React.Fragment key={i}>
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className={`${keyW} text-stone-600 text-right truncate`}>{c.key}</span>
+                <div className="flex-1 flex items-center relative h-4">
+                  <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300"></div>
+                  <div
+                    className={`absolute inset-y-0.5 ${isPos ? posColor : "bg-stone-400"}`}
+                    style={{
+                      left: isPos ? "50%" : `${50 - pct}%`,
+                      width: `${pct}%`,
+                    }}
+                  ></div>
+                </div>
+                {rate && p.gp > 1 ? (
+                  <>
+                    <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(1)}</span>
+                    <span className="text-stone-300 select-none">|</span>
+                    <span className="w-12 tabular-nums text-right font-semibold text-stone-700">{(c.value / p.gp).toFixed(2)}</span>
+                  </>
+                ) : (
+                  <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
+                )}
+                <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
-              {rate && p.gp > 1 ? (
-                <>
-                  <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(1)}</span>
-                  <span className="text-stone-300 select-none">|</span>
-                  <span className="w-12 tabular-nums text-right font-semibold text-stone-700">{(c.value / p.gp).toFixed(2)}</span>
-                </>
-              ) : (
-                <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
-              )}
-              <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
-            </div>
+              {VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
+            </React.Fragment>
           );
         })}
       </div>
       <div className="text-[9px] text-stone-400 mt-2 text-center italic">Bars show contribution above/below league average</div>
+        </div>
+        <button
+          type="button"
+          disabled={!canNext}
+          onClick={handleNext}
+          aria-label={inGameNav ? "Next game" : "Next player"}
+          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }
@@ -256,7 +335,7 @@ function getSortedPlayers(box, lga = LGA) {
     .sort((a, b) => b.va - a.va);
 }
 
-function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS, gameNumber }) {
+function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -289,14 +368,20 @@ function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS,
           {p.va.toFixed(1)}
         </span>
       </button>
-      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} />}
+      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} />}
     </div>
   );
 }
 
 function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber }) {
-  const renderRow = (p, i) => {
+  // Build a row plus prev/next callbacks that navigate within the same
+  // array (partition-aware: nav stays within On Court / Bench).
+  const buildRow = (arr) => (p, i) => {
     const rowKey = `${p.team}-${p.name}-${i}`;
+    const prev = arr[i - 1];
+    const next = arr[i + 1];
+    const prevKey = prev ? `${prev.team}-${prev.name}-${i - 1}` : null;
+    const nextKey = next ? `${next.team}-${next.name}-${i + 1}` : null;
     return (
       <PlayerRow
         key={rowKey}
@@ -307,6 +392,8 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
         lga={lga}
         teams={teams}
         gameNumber={gameNumber}
+        onPrev={prevKey ? () => setExpandedKey(prevKey) : undefined}
+        onNext={nextKey ? () => setExpandedKey(nextKey) : undefined}
       />
     );
   };
@@ -335,13 +422,13 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
               On Court
             </div>
-            {onCourt.map(renderRow)}
+            {onCourt.map(buildRow(onCourt))}
           </>
         )}
         {bench.length > 0 && (
           <>
             <div className="text-[9px] uppercase tracking-widest text-stone-500 pt-2 pb-0.5">Bench</div>
-            {bench.map(renderRow)}
+            {bench.map(buildRow(bench))}
           </>
         )}
       </div>
@@ -351,7 +438,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
   return (
     <div>
       {header}
-      {rows.map(renderRow)}
+      {rows.map(buildRow(rows))}
     </div>
   );
 }
@@ -1027,7 +1114,18 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
                       <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
                     </button>
-                    {isOpen && <VABreakdown p={p} lga={lga} teams={teamsMap} rate gameSeries={p.games} byGame={p.byGame} />}
+                    {isOpen && (
+                      <VABreakdown
+                        p={p}
+                        lga={lga}
+                        teams={teamsMap}
+                        rate
+                        gameSeries={p.games}
+                        byGame={p.byGame}
+                        onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
+                        onNext={i < rows.length - 1 ? () => setExpanded(i + 1) : undefined}
+                      />
+                    )}
                   </div>
                 );
               })}
