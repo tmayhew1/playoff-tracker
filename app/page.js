@@ -1053,7 +1053,7 @@ function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
       </div>
       {s.games.length > 0 ? (
         <>
-          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
+          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} boxSrc="espn" />
           <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
         </>
       ) : (
@@ -1176,6 +1176,153 @@ function HistoryView({ season }) {
           <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} />
         ))}
       </div>
+    </div>
+  );
+}
+
+const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
+
+function ExploreSeriesRow({ s, lga }) {
+  const teamCell = (code, isWinner) => (
+    <div className={`flex-1 px-2 py-1.5 border ${isWinner ? "bg-stone-100 border-stone-400 border-2" : "bg-white border-stone-200"}`}>
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm font-semibold text-stone-900">{code}</span>
+        {isWinner && <span className="ml-auto text-[10px]">✓</span>}
+      </div>
+    </div>
+  );
+  return (
+    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
+      <div className="flex gap-1.5 items-stretch">
+        {teamCell(s.teams[0], s.winner === s.teams[0])}
+        <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
+        {teamCell(s.teams[1], s.winner === s.teams[1])}
+      </div>
+      {s.games.length > 0 ? (
+        <>
+          <SeriesAverages games={s.games} teamsMap={{}} lga={lga} boxSrc="espn" />
+          {s.games.map((g, i) => {
+            const liveGame = {
+              gameId: g.gameId,
+              gameCode: g.gameCode,
+              gameStatus: 3,
+              gameStatusText: "Final",
+              gameDateTimeUTC: g.gameDateTimeUTC,
+              home: { tri: g.home.tri, score: g.home.score },
+              away: { tri: g.away.tri, score: g.away.score },
+            };
+            return (
+              <LiveGameBanner
+                key={g.gameId || i}
+                liveGame={liveGame}
+                gameLabel={`Game ${i + 1}`}
+                lga={lga}
+                teams={{}}
+              />
+            );
+          })}
+        </>
+      ) : (
+        <div className="mt-1 text-[10px] text-stone-400 italic text-center py-1">No games</div>
+      )}
+    </div>
+  );
+}
+
+function ExploreRoundSection({ roundKey, series, lga }) {
+  const [open, setOpen] = useState(false);
+  if (series.length === 0) return null;
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
+      >
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+          {ROUND_LABELS[roundKey] || roundKey}
+        </h3>
+        <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
+      </button>
+      {open && series.map((s, i) => (
+        <ExploreSeriesRow key={i} s={s} lga={lga} />
+      ))}
+    </div>
+  );
+}
+
+// Seasons available in the picker. Modern era — 1996-97 onward — where
+// ESPN's box-score coverage is reliable.
+function exploreSeasonList() {
+  const seasons = [];
+  for (let y = 2024; y >= 1996; y--) {
+    const end = String((y + 1) % 100).padStart(2, "0");
+    seasons.push(`${y}-${end}`);
+  }
+  return seasons;
+}
+
+function ExploreView() {
+  const SEASONS = useMemo(() => exploreSeasonList(), []);
+  const [season, setSeason] = useState(SEASONS[0]);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setData(null);
+    setError(null);
+    setLoading(true);
+    fetch(`/api/history?season=${season}`)
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => !cancelled && setError(e.message || "Load failed"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [season]);
+
+  const lga = lgaForSeason(season);
+  const byRound = useMemo(() => {
+    const out = { r1: [], r2: [], r3: [], r4: [] };
+    for (const s of data?.series || []) {
+      if (out[s.round]) out[s.round].push(s);
+    }
+    return out;
+  }, [data]);
+
+  return (
+    <div>
+      <div className="mb-4 p-3 bg-white border border-stone-300">
+        <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
+        <select
+          value={season}
+          onChange={(e) => setSeason(e.target.value)}
+          className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
+        >
+          {SEASONS.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN; coverage best from 1996-97 onward.</div>
+      </div>
+
+      {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
+      {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
+      {!loading && !error && data && (
+        <>
+          {(["r1", "r2", "r3", "r4"]).map((rk) => (
+            <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} />
+          ))}
+          {data.series && data.series.length === 0 && (
+            <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -1452,10 +1599,10 @@ export default function PlayoffTracker() {
           <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
         </header>
 
-        <div className="flex border-b-2 border-stone-900 mb-5">
+        <div className="flex border-b-2 border-stone-900 mb-5 overflow-x-auto">
           <button
             onClick={() => setTab("current")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest ${tab === "current" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "current" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
             2025-26
           </button>
@@ -1463,14 +1610,20 @@ export default function PlayoffTracker() {
             <button
               key={s}
               onClick={() => setTab(s)}
-              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest ${tab === s ? "bg-stone-900 text-white" : "text-stone-500"}`}
+              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === s ? "bg-stone-900 text-white" : "text-stone-500"}`}
             >
               {s}
             </button>
           ))}
+          <button
+            onClick={() => setTab("explore")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "explore" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Explore
+          </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : <HistoryView season={tab} />}
+        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

@@ -1,63 +1,12 @@
 // Scoring logic: points computation and Value Added (VA) player stat.
 
 import { TEAMS, BRACKET, ROUND_BASE, ROUND_LABEL } from "./teams";
+import LEAGUE_AVERAGES_DATA from "./data/league-averages.json";
 
 // League averages per season, used to compute Value Added. Keeping VA
 // season-accurate matters for historical box scores (efficiency baselines
-// drift year to year).
-export const LEAGUE_AVERAGES = {
-  "2023-24": {
-    la3P: 0.364811447114809,
-    la2P: 0.544641143904883,
-    laFT: 0.783976606126799,
-    laFG: 0.473626269663115,
-    laPTSperM: 0.379016874541453,
-    laASTperM: 0.0805524657026326,
-    laSTLperM: 0.0278588533409397,
-    laBLKperM: 0.0157268037594516,
-    laTOVperM: 0.0450747733303848,
-    laDRBperM: 0.119895833333333,
-    laORBperM: 0.0338730239673636,
-    laPTSperMake: 2.30417294666691,
-    laPTSperPoss: 1.0174234902173,
-    laDRBrate: 0.757679450396146,
-    laORBrate: 0.242320549603854,
-  },
-  "2024-25": {
-    la3P: 0.359834082267542,
-    la2P: 0.543853565684437,
-    laFT: 0.779493622293183,
-    laFG: 0.466469149736644,
-    laPTSperM: 0.402475143343264,
-    laASTperM: 0.082984050521855,
-    laSTLperM: 0.0308587441215225,
-    laBLKperM: 0.015065966803802,
-    laTOVperM: 0.0485040889833636,
-    laDRBperM: 0.123144073124728,
-    laORBperM: 0.0402147662584095,
-    laPTSperMake: 2.32439120512515,
-    laPTSperPoss: 1.00562343231653,
-    laDRBrate: 0.747507932253798,
-    laORBrate: 0.252492067746202,
-  },
-  "2025-26": {
-    la3P: 0.359686938670772,
-    la2P: 0.548356161904934,
-    laFT: 0.788506191950464,
-    laFG: 0.470335430881713,
-    laPTSperM: 0.408655965562845,
-    laASTperM: 0.0827805842301779,
-    laSTLperM: 0.032258064516129,
-    laBLKperM: 0.0143884892086331,
-    laTOVperM: 0.0516272842803455,
-    laDRBperM: 0.121786420566908,
-    laORBperM: 0.0384615384615385,
-    laPTSperMake: 2.31624664395461,
-    laPTSperPoss: 1.01391216652376,
-    laDRBrate: 0.738162582316744,
-    laORBrate: 0.261837417683256,
-  },
-};
+// drift year to year). Sourced from data/league-averages.json.
+export const LEAGUE_AVERAGES = LEAGUE_AVERAGES_DATA;
 
 // Default (current season) — keeps existing callers unchanged.
 export const LGA = LEAGUE_AVERAGES["2025-26"];
