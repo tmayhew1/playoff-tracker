@@ -61,7 +61,8 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function GameVAChart({ values, owner, selected, onSelect }) {
+function GameVAChart({ values, color = "#57534e", selected, onSelect }) {
+  const stroke = color;
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series.
   const n = Math.max(values.length, 4);
@@ -76,7 +77,7 @@ function GameVAChart({ values, owner, selected, onSelect }) {
   if (vMin === vMax) { vMin -= 1; vMax += 1; }
   const x = (i) => pad.l + (i / (n - 1)) * innerW;
   const y = (v) => pad.t + (1 - (v - vMin) / (vMax - vMin)) * innerH;
-  const stroke = owner === "Spencer" ? "#d97706" : owner === "Trey" ? "#0d9488" : "#57534e";
+  // color (the player's accent) is already set above as `stroke`.
 
   let d = "";
   for (let i = 0; i < n; i++) {
@@ -108,7 +109,7 @@ function GameVAChart({ values, owner, selected, onSelect }) {
         {padded.map((v, i) => v == null ? null : (
           <g key={`dot-${i}`}>
             <circle cx={x(i)} cy={y(v)} r={selected === i + 1 ? 5 : 3.5} fill={stroke} stroke={selected === i + 1 ? "#1c1917" : "none"} strokeWidth="1" />
-            <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill="#44403c" className="tabular-nums">{v.toFixed(1)}</text>
+            <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#dc2626" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
           </g>
         ))}
         {/* X-axis labels */}
@@ -163,7 +164,7 @@ const VA_CATEGORY_ORDER = [
 ];
 const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebounds"]);
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, onPrev, onNext }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, onPrev, onNext, useTeamColor = false }) {
   // Tap a game label in the chart to swap in that game's single-game stats.
   const [selectedGame, setSelectedGame] = useState(null);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
@@ -205,7 +206,14 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
 
   const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
   const owner = teams[p.team]?.owner;
-  const posColor = owner === "Spencer" ? "bg-amber-500" : "bg-teal-500";
+  // Accent color drives the chart line/dot and the positive bars. Historical
+  // and explore contexts use the player's team color; live/draft uses the
+  // owner's color so the competition stays the dominant visual.
+  const accentColor = useTeamColor
+    ? teamColor(p.team)
+    : owner === "Spencer" ? "#d97706"
+    : owner === "Trey" ? "#0d9488"
+    : "#57534e";
   const keyW = effectiveRate ? "w-16" : "w-20";
   const labelW = effectiveRate ? "w-[5.25rem]" : "w-12";
 
@@ -260,12 +268,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           </div>
           <div className="flex flex-col justify-end text-center">
             <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
-            <div className="tabular-nums text-lg font-black text-stone-900">{p.va.toFixed(2)}</div>
+            <div className={`tabular-nums text-lg font-black ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</div>
           </div>
           {(p.gp || 1) > 1 && (
             <div className="flex flex-col justify-end text-center">
               <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
-              <div className="tabular-nums text-lg font-black text-stone-900">{(p.va / p.gp).toFixed(2)}</div>
+              <div className={`tabular-nums text-lg font-black ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va / p.gp).toFixed(2)}</div>
             </div>
           )}
         </div>
@@ -273,7 +281,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       {rate && gameSeries && gameSeries.length > 0 && (
         <GameVAChart
           values={gameSeries}
-          owner={teams[p.team]?.owner}
+          color={accentColor}
           selected={selectedGame}
           onSelect={canSelect ? setSelectedGame : undefined}
         />
@@ -289,8 +297,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                 <div className="flex-1 flex items-center relative h-4">
                   <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300"></div>
                   <div
-                    className={`absolute inset-y-0.5 ${isPos ? posColor : "bg-stone-400"}`}
+                    className="absolute inset-y-0.5"
                     style={{
+                      backgroundColor: isPos ? accentColor : "#a8a29e",
                       left: isPos ? "50%" : `${50 - pct}%`,
                       width: `${pct}%`,
                     }}
@@ -298,12 +307,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                 </div>
                 {rate && p.gp > 1 ? (
                   <>
-                    <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(1)}</span>
+                    <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(1)}</span>
                     <span className="text-stone-300 select-none">|</span>
-                    <span className="w-12 tabular-nums text-right font-semibold text-stone-700">{(c.value / p.gp).toFixed(2)}</span>
+                    <span className={`w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{(c.value / p.gp).toFixed(2)}</span>
                   </>
                 ) : (
-                  <span className="w-10 tabular-nums text-right font-semibold text-stone-700">{c.value.toFixed(2)}</span>
+                  <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(2)}</span>
                 )}
                 <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
@@ -341,16 +350,16 @@ function getSortedPlayers(box, lga = LGA) {
     .sort((a, b) => b.va - a.va);
 }
 
-function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext }) {
+function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
-  const useTeamColor = !isDim && !owner;
+  const badgeUseTeam = !isDim && !owner;
   const badgeClass = isDim
     ? "bg-white text-stone-500 border border-stone-200"
     : owner ? ownerBadge(owner) : "border";
-  const tc = useTeamColor ? teamColor(p.team) : null;
-  const badgeStyle = useTeamColor
+  const tc = badgeUseTeam ? teamColor(p.team) : null;
+  const badgeStyle = badgeUseTeam
     ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
     : undefined;
   return (
@@ -370,16 +379,16 @@ function PlayerRow({ p, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS,
         <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
         <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
         <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
-        <span className={`tabular-nums w-8 text-right font-semibold ${p.va > 0 ? "text-stone-900" : "text-stone-400"}`}>
+        <span className={`tabular-nums w-8 text-right font-semibold ${p.va < 0 ? "text-red-600" : p.va > 0 ? "text-stone-900" : "text-stone-400"}`}>
           {p.va.toFixed(1)}
         </span>
       </button>
-      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} />}
+      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} useTeamColor={useTeamColor} />}
     </div>
   );
 }
 
-function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber }) {
+function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, useTeamColor }) {
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
   const buildRow = (arr) => (p, i) => {
@@ -398,6 +407,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
         lga={lga}
         teams={teams}
         gameNumber={gameNumber}
+        useTeamColor={useTeamColor}
         onPrev={prevKey ? () => setExpandedKey(prevKey) : undefined}
         onNext={nextKey ? () => setExpandedKey(nextKey) : undefined}
       />
@@ -449,7 +459,7 @@ function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOn
   );
 }
 
-function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS }) {
+function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -592,7 +602,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
-          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} gameNumber={gameNumber} />
+          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} gameNumber={gameNumber} useTeamColor={useTeamColor} />
         </div>
       )}
 
@@ -602,7 +612,7 @@ function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, te
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} useTeamColor={useTeamColor} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
@@ -956,12 +966,13 @@ function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
         lga={lga}
         teams={teamsMap}
         dimTeam={dimTeam}
+        useTeamColor
       />
     );
   });
 }
 
-function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
+function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1090,12 +1101,12 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
               {rows.map((p, i) => {
                 const owner = teamsMap[p.team]?.owner;
                 const isDim = p.team === dimTeam;
-                const useTeamColor = !isDim && !owner;
+                const badgeUseTeam = !isDim && !owner;
                 const badge = isDim
                   ? "bg-white text-stone-500 border border-stone-200"
                   : owner ? ownerBadge(owner) : "border";
-                const tc = useTeamColor ? teamColor(p.team) : null;
-                const badgeStyle = useTeamColor
+                const tc = badgeUseTeam ? teamColor(p.team) : null;
+                const badgeStyle = badgeUseTeam
                   ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
                   : undefined;
                 const isOpen = expanded === i;
@@ -1112,13 +1123,13 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                       </span>
                       <span className="hidden sm:block w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
                       <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
-                      <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg >= 0 ? "text-stone-700" : "text-stone-400"}`}>{p.effpg.toFixed(1)}</span>
+                      <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg < 0 ? "text-red-600" : "text-stone-700"}`}>{p.effpg.toFixed(1)}</span>
                       <span className="w-8 text-right tabular-nums text-stone-600">{p.rpg.toFixed(1)}</span>
                       <span className="w-8 text-right tabular-nums text-stone-600">{p.apg.toFixed(1)}</span>
                       <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.spg.toFixed(1)}</span>
                       <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
-                      <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va >= 0 ? "text-stone-900" : "text-stone-400"}`}>{p.va.toFixed(1)}</span>
+                      <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
                     </button>
                     {isOpen && (
                       <VABreakdown
@@ -1128,6 +1139,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc }) {
                         rate
                         gameSeries={p.games}
                         byGame={p.byGame}
+                        useTeamColor={useTeamColor}
                         onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                         onNext={i < rows.length - 1 ? () => setExpanded(i + 1) : undefined}
                       />
@@ -1187,7 +1199,7 @@ function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
       </div>
       {s.games.length > 0 ? (
         <>
-          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} boxSrc="espn" />
+          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} boxSrc="espn" useTeamColor />
           <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
         </>
       ) : (
@@ -1344,7 +1356,7 @@ function ExploreSeriesRow({ s, lga }) {
       </div>
       {s.games.length > 0 ? (
         <>
-          <SeriesAverages games={s.games} teamsMap={{}} lga={lga} boxSrc="espn" />
+          <SeriesAverages games={s.games} teamsMap={{}} lga={lga} boxSrc="espn" useTeamColor />
           {s.games.map((g, i) => {
             const liveGame = {
               gameId: g.gameId,
@@ -1362,6 +1374,7 @@ function ExploreSeriesRow({ s, lga }) {
                 gameLabel={`Game ${i + 1}`}
                 lga={lga}
                 teams={{}}
+                useTeamColor
               />
             );
           })}
