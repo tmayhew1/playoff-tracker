@@ -45,9 +45,15 @@ export async function GET(req) {
     // dates range + seasontype=3. Note: ESPN ignores seasontype when an
     // explicit date range is given, so it also returns early-April regular
     // season games — we filter those out by the playoff series note below.
+    // 2019-20 played in the COVID bubble: late August through mid-October
+    // 2020. Special-case the window for that season; everyone else uses
+    // the normal April–July range.
+    const isBubble = season === "2019-20";
+    const startMD = isBubble ? "0801" : "0401";
+    const endMD = isBubble ? "1015" : "0720";
     const url =
       `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard` +
-      `?dates=${endYear}0401-${endYear}0720&seasontype=3&limit=1000`;
+      `?dates=${endYear}${startMD}-${endYear}${endMD}&seasontype=3&limit=1000`;
     const data = await fetchJson(url);
     const events = data?.events || [];
 
