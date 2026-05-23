@@ -209,7 +209,16 @@ export async function GET(req) {
     }
 
     const players = [...agg.values()];
-    players.forEach((p) => p.games.sort((a, b) => a.gameIdx - b.gameIdx));
+    players.forEach((p) => {
+      p.games.sort((a, b) => a.gameIdx - b.gameIdx);
+      // Per-series ordinal so the drill-in title can read "Game 4 vs OKC"
+      // even when it's the player's 10th playoff game overall.
+      const counts = {};
+      for (const g of p.games) {
+        counts[g.seriesIdx] = (counts[g.seriesIdx] || 0) + 1;
+        g.seriesGameNumber = counts[g.seriesIdx];
+      }
+    });
     players.sort((a, b) => b.va - a.va);
 
     return new Response(JSON.stringify({

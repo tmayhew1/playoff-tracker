@@ -258,8 +258,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           <span>{(() => {
             if (!rate) return "Value Added Breakdown";
             if (selectedGame) {
-              const opp = gameContext?.[selectedGame - 1]?.opp;
-              return `Game ${selectedGame}${opp ? ` vs ${opp}` : ""}`;
+              const ctx = gameContext?.[selectedGame - 1];
+              const num = ctx?.seriesGameNumber || selectedGame;
+              const opp = ctx?.opp;
+              return `Game ${num}${opp ? ` vs ${opp}` : ""}`;
             }
             return breakdownTitle || "Series Breakdown";
           })()}</span>
@@ -1508,7 +1510,7 @@ function PlayoffLeaderboard({ season, lga }) {
           ast: g.ast, stl: g.stl, blk: g.blk, tov: g.tov,
           fgm: g.fgm, fga: g.fga, tpm: g.tpm, tpa: g.tpa, ftm: g.ftm, fta: g.fta,
         }));
-        const gameContext = p.games.map((g) => ({ opp: g.opp, seriesIdx: g.seriesIdx }));
+        const gameContext = p.games.map((g) => ({ opp: g.opp, seriesIdx: g.seriesIdx, seriesGameNumber: g.seriesGameNumber }));
         const partitions = [];
         for (let j = 1; j < p.games.length; j++) {
           if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
