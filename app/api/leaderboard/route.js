@@ -34,6 +34,18 @@ const splitMade = (v) => {
   return [Number(m) || 0, Number(a) || 0];
 };
 
+// ESPN returns MIN as either a plain integer ("38") on modern data or
+// "MM:SS" on some older seasons. Handle both.
+function parseMin(v) {
+  if (v == null || v === "") return 0;
+  const s = String(v).trim();
+  if (s.includes(":")) {
+    const [m, sec] = s.split(":");
+    return (parseInt(m, 10) || 0) + (parseFloat(sec) || 0) / 60;
+  }
+  return parseFloat(s) || 0;
+}
+
 function playersFromBox(box) {
   const teamsBox = box?.boxscore?.players || [];
   if (teamsBox.length < 2) return null;
@@ -47,7 +59,7 @@ function playersFromBox(box) {
     for (const a of grp.athletes || []) {
       const st = a.stats || [];
       if (!st.length || a.didNotPlay) continue;
-      const mp = Number(st[idx.MIN]) || 0;
+      const mp = parseMin(st[idx.MIN]);
       if (mp <= 0) continue;
       const [fgm, fga] = splitMade(st[idx.FG]);
       const [tpm, tpa] = splitMade(st[idx["3PT"]]);

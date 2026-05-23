@@ -37,6 +37,18 @@ const splitMade = (v) => {
   return [Number(m) || 0, Number(a) || 0];
 };
 
+// ESPN returns MIN as either a plain integer ("38") on modern data or
+// "MM:SS" on some older seasons. Handle both.
+function parseMin(v) {
+  if (v == null || v === "") return 0;
+  const s = String(v).trim();
+  if (s.includes(":")) {
+    const [m, sec] = s.split(":");
+    return (parseInt(m, 10) || 0) + (parseFloat(sec) || 0) / 60;
+  }
+  return parseFloat(s) || 0;
+}
+
 // Fallback for old games (live CDN only keeps recent ones): NBA blocks
 // server-side historical requests, so use ESPN's summary endpoint. The
 // gameId here is an ESPN event id (supplied by /api/history).
@@ -72,7 +84,7 @@ async function fetchEspnBox(eventId) {
         name: a.athlete?.displayName || "",
         starter: !!a.starter,
         oncourt: false,
-        mp: Number(st[idx.MIN]) || 0,
+        mp: parseMin(st[idx.MIN]),
         pts: Number(st[idx.PTS]) || 0,
         reb: Number(st[idx.REB]) || 0,
         drb: Number(st[idx.DREB]) || 0,
