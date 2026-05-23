@@ -49,29 +49,11 @@ function parseMin(v) {
   return parseFloat(s) || 0;
 }
 
-// Fallback for old games (live CDN only keeps recent ones): NBA blocks
-// server-side historical requests, so use ESPN's summary endpoint. The
-// gameId here is an ESPN event id (supplied by /api/history).
-async function fetchEspnBox(eventId) {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`;
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  let data;
-  try {
-    const res = await fetch(url, { headers: { ...HEADERS, Referer: undefined, Origin: undefined }, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`espn ${res.status}`);
-    data = await res.json();
-  } finally {
-    clearTimeout(t);
-  }
+function parseBox(data) {
   const teamsBox = data?.boxscore?.players || [];
-  if (teamsBox.length < 2) throw new Error("no boxscore players");
-
+  if (teamsBox.length < 2) return null;
   const teamOut = (tb) => {
     const tri = toNba(tb.team?.abbreviation);
-    // Some older ESPN summaries split statistics into "starters"/"bench"
-    // sub-blocks; iterate all blocks and collect from each so we don't
-    // miss the bench (or pick the wrong block).
     const blocks = Array.isArray(tb.statistics) ? tb.statistics : [];
     const players = [];
     for (const grp of blocks) {
@@ -104,9 +86,44 @@ async function fetchEspnBox(eventId) {
     }
     return { tri, players };
   };
-
   const a = teamOut(teamsBox[0]);
   const b = teamOut(teamsBox[1]);
+  if (!a.players.length && !b.players.length) return null;
+  return { a, b };
+}
+
+async function fetchEspn(url, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { headers: { ...HEADERS, Referer: undefined, Origin: undefined }, signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) throw new Error(`espn ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// Fallback for old games (live CDN only keeps recent ones): NBA blocks
+// server-side historical requests, so use ESPN. The gameId here is an ESPN
+// event id (supplied by /api/history). The site API summary covers most
+// games; some older events return empty player blocks and need the CDN
+// core (gamepackageJSON) instead.
+async function fetchEspnBox(eventId) {
+  let parsed = null;
+  try {
+    const summary = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`);
+    parsed = parseBox(summary);
+  } catch {}
+  if (!parsed) {
+    try {
+      const core = await fetchEspn(`https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`);
+      const box = core?.gamepackageJSON?.boxscore || core?.boxscore || null;
+      if (box) parsed = parseBox({ boxscore: box });
+    } catch {}
+  }
+  if (!parsed) throw new Error("no boxscore players");
+  const { a, b } = parsed;
   return {
     gameId: String(eventId),
     status: "Final",

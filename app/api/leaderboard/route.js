@@ -182,19 +182,30 @@ export async function GET(req) {
     allGames.forEach((g, i) => { g.gameIdx = i; });
 
     // 4. Fetch every game's box score, in batches so we don't hammer ESPN.
+    // Try the site summary first; fall back to ESPN's CDN core endpoint for
+    // older events that summary returns without player blocks.
     const lga = lgaForSeason(season);
     const results = await inBatches(allGames, 10, async (g) => {
+      let players = null;
       try {
         const box = await fetchJson(
           `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${g.gameId}`,
           9000
         );
-        const players = playersFromBox(box);
-        if (!players) return null;
-        return { ...g, players };
-      } catch {
-        return null;
+        players = playersFromBox(box);
+      } catch {}
+      if (!players || players.length === 0) {
+        try {
+          const core = await fetchJson(
+            `https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${g.gameId}`,
+            9000
+          );
+          const inner = core?.gamepackageJSON?.boxscore || core?.boxscore;
+          if (inner) players = playersFromBox({ boxscore: inner });
+        } catch {}
       }
+      if (!players || players.length === 0) return null;
+      return { ...g, players };
     });
 
     // 5. Aggregate per player across all playoff games.
