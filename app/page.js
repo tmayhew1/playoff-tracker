@@ -67,8 +67,11 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
   // for 1- or 2-game series.
   const n = Math.max(values.length, 4);
   const padded = values.length >= n ? values : [...values, ...Array(n - values.length).fill(null)];
-  const W = 320, H = 110;
-  const pad = { l: 14, r: 10, t: 22, b: 18 };
+  const W = 320, H = 100;
+  const pad = { l: 14, r: 10, t: 22, b: 8 };
+  // Only the top-scoring dot gets a value label (max anchor for scale).
+  let topIdx = -1, topVal = -Infinity;
+  padded.forEach((v, i) => { if (v != null && v > topVal) { topVal = v; topIdx = i; } });
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
   const nums = padded.filter((v) => v != null);
@@ -125,27 +128,11 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
         {padded.map((v, i) => v == null ? null : (
           <g key={`dot-${i}`}>
             <circle cx={x(i)} cy={y(v)} r={selected === i + 1 ? 5 : 3.5} fill={stroke} stroke={selected === i + 1 ? "#1c1917" : "none"} strokeWidth="1" />
-            <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#dc2626" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
+            {i === topIdx && (
+              <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#dc2626" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
+            )}
           </g>
         ))}
-        {/* X-axis labels */}
-        {padded.map((v, i) => {
-          const hasData = v != null;
-          const isSel = selected === i + 1;
-          return (
-            <text
-              key={`lab-${i}`}
-              x={x(i)}
-              y={H - 4}
-              fontSize="9"
-              textAnchor="middle"
-              fill={isSel ? stroke : hasData ? "#78716c" : "#a8a29e"}
-              fontWeight={isSel ? "700" : "400"}
-            >
-              G{i + 1}
-            </text>
-          );
-        })}
         {/* Full-height column hit zones, layered last so they capture taps */}
         {padded.map((v, i) => {
           const hasData = v != null;
@@ -180,7 +167,7 @@ const VA_CATEGORY_ORDER = [
 ];
 const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebounds"]);
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game" }) {
   // Tap a game label in the chart to swap in that game's single-game stats.
   const [selectedGame, setSelectedGame] = useState(null);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
@@ -272,19 +259,19 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             if (!rate) return "Value Added Breakdown";
             if (selectedGame) {
               const opp = gameContext?.[selectedGame - 1]?.opp;
-              return `Game ${selectedGame}${opp ? ` vs ${opp}` : ""} Breakdown`;
+              return `Game ${selectedGame}${opp ? ` vs ${opp}` : ""}`;
             }
             return breakdownTitle || "Series Breakdown";
           })()}</span>
           {selectedGame && (
-            <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back to series</button>
+            <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back</button>
           )}
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="sm:order-2 sm:flex-1">
             <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2" : "grid-cols-3"}`}>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? "Game" : "Games"}</div>
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
               </div>
               <div className="flex flex-col justify-end text-center">
@@ -1500,7 +1487,6 @@ function PlayoffLeaderboard({ season, lga }) {
     <div className="mb-4 border border-stone-300 bg-white">
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200">
         Playoff Leaderboard
-        <span className="ml-2 normal-case tracking-normal text-stone-400 italic">Top {Math.min(10, all.length)} by Total Value Added</span>
       </div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
@@ -1556,6 +1542,7 @@ function PlayoffLeaderboard({ season, lga }) {
                 partitions={partitions}
                 useTeamColor
                 breakdownTitle="Playoff Breakdown"
+                gameTileLabel="Playoff Game"
                 onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(i + 1) : undefined}
               />
