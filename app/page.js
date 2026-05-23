@@ -61,14 +61,17 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function GameVAChart({ values, color = "#57534e", selected, onSelect }) {
+function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions }) {
   const stroke = color;
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series.
   const n = Math.max(values.length, 4);
   const padded = values.length >= n ? values : [...values, ...Array(n - values.length).fill(null)];
-  const W = 320, H = 110;
-  const pad = { l: 14, r: 10, t: 22, b: 18 };
+  const W = 320, H = 100;
+  const pad = { l: 14, r: 10, t: 22, b: 8 };
+  // Only the top-scoring dot gets a value label (max anchor for scale).
+  let topIdx = -1, topVal = -Infinity;
+  padded.forEach((v, i) => { if (v != null && v > topVal) { topVal = v; topIdx = i; } });
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
   const nums = padded.filter((v) => v != null);
@@ -105,31 +108,31 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect }) {
           );
         })()}
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
+        {/* Series partitions: dotted vertical between i-1 and i */}
+        {(partitions || []).map((j) => {
+          if (j <= 0 || j >= n) return null;
+          const px = (x(j - 1) + x(j)) / 2;
+          return (
+            <line
+              key={`part-${j}`}
+              x1={px} x2={px}
+              y1={pad.t - 6}
+              y2={H - pad.b + 4}
+              stroke="#a8a29e"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+            />
+          );
+        })}
         <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         {padded.map((v, i) => v == null ? null : (
           <g key={`dot-${i}`}>
             <circle cx={x(i)} cy={y(v)} r={selected === i + 1 ? 5 : 3.5} fill={stroke} stroke={selected === i + 1 ? "#1c1917" : "none"} strokeWidth="1" />
-            <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#dc2626" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
+            {i === topIdx && (
+              <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#dc2626" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
+            )}
           </g>
         ))}
-        {/* X-axis labels */}
-        {padded.map((v, i) => {
-          const hasData = v != null;
-          const isSel = selected === i + 1;
-          return (
-            <text
-              key={`lab-${i}`}
-              x={x(i)}
-              y={H - 4}
-              fontSize="9"
-              textAnchor="middle"
-              fill={isSel ? stroke : hasData ? "#78716c" : "#a8a29e"}
-              fontWeight={isSel ? "700" : "400"}
-            >
-              G{i + 1}
-            </text>
-          );
-        })}
         {/* Full-height column hit zones, layered last so they capture taps */}
         {padded.map((v, i) => {
           const hasData = v != null;
@@ -164,7 +167,7 @@ const VA_CATEGORY_ORDER = [
 ];
 const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebounds"]);
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, onPrev, onNext, useTeamColor = false }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game" }) {
   // Tap a game label in the chart to swap in that game's single-game stats.
   const [selectedGame, setSelectedGame] = useState(null);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
@@ -252,16 +255,25 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         <div className="flex-1 min-w-0">
       <div className="mb-3">
         <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
-          <span>{rate ? (selectedGame ? `Game ${selectedGame} Breakdown` : "Series Breakdown") : "Value Added Breakdown"}</span>
+          <span>{(() => {
+            if (!rate) return "Value Added Breakdown";
+            if (selectedGame) {
+              const ctx = gameContext?.[selectedGame - 1];
+              const num = ctx?.seriesGameNumber || selectedGame;
+              const opp = ctx?.opp;
+              return `Game ${num}${opp ? ` vs ${opp}` : ""}`;
+            }
+            return breakdownTitle || "Series Breakdown";
+          })()}</span>
           {selectedGame && (
-            <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back to series</button>
+            <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back</button>
           )}
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="sm:order-2 sm:flex-1">
             <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2" : "grid-cols-3"}`}>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? "Game" : "Games"}</div>
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
               </div>
               <div className="flex flex-col justify-end text-center">
@@ -287,6 +299,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                 color={accentColor}
                 selected={selectedGame}
                 onSelect={canSelect ? setSelectedGame : undefined}
+                partitions={partitions}
               />
             </div>
           )}
@@ -1425,6 +1438,132 @@ function exploreSeasonList() {
   return seasons;
 }
 
+function PlayoffLeaderboard({ season, lga }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setData(null);
+    setError(null);
+    setShowAll(false);
+    setExpanded(null);
+    setLoading(true);
+    fetch(`/api/leaderboard?season=${season}`)
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => !cancelled && setError(e.message || "Load failed"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [season]);
+
+  if (loading) {
+    return (
+      <div className="mb-4 p-3 bg-white border border-stone-300">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Playoff Leaderboard</div>
+        <div className="text-[10px] text-stone-500 italic py-2 text-center">Aggregating box scores… (first load may take ~10s)</div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="mb-4 p-3 bg-white border border-stone-300">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Playoff Leaderboard</div>
+        <div className="text-[10px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load — {error}</div>
+      </div>
+    );
+  }
+  if (!data || !data.players?.length) return null;
+
+  const all = data.players;
+  const shown = showAll ? all : all.slice(0, 10);
+
+  return (
+    <div className="mb-4 border border-stone-300 bg-white">
+      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200">
+        Playoff Leaderboard
+      </div>
+      <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
+        <span className="w-6 text-right">#</span>
+        <span className="w-10">Team</span>
+        <span className="flex-1">Player</span>
+        <span className="w-6 text-right">G</span>
+        <span className="w-12 text-right">TOT VA</span>
+        <span className="w-10 text-right">VA/G</span>
+      </div>
+      {shown.map((p, i) => {
+        const isOpen = expanded === i;
+        const tc = teamColor(p.team);
+        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+        // Player's playoff games already chronological from server.
+        const values = p.games.map((g) => g.va);
+        const byGame = p.games.map((g) => ({
+          team: p.team, name: p.name, gp: 1, va: g.va,
+          mp: g.mp, pts: g.pts, reb: g.reb, drb: g.drb, orb: g.orb,
+          ast: g.ast, stl: g.stl, blk: g.blk, tov: g.tov,
+          fgm: g.fgm, fga: g.fga, tpm: g.tpm, tpa: g.tpa, ftm: g.ftm, fta: g.fta,
+        }));
+        const gameContext = p.games.map((g) => ({ opp: g.opp, seriesIdx: g.seriesIdx, seriesGameNumber: g.seriesGameNumber }));
+        const partitions = [];
+        for (let j = 1; j < p.games.length; j++) {
+          if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
+        }
+        const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
+        return (
+          <div key={i} className="border-b border-stone-100 last:border-0">
+            <button
+              onClick={() => setExpanded(isOpen ? null : i)}
+              className={`w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left ${isOpen ? "bg-stone-100" : ""}`}
+            >
+              <span className="w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
+              <span style={badgeStyle} className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border">{p.team}</span>
+              <span className="flex-1 truncate text-stone-800">
+                <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
+                {p.name}
+              </span>
+              <span className="w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
+              <span className={`w-12 text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
+              <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
+            </button>
+            {isOpen && (
+              <VABreakdown
+                p={p}
+                lga={lga}
+                teams={{}}
+                rate
+                gameSeries={values}
+                byGame={byGame}
+                gameContext={gameContext}
+                partitions={partitions}
+                useTeamColor
+                breakdownTitle="Playoff Breakdown"
+                gameTileLabel="Playoff Game"
+                onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
+                onNext={i < shown.length - 1 ? () => setExpanded(i + 1) : undefined}
+              />
+            )}
+          </div>
+        );
+      })}
+      {all.length > 10 && (
+        <button
+          onClick={() => setShowAll((s) => !s)}
+          className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
+        >
+          {showAll ? "Show top 10" : `Show all (${all.length})`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ExploreView() {
   const SEASONS = useMemo(() => exploreSeasonList(), []);
   const [season, setSeason] = useState(SEASONS[0]);
@@ -1478,6 +1617,7 @@ function ExploreView() {
       {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
       {!loading && !error && data && (
         <>
+          <PlayoffLeaderboard season={season} lga={lga} />
           {(["r1", "r2", "r3", "r4"]).map((rk) => (
             <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} />
           ))}
