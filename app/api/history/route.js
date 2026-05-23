@@ -62,10 +62,13 @@ export async function GET(req) {
     for (const ev of events) {
       const comp = ev.competitions?.[0];
       if (!comp || !(comp.status?.type?.completed ?? ev.status?.type?.completed)) continue;
-      // Playoff games carry a series note ("West 1st Round - Game 1", etc.).
-      // Regular-season games don't; Play-In games say "Play-In".
+      // Identify playoff games: ESPN flags them with season.type === 3, but
+      // older seasons sometimes omit the per-event note. Accept either signal.
+      // Always exclude play-in via the note when present.
       const note = (comp.notes?.[0]?.headline || comp.notes?.[0]?.type || "").toString();
-      if (!note || /play[- ]?in/i.test(note)) continue;
+      if (/play[- ]?in/i.test(note)) continue;
+      const isPostseason = ev.season?.type === 3 || comp.season?.type === 3;
+      if (!isPostseason && !note) continue;
       const cs = comp.competitors || [];
       const h = cs.find((c) => c.homeAway === "home");
       const a = cs.find((c) => c.homeAway === "away");
