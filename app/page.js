@@ -1408,11 +1408,11 @@ function ExploreRoundSection({ roundKey, series, lga }) {
   );
 }
 
-// Seasons available in the picker. Modern era — 1996-97 onward — where
-// ESPN's box-score coverage is reliable.
+// Seasons available in the picker. ESPN's NBA scoreboard reliably covers
+// 2003-04 onward; earlier seasons return empty/erroring responses.
 function exploreSeasonList() {
   const seasons = [];
-  for (let y = 2024; y >= 1996; y--) {
+  for (let y = 2024; y >= 2003; y--) {
     const end = String((y + 1) % 100).padStart(2, "0");
     seasons.push(`${y}-${end}`);
   }
@@ -1465,7 +1465,7 @@ function ExploreView() {
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
-        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN; coverage best from 1996-97 onward.</div>
+        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN; coverage from 2003-04 onward.</div>
       </div>
 
       {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
