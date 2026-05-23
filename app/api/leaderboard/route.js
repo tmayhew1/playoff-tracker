@@ -52,32 +52,36 @@ function playersFromBox(box) {
   const out = [];
   for (const tb of teamsBox) {
     const tri = toNba(tb.team?.abbreviation);
-    const grp = (tb.statistics || [])[0] || {};
-    const names = grp.names || [];
-    const idx = {};
-    names.forEach((n, i) => (idx[n] = i));
-    for (const a of grp.athletes || []) {
-      const st = a.stats || [];
-      if (!st.length || a.didNotPlay) continue;
-      const mp = parseMin(st[idx.MIN]);
-      if (mp <= 0) continue;
-      const [fgm, fga] = splitMade(st[idx.FG]);
-      const [tpm, tpa] = splitMade(st[idx["3PT"]]);
-      const [ftm, fta] = splitMade(st[idx.FT]);
-      out.push({
-        name: a.athlete?.displayName || "",
-        team: tri,
-        mp,
-        pts: Number(st[idx.PTS]) || 0,
-        reb: Number(st[idx.REB]) || 0,
-        drb: Number(st[idx.DREB]) || 0,
-        orb: Number(st[idx.OREB]) || 0,
-        ast: Number(st[idx.AST]) || 0,
-        stl: Number(st[idx.STL]) || 0,
-        blk: Number(st[idx.BLK]) || 0,
-        tov: Number(st[idx.TO]) || 0,
-        fgm, fga, tpm, tpa, ftm, fta,
-      });
+    // Iterate ALL statistics blocks (older summaries split into
+    // starters/bench), not just the first one.
+    const blocks = Array.isArray(tb.statistics) ? tb.statistics : [];
+    for (const grp of blocks) {
+      const names = grp.names || [];
+      const idx = {};
+      names.forEach((n, i) => (idx[n] = i));
+      for (const a of grp.athletes || []) {
+        const st = a.stats || [];
+        if (!st.length || a.didNotPlay) continue;
+        const mp = parseMin(st[idx.MIN]);
+        if (mp <= 0) continue;
+        const [fgm, fga] = splitMade(st[idx.FG]);
+        const [tpm, tpa] = splitMade(st[idx["3PT"]]);
+        const [ftm, fta] = splitMade(st[idx.FT]);
+        out.push({
+          name: a.athlete?.displayName || "",
+          team: tri,
+          mp,
+          pts: Number(st[idx.PTS]) || 0,
+          reb: Number(st[idx.REB]) || 0,
+          drb: Number(st[idx.DREB]) || 0,
+          orb: Number(st[idx.OREB]) || 0,
+          ast: Number(st[idx.AST]) || 0,
+          stl: Number(st[idx.STL]) || 0,
+          blk: Number(st[idx.BLK]) || 0,
+          tov: Number(st[idx.TO]) || 0,
+          fgm, fga, tpm, tpa, ftm, fta,
+        });
+      }
     }
   }
   return out;

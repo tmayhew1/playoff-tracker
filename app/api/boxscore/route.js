@@ -69,33 +69,38 @@ async function fetchEspnBox(eventId) {
 
   const teamOut = (tb) => {
     const tri = toNba(tb.team?.abbreviation);
-    const grp = (tb.statistics || [])[0] || {};
-    const names = grp.names || [];
-    const idx = {};
-    names.forEach((n, i) => (idx[n] = i));
+    // Some older ESPN summaries split statistics into "starters"/"bench"
+    // sub-blocks; iterate all blocks and collect from each so we don't
+    // miss the bench (or pick the wrong block).
+    const blocks = Array.isArray(tb.statistics) ? tb.statistics : [];
     const players = [];
-    for (const a of grp.athletes || []) {
-      const st = a.stats || [];
-      if (!st.length || a.didNotPlay) continue;
-      const [fgm, fga] = splitMade(st[idx.FG]);
-      const [tpm, tpa] = splitMade(st[idx["3PT"]]);
-      const [ftm, fta] = splitMade(st[idx.FT]);
-      players.push({
-        name: a.athlete?.displayName || "",
-        starter: !!a.starter,
-        oncourt: false,
-        mp: parseMin(st[idx.MIN]),
-        pts: Number(st[idx.PTS]) || 0,
-        reb: Number(st[idx.REB]) || 0,
-        drb: Number(st[idx.DREB]) || 0,
-        orb: Number(st[idx.OREB]) || 0,
-        ast: Number(st[idx.AST]) || 0,
-        stl: Number(st[idx.STL]) || 0,
-        blk: Number(st[idx.BLK]) || 0,
-        tov: Number(st[idx.TO]) || 0,
-        fgm, fga, tpm, tpa, ftm, fta,
-        plusMinus: Number(String(st[idx["+/-"]] || "0").replace("+", "")) || 0,
-      });
+    for (const grp of blocks) {
+      const names = grp.names || [];
+      const idx = {};
+      names.forEach((n, i) => (idx[n] = i));
+      for (const a of grp.athletes || []) {
+        const st = a.stats || [];
+        if (!st.length || a.didNotPlay) continue;
+        const [fgm, fga] = splitMade(st[idx.FG]);
+        const [tpm, tpa] = splitMade(st[idx["3PT"]]);
+        const [ftm, fta] = splitMade(st[idx.FT]);
+        players.push({
+          name: a.athlete?.displayName || "",
+          starter: !!a.starter,
+          oncourt: false,
+          mp: parseMin(st[idx.MIN]),
+          pts: Number(st[idx.PTS]) || 0,
+          reb: Number(st[idx.REB]) || 0,
+          drb: Number(st[idx.DREB]) || 0,
+          orb: Number(st[idx.OREB]) || 0,
+          ast: Number(st[idx.AST]) || 0,
+          stl: Number(st[idx.STL]) || 0,
+          blk: Number(st[idx.BLK]) || 0,
+          tov: Number(st[idx.TO]) || 0,
+          fgm, fga, tpm, tpa, ftm, fta,
+          plusMinus: Number(String(st[idx["+/-"]] || "0").replace("+", "")) || 0,
+        });
+      }
     }
     return { tri, players };
   };
