@@ -257,35 +257,41 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back to series</button>
           )}
         </div>
-        <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
-          <div className="flex flex-col justify-end text-center">
-            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? "Game" : "Games"}</div>
-            <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="sm:order-2 sm:flex-1">
+            <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2" : "grid-cols-3"}`}>
+              <div className="flex flex-col justify-end text-center">
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? "Game" : "Games"}</div>
+                <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
+              </div>
+              <div className="flex flex-col justify-end text-center">
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
+                <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
+              </div>
+              <div className="flex flex-col justify-end text-center">
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
+                <div className={`tabular-nums text-lg font-black ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</div>
+              </div>
+              {(p.gp || 1) > 1 && (
+                <div className="flex flex-col justify-end text-center">
+                  <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
+                  <div className={`tabular-nums text-lg font-black ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va / p.gp).toFixed(2)}</div>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col justify-end text-center">
-            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
-            <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
-          </div>
-          <div className="flex flex-col justify-end text-center">
-            <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
-            <div className={`tabular-nums text-lg font-black ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</div>
-          </div>
-          {(p.gp || 1) > 1 && (
-            <div className="flex flex-col justify-end text-center">
-              <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
-              <div className={`tabular-nums text-lg font-black ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va / p.gp).toFixed(2)}</div>
+          {rate && gameSeries && gameSeries.length > 0 && (
+            <div className="sm:order-1 sm:flex-1">
+              <GameVAChart
+                values={gameSeries}
+                color={accentColor}
+                selected={selectedGame}
+                onSelect={canSelect ? setSelectedGame : undefined}
+              />
             </div>
           )}
         </div>
       </div>
-      {rate && gameSeries && gameSeries.length > 0 && (
-        <GameVAChart
-          values={gameSeries}
-          color={accentColor}
-          selected={selectedGame}
-          onSelect={canSelect ? setSelectedGame : undefined}
-        />
-      )}
       <div className="space-y-0.5">
         {categories.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
@@ -1408,11 +1414,11 @@ function ExploreRoundSection({ roundKey, series, lga }) {
   );
 }
 
-// Seasons available in the picker. Modern era — 1996-97 onward — where
-// ESPN's box-score coverage is reliable.
+// Seasons available in the picker. ESPN's NBA scoreboard reliably covers
+// 2003-04 onward; earlier seasons return empty/erroring responses.
 function exploreSeasonList() {
   const seasons = [];
-  for (let y = 2024; y >= 1996; y--) {
+  for (let y = 2024; y >= 2003; y--) {
     const end = String((y + 1) % 100).padStart(2, "0");
     seasons.push(`${y}-${end}`);
   }
@@ -1465,7 +1471,7 @@ function ExploreView() {
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
-        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN; coverage best from 1996-97 onward.</div>
+        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN; coverage from 2003-04 onward.</div>
       </div>
 
       {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
