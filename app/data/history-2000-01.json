@@ -1,0 +1,1080 @@
+{
+  "season": "2000-01",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "CHA"
+      ],
+      "winner": "CHA",
+      "games": [
+        {
+          "gameId": "200104210MIA",
+          "gameCode": "20010421",
+          "gameDateTimeUTC": "2001-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 80
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "200104230MIA",
+          "gameCode": "20010423",
+          "gameDateTimeUTC": "2001-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 76
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200104270CHH",
+          "gameCode": "20010427",
+          "gameDateTimeUTC": "2001-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 79
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "IND"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "200104210PHI",
+          "gameCode": "20010421",
+          "gameDateTimeUTC": "2001-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 78
+          },
+          "away": {
+            "tri": "IND",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200104240PHI",
+          "gameCode": "20010424",
+          "gameDateTimeUTC": "2001-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 116
+          },
+          "away": {
+            "tri": "IND",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200104280IND",
+          "gameCode": "20010428",
+          "gameDateTimeUTC": "2001-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 87
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200105020IND",
+          "gameCode": "20010502",
+          "gameDateTimeUTC": "2001-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 85
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "MIN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200104210SAS",
+          "gameCode": "20010421",
+          "gameDateTimeUTC": "2001-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 87
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200104230SAS",
+          "gameCode": "20010423",
+          "gameDateTimeUTC": "2001-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 86
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "200104280MIN",
+          "gameCode": "20010428",
+          "gameDateTimeUTC": "2001-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 93
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200104300MIN",
+          "gameCode": "20010430",
+          "gameDateTimeUTC": "2001-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 84
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "200104210UTA",
+          "gameCode": "20010421",
+          "gameDateTimeUTC": "2001-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 88
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200104240UTA",
+          "gameCode": "20010424",
+          "gameDateTimeUTC": "2001-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 109
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200104280DAL",
+          "gameCode": "20010428",
+          "gameDateTimeUTC": "2001-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 94
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200105010DAL",
+          "gameCode": "20010501",
+          "gameDateTimeUTC": "2001-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 107
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "200105030UTA",
+          "gameCode": "20010503",
+          "gameDateTimeUTC": "2001-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 83
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200104220LAL",
+          "gameCode": "20010422",
+          "gameDateTimeUTC": "2001-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 106
+          },
+          "away": {
+            "tri": "POR",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200104260LAL",
+          "gameCode": "20010426",
+          "gameDateTimeUTC": "2001-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 106
+          },
+          "away": {
+            "tri": "POR",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200104290POR",
+          "gameCode": "20010429",
+          "gameDateTimeUTC": "2001-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 86
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "ORL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "200104220MIL",
+          "gameCode": "20010422",
+          "gameDateTimeUTC": "2001-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 103
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200104250MIL",
+          "gameCode": "20010425",
+          "gameDateTimeUTC": "2001-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 103
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200104280ORL",
+          "gameCode": "20010428",
+          "gameDateTimeUTC": "2001-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "200105010ORL",
+          "gameCode": "20010501",
+          "gameDateTimeUTC": "2001-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "TOR"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "200104220NYK",
+          "gameCode": "20010422",
+          "gameDateTimeUTC": "2001-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 92
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200104260NYK",
+          "gameCode": "20010426",
+          "gameDateTimeUTC": "2001-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 74
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200104290TOR",
+          "gameCode": "20010429",
+          "gameDateTimeUTC": "2001-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 89
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200105020TOR",
+          "gameCode": "20010502",
+          "gameDateTimeUTC": "2001-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 100
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200105040NYK",
+          "gameCode": "20010504",
+          "gameDateTimeUTC": "2001-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAC",
+        "PHX"
+      ],
+      "winner": "SAC",
+      "games": [
+        {
+          "gameId": "200104220SAC",
+          "gameCode": "20010422",
+          "gameDateTimeUTC": "2001-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 83
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200104250SAC",
+          "gameCode": "20010425",
+          "gameDateTimeUTC": "2001-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 116
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200104290PHO",
+          "gameCode": "20010429",
+          "gameDateTimeUTC": "2001-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200105020PHO",
+          "gameCode": "20010502",
+          "gameDateTimeUTC": "2001-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 82
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "DAL"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200105050SAS",
+          "gameCode": "20010505",
+          "gameDateTimeUTC": "2001-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 94
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "200105070SAS",
+          "gameCode": "20010507",
+          "gameDateTimeUTC": "2001-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200105090DAL",
+          "gameCode": "20010509",
+          "gameDateTimeUTC": "2001-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 90
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200105120DAL",
+          "gameCode": "20010512",
+          "gameDateTimeUTC": "2001-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "200105140SAS",
+          "gameCode": "20010514",
+          "gameDateTimeUTC": "2001-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 105
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "SAC"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200105060LAL",
+          "gameCode": "20010506",
+          "gameDateTimeUTC": "2001-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "200105080LAL",
+          "gameCode": "20010508",
+          "gameDateTimeUTC": "2001-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200105110SAC",
+          "gameCode": "20010511",
+          "gameDateTimeUTC": "2001-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 81
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200105130SAC",
+          "gameCode": "20010513",
+          "gameDateTimeUTC": "2001-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 113
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 119
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIL",
+        "CHA"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "200105060MIL",
+          "gameCode": "20010506",
+          "gameDateTimeUTC": "2001-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 104
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200105080MIL",
+          "gameCode": "20010508",
+          "gameDateTimeUTC": "2001-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 91
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200105100CHH",
+          "gameCode": "20010510",
+          "gameDateTimeUTC": "2001-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 102
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200105130CHH",
+          "gameCode": "20010513",
+          "gameDateTimeUTC": "2001-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 85
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "200105150MIL",
+          "gameCode": "20010515",
+          "gameDateTimeUTC": "2001-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 86
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200105170CHH",
+          "gameCode": "20010517",
+          "gameDateTimeUTC": "2001-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200105200MIL",
+          "gameCode": "20010520",
+          "gameDateTimeUTC": "2001-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 104
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHI",
+        "TOR"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "200105060PHI",
+          "gameCode": "20010506",
+          "gameDateTimeUTC": "2001-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 93
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200105090PHI",
+          "gameCode": "20010509",
+          "gameDateTimeUTC": "2001-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 97
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200105110TOR",
+          "gameCode": "20010511",
+          "gameDateTimeUTC": "2001-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "200105130TOR",
+          "gameCode": "20010513",
+          "gameDateTimeUTC": "2001-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 79
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200105160PHI",
+          "gameCode": "20010516",
+          "gameDateTimeUTC": "2001-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 121
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200105180TOR",
+          "gameCode": "20010518",
+          "gameDateTimeUTC": "2001-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200105200PHI",
+          "gameCode": "20010520",
+          "gameDateTimeUTC": "2001-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 88
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200105190SAS",
+          "gameCode": "20010519",
+          "gameDateTimeUTC": "2001-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 90
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200105210SAS",
+          "gameCode": "20010521",
+          "gameDateTimeUTC": "2001-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 81
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200105250LAL",
+          "gameCode": "20010525",
+          "gameDateTimeUTC": "2001-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "200105270LAL",
+          "gameCode": "20010527",
+          "gameDateTimeUTC": "2001-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 82
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "PHI",
+        "MIL"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "200105220PHI",
+          "gameCode": "20010522",
+          "gameDateTimeUTC": "2001-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 93
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200105240PHI",
+          "gameCode": "20010524",
+          "gameDateTimeUTC": "2001-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 78
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200105260MIL",
+          "gameCode": "20010526",
+          "gameDateTimeUTC": "2001-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 80
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "200105280MIL",
+          "gameCode": "20010528",
+          "gameDateTimeUTC": "2001-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 83
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200105300PHI",
+          "gameCode": "20010530",
+          "gameDateTimeUTC": "2001-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 89
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200106010MIL",
+          "gameCode": "20010601",
+          "gameDateTimeUTC": "2001-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 110
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200106030PHI",
+          "gameCode": "20010603",
+          "gameDateTimeUTC": "2001-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 108
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "LAL",
+        "PHI"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200106060LAL",
+          "gameCode": "20010606",
+          "gameDateTimeUTC": "2001-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "200106080LAL",
+          "gameCode": "20010608",
+          "gameDateTimeUTC": "2001-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 98
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200106100PHI",
+          "gameCode": "20010610",
+          "gameDateTimeUTC": "2001-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 91
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200106130PHI",
+          "gameCode": "20010613",
+          "gameDateTimeUTC": "2001-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200106150PHI",
+          "gameCode": "20010615",
+          "gameDateTimeUTC": "2001-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 108
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-05-24T16:21:16.142Z"
+}
