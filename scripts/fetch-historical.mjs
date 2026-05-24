@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Bakes one season's playoff data into static JSON, using balldontlie.io
- * as the source. Writes two files the API routes prefer when present:
+ * Bakes one season's playoff data into static JSON, using stats.nba.com as
+ * the source. NBA's API blocks Vercel's IPs (why /api/* falls back to ESPN),
+ * but GitHub Actions runners get a different pool — this script runs there
+ * via .github/workflows/bake-history.yml.
  *
+ * Writes:
  *   app/data/history-<season>.json     (rounds → series → games)
  *   app/data/leaderboard-<season>.json (per-player playoff aggregates)
  *
  * Usage:
- *   BALLDONTLIE_API_KEY=xxx node scripts/fetch-historical.mjs 2014-15
- *
- * Designed to run in GitHub Actions (.github/workflows/bake-history.yml)
- * so it can be triggered from a phone with no local Node setup.
+ *   node scripts/fetch-historical.mjs 2014-15
  */
 
 import { writeFile, mkdir } from "node:fs/promises";
@@ -24,20 +24,22 @@ const DATA_DIR = join(ROOT, "app", "data");
 
 const season = process.argv[2];
 if (!season || !/^\d{4}-\d{2}$/.test(season)) {
-  console.error("Usage: BALLDONTLIE_API_KEY=xxx node scripts/fetch-historical.mjs <YYYY-YY>");
-  process.exit(1);
-}
-const seasonStartYear = Number(season.slice(0, 4));
-
-const API_KEY = process.env.BALLDONTLIE_API_KEY;
-if (!API_KEY) {
-  console.error("BALLDONTLIE_API_KEY env var required (sign up free at balldontlie.io).");
+  console.error("Usage: node scripts/fetch-historical.mjs <YYYY-YY>");
   process.exit(1);
 }
 
-const API = "https://api.balldontlie.io/v1";
+const HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  Accept: "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  Referer: "https://www.nba.com/",
+  Origin: "https://www.nba.com",
+  "x-nba-stats-origin": "stats",
+  "x-nba-stats-token": "true",
+};
 
-// --- League averages for VA (same data the app uses) -----------------------
+// --- League averages for VA -----------------------------------------------
 const LGA_ALL = JSON.parse(readFileSync(join(DATA_DIR, "league-averages.json"), "utf8"));
 const DEFAULT_LGA = LGA_ALL["2025-26"] || Object.values(LGA_ALL).pop();
 const lga = LGA_ALL[season] || DEFAULT_LGA;
@@ -45,7 +47,7 @@ if (!LGA_ALL[season]) {
   console.warn(`No league averages for ${season}; falling back to defaults. VA will be approximate.`);
 }
 
-// --- VA calc, duplicated from app/scoring.js so the script is standalone ---
+// VA, duplicated from app/scoring.js so the script is standalone.
 function valueAddParts(p) {
   const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
   if (!mp || mp <= 0) return { va: 0, efficiency: 0 };
@@ -64,7 +66,6 @@ function valueAddParts(p) {
   return { va: volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal, efficiency };
 }
 
-// --- Helpers --------------------------------------------------------------
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function parseMin(v) {
@@ -77,172 +78,208 @@ function parseMin(v) {
   return parseFloat(s) || 0;
 }
 
-async function fetchPage(url, attempt = 1) {
-  const res = await fetch(url, { headers: { Authorization: API_KEY } });
-  if (res.status === 429) {
-    const wait = Math.min(60_000, 5_000 * attempt);
-    console.warn(`  rate-limited; sleeping ${wait}ms`);
-    await sleep(wait);
-    return fetchPage(url, attempt + 1);
+async function fetchJson(url, attempt = 1) {
+  try {
+    const res = await fetch(url, { headers: HEADERS });
+    if (res.status === 429 || res.status === 503) {
+      const wait = Math.min(60_000, 3_000 * attempt);
+      console.warn(`  ${res.status}; sleeping ${wait}ms (attempt ${attempt})`);
+      await sleep(wait);
+      return fetchJson(url, attempt + 1);
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${url}\n${body.slice(0, 400)}`);
+    }
+    return res.json();
+  } catch (e) {
+    if (attempt < 4 && /fetch|network|ECONN|timeout/i.test(e.message)) {
+      console.warn(`  retry ${attempt}: ${e.message}`);
+      await sleep(2000 * attempt);
+      return fetchJson(url, attempt + 1);
+    }
+    throw e;
   }
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
-  return res.json();
 }
 
-async function fetchAll(path, baseQuery) {
+function indexer(headers) {
+  const idx = {};
+  headers.forEach((h, i) => (idx[h] = i));
+  return (row, key) => row[idx[key]];
+}
+
+async function inBatches(arr, n, fn) {
   const out = [];
-  let cursor = null;
-  while (true) {
-    const qs = new URLSearchParams(baseQuery);
-    if (cursor != null) qs.set("cursor", String(cursor));
-    qs.set("per_page", "100");
-    const data = await fetchPage(`${API}${path}?${qs.toString()}`);
-    for (const row of data.data || []) out.push(row);
-    cursor = data.meta?.next_cursor;
-    if (!cursor) return out;
-    console.log(`  fetched ${out.length}…`);
+  for (let i = 0; i < arr.length; i += n) {
+    const chunk = arr.slice(i, i + n);
+    const res = await Promise.all(chunk.map(fn));
+    out.push(...res);
+    if (i + n < arr.length) await sleep(800);
   }
+  return out;
 }
 
 // --- Main -----------------------------------------------------------------
 async function main() {
-  console.log(`Baking ${season} playoffs from balldontlie…`);
+  console.log(`Baking ${season} from stats.nba.com…`);
 
-  // 1. Games.
-  const games = await fetchAll("/games", {
-    "seasons[]": String(seasonStartYear),
-    postseason: "true",
-  });
-  // Filter to completed games with both team abbreviations.
-  const completed = games.filter((g) =>
-    g.home_team?.abbreviation && g.visitor_team?.abbreviation &&
-    Number.isFinite(g.home_team_score) && Number.isFinite(g.visitor_team_score) &&
-    (g.home_team_score > 0 || g.visitor_team_score > 0)
-  );
-  console.log(`  ${completed.length} completed playoff games`);
+  // 1. Playoff game log (team-level rows; 2 rows per game).
+  const logUrl =
+    `https://stats.nba.com/stats/leaguegamelog?Counter=1000&Direction=ASC` +
+    `&LeagueID=00&PlayerOrTeam=T&Season=${season}&SeasonType=Playoffs&Sorter=DATE`;
+  const logJson = await fetchJson(logUrl);
+  const lg = (logJson.resultSets || []).find((r) => r.name === "LeagueGameLog") || logJson.resultSets?.[0];
+  if (!lg) throw new Error("LeagueGameLog result set missing");
+  const getLg = indexer(lg.headers);
 
-  // 2. Cluster by team pair → series. Sort chronologically; rounds 8/4/2/1.
+  // Merge two rows per game into one record.
+  const gameMap = new Map();
+  for (const row of lg.rowSet) {
+    const gameId = getLg(row, "GAME_ID");
+    const tri = getLg(row, "TEAM_ABBREVIATION");
+    const matchup = getLg(row, "MATCHUP") || "";
+    const pts = Number(getLg(row, "PTS")) || 0;
+    const date = getLg(row, "GAME_DATE");
+    const side = matchup.includes(" vs. ") ? "home" : "away";
+    const g = gameMap.get(gameId) || { gameId, date, home: null, away: null };
+    g[side] = { tri, score: pts };
+    gameMap.set(gameId, g);
+  }
+  const games = [...gameMap.values()]
+    .filter((g) => g.home && g.away)
+    .sort((a, b) => (a.date || "").localeCompare(b.date || "") || a.gameId.localeCompare(b.gameId));
+  console.log(`  ${games.length} playoff games`);
+
+  // 2. Cluster into series; assign rounds 8/4/2/1.
   const byPair = new Map();
-  const sortedGames = completed
-    .slice()
-    .sort((x, y) => (x.date || "").localeCompare(y.date || "") || (x.id - y.id));
-  for (const g of sortedGames) {
-    const key = [g.home_team.abbreviation, g.visitor_team.abbreviation].sort().join("-");
+  for (const g of games) {
+    const key = [g.home.tri, g.away.tri].sort().join("-");
     if (!byPair.has(key)) byPair.set(key, []);
     byPair.get(key).push(g);
   }
   const seriesList = [...byPair.values()]
     .map((gs) => ({ games: gs, start: gs[0].date }))
     .sort((p, q) => (p.start || "").localeCompare(q.start || ""));
-  const roundForIdx = (i) => (i < 8 ? "r1" : i < 12 ? "r2" : i < 14 ? "r3" : "r4");
+  const roundKeyForIdx = (i) => (i < 8 ? "r1" : i < 12 ? "r2" : i < 14 ? "r3" : "r4");
   const roundNumForIdx = (i) => (i < 8 ? 1 : i < 12 ? 2 : i < 14 ? 3 : 4);
 
-  // gameId → seriesIdx, plus a chronological global gameIdx.
-  const seriesIdxByGameId = new Map();
-  const dateByGameId = new Map();
+  // Flat chronological list with series index.
   const allGames = [];
   seriesList.forEach((s, sIdx) => {
-    for (const g of s.games) {
-      seriesIdxByGameId.set(g.id, sIdx);
-      dateByGameId.set(g.id, g.date);
-      allGames.push({ ...g, seriesIdx: sIdx });
+    for (const g of s.games) allGames.push({ ...g, seriesIdx: sIdx });
+  });
+  allGames.sort((x, y) => (x.date || "").localeCompare(y.date || "") || x.gameId.localeCompare(y.gameId));
+  const gameIdxByGameId = new Map();
+  allGames.forEach((g, i) => gameIdxByGameId.set(g.gameId, i));
+
+  // 3. Fetch each game's traditional box score in batches.
+  console.log("Fetching box scores…");
+  const boxes = await inBatches(allGames, 5, async (g, j) => {
+    const url =
+      `https://stats.nba.com/stats/boxscoretraditionalv2?GameID=${g.gameId}` +
+      `&StartPeriod=0&EndPeriod=10&StartRange=0&EndRange=0&RangeType=0`;
+    try {
+      const data = await fetchJson(url);
+      const ps = (data.resultSets || []).find((r) => r.name === "PlayerStats");
+      if (!ps) return null;
+      const get = indexer(ps.headers);
+      const players = [];
+      for (const row of ps.rowSet) {
+        const tri = get(row, "TEAM_ABBREVIATION");
+        const mp = parseMin(get(row, "MIN"));
+        if (mp <= 0) continue;
+        players.push({
+          name: get(row, "PLAYER_NAME"),
+          team: tri,
+          starter: !!get(row, "START_POSITION"),
+          mp,
+          pts: Number(get(row, "PTS")) || 0,
+          reb: Number(get(row, "REB")) || 0,
+          drb: Number(get(row, "DREB")) || 0,
+          orb: Number(get(row, "OREB")) || 0,
+          ast: Number(get(row, "AST")) || 0,
+          stl: Number(get(row, "STL")) || 0,
+          blk: Number(get(row, "BLK")) || 0,
+          tov: Number(get(row, "TO")) || 0,
+          fgm: Number(get(row, "FGM")) || 0,
+          fga: Number(get(row, "FGA")) || 0,
+          tpm: Number(get(row, "FG3M")) || 0,
+          tpa: Number(get(row, "FG3A")) || 0,
+          ftm: Number(get(row, "FTM")) || 0,
+          fta: Number(get(row, "FTA")) || 0,
+        });
+      }
+      return { ...g, players };
+    } catch (e) {
+      console.warn(`  box failed for ${g.gameId}: ${e.message.split("\n")[0]}`);
+      return null;
     }
   });
-  allGames.sort((x, y) => (x.date || "").localeCompare(y.date || "") || (x.id - y.id));
-  const gameIdxByGameId = new Map();
-  allGames.forEach((g, i) => gameIdxByGameId.set(g.id, i));
 
-  // 3. Build history JSON shape — what /api/history returns.
-  const seriesGames = seriesList.map((s, i) => ({
-    round: roundForIdx(i),
-    teams: [s.games[0].home_team.abbreviation, s.games[0].visitor_team.abbreviation],
-    winner: (() => {
-      const wins = {};
-      for (const g of s.games) {
-        const w = g.home_team_score > g.visitor_team_score
-          ? g.home_team.abbreviation
-          : g.visitor_team.abbreviation;
-        wins[w] = (wins[w] || 0) + 1;
-      }
-      let best = null, bestN = 0;
-      for (const [t, n] of Object.entries(wins)) if (n > bestN) { best = t; bestN = n; }
-      return best;
-    })(),
-    games: s.games.map((g) => ({
-      gameId: String(g.id),
-      gameCode: (g.date || "").replace(/-/g, ""),
-      gameDateTimeUTC: g.status?.includes("T") ? g.status : (g.date ? `${g.date}T00:00:00.000Z` : null),
-      home: { tri: g.home_team.abbreviation, score: g.home_team_score },
-      away: { tri: g.visitor_team.abbreviation, score: g.visitor_team_score },
-    })),
-  }));
+  // 4. Build history JSON (matches /api/history's shape).
+  const historySeries = seriesList.map((s, i) => {
+    const wins = {};
+    for (const g of s.games) {
+      const w = g.home.score > g.away.score ? g.home.tri : g.away.tri;
+      wins[w] = (wins[w] || 0) + 1;
+    }
+    let winner = null, bestN = 0;
+    for (const [t, n] of Object.entries(wins)) if (n > bestN) { winner = t; bestN = n; }
+    return {
+      round: roundKeyForIdx(i),
+      teams: [s.games[0].home.tri, s.games[0].away.tri],
+      winner,
+      games: s.games.map((g) => ({
+        gameId: g.gameId,
+        gameCode: (g.date || "").replace(/-/g, ""),
+        gameDateTimeUTC: g.date ? `${g.date}T00:00:00.000Z` : null,
+        home: { tri: g.home.tri, score: g.home.score },
+        away: { tri: g.away.tri, score: g.away.score },
+      })),
+    };
+  });
 
   const historyOut = {
     season,
-    series: seriesGames,
-    source: "balldontlie",
+    series: historySeries,
+    source: "stats.nba.com",
     fetchedAt: new Date().toISOString(),
   };
 
-  // 4. Stats → per-player aggregation for leaderboard JSON.
-  console.log("Fetching stats…");
-  const stats = await fetchAll("/stats", {
-    "seasons[]": String(seasonStartYear),
-    postseason: "true",
-  });
-  console.log(`  ${stats.length} stat lines`);
-
+  // 5. Aggregate per player across all games for the leaderboard.
   const agg = new Map();
-  for (const s of stats) {
-    const gameId = s.game?.id;
-    if (gameId == null || !seriesIdxByGameId.has(gameId)) continue; // not a playoff series we care about
-    const tri = s.team?.abbreviation;
-    if (!tri) continue;
-    const mp = parseMin(s.min);
-    if (mp <= 0) continue;
-
-    const fgm = s.fgm || 0, fga = s.fga || 0;
-    const tpm = s.fg3m || 0, tpa = s.fg3a || 0;
-    const ftm = s.ftm || 0, fta = s.fta || 0;
-    const pts = s.pts || 0;
-    const drb = s.dreb || 0, orb = s.oreb || 0;
-    const reb = s.reb != null ? s.reb : (drb + orb);
-    const ast = s.ast || 0, stl = s.stl || 0, blk = s.blk || 0;
-    const tov = s.turnover || 0;
-
-    const playerObj = {
-      mp, pts, reb, drb, orb, ast, stl, blk, tov,
-      fgm, fga, tpm, tpa, ftm, fta,
-    };
-    const { va, efficiency } = valueAddParts(playerObj);
-
-    const name = `${s.player?.first_name || ""} ${s.player?.last_name || ""}`.trim();
-    const key = `${tri}:${name}`;
-    const a = agg.get(key) || {
-      name, team: tri,
-      gp: 0, va: 0, eff: 0,
-      mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
-      fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
-      games: [],
-    };
-    a.gp += 1;
-    a.va += va;
-    a.eff += efficiency;
-    for (const k of Object.keys(playerObj)) a[k] += playerObj[k];
-
-    const game = sortedGames.find((g) => g.id === gameId);
-    const opp = tri === game?.home_team?.abbreviation
-      ? game?.visitor_team?.abbreviation
-      : game?.home_team?.abbreviation;
-    a.games.push({
-      gameId: String(gameId),
-      gameIdx: gameIdxByGameId.get(gameId) ?? 0,
-      seriesIdx: seriesIdxByGameId.get(gameId),
-      opp: opp || "",
-      va,
-      ...playerObj,
-    });
-    agg.set(key, a);
+  for (const r of boxes) {
+    if (!r) continue;
+    for (const p of r.players) {
+      const opp = p.team === r.home.tri ? r.away.tri : r.home.tri;
+      const { va, efficiency } = valueAddParts(p);
+      const key = `${p.team}:${p.name}`;
+      const a = agg.get(key) || {
+        name: p.name, team: p.team,
+        gp: 0, va: 0, eff: 0,
+        mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+        fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
+        games: [],
+      };
+      a.gp += 1;
+      a.va += va;
+      a.eff += efficiency;
+      for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
+        a[k] += p[k] || 0;
+      }
+      a.games.push({
+        gameId: r.gameId,
+        gameIdx: gameIdxByGameId.get(r.gameId) ?? 0,
+        seriesIdx: r.seriesIdx,
+        opp,
+        va,
+        mp: p.mp || 0, pts: p.pts || 0, reb: p.reb || 0, ast: p.ast || 0,
+        stl: p.stl || 0, blk: p.blk || 0, tov: p.tov || 0,
+        fgm: p.fgm || 0, fga: p.fga || 0, tpm: p.tpm || 0, tpa: p.tpa || 0,
+        ftm: p.ftm || 0, fta: p.fta || 0, drb: p.drb || 0, orb: p.orb || 0,
+      });
+      agg.set(key, a);
+    }
   }
 
   const players = [...agg.values()];
@@ -261,14 +298,14 @@ async function main() {
     series: seriesList.map((s, i) => ({
       idx: i,
       round: roundNumForIdx(i),
-      teams: [s.games[0].home_team.abbreviation, s.games[0].visitor_team.abbreviation],
+      teams: [s.games[0].home.tri, s.games[0].away.tri],
     })),
     players,
-    source: "balldontlie",
+    source: "stats.nba.com",
     fetchedAt: new Date().toISOString(),
   };
 
-  // 5. Write both files.
+  // 6. Write.
   await mkdir(DATA_DIR, { recursive: true });
   const historyPath = join(DATA_DIR, `history-${season}.json`);
   const leaderboardPath = join(DATA_DIR, `leaderboard-${season}.json`);
@@ -280,6 +317,8 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error("\n========== BAKE FAILED ==========");
+  console.error(e?.stack || e?.message || String(e));
+  console.error("==================================\n");
   process.exit(1);
 });

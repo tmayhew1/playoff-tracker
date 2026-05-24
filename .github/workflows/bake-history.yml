@@ -22,11 +22,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Bake season
-        env:
-          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
         run: node scripts/fetch-historical.mjs "${{ inputs.season }}"
 
       - name: Commit baked JSON
