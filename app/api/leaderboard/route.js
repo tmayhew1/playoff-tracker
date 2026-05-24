@@ -1,8 +1,22 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { lgaForSeason, valueAddParts } from "../../scoring";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 export const revalidate = 86400;
+
+// Bake-first lookup, mirroring /api/history. The bake script produces
+// app/data/leaderboard-<season>.json.
+async function loadBaked(season) {
+  try {
+    const path = join(process.cwd(), "app", "data", `leaderboard-${season}.json`);
+    const buf = await readFile(path, "utf8");
+    return JSON.parse(buf);
+  } catch {
+    return null;
+  }
+}
 
 const HEADERS = {
   "User-Agent":
@@ -103,6 +117,19 @@ export async function GET(req) {
   if (!season || !SEASON_RE.test(season)) {
     return new Response(JSON.stringify({ error: "valid season required (e.g. 2024-25)" }), { status: 400 });
   }
+
+  // Prefer baked static JSON when available — produced by the bake script.
+  const baked = await loadBaked(season);
+  if (baked) {
+    return new Response(JSON.stringify(baked), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=2592000",
+      },
+    });
+  }
+
   const endYear = Number(season.slice(0, 4)) + 1;
   const isBubble = season === "2019-20";
   const startMD = isBubble ? "0801" : "0401";
@@ -155,17 +182,12 @@ export async function GET(req) {
       if (!byPair.has(key)) byPair.set(key, []);
       byPair.get(key).push(g);
     }
+    // No "must reach 4 wins" filter — for an in-progress season we want
+    // series-in-progress to count. Play-in is already excluded upstream by
+    // the playoff-note filter.
     const seriesList = [...byPair.values()]
       .map((gs) => ({ games: gs, start: gs[0].date }))
-      .sort((p, q) => p.start.localeCompare(q.start))
-      .filter((s) => {
-        const wins = {};
-        for (const g of s.games) {
-          const w = g.home.score > g.away.score ? g.home.tri : g.away.tri;
-          wins[w] = (wins[w] || 0) + 1;
-        }
-        return Object.values(wins).some((v) => v >= 4);
-      });
+      .sort((p, q) => p.start.localeCompare(q.start));
     const roundFor = (i) => (i < 8 ? 1 : i < 12 ? 2 : i < 14 ? 3 : 4);
     const seriesMeta = seriesList.map((s, i) => ({
       idx: i,

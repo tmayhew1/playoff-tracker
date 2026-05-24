@@ -1,0 +1,36 @@
+name: Bake historical playoff data
+
+# Trigger manually (GitHub mobile: Actions tab → this workflow → Run workflow).
+# Enter the season you want to bake; the workflow fetches from balldontlie,
+# writes app/data/history-<season>.json + leaderboard-<season>.json, and
+# auto-commits to main. Vercel auto-deploys on the new commit.
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "NBA season (YYYY-YY, e.g. 2014-15)"
+        required: true
+        default: "2014-15"
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Bake season
+        env:
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+        run: node scripts/fetch-historical.mjs "${{ inputs.season }}"
+
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake ${{ inputs.season }} playoff data"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json"
