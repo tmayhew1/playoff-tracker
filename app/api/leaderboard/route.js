@@ -1,8 +1,22 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { lgaForSeason, valueAddParts } from "../../scoring";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 export const revalidate = 86400;
+
+// Bake-first lookup, mirroring /api/history. The bake script produces
+// app/data/leaderboard-<season>.json.
+async function loadBaked(season) {
+  try {
+    const path = join(process.cwd(), "app", "data", `leaderboard-${season}.json`);
+    const buf = await readFile(path, "utf8");
+    return JSON.parse(buf);
+  } catch {
+    return null;
+  }
+}
 
 const HEADERS = {
   "User-Agent":
@@ -34,38 +48,54 @@ const splitMade = (v) => {
   return [Number(m) || 0, Number(a) || 0];
 };
 
+// ESPN returns MIN as either a plain integer ("38") on modern data or
+// "MM:SS" on some older seasons. Handle both.
+function parseMin(v) {
+  if (v == null || v === "") return 0;
+  const s = String(v).trim();
+  if (s.includes(":")) {
+    const [m, sec] = s.split(":");
+    return (parseInt(m, 10) || 0) + (parseFloat(sec) || 0) / 60;
+  }
+  return parseFloat(s) || 0;
+}
+
 function playersFromBox(box) {
   const teamsBox = box?.boxscore?.players || [];
   if (teamsBox.length < 2) return null;
   const out = [];
   for (const tb of teamsBox) {
     const tri = toNba(tb.team?.abbreviation);
-    const grp = (tb.statistics || [])[0] || {};
-    const names = grp.names || [];
-    const idx = {};
-    names.forEach((n, i) => (idx[n] = i));
-    for (const a of grp.athletes || []) {
-      const st = a.stats || [];
-      if (!st.length || a.didNotPlay) continue;
-      const mp = Number(st[idx.MIN]) || 0;
-      if (mp <= 0) continue;
-      const [fgm, fga] = splitMade(st[idx.FG]);
-      const [tpm, tpa] = splitMade(st[idx["3PT"]]);
-      const [ftm, fta] = splitMade(st[idx.FT]);
-      out.push({
-        name: a.athlete?.displayName || "",
-        team: tri,
-        mp,
-        pts: Number(st[idx.PTS]) || 0,
-        reb: Number(st[idx.REB]) || 0,
-        drb: Number(st[idx.DREB]) || 0,
-        orb: Number(st[idx.OREB]) || 0,
-        ast: Number(st[idx.AST]) || 0,
-        stl: Number(st[idx.STL]) || 0,
-        blk: Number(st[idx.BLK]) || 0,
-        tov: Number(st[idx.TO]) || 0,
-        fgm, fga, tpm, tpa, ftm, fta,
-      });
+    // Iterate ALL statistics blocks (older summaries split into
+    // starters/bench), not just the first one.
+    const blocks = Array.isArray(tb.statistics) ? tb.statistics : [];
+    for (const grp of blocks) {
+      const names = grp.names || [];
+      const idx = {};
+      names.forEach((n, i) => (idx[n] = i));
+      for (const a of grp.athletes || []) {
+        const st = a.stats || [];
+        if (!st.length || a.didNotPlay) continue;
+        const mp = parseMin(st[idx.MIN]);
+        if (mp <= 0) continue;
+        const [fgm, fga] = splitMade(st[idx.FG]);
+        const [tpm, tpa] = splitMade(st[idx["3PT"]]);
+        const [ftm, fta] = splitMade(st[idx.FT]);
+        out.push({
+          name: a.athlete?.displayName || "",
+          team: tri,
+          mp,
+          pts: Number(st[idx.PTS]) || 0,
+          reb: Number(st[idx.REB]) || 0,
+          drb: Number(st[idx.DREB]) || 0,
+          orb: Number(st[idx.OREB]) || 0,
+          ast: Number(st[idx.AST]) || 0,
+          stl: Number(st[idx.STL]) || 0,
+          blk: Number(st[idx.BLK]) || 0,
+          tov: Number(st[idx.TO]) || 0,
+          fgm, fga, tpm, tpa, ftm, fta,
+        });
+      }
     }
   }
   return out;
@@ -87,6 +117,19 @@ export async function GET(req) {
   if (!season || !SEASON_RE.test(season)) {
     return new Response(JSON.stringify({ error: "valid season required (e.g. 2024-25)" }), { status: 400 });
   }
+
+  // Prefer baked static JSON when available — produced by the bake script.
+  const baked = await loadBaked(season);
+  if (baked) {
+    return new Response(JSON.stringify(baked), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=2592000",
+      },
+    });
+  }
+
   const endYear = Number(season.slice(0, 4)) + 1;
   const isBubble = season === "2019-20";
   const startMD = isBubble ? "0801" : "0401";
@@ -139,17 +182,12 @@ export async function GET(req) {
       if (!byPair.has(key)) byPair.set(key, []);
       byPair.get(key).push(g);
     }
+    // No "must reach 4 wins" filter — for an in-progress season we want
+    // series-in-progress to count. Play-in is already excluded upstream by
+    // the playoff-note filter.
     const seriesList = [...byPair.values()]
       .map((gs) => ({ games: gs, start: gs[0].date }))
-      .sort((p, q) => p.start.localeCompare(q.start))
-      .filter((s) => {
-        const wins = {};
-        for (const g of s.games) {
-          const w = g.home.score > g.away.score ? g.home.tri : g.away.tri;
-          wins[w] = (wins[w] || 0) + 1;
-        }
-        return Object.values(wins).some((v) => v >= 4);
-      });
+      .sort((p, q) => p.start.localeCompare(q.start));
     const roundFor = (i) => (i < 8 ? 1 : i < 12 ? 2 : i < 14 ? 3 : 4);
     const seriesMeta = seriesList.map((s, i) => ({
       idx: i,
@@ -166,19 +204,30 @@ export async function GET(req) {
     allGames.forEach((g, i) => { g.gameIdx = i; });
 
     // 4. Fetch every game's box score, in batches so we don't hammer ESPN.
+    // Try the site summary first; fall back to ESPN's CDN core endpoint for
+    // older events that summary returns without player blocks.
     const lga = lgaForSeason(season);
     const results = await inBatches(allGames, 10, async (g) => {
+      let players = null;
       try {
         const box = await fetchJson(
           `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${g.gameId}`,
           9000
         );
-        const players = playersFromBox(box);
-        if (!players) return null;
-        return { ...g, players };
-      } catch {
-        return null;
+        players = playersFromBox(box);
+      } catch {}
+      if (!players || players.length === 0) {
+        try {
+          const core = await fetchJson(
+            `https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${g.gameId}`,
+            9000
+          );
+          const inner = core?.gamepackageJSON?.boxscore || core?.boxscore;
+          if (inner) players = playersFromBox({ boxscore: inner });
+        } catch {}
       }
+      if (!players || players.length === 0) return null;
+      return { ...g, players };
     });
 
     // 5. Aggregate per player across all playoff games.

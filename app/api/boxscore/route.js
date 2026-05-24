@@ -37,59 +37,93 @@ const splitMade = (v) => {
   return [Number(m) || 0, Number(a) || 0];
 };
 
-// Fallback for old games (live CDN only keeps recent ones): NBA blocks
-// server-side historical requests, so use ESPN's summary endpoint. The
-// gameId here is an ESPN event id (supplied by /api/history).
-async function fetchEspnBox(eventId) {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`;
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  let data;
-  try {
-    const res = await fetch(url, { headers: { ...HEADERS, Referer: undefined, Origin: undefined }, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`espn ${res.status}`);
-    data = await res.json();
-  } finally {
-    clearTimeout(t);
+// ESPN returns MIN as either a plain integer ("38") on modern data or
+// "MM:SS" on some older seasons. Handle both.
+function parseMin(v) {
+  if (v == null || v === "") return 0;
+  const s = String(v).trim();
+  if (s.includes(":")) {
+    const [m, sec] = s.split(":");
+    return (parseInt(m, 10) || 0) + (parseFloat(sec) || 0) / 60;
   }
-  const teamsBox = data?.boxscore?.players || [];
-  if (teamsBox.length < 2) throw new Error("no boxscore players");
+  return parseFloat(s) || 0;
+}
 
+function parseBox(data) {
+  const teamsBox = data?.boxscore?.players || [];
+  if (teamsBox.length < 2) return null;
   const teamOut = (tb) => {
     const tri = toNba(tb.team?.abbreviation);
-    const grp = (tb.statistics || [])[0] || {};
-    const names = grp.names || [];
-    const idx = {};
-    names.forEach((n, i) => (idx[n] = i));
+    const blocks = Array.isArray(tb.statistics) ? tb.statistics : [];
     const players = [];
-    for (const a of grp.athletes || []) {
-      const st = a.stats || [];
-      if (!st.length || a.didNotPlay) continue;
-      const [fgm, fga] = splitMade(st[idx.FG]);
-      const [tpm, tpa] = splitMade(st[idx["3PT"]]);
-      const [ftm, fta] = splitMade(st[idx.FT]);
-      players.push({
-        name: a.athlete?.displayName || "",
-        starter: !!a.starter,
-        oncourt: false,
-        mp: Number(st[idx.MIN]) || 0,
-        pts: Number(st[idx.PTS]) || 0,
-        reb: Number(st[idx.REB]) || 0,
-        drb: Number(st[idx.DREB]) || 0,
-        orb: Number(st[idx.OREB]) || 0,
-        ast: Number(st[idx.AST]) || 0,
-        stl: Number(st[idx.STL]) || 0,
-        blk: Number(st[idx.BLK]) || 0,
-        tov: Number(st[idx.TO]) || 0,
-        fgm, fga, tpm, tpa, ftm, fta,
-        plusMinus: Number(String(st[idx["+/-"]] || "0").replace("+", "")) || 0,
-      });
+    for (const grp of blocks) {
+      const names = grp.names || [];
+      const idx = {};
+      names.forEach((n, i) => (idx[n] = i));
+      for (const a of grp.athletes || []) {
+        const st = a.stats || [];
+        if (!st.length || a.didNotPlay) continue;
+        const [fgm, fga] = splitMade(st[idx.FG]);
+        const [tpm, tpa] = splitMade(st[idx["3PT"]]);
+        const [ftm, fta] = splitMade(st[idx.FT]);
+        players.push({
+          name: a.athlete?.displayName || "",
+          starter: !!a.starter,
+          oncourt: false,
+          mp: parseMin(st[idx.MIN]),
+          pts: Number(st[idx.PTS]) || 0,
+          reb: Number(st[idx.REB]) || 0,
+          drb: Number(st[idx.DREB]) || 0,
+          orb: Number(st[idx.OREB]) || 0,
+          ast: Number(st[idx.AST]) || 0,
+          stl: Number(st[idx.STL]) || 0,
+          blk: Number(st[idx.BLK]) || 0,
+          tov: Number(st[idx.TO]) || 0,
+          fgm, fga, tpm, tpa, ftm, fta,
+          plusMinus: Number(String(st[idx["+/-"]] || "0").replace("+", "")) || 0,
+        });
+      }
     }
     return { tri, players };
   };
-
   const a = teamOut(teamsBox[0]);
   const b = teamOut(teamsBox[1]);
+  if (!a.players.length && !b.players.length) return null;
+  return { a, b };
+}
+
+async function fetchEspn(url, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { headers: { ...HEADERS, Referer: undefined, Origin: undefined }, signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) throw new Error(`espn ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// Fallback for old games (live CDN only keeps recent ones): NBA blocks
+// server-side historical requests, so use ESPN. The gameId here is an ESPN
+// event id (supplied by /api/history). The site API summary covers most
+// games; some older events return empty player blocks and need the CDN
+// core (gamepackageJSON) instead.
+async function fetchEspnBox(eventId) {
+  let parsed = null;
+  try {
+    const summary = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`);
+    parsed = parseBox(summary);
+  } catch {}
+  if (!parsed) {
+    try {
+      const core = await fetchEspn(`https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`);
+      const box = core?.gamepackageJSON?.boxscore || core?.boxscore || null;
+      if (box) parsed = parseBox({ boxscore: box });
+    } catch {}
+  }
+  if (!parsed) throw new Error("no boxscore players");
+  const { a, b } = parsed;
   return {
     gameId: String(eventId),
     status: "Final",

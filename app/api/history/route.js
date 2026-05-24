@@ -1,6 +1,22 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 export const runtime = "nodejs";
 export const maxDuration = 15;
 export const revalidate = 86400;
+
+// Bake-first lookup: if `app/data/history-<season>.json` exists, the
+// scripts/fetch-historical.mjs pipeline has produced canonical data and we
+// serve that. Otherwise fall back to the live ESPN logic below.
+async function loadBaked(season) {
+  try {
+    const path = join(process.cwd(), "app", "data", `history-${season}.json`);
+    const buf = await readFile(path, "utf8");
+    return JSON.parse(buf);
+  } catch {
+    return null;
+  }
+}
 
 const HEADERS = {
   "User-Agent":
@@ -36,6 +52,19 @@ export async function GET(req) {
   if (!season || !SEASON_RE.test(season)) {
     return new Response(JSON.stringify({ error: "valid season required (e.g. 2024-25)" }), { status: 400 });
   }
+
+  // Prefer baked static JSON when available — produced by the bake script.
+  const baked = await loadBaked(season);
+  if (baked) {
+    return new Response(JSON.stringify(baked), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=2592000",
+      },
+    });
+  }
+
   // Playoffs happen in the season's *ending* calendar year: 2024-25 -> 2025.
   const endYear = Number(season.slice(0, 4)) + 1;
 
