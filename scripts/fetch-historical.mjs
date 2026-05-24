@@ -85,7 +85,10 @@ async function fetchPage(url, attempt = 1) {
     await sleep(wait);
     return fetchPage(url, attempt + 1);
   }
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${url}\n${body.slice(0, 400)}`);
+  }
   return res.json();
 }
 
@@ -280,6 +283,8 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error("\n========== BAKE FAILED ==========");
+  console.error(e?.stack || e?.message || String(e));
+  console.error("==================================\n");
   process.exit(1);
 });
