@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
       - name: Bake season
         run: node scripts/fetch-historical.mjs "${{ inputs.season }}"
 
