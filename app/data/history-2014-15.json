@@ -1,0 +1,1210 @@
+{
+  "season": "2014-15",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "MIL"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "201504180CHI",
+          "gameCode": "20150418",
+          "gameDateTimeUTC": "2015-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201504200CHI",
+          "gameCode": "20150420",
+          "gameDateTimeUTC": "2015-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 91
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201504230MIL",
+          "gameCode": "20150423",
+          "gameDateTimeUTC": "2015-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201504250MIL",
+          "gameCode": "20150425",
+          "gameDateTimeUTC": "2015-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201504270CHI",
+          "gameCode": "20150427",
+          "gameDateTimeUTC": "2015-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 88
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201504300MIL",
+          "gameCode": "20150430",
+          "gameDateTimeUTC": "2015-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 66
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 120
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "NOP"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201504180GSW",
+          "gameCode": "20150418",
+          "gameDateTimeUTC": "2015-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 106
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201504200GSW",
+          "gameCode": "20150420",
+          "gameDateTimeUTC": "2015-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 97
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201504230NOP",
+          "gameCode": "20150423",
+          "gameDateTimeUTC": "2015-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 119
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "201504250NOP",
+          "gameCode": "20150425",
+          "gameDateTimeUTC": "2015-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 98
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "DAL"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "201504180HOU",
+          "gameCode": "20150418",
+          "gameDateTimeUTC": "2015-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 118
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201504210HOU",
+          "gameCode": "20150421",
+          "gameDateTimeUTC": "2015-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 111
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201504240DAL",
+          "gameCode": "20150424",
+          "gameDateTimeUTC": "2015-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 128
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "201504260DAL",
+          "gameCode": "20150426",
+          "gameDateTimeUTC": "2015-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 121
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201504280HOU",
+          "gameCode": "20150428",
+          "gameDateTimeUTC": "2015-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 103
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "WAS"
+      ],
+      "winner": "WAS",
+      "games": [
+        {
+          "gameId": "201504180TOR",
+          "gameCode": "20150418",
+          "gameDateTimeUTC": "2015-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 86
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201504210TOR",
+          "gameCode": "20150421",
+          "gameDateTimeUTC": "2015-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 106
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "201504240WAS",
+          "gameCode": "20150424",
+          "gameDateTimeUTC": "2015-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201504260WAS",
+          "gameCode": "20150426",
+          "gameDateTimeUTC": "2015-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 125
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "BKN"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "201504190ATL",
+          "gameCode": "20150419",
+          "gameDateTimeUTC": "2015-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 99
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201504220ATL",
+          "gameCode": "20150422",
+          "gameDateTimeUTC": "2015-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 96
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201504250BRK",
+          "gameCode": "20150425",
+          "gameDateTimeUTC": "2015-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 91
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201504270BRK",
+          "gameCode": "20150427",
+          "gameDateTimeUTC": "2015-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 120
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "201504290ATL",
+          "gameCode": "20150429",
+          "gameDateTimeUTC": "2015-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 107
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201505010BRK",
+          "gameCode": "20150501",
+          "gameDateTimeUTC": "2015-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 87
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "BOS"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201504190CLE",
+          "gameCode": "20150419",
+          "gameDateTimeUTC": "2015-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 113
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201504210CLE",
+          "gameCode": "20150421",
+          "gameDateTimeUTC": "2015-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201504230BOS",
+          "gameCode": "20150423",
+          "gameDateTimeUTC": "2015-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 95
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201504260BOS",
+          "gameCode": "20150426",
+          "gameDateTimeUTC": "2015-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 93
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "SAS"
+      ],
+      "winner": "LAC",
+      "games": [
+        {
+          "gameId": "201504190LAC",
+          "gameCode": "20150419",
+          "gameDateTimeUTC": "2015-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201504220LAC",
+          "gameCode": "20150422",
+          "gameDateTimeUTC": "2015-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201504240SAS",
+          "gameCode": "20150424",
+          "gameDateTimeUTC": "2015-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "201504260SAS",
+          "gameCode": "20150426",
+          "gameDateTimeUTC": "2015-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "201504280LAC",
+          "gameCode": "20150428",
+          "gameDateTimeUTC": "2015-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201504300SAS",
+          "gameCode": "20150430",
+          "gameDateTimeUTC": "2015-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201505020LAC",
+          "gameCode": "20150502",
+          "gameDateTimeUTC": "2015-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MEM",
+        "POR"
+      ],
+      "winner": "MEM",
+      "games": [
+        {
+          "gameId": "201504190MEM",
+          "gameCode": "20150419",
+          "gameDateTimeUTC": "2015-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 100
+          },
+          "away": {
+            "tri": "POR",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201504220MEM",
+          "gameCode": "20150422",
+          "gameDateTimeUTC": "2015-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 97
+          },
+          "away": {
+            "tri": "POR",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201504250POR",
+          "gameCode": "20150425",
+          "gameDateTimeUTC": "2015-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 109
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "201504270POR",
+          "gameCode": "20150427",
+          "gameDateTimeUTC": "2015-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 99
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201504290MEM",
+          "gameCode": "20150429",
+          "gameDateTimeUTC": "2015-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 99
+          },
+          "away": {
+            "tri": "POR",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "ATL",
+        "WAS"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "201505030ATL",
+          "gameCode": "20150503",
+          "gameDateTimeUTC": "2015-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 98
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201505050ATL",
+          "gameCode": "20150505",
+          "gameDateTimeUTC": "2015-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 106
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201505090WAS",
+          "gameCode": "20150509",
+          "gameDateTimeUTC": "2015-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201505110WAS",
+          "gameCode": "20150511",
+          "gameDateTimeUTC": "2015-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201505130ATL",
+          "gameCode": "20150513",
+          "gameDateTimeUTC": "2015-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 82
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201505150WAS",
+          "gameCode": "20150515",
+          "gameDateTimeUTC": "2015-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 91
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "GSW",
+        "MEM"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201505030GSW",
+          "gameCode": "20150503",
+          "gameDateTimeUTC": "2015-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 101
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201505050GSW",
+          "gameCode": "20150505",
+          "gameDateTimeUTC": "2015-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 90
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201505090MEM",
+          "gameCode": "20150509",
+          "gameDateTimeUTC": "2015-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 99
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201505110MEM",
+          "gameCode": "20150511",
+          "gameDateTimeUTC": "2015-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 84
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201505130GSW",
+          "gameCode": "20150513",
+          "gameDateTimeUTC": "2015-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 98
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "201505150MEM",
+          "gameCode": "20150515",
+          "gameDateTimeUTC": "2015-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 95
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 108
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "CHI"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201505040CLE",
+          "gameCode": "20150504",
+          "gameDateTimeUTC": "2015-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201505060CLE",
+          "gameCode": "20150506",
+          "gameDateTimeUTC": "2015-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201505080CHI",
+          "gameCode": "20150508",
+          "gameDateTimeUTC": "2015-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201505100CHI",
+          "gameCode": "20150510",
+          "gameDateTimeUTC": "2015-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 84
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201505120CLE",
+          "gameCode": "20150512",
+          "gameDateTimeUTC": "2015-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201505140CHI",
+          "gameCode": "20150514",
+          "gameDateTimeUTC": "2015-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 73
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "HOU",
+        "LAC"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "201505040HOU",
+          "gameCode": "20150504",
+          "gameDateTimeUTC": "2015-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 101
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "201505060HOU",
+          "gameCode": "20150506",
+          "gameDateTimeUTC": "2015-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201505080LAC",
+          "gameCode": "20150508",
+          "gameDateTimeUTC": "2015-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 124
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201505100LAC",
+          "gameCode": "20150510",
+          "gameDateTimeUTC": "2015-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 128
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201505120HOU",
+          "gameCode": "20150512",
+          "gameDateTimeUTC": "2015-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 124
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201505140LAC",
+          "gameCode": "20150514",
+          "gameDateTimeUTC": "2015-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 107
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201505170HOU",
+          "gameCode": "20150517",
+          "gameDateTimeUTC": "2015-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 113
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "GSW",
+        "HOU"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201505190GSW",
+          "gameCode": "20150519",
+          "gameDateTimeUTC": "2015-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201505210GSW",
+          "gameCode": "20150521",
+          "gameDateTimeUTC": "2015-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 99
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201505230HOU",
+          "gameCode": "20150523",
+          "gameDateTimeUTC": "2015-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 80
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "201505250HOU",
+          "gameCode": "20150525",
+          "gameDateTimeUTC": "2015-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 128
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "201505270GSW",
+          "gameCode": "20150527",
+          "gameDateTimeUTC": "2015-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "ATL",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201505200ATL",
+          "gameCode": "20150520",
+          "gameDateTimeUTC": "2015-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 89
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201505220ATL",
+          "gameCode": "20150522",
+          "gameDateTimeUTC": "2015-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 82
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201505240CLE",
+          "gameCode": "20150524",
+          "gameDateTimeUTC": "2015-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 114
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201505260CLE",
+          "gameCode": "20150526",
+          "gameDateTimeUTC": "2015-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 118
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "GSW",
+        "CLE"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201506040GSW",
+          "gameCode": "20150604",
+          "gameDateTimeUTC": "2015-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 108
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201506070GSW",
+          "gameCode": "20150607",
+          "gameDateTimeUTC": "2015-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 93
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201506090CLE",
+          "gameCode": "20150609",
+          "gameDateTimeUTC": "2015-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 96
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201506110CLE",
+          "gameCode": "20150611",
+          "gameDateTimeUTC": "2015-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 82
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201506140GSW",
+          "gameCode": "20150614",
+          "gameDateTimeUTC": "2015-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201506160CLE",
+          "gameCode": "20150616",
+          "gameDateTimeUTC": "2015-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 97
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 105
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-05-24T13:48:31.869Z"
+}
