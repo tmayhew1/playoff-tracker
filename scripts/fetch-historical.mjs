@@ -1,22 +1,27 @@
 #!/usr/bin/env node
 /**
- * Bakes one season's playoff data into static JSON, using stats.nba.com as
- * the source. NBA's API blocks Vercel's IPs (why /api/* falls back to ESPN),
- * but GitHub Actions runners get a different pool — this script runs there
- * via .github/workflows/bake-history.yml.
+ * Bakes one season's playoff data into static JSON, scraping
+ * basketball-reference.com (full coverage back to 1949-50, no API key).
+ *
+ *   node scripts/fetch-historical.mjs 2014-15
+ *
+ * Designed to run in GitHub Actions (.github/workflows/bake-history.yml).
+ * Throttles requests to stay polite (BR's policy is ~20/min; we wait 2.5s
+ * between calls).
  *
  * Writes:
  *   app/data/history-<season>.json     (rounds → series → games)
  *   app/data/leaderboard-<season>.json (per-player playoff aggregates)
  *
- * Usage:
- *   node scripts/fetch-historical.mjs 2014-15
+ * Tricodes are mapped to the NBA-current set the app already knows
+ * (e.g. BR's "BRK" → "BKN", "CHO" → "CHA", "PHO" → "PHX").
  */
 
 import { writeFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
+import * as cheerio from "cheerio";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -27,17 +32,9 @@ if (!season || !/^\d{4}-\d{2}$/.test(season)) {
   console.error("Usage: node scripts/fetch-historical.mjs <YYYY-YY>");
   process.exit(1);
 }
+const endYear = Number(season.slice(0, 4)) + 1;
 
-const HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  Accept: "application/json, text/plain, */*",
-  "Accept-Language": "en-US,en;q=0.9",
-  Referer: "https://www.nba.com/",
-  Origin: "https://www.nba.com",
-  "x-nba-stats-origin": "stats",
-  "x-nba-stats-token": "true",
-};
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 // --- League averages for VA -----------------------------------------------
 const LGA_ALL = JSON.parse(readFileSync(join(DATA_DIR, "league-averages.json"), "utf8"));
@@ -47,7 +44,6 @@ if (!LGA_ALL[season]) {
   console.warn(`No league averages for ${season}; falling back to defaults. VA will be approximate.`);
 }
 
-// VA, duplicated from app/scoring.js so the script is standalone.
 function valueAddParts(p) {
   const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
   if (!mp || mp <= 0) return { va: 0, efficiency: 0 };
@@ -66,9 +62,38 @@ function valueAddParts(p) {
   return { va: volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal, efficiency };
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// --- Helpers --------------------------------------------------------------
+const BR_TO_NBA = {
+  BRK: "BKN",         // Nets (BR uses BRK)
+  CHO: "CHA",         // Hornets (post-2014)
+  CHH: "CHA",         // original Hornets
+  NOH: "NOP",         // New Orleans Hornets
+  NOK: "NOP",         // New Orleans/OKC Hornets
+  PHO: "PHX",         // Suns (BR uses PHO)
+  // Defunct/legacy preserved as-is (SEA, NJN, VAN, WSB) since the app's
+  // color map already covers them.
+};
+const toNba = (tri) => BR_TO_NBA[tri] || tri;
 
-function parseMin(v) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const REQUEST_DELAY = 2500; // ms between sequential HTTP calls (BR allows ~20/min)
+let lastRequest = 0;
+
+async function throttledFetch(url) {
+  const wait = Math.max(0, REQUEST_DELAY - (Date.now() - lastRequest));
+  if (wait > 0) await sleep(wait);
+  lastRequest = Date.now();
+  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html" } });
+  if (res.status === 429 || res.status === 503) {
+    console.warn(`  ${res.status} on ${url} — sleeping 60s`);
+    await sleep(60_000);
+    return throttledFetch(url);
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
+  return res.text();
+}
+
+function parseMinutes(v) {
   if (v == null || v === "") return 0;
   const s = String(v).trim();
   if (s.includes(":")) {
@@ -78,79 +103,155 @@ function parseMin(v) {
   return parseFloat(s) || 0;
 }
 
-async function fetchJson(url, attempt = 1) {
-  try {
-    const res = await fetch(url, { headers: HEADERS });
-    if (res.status === 429 || res.status === 503) {
-      const wait = Math.min(60_000, 3_000 * attempt);
-      console.warn(`  ${res.status}; sleeping ${wait}ms (attempt ${attempt})`);
-      await sleep(wait);
-      return fetchJson(url, attempt + 1);
-    }
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} ${url}\n${body.slice(0, 400)}`);
-    }
-    return res.json();
-  } catch (e) {
-    if (attempt < 4 && /fetch|network|ECONN|timeout/i.test(e.message)) {
-      console.warn(`  retry ${attempt}: ${e.message}`);
-      await sleep(2000 * attempt);
-      return fetchJson(url, attempt + 1);
-    }
-    throw e;
-  }
+function num(v) {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
 }
 
-function indexer(headers) {
-  const idx = {};
-  headers.forEach((h, i) => (idx[h] = i));
-  return (row, key) => row[idx[key]];
+// --- Step 1: list of playoff game URLs from the season's playoff page -----
+async function fetchPlayoffGameUrls() {
+  const url = `https://www.basketball-reference.com/playoffs/NBA_${endYear}.html`;
+  console.log(`Fetching ${url}`);
+  const html = await throttledFetch(url);
+  const $ = cheerio.load(html);
+  const urls = new Set();
+  // Box score links live both in the main HTML and inside commented-out blocks
+  // BR uses to lazy-render some tables. Extract from both.
+  const hrefs = [];
+  $("a").each((_, a) => {
+    const href = $(a).attr("href");
+    if (href && /^\/boxscores\/\d{8}0[A-Z]{3}\.html$/.test(href)) hrefs.push(href);
+  });
+  // BR wraps some tables in <!-- ... --> to defer rendering; pull boxscore
+  // links out of those comments too.
+  $("*").contents().each((_, node) => {
+    if (node.type === "comment") {
+      const text = node.data || "";
+      const re = /\/boxscores\/\d{8}0[A-Z]{3}\.html/g;
+      let m;
+      while ((m = re.exec(text)) !== null) hrefs.push(m[0]);
+    }
+  });
+  for (const h of hrefs) urls.add(`https://www.basketball-reference.com${h}`);
+  return [...urls];
 }
 
-async function inBatches(arr, n, fn) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += n) {
-    const chunk = arr.slice(i, i + n);
-    const res = await Promise.all(chunk.map(fn));
-    out.push(...res);
-    if (i + n < arr.length) await sleep(800);
-  }
-  return out;
+// --- Step 2: fetch + parse one box score ----------------------------------
+function parseDateFromBoxId(boxId) {
+  // boxId looks like "201504190GSW" — first 8 chars are YYYYMMDD.
+  return `${boxId.slice(0, 4)}-${boxId.slice(4, 6)}-${boxId.slice(6, 8)}`;
+}
+
+async function fetchBox(url) {
+  const boxId = url.match(/\/boxscores\/([^/.]+)\.html/)?.[1] || "";
+  const date = parseDateFromBoxId(boxId);
+  const html = await throttledFetch(url);
+  const $ = cheerio.load(html);
+
+  // Score boxes: BR has <div class="scorebox"> with two team blocks; each
+  // has a <strong><a href="/teams/XXX/...">XXX</a></strong> and a
+  // <div class="score">NNN</div>. The first block is the away team, second is home.
+  const teamBlocks = $("div.scorebox > div").filter((_, el) => {
+    return $(el).find("a[href*='/teams/']").length > 0;
+  });
+  if (teamBlocks.length < 2) throw new Error(`scorebox parse failed for ${boxId}`);
+  const teamAt = (i) => {
+    const blk = $(teamBlocks[i]);
+    const href = blk.find("a[href*='/teams/']").first().attr("href") || "";
+    const m = href.match(/\/teams\/([A-Z]{3})\//);
+    const tri = m ? m[1] : "";
+    const score = num(blk.find("div.score").first().text());
+    return { tri, score };
+  };
+  const away = teamAt(0);
+  const home = teamAt(1);
+
+  // Box score tables: id="box-XXX-game-basic" for each team's basic stats.
+  // The DOM sometimes has these tables, sometimes BR wraps them in HTML
+  // comments. Reconstruct any commented-out tables.
+  const allHtml = $.html();
+  // Inline any commented-out tables (they're sentinel-wrapped exactly like
+  // their inline counterparts).
+  const hydrated = cheerio.load(allHtml.replace(/<!--([\s\S]*?)-->/g, "$1"));
+
+  const playersForTeam = (tri) => {
+    const t = hydrated(`table#box-${tri}-game-basic`);
+    if (!t.length) return [];
+    const out = [];
+    t.find("tbody tr").each((_, tr) => {
+      const $tr = hydrated(tr);
+      if ($tr.hasClass("thead")) return;
+      const name = $tr.find("th[data-stat='player']").text().trim();
+      if (!name) return;
+      // DNP rows have a single cell saying "Did Not Play" etc.
+      const reason = $tr.find("td[data-stat='reason']").text().trim();
+      if (reason) return;
+      const cell = (key) => $tr.find(`td[data-stat='${key}']`).text().trim();
+      const mp = parseMinutes(cell("mp"));
+      if (mp <= 0) return;
+      out.push({
+        name,
+        team: tri,
+        mp,
+        pts: num(cell("pts")),
+        reb: num(cell("trb")),
+        drb: num(cell("drb")),
+        orb: num(cell("orb")),
+        ast: num(cell("ast")),
+        stl: num(cell("stl")),
+        blk: num(cell("blk")),
+        tov: num(cell("tov")),
+        fgm: num(cell("fg")),
+        fga: num(cell("fga")),
+        tpm: num(cell("fg3")),
+        tpa: num(cell("fg3a")),
+        ftm: num(cell("ft")),
+        fta: num(cell("fta")),
+      });
+    });
+    return out;
+  };
+
+  const players = [...playersForTeam(away.tri), ...playersForTeam(home.tri)];
+  return {
+    gameId: boxId,
+    date,
+    home: { tri: toNba(home.tri), score: home.score, brTri: home.tri },
+    away: { tri: toNba(away.tri), score: away.score, brTri: away.tri },
+    players: players.map((p) => ({ ...p, team: toNba(p.team) })),
+  };
 }
 
 // --- Main -----------------------------------------------------------------
 async function main() {
-  console.log(`Baking ${season} from stats.nba.com…`);
+  console.log(`Baking ${season} from basketball-reference…`);
 
-  // 1. Playoff game log (team-level rows; 2 rows per game).
-  const logUrl =
-    `https://stats.nba.com/stats/leaguegamelog?Counter=1000&Direction=ASC` +
-    `&LeagueID=00&PlayerOrTeam=T&Season=${season}&SeasonType=Playoffs&Sorter=DATE`;
-  const logJson = await fetchJson(logUrl);
-  const lg = (logJson.resultSets || []).find((r) => r.name === "LeagueGameLog") || logJson.resultSets?.[0];
-  if (!lg) throw new Error("LeagueGameLog result set missing");
-  const getLg = indexer(lg.headers);
+  // 1. All playoff game URLs for the season.
+  const urls = await fetchPlayoffGameUrls();
+  console.log(`  ${urls.length} playoff game URLs`);
+  if (urls.length === 0) throw new Error("no playoff games discovered");
 
-  // Merge two rows per game into one record.
-  const gameMap = new Map();
-  for (const row of lg.rowSet) {
-    const gameId = getLg(row, "GAME_ID");
-    const tri = getLg(row, "TEAM_ABBREVIATION");
-    const matchup = getLg(row, "MATCHUP") || "";
-    const pts = Number(getLg(row, "PTS")) || 0;
-    const date = getLg(row, "GAME_DATE");
-    const side = matchup.includes(" vs. ") ? "home" : "away";
-    const g = gameMap.get(gameId) || { gameId, date, home: null, away: null };
-    g[side] = { tri, score: pts };
-    gameMap.set(gameId, g);
+  // 2. Sort by URL (which sorts by date because IDs start with YYYYMMDD).
+  urls.sort();
+
+  // 3. Fetch each game's box (sequential — BR throttle is unforgiving).
+  console.log("Fetching box scores…");
+  const games = [];
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    try {
+      const g = await fetchBox(url);
+      games.push(g);
+      if ((i + 1) % 10 === 0) console.log(`  ${i + 1}/${urls.length}`);
+    } catch (e) {
+      console.warn(`  failed ${url}: ${e.message}`);
+    }
   }
-  const games = [...gameMap.values()]
-    .filter((g) => g.home && g.away)
-    .sort((a, b) => (a.date || "").localeCompare(b.date || "") || a.gameId.localeCompare(b.gameId));
-  console.log(`  ${games.length} playoff games`);
+  if (games.length === 0) throw new Error("no boxes parsed");
+  console.log(`  ${games.length} games parsed`);
 
-  // 2. Cluster into series; assign rounds 8/4/2/1.
+  // 4. Cluster into series; assign rounds 8/4/2/1 by chronological start.
+  games.sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId));
   const byPair = new Map();
   for (const g of games) {
     const key = [g.home.tri, g.away.tri].sort().join("-");
@@ -159,64 +260,20 @@ async function main() {
   }
   const seriesList = [...byPair.values()]
     .map((gs) => ({ games: gs, start: gs[0].date }))
-    .sort((p, q) => (p.start || "").localeCompare(q.start || ""));
+    .sort((p, q) => p.start.localeCompare(q.start));
   const roundKeyForIdx = (i) => (i < 8 ? "r1" : i < 12 ? "r2" : i < 14 ? "r3" : "r4");
   const roundNumForIdx = (i) => (i < 8 ? 1 : i < 12 ? 2 : i < 14 ? 3 : 4);
 
-  // Flat chronological list with series index.
-  const allGames = [];
+  // Flat chronological list with series index (for leaderboard).
+  const allGamesFlat = [];
   seriesList.forEach((s, sIdx) => {
-    for (const g of s.games) allGames.push({ ...g, seriesIdx: sIdx });
+    for (const g of s.games) allGamesFlat.push({ ...g, seriesIdx: sIdx });
   });
-  allGames.sort((x, y) => (x.date || "").localeCompare(y.date || "") || x.gameId.localeCompare(y.gameId));
+  allGamesFlat.sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId));
   const gameIdxByGameId = new Map();
-  allGames.forEach((g, i) => gameIdxByGameId.set(g.gameId, i));
+  allGamesFlat.forEach((g, i) => gameIdxByGameId.set(g.gameId, i));
 
-  // 3. Fetch each game's traditional box score in batches.
-  console.log("Fetching box scores…");
-  const boxes = await inBatches(allGames, 5, async (g, j) => {
-    const url =
-      `https://stats.nba.com/stats/boxscoretraditionalv2?GameID=${g.gameId}` +
-      `&StartPeriod=0&EndPeriod=10&StartRange=0&EndRange=0&RangeType=0`;
-    try {
-      const data = await fetchJson(url);
-      const ps = (data.resultSets || []).find((r) => r.name === "PlayerStats");
-      if (!ps) return null;
-      const get = indexer(ps.headers);
-      const players = [];
-      for (const row of ps.rowSet) {
-        const tri = get(row, "TEAM_ABBREVIATION");
-        const mp = parseMin(get(row, "MIN"));
-        if (mp <= 0) continue;
-        players.push({
-          name: get(row, "PLAYER_NAME"),
-          team: tri,
-          starter: !!get(row, "START_POSITION"),
-          mp,
-          pts: Number(get(row, "PTS")) || 0,
-          reb: Number(get(row, "REB")) || 0,
-          drb: Number(get(row, "DREB")) || 0,
-          orb: Number(get(row, "OREB")) || 0,
-          ast: Number(get(row, "AST")) || 0,
-          stl: Number(get(row, "STL")) || 0,
-          blk: Number(get(row, "BLK")) || 0,
-          tov: Number(get(row, "TO")) || 0,
-          fgm: Number(get(row, "FGM")) || 0,
-          fga: Number(get(row, "FGA")) || 0,
-          tpm: Number(get(row, "FG3M")) || 0,
-          tpa: Number(get(row, "FG3A")) || 0,
-          ftm: Number(get(row, "FTM")) || 0,
-          fta: Number(get(row, "FTA")) || 0,
-        });
-      }
-      return { ...g, players };
-    } catch (e) {
-      console.warn(`  box failed for ${g.gameId}: ${e.message.split("\n")[0]}`);
-      return null;
-    }
-  });
-
-  // 4. Build history JSON (matches /api/history's shape).
+  // 5. Build history JSON shape.
   const historySeries = seriesList.map((s, i) => {
     const wins = {};
     for (const g of s.games) {
@@ -231,25 +288,23 @@ async function main() {
       winner,
       games: s.games.map((g) => ({
         gameId: g.gameId,
-        gameCode: (g.date || "").replace(/-/g, ""),
-        gameDateTimeUTC: g.date ? `${g.date}T00:00:00.000Z` : null,
+        gameCode: g.date.replace(/-/g, ""),
+        gameDateTimeUTC: `${g.date}T00:00:00.000Z`,
         home: { tri: g.home.tri, score: g.home.score },
         away: { tri: g.away.tri, score: g.away.score },
       })),
     };
   });
-
   const historyOut = {
     season,
     series: historySeries,
-    source: "stats.nba.com",
+    source: "basketball-reference",
     fetchedAt: new Date().toISOString(),
   };
 
-  // 5. Aggregate per player across all games for the leaderboard.
+  // 6. Aggregate per player across all games for the leaderboard.
   const agg = new Map();
-  for (const r of boxes) {
-    if (!r) continue;
+  for (const r of allGamesFlat) {
     for (const p of r.players) {
       const opp = p.team === r.home.tri ? r.away.tri : r.home.tri;
       const { va, efficiency } = valueAddParts(p);
@@ -301,11 +356,11 @@ async function main() {
       teams: [s.games[0].home.tri, s.games[0].away.tri],
     })),
     players,
-    source: "stats.nba.com",
+    source: "basketball-reference",
     fetchedAt: new Date().toISOString(),
   };
 
-  // 6. Write.
+  // 7. Write.
   await mkdir(DATA_DIR, { recursive: true });
   const historyPath = join(DATA_DIR, `history-${season}.json`);
   const leaderboardPath = join(DATA_DIR, `leaderboard-${season}.json`);
