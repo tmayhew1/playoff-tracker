@@ -241,12 +241,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   return (
     <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
       <div className="flex items-stretch gap-1">
-        {showNav && (
+        {showNav && !inGameNav && (
           <button
             type="button"
             disabled={!canPrev}
             onClick={handlePrev}
-            aria-label={inGameNav ? "Previous game" : "Previous player"}
+            aria-label="Previous player"
             className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
           >
             ‹
@@ -293,14 +293,38 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             </div>
           </div>
           {rate && gameSeries && gameSeries.length > 0 && (
-            <div className="sm:order-1 sm:flex-1">
-              <GameVAChart
-                values={gameSeries}
-                color={accentColor}
-                selected={selectedGame}
-                onSelect={canSelect ? setSelectedGame : undefined}
-                partitions={partitions}
-              />
+            <div className="sm:order-1 sm:flex-1 flex items-stretch gap-1">
+              {showNav && inGameNav && (
+                <button
+                  type="button"
+                  disabled={!canPrev}
+                  onClick={handlePrev}
+                  aria-label="Previous game"
+                  className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+                >
+                  ‹
+                </button>
+              )}
+              <div className="flex-1 min-w-0">
+                <GameVAChart
+                  values={gameSeries}
+                  color={accentColor}
+                  selected={selectedGame}
+                  onSelect={canSelect ? setSelectedGame : undefined}
+                  partitions={partitions}
+                />
+              </div>
+              {showNav && inGameNav && (
+                <button
+                  type="button"
+                  disabled={!canNext}
+                  onClick={handleNext}
+                  aria-label="Next game"
+                  className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+                >
+                  ›
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -342,12 +366,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       </div>
       <div className="text-[9px] text-stone-400 mt-2 text-center italic">Bars show contribution above/below league average</div>
         </div>
-        {showNav && (
+        {showNav && !inGameNav && (
           <button
             type="button"
             disabled={!canNext}
             onClick={handleNext}
-            aria-label={inGameNav ? "Next game" : "Next player"}
+            aria-label="Next player"
             className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
           >
             ›
@@ -1443,6 +1467,7 @@ function PlayoffLeaderboard({ season, lga }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
+  const [teamFilter, setTeamFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
@@ -1450,6 +1475,7 @@ function PlayoffLeaderboard({ season, lga }) {
     setData(null);
     setError(null);
     setShowAll(false);
+    setTeamFilter(null);
     setExpanded(null);
     setLoading(true);
     fetch(`/api/leaderboard?season=${season}`)
@@ -1483,12 +1509,26 @@ function PlayoffLeaderboard({ season, lga }) {
   if (!data || !data.players?.length) return null;
 
   const all = data.players;
-  const shown = showAll ? all : all.slice(0, 10);
+  const filtered = teamFilter ? all.filter((p) => p.team === teamFilter) : all;
+  const shown = (showAll || teamFilter) ? filtered : filtered.slice(0, 10);
 
   return (
     <div className="mb-4 border border-stone-300 bg-white">
-      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200">
-        Playoff Leaderboard
+      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex items-center justify-between gap-2">
+        <span>Playoff Leaderboard</span>
+        {teamFilter && (() => {
+          const c = teamColor(teamFilter);
+          return (
+            <button
+              onClick={() => setTeamFilter(null)}
+              className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
+              style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
+              aria-label={`Clear ${teamFilter} filter`}
+            >
+              {teamFilter} <span className="text-stone-400">×</span>
+            </button>
+          );
+        })()}
       </div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
@@ -1518,12 +1558,29 @@ function PlayoffLeaderboard({ season, lga }) {
         const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
         return (
           <div key={i} className="border-b border-stone-100 last:border-0">
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => setExpanded(isOpen ? null : i)}
-              className={`w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left ${isOpen ? "bg-stone-100" : ""}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setExpanded(isOpen ? null : i);
+                }
+              }}
+              className={`w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
             >
               <span className="w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
-              <span style={badgeStyle} className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border">{p.team}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTeamFilter(teamFilter === p.team ? null : p.team);
+                }}
+                style={badgeStyle}
+                className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
+                aria-label={`Filter by ${p.team}`}
+              >{p.team}</button>
               <span className="flex-1 truncate text-stone-800">
                 <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
                 {p.name}
@@ -1531,7 +1588,7 @@ function PlayoffLeaderboard({ season, lga }) {
               <span className="w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
               <span className={`w-12 text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
               <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
-            </button>
+            </div>
             {isOpen && (
               <VABreakdown
                 p={p}
@@ -1552,7 +1609,7 @@ function PlayoffLeaderboard({ season, lga }) {
           </div>
         );
       })}
-      {all.length > 10 && (
+      {!teamFilter && all.length > 10 && (
         <button
           onClick={() => setShowAll((s) => !s)}
           className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
