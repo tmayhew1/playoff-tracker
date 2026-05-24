@@ -1428,10 +1428,10 @@ function ExploreRoundSection({ roundKey, series, lga }) {
 }
 
 // Seasons available in the picker. ESPN's NBA scoreboard reliably covers
-// 2003-04 onward; earlier seasons return empty/erroring responses.
+// 2001-02 onward; earlier seasons return empty/erroring responses.
 function exploreSeasonList() {
   const seasons = [];
-  for (let y = 2024; y >= 2003; y--) {
+  for (let y = 2024; y >= 2001; y--) {
     const end = String((y + 1) % 100).padStart(2, "0");
     seasons.push(`${y}-${end}`);
   }
