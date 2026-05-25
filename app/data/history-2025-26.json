@@ -1024,7 +1024,7 @@
         "OKC",
         "SAS"
       ],
-      "winner": "OKC",
+      "winner": "SAS",
       "games": [
         {
           "gameId": "202605180OKC",
@@ -1063,6 +1063,19 @@
           "away": {
             "tri": "OKC",
             "score": 123
+          }
+        },
+        {
+          "gameId": "202605240SAS",
+          "gameCode": "20260524",
+          "gameDateTimeUTC": "2026-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 82
           }
         }
       ]
@@ -1118,5 +1131,5 @@
     }
   ],
   "source": "basketball-reference",
-  "fetchedAt": "2026-05-25T02:56:11.883Z"
+  "fetchedAt": "2026-05-25T14:49:49.972Z"
 }
