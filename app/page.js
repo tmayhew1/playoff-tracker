@@ -61,7 +61,7 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions }) {
+function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange }) {
   const stroke = color;
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series.
@@ -92,6 +92,23 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
     <div className="mt-2 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">By Game</div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
+        {/* Series-band shading (used when a series is selected but no
+            single game has been drilled into) */}
+        {selected == null && Array.isArray(seriesRange) && (() => {
+          const colW = innerW / (n - 1);
+          const [a, b] = seriesRange;
+          return (
+            <rect
+              x={x(a) - colW / 2}
+              y={0}
+              width={x(b) - x(a) + colW}
+              height={H}
+              fill={withAlpha(stroke, 0.10)}
+              stroke={withAlpha(stroke, 0.30)}
+              strokeWidth="1"
+            />
+          );
+        })()}
         {/* Selected column shading sits behind everything else */}
         {selected != null && padded[selected - 1] != null && (() => {
           const colW = innerW / (n - 1);
@@ -167,12 +184,45 @@ const VA_CATEGORY_ORDER = [
 ];
 const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebounds"]);
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game" }) {
-  // Tap a game label in the chart to swap in that game's single-game stats.
+// Helper: aggregate raw stat snapshots into a player object matching what
+// VABreakdown expects (mp/pts/.../fgm/.../va), preserving identity.
+function aggregateSnapshots(base, snapshots) {
+  const out = {
+    name: base.name, team: base.team,
+    gp: 0, va: 0, eff: 0,
+    mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+    fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
+  };
+  for (const s of snapshots) {
+    if (!s) continue;
+    out.gp += 1;
+    out.va += s.va || 0;
+    for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
+      out[k] += s[k] || 0;
+    }
+  }
+  return out;
+}
+
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false }) {
+  // Tap a game on the chart to swap in that game's stats. When the chart
+  // spans multiple series (playoff leaderboard), tapping is a two-step
+  // drill: first tap selects the series the game belongs to (series
+  // aggregate), second tap on a game in that series drills into the game.
   const [selectedGame, setSelectedGame] = useState(null);
+  const [selectedSeriesIdx, setSelectedSeriesIdx] = useState(null);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
-  const selectedSnapshot = canSelect && selectedGame ? byGame[selectedGame - 1] : null;
-  const p = selectedSnapshot || pSeries;
+  const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
+
+  let p;
+  if (canSelect && selectedGame) {
+    p = byGame[selectedGame - 1] || pSeries;
+  } else if (canDrillToSeries && selectedSeriesIdx != null && byGame) {
+    const subset = byGame.filter((s, i) => s && gameContext[i]?.seriesIdx === selectedSeriesIdx);
+    p = aggregateSnapshots(pSeries, subset);
+  } else {
+    p = pSeries;
+  }
   const effectiveGameNumber = selectedGame || gameNumber;
 
   const mp = p.mp || 0;
@@ -224,6 +274,39 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // off to the parent's prev/next (player navigation). Series-aggregate
   // view hides the nav entirely — chevrons there were too cluttered.
   const inGameNav = canSelect && selectedGame != null;
+
+  // Two-step drill click handler. Without enableSeriesDrill it's the
+  // existing toggle. With it: first tap on a game in a different series
+  // scopes to that series; another tap on a game in the current series
+  // drills into that game; a tap on the currently-selected game clears it.
+  const handleChartSelect = (gameIdx) => {
+    if (!canSelect) return;
+    if (gameIdx == null) {
+      setSelectedGame(null);
+      return;
+    }
+    if (!canDrillToSeries) {
+      setSelectedGame(selectedGame === gameIdx ? null : gameIdx);
+      return;
+    }
+    const tappedSeriesIdx = gameContext[gameIdx - 1]?.seriesIdx;
+    if (selectedSeriesIdx === tappedSeriesIdx) {
+      setSelectedGame(selectedGame === gameIdx ? null : gameIdx);
+    } else {
+      setSelectedSeriesIdx(tappedSeriesIdx);
+      setSelectedGame(null);
+    }
+  };
+
+  // Series band for the chart: highlight all games in the selected series
+  // when we're in series-aggregate view (no single game picked).
+  let seriesRange = null;
+  if (canDrillToSeries && selectedSeriesIdx != null && !selectedGame) {
+    const idxs = gameContext
+      .map((g, i) => (g?.seriesIdx === selectedSeriesIdx ? i : -1))
+      .filter((i) => i >= 0);
+    if (idxs.length) seriesRange = [idxs[0], idxs[idxs.length - 1]];
+  }
   const showNav = !rate || inGameNav;
   const findGameWithData = (start, step) => {
     for (let i = start; i >= 0 && i < byGame.length; i += step) {
@@ -263,10 +346,23 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               const opp = ctx?.opp;
               return `Game ${num}${opp ? ` vs ${opp}` : ""}`;
             }
+            if (canDrillToSeries && selectedSeriesIdx != null) {
+              const ctx = gameContext.find((g) => g?.seriesIdx === selectedSeriesIdx);
+              const opp = ctx?.opp;
+              return `Series${opp ? ` vs ${opp}` : ""}`;
+            }
             return breakdownTitle || "Series Breakdown";
           })()}</span>
-          {selectedGame && (
-            <button onClick={() => setSelectedGame(null)} className="normal-case tracking-normal text-stone-400 hover:text-stone-700">← back</button>
+          {(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) && (
+            <button
+              onClick={() => {
+                if (selectedGame) setSelectedGame(null);
+                else setSelectedSeriesIdx(null);
+              }}
+              className="normal-case tracking-normal text-stone-400 hover:text-stone-700"
+            >
+              ← back
+            </button>
           )}
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -310,8 +406,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                   values={gameSeries}
                   color={accentColor}
                   selected={selectedGame}
-                  onSelect={canSelect ? setSelectedGame : undefined}
+                  onSelect={canSelect ? handleChartSelect : undefined}
                   partitions={partitions}
+                  seriesRange={seriesRange}
                 />
               </div>
               {showNav && inGameNav && (
@@ -1539,6 +1636,9 @@ function PlayoffLeaderboard({ season, lga }) {
         <span className="w-10 text-right">VA/G</span>
       </div>
       {shown.map((p, i) => {
+        // Keep the overall playoff rank (1, 7, 13…) even when the team
+        // filter trims the visible list.
+        const rank = all.indexOf(p) + 1;
         const isOpen = expanded === i;
         const tc = teamColor(p.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
@@ -1570,7 +1670,7 @@ function PlayoffLeaderboard({ season, lga }) {
               }}
               className={`w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
             >
-              <span className="w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
+              <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -1602,6 +1702,7 @@ function PlayoffLeaderboard({ season, lga }) {
                 useTeamColor
                 breakdownTitle="Playoff Breakdown"
                 gameTileLabel="Playoff Game"
+                enableSeriesDrill
                 onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(i + 1) : undefined}
               />
