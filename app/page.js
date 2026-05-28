@@ -1632,6 +1632,12 @@ function PlayoffLeaderboard({ season, lga }) {
         <span className="w-10">Team</span>
         <span className="flex-1">Player</span>
         <span className="w-6 text-right">G</span>
+        <span className="hidden sm:block w-8 text-right">PPG</span>
+        <span className="hidden sm:block w-9 text-right">EFF</span>
+        <span className="hidden sm:block w-8 text-right">RPG</span>
+        <span className="hidden sm:block w-8 text-right">APG</span>
+        <span className="hidden sm:block w-8 text-right">SPG</span>
+        <span className="hidden sm:block w-8 text-right">BPG</span>
         <span className="w-12 text-right">TOT VA</span>
         <span className="w-10 text-right">VA/G</span>
       </div>
@@ -1686,6 +1692,12 @@ function PlayoffLeaderboard({ season, lga }) {
                 {p.name}
               </span>
               <span className="w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
+              <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
+              <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.eff / p.gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.eff / p.gp).toFixed(1)}</span>
+              <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.reb / p.gp).toFixed(1)}</span>
+              <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.ast / p.gp).toFixed(1)}</span>
+              <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.stl / p.gp).toFixed(1)}</span>
+              <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.blk / p.gp).toFixed(1)}</span>
               <span className={`w-12 text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
               <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
             </div>
