@@ -231,48 +231,80 @@ export async function GET(req) {
     });
 
     // 5. Aggregate per player across all playoff games.
-    const agg = new Map();
+    // Walk every game of every series the player participated in (≥1 GP) so
+    // missed games surface as null-VA entries — keeps the spark line slot and
+    // lets `seriesGameNumber` reflect the true game-within-series, not the
+    // player's appearance count. (A player who plays G1/G2, sits G3–G5, and
+    // returns for G6 would otherwise have their G6 labelled "Game 3 vs OPP".)
+    const playerInfo = new Map();         // key → { name, team, seriesSet }
+    const playerStatsByGame = new Map();  // `${key}:${gameId}` → box-score row
     for (const r of results) {
       if (!r) continue;
       for (const p of r.players) {
-        const opp = p.team === r.home.tri ? r.away.tri : r.home.tri;
-        const { va, efficiency } = valueAddParts(p, lga);
         const key = `${p.team}:${p.name}`;
-        const a = agg.get(key) || {
-          name: p.name, team: p.team,
-          gp: 0, va: 0, eff: 0,
-          mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
-          fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
-          games: [],
-        };
-        a.gp += 1;
-        a.va += va;
-        a.eff += efficiency;
-        for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
-          a[k] += p[k] || 0;
+        let info = playerInfo.get(key);
+        if (!info) {
+          info = { name: p.name, team: p.team, seriesSet: new Set() };
+          playerInfo.set(key, info);
         }
-        a.games.push({
-          gameId: r.gameId, gameIdx: r.gameIdx, seriesIdx: r.seriesIdx, opp, va,
-          mp: p.mp || 0, pts: p.pts || 0, reb: p.reb || 0, ast: p.ast || 0,
-          stl: p.stl || 0, blk: p.blk || 0, tov: p.tov || 0,
-          fgm: p.fgm || 0, fga: p.fga || 0, tpm: p.tpm || 0, tpa: p.tpa || 0,
-          ftm: p.ftm || 0, fta: p.fta || 0, drb: p.drb || 0, orb: p.orb || 0,
-        });
-        agg.set(key, a);
+        info.seriesSet.add(r.seriesIdx);
+        playerStatsByGame.set(`${key}:${r.gameId}`, p);
       }
+    }
+    const seriesGamesByIdx = new Map();
+    for (const g of allGames) {
+      if (!seriesGamesByIdx.has(g.seriesIdx)) seriesGamesByIdx.set(g.seriesIdx, []);
+      seriesGamesByIdx.get(g.seriesIdx).push(g);
+    }
+
+    const agg = new Map();
+    for (const [key, info] of playerInfo) {
+      const a = {
+        name: info.name, team: info.team,
+        gp: 0, va: 0, eff: 0,
+        mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+        fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
+        games: [],
+      };
+      const seriesIdxs = [...info.seriesSet].sort((x, y) => x - y);
+      for (const sIdx of seriesIdxs) {
+        const sGames = seriesGamesByIdx.get(sIdx) || [];
+        sGames.forEach((g, i) => {
+          const opp = info.team === g.home.tri ? g.away.tri : g.home.tri;
+          const seriesGameNumber = i + 1;
+          const p = playerStatsByGame.get(`${key}:${g.gameId}`);
+          const base = {
+            gameId: g.gameId, gameIdx: g.gameIdx, seriesIdx: sIdx,
+            seriesGameNumber, opp,
+          };
+          if (p) {
+            const { va, efficiency } = valueAddParts(p, lga);
+            a.gp += 1;
+            a.va += va;
+            a.eff += efficiency;
+            for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
+              a[k] += p[k] || 0;
+            }
+            a.games.push({
+              ...base, va,
+              mp: p.mp || 0, pts: p.pts || 0, reb: p.reb || 0, ast: p.ast || 0,
+              stl: p.stl || 0, blk: p.blk || 0, tov: p.tov || 0,
+              fgm: p.fgm || 0, fga: p.fga || 0, tpm: p.tpm || 0, tpa: p.tpa || 0,
+              ftm: p.ftm || 0, fta: p.fta || 0, drb: p.drb || 0, orb: p.orb || 0,
+            });
+          } else {
+            a.games.push({
+              ...base, va: null,
+              mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+              fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
+            });
+          }
+        });
+      }
+      agg.set(key, a);
     }
 
     const players = [...agg.values()];
-    players.forEach((p) => {
-      p.games.sort((a, b) => a.gameIdx - b.gameIdx);
-      // Per-series ordinal so the drill-in title can read "Game 4 vs OKC"
-      // even when it's the player's 10th playoff game overall.
-      const counts = {};
-      for (const g of p.games) {
-        counts[g.seriesIdx] = (counts[g.seriesIdx] || 0) + 1;
-        g.seriesGameNumber = counts[g.seriesIdx];
-      }
-    });
     players.sort((a, b) => b.va - a.va);
 
     return new Response(JSON.stringify({

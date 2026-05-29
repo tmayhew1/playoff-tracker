@@ -1648,9 +1648,12 @@ function PlayoffLeaderboard({ season, lga }) {
         const isOpen = expanded === i;
         const tc = teamColor(p.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
-        // Player's playoff games already chronological from server.
+        // Player's playoff games already chronological from server, with
+        // null-va slots for games they sat out inside a series they played
+        // (kept so the chart shows a gap and the title uses the true series
+        // game number, not the player's appearance count).
         const values = p.games.map((g) => g.va);
-        const byGame = p.games.map((g) => ({
+        const byGame = p.games.map((g) => g.va == null ? null : ({
           team: p.team, name: p.name, gp: 1, va: g.va,
           mp: g.mp, pts: g.pts, reb: g.reb, drb: g.drb, orb: g.orb,
           ast: g.ast, stl: g.stl, blk: g.blk, tov: g.tov,
