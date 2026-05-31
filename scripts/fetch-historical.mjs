@@ -181,7 +181,8 @@ async function fetchBox(url) {
     t.find("tbody tr").each((_, tr) => {
       const $tr = hydrated(tr);
       if ($tr.hasClass("thead")) return;
-      const name = $tr.find("th[data-stat='player']").text().trim();
+      const playerCell = $tr.find("th[data-stat='player']");
+      const name = playerCell.text().trim();
       if (!name) return;
       // DNP rows have a single cell saying "Did Not Play" etc.
       const reason = $tr.find("td[data-stat='reason']").text().trim();
@@ -189,8 +190,13 @@ async function fetchBox(url) {
       const cell = (key) => $tr.find(`td[data-stat='${key}']`).text().trim();
       const mp = parseMinutes(cell("mp"));
       if (mp <= 0) return;
+      // Player slug lives in the cell anchor (e.g. /players/w/willija01.html);
+      // it's the stable join key for the regular-season totals page.
+      const slug = (playerCell.find("a").attr("href") || "")
+        .match(/\/players\/[a-z]\/([^.]+)\.html/)?.[1] || null;
       out.push({
         name,
+        slug,
         team: tri,
         mp,
         pts: num(cell("pts")),
@@ -220,6 +226,70 @@ async function fetchBox(url) {
     away: { tri: toNba(away.tri), score: away.score, brTri: away.tri },
     players: players.map((p) => ({ ...p, team: toNba(p.team) })),
   };
+}
+
+// --- Regular-season totals (for the per-game VA reference tick) -----------
+// BR's totals page lists every player who appeared in the regular season,
+// with one row per team (traded players also get a "TOT" aggregate row).
+// We use the unrounded totals — per_game.html rounds to one decimal which
+// drifts the VA calc enough to be noticeable on the chart.
+async function fetchRegularSeasonTotals() {
+  const url = `https://www.basketball-reference.com/leagues/NBA_${endYear}_totals.html`;
+  console.log(`Fetching ${url}`);
+  const html = await throttledFetch(url);
+  // Some BR tables are wrapped in HTML comments to defer rendering. Inline
+  // them so cheerio can see all rows.
+  const $ = cheerio.load(html.replace(/<!--([\s\S]*?)-->/g, "$1"));
+  // Table id has churned over the years; try the known variants in order.
+  const table =
+    $("table#totals_stats").length ? $("table#totals_stats") :
+    $("table#players_totals").length ? $("table#players_totals") :
+    $("table#totals").first();
+  if (!table || !table.length) throw new Error("totals table not found");
+
+  // Group by slug — traded players have multiple rows, the "TOT"/<n>TM row
+  // is the season aggregate we want. Fall back to the per-team row if a
+  // player only played for one team.
+  const bySlug = new Map();
+  table.find("tbody tr").each((_, tr) => {
+    const $tr = $(tr);
+    if ($tr.hasClass("thead")) return;
+    // Player cell is <td data-stat="name_display"> on newer tables and
+    // <th data-stat="player"> on older ones.
+    const playerCell = $tr.find("[data-stat='player'], [data-stat='name_display']").first();
+    const name = playerCell.text().trim();
+    if (!name) return;
+    const slug = (playerCell.find("a").attr("href") || "")
+      .match(/\/players\/[a-z]\/([^.]+)\.html/)?.[1] || null;
+    if (!slug) return;
+    const cell = (key) => $tr.find(`[data-stat='${key}']`).first().text().trim();
+    const team = cell("team_id") || cell("team_name_abbr") || "";
+    const g = num(cell("g"));
+    const mp = num(cell("mp"));
+    if (g <= 0 || mp <= 0) return;
+    const row = {
+      slug, name, team: toNba(team),
+      g, mp,
+      pts: num(cell("pts")),
+      ast: num(cell("ast")),
+      stl: num(cell("stl")),
+      blk: num(cell("blk")),
+      tov: num(cell("tov")),
+      drb: num(cell("drb")),
+      orb: num(cell("orb")),
+      fgm: num(cell("fg")),
+      fga: num(cell("fga")),
+      tpm: num(cell("fg3")),
+      tpa: num(cell("fg3a")),
+      ftm: num(cell("ft")),
+      fta: num(cell("fta")),
+    };
+    const existing = bySlug.get(slug);
+    const isAggregate = /^(TOT|\dTM)$/.test(team);
+    // Prefer aggregate rows; otherwise keep the first per-team row we see.
+    if (!existing || isAggregate) bySlug.set(slug, row);
+  });
+  return [...bySlug.values()];
 }
 
 // --- Main -----------------------------------------------------------------
@@ -308,15 +378,17 @@ async function main() {
   // them and `seriesGameNumber` reflects the true game-within-series, not the
   // player's appearance count. (Without this, a player who plays G1/G2, sits
   // G3–G5, then returns for G6 has their G6 mis-labelled "Game 3 vs OPP".)
-  const playerInfo = new Map();           // key → { name, team, seriesSet }
+  const playerInfo = new Map();           // key → { name, team, slug, seriesSet }
   const playerStatsByGame = new Map();    // `${key}:${gameId}` → box-score row
   for (const r of allGamesFlat) {
     for (const p of r.players) {
       const key = `${p.team}:${p.name}`;
       let info = playerInfo.get(key);
       if (!info) {
-        info = { name: p.name, team: p.team, seriesSet: new Set() };
+        info = { name: p.name, team: p.team, slug: p.slug || null, seriesSet: new Set() };
         playerInfo.set(key, info);
+      } else if (!info.slug && p.slug) {
+        info.slug = p.slug;
       }
       info.seriesSet.add(r.seriesIdx);
       playerStatsByGame.set(`${key}:${r.gameId}`, p);
@@ -331,7 +403,7 @@ async function main() {
   const agg = new Map();
   for (const [key, info] of playerInfo) {
     const a = {
-      name: info.name, team: info.team,
+      name: info.name, team: info.team, slug: info.slug || null,
       gp: 0, va: 0, eff: 0,
       mp: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
       fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, drb: 0, orb: 0,
@@ -393,7 +465,24 @@ async function main() {
     fetchedAt: new Date().toISOString(),
   };
 
-  // 7. Write.
+  // 7. Regular-season totals — used by the VA breakdown as the per-game
+  // reference tick. Best-effort: a failed fetch just omits the file so the
+  // UI hides the tick rather than blocking the playoff bake.
+  let regularSeasonOut = null;
+  try {
+    const rsPlayers = await fetchRegularSeasonTotals();
+    console.log(`  ${rsPlayers.length} regular-season players`);
+    regularSeasonOut = {
+      season,
+      players: rsPlayers,
+      source: "basketball-reference",
+      fetchedAt: new Date().toISOString(),
+    };
+  } catch (e) {
+    console.warn(`  regular-season totals failed: ${e.message} — skipping reference file`);
+  }
+
+  // 8. Write.
   await mkdir(DATA_DIR, { recursive: true });
   const historyPath = join(DATA_DIR, `history-${season}.json`);
   const leaderboardPath = join(DATA_DIR, `leaderboard-${season}.json`);
@@ -402,6 +491,11 @@ async function main() {
   console.log(`Wrote ${historyOut.series.length} series, ${players.length} players`);
   console.log(`  → ${historyPath}`);
   console.log(`  → ${leaderboardPath}`);
+  if (regularSeasonOut) {
+    const rsPath = join(DATA_DIR, `regular-season-${season}.json`);
+    await writeFile(rsPath, JSON.stringify(regularSeasonOut, null, 2) + "\n");
+    console.log(`  → ${rsPath}`);
+  }
 }
 
 main().catch((e) => {
