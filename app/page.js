@@ -16,8 +16,11 @@ const withAlpha = (hex, alpha) => {
 
 // Loose name match for joining ESPN box-score names with basketball-reference
 // names (regular-season reference tick). Strips punctuation, suffixes like
-// "Jr."/"III", and collapses whitespace so "P.J. Tucker" matches "PJ Tucker".
+// "Jr."/"III", collapses whitespace, and folds diacritics so "P.J. Tucker"
+// matches "PJ Tucker" and "Luka Dončić" matches "Luka Doncic".
 const normalizeName = (s) => (s || "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
   .toLowerCase()
   .replace(/[.''`,]/g, "")
   .replace(/\s+/g, " ")
