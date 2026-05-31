@@ -118,6 +118,7 @@
     {
       "name": "Victor Wembanyama",
       "team": "SAS",
+      "slug": "wembavi01",
       "gp": 17,
       "va": 249.92234801612955,
       "eff": 20.703068190542552,
@@ -556,6 +557,7 @@
     {
       "name": "Shai Gilgeous-Alexander",
       "team": "OKC",
+      "slug": "gilgesh01",
       "gp": 15,
       "va": 231.95310273365115,
       "eff": -14.220489734425474,
@@ -925,6 +927,7 @@
     {
       "name": "Jalen Brunson",
       "team": "NYK",
+      "slug": "brunsja01",
       "gp": 14,
       "va": 195.24618624933606,
       "eff": 1.8738433197311704,
@@ -1271,6 +1274,7 @@
     {
       "name": "Karl-Anthony Towns",
       "team": "NYK",
+      "slug": "townska01",
       "gp": 14,
       "va": 193.90140485924255,
       "eff": 35.98362088029836,
@@ -1617,6 +1621,7 @@
     {
       "name": "Donovan Mitchell",
       "team": "CLE",
+      "slug": "mitchdo01",
       "gp": 18,
       "va": 156.4020567705834,
       "eff": -17.442905166964543,
@@ -2055,6 +2060,7 @@
     {
       "name": "Cade Cunningham",
       "team": "DET",
+      "slug": "cunnica01",
       "gp": 14,
       "va": 148.13660939184592,
       "eff": -17.311181479054248,
@@ -2401,6 +2407,7 @@
     {
       "name": "Stephon Castle",
       "team": "SAS",
+      "slug": "castlst01",
       "gp": 18,
       "va": 148.02626818440896,
       "eff": 1.9490434139341413,
@@ -2839,6 +2846,7 @@
     {
       "name": "OG Anunoby",
       "team": "NYK",
+      "slug": "anunoog01",
       "gp": 12,
       "va": 127.2039783752841,
       "eff": 40.25233376522873,
@@ -3185,6 +3193,7 @@
     {
       "name": "Scottie Barnes",
       "team": "TOR",
+      "slug": "barnesc01",
       "gp": 7,
       "va": 98.0896014091207,
       "eff": -0.42728226352114795,
@@ -3370,6 +3379,7 @@
     {
       "name": "Evan Mobley",
       "team": "CLE",
+      "slug": "mobleev01",
       "gp": 18,
       "va": 97.4889132086158,
       "eff": 5.053493382433942,
@@ -3808,6 +3818,7 @@
     {
       "name": "Nikola Jokić",
       "team": "DEN",
+      "slug": "jokicni01",
       "gp": 6,
       "va": 95.15848382285796,
       "eff": -10.972503154152104,
@@ -3970,6 +3981,7 @@
     {
       "name": "Tyrese Maxey",
       "team": "PHI",
+      "slug": "maxeyty01",
       "gp": 11,
       "va": 87.05134499056163,
       "eff": -6.948385960485567,
@@ -4247,6 +4259,7 @@
     {
       "name": "Jayson Tatum",
       "team": "BOS",
+      "slug": "tatumja01",
       "gp": 6,
       "va": 83.943610669615,
       "eff": 4.917735558261189,
@@ -4432,6 +4445,7 @@
     {
       "name": "LeBron James",
       "team": "LAL",
+      "slug": "jamesle01",
       "gp": 10,
       "va": 83.90198948029963,
       "eff": -17.456366944612363,
@@ -4686,6 +4700,7 @@
     {
       "name": "Dylan Harper",
       "team": "SAS",
+      "slug": "harpedy01",
       "gp": 18,
       "va": 79.95006764722368,
       "eff": 12.375910752766758,
@@ -5124,6 +5139,7 @@
     {
       "name": "Joel Embiid",
       "team": "PHI",
+      "slug": "embiijo01",
       "gp": 7,
       "va": 78.95334158036215,
       "eff": -14.01995125916955,
@@ -5401,6 +5417,7 @@
     {
       "name": "Chet Holmgren",
       "team": "OKC",
+      "slug": "holmgch01",
       "gp": 15,
       "va": 74.56270030492598,
       "eff": 23.619042069832325,
@@ -5770,6 +5787,7 @@
     {
       "name": "De'Aaron Fox",
       "team": "SAS",
+      "slug": "foxde01",
       "gp": 16,
       "va": 69.02566450106663,
       "eff": -31.133369528294654,
@@ -6208,6 +6226,7 @@
     {
       "name": "Paolo Banchero",
       "team": "ORL",
+      "slug": "banchpa01",
       "gp": 7,
       "va": 65.62949397538348,
       "eff": -30.437957181648272,
@@ -6393,6 +6412,7 @@
     {
       "name": "Isaiah Hartenstein",
       "team": "OKC",
+      "slug": "harteis01",
       "gp": 15,
       "va": 62.02928193707823,
       "eff": 14.658356606395515,
@@ -6762,6 +6782,7 @@
     {
       "name": "Ayo Dosunmu",
       "team": "MIN",
+      "slug": "dosunay01",
       "gp": 10,
       "va": 61.131391237478276,
       "eff": 10.391188214914598,
@@ -7062,6 +7083,7 @@
     {
       "name": "Jaylen Brown",
       "team": "BOS",
+      "slug": "brownja02",
       "gp": 7,
       "va": 58.71457323499962,
       "eff": -12.359783807035283,
@@ -7247,6 +7269,7 @@
     {
       "name": "Ajay Mitchell",
       "team": "OKC",
+      "slug": "mitchaj01",
       "gp": 11,
       "va": 57.7219000183713,
       "eff": -7.198713808563756,
@@ -7616,6 +7639,7 @@
     {
       "name": "Paul Reed",
       "team": "DET",
+      "slug": "reedpa01",
       "gp": 9,
       "va": 56.34837770355414,
       "eff": 11.564265635567736,
@@ -7962,6 +7986,7 @@
     {
       "name": "Collin Murray-Boyles",
       "team": "TOR",
+      "slug": "murraco01",
       "gp": 7,
       "va": 54.67229570614773,
       "eff": 13.516229576650897,
@@ -8147,6 +8172,7 @@
     {
       "name": "Jarrett Allen",
       "team": "CLE",
+      "slug": "allenja01",
       "gp": 18,
       "va": 51.85542128500179,
       "eff": 3.84232340275401,
@@ -8585,6 +8611,7 @@
     {
       "name": "RJ Barrett",
       "team": "TOR",
+      "slug": "barrerj01",
       "gp": 7,
       "va": 49.490453494337245,
       "eff": -7.31811426977931,
@@ -8770,6 +8797,7 @@
     {
       "name": "Alex Caruso",
       "team": "OKC",
+      "slug": "carusal01",
       "gp": 15,
       "va": 49.097085141176606,
       "eff": 18.894627156221496,
@@ -9139,6 +9167,7 @@
     {
       "name": "James Harden",
       "team": "CLE",
+      "slug": "hardeja01",
       "gp": 18,
       "va": 48.241307684423646,
       "eff": -23.614394940225562,
@@ -9577,6 +9606,7 @@
     {
       "name": "Anthony Edwards",
       "team": "MIN",
+      "slug": "edwaran01",
       "gp": 10,
       "va": 48.10920805199027,
       "eff": -20.509989084004125,
@@ -9877,6 +9907,7 @@
     {
       "name": "Mikal Bridges",
       "team": "NYK",
+      "slug": "bridgmi01",
       "gp": 14,
       "va": 43.68633740746757,
       "eff": 30.771761743602617,
@@ -10223,6 +10254,7 @@
     {
       "name": "Jalen Williams",
       "team": "OKC",
+      "slug": "willija06",
       "gp": 5,
       "va": 37.454071139558444,
       "eff": 1.3338536568124486,
@@ -10500,6 +10532,7 @@
     {
       "name": "Robert Williams",
       "team": "POR",
+      "slug": "williro04",
       "gp": 5,
       "va": 36.23950239227589,
       "eff": 7.408413660981196,
@@ -10639,6 +10672,7 @@
     {
       "name": "Dillon Brooks",
       "team": "PHX",
+      "slug": "brookdi01",
       "gp": 4,
       "va": 34.89427622484098,
       "eff": 1.8822264222773204,
@@ -10755,6 +10789,7 @@
     {
       "name": "Alperen Şengün",
       "team": "HOU",
+      "slug": "sengual01",
       "gp": 6,
       "va": 34.60411238643057,
       "eff": -19.550568056715996,
@@ -10917,6 +10952,7 @@
     {
       "name": "Jalen Johnson",
       "team": "ATL",
+      "slug": "johnsja05",
       "gp": 6,
       "va": 33.850117744349205,
       "eff": -8.58253519119859,
@@ -11079,6 +11115,7 @@
     {
       "name": "Cason Wallace",
       "team": "OKC",
+      "slug": "wallaca01",
       "gp": 15,
       "va": 32.93023288274084,
       "eff": 18.50196086209718,
@@ -11448,6 +11485,7 @@
     {
       "name": "Naz Reid",
       "team": "MIN",
+      "slug": "reidna01",
       "gp": 12,
       "va": 29.120701645791897,
       "eff": 4.767324160903576,
@@ -11748,6 +11786,7 @@
     {
       "name": "Tobias Harris",
       "team": "DET",
+      "slug": "harrito02",
       "gp": 14,
       "va": 28.27981961418534,
       "eff": -30.224979381350103,
@@ -12094,6 +12133,7 @@
     {
       "name": "Rui Hachimura",
       "team": "LAL",
+      "slug": "hachiru01",
       "gp": 10,
       "va": 27.612781517500846,
       "eff": 33.55131583599901,
@@ -12348,6 +12388,7 @@
     {
       "name": "Deni Avdija",
       "team": "POR",
+      "slug": "avdijde01",
       "gp": 5,
       "va": 26.00233935189775,
       "eff": -11.250322122890474,
@@ -12487,6 +12528,7 @@
     {
       "name": "Jamal Murray",
       "team": "DEN",
+      "slug": "murraja01",
       "gp": 6,
       "va": 23.405766442925632,
       "eff": -30.274774121994348,
@@ -12649,6 +12691,7 @@
     {
       "name": "Franz Wagner",
       "team": "ORL",
+      "slug": "wagnefr01",
       "gp": 4,
       "va": 22.197428525827128,
       "eff": -7.181331766241467,
@@ -12834,6 +12877,7 @@
     {
       "name": "Donte DiVincenzo",
       "team": "MIN",
+      "slug": "divindo01",
       "gp": 4,
       "va": 21.813927855295887,
       "eff": 6.73417793352699,
@@ -12996,6 +13040,7 @@
     {
       "name": "Neemias Queta",
       "team": "BOS",
+      "slug": "quetane01",
       "gp": 7,
       "va": 21.368260826692527,
       "eff": 12.730163343405675,
@@ -13181,6 +13226,7 @@
     {
       "name": "Payton Pritchard",
       "team": "BOS",
+      "slug": "pritcpa01",
       "gp": 7,
       "va": 20.727992142818323,
       "eff": -4.2347503972462075,
@@ -13366,6 +13412,7 @@
     {
       "name": "Jose Alvarado",
       "team": "NYK",
+      "slug": "alvarjo01",
       "gp": 13,
       "va": 19.154620237483343,
       "eff": 4.864184671870428,
@@ -13712,6 +13759,7 @@
     {
       "name": "Isaiah Joe",
       "team": "OKC",
+      "slug": "joeis01",
       "gp": 13,
       "va": 18.896459501327936,
       "eff": 2.7042853571941867,
@@ -14081,6 +14129,7 @@
     {
       "name": "Tari Eason",
       "team": "HOU",
+      "slug": "easonta01",
       "gp": 6,
       "va": 18.17555963289419,
       "eff": 1.9926636909291089,
@@ -14243,6 +14292,7 @@
     {
       "name": "Jared McCain",
       "team": "OKC",
+      "slug": "mccaija01",
       "gp": 15,
       "va": 18.039730648492306,
       "eff": -9.744863371570366,
@@ -14612,6 +14662,7 @@
     {
       "name": "Amen Thompson",
       "team": "HOU",
+      "slug": "thompam01",
       "gp": 6,
       "va": 17.604585786269336,
       "eff": -11.504801655237253,
@@ -14774,6 +14825,7 @@
     {
       "name": "Jeremy Sochan",
       "team": "NYK",
+      "slug": "sochaje01",
       "gp": 5,
       "va": 17.38090088762565,
       "eff": 4.953554889512448,
@@ -15028,6 +15080,7 @@
     {
       "name": "Paul George",
       "team": "PHI",
+      "slug": "georgpa01",
       "gp": 11,
       "va": 16.1665190044125,
       "eff": 9.749983233615657,
@@ -15305,6 +15358,7 @@
     {
       "name": "Luke Kornet",
       "team": "SAS",
+      "slug": "kornelu01",
       "gp": 18,
       "va": 15.622865632363258,
       "eff": 5.4086499193365976,
@@ -15743,6 +15797,7 @@
     {
       "name": "Luka Garza",
       "team": "BOS",
+      "slug": "garzalu01",
       "gp": 7,
       "va": 15.09807392415371,
       "eff": 2.9871735895671048,
@@ -15928,6 +15983,7 @@
     {
       "name": "Mike Conley",
       "team": "MIN",
+      "slug": "conlemi01",
       "gp": 12,
       "va": 14.134106840449359,
       "eff": 10.206858514060439,
@@ -16228,6 +16284,7 @@
     {
       "name": "Jakob Poeltl",
       "team": "TOR",
+      "slug": "poeltja01",
       "gp": 7,
       "va": 13.264951227329886,
       "eff": 3.9628312745875975,
@@ -16413,6 +16470,7 @@
     {
       "name": "Kenrich Williams",
       "team": "OKC",
+      "slug": "willike04",
       "gp": 11,
       "va": 13.182803838826256,
       "eff": -2.816728157754275,
@@ -16782,6 +16840,7 @@
     {
       "name": "Jrue Holiday",
       "team": "POR",
+      "slug": "holidjr01",
       "gp": 5,
       "va": 12.707924381546299,
       "eff": -8.943253395797242,
@@ -16921,6 +16980,7 @@
     {
       "name": "Onyeka Okongwu",
       "team": "ATL",
+      "slug": "okongon01",
       "gp": 6,
       "va": 12.469722787801484,
       "eff": 13.28406732526691,
@@ -17083,6 +17143,7 @@
     {
       "name": "Tyler Kolek",
       "team": "NYK",
+      "slug": "kolekty01",
       "gp": 8,
       "va": 11.365038927007953,
       "eff": -0.8359569089696597,
@@ -17429,6 +17490,7 @@
     {
       "name": "Devin Booker",
       "team": "PHX",
+      "slug": "bookede01",
       "gp": 4,
       "va": 11.248108045363027,
       "eff": -5.818019618683634,
@@ -17545,6 +17607,7 @@
     {
       "name": "Mitchell Robinson",
       "team": "NYK",
+      "slug": "robinmi01",
       "gp": 13,
       "va": 10.071955051360693,
       "eff": -6.580834558644934,
@@ -17891,6 +17954,7 @@
     {
       "name": "Austin Reaves",
       "team": "LAL",
+      "slug": "reaveau01",
       "gp": 6,
       "va": 10.001029846497435,
       "eff": -13.088784947653618,
@@ -18145,6 +18209,7 @@
     {
       "name": "Joan Beringer",
       "team": "MIN",
+      "slug": "berinjo01",
       "gp": 5,
       "va": 9.598582585143552,
       "eff": -0.17846044989252374,
@@ -18445,6 +18510,7 @@
     {
       "name": "Collin Gillespie",
       "team": "PHX",
+      "slug": "gilleco01",
       "gp": 4,
       "va": 8.877063615981665,
       "eff": 2.171137845833087,
@@ -18561,6 +18627,7 @@
     {
       "name": "Desmond Bane",
       "team": "ORL",
+      "slug": "banede01",
       "gp": 7,
       "va": 8.725300896673513,
       "eff": -8.384692005836742,
@@ -18746,6 +18813,7 @@
     {
       "name": "Cameron Johnson",
       "team": "DEN",
+      "slug": "johnsca02",
       "gp": 6,
       "va": 8.334081381874963,
       "eff": 4.217033433544616,
@@ -18908,6 +18976,7 @@
     {
       "name": "Jase Richardson",
       "team": "ORL",
+      "slug": "richaja02",
       "gp": 1,
       "va": 8.137541664268715,
       "eff": 3.8418783679753683,
@@ -19093,6 +19162,7 @@
     {
       "name": "Jaden McDaniels",
       "team": "MIN",
+      "slug": "mcdanja02",
       "gp": 12,
       "va": 7.8884562900751085,
       "eff": -23.87772238130582,
@@ -19393,6 +19463,7 @@
     {
       "name": "Grayson Allen",
       "team": "PHX",
+      "slug": "allengr01",
       "gp": 2,
       "va": 7.250664823493248,
       "eff": 1.7828816084429313,
@@ -19509,6 +19580,7 @@
     {
       "name": "Nick Smith Jr.",
       "team": "LAL",
+      "slug": "smithni01",
       "gp": 6,
       "va": 7.004058812232481,
       "eff": -0.8074243626562154,
@@ -19763,6 +19835,7 @@
     {
       "name": "CJ McCollum",
       "team": "ATL",
+      "slug": "mccolcj01",
       "gp": 6,
       "va": 6.9164088257424945,
       "eff": -11.916168906668847,
@@ -19925,6 +19998,7 @@
     {
       "name": "Royce O'Neale",
       "team": "PHX",
+      "slug": "onealro01",
       "gp": 4,
       "va": 6.335958206844616,
       "eff": 11.144459916327241,
@@ -20041,6 +20115,7 @@
     {
       "name": "Julian Champagnie",
       "team": "SAS",
+      "slug": "champju02",
       "gp": 18,
       "va": 6.241615521699018,
       "eff": 19.440804586402503,
@@ -20479,6 +20554,7 @@
     {
       "name": "Zeke Nnaji",
       "team": "DEN",
+      "slug": "nnajize01",
       "gp": 2,
       "va": 5.917576105014242,
       "eff": 3.0931897084750326,
@@ -20641,6 +20717,7 @@
     {
       "name": "Buddy Hield",
       "team": "ATL",
+      "slug": "hieldbu01",
       "gp": 2,
       "va": 5.648094037904947,
       "eff": 4.551741396545765,
@@ -20803,6 +20880,7 @@
     {
       "name": "Johni Broome",
       "team": "PHI",
+      "slug": "broomjo01",
       "gp": 2,
       "va": 5.516690367975693,
       "eff": 0.49033208833099984,
@@ -20919,6 +20997,7 @@
     {
       "name": "Pacôme Dadiet",
       "team": "NYK",
+      "slug": "dadiepa01",
       "gp": 7,
       "va": 5.14687163668097,
       "eff": 1.0168024975216006,
@@ -21265,6 +21344,7 @@
     {
       "name": "Nae'Qwan Tomlin",
       "team": "CLE",
+      "slug": "tomlina01",
       "gp": 7,
       "va": 5.123695088962716,
       "eff": 0.8427136732398643,
@@ -21703,6 +21783,7 @@
     {
       "name": "Landry Shamet",
       "team": "NYK",
+      "slug": "shamela01",
       "gp": 14,
       "va": 5.104770146595635,
       "eff": 21.975767826296348,
@@ -22049,6 +22130,7 @@
     {
       "name": "Jonathan Kuminga",
       "team": "ATL",
+      "slug": "kuminjo01",
       "gp": 6,
       "va": 4.91209505691738,
       "eff": -3.880264232162897,
@@ -22211,6 +22293,7 @@
     {
       "name": "Duncan Robinson",
       "team": "DET",
+      "slug": "robindu01",
       "gp": 13,
       "va": 4.797572359182138,
       "eff": 16.37031933234637,
@@ -22557,6 +22640,7 @@
     {
       "name": "Josh Hart",
       "team": "NYK",
+      "slug": "hartjo01",
       "gp": 14,
       "va": 4.781389103587558,
       "eff": -12.875886809455151,
@@ -22903,6 +22987,7 @@
     {
       "name": "Rasheer Fleming",
       "team": "PHX",
+      "slug": "flemira01",
       "gp": 4,
       "va": 4.729915162863968,
       "eff": 3.60469591993842,
@@ -23019,6 +23104,7 @@
     {
       "name": "Trendon Watford",
       "team": "PHI",
+      "slug": "watfotr01",
       "gp": 7,
       "va": 4.303112404283501,
       "eff": 1.6457664102852927,
@@ -23296,6 +23382,7 @@
     {
       "name": "Dalton Knecht",
       "team": "LAL",
+      "slug": "knechda01",
       "gp": 5,
       "va": 3.9092330285993264,
       "eff": -0.2624534353921124,
@@ -23550,6 +23637,7 @@
     {
       "name": "Ron Harper Jr.",
       "team": "BOS",
+      "slug": "harpero02",
       "gp": 6,
       "va": 3.847192278246959,
       "eff": 1.2354981324965002,
@@ -23735,6 +23823,7 @@
     {
       "name": "Joe Ingles",
       "team": "MIN",
+      "slug": "inglejo01",
       "gp": 3,
       "va": 3.619455488950064,
       "eff": 2.1858051680621235,
@@ -24035,6 +24124,7 @@
     {
       "name": "Jalen Green",
       "team": "PHX",
+      "slug": "greenja05",
       "gp": 4,
       "va": 3.5887735004283705,
       "eff": -19.197095450111554,
@@ -24151,6 +24241,7 @@
     {
       "name": "Jonathan Mogbo",
       "team": "TOR",
+      "slug": "mogbojo01",
       "gp": 3,
       "va": 3.4956103304051416,
       "eff": 1.8065753523802641,
@@ -24336,6 +24427,7 @@
     {
       "name": "Kevin Durant",
       "team": "HOU",
+      "slug": "duranke01",
       "gp": 1,
       "va": 2.8786905519684955,
       "eff": 2.813502417917616,
@@ -24498,6 +24590,7 @@
     {
       "name": "Scoot Henderson",
       "team": "POR",
+      "slug": "hendesc01",
       "gp": 5,
       "va": 2.551964413624561,
       "eff": 4.480165577945532,
@@ -24637,6 +24730,7 @@
     {
       "name": "Tolu Smith",
       "team": "DET",
+      "slug": "smithto05",
       "gp": 3,
       "va": 2.4164579015994443,
       "eff": 1.8065753523802641,
@@ -24983,6 +25077,7 @@
     {
       "name": "Jamaree Bouyea",
       "team": "PHX",
+      "slug": "bouyeja01",
       "gp": 4,
       "va": 2.3875827282893125,
       "eff": -0.9638616791403998,
@@ -25099,6 +25194,7 @@
     {
       "name": "Sidy Cissoko",
       "team": "POR",
+      "slug": "cissosi01",
       "gp": 4,
       "va": 2.3598951535991004,
       "eff": -0.6673718910613844,
@@ -25238,6 +25334,7 @@
     {
       "name": "Jamison Battle",
       "team": "TOR",
+      "slug": "battlja01",
       "gp": 6,
       "va": 1.9150562191617864,
       "eff": 8.356632433385585,
@@ -25423,6 +25520,7 @@
     {
       "name": "Marcus Sasser",
       "team": "DET",
+      "slug": "sassema01",
       "gp": 6,
       "va": 1.7815616743081888,
       "eff": 2.0227376615387644,
@@ -25769,6 +25867,7 @@
     {
       "name": "Shaedon Sharpe",
       "team": "POR",
+      "slug": "sharpsh01",
       "gp": 5,
       "va": 1.5121495221310044,
       "eff": -7.402101959366151,
@@ -25908,6 +26007,7 @@
     {
       "name": "Max Shulga",
       "team": "BOS",
+      "slug": "shulgma01",
       "gp": 2,
       "va": 1.1457525090043919,
       "eff": 0.8418783679753681,
@@ -26093,6 +26193,7 @@
     {
       "name": "Tony Bradley",
       "team": "ATL",
+      "slug": "bradlto01",
       "gp": 4,
       "va": 0.5987054036654369,
       "eff": 1.8997650608552963,
@@ -26255,6 +26356,7 @@
     {
       "name": "Dalano Banton",
       "team": "BOS",
+      "slug": "bantoda01",
       "gp": 2,
       "va": 0.5730646123652166,
       "eff": 0.9032876761901321,
@@ -26440,6 +26542,7 @@
     {
       "name": "Jonas Valančiūnas",
       "team": "DEN",
+      "slug": "valanjo01",
       "gp": 4,
       "va": 0.005896095557032188,
       "eff": 1.7460013494299966,
@@ -26602,6 +26705,7 @@
     {
       "name": "Amari Williams",
       "team": "BOS",
+      "slug": "william01",
       "gp": 1,
       "va": -0.633683624871727,
       "eff": -1.673724707710796,
@@ -26787,6 +26891,7 @@
     {
       "name": "Jalen Pickett",
       "team": "DEN",
+      "slug": "pickeja02",
       "gp": 2,
       "va": -0.7670628554080134,
       "eff": -0.577012383900928,
@@ -26949,6 +27054,7 @@
     {
       "name": "Tim Hardaway Jr.",
       "team": "DEN",
+      "slug": "hardati02",
       "gp": 6,
       "va": -0.7675284260848869,
       "eff": -2.8702184989114996,
@@ -27111,6 +27217,7 @@
     {
       "name": "Zaccharie Risacher",
       "team": "ATL",
+      "slug": "risacza01",
       "gp": 3,
       "va": -0.9886595030650369,
       "eff": -4.265714994350392,
@@ -27273,6 +27380,7 @@
     {
       "name": "Andre Drummond",
       "team": "PHI",
+      "slug": "drumman01",
       "gp": 11,
       "va": -0.9970509502654987,
       "eff": 10.031766695248816,
@@ -27550,6 +27658,7 @@
     {
       "name": "Garrett Temple",
       "team": "TOR",
+      "slug": "templga01",
       "gp": 2,
       "va": -1.0157320332306357,
       "eff": -1.096712323809868,
@@ -27735,6 +27844,7 @@
     {
       "name": "Trayce Jackson-Davis",
       "team": "TOR",
+      "slug": "jackstr02",
       "gp": 3,
       "va": -1.0630618673552497,
       "eff": -0.673724707710796,
@@ -27920,6 +28030,7 @@
     {
       "name": "Dyson Daniels",
       "team": "ATL",
+      "slug": "daniedy01",
       "gp": 6,
       "va": -1.1961916713143381,
       "eff": -5.449121318741643,
@@ -28082,6 +28193,7 @@
     {
       "name": "Kyle Lowry",
       "team": "PHI",
+      "slug": "lowryky01",
       "gp": 2,
       "va": -1.2665672942325221,
       "eff": 0,
@@ -28267,6 +28379,7 @@
     {
       "name": "Noah Penda",
       "team": "ORL",
+      "slug": "pendano01",
       "gp": 1,
       "va": -1.3724865244063817,
       "eff": 0,
@@ -28452,6 +28565,7 @@
     {
       "name": "Asa Newell",
       "team": "ATL",
+      "slug": "newelas01",
       "gp": 2,
       "va": -1.4053361530037805,
       "eff": -0.19342464761973588,
@@ -28614,6 +28728,7 @@
     {
       "name": "Keaton Wallace",
       "team": "ATL",
+      "slug": "wallake01",
       "gp": 3,
       "va": -1.5338948020158616,
       "eff": -4.297756450987215,
@@ -28776,6 +28891,7 @@
     {
       "name": "Tyus Jones",
       "team": "DEN",
+      "slug": "jonesty01",
       "gp": 3,
       "va": -1.6477392090121783,
       "eff": -1.3330594665823197,
@@ -28938,6 +29054,7 @@
     {
       "name": "DaRon Holmes",
       "team": "DEN",
+      "slug": "holmeda01",
       "gp": 2,
       "va": -1.7531838935484405,
       "eff": 0,
@@ -29100,6 +29217,7 @@
     {
       "name": "JD Davison",
       "team": "HOU",
+      "slug": "davisjd01",
       "gp": 2,
       "va": -1.9646489287653583,
       "eff": 0.422987616099072,
@@ -29262,6 +29380,7 @@
     {
       "name": "Gradey Dick",
       "team": "TOR",
+      "slug": "dickgr01",
       "gp": 3,
       "va": -1.9791148426748515,
       "eff": 0,
@@ -29447,6 +29566,7 @@
     {
       "name": "Chaz Lanier",
       "team": "DET",
+      "slug": "laniech01",
       "gp": 3,
       "va": -2.3787110991935103,
       "eff": -1.272485463632052,
@@ -29793,6 +29913,7 @@
     {
       "name": "Jordan McLaughlin",
       "team": "SAS",
+      "slug": "mclaujo01",
       "gp": 10,
       "va": -2.60823031505236,
       "eff": 5.4474095931782855,
@@ -30231,6 +30352,7 @@
     {
       "name": "Kelly Olynyk",
       "team": "SAS",
+      "slug": "olynyke01",
       "gp": 9,
       "va": -2.627681516347092,
       "eff": 3.170983861579148,
@@ -30669,6 +30791,7 @@
     {
       "name": "Moritz Wagner",
       "team": "ORL",
+      "slug": "wagnemo01",
       "gp": 2,
       "va": -2.6693088324079617,
       "eff": -0.9462101713428477,
@@ -30854,6 +30977,7 @@
     {
       "name": "Bronny James",
       "team": "LAL",
+      "slug": "jamesbr02",
       "gp": 8,
       "va": -3.0239814146141732,
       "eff": 1.1387858086866325,
@@ -31108,6 +31232,7 @@
     {
       "name": "Clint Capela",
       "team": "HOU",
+      "slug": "capelca01",
       "gp": 4,
       "va": -3.0560747992440978,
       "eff": -2.7736985904789435,
@@ -31270,6 +31395,7 @@
     {
       "name": "Jordan Goodwin",
       "team": "PHX",
+      "slug": "goodwjo01",
       "gp": 1,
       "va": -3.212972028390823,
       "eff": -2.333894771846816,
@@ -31386,6 +31512,7 @@
     {
       "name": "Blake Wesley",
       "team": "POR",
+      "slug": "weslebl01",
       "gp": 4,
       "va": -3.2292762838462865,
       "eff": -0.577012383900928,
@@ -31525,6 +31652,7 @@
     {
       "name": "Sandro Mamukelashvili",
       "team": "TOR",
+      "slug": "mamuksa01",
       "gp": 7,
       "va": -3.3704422324160936,
       "eff": -8.657353567832898,
@@ -31710,6 +31838,7 @@
     {
       "name": "Dalen Terry",
       "team": "PHI",
+      "slug": "terryda01",
       "gp": 7,
       "va": -3.542722904007567,
       "eff": -6.688546014193772,
@@ -31987,6 +32116,7 @@
     {
       "name": "Larry Nance Jr.",
       "team": "CLE",
+      "slug": "nancela02",
       "gp": 2,
       "va": -3.7004090045698397,
       "eff": 0,
@@ -32172,6 +32302,7 @@
     {
       "name": "Wendell Carter Jr.",
       "team": "ORL",
+      "slug": "cartewe01",
       "gp": 7,
       "va": -3.741039839940747,
       "eff": 0.23184364701788907,
@@ -32357,6 +32488,7 @@
     {
       "name": "Jett Howard",
       "team": "ORL",
+      "slug": "howarje01",
       "gp": 1,
       "va": -3.862458335731285,
       "eff": -2.158121632024632,
@@ -32542,6 +32674,7 @@
     {
       "name": "Yang Hansen",
       "team": "POR",
+      "slug": "yangha01",
       "gp": 4,
       "va": -4.464623186145959,
       "eff": -2.158121632024632,
@@ -32681,6 +32814,7 @@
     {
       "name": "Maxi Kleber",
       "team": "LAL",
+      "slug": "klebima01",
       "gp": 3,
       "va": -4.4651585746353435,
       "eff": -1.673724707710796,
@@ -32935,6 +33069,7 @@
     {
       "name": "Jaxson Hayes",
       "team": "LAL",
+      "slug": "hayesja02",
       "gp": 10,
       "va": -4.835631066887938,
       "eff": 5.020039258458721,
@@ -33189,6 +33324,7 @@
     {
       "name": "Baylor Scheierman",
       "team": "BOS",
+      "slug": "scheiba01",
       "gp": 7,
       "va": -4.920039039359907,
       "eff": 1.8561612446920233,
@@ -33374,6 +33510,7 @@
     {
       "name": "Jevon Carter",
       "team": "ORL",
+      "slug": "carteje01",
       "gp": 3,
       "va": -5.149307059329494,
       "eff": -2.351546279644368,
@@ -33559,6 +33696,7 @@
     {
       "name": "Jae'Sean Tate",
       "team": "HOU",
+      "slug": "tateja01",
       "gp": 5,
       "va": -5.2652225315454615,
       "eff": -5.627554358611255,
@@ -33721,6 +33859,7 @@
     {
       "name": "Jordan Clarkson",
       "team": "NYK",
+      "slug": "clarkjo01",
       "gp": 14,
       "va": -5.363151050601935,
       "eff": -6.651599798092589,
@@ -34067,6 +34206,7 @@
     {
       "name": "Julian Phillips",
       "team": "MIN",
+      "slug": "phillju01",
       "gp": 5,
       "va": -5.375236873178308,
       "eff": -0.5096679116689998,
@@ -34367,6 +34507,7 @@
     {
       "name": "Terrence Shannon Jr.",
       "team": "MIN",
+      "slug": "shannte01",
       "gp": 9,
       "va": -5.3951155455199995,
       "eff": -15.45025879541706,
@@ -34667,6 +34808,7 @@
     {
       "name": "Amir Coffey",
       "team": "PHX",
+      "slug": "coffeam01",
       "gp": 4,
       "va": -5.609820117108961,
       "eff": 0,
@@ -34783,6 +34925,7 @@
     {
       "name": "Ausar Thompson",
       "team": "DET",
+      "slug": "thompau01",
       "gp": 14,
       "va": -6.081680441464036,
       "eff": -15.701226805438711,
@@ -35129,6 +35272,7 @@
     {
       "name": "Marcus Smart",
       "team": "LAL",
+      "slug": "smartma01",
       "gp": 10,
       "va": -6.30920595811234,
       "eff": -12.597710921169282,
@@ -35383,6 +35527,7 @@
     {
       "name": "Thomas Bryant",
       "team": "CLE",
+      "slug": "bryanth01",
       "gp": 9,
       "va": -6.362593986998551,
       "eff": -8.184659282287997,
@@ -35821,6 +35966,7 @@
     {
       "name": "Tyrese Proctor",
       "team": "CLE",
+      "slug": "proctty01",
       "gp": 4,
       "va": -6.3821576996343055,
       "eff": -1.7351340159255602,
@@ -36259,6 +36405,7 @@
     {
       "name": "Deandre Ayton",
       "team": "LAL",
+      "slug": "aytonde01",
       "gp": 10,
       "va": -6.681363879276516,
       "eff": -2.3744156953849362,
@@ -36513,6 +36660,7 @@
     {
       "name": "Vít Krejčí",
       "team": "POR",
+      "slug": "krejcvi01",
       "gp": 4,
       "va": -7.013704600435858,
       "eff": -2.333894771846816,
@@ -36652,6 +36800,7 @@
     {
       "name": "Jabari Smith Jr.",
       "team": "HOU",
+      "slug": "smithja05",
       "gp": 6,
       "va": -7.49475741797746,
       "eff": -7.821481616875694,
@@ -36814,6 +36963,7 @@
     {
       "name": "Haywood Highsmith",
       "team": "PHX",
+      "slug": "highsha01",
       "gp": 2,
       "va": -7.87871896313011,
       "eff": -2.158121632024632,
@@ -36930,6 +37080,7 @@
     {
       "name": "Aaron Gordon",
       "team": "DEN",
+      "slug": "gordoaa01",
       "gp": 3,
       "va": -8.104144094005328,
       "eff": -6.539310524634951,
@@ -37092,6 +37243,7 @@
     {
       "name": "Julian Strawther",
       "team": "DEN",
+      "slug": "strawju01",
       "gp": 2,
       "va": -8.154147943681602,
       "eff": -3.201044127177348,
@@ -37254,6 +37406,7 @@
     {
       "name": "Adou Thiero",
       "team": "LAL",
+      "slug": "thierad01",
       "gp": 6,
       "va": -8.487390686862328,
       "eff": -2.276008078966888,
@@ -37508,6 +37661,7 @@
     {
       "name": "Isaiah Stewart",
       "team": "DET",
+      "slug": "stewais01",
       "gp": 14,
       "va": -8.951147437515608,
       "eff": 5.4483877896870165,
@@ -37854,6 +38008,7 @@
     {
       "name": "Ariel Hukporti",
       "team": "NYK",
+      "slug": "hukpoar01",
       "gp": 8,
       "va": -9.22845947771274,
       "eff": -6.873776933367955,
@@ -38200,6 +38355,7 @@
     {
       "name": "Jeff Green",
       "team": "HOU",
+      "slug": "greenje02",
       "gp": 2,
       "va": -9.275226530880433,
       "eff": -2.175773139822184,
@@ -38362,6 +38518,7 @@
     {
       "name": "Craig Porter Jr.",
       "team": "CLE",
+      "slug": "portecr01",
       "gp": 7,
       "va": -9.673363085726841,
       "eff": -1.272485463632052,
@@ -38800,6 +38957,7 @@
     {
       "name": "Jaylin Williams",
       "team": "OKC",
+      "slug": "willija07",
       "gp": 15,
       "va": -9.738289508983069,
       "eff": -1.1347628094666042,
@@ -39169,6 +39327,7 @@
     {
       "name": "Donovan Clingan",
       "team": "POR",
+      "slug": "clingdo01",
       "gp": 5,
       "va": -9.80595694974448,
       "eff": -18.161503968116985,
@@ -39308,6 +39467,7 @@
     {
       "name": "Lindy Waters III",
       "team": "SAS",
+      "slug": "waterli01",
       "gp": 9,
       "va": -10.472571639179025,
       "eff": 0.8839518528521317,
@@ -39746,6 +39906,7 @@
     {
       "name": "Nikola Vučević",
       "team": "BOS",
+      "slug": "vucevni01",
       "gp": 6,
       "va": -11.143335820218635,
       "eff": -6.3087445616257245,
@@ -39931,6 +40092,7 @@
     {
       "name": "Hugo González",
       "team": "BOS",
+      "slug": "gonzahu01",
       "gp": 4,
       "va": -11.527565387847442,
       "eff": -4.8141948319378765,
@@ -40116,6 +40278,7 @@
     {
       "name": "Kevin Huerter",
       "team": "DET",
+      "slug": "huertke01",
       "gp": 5,
       "va": -11.754045763677357,
       "eff": -1.588728727681316,
@@ -40462,6 +40625,7 @@
     {
       "name": "Kris Murray",
       "team": "POR",
+      "slug": "murrakr01",
       "gp": 5,
       "va": -11.901247351330188,
       "eff": -0.928558663545296,
@@ -40601,6 +40765,7 @@
     {
       "name": "Caris LeVert",
       "team": "DET",
+      "slug": "leverca01",
       "gp": 13,
       "va": -11.976721203590916,
       "eff": -1.6947722566121564,
@@ -40947,6 +41112,7 @@
     {
       "name": "Oso Ighodaro",
       "team": "PHX",
+      "slug": "ighodos01",
       "gp": 4,
       "va": -12.027757479529935,
       "eff": -1.052132923139614,
@@ -41063,6 +41229,7 @@
     {
       "name": "Jerami Grant",
       "team": "POR",
+      "slug": "grantje01",
       "gp": 5,
       "va": -12.19671177039908,
       "eff": -9.086968761969395,
@@ -41202,6 +41369,7 @@
     {
       "name": "Kyle Anderson",
       "team": "MIN",
+      "slug": "anderky01",
       "gp": 8,
       "va": -12.232131973476632,
       "eff": -9.934507532573916,
@@ -41502,6 +41670,7 @@
     {
       "name": "Keldon Johnson",
       "team": "SAS",
+      "slug": "johnske04",
       "gp": 18,
       "va": -12.350070534532612,
       "eff": -23.158154337960287,
@@ -41940,6 +42109,7 @@
     {
       "name": "Goga Bitadze",
       "team": "ORL",
+      "slug": "bitadgo01",
       "gp": 6,
       "va": -12.354280935101135,
       "eff": -4.970228200801267,
@@ -42125,6 +42295,7 @@
     {
       "name": "Josh Okogie",
       "team": "HOU",
+      "slug": "okogijo01",
       "gp": 6,
       "va": -12.642936816346678,
       "eff": 0.23464912222054823,
@@ -42287,6 +42458,7 @@
     {
       "name": "Carter Bryant",
       "team": "SAS",
+      "slug": "bryanca01",
       "gp": 17,
       "va": -13.249583201648976,
       "eff": 3.5331338063496434,
@@ -42725,6 +42897,7 @@
     {
       "name": "Daniss Jenkins",
       "team": "DET",
+      "slug": "jenkida01",
       "gp": 14,
       "va": -13.371082367290805,
       "eff": -29.201156495212707,
@@ -43071,6 +43244,7 @@
     {
       "name": "Devin Vassell",
       "team": "SAS",
+      "slug": "vassede01",
       "gp": 18,
       "va": -13.730676719171152,
       "eff": -10.685209631897049,
@@ -43509,6 +43683,7 @@
     {
       "name": "Sam Hauser",
       "team": "BOS",
+      "slug": "hausesa01",
       "gp": 7,
       "va": -14.130000122844335,
       "eff": 4.2219904010530485,
@@ -43694,6 +43869,7 @@
     {
       "name": "Bones Hyland",
       "team": "MIN",
+      "slug": "hylanbo01",
       "gp": 10,
       "va": -14.302572068376358,
       "eff": -14.543514460980344,
@@ -43994,6 +44170,7 @@
     {
       "name": "Dominick Barlow",
       "team": "PHI",
+      "slug": "barlodo01",
       "gp": 9,
       "va": -14.528724643249106,
       "eff": 1.8539986593765487,
@@ -44271,6 +44448,7 @@
     {
       "name": "Mouhamed Gueye",
       "team": "ATL",
+      "slug": "gueyemo02",
       "gp": 6,
       "va": -14.666859036508601,
       "eff": -6.754469839263561,
@@ -44433,6 +44611,7 @@
     {
       "name": "Bruce Brown",
       "team": "DEN",
+      "slug": "brownbr01",
       "gp": 6,
       "va": -14.91159062835949,
       "eff": -6.190608151316616,
@@ -44595,6 +44774,7 @@
     {
       "name": "Jarred Vanderbilt",
       "team": "LAL",
+      "slug": "vandeja01",
       "gp": 7,
       "va": -15.339664284762872,
       "eff": -6.334326129490519,
@@ -44849,6 +45029,7 @@
     {
       "name": "Mohamed Diawara",
       "team": "NYK",
+      "slug": "diawamo01",
       "gp": 6,
       "va": -15.839608832717573,
       "eff": -7.151351162742972,
@@ -45195,6 +45376,7 @@
     {
       "name": "Max Strus",
       "team": "CLE",
+      "slug": "strusma01",
       "gp": 18,
       "va": -15.876385379090145,
       "eff": 3.600610533967587,
@@ -45633,6 +45815,7 @@
     {
       "name": "Ron Holland",
       "team": "DET",
+      "slug": "hollaro01",
       "gp": 9,
       "va": -16.301127965626772,
       "eff": -5.058579106900188,
@@ -45979,6 +46162,7 @@
     {
       "name": "Spencer Jones",
       "team": "DEN",
+      "slug": "jonessp01",
       "gp": 6,
       "va": -17.020065531808537,
       "eff": 14.449404489228362,
@@ -46141,6 +46325,7 @@
     {
       "name": "Mason Plumlee",
       "team": "SAS",
+      "slug": "plumlma01",
       "gp": 6,
       "va": -17.460410861200238,
       "eff": 0.7098630285703962,
@@ -46579,6 +46764,7 @@
     {
       "name": "Khaman Maluach",
       "team": "PHX",
+      "slug": "maluakh01",
       "gp": 4,
       "va": -17.7369150596106,
       "eff": -0.7560470826813916,
@@ -46695,6 +46881,7 @@
     {
       "name": "Gabe Vincent",
       "team": "ATL",
+      "slug": "vincega01",
       "gp": 6,
       "va": -18.41120942206811,
       "eff": -1.7524749432134807,
@@ -46857,6 +47044,7 @@
     {
       "name": "Jaylen Clark",
       "team": "MIN",
+      "slug": "clarkja02",
       "gp": 6,
       "va": -18.573681326491013,
       "eff": -4.596348207238928,
@@ -47157,6 +47345,7 @@
     {
       "name": "A.J. Lawson",
       "team": "TOR",
+      "slug": "lawsoaj01",
       "gp": 7,
       "va": -18.85460867780063,
       "eff": -6.9831975024784,
@@ -47342,6 +47531,7 @@
     {
       "name": "Jabari Walker",
       "team": "PHI",
+      "slug": "walkeja01",
       "gp": 6,
       "va": -19.3050474907673,
       "eff": -8.455878083011848,
@@ -47619,6 +47809,7 @@
     {
       "name": "Matisse Thybulle",
       "team": "POR",
+      "slug": "thybuma01",
       "gp": 4,
       "va": -19.933132960065247,
       "eff": -9.736818331466008,
@@ -47758,6 +47949,7 @@
     {
       "name": "Jalen Duren",
       "team": "DET",
+      "slug": "durenja01",
       "gp": 14,
       "va": -20.38255204771571,
       "eff": -12.812928124996953,
@@ -48104,6 +48296,7 @@
     {
       "name": "Sam Merrill",
       "team": "CLE",
+      "slug": "merrisa01",
       "gp": 17,
       "va": -20.94689771965994,
       "eff": 8.37977972370013,
@@ -48542,6 +48735,7 @@
     {
       "name": "VJ Edgecombe",
       "team": "PHI",
+      "slug": "edgecvj01",
       "gp": 11,
       "va": -21.85148184545049,
       "eff": -17.945489846115468,
@@ -48819,6 +49013,7 @@
     {
       "name": "Keon Ellis",
       "team": "CLE",
+      "slug": "elliske01",
       "gp": 12,
       "va": -21.857829274779753,
       "eff": -1.1460947077346122,
@@ -49257,6 +49452,7 @@
     {
       "name": "Reed Sheppard",
       "team": "HOU",
+      "slug": "sheppre01",
       "gp": 6,
       "va": -22.147478291885662,
       "eff": -25.711527842002432,
@@ -49419,6 +49615,7 @@
     {
       "name": "Ryan Dunn",
       "team": "PHX",
+      "slug": "dunnry01",
       "gp": 4,
       "va": -22.431236541300013,
       "eff": -4.316243264049264,
@@ -49535,6 +49732,7 @@
     {
       "name": "Ja'Kobe Walter",
       "team": "TOR",
+      "slug": "walteja01",
       "gp": 7,
       "va": -23.247023143535575,
       "eff": -4.0239215931940215,
@@ -49720,6 +49918,7 @@
     {
       "name": "Adem Bona",
       "team": "PHI",
+      "slug": "bonaad01",
       "gp": 10,
       "va": -23.459381889980214,
       "eff": -4.163496252165311,
@@ -49997,6 +50196,7 @@
     {
       "name": "Nikola Topić",
       "team": "OKC",
+      "slug": "topicni01",
       "gp": 9,
       "va": -23.47299283842276,
       "eff": -2.544970927264104,
@@ -50366,6 +50566,7 @@
     {
       "name": "Julius Randle",
       "team": "MIN",
+      "slug": "randlju01",
       "gp": 12,
       "va": -24.11547081474923,
       "eff": -47.16371035237782,
@@ -50666,6 +50867,7 @@
     {
       "name": "Corey Kispert",
       "team": "ATL",
+      "slug": "kispeco01",
       "gp": 5,
       "va": -24.762728111618728,
       "eff": -15.281371606097863,
@@ -50828,6 +51030,7 @@
     {
       "name": "Dorian Finney-Smith",
       "team": "HOU",
+      "slug": "finnedo01",
       "gp": 4,
       "va": -25.038133389850977,
       "eff": -8.736818331466008,
@@ -50990,6 +51193,7 @@
     {
       "name": "Miles McBride",
       "team": "NYK",
+      "slug": "mcbrimi01",
       "gp": 14,
       "va": -25.277515571206244,
       "eff": -0.2231274205769802,
@@ -51336,6 +51540,7 @@
     {
       "name": "Quentin Grimes",
       "team": "PHI",
+      "slug": "grimequ01",
       "gp": 11,
       "va": -25.454953933318947,
       "eff": -1.6076110792654477,
@@ -51613,6 +51818,7 @@
     {
       "name": "Bismack Biyombo",
       "team": "SAS",
+      "slug": "biyombi01",
       "gp": 9,
       "va": -25.460089209462424,
       "eff": -1.6769862666690756,
@@ -52051,6 +52257,7 @@
     {
       "name": "Aaron Holiday",
       "team": "HOU",
+      "slug": "holidaa01",
       "gp": 6,
       "va": -26.338776733052757,
       "eff": -7.862898506853815,
@@ -52213,6 +52420,7 @@
     {
       "name": "Luke Kennard",
       "team": "LAL",
+      "slug": "kennalu01",
       "gp": 10,
       "va": -26.39696872156344,
       "eff": 9.798128976656866,
@@ -52467,6 +52675,7 @@
     {
       "name": "Jordan Walsh",
       "team": "BOS",
+      "slug": "walshjo01",
       "gp": 7,
       "va": -28.866611071332766,
       "eff": -13.356753210519653,
@@ -52652,6 +52861,7 @@
     {
       "name": "Jaylon Tyson",
       "team": "CLE",
+      "slug": "tysonja01",
       "gp": 17,
       "va": -30.40525746228205,
       "eff": -17.829985925830876,
@@ -53090,6 +53300,7 @@
     {
       "name": "Tristan Da Silva",
       "team": "ORL",
+      "slug": "dasiltr01",
       "gp": 7,
       "va": -30.64350612150337,
       "eff": -5.676258033527196,
@@ -53275,6 +53486,7 @@
     {
       "name": "Jamal Cain",
       "team": "ORL",
+      "slug": "cainja01",
       "gp": 7,
       "va": -30.979308787148643,
       "eff": -8.266407408370652,
@@ -53460,6 +53672,7 @@
     {
       "name": "Brandon Ingram",
       "team": "TOR",
+      "slug": "ingrabr01",
       "gp": 5,
       "va": -31.17047045145238,
       "eff": -21.515487594464844,
@@ -53645,6 +53858,7 @@
     {
       "name": "Nickeil Alexander-Walker",
       "team": "ATL",
+      "slug": "alexani01",
       "gp": 6,
       "va": -32.138870640143814,
       "eff": -6.935153034462852,
@@ -53807,6 +54021,7 @@
     {
       "name": "Jake LaRavia",
       "team": "LAL",
+      "slug": "laravja01",
       "gp": 8,
       "va": -32.175308948099826,
       "eff": -8.218709339986356,
@@ -54061,6 +54276,7 @@
     {
       "name": "Jamal Shead",
       "team": "TOR",
+      "slug": "sheadja01",
       "gp": 7,
       "va": -32.60107836413272,
       "eff": -12.27597487184702,
@@ -54246,6 +54462,7 @@
     {
       "name": "Justin Edwards",
       "team": "PHI",
+      "slug": "edwarju01",
       "gp": 9,
       "va": -33.69895414916844,
       "eff": -10.296610565213086,
@@ -54523,6 +54740,7 @@
     {
       "name": "Anthony Black",
       "team": "ORL",
+      "slug": "blackan01",
       "gp": 7,
       "va": -33.72199064709161,
       "eff": -15.392762345146469,
@@ -54708,6 +54926,7 @@
     {
       "name": "Dennis Schröder",
       "team": "CLE",
+      "slug": "schrode01",
       "gp": 17,
       "va": -33.98877224577167,
       "eff": -16.465484049520825,
@@ -55146,6 +55365,7 @@
     {
       "name": "Javonte Green",
       "team": "DET",
+      "slug": "greenja02",
       "gp": 11,
       "va": -35.19554182693962,
       "eff": -7.155816155464921,
@@ -55492,6 +55712,7 @@
     {
       "name": "Christian Braun",
       "team": "DEN",
+      "slug": "braunch01",
       "gp": 6,
       "va": -35.97179610661283,
       "eff": -4.216140195048335,
@@ -55654,6 +55875,7 @@
     {
       "name": "Harrison Barnes",
       "team": "SAS",
+      "slug": "barneha02",
       "gp": 18,
       "va": -36.98431045885078,
       "eff": -6.770818865031291,
@@ -56092,6 +56314,7 @@
     {
       "name": "Rudy Gobert",
       "team": "MIN",
+      "slug": "goberru01",
       "gp": 12,
       "va": -42.82566668047555,
       "eff": -19.601082621403418,
@@ -56392,6 +56615,7 @@
     {
       "name": "Aaron Wiggins",
       "team": "OKC",
+      "slug": "wiggiaa01",
       "gp": 13,
       "va": -43.23060090271976,
       "eff": -8.258944525068731,
@@ -56761,6 +56985,7 @@
     {
       "name": "Derrick White",
       "team": "BOS",
+      "slug": "whitede01",
       "gp": 7,
       "va": -44.01342964854315,
       "eff": -20.11344579508998,
@@ -56946,6 +57171,7 @@
     {
       "name": "Kelly Oubre Jr.",
       "team": "PHI",
+      "slug": "oubreke01",
       "gp": 11,
       "va": -47.12991479762497,
       "eff": -8.852764702404002,
@@ -57223,6 +57449,7 @@
     {
       "name": "Toumani Camara",
       "team": "POR",
+      "slug": "camarto01",
       "gp": 5,
       "va": -47.90919461639956,
       "eff": -10.929514745943862,
@@ -57362,6 +57589,7 @@
     {
       "name": "Jalen Suggs",
       "team": "ORL",
+      "slug": "suggsja01",
       "gp": 7,
       "va": -50.056989237841805,
       "eff": -27.499877437697204,
@@ -57547,6 +57775,7 @@
     {
       "name": "Luguentz Dort",
       "team": "OKC",
+      "slug": "dortlu01",
       "gp": 15,
       "va": -70.2458667406023,
       "eff": -9.937087313370153,
@@ -57916,6 +58145,7 @@
     {
       "name": "Dean Wade",
       "team": "CLE",
+      "slug": "wadede01",
       "gp": 18,
       "va": -91.530940429116,
       "eff": 6.195452750789682,
@@ -58353,5 +58583,5 @@
     }
   ],
   "source": "basketball-reference",
-  "fetchedAt": "2026-05-31T13:46:07.943Z"
+  "fetchedAt": "2026-05-31T20:30:26.773Z"
 }
