@@ -34,4 +34,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Bake ${{ inputs.season }} playoff data"
-          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json"

@@ -37,6 +37,41 @@ export function valueAdd(p, lga = LGA) {
   return valueAddParts(p, lga).va;
 }
 
+// Keys for the per-category VA breakdown. Order matches the row order in
+// VABreakdown; kept here so the bake and UI share one source of truth.
+export const VA_CATEGORY_KEYS = [
+  "Scoring", "3-Pointers", "2-Pointers", "Free Throws",
+  "Assists", "Steals", "Blocks", "Turnovers",
+  "D Rebounds", "O Rebounds",
+];
+
+// Per-category VA from a single stat line. Matches the formulas VABreakdown
+// already renders (which differ from `valueAddParts` only in the rebound
+// 1.25 weighting — we keep the on-screen version as the canonical reference
+// so ticks line up with bars).
+export function valueAddByCategory(p, lga = LGA) {
+  const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
+  if (!mp || mp <= 0) {
+    return Object.fromEntries(VA_CATEGORY_KEYS.map((k) => [k, 0]));
+  }
+  const twoPm = fgm - tpm, twoPa = fga - tpa;
+  const tpAdd = ((tpm / (tpa || 1)) - lga.la3P) * tpa;
+  const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
+  const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
+  return {
+    "Scoring": ((pts / mp) - lga.laPTSperM) * mp,
+    "3-Pointers": 3 * tpAdd,
+    "2-Pointers": 2 * twoAdd,
+    "Free Throws": ftAdd,
+    "Assists": ((ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG),
+    "Steals": ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss,
+    "Blocks": ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate,
+    "Turnovers": -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss,
+    "D Rebounds": ((drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate,
+    "O Rebounds": ((orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate,
+  };
+}
+
 export function computeMatchups(winners) {
   const t = {};
   BRACKET.r1.forEach((s) => (t[s.id] = s.teams.slice()));

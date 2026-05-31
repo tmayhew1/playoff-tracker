@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, valueAddParts, computePoints, potentialPoints, lgaForSeason } from "./scoring";
+import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason } from "./scoring";
 import TEAM_COLORS from "./data/team-colors.json";
 
 // Per-team primary color (hex). Used in Explore and anywhere we don't have
@@ -204,7 +204,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -257,7 +257,22 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
 
-  const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), 0.5);
+  // Per-category regular-season reference: the player's RS season VA-per-game
+  // scaled to the games shown in the current view (1 when a single game is
+  // drilled in, p.gp otherwise). Rendered as a vertical tick on each bar so
+  // the reader sees "actual vs. what this player would normally produce".
+  // Hidden when the player has no RS sample (rookie, two-way, etc.).
+  const referenceScale = selectedGame ? 1 : (p.gp || 1);
+  const refByKey = (() => {
+    if (!regularSeasonTotals || !(regularSeasonTotals.g > 0) || !(regularSeasonTotals.mp > 0)) return null;
+    const full = valueAddByCategory(regularSeasonTotals, lga);
+    const out = {};
+    for (const k of Object.keys(full)) out[k] = (full[k] / regularSeasonTotals.g) * referenceScale;
+    return out;
+  })();
+
+  const refMagnitudes = refByKey ? Object.values(refByKey).map((v) => Math.abs(v || 0)) : [];
+  const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), ...refMagnitudes, 0.5);
   const owner = teams[p.team]?.owner;
   // Accent color drives the chart line/dot and the positive bars. Historical
   // and explore contexts use the player's team color; live/draft uses the
@@ -430,6 +445,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         {categories.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
           const isPos = c.value >= 0;
+          const ref = refByKey ? refByKey[c.key] : null;
+          const refMagPct = ref != null && Number.isFinite(ref) ? (Math.abs(ref) / maxAbs) * 45 : null;
+          const refLeftPct = refMagPct != null ? (ref >= 0 ? 50 + refMagPct : 50 - refMagPct) : null;
           return (
             <React.Fragment key={i}>
               <div className="flex items-center gap-2 text-[10px]">
@@ -444,6 +462,13 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                       width: `${pct}%`,
                     }}
                   ></div>
+                  {refLeftPct != null && (
+                    <div
+                      className="absolute inset-y-0 w-0.5"
+                      style={{ left: `calc(${refLeftPct}% - 1px)`, backgroundColor: "#1c1917" }}
+                      title={`Regular season: ${ref.toFixed(2)}`}
+                    />
+                  )}
                 </div>
                 {rate && p.gp > 1 ? (
                   <>
@@ -865,7 +890,7 @@ function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWi
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimB} pointValue={ptsB} />
       </div>
-      <SeriesAverages games={seriesGames} teamsMap={TEAMS} lga={LGA} dimTeam={dimTeam} />
+      <SeriesAverages games={seriesGames} teamsMap={TEAMS} lga={LGA} dimTeam={dimTeam} season="2025-26" />
       {realGames.map((g, i) => {
         const num = i + 1;
         const gameLabel = num <= 7 ? `Game ${num}` : null;
@@ -1112,12 +1137,30 @@ function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
   });
 }
 
-function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor }) {
+function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, season }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  const [rsLookup, setRsLookup] = useState(null);
+
+  // Pull regular-season totals lazily when the section is first opened.
+  // Name lookup only — the live ESPN box-score path doesn't expose BR slugs.
+  useEffect(() => {
+    if (!open || rsLookup || !season) return;
+    let cancelled = false;
+    fetch(`/api/regular-season?season=${season}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (cancelled || !d || !Array.isArray(d.players)) return;
+        const byName = {};
+        for (const p of d.players) if (p.name && !byName[p.name]) byName[p.name] = p;
+        setRsLookup({ byName });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [open, season, rsLookup]);
 
   // Only completed games contribute. History games carry no gameStatus
   // (all final); live games do, so require final (3).
@@ -1280,6 +1323,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor })
                         gameSeries={p.games}
                         byGame={p.byGame}
                         useTeamColor={useTeamColor}
+                        regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || null) : null}
                         onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                         onNext={i < rows.length - 1 ? () => setExpanded(i + 1) : undefined}
                       />
@@ -1339,7 +1383,7 @@ function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
       </div>
       {s.games.length > 0 ? (
         <>
-          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} boxSrc="espn" useTeamColor />
+          <SeriesAverages games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} boxSrc="espn" useTeamColor season={season} />
           <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
         </>
       ) : (
@@ -1496,7 +1540,7 @@ function ExploreSeriesRow({ s, lga }) {
       </div>
       {s.games.length > 0 ? (
         <>
-          <SeriesAverages games={s.games} teamsMap={{}} lga={lga} boxSrc="espn" useTeamColor />
+          <SeriesAverages games={s.games} teamsMap={{}} lga={lga} boxSrc="espn" useTeamColor season={season} />
           {s.games.map((g, i) => {
             const liveGame = {
               gameId: g.gameId,
@@ -1566,6 +1610,9 @@ function PlayoffLeaderboard({ season, lga }) {
   const [showAll, setShowAll] = useState(false);
   const [teamFilter, setTeamFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  // Regular-season totals load independently so a slow BR fetch doesn't
+  // block the leaderboard; the reference tick just appears once it arrives.
+  const [rsLookup, setRsLookup] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1574,6 +1621,7 @@ function PlayoffLeaderboard({ season, lga }) {
     setShowAll(false);
     setTeamFilter(null);
     setExpanded(null);
+    setRsLookup(null);
     setLoading(true);
     fetch(`/api/leaderboard?season=${season}`)
       .then(async (r) => {
@@ -1584,6 +1632,22 @@ function PlayoffLeaderboard({ season, lga }) {
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
+    fetch(`/api/regular-season?season=${season}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (cancelled || !d || !Array.isArray(d.players)) return;
+        const bySlug = {}, byName = {};
+        for (const p of d.players) {
+          if (p.slug) bySlug[p.slug] = p;
+          // Multiple players can share a name; the leaderboard prefers slug,
+          // but a name lookup is the fallback for the ESPN/live path where
+          // we don't have a BR slug. Keeping the *first* row is fine — the
+          // bake/route already prefers the TOT row when one exists.
+          if (p.name && !byName[p.name]) byName[p.name] = p;
+        }
+        setRsLookup({ bySlug, byName });
+      })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [season]);
 
@@ -1718,6 +1782,7 @@ function PlayoffLeaderboard({ season, lga }) {
                 breakdownTitle="Playoff Breakdown"
                 gameTileLabel="Playoff Game"
                 enableSeriesDrill
+                regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || null) : null}
                 onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(i + 1) : undefined}
               />
