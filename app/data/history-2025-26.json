@@ -1103,6 +1103,19 @@
             "tri": "OKC",
             "score": 91
           }
+        },
+        {
+          "gameId": "202605300OKC",
+          "gameCode": "20260530",
+          "gameDateTimeUTC": "2026-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 103
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
         }
       ]
     },
@@ -1170,5 +1183,5 @@
     }
   ],
   "source": "basketball-reference",
-  "fetchedAt": "2026-05-30T17:50:39.798Z"
+  "fetchedAt": "2026-05-31T13:46:07.936Z"
 }
