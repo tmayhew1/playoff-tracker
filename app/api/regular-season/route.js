@@ -45,26 +45,44 @@ async function fetchTotalsFromBR(endYear) {
   // BR sometimes wraps tables in HTML comments; inline them so cheerio
   // selectors see every row.
   const $ = cheerio.load(html.replace(/<!--([\s\S]*?)-->/g, "$1"));
-  const table =
-    $("table#totals_stats").length ? $("table#totals_stats") :
-    $("table#players_totals").length ? $("table#players_totals") :
-    $("table#totals").first();
+  let table = null;
+  for (const id of ["totals_stats", "players_totals", "totals", "per_game_stats"]) {
+    const t = $(`table#${id}`);
+    if (t.length) { table = t; break; }
+  }
+  if (!table) {
+    $("table").each((_, el) => {
+      if (table) return;
+      const t = $(el);
+      const head = t.find("thead");
+      if (!head.length) return;
+      const hasPts = head.find("[data-stat='pts']").length > 0;
+      const hasG = head.find("[data-stat='g']").length > 0;
+      const hasMp = head.find("[data-stat='mp']").length > 0;
+      if (hasPts && hasG && hasMp) table = t;
+    });
+  }
   if (!table || !table.length) throw new Error("totals table not found");
 
-  const bySlug = new Map();
+  const byKey = new Map();
   table.find("tbody tr").each((_, tr) => {
     const $tr = $(tr);
     if ($tr.hasClass("thead")) return;
-    const playerCell = $tr.find("[data-stat='player'], [data-stat='name_display']").first();
+    const playerCell = $tr.find("[data-stat='player'], [data-stat='name_display'], [data-stat='name']").first();
     const name = playerCell.text().trim();
     if (!name) return;
-    const slug = (playerCell.find("a").attr("href") || "")
-      .match(/\/players\/[a-z]\/([^.]+)\.html/)?.[1] || null;
-    if (!slug) return;
-    const cell = (key) => $tr.find(`[data-stat='${key}']`).first().text().trim();
-    const team = cell("team_id") || cell("team_name_abbr") || "";
-    const g = num(cell("g"));
-    const mp = num(cell("mp"));
+    const slugHref = $tr.find("a[href*='/players/']").attr("href") || "";
+    const slug = slugHref.match(/\/players\/[a-z]\/([^.]+)\.html/)?.[1] || null;
+    const cell = (...keys) => {
+      for (const k of keys) {
+        const v = $tr.find(`[data-stat='${k}']`).first().text().trim();
+        if (v !== "") return v;
+      }
+      return "";
+    };
+    const team = cell("team_id", "team_name_abbr", "team");
+    const g = num(cell("g", "games"));
+    const mp = num(cell("mp", "mp_total"));
     if (g <= 0 || mp <= 0) return;
     const row = {
       slug, name, team: toNba(team),
@@ -83,11 +101,13 @@ async function fetchTotalsFromBR(endYear) {
       ftm: num(cell("ft")),
       fta: num(cell("fta")),
     };
-    const existing = bySlug.get(slug);
+    const key = slug || name;
+    const existing = byKey.get(key);
     const isAggregate = /^(TOT|\dTM)$/.test(team);
-    if (!existing || isAggregate) bySlug.set(slug, row);
+    if (!existing || isAggregate) byKey.set(key, row);
   });
-  return [...bySlug.values()];
+  if (byKey.size === 0) throw new Error("totals table found but parsed 0 player rows");
+  return [...byKey.values()];
 }
 
 export async function GET(req) {

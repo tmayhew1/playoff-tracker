@@ -14,6 +14,16 @@ const withAlpha = (hex, alpha) => {
   return hex + a;
 };
 
+// Loose name match for joining ESPN box-score names with basketball-reference
+// names (regular-season reference tick). Strips punctuation, suffixes like
+// "Jr."/"III", and collapses whitespace so "P.J. Tucker" matches "PJ Tucker".
+const normalizeName = (s) => (s || "")
+  .toLowerCase()
+  .replace(/[.''`,]/g, "")
+  .replace(/\s+/g, " ")
+  .trim()
+  .replace(/\s+(jr|sr|ii|iii|iv|v)$/, "");
+
 // `dim` = lighten owner styling when both teams in a matchup share an owner,
 // to flag the side that wins the series for fewer points (no upset bonus).
 const ownerColor = (o, dim) => {
@@ -1154,9 +1164,14 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (cancelled || !d || !Array.isArray(d.players)) return;
-        const byName = {};
-        for (const p of d.players) if (p.name && !byName[p.name]) byName[p.name] = p;
-        setRsLookup({ byName });
+        const byName = {}, byNorm = {};
+        for (const p of d.players) {
+          if (!p.name) continue;
+          if (!byName[p.name]) byName[p.name] = p;
+          const n = normalizeName(p.name);
+          if (n && !byNorm[n]) byNorm[n] = p;
+        }
+        setRsLookup({ byName, byNorm });
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -1323,7 +1338,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                         gameSeries={p.games}
                         byGame={p.byGame}
                         useTeamColor={useTeamColor}
-                        regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || null) : null}
+                        regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                         onNext={i < rows.length - 1 ? () => setExpanded(i + 1) : undefined}
                       />
@@ -1636,16 +1651,19 @@ function PlayoffLeaderboard({ season, lga }) {
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (cancelled || !d || !Array.isArray(d.players)) return;
-        const bySlug = {}, byName = {};
+        const bySlug = {}, byName = {}, byNorm = {};
         for (const p of d.players) {
           if (p.slug) bySlug[p.slug] = p;
           // Multiple players can share a name; the leaderboard prefers slug,
           // but a name lookup is the fallback for the ESPN/live path where
           // we don't have a BR slug. Keeping the *first* row is fine — the
           // bake/route already prefers the TOT row when one exists.
-          if (p.name && !byName[p.name]) byName[p.name] = p;
+          if (!p.name) continue;
+          if (!byName[p.name]) byName[p.name] = p;
+          const n = normalizeName(p.name);
+          if (n && !byNorm[n]) byNorm[n] = p;
         }
-        setRsLookup({ bySlug, byName });
+        setRsLookup({ bySlug, byName, byNorm });
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -1782,7 +1800,7 @@ function PlayoffLeaderboard({ season, lga }) {
                 breakdownTitle="Playoff Breakdown"
                 gameTileLabel="Playoff Game"
                 enableSeriesDrill
-                regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || null) : null}
+                regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                 onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(i + 1) : undefined}
               />

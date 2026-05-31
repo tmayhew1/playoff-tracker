@@ -240,32 +240,49 @@ async function fetchRegularSeasonTotals() {
   // Some BR tables are wrapped in HTML comments to defer rendering. Inline
   // them so cheerio can see all rows.
   const $ = cheerio.load(html.replace(/<!--([\s\S]*?)-->/g, "$1"));
-  // Table id has churned over the years; try the known variants in order.
-  const table =
-    $("table#totals_stats").length ? $("table#totals_stats") :
-    $("table#players_totals").length ? $("table#players_totals") :
-    $("table#totals").first();
+  // Table id has churned over the years. Try known variants, then fall
+  // back to any table whose <thead> has the per-game stat columns we need.
+  let table = null;
+  for (const id of ["totals_stats", "players_totals", "totals", "per_game_stats"]) {
+    const t = $(`table#${id}`);
+    if (t.length) { table = t; break; }
+  }
+  if (!table) {
+    $("table").each((_, el) => {
+      if (table) return;
+      const t = $(el);
+      const head = t.find("thead");
+      if (!head.length) return;
+      const hasPts = head.find("[data-stat='pts']").length > 0;
+      const hasG = head.find("[data-stat='g']").length > 0;
+      const hasMp = head.find("[data-stat='mp']").length > 0;
+      if (hasPts && hasG && hasMp) table = t;
+    });
+  }
   if (!table || !table.length) throw new Error("totals table not found");
 
-  // Group by slug — traded players have multiple rows, the "TOT"/<n>TM row
-  // is the season aggregate we want. Fall back to the per-team row if a
-  // player only played for one team.
-  const bySlug = new Map();
+  // Prefer slug as the dedupe key; fall back to name for rows where the
+  // anchor isn't present (BR's recent template changes have shuffled which
+  // cell holds the link).
+  const byKey = new Map();
   table.find("tbody tr").each((_, tr) => {
     const $tr = $(tr);
     if ($tr.hasClass("thead")) return;
-    // Player cell is <td data-stat="name_display"> on newer tables and
-    // <th data-stat="player"> on older ones.
-    const playerCell = $tr.find("[data-stat='player'], [data-stat='name_display']").first();
+    const playerCell = $tr.find("[data-stat='player'], [data-stat='name_display'], [data-stat='name']").first();
     const name = playerCell.text().trim();
     if (!name) return;
-    const slug = (playerCell.find("a").attr("href") || "")
-      .match(/\/players\/[a-z]\/([^.]+)\.html/)?.[1] || null;
-    if (!slug) return;
-    const cell = (key) => $tr.find(`[data-stat='${key}']`).first().text().trim();
-    const team = cell("team_id") || cell("team_name_abbr") || "";
-    const g = num(cell("g"));
-    const mp = num(cell("mp"));
+    const slugHref = $tr.find("a[href*='/players/']").attr("href") || "";
+    const slug = slugHref.match(/\/players\/[a-z]\/([^.]+)\.html/)?.[1] || null;
+    const cell = (...keys) => {
+      for (const k of keys) {
+        const v = $tr.find(`[data-stat='${k}']`).first().text().trim();
+        if (v !== "") return v;
+      }
+      return "";
+    };
+    const team = cell("team_id", "team_name_abbr", "team");
+    const g = num(cell("g", "games"));
+    const mp = num(cell("mp", "mp_total"));
     if (g <= 0 || mp <= 0) return;
     const row = {
       slug, name, team: toNba(team),
@@ -284,12 +301,13 @@ async function fetchRegularSeasonTotals() {
       ftm: num(cell("ft")),
       fta: num(cell("fta")),
     };
-    const existing = bySlug.get(slug);
+    const key = slug || name;
+    const existing = byKey.get(key);
     const isAggregate = /^(TOT|\dTM)$/.test(team);
-    // Prefer aggregate rows; otherwise keep the first per-team row we see.
-    if (!existing || isAggregate) bySlug.set(slug, row);
+    if (!existing || isAggregate) byKey.set(key, row);
   });
-  return [...bySlug.values()];
+  if (byKey.size === 0) throw new Error("totals table found but parsed 0 player rows");
+  return [...byKey.values()];
 }
 
 // --- Main -----------------------------------------------------------------
