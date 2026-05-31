@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       season:
-        description: "NBA season (YYYY-YY, e.g. 2014-15)"
+        description: "NBA season (YYYY-YY, e.g. 2025-26)"
         required: true
-        default: "2014-15"
+        default: "2025-26"
 
 jobs:
   bake:
