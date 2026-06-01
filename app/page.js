@@ -1361,7 +1361,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
   );
 }
 
-function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
+function HistorySeriesRow({ s, teamsMap, lga, roundKey, season }) {
   const ta = teamsMap[s.teams[0]];
   const tb = teamsMap[s.teams[1]];
   const sameOwner = ta && tb && ta.owner === tb.owner;
@@ -1411,7 +1411,7 @@ function HistorySeriesRow({ s, teamsMap, lga, roundKey }) {
   );
 }
 
-function HistoryRoundSection({ round, teamsMap, lga }) {
+function HistoryRoundSection({ round, teamsMap, lga, season }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="mb-3">
@@ -1425,7 +1425,7 @@ function HistoryRoundSection({ round, teamsMap, lga }) {
         </h3>
       </button>
       {open && round.series.map((s, i) => (
-        <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} roundKey={round.key} />
+        <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} roundKey={round.key} season={season} />
       ))}
     </div>
   );
@@ -1521,7 +1521,7 @@ function HistoryView({ season }) {
           <div className="text-[10px] text-stone-400 italic py-2 text-center">No game data</div>
         )}
         {hasGames && rounds.map((r) => (
-          <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} />
+          <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} season={season} />
         ))}
       </div>
     </div>
@@ -1530,7 +1530,7 @@ function HistoryView({ season }) {
 
 const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
 
-function ExploreSeriesRow({ s, lga }) {
+function ExploreSeriesRow({ s, lga, season }) {
   const teamCell = (code, isWinner) => {
     const c = teamColor(code);
     const style = isWinner
@@ -1588,7 +1588,7 @@ function ExploreSeriesRow({ s, lga }) {
   );
 }
 
-function ExploreRoundSection({ roundKey, series, lga }) {
+function ExploreRoundSection({ roundKey, series, lga, season }) {
   const [open, setOpen] = useState(false);
   if (series.length === 0) return null;
   return (
@@ -1604,7 +1604,7 @@ function ExploreRoundSection({ roundKey, series, lga }) {
         <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
       </button>
       {open && series.map((s, i) => (
-        <ExploreSeriesRow key={i} s={s} lga={lga} />
+        <ExploreSeriesRow key={i} s={s} lga={lga} season={season} />
       ))}
     </div>
   );
@@ -1878,7 +1878,7 @@ function ExploreView() {
         <>
           <PlayoffLeaderboard season={season} lga={lga} />
           {(["r1", "r2", "r3", "r4"]).map((rk) => (
-            <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} />
+            <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
           ))}
           {data.series && data.series.length === 0 && (
             <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
