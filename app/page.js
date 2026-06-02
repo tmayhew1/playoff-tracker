@@ -74,7 +74,7 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange }) {
+function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange, label = "By Game" }) {
   const stroke = color;
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series.
@@ -103,7 +103,7 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
 
   return (
     <div className="mt-2 mb-3">
-      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">By Game</div>
+      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
         {/* Series-band shading (used when a series is selected but no
             single game has been drilled into) */}
@@ -190,7 +190,7 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
 // Fixed display order for the breakdown rows. Partition dividers go AFTER
 // each key in PARTITIONS_AFTER (shooting / playmaking / rebounding groups).
 const VA_CATEGORY_ORDER = [
-  "Scoring", "2-Pointers", "3-Pointers", "Free Throws",
+  "Points", "2-Pointers", "3-Pointers", "Free Throws",
   "Assists", "Turnovers",
   "D Rebounds", "O Rebounds",
   "Blocks", "Steals",
@@ -224,8 +224,13 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // aggregate), second tap on a game in that series drills into the game.
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedSeriesIdx, setSelectedSeriesIdx] = useState(null);
+  // Tap a category row to swap the spark-line out of total VA and into
+  // that category's per-game contribution (e.g. "2-Pointers" → 2P VA in
+  // each game). Tap again to clear.
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
+  const canSelectCategory = canSelect;
 
   let p;
   if (canSelect && selectedGame) {
@@ -258,7 +263,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const shoot = (m, att, tag) => (effectiveRate ? shot(m, att) : `${m}/${att} ${tag}`);
 
   const categories = [
-    { key: "Scoring", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
+    { key: "Points", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
     { key: "3-Pointers", value: 3 * tpAdd, label: shoot(p.tpm, p.tpa, "3P") },
     { key: "2-Pointers", value: 2 * twoAdd, label: shoot(twoPm, twoPa, "2P") },
     { key: "Free Throws", value: ftAdd, label: shoot(p.ftm, p.fta, "FT") },
@@ -269,6 +274,18 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
+
+  // Per-game series for the spark line. Defaults to whatever the caller
+  // passed (raw per-game VA), but flips to a single category's per-game
+  // contribution when the user taps a category row.
+  const chartValues = (selectedCategory && Array.isArray(byGame))
+    ? byGame.map((snap) => {
+        if (!snap) return null;
+        const v = valueAddByCategory(snap, lga)[selectedCategory];
+        return Number.isFinite(v) ? v : null;
+      })
+    : gameSeries;
+  const chartLabel = selectedCategory ? `By Game · ${selectedCategory}` : "By Game";
 
   // Per-category regular-season reference: the player's RS season VA-per-game
   // scaled to the games shown in the current view (1 when a single game is
@@ -431,12 +448,13 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               )}
               <div className="flex-1 min-w-0">
                 <GameVAChart
-                  values={gameSeries}
+                  values={chartValues}
                   color={accentColor}
                   selected={selectedGame}
                   onSelect={canSelect ? handleChartSelect : undefined}
                   partitions={partitions}
                   seriesRange={seriesRange}
+                  label={chartLabel}
                 />
               </div>
               {showNav && inGameNav && (
@@ -461,10 +479,21 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           const ref = refByKey ? refByKey[c.key] : null;
           const refMagPct = ref != null && Number.isFinite(ref) ? (Math.abs(ref) / maxAbs) * 45 : null;
           const refLeftPct = refMagPct != null ? (ref >= 0 ? 50 + refMagPct : 50 - refMagPct) : null;
+          const isCatSel = selectedCategory === c.key;
+          const onCatTap = canSelectCategory
+            ? () => setSelectedCategory(isCatSel ? null : c.key)
+            : undefined;
           return (
             <React.Fragment key={i}>
-              <div className="flex items-center gap-2 text-[10px]">
-                <span className={`${keyW} text-stone-600 text-right truncate`}>{c.key}</span>
+              <div
+                className={`flex items-center gap-2 text-[10px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${isCatSel ? "bg-stone-200" : ""}`}
+                onClick={onCatTap}
+                role={onCatTap ? "button" : undefined}
+                tabIndex={onCatTap ? 0 : undefined}
+                onKeyDown={onCatTap ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onCatTap(); } } : undefined}
+                aria-pressed={onCatTap ? isCatSel : undefined}
+              >
+                <span className={`${keyW} text-right truncate ${isCatSel ? "text-stone-900 font-semibold" : "text-stone-600"}`}>{c.key}</span>
                 <div className="flex-1 flex items-center relative h-4">
                   <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300"></div>
                   <div

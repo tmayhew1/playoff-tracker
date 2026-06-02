@@ -40,7 +40,7 @@ export function valueAdd(p, lga = LGA) {
 // Keys for the per-category VA breakdown. Order matches the row order in
 // VABreakdown; kept here so the bake and UI share one source of truth.
 export const VA_CATEGORY_KEYS = [
-  "Scoring", "3-Pointers", "2-Pointers", "Free Throws",
+  "Points", "3-Pointers", "2-Pointers", "Free Throws",
   "Assists", "Steals", "Blocks", "Turnovers",
   "D Rebounds", "O Rebounds",
 ];
@@ -59,7 +59,7 @@ export function valueAddByCategory(p, lga = LGA) {
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
   return {
-    "Scoring": ((pts / mp) - lga.laPTSperM) * mp,
+    "Points": ((pts / mp) - lga.laPTSperM) * mp,
     "3-Pointers": 3 * tpAdd,
     "2-Pointers": 2 * twoAdd,
     "Free Throws": ftAdd,
