@@ -1186,6 +1186,19 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [rsLookup, setRsLookup] = useState(null);
+  // Tap a G value to filter to players with ≥ that many GP and re-sort
+  // by VA/G; lets you compare efficiency at comparable volume within a
+  // series. Same mechanic as the playoff leaderboard.
+  const [minGames, setMinGames] = useState(null);
+  const [pendingScrollName, setPendingScrollName] = useState(null);
+
+  useEffect(() => {
+    if (!pendingScrollName) return;
+    const sel = `[data-player-row="${pendingScrollName.replace(/"/g, '\\"')}"]`;
+    const el = document.querySelector(sel);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setPendingScrollName(null);
+  }, [pendingScrollName]);
 
   // Pull regular-season totals lazily when the section is first opened.
   // Name lookup only — the live ESPN box-score path doesn't expose BR slugs.
@@ -1313,8 +1326,24 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
         <div className="px-2 pb-2">
           {loading && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading…</div>}
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
-          {rows && rows.length > 0 && (
+          {rows && rows.length > 0 && (() => {
+            const sortedRows = minGames != null
+              ? [...rows].sort((a, b) => (b.va / Math.max(1, b.gp)) - (a.va / Math.max(1, a.gp)))
+              : rows;
+            const visibleRows = minGames != null ? sortedRows.filter((p) => p.gp >= minGames) : sortedRows;
+            return (
             <div>
+              {minGames != null && (
+                <div className="flex items-center justify-end py-1">
+                  <button
+                    onClick={() => setMinGames(null)}
+                    className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+                    aria-label="Clear min-games filter"
+                  >
+                    ≥{minGames} games <span className="text-stone-400">×</span>
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-10">Team</span>
                 <span className="flex-1">Player</span>
@@ -1328,7 +1357,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                 <span className="sm:hidden w-9 text-right">STK</span>
                 <span className="hidden sm:block w-12 text-right">TOT VA</span>
               </div>
-              {rows.map((p, i) => {
+              {visibleRows.map((p, i) => {
                 const owner = teamsMap[p.team]?.owner;
                 const isDim = p.team === dimTeam;
                 const badgeUseTeam = !isDim && !owner;
@@ -1341,17 +1370,35 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                   : undefined;
                 const isOpen = expanded === i;
                 return (
-                  <div key={i} className="border-b border-stone-100 last:border-0">
-                    <button
+                  <div key={i} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setExpanded(isOpen ? null : i)}
-                      className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isOpen ? "bg-stone-100" : ""}`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpanded(isOpen ? null : i);
+                        }
+                      }}
+                      className={`w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
                     >
                       <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
                         {p.name}
                       </span>
-                      <span className="hidden sm:block w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next = minGames === p.gp ? null : p.gp;
+                          setMinGames(next);
+                          if (next != null) setPendingScrollName(p.name);
+                        }}
+                        className={`hidden sm:block w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === p.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
+                        aria-label={`Filter to players with at least ${p.gp} games`}
+                      >{p.gp}</button>
                       <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
                       <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg < 0 ? "text-red-600" : "text-stone-700"}`}>{p.effpg.toFixed(1)}</span>
                       <span className="w-8 text-right tabular-nums text-stone-600">{p.rpg.toFixed(1)}</span>
@@ -1360,7 +1407,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                       <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
                       <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
-                    </button>
+                    </div>
                     {isOpen && (
                       <VABreakdown
                         p={p}
@@ -1372,15 +1419,16 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                         useTeamColor={useTeamColor}
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
-                        onNext={i < rows.length - 1 ? () => setExpanded(i + 1) : undefined}
+                        onNext={i < visibleRows.length - 1 ? () => setExpanded(i + 1) : undefined}
                       />
                     )}
                   </div>
                 );
               })}
-              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by total Value Added · STK = steals + blocks · tap a row for VA breakdown</div>
+              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by {minGames != null ? "VA / Game" : "total Value Added"} · STK = steals + blocks · tap a row for VA breakdown</div>
             </div>
-          )}
+            );
+          })()}
           {rows && rows.length === 0 && !error && (
             <div className="py-2 text-[10px] text-stone-500 italic text-center">No stats</div>
           )}
@@ -1657,6 +1705,13 @@ function PlayoffLeaderboard({ season, lga }) {
   const [showAll, setShowAll] = useState(false);
   const [teamFilter, setTeamFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  // When set, leaderboard re-sorts by VA/G and trims to players with at
+  // least `minGames` GP — the "show me efficiency at comparable volume"
+  // filter, tap a G value to set it.
+  const [minGames, setMinGames] = useState(null);
+  // Name of the player whose G cell was just tapped, so we can scroll
+  // their row into view after the list re-sorts/filters.
+  const [pendingScrollName, setPendingScrollName] = useState(null);
   // Regular-season totals load independently so a slow BR fetch doesn't
   // block the leaderboard; the reference tick just appears once it arrives.
   const [rsLookup, setRsLookup] = useState(null);
@@ -1667,6 +1722,8 @@ function PlayoffLeaderboard({ season, lga }) {
     setError(null);
     setShowAll(false);
     setTeamFilter(null);
+    setMinGames(null);
+    setPendingScrollName(null);
     setExpanded(null);
     setRsLookup(null);
     setLoading(true);
@@ -1701,6 +1758,14 @@ function PlayoffLeaderboard({ season, lga }) {
     return () => { cancelled = true; };
   }, [season]);
 
+  useEffect(() => {
+    if (!pendingScrollName) return;
+    const sel = `[data-player-row="${pendingScrollName.replace(/"/g, '\\"')}"]`;
+    const el = document.querySelector(sel);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setPendingScrollName(null);
+  }, [pendingScrollName]);
+
   if (loading) {
     return (
       <div className="mb-4 p-3 bg-white border border-stone-300">
@@ -1720,26 +1785,44 @@ function PlayoffLeaderboard({ season, lga }) {
   if (!data || !data.players?.length) return null;
 
   const all = data.players;
-  const filtered = teamFilter ? all.filter((p) => p.team === teamFilter) : all;
-  const shown = (showAll || teamFilter) ? filtered : filtered.slice(0, 10);
+  // With the min-games filter on, re-sort by VA/G — the whole point is to
+  // compare efficiency at comparable volume. Without it, the server-sorted
+  // (total VA) order is correct.
+  const sortedAll = minGames != null
+    ? [...all].sort((a, b) => (b.va / Math.max(1, b.gp)) - (a.va / Math.max(1, a.gp)))
+    : all;
+  const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
+  const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
+  const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
 
   return (
     <div className="mb-4 border border-stone-300 bg-white">
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex items-center justify-between gap-2">
         <span>Playoff Leaderboard</span>
-        {teamFilter && (() => {
-          const c = teamColor(teamFilter);
-          return (
+        <div className="flex items-center gap-1.5">
+          {minGames != null && (
             <button
-              onClick={() => setTeamFilter(null)}
-              className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
-              style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
-              aria-label={`Clear ${teamFilter} filter`}
+              onClick={() => setMinGames(null)}
+              className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+              aria-label="Clear min-games filter"
             >
-              {teamFilter} <span className="text-stone-400">×</span>
+              ≥{minGames} games <span className="text-stone-400">×</span>
             </button>
-          );
-        })()}
+          )}
+          {teamFilter && (() => {
+            const c = teamColor(teamFilter);
+            return (
+              <button
+                onClick={() => setTeamFilter(null)}
+                className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
+                style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
+                aria-label={`Clear ${teamFilter} filter`}
+              >
+                {teamFilter} <span className="text-stone-400">×</span>
+              </button>
+            );
+          })()}
+        </div>
       </div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
@@ -1756,9 +1839,10 @@ function PlayoffLeaderboard({ season, lga }) {
         <span className="w-10 text-right">VA/G</span>
       </div>
       {shown.map((p, i) => {
-        // Keep the overall playoff rank (1, 7, 13…) even when the team
-        // filter trims the visible list.
-        const rank = all.indexOf(p) + 1;
+        // Keep the overall rank (1, 7, 13…) even when filters trim the
+        // visible list. With the min-games filter on, "overall" means
+        // ranked by VA/G, since that's how the list is now ordered.
+        const rank = sortedAll.indexOf(p) + 1;
         const isOpen = expanded === i;
         const tc = teamColor(p.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
@@ -1780,7 +1864,7 @@ function PlayoffLeaderboard({ season, lga }) {
         }
         const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
         return (
-          <div key={i} className="border-b border-stone-100 last:border-0">
+          <div key={i} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             <div
               role="button"
               tabIndex={0}
@@ -1808,7 +1892,17 @@ function PlayoffLeaderboard({ season, lga }) {
                 <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
                 {p.name}
               </span>
-              <span className="w-6 text-right tabular-nums text-stone-500">{p.gp}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const next = minGames === p.gp ? null : p.gp;
+                  setMinGames(next);
+                  if (next != null) setPendingScrollName(p.name);
+                }}
+                className={`w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === p.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
+                aria-label={`Filter to players with at least ${p.gp} games`}
+              >{p.gp}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
               <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.eff / p.gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.eff / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.reb / p.gp).toFixed(1)}</span>
@@ -1840,7 +1934,7 @@ function PlayoffLeaderboard({ season, lga }) {
           </div>
         );
       })}
-      {!teamFilter && all.length > 10 && (
+      {!teamFilter && minGames == null && all.length > 10 && (
         <button
           onClick={() => setShowAll((s) => !s)}
           className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
