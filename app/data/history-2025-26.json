@@ -1201,10 +1201,23 @@
             "tri": "NYK",
             "score": 105
           }
+        },
+        {
+          "gameId": "202606050SAS",
+          "gameCode": "20260605",
+          "gameDateTimeUTC": "2026-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 104
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 105
+          }
         }
       ]
     }
   ],
   "source": "basketball-reference",
-  "fetchedAt": "2026-06-04T13:05:36.144Z"
+  "fetchedAt": "2026-06-06T13:12:09.180Z"
 }
