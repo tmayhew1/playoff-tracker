@@ -1368,17 +1368,18 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                 const badgeStyle = badgeUseTeam
                   ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
                   : undefined;
-                const isOpen = expanded === i;
+                const rowKey = `${p.team}:${p.name}`;
+                const isOpen = expanded === rowKey;
                 return (
-                  <div key={i} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+                  <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
                     <div
                       role="button"
                       tabIndex={0}
-                      onClick={() => setExpanded(isOpen ? null : i)}
+                      onClick={() => setExpanded(isOpen ? null : rowKey)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setExpanded(isOpen ? null : i);
+                          setExpanded(isOpen ? null : rowKey);
                         }
                       }}
                       className={`w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
@@ -1418,8 +1419,8 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                         byGame={p.byGame}
                         useTeamColor={useTeamColor}
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
-                        onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
-                        onNext={i < visibleRows.length - 1 ? () => setExpanded(i + 1) : undefined}
+                        onPrev={i > 0 ? () => setExpanded(`${visibleRows[i - 1].team}:${visibleRows[i - 1].name}`) : undefined}
+                        onNext={i < visibleRows.length - 1 ? () => setExpanded(`${visibleRows[i + 1].team}:${visibleRows[i + 1].name}`) : undefined}
                       />
                     )}
                   </div>
@@ -1843,7 +1844,8 @@ function PlayoffLeaderboard({ season, lga }) {
         // visible list. With the min-games filter on, "overall" means
         // ranked by VA/G, since that's how the list is now ordered.
         const rank = sortedAll.indexOf(p) + 1;
-        const isOpen = expanded === i;
+        const rowKey = `${p.team}:${p.name}`;
+        const isOpen = expanded === rowKey;
         const tc = teamColor(p.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
         // Player's playoff games already chronological from server, with
@@ -1864,15 +1866,15 @@ function PlayoffLeaderboard({ season, lga }) {
         }
         const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
         return (
-          <div key={i} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+          <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             <div
               role="button"
               tabIndex={0}
-              onClick={() => setExpanded(isOpen ? null : i)}
+              onClick={() => setExpanded(isOpen ? null : rowKey)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setExpanded(isOpen ? null : i);
+                  setExpanded(isOpen ? null : rowKey);
                 }
               }}
               className={`w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
@@ -1927,8 +1929,8 @@ function PlayoffLeaderboard({ season, lga }) {
                 gameTileLabel="Playoff Game"
                 enableSeriesDrill
                 regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
-                onPrev={i > 0 ? () => setExpanded(i - 1) : undefined}
-                onNext={i < shown.length - 1 ? () => setExpanded(i + 1) : undefined}
+                onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
+                onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
               />
             )}
           </div>
