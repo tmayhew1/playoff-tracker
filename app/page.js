@@ -1786,12 +1786,34 @@ function PlayoffLeaderboard({ season, lga }) {
   if (!data || !data.players?.length) return null;
 
   const all = data.players;
-  // With the min-games filter on, re-sort by VA/G — the whole point is to
-  // compare efficiency at comparable volume. Without it, the server-sorted
-  // (total VA) order is correct.
+  // Composite default rank = (VA rank) + (VA/G rank) + (VA/G rank among
+  // peers with ≥ this player's games). Rewards being good on volume,
+  // good on rate, and good vs. the players who logged similar minutes —
+  // a single chart-topper position can no longer carry someone who's
+  // weak on the other two axes.
+  const vaPerG = (p) => p.va / Math.max(1, p.gp);
+  const aRank = new Map();
+  [...all]
+    .sort((x, y) => y.va - x.va)
+    .forEach((p, i) => aRank.set(p, i + 1));
+  const bRank = new Map();
+  [...all]
+    .sort((x, y) => vaPerG(y) - vaPerG(x))
+    .forEach((p, i) => bRank.set(p, i + 1));
+  const cRank = new Map();
+  for (const p of all) {
+    const cohort = all.filter((q) => q.gp >= p.gp);
+    cohort.sort((x, y) => vaPerG(y) - vaPerG(x));
+    cRank.set(p, cohort.indexOf(p) + 1);
+  }
+  const composite = (p) => aRank.get(p) + bRank.get(p) + cRank.get(p);
+
+  // With the min-games filter on, re-sort by VA/G — the whole point is
+  // to compare efficiency at comparable volume. Without it, the
+  // composite rank above wins.
   const sortedAll = minGames != null
-    ? [...all].sort((a, b) => (b.va / Math.max(1, b.gp)) - (a.va / Math.max(1, a.gp)))
-    : all;
+    ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a))
+    : [...all].sort((a, b) => composite(a) - composite(b));
   const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
