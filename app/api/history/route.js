@@ -30,17 +30,41 @@ const ESPN_TO_NBA = {
 };
 const toNba = (abbr) => ESPN_TO_NBA[abbr] || abbr;
 
-async function fetchJson(url, timeoutMs = 9000) {
+async function fetchJsonOnce(url, timeoutMs) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
     return await res.json();
   } catch (e) {
-    throw new Error(e.name === "AbortError" ? "timeout" : e.message);
+    if (e.name === "AbortError") {
+      const err = new Error("timeout");
+      err.transient = true;
+      throw err;
+    }
+    if (e.status >= 500 && e.status < 600) e.transient = true;
+    throw e;
   } finally {
     clearTimeout(t);
+  }
+}
+
+// ESPN's scoreboard occasionally returns 504s on long date-range queries
+// (older seasons hit slower upstream caches). Retry transient failures
+// once with a short backoff — caps total wall time at ~timeoutMs+700ms+
+// timeoutMs, still inside our 15s maxDuration.
+async function fetchJson(url, timeoutMs = 7000) {
+  try {
+    return await fetchJsonOnce(url, timeoutMs);
+  } catch (e) {
+    if (!e.transient) throw e;
+    await new Promise((r) => setTimeout(r, 600));
+    return await fetchJsonOnce(url, timeoutMs);
   }
 }
 
