@@ -29,17 +29,40 @@ const toNba = (a) => ESPN_TO_NBA[a] || a;
 
 const SEASON_RE = /^\d{4}-\d{2}$/;
 
-async function fetchJson(url, timeoutMs = 9000) {
+async function fetchJsonOnce(url, timeoutMs) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal, cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
     return await res.json();
   } catch (e) {
-    throw new Error(e.name === "AbortError" ? "timeout" : e.message);
+    if (e.name === "AbortError") {
+      const err = new Error("timeout");
+      err.transient = true;
+      throw err;
+    }
+    if (e.status >= 500 && e.status < 600) e.transient = true;
+    throw e;
   } finally {
     clearTimeout(t);
+  }
+}
+
+// ESPN's scoreboard and summary endpoints occasionally return 504s under
+// load. Retry transient failures once with a short backoff; the per-game
+// box-score loop runs in batches so the extra wall time is bounded.
+async function fetchJson(url, timeoutMs = 9000) {
+  try {
+    return await fetchJsonOnce(url, timeoutMs);
+  } catch (e) {
+    if (!e.transient) throw e;
+    await new Promise((r) => setTimeout(r, 400));
+    return await fetchJsonOnce(url, timeoutMs);
   }
 }
 
