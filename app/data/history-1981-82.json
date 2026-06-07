@@ -1,0 +1,728 @@
+{
+  "season": "1981-82",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "PHX"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "198204200DEN",
+          "gameCode": "19820420",
+          "gameDateTimeUTC": "1982-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 129
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198204230PHO",
+          "gameCode": "19820423",
+          "gameDateTimeUTC": "1982-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 126
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198204240DEN",
+          "gameCode": "19820424",
+          "gameDateTimeUTC": "1982-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 119
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 124
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NJN",
+        "WSB"
+      ],
+      "winner": "WSB",
+      "games": [
+        {
+          "gameId": "198204200NJN",
+          "gameCode": "19820420",
+          "gameDateTimeUTC": "1982-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 83
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198204230WSB",
+          "gameCode": "19820423",
+          "gameDateTimeUTC": "1982-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 103
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "ATL"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198204210PHI",
+          "gameCode": "19820421",
+          "gameDateTimeUTC": "1982-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 111
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "198204230ATL",
+          "gameCode": "19820423",
+          "gameDateTimeUTC": "1982-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 95
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "HOU"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "198204210SEA",
+          "gameCode": "19820421",
+          "gameDateTimeUTC": "1982-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 102
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "198204230HOU",
+          "gameCode": "19820423",
+          "gameDateTimeUTC": "1982-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 91
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 70
+          }
+        },
+        {
+          "gameId": "198204250SEA",
+          "gameCode": "19820425",
+          "gameDateTimeUTC": "1982-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 83
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "WSB"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198204250BOS",
+          "gameCode": "19820425",
+          "gameDateTimeUTC": "1982-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198204280BOS",
+          "gameCode": "19820428",
+          "gameDateTimeUTC": "1982-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198205010WSB",
+          "gameCode": "19820501",
+          "gameDateTimeUTC": "1982-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 83
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198205020WSB",
+          "gameCode": "19820502",
+          "gameDateTimeUTC": "1982-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198205050BOS",
+          "gameCode": "19820505",
+          "gameDateTimeUTC": "1982-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 131
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 126
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "MIL"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198204250PHI",
+          "gameCode": "19820425",
+          "gameDateTimeUTC": "1982-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 125
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "198204280PHI",
+          "gameCode": "19820428",
+          "gameDateTimeUTC": "1982-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 120
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198205010MIL",
+          "gameCode": "19820501",
+          "gameDateTimeUTC": "1982-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198205020MIL",
+          "gameCode": "19820502",
+          "gameDateTimeUTC": "1982-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 93
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198205050PHI",
+          "gameCode": "19820505",
+          "gameDateTimeUTC": "1982-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198205070MIL",
+          "gameCode": "19820507",
+          "gameDateTimeUTC": "1982-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 90
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "PHX"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198204270LAL",
+          "gameCode": "19820427",
+          "gameDateTimeUTC": "1982-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 115
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198204280LAL",
+          "gameCode": "19820428",
+          "gameDateTimeUTC": "1982-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198204300PHO",
+          "gameCode": "19820430",
+          "gameDateTimeUTC": "1982-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198205020PHO",
+          "gameCode": "19820502",
+          "gameDateTimeUTC": "1982-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "198204270SEA",
+          "gameCode": "19820427",
+          "gameDateTimeUTC": "1982-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 93
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198204280SEA",
+          "gameCode": "19820428",
+          "gameDateTimeUTC": "1982-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 114
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198204300SAS",
+          "gameCode": "19820430",
+          "gameDateTimeUTC": "1982-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 99
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198205020SAS",
+          "gameCode": "19820502",
+          "gameDateTimeUTC": "1982-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 115
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198205050SEA",
+          "gameCode": "19820505",
+          "gameDateTimeUTC": "1982-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 103
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198205090BOS",
+          "gameCode": "19820509",
+          "gameDateTimeUTC": "1982-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 121
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "198205120BOS",
+          "gameCode": "19820512",
+          "gameDateTimeUTC": "1982-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "198205150PHI",
+          "gameCode": "19820515",
+          "gameDateTimeUTC": "1982-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198205160PHI",
+          "gameCode": "19820516",
+          "gameDateTimeUTC": "1982-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 119
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198205190BOS",
+          "gameCode": "19820519",
+          "gameDateTimeUTC": "1982-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "198205210PHI",
+          "gameCode": "19820521",
+          "gameDateTimeUTC": "1982-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 75
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "198205230BOS",
+          "gameCode": "19820523",
+          "gameDateTimeUTC": "1982-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 120
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "SAS"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198205090LAL",
+          "gameCode": "19820509",
+          "gameDateTimeUTC": "1982-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 128
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "198205110LAL",
+          "gameCode": "19820511",
+          "gameDateTimeUTC": "1982-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 110
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198205140SAS",
+          "gameCode": "19820514",
+          "gameDateTimeUTC": "1982-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "198205150SAS",
+          "gameCode": "19820515",
+          "gameDateTimeUTC": "1982-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 123
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 128
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHI",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198205270PHI",
+          "gameCode": "19820527",
+          "gameDateTimeUTC": "1982-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 117
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "198205300PHI",
+          "gameCode": "19820530",
+          "gameDateTimeUTC": "1982-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 110
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198206010LAL",
+          "gameCode": "19820601",
+          "gameDateTimeUTC": "1982-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 129
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198206030LAL",
+          "gameCode": "19820603",
+          "gameDateTimeUTC": "1982-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198206060PHI",
+          "gameCode": "19820606",
+          "gameDateTimeUTC": "1982-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 135
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198206080LAL",
+          "gameCode": "19820608",
+          "gameDateTimeUTC": "1982-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 114
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 104
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T20:47:55.673Z"
+}

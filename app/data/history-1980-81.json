@@ -1,0 +1,806 @@
+{
+  "season": "1980-81",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "198103310NYK",
+          "gameCode": "19810331",
+          "gameDateTimeUTC": "1981-03-31T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 80
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "198104030CHI",
+          "gameCode": "19810403",
+          "gameDateTimeUTC": "1981-04-03T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 115
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "IND"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198103310PHI",
+          "gameCode": "19810331",
+          "gameDateTimeUTC": "1981-03-31T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 124
+          },
+          "away": {
+            "tri": "IND",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198104020IND",
+          "gameCode": "19810402",
+          "gameDateTimeUTC": "1981-04-02T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 85
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "198104010LAL",
+          "gameCode": "19810401",
+          "gameDateTimeUTC": "1981-04-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 107
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198104030HOU",
+          "gameCode": "19810403",
+          "gameDateTimeUTC": "1981-04-03T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198104050LAL",
+          "gameCode": "19810405",
+          "gameDateTimeUTC": "1981-04-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 86
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "KCK"
+      ],
+      "winner": "KCK",
+      "games": [
+        {
+          "gameId": "198104010POR",
+          "gameCode": "19810401",
+          "gameDateTimeUTC": "1981-04-01T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 97
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198104030KCK",
+          "gameCode": "19810403",
+          "gameDateTimeUTC": "1981-04-03T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 119
+          },
+          "away": {
+            "tri": "POR",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "198104050POR",
+          "gameCode": "19810405",
+          "gameDateTimeUTC": "1981-04-05T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 95
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "CHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198104050BOS",
+          "gameCode": "19810405",
+          "gameDateTimeUTC": "1981-04-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 121
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198104070BOS",
+          "gameCode": "19810407",
+          "gameDateTimeUTC": "1981-04-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198104100CHI",
+          "gameCode": "19810410",
+          "gameDateTimeUTC": "1981-04-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198104120CHI",
+          "gameCode": "19810412",
+          "gameDateTimeUTC": "1981-04-12T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "MIL"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198104050PHI",
+          "gameCode": "19810405",
+          "gameDateTimeUTC": "1981-04-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 125
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "198104070PHI",
+          "gameCode": "19810407",
+          "gameDateTimeUTC": "1981-04-07T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198104100MIL",
+          "gameCode": "19810410",
+          "gameDateTimeUTC": "1981-04-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198104120MIL",
+          "gameCode": "19810412",
+          "gameDateTimeUTC": "1981-04-12T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198104150PHI",
+          "gameCode": "19810415",
+          "gameDateTimeUTC": "1981-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198104170MIL",
+          "gameCode": "19810417",
+          "gameDateTimeUTC": "1981-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "198104190PHI",
+          "gameCode": "19810419",
+          "gameDateTimeUTC": "1981-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "KCK"
+      ],
+      "winner": "KCK",
+      "games": [
+        {
+          "gameId": "198104070PHO",
+          "gameCode": "19810407",
+          "gameDateTimeUTC": "1981-04-07T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 102
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "198104080PHO",
+          "gameCode": "19810408",
+          "gameDateTimeUTC": "1981-04-08T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 83
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "198104100KCK",
+          "gameCode": "19810410",
+          "gameDateTimeUTC": "1981-04-10T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 93
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198104120KCK",
+          "gameCode": "19810412",
+          "gameDateTimeUTC": "1981-04-12T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198104150PHO",
+          "gameCode": "19810415",
+          "gameDateTimeUTC": "1981-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 101
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "198104170KCK",
+          "gameCode": "19810417",
+          "gameDateTimeUTC": "1981-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 76
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "198104190PHO",
+          "gameCode": "19810419",
+          "gameDateTimeUTC": "1981-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 88
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "198104070SAS",
+          "gameCode": "19810407",
+          "gameDateTimeUTC": "1981-04-07T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 98
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198104080SAS",
+          "gameCode": "19810408",
+          "gameDateTimeUTC": "1981-04-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 125
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198104100HOU",
+          "gameCode": "19810410",
+          "gameDateTimeUTC": "1981-04-10T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 112
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198104120HOU",
+          "gameCode": "19810412",
+          "gameDateTimeUTC": "1981-04-12T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 112
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198104140SAS",
+          "gameCode": "19810414",
+          "gameDateTimeUTC": "1981-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 117
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198104150HOU",
+          "gameCode": "19810415",
+          "gameDateTimeUTC": "1981-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198104170SAS",
+          "gameCode": "19810417",
+          "gameDateTimeUTC": "1981-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198104210BOS",
+          "gameCode": "19810421",
+          "gameDateTimeUTC": "1981-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 104
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198104220BOS",
+          "gameCode": "19810422",
+          "gameDateTimeUTC": "1981-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198104240PHI",
+          "gameCode": "19810424",
+          "gameDateTimeUTC": "1981-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 110
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198104260PHI",
+          "gameCode": "19810426",
+          "gameDateTimeUTC": "1981-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198104290BOS",
+          "gameCode": "19810429",
+          "gameDateTimeUTC": "1981-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198105010PHI",
+          "gameCode": "19810501",
+          "gameDateTimeUTC": "1981-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198105030BOS",
+          "gameCode": "19810503",
+          "gameDateTimeUTC": "1981-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 91
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "KCK",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "198104210KCK",
+          "gameCode": "19810421",
+          "gameDateTimeUTC": "1981-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 78
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198104220KCK",
+          "gameCode": "19810422",
+          "gameDateTimeUTC": "1981-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 88
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "198104240HOU",
+          "gameCode": "19810424",
+          "gameDateTimeUTC": "1981-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 92
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "198104260HOU",
+          "gameCode": "19810426",
+          "gameDateTimeUTC": "1981-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 100
+          },
+          "away": {
+            "tri": "KCK",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "198104290KCK",
+          "gameCode": "19810429",
+          "gameDateTimeUTC": "1981-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "KCK",
+            "score": 88
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "HOU"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198105050BOS",
+          "gameCode": "19810505",
+          "gameDateTimeUTC": "1981-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 98
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198105070BOS",
+          "gameCode": "19810507",
+          "gameDateTimeUTC": "1981-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 90
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198105090HOU",
+          "gameCode": "19810509",
+          "gameDateTimeUTC": "1981-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 71
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198105100HOU",
+          "gameCode": "19810510",
+          "gameDateTimeUTC": "1981-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 91
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "198105120BOS",
+          "gameCode": "19810512",
+          "gameDateTimeUTC": "1981-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "198105140HOU",
+          "gameCode": "19810514",
+          "gameDateTimeUTC": "1981-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 91
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T20:44:25.027Z"
+}

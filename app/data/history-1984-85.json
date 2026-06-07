@@ -1,0 +1,1041 @@
+{
+  "season": "1984-85",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "WSB"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198504170PHI",
+          "gameCode": "19850417",
+          "gameDateTimeUTC": "1985-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198504210PHI",
+          "gameCode": "19850421",
+          "gameDateTimeUTC": "1985-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 113
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198504240WSB",
+          "gameCode": "19850424",
+          "gameDateTimeUTC": "1985-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198504260WSB",
+          "gameCode": "19850426",
+          "gameDateTimeUTC": "1985-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 98
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "CLE"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198504180BOS",
+          "gameCode": "19850418",
+          "gameDateTimeUTC": "1985-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 126
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198504200BOS",
+          "gameCode": "19850420",
+          "gameDateTimeUTC": "1985-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "198504230CLE",
+          "gameCode": "19850423",
+          "gameDateTimeUTC": "1985-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 105
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198504250CLE",
+          "gameCode": "19850425",
+          "gameDateTimeUTC": "1985-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 115
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 117
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "198504180DAL",
+          "gameCode": "19850418",
+          "gameDateTimeUTC": "1985-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 139
+          },
+          "away": {
+            "tri": "POR",
+            "score": 131
+          }
+        },
+        {
+          "gameId": "198504200DAL",
+          "gameCode": "19850420",
+          "gameDateTimeUTC": "1985-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 121
+          },
+          "away": {
+            "tri": "POR",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "198504230POR",
+          "gameCode": "19850423",
+          "gameDateTimeUTC": "1985-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 122
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198504250POR",
+          "gameCode": "19850425",
+          "gameDateTimeUTC": "1985-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "SAS"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "198504180DEN",
+          "gameCode": "19850418",
+          "gameDateTimeUTC": "1985-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 141
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198504200DEN",
+          "gameCode": "19850420",
+          "gameDateTimeUTC": "1985-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198504230SAS",
+          "gameCode": "19850423",
+          "gameDateTimeUTC": "1985-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 112
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198504260SAS",
+          "gameCode": "19850426",
+          "gameDateTimeUTC": "1985-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 116
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198504280DEN",
+          "gameCode": "19850428",
+          "gameDateTimeUTC": "1985-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 126
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "NJN"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198504180DET",
+          "gameCode": "19850418",
+          "gameDateTimeUTC": "1985-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 125
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198504210DET",
+          "gameCode": "19850421",
+          "gameDateTimeUTC": "1985-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 121
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198504240NJN",
+          "gameCode": "19850424",
+          "gameDateTimeUTC": "1985-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 115
+          },
+          "away": {
+            "tri": "DET",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "PHX"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198504180LAL",
+          "gameCode": "19850418",
+          "gameDateTimeUTC": "1985-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 142
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198504200LAL",
+          "gameCode": "19850420",
+          "gameDateTimeUTC": "1985-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 147
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "198504230PHO",
+          "gameCode": "19850423",
+          "gameDateTimeUTC": "1985-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 119
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "198504190HOU",
+          "gameCode": "19850419",
+          "gameDateTimeUTC": "1985-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 101
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198504210HOU",
+          "gameCode": "19850421",
+          "gameDateTimeUTC": "1985-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 122
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198504240UTA",
+          "gameCode": "19850424",
+          "gameDateTimeUTC": "1985-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 112
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198504260UTA",
+          "gameCode": "19850426",
+          "gameDateTimeUTC": "1985-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 94
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198504280HOU",
+          "gameCode": "19850428",
+          "gameDateTimeUTC": "1985-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 97
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "CHI"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "198504190MIL",
+          "gameCode": "19850419",
+          "gameDateTimeUTC": "1985-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 109
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198504210MIL",
+          "gameCode": "19850421",
+          "gameDateTimeUTC": "1985-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 122
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198504240CHI",
+          "gameCode": "19850424",
+          "gameDateTimeUTC": "1985-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198504260CHI",
+          "gameCode": "19850426",
+          "gameDateTimeUTC": "1985-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198504270LAL",
+          "gameCode": "19850427",
+          "gameDateTimeUTC": "1985-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 125
+          },
+          "away": {
+            "tri": "POR",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198504300LAL",
+          "gameCode": "19850430",
+          "gameDateTimeUTC": "1985-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 134
+          },
+          "away": {
+            "tri": "POR",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "198505030POR",
+          "gameCode": "19850503",
+          "gameDateTimeUTC": "1985-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 126
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "198505050POR",
+          "gameCode": "19850505",
+          "gameDateTimeUTC": "1985-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198505070LAL",
+          "gameCode": "19850507",
+          "gameDateTimeUTC": "1985-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 139
+          },
+          "away": {
+            "tri": "POR",
+            "score": 120
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "DET"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198504280BOS",
+          "gameCode": "19850428",
+          "gameDateTimeUTC": "1985-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 133
+          },
+          "away": {
+            "tri": "DET",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198504300BOS",
+          "gameCode": "19850430",
+          "gameDateTimeUTC": "1985-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 121
+          },
+          "away": {
+            "tri": "DET",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198505020DET",
+          "gameCode": "19850502",
+          "gameDateTimeUTC": "1985-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 125
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "198505050DET",
+          "gameCode": "19850505",
+          "gameDateTimeUTC": "1985-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198505080BOS",
+          "gameCode": "19850508",
+          "gameDateTimeUTC": "1985-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 130
+          },
+          "away": {
+            "tri": "DET",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198505100DET",
+          "gameCode": "19850510",
+          "gameDateTimeUTC": "1985-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 113
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 123
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIL",
+        "PHI"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198504280MIL",
+          "gameCode": "19850428",
+          "gameDateTimeUTC": "1985-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 105
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "198504300MIL",
+          "gameCode": "19850430",
+          "gameDateTimeUTC": "1985-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "198505030PHI",
+          "gameCode": "19850503",
+          "gameDateTimeUTC": "1985-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198505050PHI",
+          "gameCode": "19850505",
+          "gameDateTimeUTC": "1985-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DEN",
+        "UTA"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "198504300DEN",
+          "gameCode": "19850430",
+          "gameDateTimeUTC": "1985-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 130
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198505020DEN",
+          "gameCode": "19850502",
+          "gameDateTimeUTC": "1985-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 131
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198505040UTA",
+          "gameCode": "19850504",
+          "gameDateTimeUTC": "1985-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 131
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198505050UTA",
+          "gameCode": "19850505",
+          "gameDateTimeUTC": "1985-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 118
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "198505070DEN",
+          "gameCode": "19850507",
+          "gameDateTimeUTC": "1985-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 116
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "DEN"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198505110LAL",
+          "gameCode": "19850511",
+          "gameDateTimeUTC": "1985-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 139
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "198505140LAL",
+          "gameCode": "19850514",
+          "gameDateTimeUTC": "1985-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 114
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 136
+          }
+        },
+        {
+          "gameId": "198505170DEN",
+          "gameCode": "19850517",
+          "gameDateTimeUTC": "1985-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 118
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 136
+          }
+        },
+        {
+          "gameId": "198505190DEN",
+          "gameCode": "19850519",
+          "gameDateTimeUTC": "1985-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 116
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "198505220LAL",
+          "gameCode": "19850522",
+          "gameDateTimeUTC": "1985-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 153
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198505120BOS",
+          "gameCode": "19850512",
+          "gameDateTimeUTC": "1985-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198505140BOS",
+          "gameCode": "19850514",
+          "gameDateTimeUTC": "1985-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198505180PHI",
+          "gameCode": "19850518",
+          "gameDateTimeUTC": "1985-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 94
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198505190PHI",
+          "gameCode": "19850519",
+          "gameDateTimeUTC": "1985-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 115
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198505220BOS",
+          "gameCode": "19850522",
+          "gameDateTimeUTC": "1985-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "BOS",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198505270BOS",
+          "gameCode": "19850527",
+          "gameDateTimeUTC": "1985-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 148
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198505300BOS",
+          "gameCode": "19850530",
+          "gameDateTimeUTC": "1985-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198506020LAL",
+          "gameCode": "19850602",
+          "gameDateTimeUTC": "1985-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 136
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198506050LAL",
+          "gameCode": "19850605",
+          "gameDateTimeUTC": "1985-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198506070LAL",
+          "gameCode": "19850607",
+          "gameDateTimeUTC": "1985-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 120
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198506090BOS",
+          "gameCode": "19850609",
+          "gameDateTimeUTC": "1985-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 111
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T21:00:30.027Z"
+}

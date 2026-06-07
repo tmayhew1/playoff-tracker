@@ -1,0 +1,1041 @@
+{
+  "season": "1985-86",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "DET"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "198604170ATL",
+          "gameCode": "19860417",
+          "gameDateTimeUTC": "1986-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 140
+          },
+          "away": {
+            "tri": "DET",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "198604190ATL",
+          "gameCode": "19860419",
+          "gameDateTimeUTC": "1986-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 137
+          },
+          "away": {
+            "tri": "DET",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "198604220DET",
+          "gameCode": "19860422",
+          "gameDateTimeUTC": "1986-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 106
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198604250DET",
+          "gameCode": "19860425",
+          "gameDateTimeUTC": "1986-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 113
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "CHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198604170BOS",
+          "gameCode": "19860417",
+          "gameDateTimeUTC": "1986-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 123
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198604200BOS",
+          "gameCode": "19860420",
+          "gameDateTimeUTC": "1986-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 135
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 131
+          }
+        },
+        {
+          "gameId": "198604220CHI",
+          "gameCode": "19860422",
+          "gameDateTimeUTC": "1986-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 122
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "SAC"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "198604170HOU",
+          "gameCode": "19860417",
+          "gameDateTimeUTC": "1986-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "198604190HOU",
+          "gameCode": "19860419",
+          "gameDateTimeUTC": "1986-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198604220SAC",
+          "gameCode": "19860422",
+          "gameDateTimeUTC": "1986-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 98
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "SAS"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198604170LAL",
+          "gameCode": "19860417",
+          "gameDateTimeUTC": "1986-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 135
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "198604190LAL",
+          "gameCode": "19860419",
+          "gameDateTimeUTC": "1986-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198604230SAS",
+          "gameCode": "19860423",
+          "gameDateTimeUTC": "1986-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 94
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "UTA"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "198604180DAL",
+          "gameCode": "19860418",
+          "gameDateTimeUTC": "1986-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198604200DAL",
+          "gameCode": "19860420",
+          "gameDateTimeUTC": "1986-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "198604230UTA",
+          "gameCode": "19860423",
+          "gameDateTimeUTC": "1986-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 100
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198604250UTA",
+          "gameCode": "19860425",
+          "gameDateTimeUTC": "1986-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 113
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 117
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "POR"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "198604180DEN",
+          "gameCode": "19860418",
+          "gameDateTimeUTC": "1986-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 133
+          },
+          "away": {
+            "tri": "POR",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "198604200DEN",
+          "gameCode": "19860420",
+          "gameDateTimeUTC": "1986-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 106
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198604220POR",
+          "gameCode": "19860422",
+          "gameDateTimeUTC": "1986-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 104
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198604240POR",
+          "gameCode": "19860424",
+          "gameDateTimeUTC": "1986-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 112
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "NJN"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "198604180MIL",
+          "gameCode": "19860418",
+          "gameDateTimeUTC": "1986-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 119
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198604200MIL",
+          "gameCode": "19860420",
+          "gameDateTimeUTC": "1986-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 111
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198604220NJN",
+          "gameCode": "19860422",
+          "gameDateTimeUTC": "1986-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 113
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "WSB"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198604180PHI",
+          "gameCode": "19860418",
+          "gameDateTimeUTC": "1986-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 94
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198604200PHI",
+          "gameCode": "19860420",
+          "gameDateTimeUTC": "1986-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 102
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198604220WSB",
+          "gameCode": "19860422",
+          "gameDateTimeUTC": "1986-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 86
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198604240WSB",
+          "gameCode": "19860424",
+          "gameDateTimeUTC": "1986-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 116
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198604270PHI",
+          "gameCode": "19860427",
+          "gameDateTimeUTC": "1986-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 134
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "HOU",
+        "DEN"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "198604260HOU",
+          "gameCode": "19860426",
+          "gameDateTimeUTC": "1986-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 126
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "198604290HOU",
+          "gameCode": "19860429",
+          "gameDateTimeUTC": "1986-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 119
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198605020DEN",
+          "gameCode": "19860502",
+          "gameDateTimeUTC": "1986-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 116
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198605040DEN",
+          "gameCode": "19860504",
+          "gameDateTimeUTC": "1986-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 114
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198605060HOU",
+          "gameCode": "19860506",
+          "gameDateTimeUTC": "1986-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 131
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198605080DEN",
+          "gameCode": "19860508",
+          "gameDateTimeUTC": "1986-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 122
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 126
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "ATL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198604270BOS",
+          "gameCode": "19860427",
+          "gameDateTimeUTC": "1986-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198604290BOS",
+          "gameCode": "19860429",
+          "gameDateTimeUTC": "1986-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 119
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198605020ATL",
+          "gameCode": "19860502",
+          "gameDateTimeUTC": "1986-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198605040ATL",
+          "gameCode": "19860504",
+          "gameDateTimeUTC": "1986-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 106
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198605060BOS",
+          "gameCode": "19860506",
+          "gameDateTimeUTC": "1986-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 132
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "DAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198604270LAL",
+          "gameCode": "19860427",
+          "gameDateTimeUTC": "1986-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 130
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "198604300LAL",
+          "gameCode": "19860430",
+          "gameDateTimeUTC": "1986-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198605020DAL",
+          "gameCode": "19860502",
+          "gameDateTimeUTC": "1986-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 110
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198605040DAL",
+          "gameCode": "19860504",
+          "gameDateTimeUTC": "1986-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 120
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "198605060LAL",
+          "gameCode": "19860506",
+          "gameDateTimeUTC": "1986-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 116
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198605080DAL",
+          "gameCode": "19860508",
+          "gameDateTimeUTC": "1986-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 120
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIL",
+        "PHI"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "198604290MIL",
+          "gameCode": "19860429",
+          "gameDateTimeUTC": "1986-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 112
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "198605010MIL",
+          "gameCode": "19860501",
+          "gameDateTimeUTC": "1986-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 119
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198605030PHI",
+          "gameCode": "19860503",
+          "gameDateTimeUTC": "1986-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198605050PHI",
+          "gameCode": "19860505",
+          "gameDateTimeUTC": "1986-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198605070MIL",
+          "gameCode": "19860507",
+          "gameDateTimeUTC": "1986-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198605090PHI",
+          "gameCode": "19860509",
+          "gameDateTimeUTC": "1986-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 126
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198605110MIL",
+          "gameCode": "19860511",
+          "gameDateTimeUTC": "1986-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "198605100LAL",
+          "gameCode": "19860510",
+          "gameDateTimeUTC": "1986-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198605130LAL",
+          "gameCode": "19860513",
+          "gameDateTimeUTC": "1986-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "198605160HOU",
+          "gameCode": "19860516",
+          "gameDateTimeUTC": "1986-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 117
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198605180HOU",
+          "gameCode": "19860518",
+          "gameDateTimeUTC": "1986-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198605210LAL",
+          "gameCode": "19860521",
+          "gameDateTimeUTC": "1986-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "MIL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198605130BOS",
+          "gameCode": "19860513",
+          "gameDateTimeUTC": "1986-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 128
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198605150BOS",
+          "gameCode": "19860515",
+          "gameDateTimeUTC": "1986-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 122
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198605170MIL",
+          "gameCode": "19860517",
+          "gameDateTimeUTC": "1986-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198605180MIL",
+          "gameCode": "19860518",
+          "gameDateTimeUTC": "1986-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "BOS",
+        "HOU"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198605260BOS",
+          "gameCode": "19860526",
+          "gameDateTimeUTC": "1986-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198605290BOS",
+          "gameCode": "19860529",
+          "gameDateTimeUTC": "1986-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 117
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198606010HOU",
+          "gameCode": "19860601",
+          "gameDateTimeUTC": "1986-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 106
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198606030HOU",
+          "gameCode": "19860603",
+          "gameDateTimeUTC": "1986-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "198606050HOU",
+          "gameCode": "19860605",
+          "gameDateTimeUTC": "1986-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 111
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198606080BOS",
+          "gameCode": "19860608",
+          "gameDateTimeUTC": "1986-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 97
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T21:04:53.239Z"
+}

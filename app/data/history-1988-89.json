@@ -1,0 +1,963 @@
+{
+  "season": "1988-89",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "MIL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "198904270ATL",
+          "gameCode": "19890427",
+          "gameDateTimeUTC": "1989-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 100
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198904290ATL",
+          "gameCode": "19890429",
+          "gameDateTimeUTC": "1989-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 98
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198905020MIL",
+          "gameCode": "19890502",
+          "gameDateTimeUTC": "1989-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 117
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198905050MIL",
+          "gameCode": "19890505",
+          "gameDateTimeUTC": "1989-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 106
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198905070ATL",
+          "gameCode": "19890507",
+          "gameDateTimeUTC": "1989-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 92
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198904270LAL",
+          "gameCode": "19890427",
+          "gameDateTimeUTC": "1989-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 128
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198904300LAL",
+          "gameCode": "19890430",
+          "gameDateTimeUTC": "1989-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "POR",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198905030POR",
+          "gameCode": "19890503",
+          "gameDateTimeUTC": "1989-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "PHI"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "198904270NYK",
+          "gameCode": "19890427",
+          "gameDateTimeUTC": "1989-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198904290NYK",
+          "gameCode": "19890429",
+          "gameDateTimeUTC": "1989-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 107
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "198905020PHI",
+          "gameCode": "19890502",
+          "gameDateTimeUTC": "1989-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 115
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "198904270UTA",
+          "gameCode": "19890427",
+          "gameDateTimeUTC": "1989-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 119
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198904290UTA",
+          "gameCode": "19890429",
+          "gameDateTimeUTC": "1989-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 91
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198905020GSW",
+          "gameCode": "19890502",
+          "gameDateTimeUTC": "1989-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 120
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "198904280CLE",
+          "gameCode": "19890428",
+          "gameDateTimeUTC": "1989-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198904300CLE",
+          "gameCode": "19890430",
+          "gameDateTimeUTC": "1989-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "198905030CHI",
+          "gameCode": "19890503",
+          "gameDateTimeUTC": "1989-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 101
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198905050CHI",
+          "gameCode": "19890505",
+          "gameDateTimeUTC": "1989-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 105
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198905070CLE",
+          "gameCode": "19890507",
+          "gameDateTimeUTC": "1989-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 100
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "BOS"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198904280DET",
+          "gameCode": "19890428",
+          "gameDateTimeUTC": "1989-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 101
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198904300DET",
+          "gameCode": "19890430",
+          "gameDateTimeUTC": "1989-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198905020BOS",
+          "gameCode": "19890502",
+          "gameDateTimeUTC": "1989-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 85
+          },
+          "away": {
+            "tri": "DET",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "DEN"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "198904280PHO",
+          "gameCode": "19890428",
+          "gameDateTimeUTC": "1989-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 104
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198904300PHO",
+          "gameCode": "19890430",
+          "gameDateTimeUTC": "1989-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 132
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198905020DEN",
+          "gameCode": "19890502",
+          "gameDateTimeUTC": "1989-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 121
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 130
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "HOU"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "198904280SEA",
+          "gameCode": "19890428",
+          "gameDateTimeUTC": "1989-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 111
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198904300SEA",
+          "gameCode": "19890430",
+          "gameDateTimeUTC": "1989-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 109
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198905030HOU",
+          "gameCode": "19890503",
+          "gameDateTimeUTC": "1989-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 126
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198905050HOU",
+          "gameCode": "19890505",
+          "gameDateTimeUTC": "1989-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 96
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "GSW"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "198905060PHO",
+          "gameCode": "19890506",
+          "gameDateTimeUTC": "1989-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 130
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198905090PHO",
+          "gameCode": "19890509",
+          "gameDateTimeUTC": "1989-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 122
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "198905110GSW",
+          "gameCode": "19890511",
+          "gameDateTimeUTC": "1989-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198905130GSW",
+          "gameCode": "19890513",
+          "gameDateTimeUTC": "1989-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 99
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 135
+          }
+        },
+        {
+          "gameId": "198905160PHO",
+          "gameCode": "19890516",
+          "gameDateTimeUTC": "1989-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 116
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "SEA"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198905070LAL",
+          "gameCode": "19890507",
+          "gameDateTimeUTC": "1989-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198905100LAL",
+          "gameCode": "19890510",
+          "gameDateTimeUTC": "1989-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 130
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198905120SEA",
+          "gameCode": "19890512",
+          "gameDateTimeUTC": "1989-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 86
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198905140SEA",
+          "gameCode": "19890514",
+          "gameDateTimeUTC": "1989-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 95
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NYK",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "198905090NYK",
+          "gameCode": "19890509",
+          "gameDateTimeUTC": "1989-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 109
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "198905110NYK",
+          "gameCode": "19890511",
+          "gameDateTimeUTC": "1989-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 114
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198905130CHI",
+          "gameCode": "19890513",
+          "gameDateTimeUTC": "1989-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 111
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "198905140CHI",
+          "gameCode": "19890514",
+          "gameDateTimeUTC": "1989-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 106
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198905160NYK",
+          "gameCode": "19890516",
+          "gameDateTimeUTC": "1989-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 121
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198905190CHI",
+          "gameCode": "19890519",
+          "gameDateTimeUTC": "1989-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 113
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "MIL"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198905100DET",
+          "gameCode": "19890510",
+          "gameDateTimeUTC": "1989-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 85
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "198905120DET",
+          "gameCode": "19890512",
+          "gameDateTimeUTC": "1989-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198905140MIL",
+          "gameCode": "19890514",
+          "gameDateTimeUTC": "1989-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 90
+          },
+          "away": {
+            "tri": "DET",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198905150MIL",
+          "gameCode": "19890515",
+          "gameDateTimeUTC": "1989-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 94
+          },
+          "away": {
+            "tri": "DET",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "PHX"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198905200LAL",
+          "gameCode": "19890520",
+          "gameDateTimeUTC": "1989-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 127
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "198905230LAL",
+          "gameCode": "19890523",
+          "gameDateTimeUTC": "1989-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198905260PHO",
+          "gameCode": "19890526",
+          "gameDateTimeUTC": "1989-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198905280PHO",
+          "gameCode": "19890528",
+          "gameDateTimeUTC": "1989-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 117
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 122
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "DET",
+        "CHI"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198905210DET",
+          "gameCode": "19890521",
+          "gameDateTimeUTC": "1989-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198905230DET",
+          "gameCode": "19890523",
+          "gameDateTimeUTC": "1989-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 100
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198905270CHI",
+          "gameCode": "19890527",
+          "gameDateTimeUTC": "1989-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "DET",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198905290CHI",
+          "gameCode": "19890529",
+          "gameDateTimeUTC": "1989-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 80
+          },
+          "away": {
+            "tri": "DET",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "198905310DET",
+          "gameCode": "19890531",
+          "gameDateTimeUTC": "1989-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "198906020CHI",
+          "gameCode": "19890602",
+          "gameDateTimeUTC": "1989-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 94
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "DET",
+        "LAL"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198906060DET",
+          "gameCode": "19890606",
+          "gameDateTimeUTC": "1989-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 109
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198906080DET",
+          "gameCode": "19890608",
+          "gameDateTimeUTC": "1989-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198906110LAL",
+          "gameCode": "19890611",
+          "gameDateTimeUTC": "1989-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 110
+          },
+          "away": {
+            "tri": "DET",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198906130LAL",
+          "gameCode": "19890613",
+          "gameDateTimeUTC": "1989-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "DET",
+            "score": 105
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T21:18:25.258Z"
+}

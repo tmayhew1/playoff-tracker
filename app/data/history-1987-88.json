@@ -1,0 +1,1197 @@
+{
+  "season": "1987-88",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "CLE"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "198804280CHI",
+          "gameCode": "19880428",
+          "gameDateTimeUTC": "1988-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198805010CHI",
+          "gameCode": "19880501",
+          "gameDateTimeUTC": "1988-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 106
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198805030CLE",
+          "gameCode": "19880503",
+          "gameDateTimeUTC": "1988-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 110
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198805050CLE",
+          "gameCode": "19880505",
+          "gameDateTimeUTC": "1988-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 97
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198805080CHI",
+          "gameCode": "19880508",
+          "gameDateTimeUTC": "1988-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "HOU"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "198804280DAL",
+          "gameCode": "19880428",
+          "gameDateTimeUTC": "1988-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 120
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198804300DAL",
+          "gameCode": "19880430",
+          "gameDateTimeUTC": "1988-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "198805030HOU",
+          "gameCode": "19880503",
+          "gameDateTimeUTC": "1988-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 92
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198805050HOU",
+          "gameCode": "19880505",
+          "gameDateTimeUTC": "1988-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 97
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "WSB"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198804280DET",
+          "gameCode": "19880428",
+          "gameDateTimeUTC": "1988-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 96
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "198804300DET",
+          "gameCode": "19880430",
+          "gameDateTimeUTC": "1988-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 102
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198805020WSB",
+          "gameCode": "19880502",
+          "gameDateTimeUTC": "1988-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 114
+          },
+          "away": {
+            "tri": "DET",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "198805040WSB",
+          "gameCode": "19880504",
+          "gameDateTimeUTC": "1988-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 106
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198805080DET",
+          "gameCode": "19880508",
+          "gameDateTimeUTC": "1988-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 99
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "198804280POR",
+          "gameCode": "19880428",
+          "gameDateTimeUTC": "1988-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 108
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198804300POR",
+          "gameCode": "19880430",
+          "gameDateTimeUTC": "1988-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 105
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198805040UTA",
+          "gameCode": "19880504",
+          "gameDateTimeUTC": "1988-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 113
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198805060UTA",
+          "gameCode": "19880506",
+          "gameDateTimeUTC": "1988-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 111
+          },
+          "away": {
+            "tri": "POR",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "MIL"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "198804290ATL",
+          "gameCode": "19880429",
+          "gameDateTimeUTC": "1988-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 110
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198805010ATL",
+          "gameCode": "19880501",
+          "gameDateTimeUTC": "1988-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198805040MIL",
+          "gameCode": "19880504",
+          "gameDateTimeUTC": "1988-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 123
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198805060MIL",
+          "gameCode": "19880506",
+          "gameDateTimeUTC": "1988-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 105
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198805080ATL",
+          "gameCode": "19880508",
+          "gameDateTimeUTC": "1988-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "NYK"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198804290BOS",
+          "gameCode": "19880429",
+          "gameDateTimeUTC": "1988-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198805010BOS",
+          "gameCode": "19880501",
+          "gameDateTimeUTC": "1988-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 128
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198805040NYK",
+          "gameCode": "19880504",
+          "gameDateTimeUTC": "1988-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 109
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "198805060NYK",
+          "gameCode": "19880506",
+          "gameDateTimeUTC": "1988-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "SEA"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "198804290DEN",
+          "gameCode": "19880429",
+          "gameDateTimeUTC": "1988-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 126
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "198805010DEN",
+          "gameCode": "19880501",
+          "gameDateTimeUTC": "1988-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 91
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198805030SEA",
+          "gameCode": "19880503",
+          "gameDateTimeUTC": "1988-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 114
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "198805050SEA",
+          "gameCode": "19880505",
+          "gameDateTimeUTC": "1988-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 127
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "198805070DEN",
+          "gameCode": "19880507",
+          "gameDateTimeUTC": "1988-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 115
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "SAS"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198804290LAL",
+          "gameCode": "19880429",
+          "gameDateTimeUTC": "1988-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198805010LAL",
+          "gameCode": "19880501",
+          "gameDateTimeUTC": "1988-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 130
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "198805030SAS",
+          "gameCode": "19880503",
+          "gameDateTimeUTC": "1988-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "UTA"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198805080LAL",
+          "gameCode": "19880508",
+          "gameDateTimeUTC": "1988-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 110
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198805100LAL",
+          "gameCode": "19880510",
+          "gameDateTimeUTC": "1988-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198805130UTA",
+          "gameCode": "19880513",
+          "gameDateTimeUTC": "1988-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "198805150UTA",
+          "gameCode": "19880515",
+          "gameDateTimeUTC": "1988-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198805170LAL",
+          "gameCode": "19880517",
+          "gameDateTimeUTC": "1988-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198805190UTA",
+          "gameCode": "19880519",
+          "gameDateTimeUTC": "1988-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "198805210LAL",
+          "gameCode": "19880521",
+          "gameDateTimeUTC": "1988-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 109
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DEN",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "198805100DEN",
+          "gameCode": "19880510",
+          "gameDateTimeUTC": "1988-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 126
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198805120DEN",
+          "gameCode": "19880512",
+          "gameDateTimeUTC": "1988-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 108
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "198805140DAL",
+          "gameCode": "19880514",
+          "gameDateTimeUTC": "1988-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198805150DAL",
+          "gameCode": "19880515",
+          "gameDateTimeUTC": "1988-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 124
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198805170DEN",
+          "gameCode": "19880517",
+          "gameDateTimeUTC": "1988-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 106
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "198805190DAL",
+          "gameCode": "19880519",
+          "gameDateTimeUTC": "1988-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "CHI"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198805100DET",
+          "gameCode": "19880510",
+          "gameDateTimeUTC": "1988-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 93
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "198805120DET",
+          "gameCode": "19880512",
+          "gameDateTimeUTC": "1988-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 95
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198805140CHI",
+          "gameCode": "19880514",
+          "gameDateTimeUTC": "1988-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 79
+          },
+          "away": {
+            "tri": "DET",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198805150CHI",
+          "gameCode": "19880515",
+          "gameDateTimeUTC": "1988-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 77
+          },
+          "away": {
+            "tri": "DET",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198805180DET",
+          "gameCode": "19880518",
+          "gameDateTimeUTC": "1988-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 102
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "ATL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198805110BOS",
+          "gameCode": "19880511",
+          "gameDateTimeUTC": "1988-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 110
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198805130BOS",
+          "gameCode": "19880513",
+          "gameDateTimeUTC": "1988-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198805150ATL",
+          "gameCode": "19880515",
+          "gameDateTimeUTC": "1988-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 110
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "198805160ATL",
+          "gameCode": "19880516",
+          "gameDateTimeUTC": "1988-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 118
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198805180BOS",
+          "gameCode": "19880518",
+          "gameDateTimeUTC": "1988-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 104
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "198805200ATL",
+          "gameCode": "19880520",
+          "gameDateTimeUTC": "1988-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 100
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198805220BOS",
+          "gameCode": "19880522",
+          "gameDateTimeUTC": "1988-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 118
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "DAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198805230LAL",
+          "gameCode": "19880523",
+          "gameDateTimeUTC": "1988-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "198805250LAL",
+          "gameCode": "19880525",
+          "gameDateTimeUTC": "1988-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 123
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "198805270DAL",
+          "gameCode": "19880527",
+          "gameDateTimeUTC": "1988-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198805290DAL",
+          "gameCode": "19880529",
+          "gameDateTimeUTC": "1988-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 118
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198805310LAL",
+          "gameCode": "19880531",
+          "gameDateTimeUTC": "1988-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198806020DAL",
+          "gameCode": "19880602",
+          "gameDateTimeUTC": "1988-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "198806040LAL",
+          "gameCode": "19880604",
+          "gameDateTimeUTC": "1988-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "DET"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "198805250BOS",
+          "gameCode": "19880525",
+          "gameDateTimeUTC": "1988-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "DET",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198805260BOS",
+          "gameCode": "19880526",
+          "gameDateTimeUTC": "1988-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 119
+          },
+          "away": {
+            "tri": "DET",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198805280DET",
+          "gameCode": "19880528",
+          "gameDateTimeUTC": "1988-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198805300DET",
+          "gameCode": "19880530",
+          "gameDateTimeUTC": "1988-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 78
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "198806010BOS",
+          "gameCode": "19880601",
+          "gameDateTimeUTC": "1988-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "DET",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198806030DET",
+          "gameCode": "19880603",
+          "gameDateTimeUTC": "1988-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 95
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "LAL",
+        "DET"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198806070LAL",
+          "gameCode": "19880607",
+          "gameDateTimeUTC": "1988-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 93
+          },
+          "away": {
+            "tri": "DET",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "198806090LAL",
+          "gameCode": "19880609",
+          "gameDateTimeUTC": "1988-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "DET",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "198806120DET",
+          "gameCode": "19880612",
+          "gameDateTimeUTC": "1988-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 86
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198806140DET",
+          "gameCode": "19880614",
+          "gameDateTimeUTC": "1988-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 111
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "198806160DET",
+          "gameCode": "19880616",
+          "gameDateTimeUTC": "1988-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 104
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198806190LAL",
+          "gameCode": "19880619",
+          "gameDateTimeUTC": "1988-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "DET",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198806210LAL",
+          "gameCode": "19880621",
+          "gameDateTimeUTC": "1988-06-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "DET",
+            "score": 105
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T21:14:17.045Z"
+}

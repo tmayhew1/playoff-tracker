@@ -1,0 +1,1093 @@
+{
+  "season": "1989-90",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199004260BOS",
+          "gameCode": "19900426",
+          "gameDateTimeUTC": "1990-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 116
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199004280BOS",
+          "gameCode": "19900428",
+          "gameDateTimeUTC": "1990-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 157
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "199005020NYK",
+          "gameCode": "19900502",
+          "gameDateTimeUTC": "1990-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199005040NYK",
+          "gameCode": "19900504",
+          "gameDateTimeUTC": "1990-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 135
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "199005060BOS",
+          "gameCode": "19900506",
+          "gameDateTimeUTC": "1990-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 121
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "IND"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "199004260DET",
+          "gameCode": "19900426",
+          "gameDateTimeUTC": "1990-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 104
+          },
+          "away": {
+            "tri": "IND",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199004280DET",
+          "gameCode": "19900428",
+          "gameDateTimeUTC": "1990-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 100
+          },
+          "away": {
+            "tri": "IND",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199005010IND",
+          "gameCode": "19900501",
+          "gameDateTimeUTC": "1990-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 96
+          },
+          "away": {
+            "tri": "DET",
+            "score": 108
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "CLE"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "199004260PHI",
+          "gameCode": "19900426",
+          "gameDateTimeUTC": "1990-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 111
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199004290PHI",
+          "gameCode": "19900429",
+          "gameDateTimeUTC": "1990-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199005010CLE",
+          "gameCode": "19900501",
+          "gameDateTimeUTC": "1990-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 122
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199005030CLE",
+          "gameCode": "19900503",
+          "gameDateTimeUTC": "1990-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199005050PHI",
+          "gameCode": "19900505",
+          "gameDateTimeUTC": "1990-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 113
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "DAL"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199004260POR",
+          "gameCode": "19900426",
+          "gameDateTimeUTC": "1990-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 109
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199004280POR",
+          "gameCode": "19900428",
+          "gameDateTimeUTC": "1990-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 114
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199005010DAL",
+          "gameCode": "19900501",
+          "gameDateTimeUTC": "1990-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 92
+          },
+          "away": {
+            "tri": "POR",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "DEN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199004260SAS",
+          "gameCode": "19900426",
+          "gameDateTimeUTC": "1990-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 119
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199004280SAS",
+          "gameCode": "19900428",
+          "gameDateTimeUTC": "1990-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 129
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "199005010DEN",
+          "gameCode": "19900501",
+          "gameDateTimeUTC": "1990-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 120
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 131
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "MIL"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199004270CHI",
+          "gameCode": "19900427",
+          "gameDateTimeUTC": "1990-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 111
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199004290CHI",
+          "gameCode": "19900429",
+          "gameDateTimeUTC": "1990-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199005010MIL",
+          "gameCode": "19900501",
+          "gameDateTimeUTC": "1990-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 119
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199005030MIL",
+          "gameCode": "19900503",
+          "gameDateTimeUTC": "1990-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 86
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199004270LAL",
+          "gameCode": "19900427",
+          "gameDateTimeUTC": "1990-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199004290LAL",
+          "gameCode": "19900429",
+          "gameDateTimeUTC": "1990-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199005010HOU",
+          "gameCode": "19900501",
+          "gameDateTimeUTC": "1990-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 114
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "199005030HOU",
+          "gameCode": "19900503",
+          "gameDateTimeUTC": "1990-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "PHX"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199004270UTA",
+          "gameCode": "19900427",
+          "gameDateTimeUTC": "1990-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199004290UTA",
+          "gameCode": "19900429",
+          "gameDateTimeUTC": "1990-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 87
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199005020PHO",
+          "gameCode": "19900502",
+          "gameDateTimeUTC": "1990-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 120
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199005040PHO",
+          "gameCode": "19900504",
+          "gameDateTimeUTC": "1990-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 94
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199005060UTA",
+          "gameCode": "19900506",
+          "gameDateTimeUTC": "1990-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "POR",
+        "SAS"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199005050POR",
+          "gameCode": "19900505",
+          "gameDateTimeUTC": "1990-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199005080POR",
+          "gameCode": "19900508",
+          "gameDateTimeUTC": "1990-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 122
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199005100SAS",
+          "gameCode": "19900510",
+          "gameDateTimeUTC": "1990-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 121
+          },
+          "away": {
+            "tri": "POR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199005120SAS",
+          "gameCode": "19900512",
+          "gameDateTimeUTC": "1990-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 115
+          },
+          "away": {
+            "tri": "POR",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199005150POR",
+          "gameCode": "19900515",
+          "gameDateTimeUTC": "1990-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 138
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 132
+          }
+        },
+        {
+          "gameId": "199005170SAS",
+          "gameCode": "19900517",
+          "gameDateTimeUTC": "1990-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 112
+          },
+          "away": {
+            "tri": "POR",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199005190POR",
+          "gameCode": "19900519",
+          "gameDateTimeUTC": "1990-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 108
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "PHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199005070CHI",
+          "gameCode": "19900507",
+          "gameDateTimeUTC": "1990-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199005090CHI",
+          "gameCode": "19900509",
+          "gameDateTimeUTC": "1990-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199005110PHI",
+          "gameCode": "19900511",
+          "gameDateTimeUTC": "1990-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 118
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199005130PHI",
+          "gameCode": "19900513",
+          "gameDateTimeUTC": "1990-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 101
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199005160CHI",
+          "gameCode": "19900516",
+          "gameDateTimeUTC": "1990-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 117
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "NYK"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "199005080DET",
+          "gameCode": "19900508",
+          "gameDateTimeUTC": "1990-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 112
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199005100DET",
+          "gameCode": "19900510",
+          "gameDateTimeUTC": "1990-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 104
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199005120NYK",
+          "gameCode": "19900512",
+          "gameDateTimeUTC": "1990-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 111
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199005130NYK",
+          "gameCode": "19900513",
+          "gameDateTimeUTC": "1990-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "DET",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199005150DET",
+          "gameCode": "19900515",
+          "gameDateTimeUTC": "1990-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 95
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "PHX"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199005080LAL",
+          "gameCode": "19900508",
+          "gameDateTimeUTC": "1990-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199005100LAL",
+          "gameCode": "19900510",
+          "gameDateTimeUTC": "1990-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 124
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199005120PHO",
+          "gameCode": "19900512",
+          "gameDateTimeUTC": "1990-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 117
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199005130PHO",
+          "gameCode": "19900513",
+          "gameDateTimeUTC": "1990-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 114
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199005150LAL",
+          "gameCode": "19900515",
+          "gameDateTimeUTC": "1990-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "DET",
+        "CHI"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "199005200DET",
+          "gameCode": "19900520",
+          "gameDateTimeUTC": "1990-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 86
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199005220DET",
+          "gameCode": "19900522",
+          "gameDateTimeUTC": "1990-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 102
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199005260CHI",
+          "gameCode": "19900526",
+          "gameDateTimeUTC": "1990-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "DET",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199005280CHI",
+          "gameCode": "19900528",
+          "gameDateTimeUTC": "1990-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 108
+          },
+          "away": {
+            "tri": "DET",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199005300DET",
+          "gameCode": "19900530",
+          "gameDateTimeUTC": "1990-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 97
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199006010CHI",
+          "gameCode": "19900601",
+          "gameDateTimeUTC": "1990-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 109
+          },
+          "away": {
+            "tri": "DET",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199006030DET",
+          "gameCode": "19900603",
+          "gameDateTimeUTC": "1990-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 93
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 74
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "POR",
+        "PHX"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199005210POR",
+          "gameCode": "19900521",
+          "gameDateTimeUTC": "1990-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199005230POR",
+          "gameCode": "19900523",
+          "gameDateTimeUTC": "1990-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199005250PHO",
+          "gameCode": "19900525",
+          "gameDateTimeUTC": "1990-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 123
+          },
+          "away": {
+            "tri": "POR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199005270PHO",
+          "gameCode": "19900527",
+          "gameDateTimeUTC": "1990-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 119
+          },
+          "away": {
+            "tri": "POR",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199005290POR",
+          "gameCode": "19900529",
+          "gameDateTimeUTC": "1990-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 120
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "199005310PHO",
+          "gameCode": "19900531",
+          "gameDateTimeUTC": "1990-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 109
+          },
+          "away": {
+            "tri": "POR",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "DET",
+        "POR"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "199006050DET",
+          "gameCode": "19900605",
+          "gameDateTimeUTC": "1990-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 105
+          },
+          "away": {
+            "tri": "POR",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199006070DET",
+          "gameCode": "19900607",
+          "gameDateTimeUTC": "1990-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 105
+          },
+          "away": {
+            "tri": "POR",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199006100POR",
+          "gameCode": "19900610",
+          "gameDateTimeUTC": "1990-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 106
+          },
+          "away": {
+            "tri": "DET",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "199006120POR",
+          "gameCode": "19900612",
+          "gameDateTimeUTC": "1990-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 109
+          },
+          "away": {
+            "tri": "DET",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199006140POR",
+          "gameCode": "19900614",
+          "gameDateTimeUTC": "1990-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 90
+          },
+          "away": {
+            "tri": "DET",
+            "score": 92
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T21:22:58.438Z"
+}

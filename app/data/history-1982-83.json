@@ -1,0 +1,676 @@
+{
+  "season": "1982-83",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "ATL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "198304190BOS",
+          "gameCode": "19830419",
+          "gameDateTimeUTC": "1983-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198304220ATL",
+          "gameCode": "19830422",
+          "gameDateTimeUTC": "1983-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 95
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198304240BOS",
+          "gameCode": "19830424",
+          "gameDateTimeUTC": "1983-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 98
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 79
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "DEN"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "198304190PHO",
+          "gameCode": "19830419",
+          "gameDateTimeUTC": "1983-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 121
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198304210DEN",
+          "gameCode": "19830421",
+          "gameDateTimeUTC": "1983-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198304240PHO",
+          "gameCode": "19830424",
+          "gameDateTimeUTC": "1983-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 112
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 117
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NJN",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "198304200NJN",
+          "gameCode": "19830420",
+          "gameDateTimeUTC": "1983-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 107
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "198304210NYK",
+          "gameCode": "19830421",
+          "gameDateTimeUTC": "1983-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 105
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "198304200SEA",
+          "gameCode": "19830420",
+          "gameDateTimeUTC": "1983-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 97
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "198304220POR",
+          "gameCode": "19830422",
+          "gameDateTimeUTC": "1983-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 105
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198304240LAL",
+          "gameCode": "19830424",
+          "gameDateTimeUTC": "1983-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 118
+          },
+          "away": {
+            "tri": "POR",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "198304260LAL",
+          "gameCode": "19830426",
+          "gameDateTimeUTC": "1983-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "POR",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "198304290POR",
+          "gameCode": "19830429",
+          "gameDateTimeUTC": "1983-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 109
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "198305010POR",
+          "gameCode": "19830501",
+          "gameDateTimeUTC": "1983-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198305030LAL",
+          "gameCode": "19830503",
+          "gameDateTimeUTC": "1983-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 116
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "NYK"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198304240PHI",
+          "gameCode": "19830424",
+          "gameDateTimeUTC": "1983-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 112
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "198304270PHI",
+          "gameCode": "19830427",
+          "gameDateTimeUTC": "1983-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "198304300NYK",
+          "gameCode": "19830430",
+          "gameDateTimeUTC": "1983-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 105
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198305010NYK",
+          "gameCode": "19830501",
+          "gameDateTimeUTC": "1983-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "DEN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "198304260SAS",
+          "gameCode": "19830426",
+          "gameDateTimeUTC": "1983-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 152
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 133
+          }
+        },
+        {
+          "gameId": "198304270SAS",
+          "gameCode": "19830427",
+          "gameDateTimeUTC": "1983-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 126
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198304290DEN",
+          "gameCode": "19830429",
+          "gameDateTimeUTC": "1983-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 126
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "198305020DEN",
+          "gameCode": "19830502",
+          "gameDateTimeUTC": "1983-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 124
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "198305040SAS",
+          "gameCode": "19830504",
+          "gameDateTimeUTC": "1983-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 145
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "MIL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "198304270BOS",
+          "gameCode": "19830427",
+          "gameDateTimeUTC": "1983-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 95
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "198304290BOS",
+          "gameCode": "19830429",
+          "gameDateTimeUTC": "1983-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 91
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "198305010MIL",
+          "gameCode": "19830501",
+          "gameDateTimeUTC": "1983-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "198305020MIL",
+          "gameCode": "19830502",
+          "gameDateTimeUTC": "1983-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "SAS"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "198305080LAL",
+          "gameCode": "19830508",
+          "gameDateTimeUTC": "1983-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198305100LAL",
+          "gameCode": "19830510",
+          "gameDateTimeUTC": "1983-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "198305130SAS",
+          "gameCode": "19830513",
+          "gameDateTimeUTC": "1983-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "198305150SAS",
+          "gameCode": "19830515",
+          "gameDateTimeUTC": "1983-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 121
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "198305180LAL",
+          "gameCode": "19830518",
+          "gameDateTimeUTC": "1983-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "198305200SAS",
+          "gameCode": "19830520",
+          "gameDateTimeUTC": "1983-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHI",
+        "MIL"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198305080PHI",
+          "gameCode": "19830508",
+          "gameDateTimeUTC": "1983-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 111
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "198305110PHI",
+          "gameCode": "19830511",
+          "gameDateTimeUTC": "1983-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 87
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "198305140MIL",
+          "gameCode": "19830514",
+          "gameDateTimeUTC": "1983-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 96
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "198305150MIL",
+          "gameCode": "19830515",
+          "gameDateTimeUTC": "1983-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "198305180PHI",
+          "gameCode": "19830518",
+          "gameDateTimeUTC": "1983-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 115
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHI",
+        "LAL"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "198305220PHI",
+          "gameCode": "19830522",
+          "gameDateTimeUTC": "1983-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 113
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "198305260PHI",
+          "gameCode": "19830526",
+          "gameDateTimeUTC": "1983-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "198305290LAL",
+          "gameCode": "19830529",
+          "gameDateTimeUTC": "1983-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 94
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "198305310LAL",
+          "gameCode": "19830531",
+          "gameDateTimeUTC": "1983-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 115
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T20:51:16.293Z"
+}
