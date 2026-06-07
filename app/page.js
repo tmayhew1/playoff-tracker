@@ -217,7 +217,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -382,7 +382,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         )}
         <div className="flex-1 min-w-0">
       <div className="mb-3">
-        <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 flex items-center justify-between gap-2">
+        <div className={`mb-2 flex items-center justify-between gap-2 uppercase tracking-widest text-stone-500 ${(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) ? "text-xs font-semibold text-stone-700" : "text-[9px]"}`}>
           <span>{(() => {
             if (!rate) return "Value Added Breakdown";
             if (selectedGame) {
@@ -394,6 +394,17 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             if (canDrillToSeries && selectedSeriesIdx != null) {
               const ctx = gameContext.find((g) => g?.seriesIdx === selectedSeriesIdx);
               const opp = ctx?.opp;
+              // Leaderboard-only: replace "Series vs OPP" with round-specific
+              // labels — "First Round vs. POR", "Western Semis vs. MIN",
+              // "Western Conf Finals vs. OKC", "NBA Finals vs NYK". Falls
+              // back to "Series vs OPP" when round info isn't in scope.
+              const round = ctx?.round;
+              const conf = playerConf === "W" ? "Western" : playerConf === "E" ? "Eastern" : null;
+              const oppTail = opp ? ` vs. ${opp}` : "";
+              if (round === 1) return `First Round${oppTail}`;
+              if (round === 2 && conf) return `${conf} Semis${oppTail}`;
+              if (round === 3 && conf) return `${conf} Conf Finals${oppTail}`;
+              if (round === 4) return `NBA Finals${oppTail}`;
               return `Series${opp ? ` vs ${opp}` : ""}`;
             }
             return breakdownTitle || "Series Breakdown";
@@ -1827,6 +1838,12 @@ function PlayoffLeaderboard({ season, lga }) {
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
 
+  // seriesIdx → round lookup, so each game row can carry its round into
+  // the VABreakdown drill-in title ("Western Semis vs. MIN" etc.).
+  const roundBySeries = Object.fromEntries(
+    (data.series || []).map((s) => [s.idx, s.round])
+  );
+
   return (
     <div className="mb-4 border border-stone-300 bg-white">
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex items-center justify-between gap-2">
@@ -1912,7 +1929,7 @@ function PlayoffLeaderboard({ season, lga }) {
           ast: g.ast, stl: g.stl, blk: g.blk, tov: g.tov,
           fgm: g.fgm, fga: g.fga, tpm: g.tpm, tpa: g.tpa, ftm: g.ftm, fta: g.fta,
         }));
-        const gameContext = p.games.map((g) => ({ opp: g.opp, seriesIdx: g.seriesIdx, seriesGameNumber: g.seriesGameNumber }));
+        const gameContext = p.games.map((g) => ({ opp: g.opp, seriesIdx: g.seriesIdx, seriesGameNumber: g.seriesGameNumber, round: roundBySeries[g.seriesIdx] }));
         const partitions = [];
         for (let j = 1; j < p.games.length; j++) {
           if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
@@ -1981,6 +1998,7 @@ function PlayoffLeaderboard({ season, lga }) {
                 breakdownTitle="Playoff Breakdown"
                 gameTileLabel="Playoff Game"
                 enableSeriesDrill
+                playerConf={TEAMS[p.team]?.conf || null}
                 regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
