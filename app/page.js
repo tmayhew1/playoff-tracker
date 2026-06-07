@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
-import { TEAMS, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
+import { TEAMS, TEAM_CONF, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
 import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason } from "./scoring";
 import TEAM_COLORS from "./data/team-colors.json";
 
@@ -1998,7 +1998,7 @@ function PlayoffLeaderboard({ season, lga }) {
                 breakdownTitle="Playoff Breakdown"
                 gameTileLabel="Playoff Game"
                 enableSeriesDrill
-                playerConf={TEAMS[p.team]?.conf || null}
+                playerConf={TEAM_CONF[p.team] || TEAMS[p.team]?.conf || null}
                 regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
