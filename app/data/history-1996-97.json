@@ -1,0 +1,1093 @@
+{
+  "season": "1996-97",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "MIN"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199704240HOU",
+          "gameCode": "19970424",
+          "gameDateTimeUTC": "1997-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199704260HOU",
+          "gameCode": "19970426",
+          "gameDateTimeUTC": "1997-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199704290MIN",
+          "gameCode": "19970429",
+          "gameDateTimeUTC": "1997-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 120
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 125
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "ORL"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "199704240MIA",
+          "gameCode": "19970424",
+          "gameDateTimeUTC": "1997-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 99
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 64
+          }
+        },
+        {
+          "gameId": "199704270MIA",
+          "gameCode": "19970427",
+          "gameDateTimeUTC": "1997-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 104
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199704290ORL",
+          "gameCode": "19970429",
+          "gameDateTimeUTC": "1997-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 88
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "199705010ORL",
+          "gameCode": "19970501",
+          "gameDateTimeUTC": "1997-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199705040MIA",
+          "gameCode": "19970504",
+          "gameDateTimeUTC": "1997-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 91
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 83
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "CHA"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199704240NYK",
+          "gameCode": "19970424",
+          "gameDateTimeUTC": "1997-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 109
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199704260NYK",
+          "gameCode": "19970426",
+          "gameDateTimeUTC": "1997-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 100
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199704280CHH",
+          "gameCode": "19970428",
+          "gameDateTimeUTC": "1997-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 95
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "LAC"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199704240UTA",
+          "gameCode": "19970424",
+          "gameDateTimeUTC": "1997-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199704260UTA",
+          "gameCode": "19970426",
+          "gameDateTimeUTC": "1997-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199704280LAC",
+          "gameCode": "19970428",
+          "gameDateTimeUTC": "1997-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 92
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "DET"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "199704250ATL",
+          "gameCode": "19970425",
+          "gameDateTimeUTC": "1997-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 89
+          },
+          "away": {
+            "tri": "DET",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "199704270ATL",
+          "gameCode": "19970427",
+          "gameDateTimeUTC": "1997-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 80
+          },
+          "away": {
+            "tri": "DET",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199704290DET",
+          "gameCode": "19970429",
+          "gameDateTimeUTC": "1997-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 99
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199705020DET",
+          "gameCode": "19970502",
+          "gameDateTimeUTC": "1997-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 82
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199705040ATL",
+          "gameCode": "19970504",
+          "gameDateTimeUTC": "1997-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 84
+          },
+          "away": {
+            "tri": "DET",
+            "score": 79
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "WSB"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199704250CHI",
+          "gameCode": "19970425",
+          "gameDateTimeUTC": "1997-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199704270CHI",
+          "gameCode": "19970427",
+          "gameDateTimeUTC": "1997-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 109
+          },
+          "away": {
+            "tri": "WSB",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199704300WSB",
+          "gameCode": "19970430",
+          "gameDateTimeUTC": "1997-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "WSB",
+            "score": 95
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199704250LAL",
+          "gameCode": "19970425",
+          "gameDateTimeUTC": "1997-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 95
+          },
+          "away": {
+            "tri": "POR",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199704270LAL",
+          "gameCode": "19970427",
+          "gameDateTimeUTC": "1997-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 107
+          },
+          "away": {
+            "tri": "POR",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199704300POR",
+          "gameCode": "19970430",
+          "gameDateTimeUTC": "1997-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199705020POR",
+          "gameCode": "19970502",
+          "gameDateTimeUTC": "1997-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 91
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "PHX"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "199704250SEA",
+          "gameCode": "19970425",
+          "gameDateTimeUTC": "1997-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199704270SEA",
+          "gameCode": "19970427",
+          "gameDateTimeUTC": "1997-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 122
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "199704290PHO",
+          "gameCode": "19970429",
+          "gameDateTimeUTC": "1997-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 110
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199705010PHO",
+          "gameCode": "19970501",
+          "gameDateTimeUTC": "1997-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 115
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "199705030SEA",
+          "gameCode": "19970503",
+          "gameDateTimeUTC": "1997-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 116
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "LAL"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199705040UTA",
+          "gameCode": "19970504",
+          "gameDateTimeUTC": "1997-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 93
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199705060UTA",
+          "gameCode": "19970506",
+          "gameDateTimeUTC": "1997-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199705080LAL",
+          "gameCode": "19970508",
+          "gameDateTimeUTC": "1997-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199705100LAL",
+          "gameCode": "19970510",
+          "gameDateTimeUTC": "1997-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 95
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "199705120UTA",
+          "gameCode": "19970512",
+          "gameDateTimeUTC": "1997-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "HOU",
+        "SEA"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199705050HOU",
+          "gameCode": "19970505",
+          "gameDateTimeUTC": "1997-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 112
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199705070HOU",
+          "gameCode": "19970507",
+          "gameDateTimeUTC": "1997-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 101
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199705090SEA",
+          "gameCode": "19970509",
+          "gameDateTimeUTC": "1997-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 93
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199705110SEA",
+          "gameCode": "19970511",
+          "gameDateTimeUTC": "1997-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 106
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "199705130HOU",
+          "gameCode": "19970513",
+          "gameDateTimeUTC": "1997-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 94
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199705150SEA",
+          "gameCode": "19970515",
+          "gameDateTimeUTC": "1997-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 99
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199705170HOU",
+          "gameCode": "19970517",
+          "gameDateTimeUTC": "1997-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 96
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "ATL"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199705060CHI",
+          "gameCode": "19970506",
+          "gameDateTimeUTC": "1997-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 100
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199705080CHI",
+          "gameCode": "19970508",
+          "gameDateTimeUTC": "1997-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199705100ATL",
+          "gameCode": "19970510",
+          "gameDateTimeUTC": "1997-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 80
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199705110ATL",
+          "gameCode": "19970511",
+          "gameDateTimeUTC": "1997-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 80
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199705130CHI",
+          "gameCode": "19970513",
+          "gameDateTimeUTC": "1997-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIA",
+        "NYK"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "199705070MIA",
+          "gameCode": "19970507",
+          "gameDateTimeUTC": "1997-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 79
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199705090MIA",
+          "gameCode": "19970509",
+          "gameDateTimeUTC": "1997-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 88
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199705110NYK",
+          "gameCode": "19970511",
+          "gameDateTimeUTC": "1997-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 77
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "199705120NYK",
+          "gameCode": "19970512",
+          "gameDateTimeUTC": "1997-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "199705140MIA",
+          "gameCode": "19970514",
+          "gameDateTimeUTC": "1997-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "199705160NYK",
+          "gameCode": "19970516",
+          "gameDateTimeUTC": "1997-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199705180MIA",
+          "gameCode": "19970518",
+          "gameDateTimeUTC": "1997-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 101
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "UTA",
+        "HOU"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199705190UTA",
+          "gameCode": "19970519",
+          "gameDateTimeUTC": "1997-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 101
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199705210UTA",
+          "gameCode": "19970521",
+          "gameDateTimeUTC": "1997-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199705230HOU",
+          "gameCode": "19970523",
+          "gameDateTimeUTC": "1997-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 118
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199705250HOU",
+          "gameCode": "19970525",
+          "gameDateTimeUTC": "1997-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 95
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199705270UTA",
+          "gameCode": "19970527",
+          "gameDateTimeUTC": "1997-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 96
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199705290HOU",
+          "gameCode": "19970529",
+          "gameDateTimeUTC": "1997-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 100
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "CHI",
+        "MIA"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199705200CHI",
+          "gameCode": "19970520",
+          "gameDateTimeUTC": "1997-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 84
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199705220CHI",
+          "gameCode": "19970522",
+          "gameDateTimeUTC": "1997-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 75
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 68
+          }
+        },
+        {
+          "gameId": "199705240MIA",
+          "gameCode": "19970524",
+          "gameDateTimeUTC": "1997-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 74
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199705260MIA",
+          "gameCode": "19970526",
+          "gameDateTimeUTC": "1997-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 87
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199705280CHI",
+          "gameCode": "19970528",
+          "gameDateTimeUTC": "1997-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 100
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "CHI",
+        "UTA"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199706010CHI",
+          "gameCode": "19970601",
+          "gameDateTimeUTC": "1997-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 84
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199706040CHI",
+          "gameCode": "19970604",
+          "gameDateTimeUTC": "1997-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 97
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199706060UTA",
+          "gameCode": "19970606",
+          "gameDateTimeUTC": "1997-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 104
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199706080UTA",
+          "gameCode": "19970608",
+          "gameDateTimeUTC": "1997-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 78
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "199706110UTA",
+          "gameCode": "19970611",
+          "gameDateTimeUTC": "1997-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199706130CHI",
+          "gameCode": "19970613",
+          "gameDateTimeUTC": "1997-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 90
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 86
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T19:14:09.745Z"
+}

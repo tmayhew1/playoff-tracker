@@ -1,0 +1,1041 @@
+{
+  "season": "1990-91",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "NYK"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199104250CHI",
+          "gameCode": "19910425",
+          "gameDateTimeUTC": "1991-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 126
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199104280CHI",
+          "gameCode": "19910428",
+          "gameDateTimeUTC": "1991-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 89
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199104300NYK",
+          "gameCode": "19910430",
+          "gameDateTimeUTC": "1991-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199104250LAL",
+          "gameCode": "19910425",
+          "gameDateTimeUTC": "1991-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 94
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199104270LAL",
+          "gameCode": "19910427",
+          "gameDateTimeUTC": "1991-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 109
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199104300HOU",
+          "gameCode": "19910430",
+          "gameDateTimeUTC": "1991-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 90
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "PHI"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "199104250MIL",
+          "gameCode": "19910425",
+          "gameDateTimeUTC": "1991-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 90
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199104270MIL",
+          "gameCode": "19910427",
+          "gameDateTimeUTC": "1991-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 112
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "199104300PHI",
+          "gameCode": "19910430",
+          "gameDateTimeUTC": "1991-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199104250PHO",
+          "gameCode": "19910425",
+          "gameDateTimeUTC": "1991-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 90
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "199104270PHO",
+          "gameCode": "19910427",
+          "gameDateTimeUTC": "1991-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 102
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199104300UTA",
+          "gameCode": "19910430",
+          "gameDateTimeUTC": "1991-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 107
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199105020UTA",
+          "gameCode": "19910502",
+          "gameDateTimeUTC": "1991-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "199104250SAS",
+          "gameCode": "19910425",
+          "gameDateTimeUTC": "1991-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 130
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "199104270SAS",
+          "gameCode": "19910427",
+          "gameDateTimeUTC": "1991-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 98
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199105010GSW",
+          "gameCode": "19910501",
+          "gameDateTimeUTC": "1991-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199105030GSW",
+          "gameCode": "19910503",
+          "gameDateTimeUTC": "1991-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "IND"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "199104260BOS",
+          "gameCode": "19910426",
+          "gameDateTimeUTC": "1991-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 127
+          },
+          "away": {
+            "tri": "IND",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "199104280BOS",
+          "gameCode": "19910428",
+          "gameDateTimeUTC": "1991-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 118
+          },
+          "away": {
+            "tri": "IND",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "199105010IND",
+          "gameCode": "19910501",
+          "gameDateTimeUTC": "1991-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 105
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199105030IND",
+          "gameCode": "19910503",
+          "gameDateTimeUTC": "1991-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 116
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "199105050BOS",
+          "gameCode": "19910505",
+          "gameDateTimeUTC": "1991-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 124
+          },
+          "away": {
+            "tri": "IND",
+            "score": 121
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "ATL"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "199104260DET",
+          "gameCode": "19910426",
+          "gameDateTimeUTC": "1991-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 98
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199104280DET",
+          "gameCode": "19910428",
+          "gameDateTimeUTC": "1991-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199104300ATL",
+          "gameCode": "19910430",
+          "gameDateTimeUTC": "1991-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 91
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199105020ATL",
+          "gameCode": "19910502",
+          "gameDateTimeUTC": "1991-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 123
+          },
+          "away": {
+            "tri": "DET",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199105050DET",
+          "gameCode": "19910505",
+          "gameDateTimeUTC": "1991-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 113
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "SEA"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199104260POR",
+          "gameCode": "19910426",
+          "gameDateTimeUTC": "1991-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 110
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199104280POR",
+          "gameCode": "19910428",
+          "gameDateTimeUTC": "1991-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199104300SEA",
+          "gameCode": "19910430",
+          "gameDateTimeUTC": "1991-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 102
+          },
+          "away": {
+            "tri": "POR",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199105020SEA",
+          "gameCode": "19910502",
+          "gameDateTimeUTC": "1991-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 101
+          },
+          "away": {
+            "tri": "POR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199105040POR",
+          "gameCode": "19910504",
+          "gameDateTimeUTC": "1991-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 119
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "PHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199105040CHI",
+          "gameCode": "19910504",
+          "gameDateTimeUTC": "1991-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 105
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199105060CHI",
+          "gameCode": "19910506",
+          "gameDateTimeUTC": "1991-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 112
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199105100PHI",
+          "gameCode": "19910510",
+          "gameDateTimeUTC": "1991-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199105120PHI",
+          "gameCode": "19910512",
+          "gameDateTimeUTC": "1991-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 85
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199105140CHI",
+          "gameCode": "19910514",
+          "gameDateTimeUTC": "1991-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "GSW"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199105050LAL",
+          "gameCode": "19910505",
+          "gameDateTimeUTC": "1991-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 126
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "199105080LAL",
+          "gameCode": "19910508",
+          "gameDateTimeUTC": "1991-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 124
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "199105100GSW",
+          "gameCode": "19910510",
+          "gameDateTimeUTC": "1991-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "199105120GSW",
+          "gameCode": "19910512",
+          "gameDateTimeUTC": "1991-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "199105140LAL",
+          "gameCode": "19910514",
+          "gameDateTimeUTC": "1991-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 124
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 119
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "DET"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "199105070BOS",
+          "gameCode": "19910507",
+          "gameDateTimeUTC": "1991-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 75
+          },
+          "away": {
+            "tri": "DET",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199105090BOS",
+          "gameCode": "19910509",
+          "gameDateTimeUTC": "1991-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199105110DET",
+          "gameCode": "19910511",
+          "gameDateTimeUTC": "1991-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 83
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "199105130DET",
+          "gameCode": "19910513",
+          "gameDateTimeUTC": "1991-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199105150BOS",
+          "gameCode": "19910515",
+          "gameDateTimeUTC": "1991-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 111
+          },
+          "away": {
+            "tri": "DET",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "199105170DET",
+          "gameCode": "19910517",
+          "gameDateTimeUTC": "1991-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 117
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "POR",
+        "UTA"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199105070POR",
+          "gameCode": "19910507",
+          "gameDateTimeUTC": "1991-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 117
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199105090POR",
+          "gameCode": "19910509",
+          "gameDateTimeUTC": "1991-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 118
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "199105110UTA",
+          "gameCode": "19910511",
+          "gameDateTimeUTC": "1991-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 107
+          },
+          "away": {
+            "tri": "POR",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199105120UTA",
+          "gameCode": "19910512",
+          "gameDateTimeUTC": "1991-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 101
+          },
+          "away": {
+            "tri": "POR",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199105140POR",
+          "gameCode": "19910514",
+          "gameDateTimeUTC": "1991-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 103
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "POR",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199105180POR",
+          "gameCode": "19910518",
+          "gameDateTimeUTC": "1991-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199105210POR",
+          "gameCode": "19910521",
+          "gameDateTimeUTC": "1991-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 109
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199105240LAL",
+          "gameCode": "19910524",
+          "gameDateTimeUTC": "1991-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 106
+          },
+          "away": {
+            "tri": "POR",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199105260LAL",
+          "gameCode": "19910526",
+          "gameDateTimeUTC": "1991-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 116
+          },
+          "away": {
+            "tri": "POR",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199105280POR",
+          "gameCode": "19910528",
+          "gameDateTimeUTC": "1991-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 95
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199105300LAL",
+          "gameCode": "19910530",
+          "gameDateTimeUTC": "1991-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 91
+          },
+          "away": {
+            "tri": "POR",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "CHI",
+        "DET"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199105190CHI",
+          "gameCode": "19910519",
+          "gameDateTimeUTC": "1991-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 94
+          },
+          "away": {
+            "tri": "DET",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199105210CHI",
+          "gameCode": "19910521",
+          "gameDateTimeUTC": "1991-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 105
+          },
+          "away": {
+            "tri": "DET",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199105250DET",
+          "gameCode": "19910525",
+          "gameDateTimeUTC": "1991-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 107
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "199105270DET",
+          "gameCode": "19910527",
+          "gameDateTimeUTC": "1991-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "CHI",
+        "LAL"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199106020CHI",
+          "gameCode": "19910602",
+          "gameDateTimeUTC": "1991-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 91
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199106050CHI",
+          "gameCode": "19910605",
+          "gameDateTimeUTC": "1991-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199106070LAL",
+          "gameCode": "19910607",
+          "gameDateTimeUTC": "1991-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199106090LAL",
+          "gameCode": "19910609",
+          "gameDateTimeUTC": "1991-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 82
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199106120LAL",
+          "gameCode": "19910612",
+          "gameDateTimeUTC": "1991-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 108
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T18:46:32.918Z"
+}

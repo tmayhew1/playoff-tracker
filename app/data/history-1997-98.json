@@ -1,0 +1,1080 @@
+{
+  "season": "1997-98",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHA",
+        "ATL"
+      ],
+      "winner": "CHA",
+      "games": [
+        {
+          "gameId": "199804230CHH",
+          "gameCode": "19980423",
+          "gameDateTimeUTC": "1998-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 97
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199804250CHH",
+          "gameCode": "19980425",
+          "gameDateTimeUTC": "1998-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 92
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199804280ATL",
+          "gameCode": "19980428",
+          "gameDateTimeUTC": "1998-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 64
+          }
+        },
+        {
+          "gameId": "199805010ATL",
+          "gameCode": "19980501",
+          "gameDateTimeUTC": "1998-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 82
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "CLE"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199804230IND",
+          "gameCode": "19980423",
+          "gameDateTimeUTC": "1998-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 106
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199804250IND",
+          "gameCode": "19980425",
+          "gameDateTimeUTC": "1998-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 92
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199804270CLE",
+          "gameCode": "19980427",
+          "gameDateTimeUTC": "1998-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 86
+          },
+          "away": {
+            "tri": "IND",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199804300CLE",
+          "gameCode": "19980430",
+          "gameDateTimeUTC": "1998-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 74
+          },
+          "away": {
+            "tri": "IND",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199804230PHO",
+          "gameCode": "19980423",
+          "gameDateTimeUTC": "1998-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199804250PHO",
+          "gameCode": "19980425",
+          "gameDateTimeUTC": "1998-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 108
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199804270SAS",
+          "gameCode": "19980427",
+          "gameDateTimeUTC": "1998-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199804290SAS",
+          "gameCode": "19980429",
+          "gameDateTimeUTC": "1998-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 99
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "HOU"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199804230UTA",
+          "gameCode": "19980423",
+          "gameDateTimeUTC": "1998-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 90
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199804250UTA",
+          "gameCode": "19980425",
+          "gameDateTimeUTC": "1998-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 105
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199804290HOU",
+          "gameCode": "19980429",
+          "gameDateTimeUTC": "1998-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 89
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199805010HOU",
+          "gameCode": "19980501",
+          "gameDateTimeUTC": "1998-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 71
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199805030UTA",
+          "gameCode": "19980503",
+          "gameDateTimeUTC": "1998-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 84
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 70
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "NJN"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199804240CHI",
+          "gameCode": "19980424",
+          "gameDateTimeUTC": "1998-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199804260CHI",
+          "gameCode": "19980426",
+          "gameDateTimeUTC": "1998-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199804290NJN",
+          "gameCode": "19980429",
+          "gameDateTimeUTC": "1998-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 101
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199804240LAL",
+          "gameCode": "19980424",
+          "gameDateTimeUTC": "1998-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "POR",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199804260LAL",
+          "gameCode": "19980426",
+          "gameDateTimeUTC": "1998-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "POR",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199804280POR",
+          "gameCode": "19980428",
+          "gameDateTimeUTC": "1998-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 99
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199804300POR",
+          "gameCode": "19980430",
+          "gameDateTimeUTC": "1998-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 99
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199804240MIA",
+          "gameCode": "19980424",
+          "gameDateTimeUTC": "1998-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 94
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199804260MIA",
+          "gameCode": "19980426",
+          "gameDateTimeUTC": "1998-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 86
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199804280NYK",
+          "gameCode": "19980428",
+          "gameDateTimeUTC": "1998-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 85
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199804300NYK",
+          "gameCode": "19980430",
+          "gameDateTimeUTC": "1998-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199805030MIA",
+          "gameCode": "19980503",
+          "gameDateTimeUTC": "1998-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 81
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "MIN"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "199804240SEA",
+          "gameCode": "19980424",
+          "gameDateTimeUTC": "1998-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 108
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199804260SEA",
+          "gameCode": "19980426",
+          "gameDateTimeUTC": "1998-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 93
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199804280MIN",
+          "gameCode": "19980428",
+          "gameDateTimeUTC": "1998-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 98
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199804300MIN",
+          "gameCode": "19980430",
+          "gameDateTimeUTC": "1998-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 88
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199805020SEA",
+          "gameCode": "19980502",
+          "gameDateTimeUTC": "1998-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "CHA"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199805030CHI",
+          "gameCode": "19980503",
+          "gameDateTimeUTC": "1998-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 83
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 70
+          }
+        },
+        {
+          "gameId": "199805060CHI",
+          "gameCode": "19980506",
+          "gameDateTimeUTC": "1998-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 76
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "199805080CHH",
+          "gameCode": "19980508",
+          "gameDateTimeUTC": "1998-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 89
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199805100CHH",
+          "gameCode": "19980510",
+          "gameDateTimeUTC": "1998-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 80
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199805130CHI",
+          "gameCode": "19980513",
+          "gameDateTimeUTC": "1998-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 93
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SEA",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199805040SEA",
+          "gameCode": "19980504",
+          "gameDateTimeUTC": "1998-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199805060SEA",
+          "gameCode": "19980506",
+          "gameDateTimeUTC": "1998-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 68
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199805080LAL",
+          "gameCode": "19980508",
+          "gameDateTimeUTC": "1998-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199805100LAL",
+          "gameCode": "19980510",
+          "gameDateTimeUTC": "1998-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199805120SEA",
+          "gameCode": "19980512",
+          "gameDateTimeUTC": "1998-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 95
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "IND",
+        "NYK"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199805050IND",
+          "gameCode": "19980505",
+          "gameDateTimeUTC": "1998-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 93
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199805070IND",
+          "gameCode": "19980507",
+          "gameDateTimeUTC": "1998-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 85
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199805090NYK",
+          "gameCode": "19980509",
+          "gameDateTimeUTC": "1998-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 83
+          },
+          "away": {
+            "tri": "IND",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "199805100NYK",
+          "gameCode": "19980510",
+          "gameDateTimeUTC": "1998-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 107
+          },
+          "away": {
+            "tri": "IND",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "199805130IND",
+          "gameCode": "19980513",
+          "gameDateTimeUTC": "1998-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 99
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "SAS"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199805050UTA",
+          "gameCode": "19980505",
+          "gameDateTimeUTC": "1998-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 83
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199805070UTA",
+          "gameCode": "19980507",
+          "gameDateTimeUTC": "1998-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199805090SAS",
+          "gameCode": "19980509",
+          "gameDateTimeUTC": "1998-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 86
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 64
+          }
+        },
+        {
+          "gameId": "199805100SAS",
+          "gameCode": "19980510",
+          "gameDateTimeUTC": "1998-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 73
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199805120UTA",
+          "gameCode": "19980512",
+          "gameDateTimeUTC": "1998-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 87
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 77
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "UTA",
+        "LAL"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199805160UTA",
+          "gameCode": "19980516",
+          "gameDateTimeUTC": "1998-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199805180UTA",
+          "gameCode": "19980518",
+          "gameDateTimeUTC": "1998-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 99
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199805220LAL",
+          "gameCode": "19980522",
+          "gameDateTimeUTC": "1998-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 98
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "199805240LAL",
+          "gameCode": "19980524",
+          "gameDateTimeUTC": "1998-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 92
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "CHI",
+        "IND"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199805170CHI",
+          "gameCode": "19980517",
+          "gameDateTimeUTC": "1998-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 85
+          },
+          "away": {
+            "tri": "IND",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199805190CHI",
+          "gameCode": "19980519",
+          "gameDateTimeUTC": "1998-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "IND",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199805230IND",
+          "gameCode": "19980523",
+          "gameDateTimeUTC": "1998-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 107
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199805250IND",
+          "gameCode": "19980525",
+          "gameDateTimeUTC": "1998-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199805270CHI",
+          "gameCode": "19980527",
+          "gameDateTimeUTC": "1998-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 106
+          },
+          "away": {
+            "tri": "IND",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199805290IND",
+          "gameCode": "19980529",
+          "gameDateTimeUTC": "1998-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199805310CHI",
+          "gameCode": "19980531",
+          "gameDateTimeUTC": "1998-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 88
+          },
+          "away": {
+            "tri": "IND",
+            "score": 83
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "UTA",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199806030UTA",
+          "gameCode": "19980603",
+          "gameDateTimeUTC": "1998-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199806050UTA",
+          "gameCode": "19980605",
+          "gameDateTimeUTC": "1998-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199806070CHI",
+          "gameCode": "19980607",
+          "gameDateTimeUTC": "1998-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 54
+          }
+        },
+        {
+          "gameId": "199806100CHI",
+          "gameCode": "19980610",
+          "gameDateTimeUTC": "1998-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199806120CHI",
+          "gameCode": "19980612",
+          "gameDateTimeUTC": "1998-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 81
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199806140UTA",
+          "gameCode": "19980614",
+          "gameDateTimeUTC": "1998-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 86
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 87
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T19:18:40.567Z"
+}

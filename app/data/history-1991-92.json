@@ -1,0 +1,1106 @@
+{
+  "season": "1991-92",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "IND"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "199204230BOS",
+          "gameCode": "19920423",
+          "gameDateTimeUTC": "1992-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 124
+          },
+          "away": {
+            "tri": "IND",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "199204250BOS",
+          "gameCode": "19920425",
+          "gameDateTimeUTC": "1992-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 119
+          },
+          "away": {
+            "tri": "IND",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199204270IND",
+          "gameCode": "19920427",
+          "gameDateTimeUTC": "1992-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "NJN"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "199204230CLE",
+          "gameCode": "19920423",
+          "gameDateTimeUTC": "1992-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 120
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "199204250CLE",
+          "gameCode": "19920425",
+          "gameDateTimeUTC": "1992-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 118
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199204280NJN",
+          "gameCode": "19920428",
+          "gameDateTimeUTC": "1992-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 109
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199204300NJN",
+          "gameCode": "19920430",
+          "gameDateTimeUTC": "1992-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 89
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "SEA"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "199204230GSW",
+          "gameCode": "19920423",
+          "gameDateTimeUTC": "1992-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 109
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "199204250GSW",
+          "gameCode": "19920425",
+          "gameDateTimeUTC": "1992-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 115
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199204280SEA",
+          "gameCode": "19920428",
+          "gameDateTimeUTC": "1992-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 129
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "199204300SEA",
+          "gameCode": "19920430",
+          "gameDateTimeUTC": "1992-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 119
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "LAL"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199204230POR",
+          "gameCode": "19920423",
+          "gameDateTimeUTC": "1992-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199204250POR",
+          "gameCode": "19920425",
+          "gameDateTimeUTC": "1992-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 101
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199204290LAL",
+          "gameCode": "19920429",
+          "gameDateTimeUTC": "1992-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 121
+          },
+          "away": {
+            "tri": "POR",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "199205030LAL",
+          "gameCode": "19920503",
+          "gameDateTimeUTC": "1992-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 76
+          },
+          "away": {
+            "tri": "POR",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "MIA"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199204240CHI",
+          "gameCode": "19920424",
+          "gameDateTimeUTC": "1992-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 113
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199204260CHI",
+          "gameCode": "19920426",
+          "gameDateTimeUTC": "1992-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 120
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199204290MIA",
+          "gameCode": "19920429",
+          "gameDateTimeUTC": "1992-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 114
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 119
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "DET"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199204240NYK",
+          "gameCode": "19920424",
+          "gameDateTimeUTC": "1992-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 109
+          },
+          "away": {
+            "tri": "DET",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "199204260NYK",
+          "gameCode": "19920426",
+          "gameDateTimeUTC": "1992-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 88
+          },
+          "away": {
+            "tri": "DET",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199204280DET",
+          "gameCode": "19920428",
+          "gameDateTimeUTC": "1992-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 87
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199205010DET",
+          "gameCode": "19920501",
+          "gameDateTimeUTC": "1992-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 86
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199205030NYK",
+          "gameCode": "19920503",
+          "gameDateTimeUTC": "1992-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "DET",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "SAS"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199204240PHO",
+          "gameCode": "19920424",
+          "gameDateTimeUTC": "1992-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 117
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199204260PHO",
+          "gameCode": "19920426",
+          "gameDateTimeUTC": "1992-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 119
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199204290SAS",
+          "gameCode": "19920429",
+          "gameDateTimeUTC": "1992-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "LAC"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199204240UTA",
+          "gameCode": "19920424",
+          "gameDateTimeUTC": "1992-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199204260UTA",
+          "gameCode": "19920426",
+          "gameDateTimeUTC": "1992-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199204280LAC",
+          "gameCode": "19920428",
+          "gameDateTimeUTC": "1992-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 98
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199205030LAC",
+          "gameCode": "19920503",
+          "gameDateTimeUTC": "1992-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 115
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199205040UTA",
+          "gameCode": "19920504",
+          "gameDateTimeUTC": "1992-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "BOS"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "199205020CLE",
+          "gameCode": "19920502",
+          "gameDateTimeUTC": "1992-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 101
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "199205040CLE",
+          "gameCode": "19920504",
+          "gameDateTimeUTC": "1992-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199205080BOS",
+          "gameCode": "19920508",
+          "gameDateTimeUTC": "1992-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 110
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199205100BOS",
+          "gameCode": "19920510",
+          "gameDateTimeUTC": "1992-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "199205130CLE",
+          "gameCode": "19920513",
+          "gameDateTimeUTC": "1992-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 114
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199205150BOS",
+          "gameCode": "19920515",
+          "gameDateTimeUTC": "1992-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 122
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199205170CLE",
+          "gameCode": "19920517",
+          "gameDateTimeUTC": "1992-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 122
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "NYK"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199205050CHI",
+          "gameCode": "19920505",
+          "gameDateTimeUTC": "1992-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 89
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199205070CHI",
+          "gameCode": "19920507",
+          "gameDateTimeUTC": "1992-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "199205090NYK",
+          "gameCode": "19920509",
+          "gameDateTimeUTC": "1992-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 86
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199205100NYK",
+          "gameCode": "19920510",
+          "gameDateTimeUTC": "1992-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 93
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199205120CHI",
+          "gameCode": "19920512",
+          "gameDateTimeUTC": "1992-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199205140NYK",
+          "gameCode": "19920514",
+          "gameDateTimeUTC": "1992-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 100
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199205170CHI",
+          "gameCode": "19920517",
+          "gameDateTimeUTC": "1992-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 110
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "POR",
+        "PHX"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199205050POR",
+          "gameCode": "19920505",
+          "gameDateTimeUTC": "1992-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199205070POR",
+          "gameCode": "19920507",
+          "gameDateTimeUTC": "1992-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 126
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "199205090PHO",
+          "gameCode": "19920509",
+          "gameDateTimeUTC": "1992-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 124
+          },
+          "away": {
+            "tri": "POR",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "199205110PHO",
+          "gameCode": "19920511",
+          "gameDateTimeUTC": "1992-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 151
+          },
+          "away": {
+            "tri": "POR",
+            "score": 153
+          }
+        },
+        {
+          "gameId": "199205140POR",
+          "gameCode": "19920514",
+          "gameDateTimeUTC": "1992-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "SEA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199205060UTA",
+          "gameCode": "19920506",
+          "gameDateTimeUTC": "1992-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 108
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199205080UTA",
+          "gameCode": "19920508",
+          "gameDateTimeUTC": "1992-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 103
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199205100SEA",
+          "gameCode": "19920510",
+          "gameDateTimeUTC": "1992-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 104
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199205120SEA",
+          "gameCode": "19920512",
+          "gameDateTimeUTC": "1992-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 83
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199205140UTA",
+          "gameCode": "19920514",
+          "gameDateTimeUTC": "1992-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 111
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "POR",
+        "UTA"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199205160POR",
+          "gameCode": "19920516",
+          "gameDateTimeUTC": "1992-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 113
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199205190POR",
+          "gameCode": "19920519",
+          "gameDateTimeUTC": "1992-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 119
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199205220UTA",
+          "gameCode": "19920522",
+          "gameDateTimeUTC": "1992-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 97
+          },
+          "away": {
+            "tri": "POR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199205240UTA",
+          "gameCode": "19920524",
+          "gameDateTimeUTC": "1992-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 121
+          },
+          "away": {
+            "tri": "POR",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "199205260POR",
+          "gameCode": "19920526",
+          "gameDateTimeUTC": "1992-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 127
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "199205280UTA",
+          "gameCode": "19920528",
+          "gameDateTimeUTC": "1992-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 97
+          },
+          "away": {
+            "tri": "POR",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "CHI",
+        "CLE"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199205190CHI",
+          "gameCode": "19920519",
+          "gameDateTimeUTC": "1992-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199205210CHI",
+          "gameCode": "19920521",
+          "gameDateTimeUTC": "1992-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 81
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199205230CLE",
+          "gameCode": "19920523",
+          "gameDateTimeUTC": "1992-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199205250CLE",
+          "gameCode": "19920525",
+          "gameDateTimeUTC": "1992-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 99
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199205270CHI",
+          "gameCode": "19920527",
+          "gameDateTimeUTC": "1992-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 112
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199205290CLE",
+          "gameCode": "19920529",
+          "gameDateTimeUTC": "1992-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "CHI",
+        "POR"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199206030CHI",
+          "gameCode": "19920603",
+          "gameDateTimeUTC": "1992-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 122
+          },
+          "away": {
+            "tri": "POR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199206050CHI",
+          "gameCode": "19920605",
+          "gameDateTimeUTC": "1992-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "POR",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "199206070POR",
+          "gameCode": "19920607",
+          "gameDateTimeUTC": "1992-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 84
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199206100POR",
+          "gameCode": "19920610",
+          "gameDateTimeUTC": "1992-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 93
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199206120POR",
+          "gameCode": "19920612",
+          "gameDateTimeUTC": "1992-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "199206140CHI",
+          "gameCode": "19920614",
+          "gameDateTimeUTC": "1992-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 97
+          },
+          "away": {
+            "tri": "POR",
+            "score": 93
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T18:51:08.628Z"
+}

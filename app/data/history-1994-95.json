@@ -1,0 +1,1106 @@
+{
+  "season": "1994-95",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "ATL"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199504270IND",
+          "gameCode": "19950427",
+          "gameDateTimeUTC": "1995-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 90
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199504290IND",
+          "gameCode": "19950429",
+          "gameDateTimeUTC": "1995-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 105
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199505020ATL",
+          "gameCode": "19950502",
+          "gameDateTimeUTC": "1995-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 89
+          },
+          "away": {
+            "tri": "IND",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "CLE"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199504270NYK",
+          "gameCode": "19950427",
+          "gameDateTimeUTC": "1995-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 103
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199504290NYK",
+          "gameCode": "19950429",
+          "gameDateTimeUTC": "1995-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 84
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199505010CLE",
+          "gameCode": "19950501",
+          "gameDateTimeUTC": "1995-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 81
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199505040CLE",
+          "gameCode": "19950504",
+          "gameDateTimeUTC": "1995-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 80
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199504270SEA",
+          "gameCode": "19950427",
+          "gameDateTimeUTC": "1995-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "199504290SEA",
+          "gameCode": "19950429",
+          "gameDateTimeUTC": "1995-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 82
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199505010LAL",
+          "gameCode": "19950501",
+          "gameDateTimeUTC": "1995-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199505040LAL",
+          "gameCode": "19950504",
+          "gameDateTimeUTC": "1995-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 114
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199504270UTA",
+          "gameCode": "19950427",
+          "gameDateTimeUTC": "1995-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 102
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199504290UTA",
+          "gameCode": "19950429",
+          "gameDateTimeUTC": "1995-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 126
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 140
+          }
+        },
+        {
+          "gameId": "199505030HOU",
+          "gameCode": "19950503",
+          "gameDateTimeUTC": "1995-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 82
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199505050HOU",
+          "gameCode": "19950505",
+          "gameDateTimeUTC": "1995-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 123
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199505070UTA",
+          "gameCode": "19950507",
+          "gameDateTimeUTC": "1995-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 91
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHA",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199504280CHH",
+          "gameCode": "19950428",
+          "gameDateTimeUTC": "1995-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 100
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "199504300CHH",
+          "gameCode": "19950430",
+          "gameDateTimeUTC": "1995-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199505020CHI",
+          "gameCode": "19950502",
+          "gameDateTimeUTC": "1995-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199505040CHI",
+          "gameCode": "19950504",
+          "gameDateTimeUTC": "1995-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 85
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "BOS"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "199504280ORL",
+          "gameCode": "19950428",
+          "gameDateTimeUTC": "1995-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 124
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199504300ORL",
+          "gameCode": "19950430",
+          "gameDateTimeUTC": "1995-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 92
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199505030BOS",
+          "gameCode": "19950503",
+          "gameDateTimeUTC": "1995-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 77
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199505050BOS",
+          "gameCode": "19950505",
+          "gameDateTimeUTC": "1995-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 92
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "POR"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199504280PHO",
+          "gameCode": "19950428",
+          "gameDateTimeUTC": "1995-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 129
+          },
+          "away": {
+            "tri": "POR",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199504300PHO",
+          "gameCode": "19950430",
+          "gameDateTimeUTC": "1995-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 103
+          },
+          "away": {
+            "tri": "POR",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199505020POR",
+          "gameCode": "19950502",
+          "gameDateTimeUTC": "1995-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 117
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "DEN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199504280SAS",
+          "gameCode": "19950428",
+          "gameDateTimeUTC": "1995-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 104
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199504300SAS",
+          "gameCode": "19950430",
+          "gameDateTimeUTC": "1995-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 122
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199505020DEN",
+          "gameCode": "19950502",
+          "gameDateTimeUTC": "1995-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 95
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "LAL"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199505060SAS",
+          "gameCode": "19950506",
+          "gameDateTimeUTC": "1995-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 110
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199505080SAS",
+          "gameCode": "19950508",
+          "gameDateTimeUTC": "1995-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199505120LAL",
+          "gameCode": "19950512",
+          "gameDateTimeUTC": "1995-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 92
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199505140LAL",
+          "gameCode": "19950514",
+          "gameDateTimeUTC": "1995-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 71
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199505160SAS",
+          "gameCode": "19950516",
+          "gameDateTimeUTC": "1995-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199505180LAL",
+          "gameCode": "19950518",
+          "gameDateTimeUTC": "1995-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 88
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NYK",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199505070NYK",
+          "gameCode": "19950507",
+          "gameDateTimeUTC": "1995-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 105
+          },
+          "away": {
+            "tri": "IND",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199505090NYK",
+          "gameCode": "19950509",
+          "gameDateTimeUTC": "1995-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 96
+          },
+          "away": {
+            "tri": "IND",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199505110IND",
+          "gameCode": "19950511",
+          "gameDateTimeUTC": "1995-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 97
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199505130IND",
+          "gameCode": "19950513",
+          "gameDateTimeUTC": "1995-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 98
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199505170NYK",
+          "gameCode": "19950517",
+          "gameDateTimeUTC": "1995-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 96
+          },
+          "away": {
+            "tri": "IND",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199505190IND",
+          "gameCode": "19950519",
+          "gameDateTimeUTC": "1995-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 82
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199505210NYK",
+          "gameCode": "19950521",
+          "gameDateTimeUTC": "1995-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 95
+          },
+          "away": {
+            "tri": "IND",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "ORL",
+        "CHI"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "199505070ORL",
+          "gameCode": "19950507",
+          "gameDateTimeUTC": "1995-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199505100ORL",
+          "gameCode": "19950510",
+          "gameDateTimeUTC": "1995-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199505120CHI",
+          "gameCode": "19950512",
+          "gameDateTimeUTC": "1995-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 101
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "199505140CHI",
+          "gameCode": "19950514",
+          "gameDateTimeUTC": "1995-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 106
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199505160ORL",
+          "gameCode": "19950516",
+          "gameDateTimeUTC": "1995-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 103
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199505180CHI",
+          "gameCode": "19950518",
+          "gameDateTimeUTC": "1995-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 102
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 108
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199505090PHO",
+          "gameCode": "19950509",
+          "gameDateTimeUTC": "1995-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 130
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "199505110PHO",
+          "gameCode": "19950511",
+          "gameDateTimeUTC": "1995-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 118
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199505130HOU",
+          "gameCode": "19950513",
+          "gameDateTimeUTC": "1995-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199505140HOU",
+          "gameCode": "19950514",
+          "gameDateTimeUTC": "1995-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 110
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "199505160PHO",
+          "gameCode": "19950516",
+          "gameDateTimeUTC": "1995-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 97
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199505180HOU",
+          "gameCode": "19950518",
+          "gameDateTimeUTC": "1995-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 116
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199505200PHO",
+          "gameCode": "19950520",
+          "gameDateTimeUTC": "1995-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 114
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199505220SAS",
+          "gameCode": "19950522",
+          "gameDateTimeUTC": "1995-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 93
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199505240SAS",
+          "gameCode": "19950524",
+          "gameDateTimeUTC": "1995-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 96
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199505260HOU",
+          "gameCode": "19950526",
+          "gameDateTimeUTC": "1995-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 102
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199505280HOU",
+          "gameCode": "19950528",
+          "gameDateTimeUTC": "1995-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 81
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199505300SAS",
+          "gameCode": "19950530",
+          "gameDateTimeUTC": "1995-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 90
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199506010HOU",
+          "gameCode": "19950601",
+          "gameDateTimeUTC": "1995-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 100
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "ORL",
+        "IND"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "199505230ORL",
+          "gameCode": "19950523",
+          "gameDateTimeUTC": "1995-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 105
+          },
+          "away": {
+            "tri": "IND",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199505250ORL",
+          "gameCode": "19950525",
+          "gameDateTimeUTC": "1995-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 119
+          },
+          "away": {
+            "tri": "IND",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "199505270IND",
+          "gameCode": "19950527",
+          "gameDateTimeUTC": "1995-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 105
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199505290IND",
+          "gameCode": "19950529",
+          "gameDateTimeUTC": "1995-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 94
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199505310ORL",
+          "gameCode": "19950531",
+          "gameDateTimeUTC": "1995-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 108
+          },
+          "away": {
+            "tri": "IND",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199506020IND",
+          "gameCode": "19950602",
+          "gameDateTimeUTC": "1995-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 123
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199506040ORL",
+          "gameCode": "19950604",
+          "gameDateTimeUTC": "1995-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 105
+          },
+          "away": {
+            "tri": "IND",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "ORL",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199506070ORL",
+          "gameCode": "19950607",
+          "gameDateTimeUTC": "1995-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 118
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "199506090ORL",
+          "gameCode": "19950609",
+          "gameDateTimeUTC": "1995-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 106
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "199506110HOU",
+          "gameCode": "19950611",
+          "gameDateTimeUTC": "1995-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 106
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199506140HOU",
+          "gameCode": "19950614",
+          "gameDateTimeUTC": "1995-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 113
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 101
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T19:05:13.250Z"
+}

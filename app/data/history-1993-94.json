@@ -1,0 +1,1158 @@
+{
+  "season": "1993-94",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "MIA"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "199404280ATL",
+          "gameCode": "19940428",
+          "gameDateTimeUTC": "1994-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199404300ATL",
+          "gameCode": "19940430",
+          "gameDateTimeUTC": "1994-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405030MIA",
+          "gameCode": "19940503",
+          "gameDateTimeUTC": "1994-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 90
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405050MIA",
+          "gameCode": "19940505",
+          "gameDateTimeUTC": "1994-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 89
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199405080ATL",
+          "gameCode": "19940508",
+          "gameDateTimeUTC": "1994-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 102
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199404280ORL",
+          "gameCode": "19940428",
+          "gameDateTimeUTC": "1994-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 88
+          },
+          "away": {
+            "tri": "IND",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199404300ORL",
+          "gameCode": "19940430",
+          "gameDateTimeUTC": "1994-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 101
+          },
+          "away": {
+            "tri": "IND",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199405020IND",
+          "gameCode": "19940502",
+          "gameDateTimeUTC": "1994-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 99
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 86
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199404280SAS",
+          "gameCode": "19940428",
+          "gameDateTimeUTC": "1994-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199404300SAS",
+          "gameCode": "19940430",
+          "gameDateTimeUTC": "1994-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 84
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199405030UTA",
+          "gameCode": "19940503",
+          "gameDateTimeUTC": "1994-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "199405050UTA",
+          "gameCode": "19940505",
+          "gameDateTimeUTC": "1994-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 95
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "DEN"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "199404280SEA",
+          "gameCode": "19940428",
+          "gameDateTimeUTC": "1994-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 106
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199404300SEA",
+          "gameCode": "19940430",
+          "gameDateTimeUTC": "1994-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 97
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199405020DEN",
+          "gameCode": "19940502",
+          "gameDateTimeUTC": "1994-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 110
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199405050DEN",
+          "gameCode": "19940505",
+          "gameDateTimeUTC": "1994-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 94
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199405070SEA",
+          "gameCode": "19940507",
+          "gameDateTimeUTC": "1994-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 94
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "CLE"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199404290CHI",
+          "gameCode": "19940429",
+          "gameDateTimeUTC": "1994-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199405010CHI",
+          "gameCode": "19940501",
+          "gameDateTimeUTC": "1994-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 105
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199405030CLE",
+          "gameCode": "19940503",
+          "gameDateTimeUTC": "1994-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "POR"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199404290HOU",
+          "gameCode": "19940429",
+          "gameDateTimeUTC": "1994-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 114
+          },
+          "away": {
+            "tri": "POR",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199405010HOU",
+          "gameCode": "19940501",
+          "gameDateTimeUTC": "1994-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 115
+          },
+          "away": {
+            "tri": "POR",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199405030POR",
+          "gameCode": "19940503",
+          "gameDateTimeUTC": "1994-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 118
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "199405060POR",
+          "gameCode": "19940506",
+          "gameDateTimeUTC": "1994-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 89
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "NJN"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199404290NYK",
+          "gameCode": "19940429",
+          "gameDateTimeUTC": "1994-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 91
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199405010NYK",
+          "gameCode": "19940501",
+          "gameDateTimeUTC": "1994-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "199405040NJN",
+          "gameCode": "19940504",
+          "gameDateTimeUTC": "1994-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 93
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199405060NJN",
+          "gameCode": "19940506",
+          "gameDateTimeUTC": "1994-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 92
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "GSW"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199404290PHO",
+          "gameCode": "19940429",
+          "gameDateTimeUTC": "1994-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 111
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199405010PHO",
+          "gameCode": "19940501",
+          "gameDateTimeUTC": "1994-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 117
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199405040GSW",
+          "gameCode": "19940504",
+          "gameDateTimeUTC": "1994-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 133
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 140
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "HOU",
+        "PHX"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199405080HOU",
+          "gameCode": "19940508",
+          "gameDateTimeUTC": "1994-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 87
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199405110HOU",
+          "gameCode": "19940511",
+          "gameDateTimeUTC": "1994-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 117
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "199405130PHO",
+          "gameCode": "19940513",
+          "gameDateTimeUTC": "1994-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 102
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "199405150PHO",
+          "gameCode": "19940515",
+          "gameDateTimeUTC": "1994-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 96
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199405170HOU",
+          "gameCode": "19940517",
+          "gameDateTimeUTC": "1994-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405190PHO",
+          "gameCode": "19940519",
+          "gameDateTimeUTC": "1994-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 103
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199405210HOU",
+          "gameCode": "19940521",
+          "gameDateTimeUTC": "1994-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 104
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NYK",
+        "CHI"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199405080NYK",
+          "gameCode": "19940508",
+          "gameDateTimeUTC": "1994-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405110NYK",
+          "gameCode": "19940511",
+          "gameDateTimeUTC": "1994-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199405130CHI",
+          "gameCode": "19940513",
+          "gameDateTimeUTC": "1994-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199405150CHI",
+          "gameCode": "19940515",
+          "gameDateTimeUTC": "1994-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199405180NYK",
+          "gameCode": "19940518",
+          "gameDateTimeUTC": "1994-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 87
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405200CHI",
+          "gameCode": "19940520",
+          "gameDateTimeUTC": "1994-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 93
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199405220NYK",
+          "gameCode": "19940522",
+          "gameDateTimeUTC": "1994-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 87
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 77
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "ATL",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199405100ATL",
+          "gameCode": "19940510",
+          "gameDateTimeUTC": "1994-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 85
+          },
+          "away": {
+            "tri": "IND",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199405120ATL",
+          "gameCode": "19940512",
+          "gameDateTimeUTC": "1994-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 92
+          },
+          "away": {
+            "tri": "IND",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "199405140IND",
+          "gameCode": "19940514",
+          "gameDateTimeUTC": "1994-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "199405150IND",
+          "gameCode": "19940515",
+          "gameDateTimeUTC": "1994-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 102
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405170ATL",
+          "gameCode": "19940517",
+          "gameDateTimeUTC": "1994-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "IND",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "199405190IND",
+          "gameCode": "19940519",
+          "gameDateTimeUTC": "1994-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 98
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 79
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "DEN"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199405100UTA",
+          "gameCode": "19940510",
+          "gameDateTimeUTC": "1994-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 100
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199405120UTA",
+          "gameCode": "19940512",
+          "gameDateTimeUTC": "1994-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 104
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199405140DEN",
+          "gameCode": "19940514",
+          "gameDateTimeUTC": "1994-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 109
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199405150DEN",
+          "gameCode": "19940515",
+          "gameDateTimeUTC": "1994-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 83
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199405170UTA",
+          "gameCode": "19940517",
+          "gameDateTimeUTC": "1994-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 101
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "199405190DEN",
+          "gameCode": "19940519",
+          "gameDateTimeUTC": "1994-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 94
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199405210UTA",
+          "gameCode": "19940521",
+          "gameDateTimeUTC": "1994-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 91
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "HOU",
+        "UTA"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199405230HOU",
+          "gameCode": "19940523",
+          "gameDateTimeUTC": "1994-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 100
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199405250HOU",
+          "gameCode": "19940525",
+          "gameDateTimeUTC": "1994-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 104
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199405270UTA",
+          "gameCode": "19940527",
+          "gameDateTimeUTC": "1994-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 95
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199405290UTA",
+          "gameCode": "19940529",
+          "gameDateTimeUTC": "1994-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 78
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199405310HOU",
+          "gameCode": "19940531",
+          "gameDateTimeUTC": "1994-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 94
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 83
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "NYK",
+        "IND"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199405240NYK",
+          "gameCode": "19940524",
+          "gameDateTimeUTC": "1994-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 100
+          },
+          "away": {
+            "tri": "IND",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199405260NYK",
+          "gameCode": "19940526",
+          "gameDateTimeUTC": "1994-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "IND",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "199405280IND",
+          "gameCode": "19940528",
+          "gameDateTimeUTC": "1994-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 88
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 68
+          }
+        },
+        {
+          "gameId": "199405300IND",
+          "gameCode": "19940530",
+          "gameDateTimeUTC": "1994-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 83
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199406010NYK",
+          "gameCode": "19940601",
+          "gameDateTimeUTC": "1994-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 86
+          },
+          "away": {
+            "tri": "IND",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199406030IND",
+          "gameCode": "19940603",
+          "gameDateTimeUTC": "1994-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 91
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199406050NYK",
+          "gameCode": "19940605",
+          "gameDateTimeUTC": "1994-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "IND",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "HOU",
+        "NYK"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199406080HOU",
+          "gameCode": "19940608",
+          "gameDateTimeUTC": "1994-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 85
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "199406100HOU",
+          "gameCode": "19940610",
+          "gameDateTimeUTC": "1994-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 83
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199406120NYK",
+          "gameCode": "19940612",
+          "gameDateTimeUTC": "1994-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199406150NYK",
+          "gameCode": "19940615",
+          "gameDateTimeUTC": "1994-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 91
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199406170NYK",
+          "gameCode": "19940617",
+          "gameDateTimeUTC": "1994-06-17T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 91
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199406190HOU",
+          "gameCode": "19940619",
+          "gameDateTimeUTC": "1994-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 86
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199406220HOU",
+          "gameCode": "19940622",
+          "gameDateTimeUTC": "1994-06-22T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 90
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 84
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T19:00:37.544Z"
+}

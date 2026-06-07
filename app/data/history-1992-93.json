@@ -1,0 +1,1145 @@
+{
+  "season": "1992-93",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "CHA"
+      ],
+      "winner": "CHA",
+      "games": [
+        {
+          "gameId": "199304290BOS",
+          "gameCode": "19930429",
+          "gameDateTimeUTC": "1993-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199305010BOS",
+          "gameCode": "19930501",
+          "gameDateTimeUTC": "1993-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 98
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199305030CHH",
+          "gameCode": "19930503",
+          "gameDateTimeUTC": "1993-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 119
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199305050CHH",
+          "gameCode": "19930505",
+          "gameDateTimeUTC": "1993-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "NJN"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "199304290CLE",
+          "gameCode": "19930429",
+          "gameDateTimeUTC": "1993-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 114
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199305010CLE",
+          "gameCode": "19930501",
+          "gameDateTimeUTC": "1993-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 99
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199305050NJN",
+          "gameCode": "19930505",
+          "gameDateTimeUTC": "1993-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 84
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199305070NJN",
+          "gameCode": "19930507",
+          "gameDateTimeUTC": "1993-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 96
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199305090CLE",
+          "gameCode": "19930509",
+          "gameDateTimeUTC": "1993-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 99
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "LAC"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "199304290HOU",
+          "gameCode": "19930429",
+          "gameDateTimeUTC": "1993-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 117
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199305010HOU",
+          "gameCode": "19930501",
+          "gameDateTimeUTC": "1993-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 83
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199305030LAC",
+          "gameCode": "19930503",
+          "gameDateTimeUTC": "1993-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 99
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199305050LAC",
+          "gameCode": "19930505",
+          "gameDateTimeUTC": "1993-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 93
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199305080HOU",
+          "gameCode": "19930508",
+          "gameDateTimeUTC": "1993-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 84
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199304290POR",
+          "gameCode": "19930429",
+          "gameDateTimeUTC": "1993-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 86
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199305010POR",
+          "gameCode": "19930501",
+          "gameDateTimeUTC": "1993-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199305050SAS",
+          "gameCode": "19930505",
+          "gameDateTimeUTC": "1993-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 107
+          },
+          "away": {
+            "tri": "POR",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199305070SAS",
+          "gameCode": "19930507",
+          "gameDateTimeUTC": "1993-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "POR",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "ATL"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199304300CHI",
+          "gameCode": "19930430",
+          "gameDateTimeUTC": "1993-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 114
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199305020CHI",
+          "gameCode": "19930502",
+          "gameDateTimeUTC": "1993-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 117
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199305040ATL",
+          "gameCode": "19930504",
+          "gameDateTimeUTC": "1993-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "IND"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199304300NYK",
+          "gameCode": "19930430",
+          "gameDateTimeUTC": "1993-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 107
+          },
+          "away": {
+            "tri": "IND",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199305020NYK",
+          "gameCode": "19930502",
+          "gameDateTimeUTC": "1993-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 101
+          },
+          "away": {
+            "tri": "IND",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199305040IND",
+          "gameCode": "19930504",
+          "gameDateTimeUTC": "1993-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 116
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199305060IND",
+          "gameCode": "19930506",
+          "gameDateTimeUTC": "1993-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 100
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "LAL"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199304300PHO",
+          "gameCode": "19930430",
+          "gameDateTimeUTC": "1993-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199305020PHO",
+          "gameCode": "19930502",
+          "gameDateTimeUTC": "1993-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 81
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199305040LAL",
+          "gameCode": "19930504",
+          "gameDateTimeUTC": "1993-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199305060LAL",
+          "gameCode": "19930506",
+          "gameDateTimeUTC": "1993-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 86
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199305090PHO",
+          "gameCode": "19930509",
+          "gameDateTimeUTC": "1993-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "UTA"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "199304300SEA",
+          "gameCode": "19930430",
+          "gameDateTimeUTC": "1993-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 99
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199305020SEA",
+          "gameCode": "19930502",
+          "gameDateTimeUTC": "1993-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 85
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199305040UTA",
+          "gameCode": "19930504",
+          "gameDateTimeUTC": "1993-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 90
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199305060UTA",
+          "gameCode": "19930506",
+          "gameDateTimeUTC": "1993-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 80
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199305080SEA",
+          "gameCode": "19930508",
+          "gameDateTimeUTC": "1993-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 100
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NYK",
+        "CHA"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199305090NYK",
+          "gameCode": "19930509",
+          "gameDateTimeUTC": "1993-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 111
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199305120NYK",
+          "gameCode": "19930512",
+          "gameDateTimeUTC": "1993-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 105
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199305140CHH",
+          "gameCode": "19930514",
+          "gameDateTimeUTC": "1993-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 110
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "199305160CHH",
+          "gameCode": "19930516",
+          "gameDateTimeUTC": "1993-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 92
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "199305180NYK",
+          "gameCode": "19930518",
+          "gameDateTimeUTC": "1993-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 105
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SEA",
+        "HOU"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "199305100SEA",
+          "gameCode": "19930510",
+          "gameDateTimeUTC": "1993-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 99
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199305120SEA",
+          "gameCode": "19930512",
+          "gameDateTimeUTC": "1993-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 111
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199305150HOU",
+          "gameCode": "19930515",
+          "gameDateTimeUTC": "1993-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 97
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "199305160HOU",
+          "gameCode": "19930516",
+          "gameDateTimeUTC": "1993-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 103
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "199305180SEA",
+          "gameCode": "19930518",
+          "gameDateTimeUTC": "1993-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 120
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199305200HOU",
+          "gameCode": "19930520",
+          "gameDateTimeUTC": "1993-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 103
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199305220SEA",
+          "gameCode": "19930522",
+          "gameDateTimeUTC": "1993-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 103
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "CLE"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199305110CHI",
+          "gameCode": "19930511",
+          "gameDateTimeUTC": "1993-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 91
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199305130CHI",
+          "gameCode": "19930513",
+          "gameDateTimeUTC": "1993-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199305150CLE",
+          "gameCode": "19930515",
+          "gameDateTimeUTC": "1993-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 90
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199305170CLE",
+          "gameCode": "19930517",
+          "gameDateTimeUTC": "1993-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 101
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "SAS"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199305110PHO",
+          "gameCode": "19930511",
+          "gameDateTimeUTC": "1993-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 98
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "199305130PHO",
+          "gameCode": "19930513",
+          "gameDateTimeUTC": "1993-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199305150SAS",
+          "gameCode": "19930515",
+          "gameDateTimeUTC": "1993-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199305160SAS",
+          "gameCode": "19930516",
+          "gameDateTimeUTC": "1993-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 117
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199305180PHO",
+          "gameCode": "19930518",
+          "gameDateTimeUTC": "1993-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199305200SAS",
+          "gameCode": "19930520",
+          "gameDateTimeUTC": "1993-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "NYK",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199305230NYK",
+          "gameCode": "19930523",
+          "gameDateTimeUTC": "1993-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 98
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199305250NYK",
+          "gameCode": "19930525",
+          "gameDateTimeUTC": "1993-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199305290CHI",
+          "gameCode": "19930529",
+          "gameDateTimeUTC": "1993-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199305310CHI",
+          "gameCode": "19930531",
+          "gameDateTimeUTC": "1993-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 105
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199306020NYK",
+          "gameCode": "19930602",
+          "gameDateTimeUTC": "1993-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199306040CHI",
+          "gameCode": "19930604",
+          "gameDateTimeUTC": "1993-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "PHX",
+        "SEA"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "199305240PHO",
+          "gameCode": "19930524",
+          "gameDateTimeUTC": "1993-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 105
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199305260PHO",
+          "gameCode": "19930526",
+          "gameDateTimeUTC": "1993-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 99
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199305280SEA",
+          "gameCode": "19930528",
+          "gameDateTimeUTC": "1993-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 97
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199305300SEA",
+          "gameCode": "19930530",
+          "gameDateTimeUTC": "1993-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 120
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199306010PHO",
+          "gameCode": "19930601",
+          "gameDateTimeUTC": "1993-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 120
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "199306030SEA",
+          "gameCode": "19930603",
+          "gameDateTimeUTC": "1993-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "199306050PHO",
+          "gameCode": "19930605",
+          "gameDateTimeUTC": "1993-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 123
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "PHX",
+        "CHI"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "199306090PHO",
+          "gameCode": "19930609",
+          "gameDateTimeUTC": "1993-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199306110PHO",
+          "gameCode": "19930611",
+          "gameDateTimeUTC": "1993-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 108
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "199306130CHI",
+          "gameCode": "19930613",
+          "gameDateTimeUTC": "1993-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 121
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "199306160CHI",
+          "gameCode": "19930616",
+          "gameDateTimeUTC": "1993-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "199306180CHI",
+          "gameCode": "19930618",
+          "gameDateTimeUTC": "1993-06-18T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "199306200PHO",
+          "gameCode": "19930620",
+          "gameDateTimeUTC": "1993-06-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 98
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 99
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T18:55:51.828Z"
+}

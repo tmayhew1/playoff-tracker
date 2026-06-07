@@ -1,0 +1,1015 @@
+{
+  "season": "1998-99",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "DET"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "199905080ATL",
+          "gameCode": "19990508",
+          "gameDateTimeUTC": "1999-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 90
+          },
+          "away": {
+            "tri": "DET",
+            "score": 70
+          }
+        },
+        {
+          "gameId": "199905100ATL",
+          "gameCode": "19990510",
+          "gameDateTimeUTC": "1999-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 89
+          },
+          "away": {
+            "tri": "DET",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "199905120DET",
+          "gameCode": "19990512",
+          "gameDateTimeUTC": "1999-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 79
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 63
+          }
+        },
+        {
+          "gameId": "199905140DET",
+          "gameCode": "19990514",
+          "gameDateTimeUTC": "1999-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 103
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199905160ATL",
+          "gameCode": "19990516",
+          "gameDateTimeUTC": "1999-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 87
+          },
+          "away": {
+            "tri": "DET",
+            "score": 75
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199905080MIA",
+          "gameCode": "19990508",
+          "gameDateTimeUTC": "1999-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 75
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "199905100MIA",
+          "gameCode": "19990510",
+          "gameDateTimeUTC": "1999-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 83
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "199905120NYK",
+          "gameCode": "19990512",
+          "gameDateTimeUTC": "1999-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "199905140NYK",
+          "gameCode": "19990514",
+          "gameDateTimeUTC": "1999-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 72
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199905160MIA",
+          "gameCode": "19990516",
+          "gameDateTimeUTC": "1999-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 77
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "PHX"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199905080POR",
+          "gameCode": "19990508",
+          "gameDateTimeUTC": "1999-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 95
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199905100POR",
+          "gameCode": "19990510",
+          "gameDateTimeUTC": "1999-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 110
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "199905120PHO",
+          "gameCode": "19990512",
+          "gameDateTimeUTC": "1999-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 93
+          },
+          "away": {
+            "tri": "POR",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "SAC"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "199905080UTA",
+          "gameCode": "19990508",
+          "gameDateTimeUTC": "1999-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 117
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199905100UTA",
+          "gameCode": "19990510",
+          "gameDateTimeUTC": "1999-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 90
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199905120SAC",
+          "gameCode": "19990512",
+          "gameDateTimeUTC": "1999-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 84
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "199905140SAC",
+          "gameCode": "19990514",
+          "gameDateTimeUTC": "1999-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 89
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199905160UTA",
+          "gameCode": "19990516",
+          "gameDateTimeUTC": "1999-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 99
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "MIL"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199905090IND",
+          "gameCode": "19990509",
+          "gameDateTimeUTC": "1999-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 110
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199905110IND",
+          "gameCode": "19990511",
+          "gameDateTimeUTC": "1999-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 108
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "199905130MIL",
+          "gameCode": "19990513",
+          "gameDateTimeUTC": "1999-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 91
+          },
+          "away": {
+            "tri": "IND",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "199905090LAL",
+          "gameCode": "19990509",
+          "gameDateTimeUTC": "1999-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199905110LAL",
+          "gameCode": "19990511",
+          "gameDateTimeUTC": "1999-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 110
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "199905130HOU",
+          "gameCode": "19990513",
+          "gameDateTimeUTC": "1999-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "199905150HOU",
+          "gameCode": "19990515",
+          "gameDateTimeUTC": "1999-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "PHI"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "199905090ORL",
+          "gameCode": "19990509",
+          "gameDateTimeUTC": "1999-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 90
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "199905110ORL",
+          "gameCode": "19990511",
+          "gameDateTimeUTC": "1999-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 79
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 68
+          }
+        },
+        {
+          "gameId": "199905130PHI",
+          "gameCode": "19990513",
+          "gameDateTimeUTC": "1999-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 97
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199905150PHI",
+          "gameCode": "19990515",
+          "gameDateTimeUTC": "1999-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 101
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "MIN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199905090SAS",
+          "gameCode": "19990509",
+          "gameDateTimeUTC": "1999-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199905110SAS",
+          "gameCode": "19990511",
+          "gameDateTimeUTC": "1999-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 71
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "199905130MIN",
+          "gameCode": "19990513",
+          "gameDateTimeUTC": "1999-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 71
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199905150MIN",
+          "gameCode": "19990515",
+          "gameDateTimeUTC": "1999-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 85
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "IND",
+        "PHI"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "199905170IND",
+          "gameCode": "19990517",
+          "gameDateTimeUTC": "1999-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 94
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199905190IND",
+          "gameCode": "19990519",
+          "gameDateTimeUTC": "1999-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 85
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "199905210PHI",
+          "gameCode": "19990521",
+          "gameDateTimeUTC": "1999-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "IND",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "199905230PHI",
+          "gameCode": "19990523",
+          "gameDateTimeUTC": "1999-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "IND",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "LAL"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199905170SAS",
+          "gameCode": "19990517",
+          "gameDateTimeUTC": "1999-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 87
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "199905190SAS",
+          "gameCode": "19990519",
+          "gameDateTimeUTC": "1999-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 79
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "199905220LAL",
+          "gameCode": "19990522",
+          "gameDateTimeUTC": "1999-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 91
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "199905230LAL",
+          "gameCode": "19990523",
+          "gameDateTimeUTC": "1999-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "ATL",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199905180ATL",
+          "gameCode": "19990518",
+          "gameDateTimeUTC": "1999-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 92
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "199905200ATL",
+          "gameCode": "19990520",
+          "gameDateTimeUTC": "1999-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 70
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199905230NYK",
+          "gameCode": "19990523",
+          "gameDateTimeUTC": "1999-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "199905240NYK",
+          "gameCode": "19990524",
+          "gameDateTimeUTC": "1999-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 79
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 66
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "199905180UTA",
+          "gameCode": "19990518",
+          "gameDateTimeUTC": "1999-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 93
+          },
+          "away": {
+            "tri": "POR",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "199905200UTA",
+          "gameCode": "19990520",
+          "gameDateTimeUTC": "1999-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 81
+          },
+          "away": {
+            "tri": "POR",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "199905220POR",
+          "gameCode": "19990522",
+          "gameDateTimeUTC": "1999-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 97
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "199905230POR",
+          "gameCode": "19990523",
+          "gameDateTimeUTC": "1999-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 81
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "199905250UTA",
+          "gameCode": "19990525",
+          "gameDateTimeUTC": "1999-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 88
+          },
+          "away": {
+            "tri": "POR",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "199905270POR",
+          "gameCode": "19990527",
+          "gameDateTimeUTC": "1999-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 92
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "POR"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199905290SAS",
+          "gameCode": "19990529",
+          "gameDateTimeUTC": "1999-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 80
+          },
+          "away": {
+            "tri": "POR",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "199905310SAS",
+          "gameCode": "19990531",
+          "gameDateTimeUTC": "1999-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 86
+          },
+          "away": {
+            "tri": "POR",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199906040POR",
+          "gameCode": "19990604",
+          "gameDateTimeUTC": "1999-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 63
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "199906060POR",
+          "gameCode": "19990606",
+          "gameDateTimeUTC": "1999-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 80
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "IND",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "199905300IND",
+          "gameCode": "19990530",
+          "gameDateTimeUTC": "1999-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 90
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "199906010IND",
+          "gameCode": "19990601",
+          "gameDateTimeUTC": "1999-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 88
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "199906050NYK",
+          "gameCode": "19990605",
+          "gameDateTimeUTC": "1999-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 92
+          },
+          "away": {
+            "tri": "IND",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "199906070NYK",
+          "gameCode": "19990607",
+          "gameDateTimeUTC": "1999-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 78
+          },
+          "away": {
+            "tri": "IND",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "199906090IND",
+          "gameCode": "19990609",
+          "gameDateTimeUTC": "1999-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 94
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "199906110NYK",
+          "gameCode": "19990611",
+          "gameDateTimeUTC": "1999-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 90
+          },
+          "away": {
+            "tri": "IND",
+            "score": 82
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "SAS",
+        "NYK"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "199906160SAS",
+          "gameCode": "19990616",
+          "gameDateTimeUTC": "1999-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 89
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "199906180SAS",
+          "gameCode": "19990618",
+          "gameDateTimeUTC": "1999-06-18T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 80
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 67
+          }
+        },
+        {
+          "gameId": "199906210NYK",
+          "gameCode": "19990621",
+          "gameDateTimeUTC": "1999-06-21T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "199906230NYK",
+          "gameCode": "19990623",
+          "gameDateTimeUTC": "1999-06-23T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "199906250NYK",
+          "gameCode": "19990625",
+          "gameDateTimeUTC": "1999-06-25T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 77
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 78
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-07T19:22:58.826Z"
+}
