@@ -1815,12 +1815,14 @@ function PlayoffLeaderboard({ season, lga }) {
   const composite = (p) => aRank.get(p) + bRank.get(p) + cRank.get(p);
 
   // Min-games filter forces VA/G order. Otherwise honour the column
-  // header the user clicked (composite by default).
+  // header the user clicked (composite by default). Total VA is the
+  // explicit tiebreaker for the composite + VA/G sorts so the order
+  // doesn't quietly drift if the server-side input order ever shifts.
   const effectiveSort = minGames != null ? "vaPerG" : sortMode;
   const sortedAll =
     effectiveSort === "totalVA" ? [...all].sort((a, b) => b.va - a.va) :
-    effectiveSort === "vaPerG"  ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a)) :
-                                  [...all].sort((a, b) => composite(a) - composite(b));
+    effectiveSort === "vaPerG"  ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
+                                  [...all].sort((a, b) => composite(a) - composite(b) || b.va - a.va);
   const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
