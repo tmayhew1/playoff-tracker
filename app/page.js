@@ -1706,6 +1706,11 @@ function PlayoffLeaderboard({ season, lga }) {
   const [showAll, setShowAll] = useState(false);
   const [teamFilter, setTeamFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  // Tap a column header (TOT VA, VA/G) to override the composite default
+  // sort. Toggles back to composite if the same column is tapped twice.
+  // When the min-games filter is active it forces VA/G ordering regardless
+  // — keeps the filter coherent.
+  const [sortMode, setSortMode] = useState("composite");
   // When set, leaderboard re-sorts by VA/G and trims to players with at
   // least `minGames` GP — the "show me efficiency at comparable volume"
   // filter, tap a G value to set it.
@@ -1723,6 +1728,7 @@ function PlayoffLeaderboard({ season, lga }) {
     setError(null);
     setShowAll(false);
     setTeamFilter(null);
+    setSortMode("composite");
     setMinGames(null);
     setPendingScrollName(null);
     setExpanded(null);
@@ -1808,12 +1814,13 @@ function PlayoffLeaderboard({ season, lga }) {
   }
   const composite = (p) => aRank.get(p) + bRank.get(p) + cRank.get(p);
 
-  // With the min-games filter on, re-sort by VA/G — the whole point is
-  // to compare efficiency at comparable volume. Without it, the
-  // composite rank above wins.
-  const sortedAll = minGames != null
-    ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a))
-    : [...all].sort((a, b) => composite(a) - composite(b));
+  // Min-games filter forces VA/G order. Otherwise honour the column
+  // header the user clicked (composite by default).
+  const effectiveSort = minGames != null ? "vaPerG" : sortMode;
+  const sortedAll =
+    effectiveSort === "totalVA" ? [...all].sort((a, b) => b.va - a.va) :
+    effectiveSort === "vaPerG"  ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a)) :
+                                  [...all].sort((a, b) => composite(a) - composite(b));
   const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
@@ -1858,8 +1865,30 @@ function PlayoffLeaderboard({ season, lga }) {
         <span className="hidden sm:block w-8 text-right">APG</span>
         <span className="hidden sm:block w-8 text-right">SPG</span>
         <span className="hidden sm:block w-8 text-right">BPG</span>
-        <span className="w-12 text-right">TOT VA</span>
-        <span className="w-10 text-right">VA/G</span>
+        <button
+          type="button"
+          onClick={() => {
+            setMinGames(null);
+            setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
+          }}
+          className={`w-12 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label="Sort by total VA"
+          aria-pressed={effectiveSort === "totalVA"}
+        >
+          TOT VA{effectiveSort === "totalVA" ? " ▼" : ""}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMinGames(null);
+            setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
+          }}
+          className={`w-10 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label="Sort by VA per game"
+          aria-pressed={effectiveSort === "vaPerG"}
+        >
+          VA/G{effectiveSort === "vaPerG" ? " ▼" : ""}
+        </button>
       </div>
       {shown.map((p, i) => {
         // Keep the overall rank (1, 7, 13…) even when filters trim the
