@@ -1702,8 +1702,11 @@ function ExploreRoundSection({ roundKey, series, lga, season }) {
 // Seasons available in the picker. ESPN's NBA scoreboard reliably covers
 // 1999-00 onward; earlier seasons return empty/erroring responses.
 function exploreSeasonList() {
+  // Synchronous fallback used until /api/seasons resolves. Covers the same
+  // ESPN-supported range the route emits (1999-00 onward, newest first).
   const seasons = [];
-  for (let y = 2024; y >= 1999; y--) {
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear - 1; y >= 1999; y--) {
     const end = String((y + 1) % 100).padStart(2, "0");
     seasons.push(`${y}-${end}`);
   }
@@ -2020,11 +2023,31 @@ function PlayoffLeaderboard({ season, lga }) {
 }
 
 function ExploreView() {
-  const SEASONS = useMemo(() => exploreSeasonList(), []);
-  const [season, setSeason] = useState(SEASONS[0]);
+  // Season list is fetched from /api/seasons so newly-baked old seasons
+  // (run via the bake-history-range workflow) show up automatically on
+  // next deploy. exploreSeasonList() is the synchronous fallback used
+  // until the fetch resolves so the picker isn't empty on first paint.
+  const FALLBACK = useMemo(() => exploreSeasonList(), []);
+  const [seasons, setSeasons] = useState(FALLBACK);
+  const [season, setSeason] = useState(FALLBACK[0]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/seasons")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (cancelled || !d?.seasons?.length) return;
+        setSeasons(d.seasons);
+        // Switch the default to the newest entry the route reports, but
+        // only if the user hasn't already navigated somewhere else.
+        setSeason((cur) => (cur === FALLBACK[0] ? d.seasons[0] : cur));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [FALLBACK]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2061,7 +2084,7 @@ function ExploreView() {
           onChange={(e) => setSeason(e.target.value)}
           className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
         >
-          {SEASONS.map((s) => (
+          {seasons.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
