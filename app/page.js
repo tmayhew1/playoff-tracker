@@ -1810,10 +1810,11 @@ function PlayoffLeaderboard({ season, lga }) {
 
   // With the min-games filter on, re-sort by VA/G — the whole point is
   // to compare efficiency at comparable volume. Without it, the
-  // composite rank above wins.
+  // composite rank above wins. Total VA is the explicit tiebreaker for
+  // both, so the order is stable regardless of what the server sends.
   const sortedAll = minGames != null
-    ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a))
-    : [...all].sort((a, b) => composite(a) - composite(b));
+    ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va)
+    : [...all].sort((a, b) => composite(a) - composite(b) || b.va - a.va);
   const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
