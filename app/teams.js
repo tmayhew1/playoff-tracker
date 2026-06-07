@@ -1,5 +1,30 @@
 // Team rosters, bracket structure, and round constants for the current season.
 
+// Conference lookup that covers every NBA tricode the bake might emit —
+// the 30 current franchises plus legacy abbreviations Basketball-Reference
+// uses for older seasons (SEA Sonics, NJN Nets, VAN Grizzlies, etc.).
+// TEAMS below only carries the 16 playoff teams in the current draft, so
+// historical leaderboards need this wider map to label "Western Semis vs.
+// MIN" etc. correctly.
+export const TEAM_CONF = {
+  // Eastern Conference (current)
+  ATL: "E", BOS: "E", BKN: "E", CHA: "E", CHI: "E", CLE: "E", DET: "E",
+  IND: "E", MIA: "E", MIL: "E", NYK: "E", ORL: "E", PHI: "E", TOR: "E",
+  WAS: "E",
+  // Western Conference (current)
+  DAL: "W", DEN: "W", GSW: "W", HOU: "W", LAC: "W", LAL: "W", MEM: "W",
+  MIN: "W", NOP: "W", OKC: "W", PHX: "W", POR: "W", SAC: "W", SAS: "W",
+  UTA: "W",
+  // Legacy tricodes still emitted by older BR box scores.
+  SEA: "W",  // Sonics (Seattle → OKC in 2008-09)
+  NJN: "E",  // Nets (New Jersey → Brooklyn in 2012-13)
+  VAN: "W",  // Grizzlies (Vancouver → Memphis in 2001-02)
+  WSB: "E",  // Bullets (Washington → Wizards in 1997-98)
+  CHH: "E",  // original Charlotte Hornets (became NOH in 2002-03)
+  NOH: "W",  // New Orleans Hornets (later NOP)
+  NOK: "W",  // New Orleans/OKC Hornets (Katrina seasons)
+};
+
 export const TEAMS = {
   SAS: { name: "Spurs",    seed: 2, owner: "Spencer", conf: "W" },
   DEN: { name: "Nuggets",  seed: 3, owner: "Spencer", conf: "W" },
