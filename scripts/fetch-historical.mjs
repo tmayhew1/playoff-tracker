@@ -38,10 +38,16 @@ const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 
 // --- League averages for VA -----------------------------------------------
 const LGA_ALL = JSON.parse(readFileSync(join(DATA_DIR, "league-averages.json"), "utf8"));
-const DEFAULT_LGA = LGA_ALL["2025-26"] || Object.values(LGA_ALL).pop();
-const lga = LGA_ALL[season] || DEFAULT_LGA;
-if (!LGA_ALL[season]) {
-  console.warn(`No league averages for ${season}; falling back to defaults. VA will be approximate.`);
+const lga = LGA_ALL[season];
+if (!lga) {
+  // Falling back to the modern season's averages used to produce nonsense
+  // VA for older eras (pre-3PT seasons measured against 2025-26 pace, etc.).
+  // Refuse rather than silently emit bad numbers.
+  console.error(
+    `No league averages for ${season}. Backfill them first:\n` +
+    `  node scripts/fetch-league-averages.mjs ${season}`
+  );
+  process.exit(1);
 }
 
 function valueAddParts(p) {
