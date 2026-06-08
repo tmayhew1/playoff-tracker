@@ -1,0 +1,57 @@
+name: Backfill league averages
+
+# Manual trigger only. Runs scripts/fetch-league-averages.mjs across a
+# season range and commits the resulting app/data/league-averages.json.
+# Run this BEFORE baking historical playoff data for seasons that aren't
+# already in league-averages.json — otherwise the bake workflow refuses
+# the season.
+on:
+  workflow_dispatch:
+    inputs:
+      start_season:
+        description: "Start season (YYYY-YY, e.g. 1970-71)"
+        required: true
+        default: "1970-71"
+      end_season:
+        description: "End season (YYYY-YY, e.g. 1995-96)"
+        required: true
+        default: "1995-96"
+      force:
+        description: "Overwrite seasons that already have an LGA entry"
+        required: false
+        default: "false"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    # The script throttles itself to 2.5s/request (one request per season)
+    # so worst case is ~30 seconds per 10 seasons. 60 minutes is plenty.
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Backfill league averages
+        run: |
+          flags=""
+          if [[ "${{ inputs.force }}" == "true" ]]; then
+            flags="--force"
+          fi
+          node scripts/fetch-league-averages.mjs \
+            "${{ inputs.start_season }}" \
+            "${{ inputs.end_season }}" \
+            $flags
+
+      - name: Commit league-averages.json
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Backfill league averages (${{ inputs.start_season }} → ${{ inputs.end_season }})"
+          file_pattern: "app/data/league-averages.json"
