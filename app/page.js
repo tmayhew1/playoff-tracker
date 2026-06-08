@@ -228,6 +228,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // that category's per-game contribution (e.g. "2-Pointers" → 2P VA in
   // each game). Tap again to clear.
   const [selectedCategory, setSelectedCategory] = useState(null);
+  // Per-36 vs per-game normalization for the counting-stat labels (PTS,
+  // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
+  // hidden in the single-game drill-in where raw counts are shown.
+  const [rateMode, setRateMode] = useState("per36");
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
   const canSelectCategory = canSelect;
@@ -256,10 +260,15 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((p.ftm / (p.fta || 1)) - lga.laFT) * p.fta;
 
-  // For series: counting stats as per-36, shooting as made/att (pct%).
+  // For series: counting stats as per-36 or per-game (user-toggleable),
+  // shooting as made/att (pct%). Single-game drill-in keeps raw counts.
   const r36 = (v, tag) => `${(mp > 0 ? (v / mp) * 36 : 0).toFixed(1)} ${tag}/36`;
+  const rG  = (v, tag) => `${(p.gp > 0 ? v / p.gp : 0).toFixed(1)} ${tag}/G`;
   const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
-  const cnt = (v, tag) => (effectiveRate ? r36(v, tag) : `${v} ${tag}`);
+  const cnt = (v, tag) => {
+    if (!effectiveRate) return `${v} ${tag}`;
+    return rateMode === "perG" ? rG(v, tag) : r36(v, tag);
+  };
   const shoot = (m, att, tag) => (effectiveRate ? shot(m, att) : `${m}/${att} ${tag}`);
 
   const categories = [
@@ -539,7 +548,29 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           );
         })}
       </div>
-      <div className="text-[9px] text-stone-400 mt-2 text-center italic">Bars show contribution above/below league average</div>
+      <div className="mt-2 flex items-center justify-center gap-3 text-[9px] text-stone-400">
+        <span className="italic">Bars show contribution above/below league average</span>
+        {effectiveRate && (
+          <div className="not-italic inline-flex items-center border border-stone-300 rounded-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setRateMode("per36")}
+              className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              aria-pressed={rateMode === "per36"}
+            >
+              Per 36
+            </button>
+            <button
+              type="button"
+              onClick={() => setRateMode("perG")}
+              className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              aria-pressed={rateMode === "perG"}
+            >
+              Per G
+            </button>
+          </div>
+        )}
+      </div>
         </div>
         {showNav && !inGameNav && (
           <button
