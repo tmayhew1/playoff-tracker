@@ -1869,27 +1869,32 @@ function PlayoffLeaderboard({ season, lga }) {
   if (!data || !data.players?.length) return null;
 
   const all = data.players;
-  // Composite default rank = (VA rank) + (VA/G rank) + (VA/G rank among
-  // peers with ≥ this player's games). Rewards being good on volume,
-  // good on rate, and good vs. the players who logged similar minutes —
-  // a single chart-topper position can no longer carry someone who's
-  // weak on the other two axes.
+  // Composite default sort: each axis (Total VA, VA/G, VA/G among GP
+  // peers) is scored as a fraction of that axis's leader, then summed.
+  // So a player at half the leader's volume scores 0.5 on Total VA —
+  // not just "rank #2" — and the gap between adjacent finishers tracks
+  // the actual magnitude difference rather than a flat one-rank penalty.
+  // Negative values stay negative (a -10 VA against a max of 100 scores
+  // -0.10 on that axis), which pulls the composite down to match
+  // below-replacement production. Higher composite = better.
   const vaPerG = (p) => p.va / Math.max(1, p.gp);
-  const aRank = new Map();
-  [...all]
-    .sort((x, y) => y.va - x.va)
-    .forEach((p, i) => aRank.set(p, i + 1));
-  const bRank = new Map();
-  [...all]
-    .sort((x, y) => vaPerG(y) - vaPerG(x))
-    .forEach((p, i) => bRank.set(p, i + 1));
-  const cRank = new Map();
+  const safeRatio = (v, max) => (max > 0 ? v / max : 0);
+  const maxVA = Math.max(...all.map((p) => p.va));
+  const maxVAperG = Math.max(...all.map((p) => vaPerG(p)));
+  // Memoize the cohort max by GP — all players sharing a games-played
+  // count have the same "peers with ≥ my GP" cohort.
+  const cohortMaxByGp = new Map();
   for (const p of all) {
-    const cohort = all.filter((q) => q.gp >= p.gp);
-    cohort.sort((x, y) => vaPerG(y) - vaPerG(x));
-    cRank.set(p, cohort.indexOf(p) + 1);
+    if (cohortMaxByGp.has(p.gp)) continue;
+    const m = all
+      .filter((q) => q.gp >= p.gp)
+      .reduce((acc, q) => Math.max(acc, vaPerG(q)), -Infinity);
+    cohortMaxByGp.set(p.gp, m);
   }
-  const composite = (p) => aRank.get(p) + bRank.get(p) + cRank.get(p);
+  const composite = (p) =>
+    safeRatio(p.va, maxVA)
+    + safeRatio(vaPerG(p), maxVAperG)
+    + safeRatio(vaPerG(p), cohortMaxByGp.get(p.gp));
 
   // Min-games filter forces VA/G order. Otherwise honour the column
   // header the user clicked (composite by default). Total VA is the
@@ -1899,7 +1904,7 @@ function PlayoffLeaderboard({ season, lga }) {
   const sortedAll =
     effectiveSort === "totalVA" ? [...all].sort((a, b) => b.va - a.va) :
     effectiveSort === "vaPerG"  ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
-                                  [...all].sort((a, b) => composite(a) - composite(b) || b.va - a.va);
+                                  [...all].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
   const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
