@@ -104,6 +104,7 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
   return (
     <div className="mt-2 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
+      <div className="relative">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
         {/* Series-band shading (used when a series is selected but no
             single game has been drilled into) */}
@@ -194,45 +195,6 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             )}
           </g>
         ))}
-        {/* Avg-vs-others callout — rendered AFTER the data path and dots
-            so the white halo around the text actually masks the line and
-            keeps the badge legible. Small "▲ +1.2" / "▼ -0.5" centered
-            on the band (or selected column in single-game view), at the
-            top of the data area if the selected group's avg beats the
-            others, at the bottom if it trails. Direction and magnitude
-            land together at a glance. */}
-        {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
-          const up = avgSelected > avgOther;
-          // Round before sign-check to avoid "-0.0" on tiny diffs.
-          const rounded = Math.round((avgSelected - avgOther) * 10) / 10;
-          const signStr = rounded > 0 ? "+" : "";
-          const text = `${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`;
-          let cx;
-          if (Array.isArray(seriesRange)) {
-            cx = (x(seriesRange[0]) + x(seriesRange[1])) / 2;
-          } else if (selected != null) {
-            cx = x(selected - 1);
-          } else {
-            cx = pad.l + innerW / 2;
-          }
-          // Inside the data area so the glyph never clips against the
-          // SVG edge; clears the top-value label (e.g. "38.1") which
-          // sits above the data top in its own padding.
-          const cy = up ? pad.t + 9 : H - pad.b - 2;
-          return (
-            <text
-              x={cx}
-              y={cy}
-              fontSize="9"
-              textAnchor="middle"
-              fill={stroke}
-              stroke="white"
-              strokeWidth="3.5"
-              paintOrder="stroke"
-              className="tabular-nums"
-            >{text}</text>
-          );
-        })()}
         {/* Full-height column hit zones, layered last so they capture taps */}
         {padded.map((v, i) => {
           const hasData = v != null;
@@ -253,6 +215,53 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
           );
         })}
       </svg>
+      {/* Avg-vs-others "dugout": a small badge hanging just below the
+          chart (if the selected group trails the rest) or just above it
+          (if it leads), anchored at the selected band/column horizontally.
+          Pairs the signed delta with a plain-English comparison so the
+          comparison reads at a glance: "▼ -1.5  worse than playoff avg."
+          Anchors right when the band sits in the right side of the chart
+          so the badge text never runs off the chart container. */}
+      {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
+        const up = avgSelected > avgOther;
+        const rounded = Math.round((avgSelected - avgOther) * 10) / 10;
+        const signStr = rounded > 0 ? "+" : "";
+        const colW = innerW / (n - 1);
+        let xLeft, xRight;
+        if (Array.isArray(seriesRange)) {
+          xLeft = x(seriesRange[0]) - colW / 2;
+          xRight = x(seriesRange[1]) + colW / 2;
+        } else if (selected != null) {
+          xLeft = x(selected - 1) - colW / 2;
+          xRight = x(selected - 1) + colW / 2;
+        } else {
+          return null;
+        }
+        const center = (xLeft + xRight) / 2;
+        const anchorRight = center > W * 0.55;
+        const leftPct = (xLeft / W) * 100;
+        const rightPct = 100 - (xRight / W) * 100;
+        const horizontal = anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` };
+        // Park the dugout inside the chart's edge padding (where the
+        // top-value label sits at the top, and where the data line
+        // never reaches at the bottom). Keeps the title and the next
+        // section below the chart from getting bumped by the badge.
+        const vertical = up ? { top: "2px" } : { bottom: "2px" };
+        return (
+          <div
+            className="absolute z-10 inline-flex items-center gap-1.5 whitespace-nowrap bg-white border border-stone-300 rounded-sm px-1.5 py-0.5 text-[9px] shadow-sm pointer-events-none"
+            style={{ ...horizontal, ...vertical }}
+          >
+            <span className="font-semibold tabular-nums" style={{ color: stroke }}>
+              {up ? "▲" : "▼"} {signStr}{rounded.toFixed(1)}
+            </span>
+            <span className="text-stone-500">
+              {up ? "better" : "worse"} than playoff avg.
+            </span>
+          </div>
+        );
+      })()}
+      </div>
     </div>
   );
 }
