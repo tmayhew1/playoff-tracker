@@ -376,7 +376,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const handleNext = () => inGameNav ? setSelectedGame(gameNavNext) : onNext && onNext();
 
   return (
-    <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
+    <div className="px-2 py-3 border-t border-stone-200">
       <div className="flex items-stretch gap-1">
         {showNav && !inGameNav && (
           <button
@@ -1422,24 +1422,28 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                   : withAlpha("#dc2626", 0.10);
                 const barPct = (Math.abs(p.va || 0) / maxAbsVa) * 100;
                 return (
-                  <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0 relative overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 pointer-events-none"
-                      style={{ width: `${barPct}%`, backgroundColor: barColor }}
-                      aria-hidden
-                    />
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setExpanded(isOpen ? null : rowKey)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setExpanded(isOpen ? null : rowKey);
-                        }
-                      }}
-                      className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
-                    >
+                  <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+                    {/* Bar wraps just the click row, not the expanded
+                        breakdown — otherwise the team-color tint bleeds
+                        through behind the whole VABreakdown panel. */}
+                    <div className="relative overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 pointer-events-none"
+                        style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                        aria-hidden
+                      />
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setExpanded(isOpen ? null : rowKey)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setExpanded(isOpen ? null : rowKey);
+                          }
+                        }}
+                        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+                      >
                       <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
@@ -1464,6 +1468,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                       <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.bpg.toFixed(1)}</span>
                       <span className="sm:hidden w-9 text-right tabular-nums text-stone-600">{p.stk.toFixed(1)}</span>
                       <span className={`hidden sm:block w-12 text-right tabular-nums font-semibold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
+                      </div>
                     </div>
                     {isOpen && (
                       <VABreakdown
@@ -1992,16 +1997,20 @@ function PlayoffLeaderboard({ season, lga }) {
         }
         const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
         return (
-          <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0 relative overflow-hidden">
-            <div
-              className="absolute inset-y-0 left-0 pointer-events-none"
-              style={{ width: `${barPct}%`, backgroundColor: barColor }}
-              aria-hidden
-            />
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setExpanded(isOpen ? null : rowKey)}
+          <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+            {/* Bar wraps just the click row, not the expanded breakdown —
+                otherwise the team-color tint bleeds through behind the
+                whole VABreakdown panel. */}
+            <div className="relative overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 pointer-events-none"
+                style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                aria-hidden
+              />
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setExpanded(isOpen ? null : rowKey)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -2044,6 +2053,7 @@ function PlayoffLeaderboard({ season, lga }) {
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.blk / p.gp).toFixed(1)}</span>
               <span className={`w-12 text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
               <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
+              </div>
             </div>
             {isOpen && (
               <VABreakdown
