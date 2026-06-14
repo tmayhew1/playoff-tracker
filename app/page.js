@@ -376,7 +376,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const handleNext = () => inGameNav ? setSelectedGame(gameNavNext) : onNext && onNext();
 
   return (
-    <div className="px-2 py-3 bg-stone-50 border-t border-stone-200">
+    <div className="px-2 py-3 border-t border-stone-200">
       <div className="flex items-stretch gap-1">
         {showNav && !inGameNav && (
           <button
