@@ -170,17 +170,26 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
           );
         })()}
         {/* Tiny caret: up if the selected average beats the others,
-            down otherwise. Right-anchored so it sits just inside the
-            right edge of the avgSelected line (series view) or just
-            inside the chart-right (game view) — anchoring left was
-            clipping the glyph when the band ran to the chart edge,
-            e.g. the NBA Finals at the end of a player's playoff run. */}
+            down otherwise. Default anchor is just inside the right edge
+            of the band (series view) or chart-right (game view). For
+            the FINAL series the band runs to the chart-right edge with
+            no room to its right, so the caret flips to the left edge
+            of the band instead — e.g. the NBA Finals at the end of a
+            player's playoff run. */}
         {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
           const up = avgSelected > avgOther;
           let cx = W - pad.r - 1;
+          let anchor = "end";
           if (Array.isArray(seriesRange)) {
             const colW = innerW / (n - 1);
-            cx = Math.min(W - pad.r - 1, x(seriesRange[1]) + colW / 2 - 1);
+            const isLastSeries = seriesRange[1] >= n - 1;
+            if (isLastSeries) {
+              cx = x(seriesRange[0]) - colW / 2 + 1;
+              anchor = "start";
+            } else {
+              cx = x(seriesRange[1]) + colW / 2 - 1;
+              anchor = "end";
+            }
           }
           const cy = y(avgSelected) + (up ? -3 : 8);
           return (
@@ -188,7 +197,7 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
               x={cx}
               y={cy}
               fontSize="8"
-              textAnchor="end"
+              textAnchor={anchor}
               fill={stroke}
               className="tabular-nums"
             >{up ? "▲" : "▼"}</text>
