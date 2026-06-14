@@ -1869,32 +1869,27 @@ function PlayoffLeaderboard({ season, lga }) {
   if (!data || !data.players?.length) return null;
 
   const all = data.players;
-  // Composite default sort: each axis (Total VA, VA/G, VA/G among GP
-  // peers) is scored as a fraction of that axis's leader, then summed.
-  // So a player at half the leader's volume scores 0.5 on Total VA —
-  // not just "rank #2" — and the gap between adjacent finishers tracks
-  // the actual magnitude difference rather than a flat one-rank penalty.
-  // Negative values stay negative (a -10 VA against a max of 100 scores
-  // -0.10 on that axis), which pulls the composite down to match
-  // below-replacement production. Higher composite = better.
+  // Composite default sort: each axis (Total VA, VA/G) is scored as a
+  // fraction of that axis's leader, then summed. So a player at half
+  // the leader's volume scores 0.5 on Total VA — not just "rank #2" —
+  // and the gap between adjacent finishers tracks the actual magnitude
+  // difference rather than a flat one-rank penalty. Negative values
+  // stay negative (a -10 VA against a max of 100 scores -0.10 on that
+  // axis), which pulls the composite down to match below-replacement
+  // production. Higher composite = better.
+  //
+  // Two axes, not three: an earlier version added a third "VA/G vs
+  // peers with >= my GP" axis, but with magnitude scoring it just
+  // doubled the rate signal — high-GP players almost always max their
+  // own narrow cohort (free 1.0) and low-GP players' cohort is everyone
+  // (so it equals the overall VA/G score exactly). Volume + rate is
+  // the clean orthogonal split.
   const vaPerG = (p) => p.va / Math.max(1, p.gp);
   const safeRatio = (v, max) => (max > 0 ? v / max : 0);
   const maxVA = Math.max(...all.map((p) => p.va));
   const maxVAperG = Math.max(...all.map((p) => vaPerG(p)));
-  // Memoize the cohort max by GP — all players sharing a games-played
-  // count have the same "peers with ≥ my GP" cohort.
-  const cohortMaxByGp = new Map();
-  for (const p of all) {
-    if (cohortMaxByGp.has(p.gp)) continue;
-    const m = all
-      .filter((q) => q.gp >= p.gp)
-      .reduce((acc, q) => Math.max(acc, vaPerG(q)), -Infinity);
-    cohortMaxByGp.set(p.gp, m);
-  }
   const composite = (p) =>
-    safeRatio(p.va, maxVA)
-    + safeRatio(vaPerG(p), maxVAperG)
-    + safeRatio(vaPerG(p), cohortMaxByGp.get(p.gp));
+    safeRatio(p.va, maxVA) + safeRatio(vaPerG(p), maxVAperG);
 
   // Min-games filter forces VA/G order. Otherwise honour the column
   // header the user clicked (composite by default). Total VA is the
