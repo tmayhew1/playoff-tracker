@@ -1373,6 +1373,11 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
               ? [...rows].sort((a, b) => (b.va / Math.max(1, b.gp)) - (a.va / Math.max(1, a.gp)))
               : rows;
             const visibleRows = minGames != null ? sortedRows.filter((p) => p.gp >= minGames) : sortedRows;
+            // Width of the per-row VA bar — proportional to abs(VA) over
+            // the visible list's max so the leader fills the row and
+            // everyone else scales down. Floor at 0.5 to avoid divide-by-
+            // zero on series where every player has 0 VA.
+            const maxAbsVa = Math.max(...visibleRows.map((p) => Math.abs(p.va || 0)), 0.5);
             return (
             <div>
               {minGames != null && (
@@ -1412,8 +1417,17 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                   : undefined;
                 const rowKey = `${p.team}:${p.name}`;
                 const isOpen = expanded === rowKey;
+                const barColor = (p.va || 0) >= 0
+                  ? withAlpha(tc || teamColor(p.team), 0.16)
+                  : withAlpha("#dc2626", 0.10);
+                const barPct = (Math.abs(p.va || 0) / maxAbsVa) * 100;
                 return (
-                  <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+                  <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0 relative overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 pointer-events-none"
+                      style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                      aria-hidden
+                    />
                     <div
                       role="button"
                       tabIndex={0}
@@ -1424,7 +1438,7 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                           setExpanded(isOpen ? null : rowKey);
                         }
                       }}
-                      className={`w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
+                      className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
                     >
                       <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
@@ -1943,7 +1957,11 @@ function PlayoffLeaderboard({ season, lga }) {
           VA/G{effectiveSort === "vaPerG" ? " ▼" : ""}
         </button>
       </div>
-      {shown.map((p, i) => {
+      {(() => {
+        // VA bar scale — proportional to abs(VA) over the visible list.
+        // Computed once per render so all rows share the same denominator.
+        const maxAbsVa = Math.max(...shown.map((p) => Math.abs(p.va || 0)), 0.5);
+        return shown.map((p, i) => {
         // Keep the overall rank (1, 7, 13…) even when filters trim the
         // visible list. With the min-games filter on, "overall" means
         // ranked by VA/G, since that's how the list is now ordered.
@@ -1952,6 +1970,10 @@ function PlayoffLeaderboard({ season, lga }) {
         const isOpen = expanded === rowKey;
         const tc = teamColor(p.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+        const barColor = p.va >= 0
+          ? withAlpha(tc, 0.16)
+          : withAlpha("#dc2626", 0.10);
+        const barPct = (Math.abs(p.va || 0) / maxAbsVa) * 100;
         // Player's playoff games already chronological from server, with
         // null-va slots for games they sat out inside a series they played
         // (kept so the chart shows a gap and the title uses the true series
@@ -1970,7 +1992,12 @@ function PlayoffLeaderboard({ season, lga }) {
         }
         const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
         return (
-          <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
+          <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0 relative overflow-hidden">
+            <div
+              className="absolute inset-y-0 left-0 pointer-events-none"
+              style={{ width: `${barPct}%`, backgroundColor: barColor }}
+              aria-hidden
+            />
             <div
               role="button"
               tabIndex={0}
@@ -1981,7 +2008,7 @@ function PlayoffLeaderboard({ season, lga }) {
                   setExpanded(isOpen ? null : rowKey);
                 }
               }}
-              className={`w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100" : ""}`}
+              className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
             >
               <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
               <button
@@ -2040,7 +2067,8 @@ function PlayoffLeaderboard({ season, lga }) {
             )}
           </div>
         );
-      })}
+      });
+      })()}
       {!teamFilter && minGames == null && all.length > 10 && (
         <button
           onClick={() => setShowAll((s) => !s)}
