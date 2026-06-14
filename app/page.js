@@ -169,40 +169,6 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             />
           );
         })()}
-        {/* Tiny caret: up if the selected average beats the others,
-            down otherwise. Default anchor is just inside the right edge
-            of the band (series view) or chart-right (game view). For
-            the FINAL series the band runs to the chart-right edge with
-            no room to its right, so the caret flips to the left edge
-            of the band instead — e.g. the NBA Finals at the end of a
-            player's playoff run. */}
-        {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
-          const up = avgSelected > avgOther;
-          let cx = W - pad.r - 1;
-          let anchor = "end";
-          if (Array.isArray(seriesRange)) {
-            const colW = innerW / (n - 1);
-            const isLastSeries = seriesRange[1] >= n - 1;
-            if (isLastSeries) {
-              cx = x(seriesRange[0]) - colW / 2 + 1;
-              anchor = "start";
-            } else {
-              cx = x(seriesRange[1]) + colW / 2 - 1;
-              anchor = "end";
-            }
-          }
-          const cy = y(avgSelected) + (up ? -3 : 8);
-          return (
-            <text
-              x={cx}
-              y={cy}
-              fontSize="8"
-              textAnchor={anchor}
-              fill={stroke}
-              className="tabular-nums"
-            >{up ? "▲" : "▼"}</text>
-          );
-        })()}
         {/* Series partitions: dotted vertical between i-1 and i */}
         {(partitions || []).map((j) => {
           if (j <= 0 || j >= n) return null;
@@ -228,6 +194,45 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             )}
           </g>
         ))}
+        {/* Avg-vs-others callout — rendered AFTER the data path and dots
+            so the white halo around the text actually masks the line and
+            keeps the badge legible. Small "▲ +1.2" / "▼ -0.5" centered
+            on the band (or selected column in single-game view), at the
+            top of the data area if the selected group's avg beats the
+            others, at the bottom if it trails. Direction and magnitude
+            land together at a glance. */}
+        {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
+          const up = avgSelected > avgOther;
+          // Round before sign-check to avoid "-0.0" on tiny diffs.
+          const rounded = Math.round((avgSelected - avgOther) * 10) / 10;
+          const signStr = rounded > 0 ? "+" : "";
+          const text = `${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`;
+          let cx;
+          if (Array.isArray(seriesRange)) {
+            cx = (x(seriesRange[0]) + x(seriesRange[1])) / 2;
+          } else if (selected != null) {
+            cx = x(selected - 1);
+          } else {
+            cx = pad.l + innerW / 2;
+          }
+          // Inside the data area so the glyph never clips against the
+          // SVG edge; clears the top-value label (e.g. "38.1") which
+          // sits above the data top in its own padding.
+          const cy = up ? pad.t + 9 : H - pad.b - 2;
+          return (
+            <text
+              x={cx}
+              y={cy}
+              fontSize="9"
+              textAnchor="middle"
+              fill={stroke}
+              stroke="white"
+              strokeWidth="3.5"
+              paintOrder="stroke"
+              className="tabular-nums"
+            >{text}</text>
+          );
+        })()}
         {/* Full-height column hit zones, layered last so they capture taps */}
         {padded.map((v, i) => {
           const hasData = v != null;
