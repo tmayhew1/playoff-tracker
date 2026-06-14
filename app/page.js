@@ -74,7 +74,7 @@ function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   );
 }
 
-function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange, label = "By Game" }) {
+function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange, label = "VA by Game", avgOther = null, avgSelected = null }) {
   const stroke = color;
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series.
@@ -138,6 +138,59 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
           );
         })()}
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
+        {/* Reference: dim full-width line at the average of the "other"
+            games (other series in series view, other games in game view). */}
+        {avgOther != null && (
+          <line
+            x1={pad.l}
+            x2={W - pad.r}
+            y1={y(avgOther)}
+            y2={y(avgOther)}
+            stroke="#a8a29e"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+          />
+        )}
+        {/* Reference: solid line at the average of the selected series,
+            drawn only inside the series band (game-view doesn't get the
+            line — its selected column already shows the value). */}
+        {avgSelected != null && Array.isArray(seriesRange) && (() => {
+          const colW = innerW / (n - 1);
+          const [a, b] = seriesRange;
+          return (
+            <line
+              x1={x(a) - colW / 2}
+              x2={x(b) + colW / 2}
+              y1={y(avgSelected)}
+              y2={y(avgSelected)}
+              stroke={stroke}
+              strokeWidth="1.5"
+              opacity="0.85"
+            />
+          );
+        })()}
+        {/* Tiny caret: up if the selected average beats the others,
+            down otherwise. Anchored to the right edge of the avgSelected
+            line in series view, or the chart-right in game view. */}
+        {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
+          const up = avgSelected > avgOther;
+          let cx = W - pad.r;
+          if (Array.isArray(seriesRange)) {
+            const colW = innerW / (n - 1);
+            cx = x(seriesRange[1]) + colW / 2;
+          }
+          const cy = y(avgSelected) + (up ? -3 : 8);
+          return (
+            <text
+              x={cx + 2}
+              y={cy}
+              fontSize="8"
+              textAnchor="start"
+              fill={stroke}
+              className="tabular-nums"
+            >{up ? "▲" : "▼"}</text>
+          );
+        })()}
         {/* Series partitions: dotted vertical between i-1 and i */}
         {(partitions || []).map((j) => {
           if (j <= 0 || j >= n) return null;
@@ -297,7 +350,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         return Number.isFinite(v) ? v : null;
       })
     : gameSeries;
-  const chartLabel = selectedCategory ? `By Game · ${selectedCategory}` : "By Game";
+  const chartLabel = selectedCategory ? `${selectedCategory} VA by Game` : "VA by Game";
 
   // Per-category regular-season reference: the player's RS season VA-per-game
   // scaled to the games shown in the current view (1 when a single game is
@@ -363,6 +416,38 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       .map((g, i) => (g?.seriesIdx === selectedSeriesIdx ? i : -1))
       .filter((i) => i >= 0);
     if (idxs.length) seriesRange = [idxs[0], idxs[idxs.length - 1]];
+  }
+  // Reference averages for the chart. Two modes:
+  // - Series selected: avgOther = mean across games NOT in the selected
+  //   series (dim dashed line); avgSelected = mean across the selected
+  //   series (solid line within the band) + up/down caret vs avgOther.
+  // - Single game drilled in: avgOther = mean across the OTHER games
+  //   (dim dashed line); avgSelected = the selected game's value
+  //   (drives the caret direction).
+  // Skipped when there's only one series / one game with data — nothing
+  // to compare against.
+  let avgOther = null;
+  let avgSelected = null;
+  if (Array.isArray(chartValues)) {
+    const validIdxs = chartValues
+      .map((v, i) => (v == null ? -1 : i))
+      .filter((i) => i >= 0);
+    const mean = (idxs) => idxs.reduce((s, i) => s + chartValues[i], 0) / idxs.length;
+    if (canDrillToSeries && selectedSeriesIdx != null && !selectedGame && Array.isArray(gameContext)) {
+      const inSel = validIdxs.filter((i) => gameContext[i]?.seriesIdx === selectedSeriesIdx);
+      const outSel = validIdxs.filter((i) => gameContext[i]?.seriesIdx !== selectedSeriesIdx);
+      if (inSel.length && outSel.length) {
+        avgSelected = mean(inSel);
+        avgOther = mean(outSel);
+      }
+    } else if (selectedGame != null) {
+      const others = validIdxs.filter((i) => i !== selectedGame - 1);
+      const selVal = chartValues[selectedGame - 1];
+      if (others.length && selVal != null) {
+        avgOther = mean(others);
+        avgSelected = selVal;
+      }
+    }
   }
   const showNav = !rate || inGameNav;
   const findGameWithData = (start, step) => {
@@ -435,15 +520,15 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="sm:order-2 sm:flex-1">
-            {/* Total VA banner — a full-width tinted bar (team color for
-                positive VA, red for negative) echoing the row bars, sitting
+            {/* Total Value Added banner — full-width tinted bar (team color
+                for positive VA, red for negative) echoing the row bars,
                 above the per-stat tiles. */}
             <div
-              className="flex items-baseline justify-center gap-2 px-2 py-2 mb-2 rounded-sm"
+              className="flex items-baseline justify-center gap-2 px-2 py-1.5 mb-2 rounded-sm"
               style={{ backgroundColor: p.va < 0 ? withAlpha("#dc2626", 0.10) : withAlpha(accentColor, 0.15) }}
             >
-              <span className="text-[10px] uppercase tracking-widest text-stone-500">Total VA:</span>
-              <span className={`tabular-nums text-2xl font-black leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
+              <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
+              <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
             </div>
             <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
@@ -484,6 +569,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                   partitions={partitions}
                   seriesRange={seriesRange}
                   label={chartLabel}
+                  avgOther={avgOther}
+                  avgSelected={avgSelected}
                 />
               </div>
               {showNav && inGameNav && (
@@ -501,6 +588,32 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           )}
         </div>
       </div>
+      {/* Per 36 / Per G toggle — sits right above the rate-label column
+          on the right, only when the breakdown is in multi-game rate
+          mode. Hidden in single-game drill-ins where rate labels show
+          raw counts (no toggle would apply). */}
+      {effectiveRate && (
+        <div className="flex justify-end mb-1.5">
+          <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setRateMode("per36")}
+              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              aria-pressed={rateMode === "per36"}
+            >
+              Per 36
+            </button>
+            <button
+              type="button"
+              onClick={() => setRateMode("perG")}
+              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              aria-pressed={rateMode === "perG"}
+            >
+              Per G
+            </button>
+          </div>
+        </div>
+      )}
       <div className="space-y-0.5">
         {categories.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
@@ -512,6 +625,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           const onCatTap = canSelectCategory
             ? () => setSelectedCategory(isCatSel ? null : c.key)
             : undefined;
+          // Explicit "+" prefix for positive VA contributions so a row's
+          // sign is unambiguous at a glance (negatives already get "-"
+          // from toFixed). Skipped at exactly 0 to avoid "+0.00".
+          const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
           return (
             <React.Fragment key={i}>
               <div
@@ -545,12 +662,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                   // Portrait phones hide the total + per-game contribution
                   // numbers so the bars (and the rate label) get the room.
                   <>
-                    <span className={`portrait:hidden w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(1)}</span>
+                    <span className={`portrait:hidden w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value, 1)}</span>
                     <span className="portrait:hidden text-stone-300 select-none">|</span>
-                    <span className={`portrait:hidden w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{(c.value / p.gp).toFixed(2)}</span>
+                    <span className={`portrait:hidden w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value / p.gp, 2)}</span>
                   </>
                 ) : (
-                  <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(2)}</span>
+                  <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value, 2)}</span>
                 )}
                 <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
@@ -559,30 +676,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           );
         })}
       </div>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[9px] text-stone-400">
-        {/* On portrait phones the caption takes the full row so the toggle
-            drops to its own line with room to render at a larger size. */}
-        <span className="italic portrait:w-full portrait:text-center">Bars show contribution above/below league average</span>
-        {effectiveRate && (
-          <div className="not-italic inline-flex items-center border border-stone-300 rounded-sm overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setRateMode("per36")}
-              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-              aria-pressed={rateMode === "per36"}
-            >
-              Per 36
-            </button>
-            <button
-              type="button"
-              onClick={() => setRateMode("perG")}
-              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-              aria-pressed={rateMode === "perG"}
-            >
-              Per G
-            </button>
-          </div>
-        )}
+      <div className="mt-2 text-center text-[9px] italic text-stone-400">
+        Bars show contribution above/below league average
       </div>
         </div>
         {showNav && !inGameNav && (
