@@ -170,22 +170,25 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
           );
         })()}
         {/* Tiny caret: up if the selected average beats the others,
-            down otherwise. Anchored to the right edge of the avgSelected
-            line in series view, or the chart-right in game view. */}
+            down otherwise. Right-anchored so it sits just inside the
+            right edge of the avgSelected line (series view) or just
+            inside the chart-right (game view) — anchoring left was
+            clipping the glyph when the band ran to the chart edge,
+            e.g. the NBA Finals at the end of a player's playoff run. */}
         {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
           const up = avgSelected > avgOther;
-          let cx = W - pad.r;
+          let cx = W - pad.r - 1;
           if (Array.isArray(seriesRange)) {
             const colW = innerW / (n - 1);
-            cx = x(seriesRange[1]) + colW / 2;
+            cx = Math.min(W - pad.r - 1, x(seriesRange[1]) + colW / 2 - 1);
           }
           const cy = y(avgSelected) + (up ? -3 : 8);
           return (
             <text
-              x={cx + 2}
+              x={cx}
               y={cy}
               fontSize="8"
-              textAnchor="start"
+              textAnchor="end"
               fill={stroke}
               className="tabular-nums"
             >{up ? "▲" : "▼"}</text>
@@ -520,13 +523,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="sm:order-2 sm:flex-1">
-            {/* Total Value Added banner — full-width tinted bar (team color
-                for positive VA, red for negative) echoing the row bars,
-                above the per-stat tiles. */}
-            <div
-              className="flex items-baseline justify-center gap-2 px-2 py-1.5 mb-2 rounded-sm"
-              style={{ backgroundColor: p.va < 0 ? withAlpha("#dc2626", 0.10) : withAlpha(accentColor, 0.15) }}
-            >
+            {/* Total Value Added — label + value inline, no background. */}
+            <div className="flex items-baseline justify-center gap-2 mb-2">
               <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
             </div>
@@ -593,12 +591,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           mode. Hidden in single-game drill-ins where rate labels show
           raw counts (no toggle would apply). */}
       {effectiveRate && (
-        <div className="flex justify-end mb-1.5">
-          <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden">
+        <div className="flex justify-end mb-1">
+          <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
             <button
               type="button"
               onClick={() => setRateMode("per36")}
-              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              className={`whitespace-nowrap px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
               aria-pressed={rateMode === "per36"}
             >
               Per 36
@@ -606,7 +604,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             <button
               type="button"
               onClick={() => setRateMode("perG")}
-              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
               aria-pressed={rateMode === "perG"}
             >
               Per G
