@@ -254,6 +254,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // ("33 PTS", "3/5 3P"), matching the per-game box-row breakdown — not
   // the per-36 / pct view used for the series aggregate.
   const effectiveRate = rate && !selectedGame;
+  // Multi-game views get the VA/Game tile; single-game drill-ins don't
+  // (VA/Game would just echo the Total VA banner).
+  const multiGame = (p.gp || 1) > 1;
 
   const twoPm = p.fgm - p.tpm, twoPa = p.fga - p.tpa;
   const tpAdd = ((p.tpm / (p.tpa || 1)) - lga.la3P) * p.tpa;
@@ -432,23 +435,29 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="sm:order-2 sm:flex-1">
-            <div className={`grid gap-2 items-end ${(p.gp || 1) > 1 ? "grid-cols-2" : "grid-cols-3"}`}>
+            {/* Total VA banner — a full-width tinted bar (team color for
+                positive VA, red for negative) echoing the row bars, sitting
+                above the per-stat tiles. */}
+            <div
+              className="flex items-baseline justify-center gap-2 px-2 py-2 mb-2 rounded-sm"
+              style={{ backgroundColor: p.va < 0 ? withAlpha("#dc2626", 0.10) : withAlpha(accentColor, 0.15) }}
+            >
+              <span className="text-[10px] uppercase tracking-widest text-stone-500">Total VA:</span>
+              <span className={`tabular-nums text-2xl font-black leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
+            </div>
+            <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
               </div>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN</div>
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN/G</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
               </div>
-              <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">Total Value Added (VA)</div>
-                <div className={`tabular-nums text-lg font-black ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</div>
-              </div>
-              {(p.gp || 1) > 1 && (
+              {multiGame && (
                 <div className="flex flex-col justify-end text-center">
                   <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
-                  <div className={`tabular-nums text-lg font-black ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va / p.gp).toFixed(2)}</div>
+                  <div className={`tabular-nums text-base font-semibold ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.va / p.gp).toFixed(2)}</div>
                 </div>
               )}
             </div>
@@ -533,10 +542,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                   )}
                 </div>
                 {rate && p.gp > 1 ? (
+                  // Portrait phones hide the total + per-game contribution
+                  // numbers so the bars (and the rate label) get the room.
                   <>
-                    <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(1)}</span>
-                    <span className="text-stone-300 select-none">|</span>
-                    <span className={`w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{(c.value / p.gp).toFixed(2)}</span>
+                    <span className={`portrait:hidden w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(1)}</span>
+                    <span className="portrait:hidden text-stone-300 select-none">|</span>
+                    <span className={`portrait:hidden w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{(c.value / p.gp).toFixed(2)}</span>
                   </>
                 ) : (
                   <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{c.value.toFixed(2)}</span>
@@ -548,14 +559,16 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           );
         })}
       </div>
-      <div className="mt-2 flex items-center justify-center gap-3 text-[9px] text-stone-400">
-        <span className="italic">Bars show contribution above/below league average</span>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[9px] text-stone-400">
+        {/* On portrait phones the caption takes the full row so the toggle
+            drops to its own line with room to render at a larger size. */}
+        <span className="italic portrait:w-full portrait:text-center">Bars show contribution above/below league average</span>
         {effectiveRate && (
           <div className="not-italic inline-flex items-center border border-stone-300 rounded-sm overflow-hidden">
             <button
               type="button"
               onClick={() => setRateMode("per36")}
-              className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
               aria-pressed={rateMode === "per36"}
             >
               Per 36
@@ -563,7 +576,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             <button
               type="button"
               onClick={() => setRateMode("perG")}
-              className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              className={`whitespace-nowrap px-1.5 py-0.5 portrait:px-3 portrait:py-1 portrait:text-xs border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
               aria-pressed={rateMode === "perG"}
             >
               Per G
