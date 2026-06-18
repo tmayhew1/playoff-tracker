@@ -141,7 +141,11 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             />
           );
         })()}
-        <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
+        {/* Zero axis: SOLID and marked with a "0" in the left gutter, so
+            it's plainly the baseline and never blurs into the dashed/
+            dotted gray average reference lines. */}
+        <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#78716c" strokeWidth="1" />
+        <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#78716c" className="tabular-nums">0</text>
         {/* Reference: dim full-width line at the average of the "other"
             games (other series in series view, other games in game view). */}
         {avgOther != null && (
@@ -219,7 +223,7 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
           return (
             <text x={labelX} y={H + 9} fontSize="9" textAnchor="middle" pointerEvents="none" className="tabular-nums">
               <tspan fill={stroke} fontWeight="600">{`${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`}</tspan>
-              <tspan fill="#78716c" dx="2">{up ? "better" : "worse"}</tspan>
+              <tspan fill="#78716c" dx="2" fontStyle="italic">{up ? "better" : "worse"}</tspan>
             </text>
           );
         })()}
@@ -490,11 +494,14 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         <div className={`mb-2 flex items-center justify-between gap-2 uppercase tracking-widest text-stone-500 ${(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) ? "text-xs font-semibold text-stone-700" : "text-[9px]"}`}>
           <span>{(() => {
             if (!rate) return "Value Added Breakdown";
+            // When a game/series is selected, italicize the matchup so it
+            // reads as the active selection: a game italicizes the whole
+            // label, a series italicizes just the "vs OPP" tail.
             if (selectedGame) {
               const ctx = gameContext?.[selectedGame - 1];
               const num = ctx?.seriesGameNumber || selectedGame;
               const opp = ctx?.opp;
-              return `Game ${num}${opp ? ` vs ${opp}` : ""}`;
+              return <span className="italic">{`Game ${num}${opp ? ` vs ${opp}` : ""}`}</span>;
             }
             if (canDrillToSeries && selectedSeriesIdx != null) {
               const ctx = gameContext.find((g) => g?.seriesIdx === selectedSeriesIdx);
@@ -505,12 +512,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               // back to "Series vs OPP" when round info isn't in scope.
               const round = ctx?.round;
               const conf = playerConf === "W" ? "Western" : playerConf === "E" ? "Eastern" : null;
-              const oppTail = opp ? ` vs. ${opp}` : "";
-              if (round === 1) return `First Round${oppTail}`;
-              if (round === 2 && conf) return `${conf} Semis${oppTail}`;
-              if (round === 3 && conf) return `${conf} Conf Finals${oppTail}`;
-              if (round === 4) return `NBA Finals${oppTail}`;
-              return `Series${opp ? ` vs ${opp}` : ""}`;
+              const oppEm = opp ? <span className="italic">{` vs. ${opp}`}</span> : null;
+              if (round === 1) return <>First Round{oppEm}</>;
+              if (round === 2 && conf) return <>{conf} Semis{oppEm}</>;
+              if (round === 3 && conf) return <>{conf} Conf Finals{oppEm}</>;
+              if (round === 4) return <>NBA Finals{oppEm}</>;
+              return <>Series{opp ? <span className="italic">{` vs ${opp}`}</span> : null}</>;
             }
             return breakdownTitle || "Series Breakdown";
           })()}</span>
