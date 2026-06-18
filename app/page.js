@@ -195,6 +195,43 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             )}
           </g>
         ))}
+        {/* Avg delta: a hairline connector from the selected dot (game
+            view) or the selected series' avg line (series view) down/up
+            to the "others" avg line, labeled with the signed gap. The
+            connector IS the delta — its length is the distance it
+            measures — so the comparison reads in place, no floating
+            callout needed. */}
+        {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
+          const colW = innerW / (n - 1);
+          let xAnchor;
+          if (Array.isArray(seriesRange)) {
+            xAnchor = x(seriesRange[1]) + colW / 2;
+          } else if (selected != null) {
+            xAnchor = x(selected - 1);
+          } else {
+            return null;
+          }
+          const ySel = y(avgSelected);
+          const yOth = y(avgOther);
+          const up = avgSelected > avgOther;
+          const rounded = Math.round((avgSelected - avgOther) * 10) / 10;
+          const signStr = rounded > 0 ? "+" : "";
+          // Label hugs the connector on whichever side has room.
+          const onLeft = xAnchor > W * 0.5;
+          const labelX = onLeft ? xAnchor - 5 : xAnchor + 5;
+          const labelY = (ySel + yOth) / 2;
+          return (
+            <g pointerEvents="none">
+              <line x1={xAnchor} x2={xAnchor} y1={ySel} y2={yOth} stroke={stroke} strokeWidth="1" />
+              {/* cap where the connector lands on the others' avg line */}
+              <line x1={xAnchor - 2.5} x2={xAnchor + 2.5} y1={yOth} y2={yOth} stroke={stroke} strokeWidth="1" />
+              <text x={labelX} y={labelY} fontSize="9" textAnchor={onLeft ? "end" : "start"} dominantBaseline="middle" className="tabular-nums">
+                <tspan fill={stroke} fontWeight="600">{`${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`}</tspan>
+                <tspan fill="#78716c" dx="2">{up ? "better" : "worse"}</tspan>
+              </text>
+            </g>
+          );
+        })()}
         {/* Full-height column hit zones, layered last so they capture taps */}
         {padded.map((v, i) => {
           const hasData = v != null;
@@ -215,52 +252,6 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
           );
         })}
       </svg>
-      {/* Avg-vs-others "dugout": a small badge hanging just below the
-          chart (if the selected group trails the rest) or just above it
-          (if it leads), anchored at the selected band/column horizontally.
-          Pairs the signed delta with a plain-English comparison so the
-          comparison reads at a glance: "▼ -1.5  worse than playoff avg."
-          Anchors right when the band sits in the right side of the chart
-          so the badge text never runs off the chart container. */}
-      {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
-        const up = avgSelected > avgOther;
-        const rounded = Math.round((avgSelected - avgOther) * 10) / 10;
-        const signStr = rounded > 0 ? "+" : "";
-        const colW = innerW / (n - 1);
-        let xLeft, xRight;
-        if (Array.isArray(seriesRange)) {
-          xLeft = x(seriesRange[0]) - colW / 2;
-          xRight = x(seriesRange[1]) + colW / 2;
-        } else if (selected != null) {
-          xLeft = x(selected - 1) - colW / 2;
-          xRight = x(selected - 1) + colW / 2;
-        } else {
-          return null;
-        }
-        const center = (xLeft + xRight) / 2;
-        const anchorRight = center > W * 0.55;
-        const leftPct = (xLeft / W) * 100;
-        const rightPct = 100 - (xRight / W) * 100;
-        const horizontal = anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` };
-        // Park the dugout inside the chart's edge padding (where the
-        // top-value label sits at the top, and where the data line
-        // never reaches at the bottom). Keeps the title and the next
-        // section below the chart from getting bumped by the badge.
-        const vertical = up ? { top: "2px" } : { bottom: "2px" };
-        return (
-          <div
-            className="absolute z-10 inline-flex items-center gap-1.5 whitespace-nowrap bg-white border border-stone-300 rounded-sm px-1.5 py-0.5 text-[9px] shadow-sm pointer-events-none"
-            style={{ ...horizontal, ...vertical }}
-          >
-            <span className="font-semibold tabular-nums" style={{ color: stroke }}>
-              {up ? "▲" : "▼"} {signStr}{rounded.toFixed(1)}
-            </span>
-            <span className="text-stone-500">
-              {up ? "better" : "worse"} than playoff avg.
-            </span>
-          </div>
-        );
-      })()}
       </div>
     </div>
   );
