@@ -87,6 +87,9 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
   padded.forEach((v, i) => { if (v != null && v > topVal) { topVal = v; topIdx = i; } });
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
+  // Extra strip below the plotting area where the avg-delta label parks,
+  // directly beneath the shaded band so it never overlaps the data.
+  const STRIP = 13;
   const nums = padded.filter((v) => v != null);
   let vMin = Math.min(0, ...(nums.length ? nums : [0]));
   let vMax = Math.max(0, ...(nums.length ? nums : [0]));
@@ -105,7 +108,7 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
     <div className="mt-2 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
       <div className="relative">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full block">
+      <svg viewBox={`0 0 ${W} ${H + STRIP}`} className="w-full block">
         {/* Series-band shading (used when a series is selected but no
             single game has been drilled into) */}
         {selected == null && Array.isArray(seriesRange) && (() => {
@@ -138,7 +141,11 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             />
           );
         })()}
-        <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="2 2" />
+        {/* Zero axis: SOLID and marked with a "0" in the left gutter, so
+            it's plainly the baseline and never blurs into the dashed/
+            dotted gray average reference lines. */}
+        <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#78716c" strokeWidth="1" />
+        <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#78716c" className="tabular-nums">0</text>
         {/* Reference: dim full-width line at the average of the "other"
             games (other series in series view, other games in game view). */}
         {avgOther != null && (
@@ -195,41 +202,29 @@ function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions
             )}
           </g>
         ))}
-        {/* Avg delta: a hairline connector from the selected dot (game
-            view) or the selected series' avg line (series view) down/up
-            to the "others" avg line, labeled with the signed gap. The
-            connector IS the delta — its length is the distance it
-            measures — so the comparison reads in place, no floating
-            callout needed. */}
+        {/* Avg delta, parked in the strip directly beneath the shaded
+            band/column so it never collides with the data. The band ties
+            it to the selection horizontally; the two avg reference lines
+            still carry the gap visually. Centered under the band and
+            clamped to stay on-chart. */}
         {avgSelected != null && avgOther != null && avgSelected !== avgOther && (() => {
-          const colW = innerW / (n - 1);
-          let xAnchor;
+          let center;
           if (Array.isArray(seriesRange)) {
-            xAnchor = x(seriesRange[1]) + colW / 2;
+            center = (x(seriesRange[0]) + x(seriesRange[1])) / 2;
           } else if (selected != null) {
-            xAnchor = x(selected - 1);
+            center = x(selected - 1);
           } else {
             return null;
           }
-          const ySel = y(avgSelected);
-          const yOth = y(avgOther);
           const up = avgSelected > avgOther;
           const rounded = Math.round((avgSelected - avgOther) * 10) / 10;
           const signStr = rounded > 0 ? "+" : "";
-          // Label hugs the connector on whichever side has room.
-          const onLeft = xAnchor > W * 0.5;
-          const labelX = onLeft ? xAnchor - 5 : xAnchor + 5;
-          const labelY = (ySel + yOth) / 2;
+          const labelX = Math.max(30, Math.min(W - 30, center));
           return (
-            <g pointerEvents="none">
-              <line x1={xAnchor} x2={xAnchor} y1={ySel} y2={yOth} stroke={stroke} strokeWidth="1" />
-              {/* cap where the connector lands on the others' avg line */}
-              <line x1={xAnchor - 2.5} x2={xAnchor + 2.5} y1={yOth} y2={yOth} stroke={stroke} strokeWidth="1" />
-              <text x={labelX} y={labelY} fontSize="9" textAnchor={onLeft ? "end" : "start"} dominantBaseline="middle" className="tabular-nums">
-                <tspan fill={stroke} fontWeight="600">{`${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`}</tspan>
-                <tspan fill="#78716c" dx="2">{up ? "better" : "worse"}</tspan>
-              </text>
-            </g>
+            <text x={labelX} y={H + 9} fontSize="9" textAnchor="middle" pointerEvents="none" className="tabular-nums">
+              <tspan fill={stroke} fontWeight="600">{`${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`}</tspan>
+              <tspan fill="#78716c" dx="2" fontStyle="italic">{up ? "better" : "worse"}</tspan>
+            </text>
           );
         })()}
         {/* Full-height column hit zones, layered last so they capture taps */}
@@ -499,11 +494,14 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         <div className={`mb-2 flex items-center justify-between gap-2 uppercase tracking-widest text-stone-500 ${(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) ? "text-xs font-semibold text-stone-700" : "text-[9px]"}`}>
           <span>{(() => {
             if (!rate) return "Value Added Breakdown";
+            // When a game/series is selected, italicize the matchup so it
+            // reads as the active selection: a game italicizes the whole
+            // label, a series italicizes just the "vs OPP" tail.
             if (selectedGame) {
               const ctx = gameContext?.[selectedGame - 1];
               const num = ctx?.seriesGameNumber || selectedGame;
               const opp = ctx?.opp;
-              return `Game ${num}${opp ? ` vs ${opp}` : ""}`;
+              return <span className="italic">{`Game ${num}${opp ? ` vs ${opp}` : ""}`}</span>;
             }
             if (canDrillToSeries && selectedSeriesIdx != null) {
               const ctx = gameContext.find((g) => g?.seriesIdx === selectedSeriesIdx);
@@ -514,12 +512,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               // back to "Series vs OPP" when round info isn't in scope.
               const round = ctx?.round;
               const conf = playerConf === "W" ? "Western" : playerConf === "E" ? "Eastern" : null;
-              const oppTail = opp ? ` vs. ${opp}` : "";
-              if (round === 1) return `First Round${oppTail}`;
-              if (round === 2 && conf) return `${conf} Semis${oppTail}`;
-              if (round === 3 && conf) return `${conf} Conf Finals${oppTail}`;
-              if (round === 4) return `NBA Finals${oppTail}`;
-              return `Series${opp ? ` vs ${opp}` : ""}`;
+              const oppEm = opp ? <span className="italic">{` vs. ${opp}`}</span> : null;
+              if (round === 1) return <>First Round{oppEm}</>;
+              if (round === 2 && conf) return <>{conf} Semis{oppEm}</>;
+              if (round === 3 && conf) return <>{conf} Conf Finals{oppEm}</>;
+              if (round === 4) return <>NBA Finals{oppEm}</>;
+              return <>Series{opp ? <span className="italic">{` vs ${opp}`}</span> : null}</>;
             }
             return breakdownTitle || "Series Breakdown";
           })()}</span>
