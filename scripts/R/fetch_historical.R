@@ -40,9 +40,10 @@ slug_from_href <- function(href) {
   if (length(m) >= 2) m[2] else NA_character_
 }
 
-# Parse one team's basic box-score table node into player stat rows.
+# Parse one team's basic box-score table node into a team record: the team's
+# final score (from the table's "Team Totals" tfoot row) plus its player rows.
 parse_team_table <- function(t, tri) {
-  out <- list()
+  players <- list()
   for (tr in xml2::xml_find_all(t, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
     if (!is.na(cls) && grepl("thead", cls)) next
@@ -56,7 +57,7 @@ parse_team_table <- function(t, tri) {
     mp <- parse_minutes(cell_text(tr, "mp"))
     if (mp <= 0) next
     href <- xml2::xml_attr(xml2::xml_find_first(player_cell, ".//a"), "href")
-    out[[length(out) + 1]] <- list(
+    players[[length(players) + 1]] <- list(
       name = name, slug = slug_from_href(href), team = tri, mp = mp,
       pts = num(cell_text(tr, "pts")), reb = num(cell_text(tr, "trb")),
       drb = num(cell_text(tr, "drb")), orb = num(cell_text(tr, "orb")),
@@ -67,20 +68,21 @@ parse_team_table <- function(t, tri) {
       ftm = num(cell_text(tr, "ft")),  fta = num(cell_text(tr, "fta"))
     )
   }
-  out
+  # Team final score = the tfoot "Team Totals" points. Ties the score to the
+  # team via the table id, so it never depends on scorebox ordering.
+  score <- num(xml2::xml_text(xml2::xml_find_first(t, ".//tfoot//*[@data-stat='pts']")))
+  list(tri = tri, score = score, players = players)
 }
 
-# Parse BOTH teams from every full-game basic box table on the page, deriving
-# the team tricode straight from the table id (box-XXX-game-basic). This never
-# guesses which side is home/away to locate a table, so a scorebox quirk can't
-# cause a team to be silently dropped.
-players_from_doc <- function(doc) {
+# Parse every full-game basic box table on the page into team records,
+# deriving the tricode straight from the table id (box-XXX-game-basic).
+teams_from_doc <- function(doc) {
   out <- list()
   for (t in xml2::xml_find_all(doc, "//table[contains(@id,'-game-basic')]")) {
     id <- xml2::xml_attr(t, "id")
     m <- regmatches(id, regexec("^box-([A-Z]{3})-game-basic$", id))[[1]]
     if (length(m) < 2) next
-    out <- c(out, parse_team_table(t, m[2]))
+    out[[length(out) + 1]] <- parse_team_table(t, m[2])
   }
   out
 }
@@ -88,32 +90,25 @@ players_from_doc <- function(doc) {
 fetch_box <- function(url) {
   box_id <- sub(".*/boxscores/([^/.]+)\\.html.*", "\\1", url)
   date <- parse_date_from_box_id(box_id)
-  html <- throttled_fetch(url)
-  # Scorebox (teams + scores) is read from the RAW HTML: un-commenting BR's
-  # lazy-loaded blocks can expose extra /teams/ links that pollute scorebox
-  # team detection. The box-score tables, however, must come from the
-  # un-commented HTML (BR hides one team's table inside an HTML comment).
-  doc_raw <- xml2::read_html(html)
-  doc <- parse_html_uncommented(html)
-  blocks <- xml2::xml_find_all(doc_raw, "//div[contains(@class,'scorebox')]/div")
-  team_blocks <- Filter(function(b) {
-    !inherits(xml2::xml_find_first(b, ".//a[contains(@href,'/teams/')]"), "xml_missing")
-  }, blocks)
-  if (length(team_blocks) < 2) stop(sprintf("scorebox parse failed for %s", box_id))
-  team_at <- function(i) {
-    blk <- team_blocks[[i]]
-    href <- xml2::xml_attr(xml2::xml_find_first(blk, ".//a[contains(@href,'/teams/')]"), "href")
-    tri <- if (is.na(href)) "" else sub(".*/teams/([A-Z]{3})/.*", "\\1", href)
-    if (!grepl("^[A-Z]{3}$", tri)) tri <- ""
-    score <- num(xml2::xml_text(xml2::xml_find_first(blk, ".//div[@class='score']")))
-    list(tri = tri, score = score)
+  # Box tables come from the un-commented HTML (BR hides one team's table in an
+  # HTML comment). Team identity and scores are taken entirely from these
+  # tables + the gameId -- the scorebox is too fragile to trust for either.
+  doc <- parse_html_uncommented(throttled_fetch(url))
+  teams <- teams_from_doc(doc)
+  if (length(teams) < 2) stop(sprintf("box parse found %d teams for %s", length(teams), box_id))
+  # BR encodes the HOME team's tricode in the gameId: YYYYMMDD + "0" + TRI.
+  home_code <- substr(box_id, 10, 12)
+  home_t <- NULL; away_t <- NULL
+  for (tm in teams) {
+    if (tm$tri == home_code) home_t <- tm else away_t <- tm
   }
-  away <- team_at(1); home <- team_at(2)
-  players <- players_from_doc(doc)
+  # Fallback (shouldn't trigger for normal games): keep document order.
+  if (is.null(home_t) || is.null(away_t)) { away_t <- teams[[1]]; home_t <- teams[[2]] }
+  players <- c(away_t$players, home_t$players)
   list(
     gameId = box_id, date = date,
-    home = list(tri = to_nba(home$tri), score = home$score, brTri = home$tri),
-    away = list(tri = to_nba(away$tri), score = away$score, brTri = away$tri),
+    home = list(tri = to_nba(home_t$tri), score = home_t$score, brTri = home_t$tri),
+    away = list(tri = to_nba(away_t$tri), score = away_t$score, brTri = away_t$tri),
     players = lapply(players, function(p) { p$team <- to_nba(p$team); p })
   )
 }
@@ -359,12 +354,15 @@ main <- function(season) {
   }
 }
 
-season_arg <- commandArgs(trailingOnly = TRUE)
-season_arg <- season_arg[!grepl("^--", season_arg)]
-if (length(season_arg) < 1) stop("Usage: Rscript fetch_historical.R <YYYY-YY>")
-tryCatch(main(season_arg[1]), error = function(e) {
-  message("\n========== BAKE FAILED ==========")
-  message(conditionMessage(e))
-  message("==================================\n")
-  quit(status = 1)
-})
+# Only run when invoked as a script (not when sourced for tests).
+if (sys.nframe() == 0) {
+  season_arg <- commandArgs(trailingOnly = TRUE)
+  season_arg <- season_arg[!grepl("^--", season_arg)]
+  if (length(season_arg) < 1) stop("Usage: Rscript fetch_historical.R <YYYY-YY>")
+  tryCatch(main(season_arg[1]), error = function(e) {
+    message("\n========== BAKE FAILED ==========")
+    message(conditionMessage(e))
+    message("==================================\n")
+    quit(status = 1)
+  })
+}
