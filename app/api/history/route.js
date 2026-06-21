@@ -6,7 +6,7 @@ export const maxDuration = 15;
 export const revalidate = 86400;
 
 // Bake-first lookup: if `app/data/history-<season>.json` exists, the
-// scripts/fetch-historical.mjs pipeline has produced canonical data and we
+// scripts/R/fetch_historical.R pipeline has produced canonical data and we
 // serve that. Otherwise fall back to the live ESPN logic below.
 async function loadBaked(season) {
   try {

@@ -3,7 +3,7 @@
 import games202425 from "./data/history-2024-25.json";
 import games202324 from "./data/history-2023-24.json";
 
-// Baked per-game data + box scores, produced by scripts/fetch-historical.mjs.
+// Baked per-game data + box scores, produced by scripts/R/fetch_historical.R.
 // Empty `series` until the script is run; the UI degrades gracefully.
 export const HISTORY_GAMES = {
   "2024-25": games202425,

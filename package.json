@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "fetch:history": "node scripts/fetch-historical.mjs"
+    "fetch:history": "Rscript scripts/R/fetch_historical.R",
+    "fetch:averages": "Rscript scripts/R/fetch_league_averages.R"
   },
   "dependencies": {
     "cheerio": "1.0.0",

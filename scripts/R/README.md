@@ -57,9 +57,11 @@ scripts shows last-digit string diffs (e.g. `…512` vs `…51`). These are
 **semantically identical** (round-trip-safe doubles; the app displays 1–2
 decimals) — verify with `compare-json.mjs`, not a byte diff.
 
-## Migration status
+## History
 
-These R scripts replace the Node scrapers (`scripts/fetch-historical.mjs`,
-`scripts/fetch-league-averages.mjs`). The Node versions and their manual
-workflows are kept until the daily R workflow has a confirmed green run, then
-removed.
+These R scripts replaced the original Node scrapers
+(`scripts/fetch-historical.mjs`, `scripts/fetch-league-averages.mjs`) and their
+manual workflows (`bake-history`, `bake-history-range`,
+`backfill-league-averages`), which were removed once the daily R workflow had a
+confirmed clean run. The current-season bake was verified semantically
+identical to the last Node bake.
