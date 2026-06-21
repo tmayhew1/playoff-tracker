@@ -1,0 +1,1249 @@
+{
+  "season": "2004-05",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "200504230BOS",
+          "gameCode": "20050423",
+          "gameDateTimeUTC": "2005-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "IND",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200504250BOS",
+          "gameCode": "20050425",
+          "gameDateTimeUTC": "2005-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 79
+          },
+          "away": {
+            "tri": "IND",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200504280IND",
+          "gameCode": "20050428",
+          "gameDateTimeUTC": "2005-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200504300IND",
+          "gameCode": "20050430",
+          "gameDateTimeUTC": "2005-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 79
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "200505030BOS",
+          "gameCode": "20050503",
+          "gameDateTimeUTC": "2005-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 85
+          },
+          "away": {
+            "tri": "IND",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200505050IND",
+          "gameCode": "20050505",
+          "gameDateTimeUTC": "2005-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 89
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200505070BOS",
+          "gameCode": "20050507",
+          "gameDateTimeUTC": "2005-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 70
+          },
+          "away": {
+            "tri": "IND",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "HOU"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "200504230DAL",
+          "gameCode": "20050423",
+          "gameDateTimeUTC": "2005-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 86
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200504250DAL",
+          "gameCode": "20050425",
+          "gameDateTimeUTC": "2005-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "200504280HOU",
+          "gameCode": "20050428",
+          "gameDateTimeUTC": "2005-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 102
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "200504300HOU",
+          "gameCode": "20050430",
+          "gameDateTimeUTC": "2005-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 93
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200505020DAL",
+          "gameCode": "20050502",
+          "gameDateTimeUTC": "2005-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200505050HOU",
+          "gameCode": "20050505",
+          "gameDateTimeUTC": "2005-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 101
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200505070DAL",
+          "gameCode": "20050507",
+          "gameDateTimeUTC": "2005-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 116
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 76
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "PHI"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200504230DET",
+          "gameCode": "20050423",
+          "gameDateTimeUTC": "2005-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200504260DET",
+          "gameCode": "20050426",
+          "gameDateTimeUTC": "2005-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 99
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200504290PHI",
+          "gameCode": "20050429",
+          "gameDateTimeUTC": "2005-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 115
+          },
+          "away": {
+            "tri": "DET",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200505010PHI",
+          "gameCode": "20050501",
+          "gameDateTimeUTC": "2005-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 92
+          },
+          "away": {
+            "tri": "DET",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200505030DET",
+          "gameCode": "20050503",
+          "gameDateTimeUTC": "2005-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 88
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SEA",
+        "SAC"
+      ],
+      "winner": "SEA",
+      "games": [
+        {
+          "gameId": "200504230SEA",
+          "gameCode": "20050423",
+          "gameDateTimeUTC": "2005-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 87
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200504260SEA",
+          "gameCode": "20050426",
+          "gameDateTimeUTC": "2005-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200504290SAC",
+          "gameCode": "20050429",
+          "gameDateTimeUTC": "2005-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 116
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200505010SAC",
+          "gameCode": "20050501",
+          "gameDateTimeUTC": "2005-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 102
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "200505030SEA",
+          "gameCode": "20050503",
+          "gameDateTimeUTC": "2005-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 122
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "WAS"
+      ],
+      "winner": "WAS",
+      "games": [
+        {
+          "gameId": "200504240CHI",
+          "gameCode": "20050424",
+          "gameDateTimeUTC": "2005-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200504270CHI",
+          "gameCode": "20050427",
+          "gameDateTimeUTC": "2005-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 113
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200504300WAS",
+          "gameCode": "20050430",
+          "gameDateTimeUTC": "2005-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 117
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "200505020WAS",
+          "gameCode": "20050502",
+          "gameDateTimeUTC": "2005-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "200505040CHI",
+          "gameCode": "20050504",
+          "gameDateTimeUTC": "2005-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 110
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "200505060WAS",
+          "gameCode": "20050506",
+          "gameDateTimeUTC": "2005-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 94
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "NJN"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "200504240MIA",
+          "gameCode": "20050424",
+          "gameDateTimeUTC": "2005-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 116
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200504260MIA",
+          "gameCode": "20050426",
+          "gameDateTimeUTC": "2005-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 104
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200504280NJN",
+          "gameCode": "20050428",
+          "gameDateTimeUTC": "2005-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 105
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "200505010NJN",
+          "gameCode": "20050501",
+          "gameDateTimeUTC": "2005-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "MEM"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "200504240PHO",
+          "gameCode": "20050424",
+          "gameDateTimeUTC": "2005-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 114
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200504270PHO",
+          "gameCode": "20050427",
+          "gameDateTimeUTC": "2005-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 108
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200504290MEM",
+          "gameCode": "20050429",
+          "gameDateTimeUTC": "2005-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 90
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "200505010MEM",
+          "gameCode": "20050501",
+          "gameDateTimeUTC": "2005-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 115
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 123
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "DEN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200504240SAS",
+          "gameCode": "20050424",
+          "gameDateTimeUTC": "2005-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 87
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200504270SAS",
+          "gameCode": "20050427",
+          "gameDateTimeUTC": "2005-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 104
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200504300DEN",
+          "gameCode": "20050430",
+          "gameDateTimeUTC": "2005-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 78
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200505020DEN",
+          "gameCode": "20050502",
+          "gameDateTimeUTC": "2005-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 115
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "200505040SAS",
+          "gameCode": "20050504",
+          "gameDateTimeUTC": "2005-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 99
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIA",
+        "WAS"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "200505080MIA",
+          "gameCode": "20050508",
+          "gameDateTimeUTC": "2005-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 105
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200505100MIA",
+          "gameCode": "20050510",
+          "gameDateTimeUTC": "2005-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 108
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200505120WAS",
+          "gameCode": "20050512",
+          "gameDateTimeUTC": "2005-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 95
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200505140WAS",
+          "gameCode": "20050514",
+          "gameDateTimeUTC": "2005-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 95
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "SEA"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200505080SAS",
+          "gameCode": "20050508",
+          "gameDateTimeUTC": "2005-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200505100SAS",
+          "gameCode": "20050510",
+          "gameDateTimeUTC": "2005-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200505120SEA",
+          "gameCode": "20050512",
+          "gameDateTimeUTC": "2005-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 92
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200505150SEA",
+          "gameCode": "20050515",
+          "gameDateTimeUTC": "2005-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 101
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200505170SAS",
+          "gameCode": "20050517",
+          "gameDateTimeUTC": "2005-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "SEA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200505190SEA",
+          "gameCode": "20050519",
+          "gameDateTimeUTC": "2005-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "SEA",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "IND"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200505090DET",
+          "gameCode": "20050509",
+          "gameDateTimeUTC": "2005-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 96
+          },
+          "away": {
+            "tri": "IND",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200505110DET",
+          "gameCode": "20050511",
+          "gameDateTimeUTC": "2005-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 83
+          },
+          "away": {
+            "tri": "IND",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200505130IND",
+          "gameCode": "20050513",
+          "gameDateTimeUTC": "2005-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 79
+          },
+          "away": {
+            "tri": "DET",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "200505150IND",
+          "gameCode": "20050515",
+          "gameDateTimeUTC": "2005-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 76
+          },
+          "away": {
+            "tri": "DET",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200505170DET",
+          "gameCode": "20050517",
+          "gameDateTimeUTC": "2005-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 86
+          },
+          "away": {
+            "tri": "IND",
+            "score": 67
+          }
+        },
+        {
+          "gameId": "200505190IND",
+          "gameCode": "20050519",
+          "gameDateTimeUTC": "2005-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 79
+          },
+          "away": {
+            "tri": "DET",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "DAL"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "200505090PHO",
+          "gameCode": "20050509",
+          "gameDateTimeUTC": "2005-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 127
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200505110PHO",
+          "gameCode": "20050511",
+          "gameDateTimeUTC": "2005-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 106
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "200505130DAL",
+          "gameCode": "20050513",
+          "gameDateTimeUTC": "2005-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "200505150DAL",
+          "gameCode": "20050515",
+          "gameDateTimeUTC": "2005-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "200505180PHO",
+          "gameCode": "20050518",
+          "gameDateTimeUTC": "2005-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 114
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "200505200DAL",
+          "gameCode": "20050520",
+          "gameDateTimeUTC": "2005-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 126
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 130
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "PHX",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200505220PHO",
+          "gameCode": "20050522",
+          "gameDateTimeUTC": "2005-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 114
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "200505240PHO",
+          "gameCode": "20050524",
+          "gameDateTimeUTC": "2005-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 108
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "200505280SAS",
+          "gameCode": "20050528",
+          "gameDateTimeUTC": "2005-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200505300SAS",
+          "gameCode": "20050530",
+          "gameDateTimeUTC": "2005-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "200506010PHO",
+          "gameCode": "20050601",
+          "gameDateTimeUTC": "2005-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 95
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIA",
+        "DET"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200505230MIA",
+          "gameCode": "20050523",
+          "gameDateTimeUTC": "2005-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 81
+          },
+          "away": {
+            "tri": "DET",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200505250MIA",
+          "gameCode": "20050525",
+          "gameDateTimeUTC": "2005-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 92
+          },
+          "away": {
+            "tri": "DET",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200505290DET",
+          "gameCode": "20050529",
+          "gameDateTimeUTC": "2005-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "200505310DET",
+          "gameCode": "20050531",
+          "gameDateTimeUTC": "2005-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 106
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200506020MIA",
+          "gameCode": "20050602",
+          "gameDateTimeUTC": "2005-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 88
+          },
+          "away": {
+            "tri": "DET",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200506040DET",
+          "gameCode": "20050604",
+          "gameDateTimeUTC": "2005-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 91
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 66
+          }
+        },
+        {
+          "gameId": "200506060MIA",
+          "gameCode": "20050606",
+          "gameDateTimeUTC": "2005-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 82
+          },
+          "away": {
+            "tri": "DET",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "SAS",
+        "DET"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200506090SAS",
+          "gameCode": "20050609",
+          "gameDateTimeUTC": "2005-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 84
+          },
+          "away": {
+            "tri": "DET",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "200506120SAS",
+          "gameCode": "20050612",
+          "gameDateTimeUTC": "2005-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "DET",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200506140DET",
+          "gameCode": "20050614",
+          "gameDateTimeUTC": "2005-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200506160DET",
+          "gameCode": "20050616",
+          "gameDateTimeUTC": "2005-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 102
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "200506190DET",
+          "gameCode": "20050619",
+          "gameDateTimeUTC": "2005-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 95
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200506210SAS",
+          "gameCode": "20050621",
+          "gameDateTimeUTC": "2005-06-21T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 86
+          },
+          "away": {
+            "tri": "DET",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "200506230SAS",
+          "gameCode": "20050623",
+          "gameDateTimeUTC": "2005-06-23T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 81
+          },
+          "away": {
+            "tri": "DET",
+            "score": 74
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-21T21:22:08.598Z"
+}

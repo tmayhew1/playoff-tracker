@@ -1,0 +1,1275 @@
+{
+  "season": "2007-08",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "WAS"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "200804190CLE",
+          "gameCode": "20080419",
+          "gameDateTimeUTC": "2008-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 93
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200804210CLE",
+          "gameCode": "20080421",
+          "gameDateTimeUTC": "2008-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 116
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200804240WAS",
+          "gameCode": "20080424",
+          "gameDateTimeUTC": "2008-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "200804270WAS",
+          "gameCode": "20080427",
+          "gameDateTimeUTC": "2008-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200804300CLE",
+          "gameCode": "20080430",
+          "gameDateTimeUTC": "2008-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 87
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200805020WAS",
+          "gameCode": "20080502",
+          "gameDateTimeUTC": "2008-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 88
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "200804190HOU",
+          "gameCode": "20080419",
+          "gameDateTimeUTC": "2008-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 82
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200804210HOU",
+          "gameCode": "20080421",
+          "gameDateTimeUTC": "2008-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 84
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200804240UTA",
+          "gameCode": "20080424",
+          "gameDateTimeUTC": "2008-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 92
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200804260UTA",
+          "gameCode": "20080426",
+          "gameDateTimeUTC": "2008-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 86
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200804290HOU",
+          "gameCode": "20080429",
+          "gameDateTimeUTC": "2008-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 95
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "200805020UTA",
+          "gameCode": "20080502",
+          "gameDateTimeUTC": "2008-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 113
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NOP",
+        "DAL"
+      ],
+      "winner": "NOP",
+      "games": [
+        {
+          "gameId": "200804190NOH",
+          "gameCode": "20080419",
+          "gameDateTimeUTC": "2008-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 104
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200804220NOH",
+          "gameCode": "20080422",
+          "gameDateTimeUTC": "2008-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 127
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200804250DAL",
+          "gameCode": "20080425",
+          "gameDateTimeUTC": "2008-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200804270DAL",
+          "gameCode": "20080427",
+          "gameDateTimeUTC": "2008-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 84
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200804290NOH",
+          "gameCode": "20080429",
+          "gameDateTimeUTC": "2008-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 99
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "PHX"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200804190SAS",
+          "gameCode": "20080419",
+          "gameDateTimeUTC": "2008-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 117
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "200804220SAS",
+          "gameCode": "20080422",
+          "gameDateTimeUTC": "2008-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200804250PHO",
+          "gameCode": "20080425",
+          "gameDateTimeUTC": "2008-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 99
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "200804270PHO",
+          "gameCode": "20080427",
+          "gameDateTimeUTC": "2008-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200804290SAS",
+          "gameCode": "20080429",
+          "gameDateTimeUTC": "2008-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "ATL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "200804200BOS",
+          "gameCode": "20080420",
+          "gameDateTimeUTC": "2008-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 104
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200804230BOS",
+          "gameCode": "20080423",
+          "gameDateTimeUTC": "2008-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "200804260ATL",
+          "gameCode": "20080426",
+          "gameDateTimeUTC": "2008-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200804280ATL",
+          "gameCode": "20080428",
+          "gameDateTimeUTC": "2008-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 97
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200804300BOS",
+          "gameCode": "20080430",
+          "gameDateTimeUTC": "2008-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 110
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200805020ATL",
+          "gameCode": "20080502",
+          "gameDateTimeUTC": "2008-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200805040BOS",
+          "gameCode": "20080504",
+          "gameDateTimeUTC": "2008-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 99
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 65
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "PHI"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200804200DET",
+          "gameCode": "20080420",
+          "gameDateTimeUTC": "2008-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 86
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200804230DET",
+          "gameCode": "20080423",
+          "gameDateTimeUTC": "2008-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 105
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200804250PHI",
+          "gameCode": "20080425",
+          "gameDateTimeUTC": "2008-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "DET",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "200804270PHI",
+          "gameCode": "20080427",
+          "gameDateTimeUTC": "2008-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 84
+          },
+          "away": {
+            "tri": "DET",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200804290DET",
+          "gameCode": "20080429",
+          "gameDateTimeUTC": "2008-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 98
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200805010PHI",
+          "gameCode": "20080501",
+          "gameDateTimeUTC": "2008-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 77
+          },
+          "away": {
+            "tri": "DET",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "DEN"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200804200LAL",
+          "gameCode": "20080420",
+          "gameDateTimeUTC": "2008-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 128
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "200804230LAL",
+          "gameCode": "20080423",
+          "gameDateTimeUTC": "2008-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "200804260DEN",
+          "gameCode": "20080426",
+          "gameDateTimeUTC": "2008-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 84
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200804280DEN",
+          "gameCode": "20080428",
+          "gameDateTimeUTC": "2008-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 101
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "TOR"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "200804200ORL",
+          "gameCode": "20080420",
+          "gameDateTimeUTC": "2008-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 114
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200804220ORL",
+          "gameCode": "20080422",
+          "gameDateTimeUTC": "2008-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 104
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200804240TOR",
+          "gameCode": "20080424",
+          "gameDateTimeUTC": "2008-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 108
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200804260TOR",
+          "gameCode": "20080426",
+          "gameDateTimeUTC": "2008-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 94
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "200804280ORL",
+          "gameCode": "20080428",
+          "gameDateTimeUTC": "2008-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 102
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "ORL"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200805030DET",
+          "gameCode": "20080503",
+          "gameDateTimeUTC": "2008-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 91
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "200805050DET",
+          "gameCode": "20080505",
+          "gameDateTimeUTC": "2008-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 100
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200805070ORL",
+          "gameCode": "20080507",
+          "gameDateTimeUTC": "2008-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 111
+          },
+          "away": {
+            "tri": "DET",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200805100ORL",
+          "gameCode": "20080510",
+          "gameDateTimeUTC": "2008-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 89
+          },
+          "away": {
+            "tri": "DET",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200805130DET",
+          "gameCode": "20080513",
+          "gameDateTimeUTC": "2008-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 91
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 86
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NOP",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200805030NOH",
+          "gameCode": "20080503",
+          "gameDateTimeUTC": "2008-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 101
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200805050NOH",
+          "gameCode": "20080505",
+          "gameDateTimeUTC": "2008-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 102
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200805080SAS",
+          "gameCode": "20080508",
+          "gameDateTimeUTC": "2008-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 110
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "200805110SAS",
+          "gameCode": "20080511",
+          "gameDateTimeUTC": "2008-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 100
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "200805130NOH",
+          "gameCode": "20080513",
+          "gameDateTimeUTC": "2008-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 101
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200805150SAS",
+          "gameCode": "20080515",
+          "gameDateTimeUTC": "2008-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 99
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "200805190NOH",
+          "gameCode": "20080519",
+          "gameDateTimeUTC": "2008-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 82
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "UTA"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200805040LAL",
+          "gameCode": "20080504",
+          "gameDateTimeUTC": "2008-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 109
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200805070LAL",
+          "gameCode": "20080507",
+          "gameDateTimeUTC": "2008-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 120
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "200805090UTA",
+          "gameCode": "20080509",
+          "gameDateTimeUTC": "2008-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 104
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "200805110UTA",
+          "gameCode": "20080511",
+          "gameDateTimeUTC": "2008-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 123
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "200805140LAL",
+          "gameCode": "20080514",
+          "gameDateTimeUTC": "2008-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200805160UTA",
+          "gameCode": "20080516",
+          "gameDateTimeUTC": "2008-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 108
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "CLE"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "200805060BOS",
+          "gameCode": "20080506",
+          "gameDateTimeUTC": "2008-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 76
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "200805080BOS",
+          "gameCode": "20080508",
+          "gameDateTimeUTC": "2008-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 89
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "200805100CLE",
+          "gameCode": "20080510",
+          "gameDateTimeUTC": "2008-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 108
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200805120CLE",
+          "gameCode": "20080512",
+          "gameDateTimeUTC": "2008-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 88
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "200805140BOS",
+          "gameCode": "20080514",
+          "gameDateTimeUTC": "2008-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200805160CLE",
+          "gameCode": "20080516",
+          "gameDateTimeUTC": "2008-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 74
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "200805180BOS",
+          "gameCode": "20080518",
+          "gameDateTimeUTC": "2008-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 97
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "DET"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "200805200BOS",
+          "gameCode": "20080520",
+          "gameDateTimeUTC": "2008-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 88
+          },
+          "away": {
+            "tri": "DET",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200805220BOS",
+          "gameCode": "20080522",
+          "gameDateTimeUTC": "2008-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 97
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "200805240DET",
+          "gameCode": "20080524",
+          "gameDateTimeUTC": "2008-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 80
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200805260DET",
+          "gameCode": "20080526",
+          "gameDateTimeUTC": "2008-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 94
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "200805280BOS",
+          "gameCode": "20080528",
+          "gameDateTimeUTC": "2008-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 106
+          },
+          "away": {
+            "tri": "DET",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200805300DET",
+          "gameCode": "20080530",
+          "gameDateTimeUTC": "2008-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 81
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "SAS"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200805210LAL",
+          "gameCode": "20080521",
+          "gameDateTimeUTC": "2008-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 89
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200805230LAL",
+          "gameCode": "20080523",
+          "gameDateTimeUTC": "2008-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "200805250SAS",
+          "gameCode": "20080525",
+          "gameDateTimeUTC": "2008-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200805270SAS",
+          "gameCode": "20080527",
+          "gameDateTimeUTC": "2008-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 91
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200805290LAL",
+          "gameCode": "20080529",
+          "gameDateTimeUTC": "2008-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "BOS",
+        "LAL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "200806050BOS",
+          "gameCode": "20080605",
+          "gameDateTimeUTC": "2008-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200806080BOS",
+          "gameCode": "20080608",
+          "gameDateTimeUTC": "2008-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200806100LAL",
+          "gameCode": "20080610",
+          "gameDateTimeUTC": "2008-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 87
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200806120LAL",
+          "gameCode": "20080612",
+          "gameDateTimeUTC": "2008-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 91
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200806150LAL",
+          "gameCode": "20080615",
+          "gameDateTimeUTC": "2008-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200806170BOS",
+          "gameCode": "20080617",
+          "gameDateTimeUTC": "2008-06-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 131
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 92
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-21T21:33:42.430Z"
+}

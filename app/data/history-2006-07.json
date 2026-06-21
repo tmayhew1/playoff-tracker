@@ -1,0 +1,1184 @@
+{
+  "season": "2006-07",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "MIA"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "200704210CHI",
+          "gameCode": "20070421",
+          "gameDateTimeUTC": "2007-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200704240CHI",
+          "gameCode": "20070424",
+          "gameDateTimeUTC": "2007-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200704270MIA",
+          "gameCode": "20070427",
+          "gameDateTimeUTC": "2007-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200704290MIA",
+          "gameCode": "20070429",
+          "gameDateTimeUTC": "2007-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 79
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "ORL"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200704210DET",
+          "gameCode": "20070421",
+          "gameDateTimeUTC": "2007-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 100
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200704230DET",
+          "gameCode": "20070423",
+          "gameDateTimeUTC": "2007-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 98
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200704260ORL",
+          "gameCode": "20070426",
+          "gameDateTimeUTC": "2007-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 77
+          },
+          "away": {
+            "tri": "DET",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "200704280ORL",
+          "gameCode": "20070428",
+          "gameDateTimeUTC": "2007-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 93
+          },
+          "away": {
+            "tri": "DET",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "200704210HOU",
+          "gameCode": "20070421",
+          "gameDateTimeUTC": "2007-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 84
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "200704230HOU",
+          "gameCode": "20070423",
+          "gameDateTimeUTC": "2007-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 98
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200704260UTA",
+          "gameCode": "20070426",
+          "gameDateTimeUTC": "2007-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 81
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 67
+          }
+        },
+        {
+          "gameId": "200704280UTA",
+          "gameCode": "20070428",
+          "gameDateTimeUTC": "2007-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 98
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200704300HOU",
+          "gameCode": "20070430",
+          "gameDateTimeUTC": "2007-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 96
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200705030UTA",
+          "gameCode": "20070503",
+          "gameDateTimeUTC": "2007-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 94
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200705050HOU",
+          "gameCode": "20070505",
+          "gameDateTimeUTC": "2007-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 99
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "NJN"
+      ],
+      "winner": "NJN",
+      "games": [
+        {
+          "gameId": "200704210TOR",
+          "gameCode": "20070421",
+          "gameDateTimeUTC": "2007-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 91
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200704240TOR",
+          "gameCode": "20070424",
+          "gameDateTimeUTC": "2007-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 89
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200704270NJN",
+          "gameCode": "20070427",
+          "gameDateTimeUTC": "2007-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 102
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200704290NJN",
+          "gameCode": "20070429",
+          "gameDateTimeUTC": "2007-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 102
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200705010TOR",
+          "gameCode": "20070501",
+          "gameDateTimeUTC": "2007-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 98
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200705040NJN",
+          "gameCode": "20070504",
+          "gameDateTimeUTC": "2007-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 98
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "WAS"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "200704220CLE",
+          "gameCode": "20070422",
+          "gameDateTimeUTC": "2007-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 97
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200704250CLE",
+          "gameCode": "20070425",
+          "gameDateTimeUTC": "2007-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 109
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "200704280WAS",
+          "gameCode": "20070428",
+          "gameDateTimeUTC": "2007-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200704300WAS",
+          "gameCode": "20070430",
+          "gameDateTimeUTC": "2007-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 90
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "200704220DAL",
+          "gameCode": "20070422",
+          "gameDateTimeUTC": "2007-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 85
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200704250DAL",
+          "gameCode": "20070425",
+          "gameDateTimeUTC": "2007-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "200704270GSW",
+          "gameCode": "20070427",
+          "gameDateTimeUTC": "2007-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 109
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200704290GSW",
+          "gameCode": "20070429",
+          "gameDateTimeUTC": "2007-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 103
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "200705010DAL",
+          "gameCode": "20070501",
+          "gameDateTimeUTC": "2007-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 118
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "200705030GSW",
+          "gameCode": "20070503",
+          "gameDateTimeUTC": "2007-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 111
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 86
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "LAL"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "200704220PHO",
+          "gameCode": "20070422",
+          "gameDateTimeUTC": "2007-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 95
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200704240PHO",
+          "gameCode": "20070424",
+          "gameDateTimeUTC": "2007-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 126
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "200704260LAL",
+          "gameCode": "20070426",
+          "gameDateTimeUTC": "2007-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 95
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200704290LAL",
+          "gameCode": "20070429",
+          "gameDateTimeUTC": "2007-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "200705020PHO",
+          "gameCode": "20070502",
+          "gameDateTimeUTC": "2007-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 119
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "DEN"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200704220SAS",
+          "gameCode": "20070422",
+          "gameDateTimeUTC": "2007-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 89
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "200704250SAS",
+          "gameCode": "20070425",
+          "gameDateTimeUTC": "2007-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200704280DEN",
+          "gameCode": "20070428",
+          "gameDateTimeUTC": "2007-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 91
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200704300DEN",
+          "gameCode": "20070430",
+          "gameDateTimeUTC": "2007-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 89
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200705020SAS",
+          "gameCode": "20070502",
+          "gameDateTimeUTC": "2007-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 93
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "CHI"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200705050DET",
+          "gameCode": "20070505",
+          "gameDateTimeUTC": "2007-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 95
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "200705070DET",
+          "gameCode": "20070507",
+          "gameDateTimeUTC": "2007-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 108
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200705100CHI",
+          "gameCode": "20070510",
+          "gameDateTimeUTC": "2007-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 74
+          },
+          "away": {
+            "tri": "DET",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200705130CHI",
+          "gameCode": "20070513",
+          "gameDateTimeUTC": "2007-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 102
+          },
+          "away": {
+            "tri": "DET",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200705150DET",
+          "gameCode": "20070515",
+          "gameDateTimeUTC": "2007-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "200705170CHI",
+          "gameCode": "20070517",
+          "gameDateTimeUTC": "2007-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 85
+          },
+          "away": {
+            "tri": "DET",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "NJN"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "200705060CLE",
+          "gameCode": "20070506",
+          "gameDateTimeUTC": "2007-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 81
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "200705080CLE",
+          "gameCode": "20070508",
+          "gameDateTimeUTC": "2007-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 102
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200705120NJN",
+          "gameCode": "20070512",
+          "gameDateTimeUTC": "2007-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 96
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200705140NJN",
+          "gameCode": "20070514",
+          "gameDateTimeUTC": "2007-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 85
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200705160CLE",
+          "gameCode": "20070516",
+          "gameDateTimeUTC": "2007-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 72
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200705180NJN",
+          "gameCode": "20070518",
+          "gameDateTimeUTC": "2007-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 72
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200705060PHO",
+          "gameCode": "20070506",
+          "gameDateTimeUTC": "2007-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 106
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "200705080PHO",
+          "gameCode": "20070508",
+          "gameDateTimeUTC": "2007-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 101
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200705120SAS",
+          "gameCode": "20070512",
+          "gameDateTimeUTC": "2007-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "200705140SAS",
+          "gameCode": "20070514",
+          "gameDateTimeUTC": "2007-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 98
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200705160PHO",
+          "gameCode": "20070516",
+          "gameDateTimeUTC": "2007-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 85
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200705180SAS",
+          "gameCode": "20070518",
+          "gameDateTimeUTC": "2007-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 114
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "GSW"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "200705070UTA",
+          "gameCode": "20070507",
+          "gameDateTimeUTC": "2007-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 116
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "200705090UTA",
+          "gameCode": "20070509",
+          "gameDateTimeUTC": "2007-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 127
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "200705110GSW",
+          "gameCode": "20070511",
+          "gameDateTimeUTC": "2007-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 125
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "200705130GSW",
+          "gameCode": "20070513",
+          "gameDateTimeUTC": "2007-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 101
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "200705150UTA",
+          "gameCode": "20070515",
+          "gameDateTimeUTC": "2007-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 100
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "UTA"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200705200SAS",
+          "gameCode": "20070520",
+          "gameDateTimeUTC": "2007-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "200705220SAS",
+          "gameCode": "20070522",
+          "gameDateTimeUTC": "2007-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 105
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200705260UTA",
+          "gameCode": "20070526",
+          "gameDateTimeUTC": "2007-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200705280UTA",
+          "gameCode": "20070528",
+          "gameDateTimeUTC": "2007-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 79
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200705300SAS",
+          "gameCode": "20070530",
+          "gameDateTimeUTC": "2007-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 109
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "DET",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "200705210DET",
+          "gameCode": "20070521",
+          "gameDateTimeUTC": "2007-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 79
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200705240DET",
+          "gameCode": "20070524",
+          "gameDateTimeUTC": "2007-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 79
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200705270CLE",
+          "gameCode": "20070527",
+          "gameDateTimeUTC": "2007-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 88
+          },
+          "away": {
+            "tri": "DET",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200705290CLE",
+          "gameCode": "20070529",
+          "gameDateTimeUTC": "2007-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 91
+          },
+          "away": {
+            "tri": "DET",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200705310DET",
+          "gameCode": "20070531",
+          "gameDateTimeUTC": "2007-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 107
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "200706020CLE",
+          "gameCode": "20070602",
+          "gameDateTimeUTC": "2007-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 98
+          },
+          "away": {
+            "tri": "DET",
+            "score": 82
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "SAS",
+        "CLE"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200706070SAS",
+          "gameCode": "20070607",
+          "gameDateTimeUTC": "2007-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 85
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "200706100SAS",
+          "gameCode": "20070610",
+          "gameDateTimeUTC": "2007-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200706120CLE",
+          "gameCode": "20070612",
+          "gameDateTimeUTC": "2007-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 72
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "200706140CLE",
+          "gameCode": "20070614",
+          "gameDateTimeUTC": "2007-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 82
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 83
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-21T21:29:50.139Z"
+}

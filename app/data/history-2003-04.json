@@ -1,0 +1,1223 @@
+{
+  "season": "2003-04",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "BOS"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "200404170IND",
+          "gameCode": "20040417",
+          "gameDateTimeUTC": "2004-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200404200IND",
+          "gameCode": "20040420",
+          "gameDateTimeUTC": "2004-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200404230BOS",
+          "gameCode": "20040423",
+          "gameDateTimeUTC": "2004-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 85
+          },
+          "away": {
+            "tri": "IND",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "200404250BOS",
+          "gameCode": "20040425",
+          "gameDateTimeUTC": "2004-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 75
+          },
+          "away": {
+            "tri": "IND",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200404170LAL",
+          "gameCode": "20040417",
+          "gameDateTimeUTC": "2004-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 72
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "200404190LAL",
+          "gameCode": "20040419",
+          "gameDateTimeUTC": "2004-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 98
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200404230HOU",
+          "gameCode": "20040423",
+          "gameDateTimeUTC": "2004-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200404250HOU",
+          "gameCode": "20040425",
+          "gameDateTimeUTC": "2004-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200404280LAL",
+          "gameCode": "20040428",
+          "gameDateTimeUTC": "2004-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NJN",
+        "NYK"
+      ],
+      "winner": "NJN",
+      "games": [
+        {
+          "gameId": "200404170NJN",
+          "gameCode": "20040417",
+          "gameDateTimeUTC": "2004-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 107
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200404200NJN",
+          "gameCode": "20040420",
+          "gameDateTimeUTC": "2004-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 99
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200404220NYK",
+          "gameCode": "20040422",
+          "gameDateTimeUTC": "2004-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 78
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200404250NYK",
+          "gameCode": "20040425",
+          "gameDateTimeUTC": "2004-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "MEM"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "200404170SAS",
+          "gameCode": "20040417",
+          "gameDateTimeUTC": "2004-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 98
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "200404190SAS",
+          "gameCode": "20040419",
+          "gameDateTimeUTC": "2004-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 87
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 70
+          }
+        },
+        {
+          "gameId": "200404220MEM",
+          "gameCode": "20040422",
+          "gameDateTimeUTC": "2004-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 93
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "200404250MEM",
+          "gameCode": "20040425",
+          "gameDateTimeUTC": "2004-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 97
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DET",
+        "MIL"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200404180DET",
+          "gameCode": "20040418",
+          "gameDateTimeUTC": "2004-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 108
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "200404210DET",
+          "gameCode": "20040421",
+          "gameDateTimeUTC": "2004-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 88
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200404240MIL",
+          "gameCode": "20040424",
+          "gameDateTimeUTC": "2004-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 85
+          },
+          "away": {
+            "tri": "DET",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "200404260MIL",
+          "gameCode": "20040426",
+          "gameDateTimeUTC": "2004-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 92
+          },
+          "away": {
+            "tri": "DET",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "200404290DET",
+          "gameCode": "20040429",
+          "gameDateTimeUTC": "2004-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 91
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 77
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "NOP"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "200404180MIA",
+          "gameCode": "20040418",
+          "gameDateTimeUTC": "2004-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 81
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200404210MIA",
+          "gameCode": "20040421",
+          "gameDateTimeUTC": "2004-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 93
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 63
+          }
+        },
+        {
+          "gameId": "200404240NOH",
+          "gameCode": "20040424",
+          "gameDateTimeUTC": "2004-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 77
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "200404270NOH",
+          "gameCode": "20040427",
+          "gameDateTimeUTC": "2004-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200404300MIA",
+          "gameCode": "20040430",
+          "gameDateTimeUTC": "2004-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 87
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200405020NOH",
+          "gameCode": "20040502",
+          "gameDateTimeUTC": "2004-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 89
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200405040MIA",
+          "gameCode": "20040504",
+          "gameDateTimeUTC": "2004-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 85
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 77
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIN",
+        "DEN"
+      ],
+      "winner": "MIN",
+      "games": [
+        {
+          "gameId": "200404180MIN",
+          "gameCode": "20040418",
+          "gameDateTimeUTC": "2004-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 106
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "200404210MIN",
+          "gameCode": "20040421",
+          "gameDateTimeUTC": "2004-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 95
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200404240DEN",
+          "gameCode": "20040424",
+          "gameDateTimeUTC": "2004-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "200404270DEN",
+          "gameCode": "20040427",
+          "gameDateTimeUTC": "2004-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 82
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "200404300MIN",
+          "gameCode": "20040430",
+          "gameDateTimeUTC": "2004-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 102
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAC",
+        "DAL"
+      ],
+      "winner": "SAC",
+      "games": [
+        {
+          "gameId": "200404180SAC",
+          "gameCode": "20040418",
+          "gameDateTimeUTC": "2004-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 116
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "200404200SAC",
+          "gameCode": "20040420",
+          "gameDateTimeUTC": "2004-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 83
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200404240DAL",
+          "gameCode": "20040424",
+          "gameDateTimeUTC": "2004-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200404260DAL",
+          "gameCode": "20040426",
+          "gameDateTimeUTC": "2004-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 92
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "200404290SAC",
+          "gameCode": "20040429",
+          "gameDateTimeUTC": "2004-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 119
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200405020SAS",
+          "gameCode": "20040502",
+          "gameDateTimeUTC": "2004-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "200405050SAS",
+          "gameCode": "20040505",
+          "gameDateTimeUTC": "2004-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 95
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200405090LAL",
+          "gameCode": "20040509",
+          "gameDateTimeUTC": "2004-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200405110LAL",
+          "gameCode": "20040511",
+          "gameDateTimeUTC": "2004-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 98
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "200405130SAS",
+          "gameCode": "20040513",
+          "gameDateTimeUTC": "2004-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 73
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "200405150LAL",
+          "gameCode": "20040515",
+          "gameDateTimeUTC": "2004-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 88
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 76
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DET",
+        "NJN"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200405030DET",
+          "gameCode": "20040503",
+          "gameDateTimeUTC": "2004-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 78
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 56
+          }
+        },
+        {
+          "gameId": "200405070DET",
+          "gameCode": "20040507",
+          "gameDateTimeUTC": "2004-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 95
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "200405090NJN",
+          "gameCode": "20040509",
+          "gameDateTimeUTC": "2004-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 82
+          },
+          "away": {
+            "tri": "DET",
+            "score": 64
+          }
+        },
+        {
+          "gameId": "200405110NJN",
+          "gameCode": "20040511",
+          "gameDateTimeUTC": "2004-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 94
+          },
+          "away": {
+            "tri": "DET",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "200405140DET",
+          "gameCode": "20040514",
+          "gameDateTimeUTC": "2004-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 120
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "200405160NJN",
+          "gameCode": "20040516",
+          "gameDateTimeUTC": "2004-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "NJN",
+            "score": 75
+          },
+          "away": {
+            "tri": "DET",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200405200DET",
+          "gameCode": "20040520",
+          "gameDateTimeUTC": "2004-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 90
+          },
+          "away": {
+            "tri": "NJN",
+            "score": 69
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIN",
+        "SAC"
+      ],
+      "winner": "MIN",
+      "games": [
+        {
+          "gameId": "200405040MIN",
+          "gameCode": "20040504",
+          "gameDateTimeUTC": "2004-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 98
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "200405080MIN",
+          "gameCode": "20040508",
+          "gameDateTimeUTC": "2004-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 94
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200405100SAC",
+          "gameCode": "20040510",
+          "gameDateTimeUTC": "2004-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 113
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "200405120SAC",
+          "gameCode": "20040512",
+          "gameDateTimeUTC": "2004-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 87
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200405140MIN",
+          "gameCode": "20040514",
+          "gameDateTimeUTC": "2004-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 86
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "200405160SAC",
+          "gameCode": "20040516",
+          "gameDateTimeUTC": "2004-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200405190MIN",
+          "gameCode": "20040519",
+          "gameDateTimeUTC": "2004-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 83
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "IND",
+        "MIA"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "200405060IND",
+          "gameCode": "20040506",
+          "gameDateTimeUTC": "2004-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "200405080IND",
+          "gameCode": "20040508",
+          "gameDateTimeUTC": "2004-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 91
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "200405100MIA",
+          "gameCode": "20040510",
+          "gameDateTimeUTC": "2004-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 94
+          },
+          "away": {
+            "tri": "IND",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200405120MIA",
+          "gameCode": "20040512",
+          "gameDateTimeUTC": "2004-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 100
+          },
+          "away": {
+            "tri": "IND",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "200405150IND",
+          "gameCode": "20040515",
+          "gameDateTimeUTC": "2004-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200405180MIA",
+          "gameCode": "20040518",
+          "gameDateTimeUTC": "2004-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 70
+          },
+          "away": {
+            "tri": "IND",
+            "score": 73
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIN",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "200405210MIN",
+          "gameCode": "20040521",
+          "gameDateTimeUTC": "2004-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "200405230MIN",
+          "gameCode": "20040523",
+          "gameDateTimeUTC": "2004-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 89
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "200405250LAL",
+          "gameCode": "20040525",
+          "gameDateTimeUTC": "2004-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "200405270LAL",
+          "gameCode": "20040527",
+          "gameDateTimeUTC": "2004-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 92
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "200405290MIN",
+          "gameCode": "20040529",
+          "gameDateTimeUTC": "2004-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "200405310LAL",
+          "gameCode": "20040531",
+          "gameDateTimeUTC": "2004-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "IND",
+        "DET"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200405220IND",
+          "gameCode": "20040522",
+          "gameDateTimeUTC": "2004-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 78
+          },
+          "away": {
+            "tri": "DET",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "200405240IND",
+          "gameCode": "20040524",
+          "gameDateTimeUTC": "2004-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 67
+          },
+          "away": {
+            "tri": "DET",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "200405260DET",
+          "gameCode": "20040526",
+          "gameDateTimeUTC": "2004-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 85
+          },
+          "away": {
+            "tri": "IND",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "200405280DET",
+          "gameCode": "20040528",
+          "gameDateTimeUTC": "2004-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 68
+          },
+          "away": {
+            "tri": "IND",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200405300IND",
+          "gameCode": "20040530",
+          "gameDateTimeUTC": "2004-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 65
+          },
+          "away": {
+            "tri": "DET",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "200406010DET",
+          "gameCode": "20040601",
+          "gameDateTimeUTC": "2004-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 69
+          },
+          "away": {
+            "tri": "IND",
+            "score": 65
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "LAL",
+        "DET"
+      ],
+      "winner": "DET",
+      "games": [
+        {
+          "gameId": "200406060LAL",
+          "gameCode": "20040606",
+          "gameDateTimeUTC": "2004-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 75
+          },
+          "away": {
+            "tri": "DET",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "200406080LAL",
+          "gameCode": "20040608",
+          "gameDateTimeUTC": "2004-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 99
+          },
+          "away": {
+            "tri": "DET",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "200406100DET",
+          "gameCode": "20040610",
+          "gameDateTimeUTC": "2004-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 68
+          }
+        },
+        {
+          "gameId": "200406130DET",
+          "gameCode": "20040613",
+          "gameDateTimeUTC": "2004-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "200406150DET",
+          "gameCode": "20040615",
+          "gameDateTimeUTC": "2004-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 87
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-21T21:18:18.435Z"
+}
