@@ -40,9 +40,8 @@ slug_from_href <- function(href) {
   if (length(m) >= 2) m[2] else NA_character_
 }
 
-players_for_team <- function(doc, tri) {
-  t <- xml2::xml_find_first(doc, sprintf("//table[@id='box-%s-game-basic']", tri))
-  if (inherits(t, "xml_missing")) return(list())
+# Parse one team's basic box-score table node into player stat rows.
+parse_team_table <- function(t, tri) {
   out <- list()
   for (tr in xml2::xml_find_all(t, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
@@ -71,11 +70,32 @@ players_for_team <- function(doc, tri) {
   out
 }
 
+# Parse BOTH teams from every full-game basic box table on the page, deriving
+# the team tricode straight from the table id (box-XXX-game-basic). This never
+# guesses which side is home/away to locate a table, so a scorebox quirk can't
+# cause a team to be silently dropped.
+players_from_doc <- function(doc) {
+  out <- list()
+  for (t in xml2::xml_find_all(doc, "//table[contains(@id,'-game-basic')]")) {
+    id <- xml2::xml_attr(t, "id")
+    m <- regmatches(id, regexec("^box-([A-Z]{3})-game-basic$", id))[[1]]
+    if (length(m) < 2) next
+    out <- c(out, parse_team_table(t, m[2]))
+  }
+  out
+}
+
 fetch_box <- function(url) {
   box_id <- sub(".*/boxscores/([^/.]+)\\.html.*", "\\1", url)
   date <- parse_date_from_box_id(box_id)
-  doc <- parse_html_uncommented(throttled_fetch(url))
-  blocks <- xml2::xml_find_all(doc, "//div[contains(@class,'scorebox')]/div")
+  html <- throttled_fetch(url)
+  # Scorebox (teams + scores) is read from the RAW HTML: un-commenting BR's
+  # lazy-loaded blocks can expose extra /teams/ links that pollute scorebox
+  # team detection. The box-score tables, however, must come from the
+  # un-commented HTML (BR hides one team's table inside an HTML comment).
+  doc_raw <- xml2::read_html(html)
+  doc <- parse_html_uncommented(html)
+  blocks <- xml2::xml_find_all(doc_raw, "//div[contains(@class,'scorebox')]/div")
   team_blocks <- Filter(function(b) {
     !inherits(xml2::xml_find_first(b, ".//a[contains(@href,'/teams/')]"), "xml_missing")
   }, blocks)
@@ -89,7 +109,7 @@ fetch_box <- function(url) {
     list(tri = tri, score = score)
   }
   away <- team_at(1); home <- team_at(2)
-  players <- c(players_for_team(doc, away$tri), players_for_team(doc, home$tri))
+  players <- players_from_doc(doc)
   list(
     gameId = box_id, date = date,
     home = list(tri = to_nba(home$tri), score = home$score, brTri = home$tri),
