@@ -4,18 +4,18 @@
     {
       "round": "r1",
       "teams": [
-        "CLE",
+        "TOR",
         "TOR"
       ],
-      "winner": "CLE",
+      "winner": "TOR",
       "games": [
         {
           "gameId": "202604180CLE",
           "gameCode": "20260418",
           "gameDateTimeUTC": "2026-04-18T00:00:00.000Z",
           "home": {
-            "tri": "CLE",
-            "score": 126
+            "tri": "TOR",
+            "score": 0
           },
           "away": {
             "tri": "TOR",
@@ -27,8 +27,8 @@
           "gameCode": "20260420",
           "gameDateTimeUTC": "2026-04-20T00:00:00.000Z",
           "home": {
-            "tri": "CLE",
-            "score": 115
+            "tri": "TOR",
+            "score": 0
           },
           "away": {
             "tri": "TOR",
@@ -36,38 +36,12 @@
           }
         },
         {
-          "gameId": "202604230TOR",
-          "gameCode": "20260423",
-          "gameDateTimeUTC": "2026-04-23T00:00:00.000Z",
-          "home": {
-            "tri": "TOR",
-            "score": 126
-          },
-          "away": {
-            "tri": "CLE",
-            "score": 104
-          }
-        },
-        {
-          "gameId": "202604260TOR",
-          "gameCode": "20260426",
-          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
-          "home": {
-            "tri": "TOR",
-            "score": 93
-          },
-          "away": {
-            "tri": "CLE",
-            "score": 89
-          }
-        },
-        {
           "gameId": "202604290CLE",
           "gameCode": "20260429",
           "gameDateTimeUTC": "2026-04-29T00:00:00.000Z",
           "home": {
-            "tri": "CLE",
-            "score": 125
+            "tri": "TOR",
+            "score": 0
           },
           "away": {
             "tri": "TOR",
@@ -75,25 +49,12 @@
           }
         },
         {
-          "gameId": "202605010TOR",
-          "gameCode": "20260501",
-          "gameDateTimeUTC": "2026-05-01T00:00:00.000Z",
-          "home": {
-            "tri": "TOR",
-            "score": 112
-          },
-          "away": {
-            "tri": "CLE",
-            "score": 110
-          }
-        },
-        {
           "gameId": "202605030CLE",
           "gameCode": "20260503",
           "gameDateTimeUTC": "2026-05-03T00:00:00.000Z",
           "home": {
-            "tri": "CLE",
-            "score": 114
+            "tri": "TOR",
+            "score": 0
           },
           "away": {
             "tri": "TOR",
@@ -105,7 +66,7 @@
     {
       "round": "r1",
       "teams": [
-        "DEN",
+        "MIN",
         "MIN"
       ],
       "winner": "MIN",
@@ -115,8 +76,8 @@
           "gameCode": "20260418",
           "gameDateTimeUTC": "2026-04-18T00:00:00.000Z",
           "home": {
-            "tri": "DEN",
-            "score": 116
+            "tri": "MIN",
+            "score": 0
           },
           "away": {
             "tri": "MIN",
@@ -128,38 +89,12 @@
           "gameCode": "20260420",
           "gameDateTimeUTC": "2026-04-20T00:00:00.000Z",
           "home": {
-            "tri": "DEN",
-            "score": 114
+            "tri": "MIN",
+            "score": 0
           },
           "away": {
             "tri": "MIN",
             "score": 119
-          }
-        },
-        {
-          "gameId": "202604230MIN",
-          "gameCode": "20260423",
-          "gameDateTimeUTC": "2026-04-23T00:00:00.000Z",
-          "home": {
-            "tri": "MIN",
-            "score": 113
-          },
-          "away": {
-            "tri": "DEN",
-            "score": 96
-          }
-        },
-        {
-          "gameId": "202604250MIN",
-          "gameCode": "20260425",
-          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
-          "home": {
-            "tri": "MIN",
-            "score": 112
-          },
-          "away": {
-            "tri": "DEN",
-            "score": 96
           }
         },
         {
@@ -167,621 +102,21 @@
           "gameCode": "20260427",
           "gameDateTimeUTC": "2026-04-27T00:00:00.000Z",
           "home": {
-            "tri": "DEN",
-            "score": 125
+            "tri": "MIN",
+            "score": 0
           },
           "away": {
             "tri": "MIN",
             "score": 113
           }
         },
-        {
-          "gameId": "202604300MIN",
-          "gameCode": "20260430",
-          "gameDateTimeUTC": "2026-04-30T00:00:00.000Z",
-          "home": {
-            "tri": "MIN",
-            "score": 110
-          },
-          "away": {
-            "tri": "DEN",
-            "score": 98
-          }
-        }
-      ]
-    },
-    {
-      "round": "r1",
-      "teams": [
-        "LAL",
-        "HOU"
-      ],
-      "winner": "LAL",
-      "games": [
-        {
-          "gameId": "202604180LAL",
-          "gameCode": "20260418",
-          "gameDateTimeUTC": "2026-04-18T00:00:00.000Z",
-          "home": {
-            "tri": "LAL",
-            "score": 107
-          },
-          "away": {
-            "tri": "HOU",
-            "score": 98
-          }
-        },
-        {
-          "gameId": "202604210LAL",
-          "gameCode": "20260421",
-          "gameDateTimeUTC": "2026-04-21T00:00:00.000Z",
-          "home": {
-            "tri": "LAL",
-            "score": 101
-          },
-          "away": {
-            "tri": "HOU",
-            "score": 94
-          }
-        },
-        {
-          "gameId": "202604240HOU",
-          "gameCode": "20260424",
-          "gameDateTimeUTC": "2026-04-24T00:00:00.000Z",
-          "home": {
-            "tri": "HOU",
-            "score": 108
-          },
-          "away": {
-            "tri": "LAL",
-            "score": 112
-          }
-        },
-        {
-          "gameId": "202604260HOU",
-          "gameCode": "20260426",
-          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
-          "home": {
-            "tri": "HOU",
-            "score": 115
-          },
-          "away": {
-            "tri": "LAL",
-            "score": 96
-          }
-        },
-        {
-          "gameId": "202604290LAL",
-          "gameCode": "20260429",
-          "gameDateTimeUTC": "2026-04-29T00:00:00.000Z",
-          "home": {
-            "tri": "LAL",
-            "score": 93
-          },
-          "away": {
-            "tri": "HOU",
-            "score": 99
-          }
-        },
-        {
-          "gameId": "202605010HOU",
-          "gameCode": "20260501",
-          "gameDateTimeUTC": "2026-05-01T00:00:00.000Z",
-          "home": {
-            "tri": "HOU",
-            "score": 78
-          },
-          "away": {
-            "tri": "LAL",
-            "score": 98
-          }
-        }
-      ]
-    },
-    {
-      "round": "r1",
-      "teams": [
-        "NYK",
-        "ATL"
-      ],
-      "winner": "NYK",
-      "games": [
-        {
-          "gameId": "202604180NYK",
-          "gameCode": "20260418",
-          "gameDateTimeUTC": "2026-04-18T00:00:00.000Z",
-          "home": {
-            "tri": "NYK",
-            "score": 113
-          },
-          "away": {
-            "tri": "ATL",
-            "score": 102
-          }
-        },
-        {
-          "gameId": "202604200NYK",
-          "gameCode": "20260420",
-          "gameDateTimeUTC": "2026-04-20T00:00:00.000Z",
-          "home": {
-            "tri": "NYK",
-            "score": 106
-          },
-          "away": {
-            "tri": "ATL",
-            "score": 107
-          }
-        },
-        {
-          "gameId": "202604230ATL",
-          "gameCode": "20260423",
-          "gameDateTimeUTC": "2026-04-23T00:00:00.000Z",
-          "home": {
-            "tri": "ATL",
-            "score": 109
-          },
-          "away": {
-            "tri": "NYK",
-            "score": 108
-          }
-        },
-        {
-          "gameId": "202604250ATL",
-          "gameCode": "20260425",
-          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
-          "home": {
-            "tri": "ATL",
-            "score": 98
-          },
-          "away": {
-            "tri": "NYK",
-            "score": 114
-          }
-        },
-        {
-          "gameId": "202604280NYK",
-          "gameCode": "20260428",
-          "gameDateTimeUTC": "2026-04-28T00:00:00.000Z",
-          "home": {
-            "tri": "NYK",
-            "score": 126
-          },
-          "away": {
-            "tri": "ATL",
-            "score": 97
-          }
-        },
-        {
-          "gameId": "202604300ATL",
-          "gameCode": "20260430",
-          "gameDateTimeUTC": "2026-04-30T00:00:00.000Z",
-          "home": {
-            "tri": "ATL",
-            "score": 89
-          },
-          "away": {
-            "tri": "NYK",
-            "score": 140
-          }
-        }
-      ]
-    },
-    {
-      "round": "r1",
-      "teams": [
-        "BOS",
-        "PHI"
-      ],
-      "winner": "PHI",
-      "games": [
-        {
-          "gameId": "202604190BOS",
-          "gameCode": "20260419",
-          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
-          "home": {
-            "tri": "BOS",
-            "score": 123
-          },
-          "away": {
-            "tri": "PHI",
-            "score": 91
-          }
-        },
-        {
-          "gameId": "202604210BOS",
-          "gameCode": "20260421",
-          "gameDateTimeUTC": "2026-04-21T00:00:00.000Z",
-          "home": {
-            "tri": "BOS",
-            "score": 97
-          },
-          "away": {
-            "tri": "PHI",
-            "score": 111
-          }
-        },
-        {
-          "gameId": "202604240PHI",
-          "gameCode": "20260424",
-          "gameDateTimeUTC": "2026-04-24T00:00:00.000Z",
-          "home": {
-            "tri": "PHI",
-            "score": 100
-          },
-          "away": {
-            "tri": "BOS",
-            "score": 108
-          }
-        },
-        {
-          "gameId": "202604260PHI",
-          "gameCode": "20260426",
-          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
-          "home": {
-            "tri": "PHI",
-            "score": 96
-          },
-          "away": {
-            "tri": "BOS",
-            "score": 128
-          }
-        },
-        {
-          "gameId": "202604280BOS",
-          "gameCode": "20260428",
-          "gameDateTimeUTC": "2026-04-28T00:00:00.000Z",
-          "home": {
-            "tri": "BOS",
-            "score": 97
-          },
-          "away": {
-            "tri": "PHI",
-            "score": 113
-          }
-        },
-        {
-          "gameId": "202604300PHI",
-          "gameCode": "20260430",
-          "gameDateTimeUTC": "2026-04-30T00:00:00.000Z",
-          "home": {
-            "tri": "PHI",
-            "score": 106
-          },
-          "away": {
-            "tri": "BOS",
-            "score": 93
-          }
-        },
-        {
-          "gameId": "202605020BOS",
-          "gameCode": "20260502",
-          "gameDateTimeUTC": "2026-05-02T00:00:00.000Z",
-          "home": {
-            "tri": "BOS",
-            "score": 100
-          },
-          "away": {
-            "tri": "PHI",
-            "score": 109
-          }
-        }
-      ]
-    },
-    {
-      "round": "r1",
-      "teams": [
-        "DET",
-        "ORL"
-      ],
-      "winner": "DET",
-      "games": [
-        {
-          "gameId": "202604190DET",
-          "gameCode": "20260419",
-          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
-          "home": {
-            "tri": "DET",
-            "score": 101
-          },
-          "away": {
-            "tri": "ORL",
-            "score": 112
-          }
-        },
-        {
-          "gameId": "202604220DET",
-          "gameCode": "20260422",
-          "gameDateTimeUTC": "2026-04-22T00:00:00.000Z",
-          "home": {
-            "tri": "DET",
-            "score": 98
-          },
-          "away": {
-            "tri": "ORL",
-            "score": 83
-          }
-        },
-        {
-          "gameId": "202604250ORL",
-          "gameCode": "20260425",
-          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
-          "home": {
-            "tri": "ORL",
-            "score": 113
-          },
-          "away": {
-            "tri": "DET",
-            "score": 105
-          }
-        },
-        {
-          "gameId": "202604270ORL",
-          "gameCode": "20260427",
-          "gameDateTimeUTC": "2026-04-27T00:00:00.000Z",
-          "home": {
-            "tri": "ORL",
-            "score": 94
-          },
-          "away": {
-            "tri": "DET",
-            "score": 88
-          }
-        },
-        {
-          "gameId": "202604290DET",
-          "gameCode": "20260429",
-          "gameDateTimeUTC": "2026-04-29T00:00:00.000Z",
-          "home": {
-            "tri": "DET",
-            "score": 116
-          },
-          "away": {
-            "tri": "ORL",
-            "score": 109
-          }
-        },
-        {
-          "gameId": "202605010ORL",
-          "gameCode": "20260501",
-          "gameDateTimeUTC": "2026-05-01T00:00:00.000Z",
-          "home": {
-            "tri": "ORL",
-            "score": 79
-          },
-          "away": {
-            "tri": "DET",
-            "score": 93
-          }
-        },
-        {
-          "gameId": "202605030DET",
-          "gameCode": "20260503",
-          "gameDateTimeUTC": "2026-05-03T00:00:00.000Z",
-          "home": {
-            "tri": "DET",
-            "score": 116
-          },
-          "away": {
-            "tri": "ORL",
-            "score": 94
-          }
-        }
-      ]
-    },
-    {
-      "round": "r1",
-      "teams": [
-        "OKC",
-        "PHX"
-      ],
-      "winner": "OKC",
-      "games": [
-        {
-          "gameId": "202604190OKC",
-          "gameCode": "20260419",
-          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
-          "home": {
-            "tri": "OKC",
-            "score": 119
-          },
-          "away": {
-            "tri": "PHX",
-            "score": 84
-          }
-        },
-        {
-          "gameId": "202604220OKC",
-          "gameCode": "20260422",
-          "gameDateTimeUTC": "2026-04-22T00:00:00.000Z",
-          "home": {
-            "tri": "OKC",
-            "score": 120
-          },
-          "away": {
-            "tri": "PHX",
-            "score": 107
-          }
-        },
-        {
-          "gameId": "202604250PHO",
-          "gameCode": "20260425",
-          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
-          "home": {
-            "tri": "PHX",
-            "score": 109
-          },
-          "away": {
-            "tri": "OKC",
-            "score": 121
-          }
-        },
-        {
-          "gameId": "202604270PHO",
-          "gameCode": "20260427",
-          "gameDateTimeUTC": "2026-04-27T00:00:00.000Z",
-          "home": {
-            "tri": "PHX",
-            "score": 122
-          },
-          "away": {
-            "tri": "OKC",
-            "score": 131
-          }
-        }
-      ]
-    },
-    {
-      "round": "r1",
-      "teams": [
-        "SAS",
-        "POR"
-      ],
-      "winner": "SAS",
-      "games": [
-        {
-          "gameId": "202604190SAS",
-          "gameCode": "20260419",
-          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
-          "home": {
-            "tri": "SAS",
-            "score": 111
-          },
-          "away": {
-            "tri": "POR",
-            "score": 98
-          }
-        },
-        {
-          "gameId": "202604210SAS",
-          "gameCode": "20260421",
-          "gameDateTimeUTC": "2026-04-21T00:00:00.000Z",
-          "home": {
-            "tri": "SAS",
-            "score": 103
-          },
-          "away": {
-            "tri": "POR",
-            "score": 106
-          }
-        },
-        {
-          "gameId": "202604240POR",
-          "gameCode": "20260424",
-          "gameDateTimeUTC": "2026-04-24T00:00:00.000Z",
-          "home": {
-            "tri": "POR",
-            "score": 108
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 120
-          }
-        },
-        {
-          "gameId": "202604260POR",
-          "gameCode": "20260426",
-          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
-          "home": {
-            "tri": "POR",
-            "score": 93
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 114
-          }
-        },
-        {
-          "gameId": "202604280SAS",
-          "gameCode": "20260428",
-          "gameDateTimeUTC": "2026-04-28T00:00:00.000Z",
-          "home": {
-            "tri": "SAS",
-            "score": 114
-          },
-          "away": {
-            "tri": "POR",
-            "score": 95
-          }
-        }
-      ]
-    },
-    {
-      "round": "r2",
-      "teams": [
-        "NYK",
-        "PHI"
-      ],
-      "winner": "NYK",
-      "games": [
-        {
-          "gameId": "202605040NYK",
-          "gameCode": "20260504",
-          "gameDateTimeUTC": "2026-05-04T00:00:00.000Z",
-          "home": {
-            "tri": "NYK",
-            "score": 137
-          },
-          "away": {
-            "tri": "PHI",
-            "score": 98
-          }
-        },
-        {
-          "gameId": "202605060NYK",
-          "gameCode": "20260506",
-          "gameDateTimeUTC": "2026-05-06T00:00:00.000Z",
-          "home": {
-            "tri": "NYK",
-            "score": 108
-          },
-          "away": {
-            "tri": "PHI",
-            "score": 102
-          }
-        },
-        {
-          "gameId": "202605080PHI",
-          "gameCode": "20260508",
-          "gameDateTimeUTC": "2026-05-08T00:00:00.000Z",
-          "home": {
-            "tri": "PHI",
-            "score": 94
-          },
-          "away": {
-            "tri": "NYK",
-            "score": 108
-          }
-        },
-        {
-          "gameId": "202605100PHI",
-          "gameCode": "20260510",
-          "gameDateTimeUTC": "2026-05-10T00:00:00.000Z",
-          "home": {
-            "tri": "PHI",
-            "score": 114
-          },
-          "away": {
-            "tri": "NYK",
-            "score": 144
-          }
-        }
-      ]
-    },
-    {
-      "round": "r2",
-      "teams": [
-        "SAS",
-        "MIN"
-      ],
-      "winner": "SAS",
-      "games": [
         {
           "gameId": "202605040SAS",
           "gameCode": "20260504",
           "gameDateTimeUTC": "2026-05-04T00:00:00.000Z",
           "home": {
-            "tri": "SAS",
-            "score": 102
+            "tri": "MIN",
+            "score": 0
           },
           "away": {
             "tri": "MIN",
@@ -793,8 +128,8 @@
           "gameCode": "20260506",
           "gameDateTimeUTC": "2026-05-06T00:00:00.000Z",
           "home": {
-            "tri": "SAS",
-            "score": 133
+            "tri": "MIN",
+            "score": 0
           },
           "away": {
             "tri": "MIN",
@@ -802,355 +137,424 @@
           }
         },
         {
-          "gameId": "202605080MIN",
-          "gameCode": "20260508",
-          "gameDateTimeUTC": "2026-05-08T00:00:00.000Z",
-          "home": {
-            "tri": "MIN",
-            "score": 108
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 115
-          }
-        },
-        {
-          "gameId": "202605100MIN",
-          "gameCode": "20260510",
-          "gameDateTimeUTC": "2026-05-10T00:00:00.000Z",
-          "home": {
-            "tri": "MIN",
-            "score": 114
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 109
-          }
-        },
-        {
           "gameId": "202605120SAS",
           "gameCode": "20260512",
           "gameDateTimeUTC": "2026-05-12T00:00:00.000Z",
           "home": {
-            "tri": "SAS",
-            "score": 126
+            "tri": "MIN",
+            "score": 0
           },
           "away": {
             "tri": "MIN",
             "score": 97
           }
-        },
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "HOU"
+      ],
+      "winner": "HOU",
+      "games": [
         {
-          "gameId": "202605150MIN",
-          "gameCode": "20260515",
-          "gameDateTimeUTC": "2026-05-15T00:00:00.000Z",
+          "gameId": "202604180LAL",
+          "gameCode": "20260418",
+          "gameDateTimeUTC": "2026-04-18T00:00:00.000Z",
           "home": {
-            "tri": "MIN",
-            "score": 109
+            "tri": "HOU",
+            "score": 0
           },
           "away": {
-            "tri": "SAS",
-            "score": 139
+            "tri": "HOU",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202604210LAL",
+          "gameCode": "20260421",
+          "gameDateTimeUTC": "2026-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 0
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202604290LAL",
+          "gameCode": "20260429",
+          "gameDateTimeUTC": "2026-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 0
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 99
           }
         }
       ]
     },
     {
-      "round": "r2",
+      "round": "r1",
       "teams": [
-        "DET",
-        "CLE"
+        "ATL",
+        "ATL"
       ],
-      "winner": "CLE",
+      "winner": "ATL",
       "games": [
         {
-          "gameId": "202605050DET",
-          "gameCode": "20260505",
-          "gameDateTimeUTC": "2026-05-05T00:00:00.000Z",
+          "gameId": "202604180NYK",
+          "gameCode": "20260418",
+          "gameDateTimeUTC": "2026-04-18T00:00:00.000Z",
           "home": {
-            "tri": "DET",
-            "score": 111
+            "tri": "ATL",
+            "score": 0
           },
           "away": {
-            "tri": "CLE",
-            "score": 101
+            "tri": "ATL",
+            "score": 102
           }
         },
         {
-          "gameId": "202605070DET",
-          "gameCode": "20260507",
-          "gameDateTimeUTC": "2026-05-07T00:00:00.000Z",
+          "gameId": "202604200NYK",
+          "gameCode": "20260420",
+          "gameDateTimeUTC": "2026-04-20T00:00:00.000Z",
           "home": {
-            "tri": "DET",
-            "score": 107
+            "tri": "ATL",
+            "score": 0
           },
           "away": {
-            "tri": "CLE",
+            "tri": "ATL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202604280NYK",
+          "gameCode": "20260428",
+          "gameDateTimeUTC": "2026-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 0
+          },
+          "away": {
+            "tri": "ATL",
             "score": 97
           }
-        },
-        {
-          "gameId": "202605090CLE",
-          "gameCode": "20260509",
-          "gameDateTimeUTC": "2026-05-09T00:00:00.000Z",
-          "home": {
-            "tri": "CLE",
-            "score": 116
-          },
-          "away": {
-            "tri": "DET",
-            "score": 109
-          }
-        },
-        {
-          "gameId": "202605110CLE",
-          "gameCode": "20260511",
-          "gameDateTimeUTC": "2026-05-11T00:00:00.000Z",
-          "home": {
-            "tri": "CLE",
-            "score": 112
-          },
-          "away": {
-            "tri": "DET",
-            "score": 103
-          }
-        },
-        {
-          "gameId": "202605130DET",
-          "gameCode": "20260513",
-          "gameDateTimeUTC": "2026-05-13T00:00:00.000Z",
-          "home": {
-            "tri": "DET",
-            "score": 113
-          },
-          "away": {
-            "tri": "CLE",
-            "score": 117
-          }
-        },
-        {
-          "gameId": "202605150CLE",
-          "gameCode": "20260515",
-          "gameDateTimeUTC": "2026-05-15T00:00:00.000Z",
-          "home": {
-            "tri": "CLE",
-            "score": 94
-          },
-          "away": {
-            "tri": "DET",
-            "score": 115
-          }
-        },
-        {
-          "gameId": "202605170DET",
-          "gameCode": "20260517",
-          "gameDateTimeUTC": "2026-05-17T00:00:00.000Z",
-          "home": {
-            "tri": "DET",
-            "score": 94
-          },
-          "away": {
-            "tri": "CLE",
-            "score": 125
-          }
         }
       ]
     },
     {
-      "round": "r2",
+      "round": "r1",
       "teams": [
-        "OKC",
-        "LAL"
+        "PHI",
+        "PHI"
       ],
-      "winner": "OKC",
+      "winner": "PHI",
       "games": [
         {
-          "gameId": "202605050OKC",
-          "gameCode": "20260505",
-          "gameDateTimeUTC": "2026-05-05T00:00:00.000Z",
+          "gameId": "202604190BOS",
+          "gameCode": "20260419",
+          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
           "home": {
-            "tri": "OKC",
-            "score": 108
+            "tri": "PHI",
+            "score": 0
           },
           "away": {
-            "tri": "LAL",
-            "score": 90
-          }
-        },
-        {
-          "gameId": "202605070OKC",
-          "gameCode": "20260507",
-          "gameDateTimeUTC": "2026-05-07T00:00:00.000Z",
-          "home": {
-            "tri": "OKC",
-            "score": 125
-          },
-          "away": {
-            "tri": "LAL",
-            "score": 107
-          }
-        },
-        {
-          "gameId": "202605090LAL",
-          "gameCode": "20260509",
-          "gameDateTimeUTC": "2026-05-09T00:00:00.000Z",
-          "home": {
-            "tri": "LAL",
-            "score": 108
-          },
-          "away": {
-            "tri": "OKC",
-            "score": 131
-          }
-        },
-        {
-          "gameId": "202605110LAL",
-          "gameCode": "20260511",
-          "gameDateTimeUTC": "2026-05-11T00:00:00.000Z",
-          "home": {
-            "tri": "LAL",
-            "score": 110
-          },
-          "away": {
-            "tri": "OKC",
-            "score": 115
-          }
-        }
-      ]
-    },
-    {
-      "round": "r3",
-      "teams": [
-        "OKC",
-        "SAS"
-      ],
-      "winner": "SAS",
-      "games": [
-        {
-          "gameId": "202605180OKC",
-          "gameCode": "20260518",
-          "gameDateTimeUTC": "2026-05-18T00:00:00.000Z",
-          "home": {
-            "tri": "OKC",
-            "score": 115
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 122
-          }
-        },
-        {
-          "gameId": "202605200OKC",
-          "gameCode": "20260520",
-          "gameDateTimeUTC": "2026-05-20T00:00:00.000Z",
-          "home": {
-            "tri": "OKC",
-            "score": 122
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 113
-          }
-        },
-        {
-          "gameId": "202605220SAS",
-          "gameCode": "20260522",
-          "gameDateTimeUTC": "2026-05-22T00:00:00.000Z",
-          "home": {
-            "tri": "SAS",
-            "score": 108
-          },
-          "away": {
-            "tri": "OKC",
-            "score": 123
-          }
-        },
-        {
-          "gameId": "202605240SAS",
-          "gameCode": "20260524",
-          "gameDateTimeUTC": "2026-05-24T00:00:00.000Z",
-          "home": {
-            "tri": "SAS",
-            "score": 103
-          },
-          "away": {
-            "tri": "OKC",
-            "score": 82
-          }
-        },
-        {
-          "gameId": "202605260OKC",
-          "gameCode": "20260526",
-          "gameDateTimeUTC": "2026-05-26T00:00:00.000Z",
-          "home": {
-            "tri": "OKC",
-            "score": 127
-          },
-          "away": {
-            "tri": "SAS",
-            "score": 114
-          }
-        },
-        {
-          "gameId": "202605280SAS",
-          "gameCode": "20260528",
-          "gameDateTimeUTC": "2026-05-28T00:00:00.000Z",
-          "home": {
-            "tri": "SAS",
-            "score": 118
-          },
-          "away": {
-            "tri": "OKC",
+            "tri": "PHI",
             "score": 91
           }
         },
         {
-          "gameId": "202605300OKC",
-          "gameCode": "20260530",
-          "gameDateTimeUTC": "2026-05-30T00:00:00.000Z",
+          "gameId": "202604210BOS",
+          "gameCode": "20260421",
+          "gameDateTimeUTC": "2026-04-21T00:00:00.000Z",
           "home": {
-            "tri": "OKC",
-            "score": 103
+            "tri": "PHI",
+            "score": 0
           },
           "away": {
-            "tri": "SAS",
+            "tri": "PHI",
             "score": 111
+          }
+        },
+        {
+          "gameId": "202604280BOS",
+          "gameCode": "20260428",
+          "gameDateTimeUTC": "2026-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 0
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202605020BOS",
+          "gameCode": "20260502",
+          "gameDateTimeUTC": "2026-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 0
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202605040NYK",
+          "gameCode": "20260504",
+          "gameDateTimeUTC": "2026-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 0
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202605060NYK",
+          "gameCode": "20260506",
+          "gameDateTimeUTC": "2026-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 0
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 102
           }
         }
       ]
     },
     {
-      "round": "r3",
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "ORL"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "202604190DET",
+          "gameCode": "20260419",
+          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 0
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202604220DET",
+          "gameCode": "20260422",
+          "gameDateTimeUTC": "2026-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 0
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "202604290DET",
+          "gameCode": "20260429",
+          "gameDateTimeUTC": "2026-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 0
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202605030DET",
+          "gameCode": "20260503",
+          "gameDateTimeUTC": "2026-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 0
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "PHX"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "202604190OKC",
+          "gameCode": "20260419",
+          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 0
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "202604220OKC",
+          "gameCode": "20260422",
+          "gameDateTimeUTC": "2026-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 0
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "202604190SAS",
+          "gameCode": "20260419",
+          "gameDateTimeUTC": "2026-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 0
+          },
+          "away": {
+            "tri": "POR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202604210SAS",
+          "gameCode": "20260421",
+          "gameDateTimeUTC": "2026-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 0
+          },
+          "away": {
+            "tri": "POR",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202604280SAS",
+          "gameCode": "20260428",
+          "gameDateTimeUTC": "2026-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 0
+          },
+          "away": {
+            "tri": "POR",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
       "teams": [
         "NYK",
-        "CLE"
+        "NYK"
       ],
       "winner": "NYK",
       "games": [
         {
-          "gameId": "202605190NYK",
-          "gameCode": "20260519",
-          "gameDateTimeUTC": "2026-05-19T00:00:00.000Z",
+          "gameId": "202604230ATL",
+          "gameCode": "20260423",
+          "gameDateTimeUTC": "2026-04-23T00:00:00.000Z",
           "home": {
             "tri": "NYK",
-            "score": 115
+            "score": 0
           },
           "away": {
-            "tri": "CLE",
-            "score": 104
+            "tri": "NYK",
+            "score": 108
           }
         },
         {
-          "gameId": "202605210NYK",
-          "gameCode": "20260521",
-          "gameDateTimeUTC": "2026-05-21T00:00:00.000Z",
+          "gameId": "202604250ATL",
+          "gameCode": "20260425",
+          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
           "home": {
             "tri": "NYK",
-            "score": 109
+            "score": 0
           },
           "away": {
-            "tri": "CLE",
-            "score": 93
+            "tri": "NYK",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202604300ATL",
+          "gameCode": "20260430",
+          "gameDateTimeUTC": "2026-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 0
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 140
+          }
+        },
+        {
+          "gameId": "202605080PHI",
+          "gameCode": "20260508",
+          "gameDateTimeUTC": "2026-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 0
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202605100PHI",
+          "gameCode": "20260510",
+          "gameDateTimeUTC": "2026-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 0
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 144
           }
         },
         {
@@ -1158,8 +562,8 @@
           "gameCode": "20260523",
           "gameDateTimeUTC": "2026-05-23T00:00:00.000Z",
           "home": {
-            "tri": "CLE",
-            "score": 108
+            "tri": "NYK",
+            "score": 0
           },
           "away": {
             "tri": "NYK",
@@ -1171,31 +575,21 @@
           "gameCode": "20260525",
           "gameDateTimeUTC": "2026-05-25T00:00:00.000Z",
           "home": {
-            "tri": "CLE",
-            "score": 93
+            "tri": "NYK",
+            "score": 0
           },
           "away": {
             "tri": "NYK",
             "score": 130
           }
-        }
-      ]
-    },
-    {
-      "round": "r4",
-      "teams": [
-        "SAS",
-        "NYK"
-      ],
-      "winner": "NYK",
-      "games": [
+        },
         {
           "gameId": "202606030SAS",
           "gameCode": "20260603",
           "gameDateTimeUTC": "2026-06-03T00:00:00.000Z",
           "home": {
-            "tri": "SAS",
-            "score": 95
+            "tri": "NYK",
+            "score": 0
           },
           "away": {
             "tri": "NYK",
@@ -1207,8 +601,8 @@
           "gameCode": "20260605",
           "gameDateTimeUTC": "2026-06-05T00:00:00.000Z",
           "home": {
-            "tri": "SAS",
-            "score": 104
+            "tri": "NYK",
+            "score": 0
           },
           "away": {
             "tri": "NYK",
@@ -1216,12 +610,452 @@
           }
         },
         {
+          "gameId": "202606130SAS",
+          "gameCode": "20260613",
+          "gameDateTimeUTC": "2026-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 0
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DEN",
+        "DEN"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202604230MIN",
+          "gameCode": "20260423",
+          "gameDateTimeUTC": "2026-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 0
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202604250MIN",
+          "gameCode": "20260425",
+          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 0
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202604300MIN",
+          "gameCode": "20260430",
+          "gameDateTimeUTC": "2026-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 0
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "202604230TOR",
+          "gameCode": "20260423",
+          "gameDateTimeUTC": "2026-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202604260TOR",
+          "gameCode": "20260426",
+          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "202605010TOR",
+          "gameCode": "20260501",
+          "gameDateTimeUTC": "2026-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202605050DET",
+          "gameCode": "20260505",
+          "gameDateTimeUTC": "2026-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202605070DET",
+          "gameCode": "20260507",
+          "gameDateTimeUTC": "2026-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202605130DET",
+          "gameCode": "20260513",
+          "gameDateTimeUTC": "2026-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202605170DET",
+          "gameCode": "20260517",
+          "gameDateTimeUTC": "2026-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "202605190NYK",
+          "gameCode": "20260519",
+          "gameDateTimeUTC": "2026-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202605210NYK",
+          "gameCode": "20260521",
+          "gameDateTimeUTC": "2026-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 0
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202604240HOU",
+          "gameCode": "20260424",
+          "gameDateTimeUTC": "2026-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 0
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202604260HOU",
+          "gameCode": "20260426",
+          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 0
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202605010HOU",
+          "gameCode": "20260501",
+          "gameDateTimeUTC": "2026-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 0
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202605050OKC",
+          "gameCode": "20260505",
+          "gameDateTimeUTC": "2026-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 0
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "202605070OKC",
+          "gameCode": "20260507",
+          "gameDateTimeUTC": "2026-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 0
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "BOS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202604240PHI",
+          "gameCode": "20260424",
+          "gameDateTimeUTC": "2026-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 0
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202604260PHI",
+          "gameCode": "20260426",
+          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 0
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "202604300PHI",
+          "gameCode": "20260430",
+          "gameDateTimeUTC": "2026-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 0
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "202604240POR",
+          "gameCode": "20260424",
+          "gameDateTimeUTC": "2026-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "202604260POR",
+          "gameCode": "20260426",
+          "gameDateTimeUTC": "2026-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202605080MIN",
+          "gameCode": "20260508",
+          "gameDateTimeUTC": "2026-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202605100MIN",
+          "gameCode": "20260510",
+          "gameDateTimeUTC": "2026-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202605150MIN",
+          "gameCode": "20260515",
+          "gameDateTimeUTC": "2026-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 139
+          }
+        },
+        {
+          "gameId": "202605180OKC",
+          "gameCode": "20260518",
+          "gameDateTimeUTC": "2026-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "202605200OKC",
+          "gameCode": "20260520",
+          "gameDateTimeUTC": "2026-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202605260OKC",
+          "gameCode": "20260526",
+          "gameDateTimeUTC": "2026-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202605300OKC",
+          "gameCode": "20260530",
+          "gameDateTimeUTC": "2026-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 0
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
           "gameId": "202606080NYK",
           "gameCode": "20260608",
           "gameDateTimeUTC": "2026-06-08T00:00:00.000Z",
           "home": {
-            "tri": "NYK",
-            "score": 111
+            "tri": "SAS",
+            "score": 0
           },
           "away": {
             "tri": "SAS",
@@ -1233,30 +1067,206 @@
           "gameCode": "20260610",
           "gameDateTimeUTC": "2026-06-10T00:00:00.000Z",
           "home": {
-            "tri": "NYK",
-            "score": 107
+            "tri": "SAS",
+            "score": 0
           },
           "away": {
             "tri": "SAS",
             "score": 106
           }
-        },
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "DET",
+        "DET"
+      ],
+      "winner": "DET",
+      "games": [
         {
-          "gameId": "202606130SAS",
-          "gameCode": "20260613",
-          "gameDateTimeUTC": "2026-06-13T00:00:00.000Z",
+          "gameId": "202604250ORL",
+          "gameCode": "20260425",
+          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
           "home": {
-            "tri": "SAS",
-            "score": 90
+            "tri": "DET",
+            "score": 0
           },
           "away": {
-            "tri": "NYK",
-            "score": 94
+            "tri": "DET",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202604270ORL",
+          "gameCode": "20260427",
+          "gameDateTimeUTC": "2026-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 0
+          },
+          "away": {
+            "tri": "DET",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "202605010ORL",
+          "gameCode": "20260501",
+          "gameDateTimeUTC": "2026-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 0
+          },
+          "away": {
+            "tri": "DET",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202605090CLE",
+          "gameCode": "20260509",
+          "gameDateTimeUTC": "2026-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 0
+          },
+          "away": {
+            "tri": "DET",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202605110CLE",
+          "gameCode": "20260511",
+          "gameDateTimeUTC": "2026-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 0
+          },
+          "away": {
+            "tri": "DET",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202605150CLE",
+          "gameCode": "20260515",
+          "gameDateTimeUTC": "2026-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 0
+          },
+          "away": {
+            "tri": "DET",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "OKC",
+        "OKC"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "202604250PHO",
+          "gameCode": "20260425",
+          "gameDateTimeUTC": "2026-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202604270PHO",
+          "gameCode": "20260427",
+          "gameDateTimeUTC": "2026-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 131
+          }
+        },
+        {
+          "gameId": "202605090LAL",
+          "gameCode": "20260509",
+          "gameDateTimeUTC": "2026-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 131
+          }
+        },
+        {
+          "gameId": "202605110LAL",
+          "gameCode": "20260511",
+          "gameDateTimeUTC": "2026-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202605220SAS",
+          "gameCode": "20260522",
+          "gameDateTimeUTC": "2026-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202605240SAS",
+          "gameCode": "20260524",
+          "gameDateTimeUTC": "2026-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "202605280SAS",
+          "gameCode": "20260528",
+          "gameDateTimeUTC": "2026-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 0
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 91
           }
         }
       ]
     }
   ],
   "source": "basketball-reference",
-  "fetchedAt": "2026-06-14T12:55:30.684Z"
+  "fetchedAt": "2026-06-21T16:24:00.302Z"
 }
