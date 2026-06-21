@@ -1,0 +1,62 @@
+name: Daily historical backfill (R)
+
+# Runs the R pipeline daily: re-bakes the current season (to pick up games
+# that finalized on basketball-reference since yesterday) and fills any gaps
+# in the covered season range. Commits the resulting app/data/*.json so
+# Vercel redeploys. Live in-progress games are served separately by the
+# Next.js /api routes and are not touched here.
+on:
+  schedule:
+    # 11:00 UTC (~7am ET) — after the prior day's games finalize on BR.
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+    inputs:
+      min_season:
+        description: "Earliest season to keep complete (YYYY-YY)"
+        required: false
+        default: ""
+      max_backfill:
+        description: "Max missing past seasons to bake this run"
+        required: false
+        default: "6"
+      force_current:
+        description: "Re-bake the current season even if unchanged"
+        required: false
+        default: "true"
+
+# Avoid overlapping runs racing on the same commit.
+concurrency:
+  group: daily-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    # Bounded by DAILY_MAX_BACKFILL; a current-season bake is ~4 min and each
+    # backfilled season is similar, so 6 + current stays well inside this.
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true  # Linux binary packages -> fast installs, no compile
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+
+      - name: Run daily backfill
+        env:
+          DAILY_MIN_SEASON: ${{ inputs.min_season }}
+          DAILY_MAX_BACKFILL: ${{ inputs.max_backfill || '6' }}
+          DAILY_FORCE_CURRENT: ${{ inputs.force_current || 'true' }}
+        run: Rscript scripts/R/daily_backfill.R
+
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Daily historical backfill (R) [skip ci]"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json"
