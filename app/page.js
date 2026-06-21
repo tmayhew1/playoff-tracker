@@ -2211,7 +2211,7 @@ function PlayoffLeaderboard({ season, lga }) {
 
 function ExploreView() {
   // Season list is fetched from /api/seasons so newly-baked old seasons
-  // (run via the bake-history-range workflow) show up automatically on
+  // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
   // until the fetch resolves so the picker isn't empty on first paint.
   const FALLBACK = useMemo(() => exploreSeasonList(), []);

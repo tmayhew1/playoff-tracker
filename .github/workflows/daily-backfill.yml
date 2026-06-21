@@ -6,12 +6,9 @@ name: Daily historical backfill (R)
 # Vercel redeploys. Live in-progress games are served separately by the
 # Next.js /api routes and are not touched here.
 on:
-  # SCHEDULE PAUSED: re-enable the daily cron only after a manual run is
-  # confirmed to produce correct data (two teams per game). Until then this
-  # workflow is manual-dispatch only so it can't auto-commit bad data.
-  # schedule:
-  #   # 11:00 UTC (~7am ET) — after the prior day's games finalize on BR.
-  #   - cron: "0 11 * * *"
+  schedule:
+    # 11:00 UTC (~7am ET) — after the prior day's games finalize on BR.
+    - cron: "0 11 * * *"
   workflow_dispatch:
     inputs:
       min_season:
