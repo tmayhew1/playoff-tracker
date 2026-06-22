@@ -1047,12 +1047,23 @@ function TeamButton({ code, selected, disabled, onClick, gamesWon, actualWins, o
 }
 
 function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGame }) {
+  const [expanded, setExpanded] = useState(false);
   const [a, b] = matchups[series.id] || [];
   const winner = winners[series.id];
   const canPick = a && b;
   const games = gameWins[series.id] || {};
   const actualGames = actualGameWins?.[series.id] || {};
   const seriesDecided = !!winner;
+  // A series is "over" when real results give a team 4 wins. Collapse it to a
+  // one-line result by default (expandable) so finished series don't crowd the
+  // bracket alongside ones still in progress.
+  const realWinsA = actualGames[a] || 0;
+  const realWinsB = actualGames[b] || 0;
+  const isOver = !!(a && b) && (realWinsA >= 4 || realWinsB >= 4);
+  const seriesWinner = realWinsA >= 4 ? a : realWinsB >= 4 ? b : null;
+  const seriesLoser = seriesWinner === a ? b : a;
+  const hiWins = Math.max(realWinsA, realWinsB);
+  const loWins = Math.min(realWinsA, realWinsB);
   const seriesGames = (liveGame || []).slice().sort((x, y) =>
     (x.gameId || "").localeCompare(y.gameId || "")
   );
@@ -1085,8 +1096,8 @@ function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWi
 
   const tbdGameNumbers = tbdGames.map((_, i) => realGames.length + i + 1).filter((n) => n <= 7);
 
-  return (
-    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
+  const body = (
+    <>
       <div className="flex gap-1.5 items-stretch">
         <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} actualWins={actualGames[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimA} pointValue={ptsA} />
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
@@ -1099,6 +1110,25 @@ function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWi
         return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} dimTeam={dimTeam} />;
       })}
       <TbdCard gameNumbers={tbdGameNumbers} />
+    </>
+  );
+
+  return (
+    <div className="mb-3 bg-stone-50 border border-stone-200 rounded">
+      {isOver && (
+        <button onClick={() => setExpanded((e) => !e)} className="w-full p-2 flex items-center gap-2 text-left">
+          <span className="text-stone-400 text-[10px]">{expanded ? "▾" : "▸"}</span>
+          <span className="text-xs">
+            <span className="font-semibold text-stone-900">{seriesWinner}</span>
+            <span className="text-stone-500"> def. </span>
+            <span className="text-stone-600">{seriesLoser}</span>
+          </span>
+          <span className="ml-auto text-xs font-semibold tabular-nums text-stone-700">{hiWins}–{loWins}</span>
+        </button>
+      )}
+      {(!isOver || expanded) && (
+        <div className={isOver ? "px-2 pb-2" : "p-2"}>{body}</div>
+      )}
     </div>
   );
 }
@@ -2302,6 +2332,7 @@ function CurrentView() {
   const [showBreakdown, setShowBreakdown] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState(null);
+  const [syncSource, setSyncSource] = useState(null);
   const [syncError, setSyncError] = useState(null);
   const [liveGamesBySeries, setLiveGamesBySeries] = useState({});
   const [actualGameWins, setActualGameWins] = useState({});
@@ -2400,6 +2431,7 @@ function CurrentView() {
         return next;
       });
       setSyncedAt(new Date(data.fetchedAt || Date.now()));
+      setSyncSource(data.source || null);
       if (data.errors && data.errors.length) setSyncError(data.errors.join("; "));
     } catch (e) {
       setSyncError(e.message || "Sync failed");
@@ -2486,7 +2518,7 @@ function CurrentView() {
     <div>
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
-          {syncedAt ? (<>Live synced <span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : (<>Not synced yet</>)}
+          {syncedAt ? (<>{syncSource === "baked" ? "Synced" : "Live synced"} <span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span>{syncSource === "baked" && <span className="text-stone-400"> · stored results</span>}</>) : (<>Not synced yet</>)}
           {syncError && <div className="text-red-600 normal-case mt-0.5 tracking-normal">{syncError}</div>}
         </div>
         <div className="flex gap-2 shrink-0">
