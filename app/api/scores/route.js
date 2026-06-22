@@ -1,4 +1,6 @@
 import { BRACKET } from "../../teams";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -31,6 +33,38 @@ const TRICODE_MAP = {
   ORL: "ORL", PHI: "PHI", PHX: "PHX", OKC: "OKC", BOS: "BOS",
   MIN: "MIN", DET: "DET", ATL: "ATL", LAL: "LAL", TOR: "TOR", POR: "POR",
 };
+
+// Season this bracket represents (matches R1_MATCHUPS / TRICODE_MAP above).
+const CURRENT_SEASON = "2025-26";
+
+// Fallback source when the live NBA feed is unavailable (e.g. 403 from a
+// datacenter IP, or simply the offseason): reconstruct finalized playoff games
+// from the baked history the R pipeline maintains. All such games are final.
+async function loadBakedPlayoffGames() {
+  try {
+    const path = join(process.cwd(), "app", "data", `history-${CURRENT_SEASON}.json`);
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const games = [];
+    for (const s of data.series || []) {
+      for (const g of s.games || []) {
+        const home = g.home?.tri, away = g.away?.tri;
+        if (!TRICODE_MAP[home] || !TRICODE_MAP[away]) continue;
+        games.push({
+          gameId: g.gameId,
+          gameStatus: 3, // baked games are finalized
+          gameStatusText: "Final",
+          gameDateTimeUTC: g.gameDateTimeUTC,
+          home: { tri: home, score: g.home.score ?? 0 },
+          away: { tri: away, score: g.away.score ?? 0 },
+          broadcasters: [],
+        });
+      }
+    }
+    return games;
+  } catch {
+    return [];
+  }
+}
 
 const R1_MATCHUPS = {
   E1: ["DET", "ORL"], E4: ["CLE", "TOR"], E3: ["NYK", "ATL"], E2: ["BOS", "PHI"],
@@ -75,6 +109,7 @@ function buildSeriesMatchups(playoffGames) {
 
 export async function GET() {
   const errors = [];
+  let usedBaked = false;
 
   // --- 1. Pull the full season schedule (includes every playoff game) ---
   let rawPlayoffGames = [];
@@ -128,6 +163,18 @@ export async function GET() {
     errors.push(`schedule: ${e.message}`);
   }
 
+  // Live feed gave us nothing (failed, or offseason) — fall back to the baked
+  // playoff history so results still show. Baked data covers us, so the
+  // live-feed error is no longer worth surfacing.
+  if (rawPlayoffGames.length === 0) {
+    const baked = await loadBakedPlayoffGames();
+    if (baked.length > 0) {
+      rawPlayoffGames = baked;
+      usedBaked = true;
+      errors.length = 0;
+    }
+  }
+
   // --- 2. Build dynamic series matchups (R1 + later rounds as they clinch) ---
   const SERIES_MATCHUPS = buildSeriesMatchups(rawPlayoffGames);
 
@@ -150,29 +197,33 @@ export async function GET() {
     .filter((g) => g.seriesId);
 
   // --- 3. Pull today's live scoreboard for in-progress scores (overrides schedule) ---
+  // Skipped when serving baked history: those games are all final, so there's
+  // no live scoreboard to merge (and no error to surface).
   let liveToday = [];
-  try {
-    const url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json";
-    const data = await fetchJson(url, 4500);
-    const games = data?.scoreboard?.games || [];
-    for (const g of games) {
-      const home = g.homeTeam?.teamTricode;
-      const away = g.awayTeam?.teamTricode;
-      const sid = findSeriesId(home, away);
-      if (!sid) continue;
-      liveToday.push({
-        seriesId: sid,
-        gameId: g.gameId,
-        gameStatus: g.gameStatus,
-        gameStatusText: g.gameStatusText,
-        period: g.period,
-        gameClock: g.gameClock,
-        home: { tri: home, score: g.homeTeam?.score ?? 0 },
-        away: { tri: away, score: g.awayTeam?.score ?? 0 },
-      });
+  if (!usedBaked) {
+    try {
+      const url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json";
+      const data = await fetchJson(url, 4500);
+      const games = data?.scoreboard?.games || [];
+      for (const g of games) {
+        const home = g.homeTeam?.teamTricode;
+        const away = g.awayTeam?.teamTricode;
+        const sid = findSeriesId(home, away);
+        if (!sid) continue;
+        liveToday.push({
+          seriesId: sid,
+          gameId: g.gameId,
+          gameStatus: g.gameStatus,
+          gameStatusText: g.gameStatusText,
+          period: g.period,
+          gameClock: g.gameClock,
+          home: { tri: home, score: g.homeTeam?.score ?? 0 },
+          away: { tri: away, score: g.awayTeam?.score ?? 0 },
+        });
+      }
+    } catch (e) {
+      errors.push(`scoreboard: ${e.message}`);
     }
-  } catch (e) {
-    errors.push(`scoreboard: ${e.message}`);
   }
 
   // --- 4. Merge: schedule provides history + broadcasters, scoreboard overrides today's live data ---
@@ -208,7 +259,8 @@ export async function GET() {
     }
   }
 
-  return new Response(JSON.stringify({ gameWins, liveGames, errors, fetchedAt: new Date().toISOString() }), {
+  const source = usedBaked ? "baked" : "live";
+  return new Response(JSON.stringify({ gameWins, liveGames, errors, source, fetchedAt: new Date().toISOString() }), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
