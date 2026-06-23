@@ -1,0 +1,1223 @@
+{
+  "season": "2009-10",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "MIL"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "201004170ATL",
+          "gameCode": "20100417",
+          "gameDateTimeUTC": "2010-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 102
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201004200ATL",
+          "gameCode": "20100420",
+          "gameDateTimeUTC": "2010-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201004240MIL",
+          "gameCode": "20100424",
+          "gameDateTimeUTC": "2010-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 107
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201004260MIL",
+          "gameCode": "20100426",
+          "gameDateTimeUTC": "2010-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 111
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201004280ATL",
+          "gameCode": "20100428",
+          "gameDateTimeUTC": "2010-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 87
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201004300MIL",
+          "gameCode": "20100430",
+          "gameDateTimeUTC": "2010-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 69
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201005020ATL",
+          "gameCode": "20100502",
+          "gameDateTimeUTC": "2010-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 95
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 74
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "MIA"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201004170BOS",
+          "gameCode": "20100417",
+          "gameDateTimeUTC": "2010-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 85
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "201004200BOS",
+          "gameCode": "20100420",
+          "gameDateTimeUTC": "2010-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 106
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "201004230MIA",
+          "gameCode": "20100423",
+          "gameDateTimeUTC": "2010-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201004250MIA",
+          "gameCode": "20100425",
+          "gameDateTimeUTC": "2010-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 101
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201004270BOS",
+          "gameCode": "20100427",
+          "gameDateTimeUTC": "2010-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 86
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "CHI"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201004170CLE",
+          "gameCode": "20100417",
+          "gameDateTimeUTC": "2010-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201004190CLE",
+          "gameCode": "20100419",
+          "gameDateTimeUTC": "2010-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 112
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201004220CHI",
+          "gameCode": "20100422",
+          "gameDateTimeUTC": "2010-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 108
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201004250CHI",
+          "gameCode": "20100425",
+          "gameDateTimeUTC": "2010-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "201004270CLE",
+          "gameCode": "20100427",
+          "gameDateTimeUTC": "2010-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "201004170DEN",
+          "gameCode": "20100417",
+          "gameDateTimeUTC": "2010-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 126
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201004190DEN",
+          "gameCode": "20100419",
+          "gameDateTimeUTC": "2010-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 111
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "201004230UTA",
+          "gameCode": "20100423",
+          "gameDateTimeUTC": "2010-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 105
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201004250UTA",
+          "gameCode": "20100425",
+          "gameDateTimeUTC": "2010-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 117
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201004280DEN",
+          "gameCode": "20100428",
+          "gameDateTimeUTC": "2010-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 116
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201004300UTA",
+          "gameCode": "20100430",
+          "gameDateTimeUTC": "2010-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 112
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "SAS"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201004180DAL",
+          "gameCode": "20100418",
+          "gameDateTimeUTC": "2010-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201004210DAL",
+          "gameCode": "20100421",
+          "gameDateTimeUTC": "2010-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 88
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201004230SAS",
+          "gameCode": "20100423",
+          "gameDateTimeUTC": "2010-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 94
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201004250SAS",
+          "gameCode": "20100425",
+          "gameDateTimeUTC": "2010-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201004270DAL",
+          "gameCode": "20100427",
+          "gameDateTimeUTC": "2010-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201004290SAS",
+          "gameCode": "20100429",
+          "gameDateTimeUTC": "2010-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "OKC"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "201004180LAL",
+          "gameCode": "20100418",
+          "gameDateTimeUTC": "2010-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 87
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "201004200LAL",
+          "gameCode": "20100420",
+          "gameDateTimeUTC": "2010-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 95
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201004220OKC",
+          "gameCode": "20100422",
+          "gameDateTimeUTC": "2010-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 101
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201004240OKC",
+          "gameCode": "20100424",
+          "gameDateTimeUTC": "2010-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 110
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201004270LAL",
+          "gameCode": "20100427",
+          "gameDateTimeUTC": "2010-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201004300OKC",
+          "gameCode": "20100430",
+          "gameDateTimeUTC": "2010-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 94
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 95
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "CHA"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "201004180ORL",
+          "gameCode": "20100418",
+          "gameDateTimeUTC": "2010-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 98
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201004210ORL",
+          "gameCode": "20100421",
+          "gameDateTimeUTC": "2010-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 92
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "201004240CHA",
+          "gameCode": "20100424",
+          "gameDateTimeUTC": "2010-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 86
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201004260CHA",
+          "gameCode": "20100426",
+          "gameDateTimeUTC": "2010-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 90
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "POR"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "201004180PHO",
+          "gameCode": "20100418",
+          "gameDateTimeUTC": "2010-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 100
+          },
+          "away": {
+            "tri": "POR",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201004200PHO",
+          "gameCode": "20100420",
+          "gameDateTimeUTC": "2010-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 119
+          },
+          "away": {
+            "tri": "POR",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201004220POR",
+          "gameCode": "20100422",
+          "gameDateTimeUTC": "2010-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 89
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201004240POR",
+          "gameCode": "20100424",
+          "gameDateTimeUTC": "2010-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 96
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201004260PHO",
+          "gameCode": "20100426",
+          "gameDateTimeUTC": "2010-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 107
+          },
+          "away": {
+            "tri": "POR",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201004290POR",
+          "gameCode": "20100429",
+          "gameDateTimeUTC": "2010-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 90
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "BOS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201005010CLE",
+          "gameCode": "20100501",
+          "gameDateTimeUTC": "2010-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 101
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201005030CLE",
+          "gameCode": "20100503",
+          "gameDateTimeUTC": "2010-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 86
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201005070BOS",
+          "gameCode": "20100507",
+          "gameDateTimeUTC": "2010-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 95
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "201005090BOS",
+          "gameCode": "20100509",
+          "gameDateTimeUTC": "2010-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 97
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201005110CLE",
+          "gameCode": "20100511",
+          "gameDateTimeUTC": "2010-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 88
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "201005130BOS",
+          "gameCode": "20100513",
+          "gameDateTimeUTC": "2010-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 94
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 85
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "UTA"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "201005020LAL",
+          "gameCode": "20100502",
+          "gameDateTimeUTC": "2010-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201005040LAL",
+          "gameCode": "20100504",
+          "gameDateTimeUTC": "2010-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201005080UTA",
+          "gameCode": "20100508",
+          "gameDateTimeUTC": "2010-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 110
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201005100UTA",
+          "gameCode": "20100510",
+          "gameDateTimeUTC": "2010-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "SAS"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "201005030PHO",
+          "gameCode": "20100503",
+          "gameDateTimeUTC": "2010-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201005050PHO",
+          "gameCode": "20100505",
+          "gameDateTimeUTC": "2010-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 110
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201005070SAS",
+          "gameCode": "20100507",
+          "gameDateTimeUTC": "2010-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 96
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "201005090SAS",
+          "gameCode": "20100509",
+          "gameDateTimeUTC": "2010-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "ORL",
+        "ATL"
+      ],
+      "winner": "ORL",
+      "games": [
+        {
+          "gameId": "201005040ORL",
+          "gameCode": "20100504",
+          "gameDateTimeUTC": "2010-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 114
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "201005060ORL",
+          "gameCode": "20100506",
+          "gameDateTimeUTC": "2010-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 112
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201005080ATL",
+          "gameCode": "20100508",
+          "gameDateTimeUTC": "2010-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 75
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201005100ATL",
+          "gameCode": "20100510",
+          "gameDateTimeUTC": "2010-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 84
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "ORL",
+        "BOS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201005160ORL",
+          "gameCode": "20100516",
+          "gameDateTimeUTC": "2010-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 88
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201005180ORL",
+          "gameCode": "20100518",
+          "gameDateTimeUTC": "2010-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 92
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201005220BOS",
+          "gameCode": "20100522",
+          "gameDateTimeUTC": "2010-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 94
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 71
+          }
+        },
+        {
+          "gameId": "201005240BOS",
+          "gameCode": "20100524",
+          "gameDateTimeUTC": "2010-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 92
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201005260ORL",
+          "gameCode": "20100526",
+          "gameDateTimeUTC": "2010-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 113
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201005280BOS",
+          "gameCode": "20100528",
+          "gameDateTimeUTC": "2010-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "PHX"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "201005170LAL",
+          "gameCode": "20100517",
+          "gameDateTimeUTC": "2010-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 128
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201005190LAL",
+          "gameCode": "20100519",
+          "gameDateTimeUTC": "2010-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 124
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201005230PHO",
+          "gameCode": "20100523",
+          "gameDateTimeUTC": "2010-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 118
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201005250PHO",
+          "gameCode": "20100525",
+          "gameDateTimeUTC": "2010-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201005270LAL",
+          "gameCode": "20100527",
+          "gameDateTimeUTC": "2010-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201005290PHO",
+          "gameCode": "20100529",
+          "gameDateTimeUTC": "2010-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "LAL",
+        "BOS"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "201006030LAL",
+          "gameCode": "20100603",
+          "gameDateTimeUTC": "2010-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201006060LAL",
+          "gameCode": "20100606",
+          "gameDateTimeUTC": "2010-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 94
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201006080BOS",
+          "gameCode": "20100608",
+          "gameDateTimeUTC": "2010-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 84
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201006100BOS",
+          "gameCode": "20100610",
+          "gameDateTimeUTC": "2010-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201006130BOS",
+          "gameCode": "20100613",
+          "gameDateTimeUTC": "2010-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 92
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201006150LAL",
+          "gameCode": "20100615",
+          "gameDateTimeUTC": "2010-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 89
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 67
+          }
+        },
+        {
+          "gameId": "201006170LAL",
+          "gameCode": "20100617",
+          "gameDateTimeUTC": "2010-06-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 83
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 79
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-23T13:47:37.608Z"
+}

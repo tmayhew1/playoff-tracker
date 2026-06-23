@@ -1,0 +1,1275 @@
+{
+  "season": "2015-16",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "BOS"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "201604160ATL",
+          "gameCode": "20160416",
+          "gameDateTimeUTC": "2016-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201604190ATL",
+          "gameCode": "20160419",
+          "gameDateTimeUTC": "2016-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 89
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "201604220BOS",
+          "gameCode": "20160422",
+          "gameDateTimeUTC": "2016-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 111
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201604240BOS",
+          "gameCode": "20160424",
+          "gameDateTimeUTC": "2016-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 104
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201604260ATL",
+          "gameCode": "20160426",
+          "gameDateTimeUTC": "2016-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 110
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201604280BOS",
+          "gameCode": "20160428",
+          "gameDateTimeUTC": "2016-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 92
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "HOU"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201604160GSW",
+          "gameCode": "20160416",
+          "gameDateTimeUTC": "2016-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "201604180GSW",
+          "gameCode": "20160418",
+          "gameDateTimeUTC": "2016-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 115
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201604210HOU",
+          "gameCode": "20160421",
+          "gameDateTimeUTC": "2016-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 97
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201604240HOU",
+          "gameCode": "20160424",
+          "gameDateTimeUTC": "2016-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 94
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "201604270GSW",
+          "gameCode": "20160427",
+          "gameDateTimeUTC": "2016-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 114
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "DAL"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201604160OKC",
+          "gameCode": "20160416",
+          "gameDateTimeUTC": "2016-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 108
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 70
+          }
+        },
+        {
+          "gameId": "201604180OKC",
+          "gameCode": "20160418",
+          "gameDateTimeUTC": "2016-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 84
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201604210DAL",
+          "gameCode": "20160421",
+          "gameDateTimeUTC": "2016-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 131
+          }
+        },
+        {
+          "gameId": "201604230DAL",
+          "gameCode": "20160423",
+          "gameDateTimeUTC": "2016-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201604250OKC",
+          "gameCode": "20160425",
+          "gameDateTimeUTC": "2016-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 118
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "IND"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201604160TOR",
+          "gameCode": "20160416",
+          "gameDateTimeUTC": "2016-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 90
+          },
+          "away": {
+            "tri": "IND",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201604180TOR",
+          "gameCode": "20160418",
+          "gameDateTimeUTC": "2016-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 98
+          },
+          "away": {
+            "tri": "IND",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201604210IND",
+          "gameCode": "20160421",
+          "gameDateTimeUTC": "2016-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 85
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201604230IND",
+          "gameCode": "20160423",
+          "gameDateTimeUTC": "2016-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 100
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201604260TOR",
+          "gameCode": "20160426",
+          "gameDateTimeUTC": "2016-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 102
+          },
+          "away": {
+            "tri": "IND",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201604290IND",
+          "gameCode": "20160429",
+          "gameDateTimeUTC": "2016-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 101
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201605010TOR",
+          "gameCode": "20160501",
+          "gameDateTimeUTC": "2016-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 89
+          },
+          "away": {
+            "tri": "IND",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "DET"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201604170CLE",
+          "gameCode": "20160417",
+          "gameDateTimeUTC": "2016-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 106
+          },
+          "away": {
+            "tri": "DET",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201604200CLE",
+          "gameCode": "20160420",
+          "gameDateTimeUTC": "2016-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 107
+          },
+          "away": {
+            "tri": "DET",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201604220DET",
+          "gameCode": "20160422",
+          "gameDateTimeUTC": "2016-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 91
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201604240DET",
+          "gameCode": "20160424",
+          "gameDateTimeUTC": "2016-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 98
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "201604170LAC",
+          "gameCode": "20160417",
+          "gameDateTimeUTC": "2016-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 115
+          },
+          "away": {
+            "tri": "POR",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201604200LAC",
+          "gameCode": "20160420",
+          "gameDateTimeUTC": "2016-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 102
+          },
+          "away": {
+            "tri": "POR",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201604230POR",
+          "gameCode": "20160423",
+          "gameDateTimeUTC": "2016-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201604250POR",
+          "gameCode": "20160425",
+          "gameDateTimeUTC": "2016-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201604270LAC",
+          "gameCode": "20160427",
+          "gameDateTimeUTC": "2016-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 98
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201604290POR",
+          "gameCode": "20160429",
+          "gameDateTimeUTC": "2016-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "CHA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201604170MIA",
+          "gameCode": "20160417",
+          "gameDateTimeUTC": "2016-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 123
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201604200MIA",
+          "gameCode": "20160420",
+          "gameDateTimeUTC": "2016-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201604230CHO",
+          "gameCode": "20160423",
+          "gameDateTimeUTC": "2016-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "201604250CHO",
+          "gameCode": "20160425",
+          "gameDateTimeUTC": "2016-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 89
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201604270MIA",
+          "gameCode": "20160427",
+          "gameDateTimeUTC": "2016-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 88
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201604290CHO",
+          "gameCode": "20160429",
+          "gameDateTimeUTC": "2016-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 90
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201605010MIA",
+          "gameCode": "20160501",
+          "gameDateTimeUTC": "2016-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 106
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 73
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "MEM"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201604170SAS",
+          "gameCode": "20160417",
+          "gameDateTimeUTC": "2016-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "201604190SAS",
+          "gameCode": "20160419",
+          "gameDateTimeUTC": "2016-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 94
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 68
+          }
+        },
+        {
+          "gameId": "201604220MEM",
+          "gameCode": "20160422",
+          "gameDateTimeUTC": "2016-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 87
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201604240MEM",
+          "gameCode": "20160424",
+          "gameDateTimeUTC": "2016-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 95
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "OKC"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201604300SAS",
+          "gameCode": "20160430",
+          "gameDateTimeUTC": "2016-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 124
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201605020SAS",
+          "gameCode": "20160502",
+          "gameDateTimeUTC": "2016-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201605060OKC",
+          "gameCode": "20160506",
+          "gameDateTimeUTC": "2016-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201605080OKC",
+          "gameCode": "20160508",
+          "gameDateTimeUTC": "2016-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 111
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201605100SAS",
+          "gameCode": "20160510",
+          "gameDateTimeUTC": "2016-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 91
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201605120OKC",
+          "gameCode": "20160512",
+          "gameDateTimeUTC": "2016-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 113
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "GSW",
+        "POR"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201605010GSW",
+          "gameCode": "20160501",
+          "gameDateTimeUTC": "2016-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 118
+          },
+          "away": {
+            "tri": "POR",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201605030GSW",
+          "gameCode": "20160503",
+          "gameDateTimeUTC": "2016-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "POR",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201605070POR",
+          "gameCode": "20160507",
+          "gameDateTimeUTC": "2016-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 120
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201605090POR",
+          "gameCode": "20160509",
+          "gameDateTimeUTC": "2016-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 125
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 132
+          }
+        },
+        {
+          "gameId": "201605110GSW",
+          "gameCode": "20160511",
+          "gameDateTimeUTC": "2016-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 125
+          },
+          "away": {
+            "tri": "POR",
+            "score": 121
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "ATL"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201605020CLE",
+          "gameCode": "20160502",
+          "gameDateTimeUTC": "2016-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 104
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201605040CLE",
+          "gameCode": "20160504",
+          "gameDateTimeUTC": "2016-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 123
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201605060ATL",
+          "gameCode": "20160506",
+          "gameDateTimeUTC": "2016-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 108
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "201605080ATL",
+          "gameCode": "20160508",
+          "gameDateTimeUTC": "2016-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 99
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "TOR",
+        "MIA"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201605030TOR",
+          "gameCode": "20160503",
+          "gameDateTimeUTC": "2016-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201605050TOR",
+          "gameCode": "20160505",
+          "gameDateTimeUTC": "2016-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201605070MIA",
+          "gameCode": "20160507",
+          "gameDateTimeUTC": "2016-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 91
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201605090MIA",
+          "gameCode": "20160509",
+          "gameDateTimeUTC": "2016-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 94
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201605110TOR",
+          "gameCode": "20160511",
+          "gameDateTimeUTC": "2016-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201605130MIA",
+          "gameCode": "20160513",
+          "gameDateTimeUTC": "2016-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 103
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201605150TOR",
+          "gameCode": "20160515",
+          "gameDateTimeUTC": "2016-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "GSW",
+        "OKC"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201605160GSW",
+          "gameCode": "20160516",
+          "gameDateTimeUTC": "2016-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 102
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201605180GSW",
+          "gameCode": "20160518",
+          "gameDateTimeUTC": "2016-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 118
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201605220OKC",
+          "gameCode": "20160522",
+          "gameDateTimeUTC": "2016-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 133
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201605240OKC",
+          "gameCode": "20160524",
+          "gameDateTimeUTC": "2016-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 118
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201605260GSW",
+          "gameCode": "20160526",
+          "gameDateTimeUTC": "2016-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 120
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201605280OKC",
+          "gameCode": "20160528",
+          "gameDateTimeUTC": "2016-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 101
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201605300GSW",
+          "gameCode": "20160530",
+          "gameDateTimeUTC": "2016-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 96
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "CLE",
+        "TOR"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201605170CLE",
+          "gameCode": "20160517",
+          "gameDateTimeUTC": "2016-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 115
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201605190CLE",
+          "gameCode": "20160519",
+          "gameDateTimeUTC": "2016-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 108
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201605210TOR",
+          "gameCode": "20160521",
+          "gameDateTimeUTC": "2016-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 99
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201605230TOR",
+          "gameCode": "20160523",
+          "gameDateTimeUTC": "2016-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 105
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201605250CLE",
+          "gameCode": "20160525",
+          "gameDateTimeUTC": "2016-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 116
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "201605270TOR",
+          "gameCode": "20160527",
+          "gameDateTimeUTC": "2016-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 87
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "GSW",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201606020GSW",
+          "gameCode": "20160602",
+          "gameDateTimeUTC": "2016-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201606050GSW",
+          "gameCode": "20160605",
+          "gameDateTimeUTC": "2016-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "201606080CLE",
+          "gameCode": "20160608",
+          "gameDateTimeUTC": "2016-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 120
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201606100CLE",
+          "gameCode": "20160610",
+          "gameDateTimeUTC": "2016-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 97
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201606130GSW",
+          "gameCode": "20160613",
+          "gameDateTimeUTC": "2016-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 97
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201606160CLE",
+          "gameCode": "20160616",
+          "gameDateTimeUTC": "2016-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 115
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201606190GSW",
+          "gameCode": "20160619",
+          "gameDateTimeUTC": "2016-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 89
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 93
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-23T14:07:15.275Z"
+}

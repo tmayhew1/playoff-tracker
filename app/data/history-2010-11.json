@@ -1,0 +1,1210 @@
+{
+  "season": "2010-11",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "IND"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "201104160CHI",
+          "gameCode": "20110416",
+          "gameDateTimeUTC": "2011-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "IND",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201104180CHI",
+          "gameCode": "20110418",
+          "gameDateTimeUTC": "2011-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "IND",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201104210IND",
+          "gameCode": "20110421",
+          "gameDateTimeUTC": "2011-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 84
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201104230IND",
+          "gameCode": "20110423",
+          "gameDateTimeUTC": "2011-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 89
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201104260CHI",
+          "gameCode": "20110426",
+          "gameDateTimeUTC": "2011-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 116
+          },
+          "away": {
+            "tri": "IND",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "POR"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "201104160DAL",
+          "gameCode": "20110416",
+          "gameDateTimeUTC": "2011-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 89
+          },
+          "away": {
+            "tri": "POR",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201104190DAL",
+          "gameCode": "20110419",
+          "gameDateTimeUTC": "2011-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "POR",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201104210POR",
+          "gameCode": "20110421",
+          "gameDateTimeUTC": "2011-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 97
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201104230POR",
+          "gameCode": "20110423",
+          "gameDateTimeUTC": "2011-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 84
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201104250DAL",
+          "gameCode": "20110425",
+          "gameDateTimeUTC": "2011-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 93
+          },
+          "away": {
+            "tri": "POR",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201104280POR",
+          "gameCode": "20110428",
+          "gameDateTimeUTC": "2011-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 96
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "PHI"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201104160MIA",
+          "gameCode": "20110416",
+          "gameDateTimeUTC": "2011-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 97
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201104180MIA",
+          "gameCode": "20110418",
+          "gameDateTimeUTC": "2011-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 94
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "201104210PHI",
+          "gameCode": "20110421",
+          "gameDateTimeUTC": "2011-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201104240PHI",
+          "gameCode": "20110424",
+          "gameDateTimeUTC": "2011-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201104270MIA",
+          "gameCode": "20110427",
+          "gameDateTimeUTC": "2011-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 97
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ORL",
+        "ATL"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "201104160ORL",
+          "gameCode": "20110416",
+          "gameDateTimeUTC": "2011-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 93
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201104190ORL",
+          "gameCode": "20110419",
+          "gameDateTimeUTC": "2011-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 88
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201104220ATL",
+          "gameCode": "20110422",
+          "gameDateTimeUTC": "2011-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201104240ATL",
+          "gameCode": "20110424",
+          "gameDateTimeUTC": "2011-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201104260ORL",
+          "gameCode": "20110426",
+          "gameDateTimeUTC": "2011-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 76
+          }
+        },
+        {
+          "gameId": "201104280ATL",
+          "gameCode": "20110428",
+          "gameDateTimeUTC": "2011-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 84
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "NYK"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201104170BOS",
+          "gameCode": "20110417",
+          "gameDateTimeUTC": "2011-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 87
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201104190BOS",
+          "gameCode": "20110419",
+          "gameDateTimeUTC": "2011-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201104220NYK",
+          "gameCode": "20110422",
+          "gameDateTimeUTC": "2011-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 96
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201104240NYK",
+          "gameCode": "20110424",
+          "gameDateTimeUTC": "2011-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "NOP"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "201104170LAL",
+          "gameCode": "20110417",
+          "gameDateTimeUTC": "2011-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201104200LAL",
+          "gameCode": "20110420",
+          "gameDateTimeUTC": "2011-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 87
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "201104220NOH",
+          "gameCode": "20110422",
+          "gameDateTimeUTC": "2011-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 86
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201104240NOH",
+          "gameCode": "20110424",
+          "gameDateTimeUTC": "2011-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 93
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201104260LAL",
+          "gameCode": "20110426",
+          "gameDateTimeUTC": "2011-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 106
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201104280NOH",
+          "gameCode": "20110428",
+          "gameDateTimeUTC": "2011-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 80
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "DEN"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201104170OKC",
+          "gameCode": "20110417",
+          "gameDateTimeUTC": "2011-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 107
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201104200OKC",
+          "gameCode": "20110420",
+          "gameDateTimeUTC": "2011-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 106
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201104230DEN",
+          "gameCode": "20110423",
+          "gameDateTimeUTC": "2011-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 94
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201104250DEN",
+          "gameCode": "20110425",
+          "gameDateTimeUTC": "2011-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 104
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201104270OKC",
+          "gameCode": "20110427",
+          "gameDateTimeUTC": "2011-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 100
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "MEM"
+      ],
+      "winner": "MEM",
+      "games": [
+        {
+          "gameId": "201104170SAS",
+          "gameCode": "20110417",
+          "gameDateTimeUTC": "2011-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 98
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201104200SAS",
+          "gameCode": "20110420",
+          "gameDateTimeUTC": "2011-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 93
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201104230MEM",
+          "gameCode": "20110423",
+          "gameDateTimeUTC": "2011-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 91
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201104250MEM",
+          "gameCode": "20110425",
+          "gameDateTimeUTC": "2011-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 104
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201104270SAS",
+          "gameCode": "20110427",
+          "gameDateTimeUTC": "2011-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 110
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201104290MEM",
+          "gameCode": "20110429",
+          "gameDateTimeUTC": "2011-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 99
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIA",
+        "BOS"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201105010MIA",
+          "gameCode": "20110501",
+          "gameDateTimeUTC": "2011-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201105030MIA",
+          "gameCode": "20110503",
+          "gameDateTimeUTC": "2011-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201105070BOS",
+          "gameCode": "20110507",
+          "gameDateTimeUTC": "2011-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201105090BOS",
+          "gameCode": "20110509",
+          "gameDateTimeUTC": "2011-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 90
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201105110MIA",
+          "gameCode": "20110511",
+          "gameDateTimeUTC": "2011-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 97
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "OKC",
+        "MEM"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201105010OKC",
+          "gameCode": "20110501",
+          "gameDateTimeUTC": "2011-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 101
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "201105030OKC",
+          "gameCode": "20110503",
+          "gameDateTimeUTC": "2011-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 111
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201105070MEM",
+          "gameCode": "20110507",
+          "gameDateTimeUTC": "2011-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 101
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201105090MEM",
+          "gameCode": "20110509",
+          "gameDateTimeUTC": "2011-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 123
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 133
+          }
+        },
+        {
+          "gameId": "201105110OKC",
+          "gameCode": "20110511",
+          "gameDateTimeUTC": "2011-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 99
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 72
+          }
+        },
+        {
+          "gameId": "201105130MEM",
+          "gameCode": "20110513",
+          "gameDateTimeUTC": "2011-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 95
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201105150OKC",
+          "gameCode": "20110515",
+          "gameDateTimeUTC": "2011-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CHI",
+        "ATL"
+      ],
+      "winner": "CHI",
+      "games": [
+        {
+          "gameId": "201105020CHI",
+          "gameCode": "20110502",
+          "gameDateTimeUTC": "2011-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201105040CHI",
+          "gameCode": "20110504",
+          "gameDateTimeUTC": "2011-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 73
+          }
+        },
+        {
+          "gameId": "201105060ATL",
+          "gameCode": "20110506",
+          "gameDateTimeUTC": "2011-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 82
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201105080ATL",
+          "gameCode": "20110508",
+          "gameDateTimeUTC": "2011-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 100
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201105100CHI",
+          "gameCode": "20110510",
+          "gameDateTimeUTC": "2011-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201105120ATL",
+          "gameCode": "20110512",
+          "gameDateTimeUTC": "2011-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 73
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "201105020LAL",
+          "gameCode": "20110502",
+          "gameDateTimeUTC": "2011-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 94
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201105040LAL",
+          "gameCode": "20110504",
+          "gameDateTimeUTC": "2011-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 81
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201105060DAL",
+          "gameCode": "20110506",
+          "gameDateTimeUTC": "2011-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201105080DAL",
+          "gameCode": "20110508",
+          "gameDateTimeUTC": "2011-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 86
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "CHI",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201105150CHI",
+          "gameCode": "20110515",
+          "gameDateTimeUTC": "2011-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201105180CHI",
+          "gameCode": "20110518",
+          "gameDateTimeUTC": "2011-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 75
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201105220MIA",
+          "gameCode": "20110522",
+          "gameDateTimeUTC": "2011-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201105240MIA",
+          "gameCode": "20110524",
+          "gameDateTimeUTC": "2011-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 101
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201105260CHI",
+          "gameCode": "20110526",
+          "gameDateTimeUTC": "2011-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 80
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 83
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "DAL",
+        "OKC"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "201105170DAL",
+          "gameCode": "20110517",
+          "gameDateTimeUTC": "2011-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 121
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201105190DAL",
+          "gameCode": "20110519",
+          "gameDateTimeUTC": "2011-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201105210OKC",
+          "gameCode": "20110521",
+          "gameDateTimeUTC": "2011-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 87
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201105230OKC",
+          "gameCode": "20110523",
+          "gameDateTimeUTC": "2011-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201105250DAL",
+          "gameCode": "20110525",
+          "gameDateTimeUTC": "2011-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "MIA",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "201105310MIA",
+          "gameCode": "20110531",
+          "gameDateTimeUTC": "2011-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 92
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201106020MIA",
+          "gameCode": "20110602",
+          "gameDateTimeUTC": "2011-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 93
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201106050DAL",
+          "gameCode": "20110605",
+          "gameDateTimeUTC": "2011-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 86
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201106070DAL",
+          "gameCode": "20110607",
+          "gameDateTimeUTC": "2011-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 86
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201106090DAL",
+          "gameCode": "20110609",
+          "gameDateTimeUTC": "2011-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201106120MIA",
+          "gameCode": "20110612",
+          "gameDateTimeUTC": "2011-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 95
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 105
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-23T13:51:26.507Z"
+}

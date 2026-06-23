@@ -1,0 +1,1314 @@
+{
+  "season": "2013-14",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "ATL"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "201404190IND",
+          "gameCode": "20140419",
+          "gameDateTimeUTC": "2014-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 93
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201404220IND",
+          "gameCode": "20140422",
+          "gameDateTimeUTC": "2014-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201404240ATL",
+          "gameCode": "20140424",
+          "gameDateTimeUTC": "2014-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 98
+          },
+          "away": {
+            "tri": "IND",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201404260ATL",
+          "gameCode": "20140426",
+          "gameDateTimeUTC": "2014-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "IND",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201404280IND",
+          "gameCode": "20140428",
+          "gameDateTimeUTC": "2014-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 97
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201405010ATL",
+          "gameCode": "20140501",
+          "gameDateTimeUTC": "2014-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 88
+          },
+          "away": {
+            "tri": "IND",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201405030IND",
+          "gameCode": "20140503",
+          "gameDateTimeUTC": "2014-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 92
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "GSW"
+      ],
+      "winner": "LAC",
+      "games": [
+        {
+          "gameId": "201404190LAC",
+          "gameCode": "20140419",
+          "gameDateTimeUTC": "2014-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 105
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201404210LAC",
+          "gameCode": "20140421",
+          "gameDateTimeUTC": "2014-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 138
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201404240GSW",
+          "gameCode": "20140424",
+          "gameDateTimeUTC": "2014-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201404270GSW",
+          "gameCode": "20140427",
+          "gameDateTimeUTC": "2014-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 118
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201404290LAC",
+          "gameCode": "20140429",
+          "gameDateTimeUTC": "2014-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 113
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201405010GSW",
+          "gameCode": "20140501",
+          "gameDateTimeUTC": "2014-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201405030LAC",
+          "gameCode": "20140503",
+          "gameDateTimeUTC": "2014-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 126
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 121
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "MEM"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201404190OKC",
+          "gameCode": "20140419",
+          "gameDateTimeUTC": "2014-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 100
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201404210OKC",
+          "gameCode": "20140421",
+          "gameDateTimeUTC": "2014-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201404240MEM",
+          "gameCode": "20140424",
+          "gameDateTimeUTC": "2014-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 98
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201404260MEM",
+          "gameCode": "20140426",
+          "gameDateTimeUTC": "2014-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 89
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201404290OKC",
+          "gameCode": "20140429",
+          "gameDateTimeUTC": "2014-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 99
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201405010MEM",
+          "gameCode": "20140501",
+          "gameDateTimeUTC": "2014-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 84
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201405030OKC",
+          "gameCode": "20140503",
+          "gameDateTimeUTC": "2014-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 120
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "BKN"
+      ],
+      "winner": "BKN",
+      "games": [
+        {
+          "gameId": "201404190TOR",
+          "gameCode": "20140419",
+          "gameDateTimeUTC": "2014-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 87
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201404220TOR",
+          "gameCode": "20140422",
+          "gameDateTimeUTC": "2014-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 100
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201404250BRK",
+          "gameCode": "20140425",
+          "gameDateTimeUTC": "2014-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 102
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201404270BRK",
+          "gameCode": "20140427",
+          "gameDateTimeUTC": "2014-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 79
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201404300TOR",
+          "gameCode": "20140430",
+          "gameDateTimeUTC": "2014-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 115
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201405020BRK",
+          "gameCode": "20140502",
+          "gameDateTimeUTC": "2014-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 97
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201405040TOR",
+          "gameCode": "20140504",
+          "gameDateTimeUTC": "2014-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 103
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "WAS"
+      ],
+      "winner": "WAS",
+      "games": [
+        {
+          "gameId": "201404200CHI",
+          "gameCode": "20140420",
+          "gameDateTimeUTC": "2014-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 93
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201404220CHI",
+          "gameCode": "20140422",
+          "gameDateTimeUTC": "2014-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201404250WAS",
+          "gameCode": "20140425",
+          "gameDateTimeUTC": "2014-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201404270WAS",
+          "gameCode": "20140427",
+          "gameDateTimeUTC": "2014-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 98
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201404290CHI",
+          "gameCode": "20140429",
+          "gameDateTimeUTC": "2014-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 69
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 75
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "201404200HOU",
+          "gameCode": "20140420",
+          "gameDateTimeUTC": "2014-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 120
+          },
+          "away": {
+            "tri": "POR",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "201404230HOU",
+          "gameCode": "20140423",
+          "gameDateTimeUTC": "2014-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 105
+          },
+          "away": {
+            "tri": "POR",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201404250POR",
+          "gameCode": "20140425",
+          "gameDateTimeUTC": "2014-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 116
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "201404270POR",
+          "gameCode": "20140427",
+          "gameDateTimeUTC": "2014-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 123
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "201404300HOU",
+          "gameCode": "20140430",
+          "gameDateTimeUTC": "2014-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 108
+          },
+          "away": {
+            "tri": "POR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201405020POR",
+          "gameCode": "20140502",
+          "gameDateTimeUTC": "2014-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 99
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "CHA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201404200MIA",
+          "gameCode": "20140420",
+          "gameDateTimeUTC": "2014-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 99
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201404230MIA",
+          "gameCode": "20140423",
+          "gameDateTimeUTC": "2014-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 101
+          },
+          "away": {
+            "tri": "CHA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201404260CHA",
+          "gameCode": "20140426",
+          "gameDateTimeUTC": "2014-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 85
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201404280CHA",
+          "gameCode": "20140428",
+          "gameDateTimeUTC": "2014-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHA",
+            "score": 98
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "DAL"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201404200SAS",
+          "gameCode": "20140420",
+          "gameDateTimeUTC": "2014-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 90
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201404230SAS",
+          "gameCode": "20140423",
+          "gameDateTimeUTC": "2014-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201404260DAL",
+          "gameCode": "20140426",
+          "gameDateTimeUTC": "2014-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201404280DAL",
+          "gameCode": "20140428",
+          "gameDateTimeUTC": "2014-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 89
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201404300SAS",
+          "gameCode": "20140430",
+          "gameDateTimeUTC": "2014-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 109
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201405020DAL",
+          "gameCode": "20140502",
+          "gameDateTimeUTC": "2014-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201405040SAS",
+          "gameCode": "20140504",
+          "gameDateTimeUTC": "2014-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 119
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "IND",
+        "WAS"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "201405050IND",
+          "gameCode": "20140505",
+          "gameDateTimeUTC": "2014-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 96
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201405070IND",
+          "gameCode": "20140507",
+          "gameDateTimeUTC": "2014-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 86
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201405090WAS",
+          "gameCode": "20140509",
+          "gameDateTimeUTC": "2014-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 63
+          },
+          "away": {
+            "tri": "IND",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201405110WAS",
+          "gameCode": "20140511",
+          "gameDateTimeUTC": "2014-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "IND",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201405130IND",
+          "gameCode": "20140513",
+          "gameDateTimeUTC": "2014-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 79
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201405150WAS",
+          "gameCode": "20140515",
+          "gameDateTimeUTC": "2014-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 80
+          },
+          "away": {
+            "tri": "IND",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "OKC",
+        "LAC"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201405050OKC",
+          "gameCode": "20140505",
+          "gameDateTimeUTC": "2014-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "201405070OKC",
+          "gameCode": "20140507",
+          "gameDateTimeUTC": "2014-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201405090LAC",
+          "gameCode": "20140509",
+          "gameDateTimeUTC": "2014-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 112
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "201405110LAC",
+          "gameCode": "20140511",
+          "gameDateTimeUTC": "2014-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 101
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201405130OKC",
+          "gameCode": "20140513",
+          "gameDateTimeUTC": "2014-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201405150LAC",
+          "gameCode": "20140515",
+          "gameDateTimeUTC": "2014-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 98
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIA",
+        "BKN"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201405060MIA",
+          "gameCode": "20140506",
+          "gameDateTimeUTC": "2014-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 107
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201405080MIA",
+          "gameCode": "20140508",
+          "gameDateTimeUTC": "2014-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 94
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201405100BRK",
+          "gameCode": "20140510",
+          "gameDateTimeUTC": "2014-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201405120BRK",
+          "gameCode": "20140512",
+          "gameDateTimeUTC": "2014-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201405140MIA",
+          "gameCode": "20140514",
+          "gameDateTimeUTC": "2014-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "POR"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201405060SAS",
+          "gameCode": "20140506",
+          "gameDateTimeUTC": "2014-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 116
+          },
+          "away": {
+            "tri": "POR",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201405080SAS",
+          "gameCode": "20140508",
+          "gameDateTimeUTC": "2014-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 114
+          },
+          "away": {
+            "tri": "POR",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201405100POR",
+          "gameCode": "20140510",
+          "gameDateTimeUTC": "2014-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 103
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "201405120POR",
+          "gameCode": "20140512",
+          "gameDateTimeUTC": "2014-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 103
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201405140SAS",
+          "gameCode": "20140514",
+          "gameDateTimeUTC": "2014-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 104
+          },
+          "away": {
+            "tri": "POR",
+            "score": 82
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "IND",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201405180IND",
+          "gameCode": "20140518",
+          "gameDateTimeUTC": "2014-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201405200IND",
+          "gameCode": "20140520",
+          "gameDateTimeUTC": "2014-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 83
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201405240MIA",
+          "gameCode": "20140524",
+          "gameDateTimeUTC": "2014-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 99
+          },
+          "away": {
+            "tri": "IND",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201405260MIA",
+          "gameCode": "20140526",
+          "gameDateTimeUTC": "2014-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 102
+          },
+          "away": {
+            "tri": "IND",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201405280IND",
+          "gameCode": "20140528",
+          "gameDateTimeUTC": "2014-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 93
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201405300MIA",
+          "gameCode": "20140530",
+          "gameDateTimeUTC": "2014-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 117
+          },
+          "away": {
+            "tri": "IND",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "OKC"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201405190SAS",
+          "gameCode": "20140519",
+          "gameDateTimeUTC": "2014-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 122
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201405210SAS",
+          "gameCode": "20140521",
+          "gameDateTimeUTC": "2014-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 112
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "201405250OKC",
+          "gameCode": "20140525",
+          "gameDateTimeUTC": "2014-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 106
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201405270OKC",
+          "gameCode": "20140527",
+          "gameDateTimeUTC": "2014-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201405290SAS",
+          "gameCode": "20140529",
+          "gameDateTimeUTC": "2014-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 117
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201405310OKC",
+          "gameCode": "20140531",
+          "gameDateTimeUTC": "2014-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "SAS",
+        "MIA"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201406050SAS",
+          "gameCode": "20140605",
+          "gameDateTimeUTC": "2014-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 110
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201406080SAS",
+          "gameCode": "20140608",
+          "gameDateTimeUTC": "2014-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201406100MIA",
+          "gameCode": "20140610",
+          "gameDateTimeUTC": "2014-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 92
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201406120MIA",
+          "gameCode": "20140612",
+          "gameDateTimeUTC": "2014-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 86
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201406150SAS",
+          "gameCode": "20140615",
+          "gameDateTimeUTC": "2014-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 87
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-23T14:03:16.911Z"
+}

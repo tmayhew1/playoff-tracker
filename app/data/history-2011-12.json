@@ -1,0 +1,1249 @@
+{
+  "season": "2011-12",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CHI",
+        "PHI"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "201204280CHI",
+          "gameCode": "20120428",
+          "gameDateTimeUTC": "2012-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201205010CHI",
+          "gameCode": "20120501",
+          "gameDateTimeUTC": "2012-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201205040PHI",
+          "gameCode": "20120504",
+          "gameDateTimeUTC": "2012-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 79
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "201205060PHI",
+          "gameCode": "20120506",
+          "gameDateTimeUTC": "2012-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 89
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201205080CHI",
+          "gameCode": "20120508",
+          "gameDateTimeUTC": "2012-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 77
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 69
+          }
+        },
+        {
+          "gameId": "201205100PHI",
+          "gameCode": "20120510",
+          "gameDateTimeUTC": "2012-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 79
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "ORL"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "201204280IND",
+          "gameCode": "20120428",
+          "gameDateTimeUTC": "2012-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 77
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201204300IND",
+          "gameCode": "20120430",
+          "gameDateTimeUTC": "2012-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 93
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "201205020ORL",
+          "gameCode": "20120502",
+          "gameDateTimeUTC": "2012-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 74
+          },
+          "away": {
+            "tri": "IND",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201205050ORL",
+          "gameCode": "20120505",
+          "gameDateTimeUTC": "2012-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 99
+          },
+          "away": {
+            "tri": "IND",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201205080IND",
+          "gameCode": "20120508",
+          "gameDateTimeUTC": "2012-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 105
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "NYK"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201204280MIA",
+          "gameCode": "20120428",
+          "gameDateTimeUTC": "2012-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 100
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 67
+          }
+        },
+        {
+          "gameId": "201204300MIA",
+          "gameCode": "20120430",
+          "gameDateTimeUTC": "2012-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 104
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201205030NYK",
+          "gameCode": "20120503",
+          "gameDateTimeUTC": "2012-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 70
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201205060NYK",
+          "gameCode": "20120506",
+          "gameDateTimeUTC": "2012-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201205090MIA",
+          "gameCode": "20120509",
+          "gameDateTimeUTC": "2012-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 106
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "DAL"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201204280OKC",
+          "gameCode": "20120428",
+          "gameDateTimeUTC": "2012-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 99
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201204300OKC",
+          "gameCode": "20120430",
+          "gameDateTimeUTC": "2012-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 102
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201205030DAL",
+          "gameCode": "20120503",
+          "gameDateTimeUTC": "2012-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 79
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201205050DAL",
+          "gameCode": "20120505",
+          "gameDateTimeUTC": "2012-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "ATL",
+        "BOS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201204290ATL",
+          "gameCode": "20120429",
+          "gameDateTimeUTC": "2012-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 83
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "201205010ATL",
+          "gameCode": "20120501",
+          "gameDateTimeUTC": "2012-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 80
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201205040BOS",
+          "gameCode": "20120504",
+          "gameDateTimeUTC": "2012-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 90
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201205060BOS",
+          "gameCode": "20120506",
+          "gameDateTimeUTC": "2012-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "201205080ATL",
+          "gameCode": "20120508",
+          "gameDateTimeUTC": "2012-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 87
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201205100BOS",
+          "gameCode": "20120510",
+          "gameDateTimeUTC": "2012-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 83
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 80
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "DEN"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "201204290LAL",
+          "gameCode": "20120429",
+          "gameDateTimeUTC": "2012-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201205010LAL",
+          "gameCode": "20120501",
+          "gameDateTimeUTC": "2012-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201205040DEN",
+          "gameCode": "20120504",
+          "gameDateTimeUTC": "2012-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 99
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "201205060DEN",
+          "gameCode": "20120506",
+          "gameDateTimeUTC": "2012-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 88
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201205080LAL",
+          "gameCode": "20120508",
+          "gameDateTimeUTC": "2012-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 99
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201205100DEN",
+          "gameCode": "20120510",
+          "gameDateTimeUTC": "2012-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 113
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201205120LAL",
+          "gameCode": "20120512",
+          "gameDateTimeUTC": "2012-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 96
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MEM",
+        "LAC"
+      ],
+      "winner": "LAC",
+      "games": [
+        {
+          "gameId": "201204290MEM",
+          "gameCode": "20120429",
+          "gameDateTimeUTC": "2012-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 98
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201205020MEM",
+          "gameCode": "20120502",
+          "gameDateTimeUTC": "2012-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201205050LAC",
+          "gameCode": "20120505",
+          "gameDateTimeUTC": "2012-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 87
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201205070LAC",
+          "gameCode": "20120507",
+          "gameDateTimeUTC": "2012-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 101
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201205090MEM",
+          "gameCode": "20120509",
+          "gameDateTimeUTC": "2012-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 92
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "201205110LAC",
+          "gameCode": "20120511",
+          "gameDateTimeUTC": "2012-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 88
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201205130MEM",
+          "gameCode": "20120513",
+          "gameDateTimeUTC": "2012-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 72
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 82
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "UTA"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201204290SAS",
+          "gameCode": "20120429",
+          "gameDateTimeUTC": "2012-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201205020SAS",
+          "gameCode": "20120502",
+          "gameDateTimeUTC": "2012-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 114
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201205050UTA",
+          "gameCode": "20120505",
+          "gameDateTimeUTC": "2012-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 90
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201205070UTA",
+          "gameCode": "20120507",
+          "gameDateTimeUTC": "2012-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 81
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201205120BOS",
+          "gameCode": "20120512",
+          "gameDateTimeUTC": "2012-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201205140BOS",
+          "gameCode": "20120514",
+          "gameDateTimeUTC": "2012-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 81
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201205160PHI",
+          "gameCode": "20120516",
+          "gameDateTimeUTC": "2012-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 91
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201205180PHI",
+          "gameCode": "20120518",
+          "gameDateTimeUTC": "2012-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 92
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201205210BOS",
+          "gameCode": "20120521",
+          "gameDateTimeUTC": "2012-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201205230PHI",
+          "gameCode": "20120523",
+          "gameDateTimeUTC": "2012-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 82
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "201205260BOS",
+          "gameCode": "20120526",
+          "gameDateTimeUTC": "2012-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 85
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 75
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIA",
+        "IND"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201205130MIA",
+          "gameCode": "20120513",
+          "gameDateTimeUTC": "2012-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 95
+          },
+          "away": {
+            "tri": "IND",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201205150MIA",
+          "gameCode": "20120515",
+          "gameDateTimeUTC": "2012-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 75
+          },
+          "away": {
+            "tri": "IND",
+            "score": 78
+          }
+        },
+        {
+          "gameId": "201205170IND",
+          "gameCode": "20120517",
+          "gameDateTimeUTC": "2012-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "201205200IND",
+          "gameCode": "20120520",
+          "gameDateTimeUTC": "2012-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 93
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201205220MIA",
+          "gameCode": "20120522",
+          "gameDateTimeUTC": "2012-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "IND",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201205240IND",
+          "gameCode": "20120524",
+          "gameDateTimeUTC": "2012-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 93
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "OKC",
+        "LAL"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201205140OKC",
+          "gameCode": "20120514",
+          "gameDateTimeUTC": "2012-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 119
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201205160OKC",
+          "gameCode": "20120516",
+          "gameDateTimeUTC": "2012-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 77
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 75
+          }
+        },
+        {
+          "gameId": "201205180LAL",
+          "gameCode": "20120518",
+          "gameDateTimeUTC": "2012-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 99
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201205190LAL",
+          "gameCode": "20120519",
+          "gameDateTimeUTC": "2012-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201205210OKC",
+          "gameCode": "20120521",
+          "gameDateTimeUTC": "2012-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "LAC"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201205150SAS",
+          "gameCode": "20120515",
+          "gameDateTimeUTC": "2012-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201205170SAS",
+          "gameCode": "20120517",
+          "gameDateTimeUTC": "2012-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "201205190LAC",
+          "gameCode": "20120519",
+          "gameDateTimeUTC": "2012-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 86
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201205200LAC",
+          "gameCode": "20120520",
+          "gameDateTimeUTC": "2012-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 99
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "SAS",
+        "OKC"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "201205270SAS",
+          "gameCode": "20120527",
+          "gameDateTimeUTC": "2012-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 101
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201205290SAS",
+          "gameCode": "20120529",
+          "gameDateTimeUTC": "2012-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 120
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201205310OKC",
+          "gameCode": "20120531",
+          "gameDateTimeUTC": "2012-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 102
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201206020OKC",
+          "gameCode": "20120602",
+          "gameDateTimeUTC": "2012-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 109
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201206040SAS",
+          "gameCode": "20120604",
+          "gameDateTimeUTC": "2012-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201206060OKC",
+          "gameCode": "20120606",
+          "gameDateTimeUTC": "2012-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 107
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIA",
+        "BOS"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201205280MIA",
+          "gameCode": "20120528",
+          "gameDateTimeUTC": "2012-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 93
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "201205300MIA",
+          "gameCode": "20120530",
+          "gameDateTimeUTC": "2012-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201206010BOS",
+          "gameCode": "20120601",
+          "gameDateTimeUTC": "2012-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 101
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201206030BOS",
+          "gameCode": "20120603",
+          "gameDateTimeUTC": "2012-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 93
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201206050MIA",
+          "gameCode": "20120605",
+          "gameDateTimeUTC": "2012-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 90
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201206070BOS",
+          "gameCode": "20120607",
+          "gameDateTimeUTC": "2012-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 79
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201206090MIA",
+          "gameCode": "20120609",
+          "gameDateTimeUTC": "2012-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 101
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "OKC",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "201206120OKC",
+          "gameCode": "20120612",
+          "gameDateTimeUTC": "2012-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 105
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201206140OKC",
+          "gameCode": "20120614",
+          "gameDateTimeUTC": "2012-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201206170MIA",
+          "gameCode": "20120617",
+          "gameDateTimeUTC": "2012-06-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 91
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201206190MIA",
+          "gameCode": "20120619",
+          "gameDateTimeUTC": "2012-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 104
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201206210MIA",
+          "gameCode": "20120621",
+          "gameDateTimeUTC": "2012-06-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 121
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 106
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-23T13:55:19.575Z"
+}
