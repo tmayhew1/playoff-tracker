@@ -1,0 +1,1236 @@
+{
+  "season": "2019-20",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202008170BOS",
+          "gameCode": "20200817",
+          "gameDateTimeUTC": "2020-08-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202008190BOS",
+          "gameCode": "20200819",
+          "gameDateTimeUTC": "2020-08-19T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 128
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202008210PHI",
+          "gameCode": "20200821",
+          "gameDateTimeUTC": "2020-08-21T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 94
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202008230PHI",
+          "gameCode": "20200823",
+          "gameDateTimeUTC": "2020-08-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 106
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "UTA"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202008170DEN",
+          "gameCode": "20200817",
+          "gameDateTimeUTC": "2020-08-17T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 135
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "202008190DEN",
+          "gameCode": "20200819",
+          "gameDateTimeUTC": "2020-08-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 105
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "202008210UTA",
+          "gameCode": "20200821",
+          "gameDateTimeUTC": "2020-08-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 124
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "202008230UTA",
+          "gameCode": "20200823",
+          "gameDateTimeUTC": "2020-08-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 129
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "202008250DEN",
+          "gameCode": "20200825",
+          "gameDateTimeUTC": "2020-08-25T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 117
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202008300UTA",
+          "gameCode": "20200830",
+          "gameDateTimeUTC": "2020-08-30T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 107
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202009010DEN",
+          "gameCode": "20200901",
+          "gameDateTimeUTC": "2020-09-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 80
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 78
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "DAL"
+      ],
+      "winner": "LAC",
+      "games": [
+        {
+          "gameId": "202008170LAC",
+          "gameCode": "20200817",
+          "gameDateTimeUTC": "2020-08-17T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 118
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202008190LAC",
+          "gameCode": "20200819",
+          "gameDateTimeUTC": "2020-08-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 114
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "202008210DAL",
+          "gameCode": "20200821",
+          "gameDateTimeUTC": "2020-08-21T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "202008230DAL",
+          "gameCode": "20200823",
+          "gameDateTimeUTC": "2020-08-23T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 135
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 133
+          }
+        },
+        {
+          "gameId": "202008250LAC",
+          "gameCode": "20200825",
+          "gameDateTimeUTC": "2020-08-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 154
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202008300DAL",
+          "gameCode": "20200830",
+          "gameDateTimeUTC": "2020-08-30T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "BKN"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "202008170TOR",
+          "gameCode": "20200817",
+          "gameDateTimeUTC": "2020-08-17T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 134
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202008190TOR",
+          "gameCode": "20200819",
+          "gameDateTimeUTC": "2020-08-19T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 104
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202008210BRK",
+          "gameCode": "20200821",
+          "gameDateTimeUTC": "2020-08-21T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 92
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202008230BRK",
+          "gameCode": "20200823",
+          "gameDateTimeUTC": "2020-08-23T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 122
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 150
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "OKC"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "202008180HOU",
+          "gameCode": "20200818",
+          "gameDateTimeUTC": "2020-08-18T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 123
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202008200HOU",
+          "gameCode": "20200820",
+          "gameDateTimeUTC": "2020-08-20T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 111
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202008220OKC",
+          "gameCode": "20200822",
+          "gameDateTimeUTC": "2020-08-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 119
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202008240OKC",
+          "gameCode": "20200824",
+          "gameDateTimeUTC": "2020-08-24T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 117
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202008290HOU",
+          "gameCode": "20200829",
+          "gameDateTimeUTC": "2020-08-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 114
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "202008310OKC",
+          "gameCode": "20200831",
+          "gameDateTimeUTC": "2020-08-31T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202009020HOU",
+          "gameCode": "20200902",
+          "gameDateTimeUTC": "2020-09-02T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 104
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202008180IND",
+          "gameCode": "20200818",
+          "gameDateTimeUTC": "2020-08-18T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 101
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202008200IND",
+          "gameCode": "20200820",
+          "gameDateTimeUTC": "2020-08-20T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 100
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202008220MIA",
+          "gameCode": "20200822",
+          "gameDateTimeUTC": "2020-08-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 124
+          },
+          "away": {
+            "tri": "IND",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202008240MIA",
+          "gameCode": "20200824",
+          "gameDateTimeUTC": "2020-08-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 99
+          },
+          "away": {
+            "tri": "IND",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "POR"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202008180LAL",
+          "gameCode": "20200818",
+          "gameDateTimeUTC": "2020-08-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 93
+          },
+          "away": {
+            "tri": "POR",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202008200LAL",
+          "gameCode": "20200820",
+          "gameDateTimeUTC": "2020-08-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "POR",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "202008220POR",
+          "gameCode": "20200822",
+          "gameDateTimeUTC": "2020-08-22T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202008240POR",
+          "gameCode": "20200824",
+          "gameDateTimeUTC": "2020-08-24T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 135
+          }
+        },
+        {
+          "gameId": "202008290LAL",
+          "gameCode": "20200829",
+          "gameDateTimeUTC": "2020-08-29T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 131
+          },
+          "away": {
+            "tri": "POR",
+            "score": 122
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "ORL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "202008180MIL",
+          "gameCode": "20200818",
+          "gameDateTimeUTC": "2020-08-18T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 110
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "202008200MIL",
+          "gameCode": "20200820",
+          "gameDateTimeUTC": "2020-08-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 111
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202008220ORL",
+          "gameCode": "20200822",
+          "gameDateTimeUTC": "2020-08-22T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202008240ORL",
+          "gameCode": "20200824",
+          "gameDateTimeUTC": "2020-08-24T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 106
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202008290MIL",
+          "gameCode": "20200829",
+          "gameDateTimeUTC": "2020-08-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 118
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "TOR",
+        "BOS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202008300TOR",
+          "gameCode": "20200830",
+          "gameDateTimeUTC": "2020-08-30T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 94
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202009010TOR",
+          "gameCode": "20200901",
+          "gameDateTimeUTC": "2020-09-01T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202009030BOS",
+          "gameCode": "20200903",
+          "gameDateTimeUTC": "2020-09-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202009050BOS",
+          "gameCode": "20200905",
+          "gameDateTimeUTC": "2020-09-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 93
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202009070TOR",
+          "gameCode": "20200907",
+          "gameDateTimeUTC": "2020-09-07T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 89
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202009090BOS",
+          "gameCode": "20200909",
+          "gameDateTimeUTC": "2020-09-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 122
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "202009110TOR",
+          "gameCode": "20200911",
+          "gameDateTimeUTC": "2020-09-11T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 87
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIL",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202008310MIL",
+          "gameCode": "20200831",
+          "gameDateTimeUTC": "2020-08-31T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202009020MIL",
+          "gameCode": "20200902",
+          "gameDateTimeUTC": "2020-09-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 114
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202009040MIA",
+          "gameCode": "20200904",
+          "gameDateTimeUTC": "2020-09-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202009060MIA",
+          "gameCode": "20200906",
+          "gameDateTimeUTC": "2020-09-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202009080MIL",
+          "gameCode": "20200908",
+          "gameDateTimeUTC": "2020-09-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAC",
+        "DEN"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202009030LAC",
+          "gameCode": "20200903",
+          "gameDateTimeUTC": "2020-09-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 120
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202009050LAC",
+          "gameCode": "20200905",
+          "gameDateTimeUTC": "2020-09-05T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 101
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202009070DEN",
+          "gameCode": "20200907",
+          "gameDateTimeUTC": "2020-09-07T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 107
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202009090DEN",
+          "gameCode": "20200909",
+          "gameDateTimeUTC": "2020-09-09T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 85
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202009110LAC",
+          "gameCode": "20200911",
+          "gameDateTimeUTC": "2020-09-11T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 105
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202009130DEN",
+          "gameCode": "20200913",
+          "gameDateTimeUTC": "2020-09-13T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 111
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202009150LAC",
+          "gameCode": "20200915",
+          "gameDateTimeUTC": "2020-09-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 89
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "LAL",
+        "HOU"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202009040LAL",
+          "gameCode": "20200904",
+          "gameDateTimeUTC": "2020-09-04T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202009060LAL",
+          "gameCode": "20200906",
+          "gameDateTimeUTC": "2020-09-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202009080HOU",
+          "gameCode": "20200908",
+          "gameDateTimeUTC": "2020-09-08T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202009100HOU",
+          "gameCode": "20200910",
+          "gameDateTimeUTC": "2020-09-10T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 100
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202009120LAL",
+          "gameCode": "20200912",
+          "gameDateTimeUTC": "2020-09-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202009150BOS",
+          "gameCode": "20200915",
+          "gameDateTimeUTC": "2020-09-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202009170BOS",
+          "gameCode": "20200917",
+          "gameDateTimeUTC": "2020-09-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 101
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202009190MIA",
+          "gameCode": "20200919",
+          "gameDateTimeUTC": "2020-09-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 106
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202009230MIA",
+          "gameCode": "20200923",
+          "gameDateTimeUTC": "2020-09-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 112
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202009250BOS",
+          "gameCode": "20200925",
+          "gameDateTimeUTC": "2020-09-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202009270MIA",
+          "gameCode": "20200927",
+          "gameDateTimeUTC": "2020-09-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 125
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "LAL",
+        "DEN"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202009180LAL",
+          "gameCode": "20200918",
+          "gameDateTimeUTC": "2020-09-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 126
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202009200LAL",
+          "gameCode": "20200920",
+          "gameDateTimeUTC": "2020-09-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202009220DEN",
+          "gameCode": "20200922",
+          "gameDateTimeUTC": "2020-09-22T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 114
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202009240DEN",
+          "gameCode": "20200924",
+          "gameDateTimeUTC": "2020-09-24T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202009260LAL",
+          "gameCode": "20200926",
+          "gameDateTimeUTC": "2020-09-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 107
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "LAL",
+        "MIA"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202009300LAL",
+          "gameCode": "20200930",
+          "gameDateTimeUTC": "2020-09-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202010020LAL",
+          "gameCode": "20201002",
+          "gameDateTimeUTC": "2020-10-02T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 124
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202010040MIA",
+          "gameCode": "20201004",
+          "gameDateTimeUTC": "2020-10-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202010060MIA",
+          "gameCode": "20201006",
+          "gameDateTimeUTC": "2020-10-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202010090LAL",
+          "gameCode": "20201009",
+          "gameDateTimeUTC": "2020-10-09T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202010110MIA",
+          "gameCode": "20201011",
+          "gameDateTimeUTC": "2020-10-11T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 93
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 106
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-24T13:38:58.274Z"
+}

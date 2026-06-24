@@ -1,0 +1,1223 @@
+{
+  "season": "2017-18",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "SAS"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201804140GSW",
+          "gameCode": "20180414",
+          "gameDateTimeUTC": "2018-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 113
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201804160GSW",
+          "gameCode": "20180416",
+          "gameDateTimeUTC": "2018-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 116
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201804190SAS",
+          "gameCode": "20180419",
+          "gameDateTimeUTC": "2018-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 97
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "201804220SAS",
+          "gameCode": "20180422",
+          "gameDateTimeUTC": "2018-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201804240GSW",
+          "gameCode": "20180424",
+          "gameDateTimeUTC": "2018-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 99
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "MIA"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "201804140PHI",
+          "gameCode": "20180414",
+          "gameDateTimeUTC": "2018-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 130
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201804160PHI",
+          "gameCode": "20180416",
+          "gameDateTimeUTC": "2018-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201804190MIA",
+          "gameCode": "20180419",
+          "gameDateTimeUTC": "2018-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "201804210MIA",
+          "gameCode": "20180421",
+          "gameDateTimeUTC": "2018-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201804240PHI",
+          "gameCode": "20180424",
+          "gameDateTimeUTC": "2018-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "NOP"
+      ],
+      "winner": "NOP",
+      "games": [
+        {
+          "gameId": "201804140POR",
+          "gameCode": "20180414",
+          "gameDateTimeUTC": "2018-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 95
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201804170POR",
+          "gameCode": "20180417",
+          "gameDateTimeUTC": "2018-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 102
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201804190NOP",
+          "gameCode": "20180419",
+          "gameDateTimeUTC": "2018-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 119
+          },
+          "away": {
+            "tri": "POR",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201804210NOP",
+          "gameCode": "20180421",
+          "gameDateTimeUTC": "2018-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 131
+          },
+          "away": {
+            "tri": "POR",
+            "score": 123
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "WAS"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201804140TOR",
+          "gameCode": "20180414",
+          "gameDateTimeUTC": "2018-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 114
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201804170TOR",
+          "gameCode": "20180417",
+          "gameDateTimeUTC": "2018-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 130
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201804200WAS",
+          "gameCode": "20180420",
+          "gameDateTimeUTC": "2018-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 122
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201804220WAS",
+          "gameCode": "20180422",
+          "gameDateTimeUTC": "2018-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 106
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201804250TOR",
+          "gameCode": "20180425",
+          "gameDateTimeUTC": "2018-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 108
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201804270WAS",
+          "gameCode": "20180427",
+          "gameDateTimeUTC": "2018-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "MIL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201804150BOS",
+          "gameCode": "20180415",
+          "gameDateTimeUTC": "2018-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 113
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201804170BOS",
+          "gameCode": "20180417",
+          "gameDateTimeUTC": "2018-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 120
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201804200MIL",
+          "gameCode": "20180420",
+          "gameDateTimeUTC": "2018-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 116
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201804220MIL",
+          "gameCode": "20180422",
+          "gameDateTimeUTC": "2018-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201804240BOS",
+          "gameCode": "20180424",
+          "gameDateTimeUTC": "2018-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 92
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201804260MIL",
+          "gameCode": "20180426",
+          "gameDateTimeUTC": "2018-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 97
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201804280BOS",
+          "gameCode": "20180428",
+          "gameDateTimeUTC": "2018-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "IND"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201804150CLE",
+          "gameCode": "20180415",
+          "gameDateTimeUTC": "2018-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 80
+          },
+          "away": {
+            "tri": "IND",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201804180CLE",
+          "gameCode": "20180418",
+          "gameDateTimeUTC": "2018-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 100
+          },
+          "away": {
+            "tri": "IND",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201804200IND",
+          "gameCode": "20180420",
+          "gameDateTimeUTC": "2018-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 92
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201804220IND",
+          "gameCode": "20180422",
+          "gameDateTimeUTC": "2018-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 100
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201804250CLE",
+          "gameCode": "20180425",
+          "gameDateTimeUTC": "2018-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 98
+          },
+          "away": {
+            "tri": "IND",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201804270IND",
+          "gameCode": "20180427",
+          "gameDateTimeUTC": "2018-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 121
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201804290CLE",
+          "gameCode": "20180429",
+          "gameDateTimeUTC": "2018-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 105
+          },
+          "away": {
+            "tri": "IND",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "MIN"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "201804150HOU",
+          "gameCode": "20180415",
+          "gameDateTimeUTC": "2018-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201804180HOU",
+          "gameCode": "20180418",
+          "gameDateTimeUTC": "2018-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 102
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201804210MIN",
+          "gameCode": "20180421",
+          "gameDateTimeUTC": "2018-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 121
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201804230MIN",
+          "gameCode": "20180423",
+          "gameDateTimeUTC": "2018-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 100
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201804250HOU",
+          "gameCode": "20180425",
+          "gameDateTimeUTC": "2018-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 122
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "201804150OKC",
+          "gameCode": "20180415",
+          "gameDateTimeUTC": "2018-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 116
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201804180OKC",
+          "gameCode": "20180418",
+          "gameDateTimeUTC": "2018-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 95
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201804210UTA",
+          "gameCode": "20180421",
+          "gameDateTimeUTC": "2018-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 115
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201804230UTA",
+          "gameCode": "20180423",
+          "gameDateTimeUTC": "2018-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 113
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201804250OKC",
+          "gameCode": "20180425",
+          "gameDateTimeUTC": "2018-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 107
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201804270UTA",
+          "gameCode": "20180427",
+          "gameDateTimeUTC": "2018-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 96
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "GSW",
+        "NOP"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201804280GSW",
+          "gameCode": "20180428",
+          "gameDateTimeUTC": "2018-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 123
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201805010GSW",
+          "gameCode": "20180501",
+          "gameDateTimeUTC": "2018-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 121
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "201805040NOP",
+          "gameCode": "20180504",
+          "gameDateTimeUTC": "2018-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 119
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201805060NOP",
+          "gameCode": "20180506",
+          "gameDateTimeUTC": "2018-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 92
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "201805080GSW",
+          "gameCode": "20180508",
+          "gameDateTimeUTC": "2018-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 113
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "HOU",
+        "UTA"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "201804290HOU",
+          "gameCode": "20180429",
+          "gameDateTimeUTC": "2018-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 110
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201805020HOU",
+          "gameCode": "20180502",
+          "gameDateTimeUTC": "2018-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 108
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "201805040UTA",
+          "gameCode": "20180504",
+          "gameDateTimeUTC": "2018-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 92
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201805060UTA",
+          "gameCode": "20180506",
+          "gameDateTimeUTC": "2018-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 87
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201805080HOU",
+          "gameCode": "20180508",
+          "gameDateTimeUTC": "2018-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 112
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 102
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201804300BOS",
+          "gameCode": "20180430",
+          "gameDateTimeUTC": "2018-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 117
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201805030BOS",
+          "gameCode": "20180503",
+          "gameDateTimeUTC": "2018-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201805050PHI",
+          "gameCode": "20180505",
+          "gameDateTimeUTC": "2018-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201805070PHI",
+          "gameCode": "20180507",
+          "gameDateTimeUTC": "2018-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "201805090BOS",
+          "gameCode": "20180509",
+          "gameDateTimeUTC": "2018-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "TOR",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201805010TOR",
+          "gameCode": "20180501",
+          "gameDateTimeUTC": "2018-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 112
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201805030TOR",
+          "gameCode": "20180503",
+          "gameDateTimeUTC": "2018-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 110
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "201805050CLE",
+          "gameCode": "20180505",
+          "gameDateTimeUTC": "2018-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 105
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201805070CLE",
+          "gameCode": "20180507",
+          "gameDateTimeUTC": "2018-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 128
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201805130BOS",
+          "gameCode": "20180513",
+          "gameDateTimeUTC": "2018-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201805150BOS",
+          "gameCode": "20180515",
+          "gameDateTimeUTC": "2018-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 107
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201805190CLE",
+          "gameCode": "20180519",
+          "gameDateTimeUTC": "2018-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 116
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201805210CLE",
+          "gameCode": "20180521",
+          "gameDateTimeUTC": "2018-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 111
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201805230BOS",
+          "gameCode": "20180523",
+          "gameDateTimeUTC": "2018-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 96
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "201805250CLE",
+          "gameCode": "20180525",
+          "gameDateTimeUTC": "2018-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 109
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201805270BOS",
+          "gameCode": "20180527",
+          "gameDateTimeUTC": "2018-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 79
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 87
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "HOU",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201805140HOU",
+          "gameCode": "20180514",
+          "gameDateTimeUTC": "2018-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 106
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201805160HOU",
+          "gameCode": "20180516",
+          "gameDateTimeUTC": "2018-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 127
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201805200GSW",
+          "gameCode": "20180520",
+          "gameDateTimeUTC": "2018-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 126
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "201805220GSW",
+          "gameCode": "20180522",
+          "gameDateTimeUTC": "2018-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 92
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201805240HOU",
+          "gameCode": "20180524",
+          "gameDateTimeUTC": "2018-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 98
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201805260GSW",
+          "gameCode": "20180526",
+          "gameDateTimeUTC": "2018-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 115
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201805280HOU",
+          "gameCode": "20180528",
+          "gameDateTimeUTC": "2018-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 92
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "GSW",
+        "CLE"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201805310GSW",
+          "gameCode": "20180531",
+          "gameDateTimeUTC": "2018-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 124
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "201806030GSW",
+          "gameCode": "20180603",
+          "gameDateTimeUTC": "2018-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 122
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201806060CLE",
+          "gameCode": "20180606",
+          "gameDateTimeUTC": "2018-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 102
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "201806080CLE",
+          "gameCode": "20180608",
+          "gameDateTimeUTC": "2018-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 85
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 108
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-24T13:31:09.662Z"
+}

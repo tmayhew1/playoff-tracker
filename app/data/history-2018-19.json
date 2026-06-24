@@ -1,0 +1,1223 @@
+{
+  "season": "2018-19",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "SAS"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "201904130DEN",
+          "gameCode": "20190413",
+          "gameDateTimeUTC": "2019-04-13T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201904160DEN",
+          "gameCode": "20190416",
+          "gameDateTimeUTC": "2019-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 114
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201904180SAS",
+          "gameCode": "20190418",
+          "gameDateTimeUTC": "2019-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 118
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201904200SAS",
+          "gameCode": "20190420",
+          "gameDateTimeUTC": "2019-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "201904230DEN",
+          "gameCode": "20190423",
+          "gameDateTimeUTC": "2019-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 108
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201904250SAS",
+          "gameCode": "20190425",
+          "gameDateTimeUTC": "2019-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 120
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201904270DEN",
+          "gameCode": "20190427",
+          "gameDateTimeUTC": "2019-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 90
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 86
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "LAC"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201904130GSW",
+          "gameCode": "20190413",
+          "gameDateTimeUTC": "2019-04-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 121
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201904150GSW",
+          "gameCode": "20190415",
+          "gameDateTimeUTC": "2019-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 131
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 135
+          }
+        },
+        {
+          "gameId": "201904180LAC",
+          "gameCode": "20190418",
+          "gameDateTimeUTC": "2019-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 105
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 132
+          }
+        },
+        {
+          "gameId": "201904210LAC",
+          "gameCode": "20190421",
+          "gameDateTimeUTC": "2019-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 105
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201904240GSW",
+          "gameCode": "20190424",
+          "gameDateTimeUTC": "2019-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 121
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "201904260LAC",
+          "gameCode": "20190426",
+          "gameDateTimeUTC": "2019-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 110
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 129
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "BKN"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "201904130PHI",
+          "gameCode": "20190413",
+          "gameDateTimeUTC": "2019-04-13T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 102
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201904150PHI",
+          "gameCode": "20190415",
+          "gameDateTimeUTC": "2019-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 145
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "201904180BRK",
+          "gameCode": "20190418",
+          "gameDateTimeUTC": "2019-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 115
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 131
+          }
+        },
+        {
+          "gameId": "201904200BRK",
+          "gameCode": "20190420",
+          "gameDateTimeUTC": "2019-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201904230PHI",
+          "gameCode": "20190423",
+          "gameDateTimeUTC": "2019-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 122
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "ORL"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201904130TOR",
+          "gameCode": "20190413",
+          "gameDateTimeUTC": "2019-04-13T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 101
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201904160TOR",
+          "gameCode": "20190416",
+          "gameDateTimeUTC": "2019-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 111
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201904190ORL",
+          "gameCode": "20190419",
+          "gameDateTimeUTC": "2019-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 93
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201904210ORL",
+          "gameCode": "20190421",
+          "gameDateTimeUTC": "2019-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 85
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201904230TOR",
+          "gameCode": "20190423",
+          "gameDateTimeUTC": "2019-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 115
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "IND"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201904140BOS",
+          "gameCode": "20190414",
+          "gameDateTimeUTC": "2019-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 84
+          },
+          "away": {
+            "tri": "IND",
+            "score": 74
+          }
+        },
+        {
+          "gameId": "201904170BOS",
+          "gameCode": "20190417",
+          "gameDateTimeUTC": "2019-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 99
+          },
+          "away": {
+            "tri": "IND",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201904190IND",
+          "gameCode": "20190419",
+          "gameDateTimeUTC": "2019-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 96
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201904210IND",
+          "gameCode": "20190421",
+          "gameDateTimeUTC": "2019-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 106
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "UTA"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "201904140HOU",
+          "gameCode": "20190414",
+          "gameDateTimeUTC": "2019-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 122
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "201904170HOU",
+          "gameCode": "20190417",
+          "gameDateTimeUTC": "2019-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 118
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201904200UTA",
+          "gameCode": "20190420",
+          "gameDateTimeUTC": "2019-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 101
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201904220UTA",
+          "gameCode": "20190422",
+          "gameDateTimeUTC": "2019-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 107
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201904240HOU",
+          "gameCode": "20190424",
+          "gameDateTimeUTC": "2019-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 100
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "DET"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "201904140MIL",
+          "gameCode": "20190414",
+          "gameDateTimeUTC": "2019-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 121
+          },
+          "away": {
+            "tri": "DET",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "201904170MIL",
+          "gameCode": "20190417",
+          "gameDateTimeUTC": "2019-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 120
+          },
+          "away": {
+            "tri": "DET",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201904200DET",
+          "gameCode": "20190420",
+          "gameDateTimeUTC": "2019-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201904220DET",
+          "gameCode": "20190422",
+          "gameDateTimeUTC": "2019-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 127
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "POR",
+        "OKC"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "201904140POR",
+          "gameCode": "20190414",
+          "gameDateTimeUTC": "2019-04-14T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 104
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201904160POR",
+          "gameCode": "20190416",
+          "gameDateTimeUTC": "2019-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 114
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201904190OKC",
+          "gameCode": "20190419",
+          "gameDateTimeUTC": "2019-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 120
+          },
+          "away": {
+            "tri": "POR",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201904210OKC",
+          "gameCode": "20190421",
+          "gameDateTimeUTC": "2019-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 98
+          },
+          "away": {
+            "tri": "POR",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201904230POR",
+          "gameCode": "20190423",
+          "gameDateTimeUTC": "2019-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 118
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "TOR",
+        "PHI"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201904270TOR",
+          "gameCode": "20190427",
+          "gameDateTimeUTC": "2019-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 108
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201904290TOR",
+          "gameCode": "20190429",
+          "gameDateTimeUTC": "2019-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 89
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201905020PHI",
+          "gameCode": "20190502",
+          "gameDateTimeUTC": "2019-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 116
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "201905050PHI",
+          "gameCode": "20190505",
+          "gameDateTimeUTC": "2019-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201905070TOR",
+          "gameCode": "20190507",
+          "gameDateTimeUTC": "2019-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 125
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201905090PHI",
+          "gameCode": "20190509",
+          "gameDateTimeUTC": "2019-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 112
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201905120TOR",
+          "gameCode": "20190512",
+          "gameDateTimeUTC": "2019-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 90
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "GSW",
+        "HOU"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201904280GSW",
+          "gameCode": "20190428",
+          "gameDateTimeUTC": "2019-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201904300GSW",
+          "gameCode": "20190430",
+          "gameDateTimeUTC": "2019-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 115
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201905040HOU",
+          "gameCode": "20190504",
+          "gameDateTimeUTC": "2019-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 126
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "201905060HOU",
+          "gameCode": "20190506",
+          "gameDateTimeUTC": "2019-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 112
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201905080GSW",
+          "gameCode": "20190508",
+          "gameDateTimeUTC": "2019-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201905100HOU",
+          "gameCode": "20190510",
+          "gameDateTimeUTC": "2019-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 113
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIL",
+        "BOS"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "201904280MIL",
+          "gameCode": "20190428",
+          "gameDateTimeUTC": "2019-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 90
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201904300MIL",
+          "gameCode": "20190430",
+          "gameDateTimeUTC": "2019-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 123
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201905030BOS",
+          "gameCode": "20190503",
+          "gameDateTimeUTC": "2019-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "201905060BOS",
+          "gameCode": "20190506",
+          "gameDateTimeUTC": "2019-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 101
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201905080MIL",
+          "gameCode": "20190508",
+          "gameDateTimeUTC": "2019-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 116
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 91
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DEN",
+        "POR"
+      ],
+      "winner": "POR",
+      "games": [
+        {
+          "gameId": "201904290DEN",
+          "gameCode": "20190429",
+          "gameDateTimeUTC": "2019-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 121
+          },
+          "away": {
+            "tri": "POR",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201905010DEN",
+          "gameCode": "20190501",
+          "gameDateTimeUTC": "2019-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 90
+          },
+          "away": {
+            "tri": "POR",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201905030POR",
+          "gameCode": "20190503",
+          "gameDateTimeUTC": "2019-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 140
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 137
+          }
+        },
+        {
+          "gameId": "201905050POR",
+          "gameCode": "20190505",
+          "gameDateTimeUTC": "2019-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 112
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "201905070DEN",
+          "gameCode": "20190507",
+          "gameDateTimeUTC": "2019-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 124
+          },
+          "away": {
+            "tri": "POR",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201905090POR",
+          "gameCode": "20190509",
+          "gameDateTimeUTC": "2019-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 119
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201905120DEN",
+          "gameCode": "20190512",
+          "gameDateTimeUTC": "2019-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 96
+          },
+          "away": {
+            "tri": "POR",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "GSW",
+        "POR"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201905140GSW",
+          "gameCode": "20190514",
+          "gameDateTimeUTC": "2019-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 116
+          },
+          "away": {
+            "tri": "POR",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201905160GSW",
+          "gameCode": "20190516",
+          "gameDateTimeUTC": "2019-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 114
+          },
+          "away": {
+            "tri": "POR",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201905180POR",
+          "gameCode": "20190518",
+          "gameDateTimeUTC": "2019-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 99
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "201905200POR",
+          "gameCode": "20190520",
+          "gameDateTimeUTC": "2019-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 117
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 119
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIL",
+        "TOR"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201905150MIL",
+          "gameCode": "20190515",
+          "gameDateTimeUTC": "2019-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 108
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201905170MIL",
+          "gameCode": "20190517",
+          "gameDateTimeUTC": "2019-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 125
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201905190TOR",
+          "gameCode": "20190519",
+          "gameDateTimeUTC": "2019-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 118
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "201905210TOR",
+          "gameCode": "20190521",
+          "gameDateTimeUTC": "2019-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 120
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201905230MIL",
+          "gameCode": "20190523",
+          "gameDateTimeUTC": "2019-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 99
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201905250TOR",
+          "gameCode": "20190525",
+          "gameDateTimeUTC": "2019-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 100
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "TOR",
+        "GSW"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201905300TOR",
+          "gameCode": "20190530",
+          "gameDateTimeUTC": "2019-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 118
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201906020TOR",
+          "gameCode": "20190602",
+          "gameDateTimeUTC": "2019-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 104
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201906050GSW",
+          "gameCode": "20190605",
+          "gameDateTimeUTC": "2019-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 109
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "201906070GSW",
+          "gameCode": "20190607",
+          "gameDateTimeUTC": "2019-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 92
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201906100TOR",
+          "gameCode": "20190610",
+          "gameDateTimeUTC": "2019-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 105
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201906130GSW",
+          "gameCode": "20190613",
+          "gameDateTimeUTC": "2019-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 114
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-24T13:35:01.517Z"
+}

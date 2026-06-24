@@ -1,0 +1,1262 @@
+{
+  "season": "2020-21",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BKN",
+        "BOS"
+      ],
+      "winner": "BKN",
+      "games": [
+        {
+          "gameId": "202105220BRK",
+          "gameCode": "20210522",
+          "gameDateTimeUTC": "2021-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202105250BRK",
+          "gameCode": "20210525",
+          "gameDateTimeUTC": "2021-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 130
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202105280BOS",
+          "gameCode": "20210528",
+          "gameDateTimeUTC": "2021-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 125
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202105300BOS",
+          "gameCode": "20210530",
+          "gameDateTimeUTC": "2021-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 126
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 141
+          }
+        },
+        {
+          "gameId": "202106010BRK",
+          "gameCode": "20210601",
+          "gameDateTimeUTC": "2021-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 123
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "POR"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202105220DEN",
+          "gameCode": "20210522",
+          "gameDateTimeUTC": "2021-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 109
+          },
+          "away": {
+            "tri": "POR",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202105240DEN",
+          "gameCode": "20210524",
+          "gameDateTimeUTC": "2021-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 128
+          },
+          "away": {
+            "tri": "POR",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202105270POR",
+          "gameCode": "20210527",
+          "gameDateTimeUTC": "2021-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "202105290POR",
+          "gameCode": "20210529",
+          "gameDateTimeUTC": "2021-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202106010DEN",
+          "gameCode": "20210601",
+          "gameDateTimeUTC": "2021-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 147
+          },
+          "away": {
+            "tri": "POR",
+            "score": 140
+          }
+        },
+        {
+          "gameId": "202106030POR",
+          "gameCode": "20210603",
+          "gameDateTimeUTC": "2021-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 115
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 126
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "DAL"
+      ],
+      "winner": "LAC",
+      "games": [
+        {
+          "gameId": "202105220LAC",
+          "gameCode": "20210522",
+          "gameDateTimeUTC": "2021-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 103
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202105250LAC",
+          "gameCode": "20210525",
+          "gameDateTimeUTC": "2021-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 121
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "202105280DAL",
+          "gameCode": "20210528",
+          "gameDateTimeUTC": "2021-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202105300DAL",
+          "gameCode": "20210530",
+          "gameDateTimeUTC": "2021-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 81
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202106020LAC",
+          "gameCode": "20210602",
+          "gameDateTimeUTC": "2021-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 100
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202106040DAL",
+          "gameCode": "20210604",
+          "gameDateTimeUTC": "2021-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 97
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202106060LAC",
+          "gameCode": "20210606",
+          "gameDateTimeUTC": "2021-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 126
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 111
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "MIA"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "202105220MIL",
+          "gameCode": "20210522",
+          "gameDateTimeUTC": "2021-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202105240MIL",
+          "gameCode": "20210524",
+          "gameDateTimeUTC": "2021-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 132
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202105270MIA",
+          "gameCode": "20210527",
+          "gameDateTimeUTC": "2021-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 84
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202105290MIA",
+          "gameCode": "20210529",
+          "gameDateTimeUTC": "2021-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 120
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "ATL"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "202105230NYK",
+          "gameCode": "20210523",
+          "gameDateTimeUTC": "2021-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 105
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202105260NYK",
+          "gameCode": "20210526",
+          "gameDateTimeUTC": "2021-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 101
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202105280ATL",
+          "gameCode": "20210528",
+          "gameDateTimeUTC": "2021-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 105
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202105300ATL",
+          "gameCode": "20210530",
+          "gameDateTimeUTC": "2021-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 113
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202106020NYK",
+          "gameCode": "20210602",
+          "gameDateTimeUTC": "2021-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 89
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "WAS"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "202105230PHI",
+          "gameCode": "20210523",
+          "gameDateTimeUTC": "2021-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 125
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202105260PHI",
+          "gameCode": "20210526",
+          "gameDateTimeUTC": "2021-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 120
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202105290WAS",
+          "gameCode": "20210529",
+          "gameDateTimeUTC": "2021-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 132
+          }
+        },
+        {
+          "gameId": "202105310WAS",
+          "gameCode": "20210531",
+          "gameDateTimeUTC": "2021-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 122
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202106020PHI",
+          "gameCode": "20210602",
+          "gameDateTimeUTC": "2021-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 129
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 112
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "LAL"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "202105230PHO",
+          "gameCode": "20210523",
+          "gameDateTimeUTC": "2021-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 99
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "202105250PHO",
+          "gameCode": "20210525",
+          "gameDateTimeUTC": "2021-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202105270LAL",
+          "gameCode": "20210527",
+          "gameDateTimeUTC": "2021-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202105300LAL",
+          "gameCode": "20210530",
+          "gameDateTimeUTC": "2021-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 92
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202106010PHO",
+          "gameCode": "20210601",
+          "gameDateTimeUTC": "2021-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 115
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "202106030LAL",
+          "gameCode": "20210603",
+          "gameDateTimeUTC": "2021-06-03T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "UTA",
+        "MEM"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "202105230UTA",
+          "gameCode": "20210523",
+          "gameDateTimeUTC": "2021-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 109
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202105260UTA",
+          "gameCode": "20210526",
+          "gameDateTimeUTC": "2021-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 141
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "202105290MEM",
+          "gameCode": "20210529",
+          "gameDateTimeUTC": "2021-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 111
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202105310MEM",
+          "gameCode": "20210531",
+          "gameDateTimeUTC": "2021-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 113
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "202106020UTA",
+          "gameCode": "20210602",
+          "gameDateTimeUTC": "2021-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 126
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BKN",
+        "MIL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "202106050BRK",
+          "gameCode": "20210605",
+          "gameDateTimeUTC": "2021-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 115
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202106070BRK",
+          "gameCode": "20210607",
+          "gameDateTimeUTC": "2021-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 125
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202106100MIL",
+          "gameCode": "20210610",
+          "gameDateTimeUTC": "2021-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 86
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "202106130MIL",
+          "gameCode": "20210613",
+          "gameDateTimeUTC": "2021-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 107
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202106150BRK",
+          "gameCode": "20210615",
+          "gameDateTimeUTC": "2021-06-15T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 114
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202106170MIL",
+          "gameCode": "20210617",
+          "gameDateTimeUTC": "2021-06-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 104
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "202106190BRK",
+          "gameCode": "20210619",
+          "gameDateTimeUTC": "2021-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 111
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHI",
+        "ATL"
+      ],
+      "winner": "ATL",
+      "games": [
+        {
+          "gameId": "202106060PHI",
+          "gameCode": "20210606",
+          "gameDateTimeUTC": "2021-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 124
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "202106080PHI",
+          "gameCode": "20210608",
+          "gameDateTimeUTC": "2021-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 118
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202106110ATL",
+          "gameCode": "20210611",
+          "gameDateTimeUTC": "2021-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "202106140ATL",
+          "gameCode": "20210614",
+          "gameDateTimeUTC": "2021-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202106160PHI",
+          "gameCode": "20210616",
+          "gameDateTimeUTC": "2021-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 106
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202106180ATL",
+          "gameCode": "20210618",
+          "gameDateTimeUTC": "2021-06-18T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 99
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202106200PHI",
+          "gameCode": "20210620",
+          "gameDateTimeUTC": "2021-06-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "DEN"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "202106070PHO",
+          "gameCode": "20210607",
+          "gameDateTimeUTC": "2021-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 122
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202106090PHO",
+          "gameCode": "20210609",
+          "gameDateTimeUTC": "2021-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 123
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202106110DEN",
+          "gameCode": "20210611",
+          "gameDateTimeUTC": "2021-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 102
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202106130DEN",
+          "gameCode": "20210613",
+          "gameDateTimeUTC": "2021-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 125
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "UTA",
+        "LAC"
+      ],
+      "winner": "LAC",
+      "games": [
+        {
+          "gameId": "202106080UTA",
+          "gameCode": "20210608",
+          "gameDateTimeUTC": "2021-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202106100UTA",
+          "gameCode": "20210610",
+          "gameDateTimeUTC": "2021-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 117
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202106120LAC",
+          "gameCode": "20210612",
+          "gameDateTimeUTC": "2021-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 132
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202106140LAC",
+          "gameCode": "20210614",
+          "gameDateTimeUTC": "2021-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 118
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202106160UTA",
+          "gameCode": "20210616",
+          "gameDateTimeUTC": "2021-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 111
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202106180LAC",
+          "gameCode": "20210618",
+          "gameDateTimeUTC": "2021-06-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 131
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 119
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "PHX",
+        "LAC"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "202106200PHO",
+          "gameCode": "20210620",
+          "gameDateTimeUTC": "2021-06-20T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 120
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202106220PHO",
+          "gameCode": "20210622",
+          "gameDateTimeUTC": "2021-06-22T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 104
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202106240LAC",
+          "gameCode": "20210624",
+          "gameDateTimeUTC": "2021-06-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202106260LAC",
+          "gameCode": "20210626",
+          "gameDateTimeUTC": "2021-06-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 80
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "202106280PHO",
+          "gameCode": "20210628",
+          "gameDateTimeUTC": "2021-06-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202106300LAC",
+          "gameCode": "20210630",
+          "gameDateTimeUTC": "2021-06-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 130
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIL",
+        "ATL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "202106230MIL",
+          "gameCode": "20210623",
+          "gameDateTimeUTC": "2021-06-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 113
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202106250MIL",
+          "gameCode": "20210625",
+          "gameDateTimeUTC": "2021-06-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 125
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "202106270ATL",
+          "gameCode": "20210627",
+          "gameDateTimeUTC": "2021-06-27T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 102
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202106290ATL",
+          "gameCode": "20210629",
+          "gameDateTimeUTC": "2021-06-29T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 110
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "202107010MIL",
+          "gameCode": "20210701",
+          "gameDateTimeUTC": "2021-07-01T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 123
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202107030ATL",
+          "gameCode": "20210703",
+          "gameDateTimeUTC": "2021-07-03T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "PHX",
+        "MIL"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "202107060PHO",
+          "gameCode": "20210706",
+          "gameDateTimeUTC": "2021-07-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 118
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202107080PHO",
+          "gameCode": "20210708",
+          "gameDateTimeUTC": "2021-07-08T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 118
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202107110MIL",
+          "gameCode": "20210711",
+          "gameDateTimeUTC": "2021-07-11T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 120
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202107140MIL",
+          "gameCode": "20210714",
+          "gameDateTimeUTC": "2021-07-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202107170PHO",
+          "gameCode": "20210717",
+          "gameDateTimeUTC": "2021-07-17T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 119
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202107200MIL",
+          "gameCode": "20210720",
+          "gameDateTimeUTC": "2021-07-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 105
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 98
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-24T13:42:56.739Z"
+}

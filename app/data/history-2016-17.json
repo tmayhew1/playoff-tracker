@@ -1,0 +1,1184 @@
+{
+  "season": "2016-17",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "IND"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201704150CLE",
+          "gameCode": "20170415",
+          "gameDateTimeUTC": "2017-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 109
+          },
+          "away": {
+            "tri": "IND",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201704170CLE",
+          "gameCode": "20170417",
+          "gameDateTimeUTC": "2017-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 117
+          },
+          "away": {
+            "tri": "IND",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201704200IND",
+          "gameCode": "20170420",
+          "gameDateTimeUTC": "2017-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 114
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201704230IND",
+          "gameCode": "20170423",
+          "gameDateTimeUTC": "2017-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 102
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "UTA"
+      ],
+      "winner": "UTA",
+      "games": [
+        {
+          "gameId": "201704150LAC",
+          "gameCode": "20170415",
+          "gameDateTimeUTC": "2017-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 95
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201704180LAC",
+          "gameCode": "20170418",
+          "gameDateTimeUTC": "2017-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 99
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201704210UTA",
+          "gameCode": "20170421",
+          "gameDateTimeUTC": "2017-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 106
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201704230UTA",
+          "gameCode": "20170423",
+          "gameDateTimeUTC": "2017-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 105
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201704250LAC",
+          "gameCode": "20170425",
+          "gameDateTimeUTC": "2017-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 92
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201704280UTA",
+          "gameCode": "20170428",
+          "gameDateTimeUTC": "2017-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 93
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201704300LAC",
+          "gameCode": "20170430",
+          "gameDateTimeUTC": "2017-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 91
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAS",
+        "MEM"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201704150SAS",
+          "gameCode": "20170415",
+          "gameDateTimeUTC": "2017-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 111
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201704170SAS",
+          "gameCode": "20170417",
+          "gameDateTimeUTC": "2017-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 96
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "201704200MEM",
+          "gameCode": "20170420",
+          "gameDateTimeUTC": "2017-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 105
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201704220MEM",
+          "gameCode": "20170422",
+          "gameDateTimeUTC": "2017-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 110
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "201704250SAS",
+          "gameCode": "20170425",
+          "gameDateTimeUTC": "2017-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 116
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201704270MEM",
+          "gameCode": "20170427",
+          "gameDateTimeUTC": "2017-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 96
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "TOR",
+        "MIL"
+      ],
+      "winner": "TOR",
+      "games": [
+        {
+          "gameId": "201704150TOR",
+          "gameCode": "20170415",
+          "gameDateTimeUTC": "2017-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 83
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201704180TOR",
+          "gameCode": "20170418",
+          "gameDateTimeUTC": "2017-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 106
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201704200MIL",
+          "gameCode": "20170420",
+          "gameDateTimeUTC": "2017-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 104
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "201704220MIL",
+          "gameCode": "20170422",
+          "gameDateTimeUTC": "2017-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 76
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201704240TOR",
+          "gameCode": "20170424",
+          "gameDateTimeUTC": "2017-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 118
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "201704270MIL",
+          "gameCode": "20170427",
+          "gameDateTimeUTC": "2017-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 89
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "CHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201704160BOS",
+          "gameCode": "20170416",
+          "gameDateTimeUTC": "2017-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "201704180BOS",
+          "gameCode": "20170418",
+          "gameDateTimeUTC": "2017-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 97
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201704210CHI",
+          "gameCode": "20170421",
+          "gameDateTimeUTC": "2017-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 87
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201704230CHI",
+          "gameCode": "20170423",
+          "gameDateTimeUTC": "2017-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201704260BOS",
+          "gameCode": "20170426",
+          "gameDateTimeUTC": "2017-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 108
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "201704280CHI",
+          "gameCode": "20170428",
+          "gameDateTimeUTC": "2017-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 83
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "POR"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201704160GSW",
+          "gameCode": "20170416",
+          "gameDateTimeUTC": "2017-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 121
+          },
+          "away": {
+            "tri": "POR",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "201704190GSW",
+          "gameCode": "20170419",
+          "gameDateTimeUTC": "2017-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "POR",
+            "score": 81
+          }
+        },
+        {
+          "gameId": "201704220POR",
+          "gameCode": "20170422",
+          "gameDateTimeUTC": "2017-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 113
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201704240POR",
+          "gameCode": "20170424",
+          "gameDateTimeUTC": "2017-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "POR",
+            "score": 103
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 128
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "OKC"
+      ],
+      "winner": "HOU",
+      "games": [
+        {
+          "gameId": "201704160HOU",
+          "gameCode": "20170416",
+          "gameDateTimeUTC": "2017-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 118
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "201704190HOU",
+          "gameCode": "20170419",
+          "gameDateTimeUTC": "2017-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 115
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201704210OKC",
+          "gameCode": "20170421",
+          "gameDateTimeUTC": "2017-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 115
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201704230OKC",
+          "gameCode": "20170423",
+          "gameDateTimeUTC": "2017-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 109
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201704250HOU",
+          "gameCode": "20170425",
+          "gameDateTimeUTC": "2017-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 105
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "WAS",
+        "ATL"
+      ],
+      "winner": "WAS",
+      "games": [
+        {
+          "gameId": "201704160WAS",
+          "gameCode": "20170416",
+          "gameDateTimeUTC": "2017-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 114
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201704190WAS",
+          "gameCode": "20170419",
+          "gameDateTimeUTC": "2017-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 109
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201704220ATL",
+          "gameCode": "20170422",
+          "gameDateTimeUTC": "2017-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 116
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "201704240ATL",
+          "gameCode": "20170424",
+          "gameDateTimeUTC": "2017-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 111
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201704260WAS",
+          "gameCode": "20170426",
+          "gameDateTimeUTC": "2017-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 103
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201704280ATL",
+          "gameCode": "20170428",
+          "gameDateTimeUTC": "2017-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 99
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "WAS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "201704300BOS",
+          "gameCode": "20170430",
+          "gameDateTimeUTC": "2017-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 123
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201705020BOS",
+          "gameCode": "20170502",
+          "gameDateTimeUTC": "2017-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 129
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "201705040WAS",
+          "gameCode": "20170504",
+          "gameDateTimeUTC": "2017-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 116
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "201705070WAS",
+          "gameCode": "20170507",
+          "gameDateTimeUTC": "2017-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 121
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201705100BOS",
+          "gameCode": "20170510",
+          "gameDateTimeUTC": "2017-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 123
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "201705120WAS",
+          "gameCode": "20170512",
+          "gameDateTimeUTC": "2017-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "WAS",
+            "score": 92
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201705150BOS",
+          "gameCode": "20170515",
+          "gameDateTimeUTC": "2017-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 115
+          },
+          "away": {
+            "tri": "WAS",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "TOR"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201705010CLE",
+          "gameCode": "20170501",
+          "gameDateTimeUTC": "2017-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 116
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "201705030CLE",
+          "gameCode": "20170503",
+          "gameDateTimeUTC": "2017-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 125
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201705050TOR",
+          "gameCode": "20170505",
+          "gameDateTimeUTC": "2017-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 94
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "201705070TOR",
+          "gameCode": "20170507",
+          "gameDateTimeUTC": "2017-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 102
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "SAS",
+        "HOU"
+      ],
+      "winner": "SAS",
+      "games": [
+        {
+          "gameId": "201705010SAS",
+          "gameCode": "20170501",
+          "gameDateTimeUTC": "2017-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 99
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "201705030SAS",
+          "gameCode": "20170503",
+          "gameDateTimeUTC": "2017-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 121
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "201705050HOU",
+          "gameCode": "20170505",
+          "gameDateTimeUTC": "2017-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 92
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "201705070HOU",
+          "gameCode": "20170507",
+          "gameDateTimeUTC": "2017-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 125
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201705090SAS",
+          "gameCode": "20170509",
+          "gameDateTimeUTC": "2017-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 110
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "201705110HOU",
+          "gameCode": "20170511",
+          "gameDateTimeUTC": "2017-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 75
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "GSW",
+        "UTA"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201705020GSW",
+          "gameCode": "20170502",
+          "gameDateTimeUTC": "2017-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 106
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "201705040GSW",
+          "gameCode": "20170504",
+          "gameDateTimeUTC": "2017-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 115
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "201705060UTA",
+          "gameCode": "20170506",
+          "gameDateTimeUTC": "2017-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 91
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "201705080UTA",
+          "gameCode": "20170508",
+          "gameDateTimeUTC": "2017-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 95
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 121
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "GSW",
+        "SAS"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201705140GSW",
+          "gameCode": "20170514",
+          "gameDateTimeUTC": "2017-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 113
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201705160GSW",
+          "gameCode": "20170516",
+          "gameDateTimeUTC": "2017-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 136
+          },
+          "away": {
+            "tri": "SAS",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "201705200SAS",
+          "gameCode": "20170520",
+          "gameDateTimeUTC": "2017-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 108
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "201705220SAS",
+          "gameCode": "20170522",
+          "gameDateTimeUTC": "2017-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "SAS",
+            "score": 115
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 129
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "CLE"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "201705170BOS",
+          "gameCode": "20170517",
+          "gameDateTimeUTC": "2017-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "201705190BOS",
+          "gameCode": "20170519",
+          "gameDateTimeUTC": "2017-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 86
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "201705210CLE",
+          "gameCode": "20170521",
+          "gameDateTimeUTC": "2017-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 108
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "201705230CLE",
+          "gameCode": "20170523",
+          "gameDateTimeUTC": "2017-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 112
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "201705250BOS",
+          "gameCode": "20170525",
+          "gameDateTimeUTC": "2017-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 135
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "GSW",
+        "CLE"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "201706010GSW",
+          "gameCode": "20170601",
+          "gameDateTimeUTC": "2017-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 113
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "201706040GSW",
+          "gameCode": "20170604",
+          "gameDateTimeUTC": "2017-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 132
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "201706070CLE",
+          "gameCode": "20170607",
+          "gameDateTimeUTC": "2017-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 113
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "201706090CLE",
+          "gameCode": "20170609",
+          "gameDateTimeUTC": "2017-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 137
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "201706120GSW",
+          "gameCode": "20170612",
+          "gameDateTimeUTC": "2017-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 129
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 120
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-24T13:27:22.159Z"
+}

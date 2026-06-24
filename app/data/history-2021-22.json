@@ -1,0 +1,1288 @@
+{
+  "season": "2021-22",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "DAL",
+        "UTA"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "202204160DAL",
+          "gameCode": "20220416",
+          "gameDateTimeUTC": "2022-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 93
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202204180DAL",
+          "gameCode": "20220418",
+          "gameDateTimeUTC": "2022-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 110
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202204210UTA",
+          "gameCode": "20220421",
+          "gameDateTimeUTC": "2022-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 118
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "202204230UTA",
+          "gameCode": "20220423",
+          "gameDateTimeUTC": "2022-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 100
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202204250DAL",
+          "gameCode": "20220425",
+          "gameDateTimeUTC": "2022-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 102
+          },
+          "away": {
+            "tri": "UTA",
+            "score": 77
+          }
+        },
+        {
+          "gameId": "202204280UTA",
+          "gameCode": "20220428",
+          "gameDateTimeUTC": "2022-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "UTA",
+            "score": 96
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "GSW",
+        "DEN"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "202204160GSW",
+          "gameCode": "20220416",
+          "gameDateTimeUTC": "2022-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 123
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202204180GSW",
+          "gameCode": "20220418",
+          "gameDateTimeUTC": "2022-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 126
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202204210DEN",
+          "gameCode": "20220421",
+          "gameDateTimeUTC": "2022-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 113
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202204240DEN",
+          "gameCode": "20220424",
+          "gameDateTimeUTC": "2022-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 126
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202204270GSW",
+          "gameCode": "20220427",
+          "gameDateTimeUTC": "2022-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 102
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MEM",
+        "MIN"
+      ],
+      "winner": "MEM",
+      "games": [
+        {
+          "gameId": "202204160MEM",
+          "gameCode": "20220416",
+          "gameDateTimeUTC": "2022-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 117
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "202204190MEM",
+          "gameCode": "20220419",
+          "gameDateTimeUTC": "2022-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 124
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202204210MIN",
+          "gameCode": "20220421",
+          "gameDateTimeUTC": "2022-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 95
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202204230MIN",
+          "gameCode": "20220423",
+          "gameDateTimeUTC": "2022-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 119
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202204260MEM",
+          "gameCode": "20220426",
+          "gameDateTimeUTC": "2022-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 111
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202204290MIN",
+          "gameCode": "20220429",
+          "gameDateTimeUTC": "2022-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 106
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "TOR"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "202204160PHI",
+          "gameCode": "20220416",
+          "gameDateTimeUTC": "2022-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 131
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202204180PHI",
+          "gameCode": "20220418",
+          "gameDateTimeUTC": "2022-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 112
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202204200TOR",
+          "gameCode": "20220420",
+          "gameDateTimeUTC": "2022-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 101
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202204230TOR",
+          "gameCode": "20220423",
+          "gameDateTimeUTC": "2022-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 110
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202204250PHI",
+          "gameCode": "20220425",
+          "gameDateTimeUTC": "2022-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 88
+          },
+          "away": {
+            "tri": "TOR",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202204280TOR",
+          "gameCode": "20220428",
+          "gameDateTimeUTC": "2022-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "TOR",
+            "score": 97
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 132
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "BKN"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202204170BOS",
+          "gameCode": "20220417",
+          "gameDateTimeUTC": "2022-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 115
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202204200BOS",
+          "gameCode": "20220420",
+          "gameDateTimeUTC": "2022-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202204230BRK",
+          "gameCode": "20220423",
+          "gameDateTimeUTC": "2022-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202204250BRK",
+          "gameCode": "20220425",
+          "gameDateTimeUTC": "2022-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 112
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIA",
+        "ATL"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202204170MIA",
+          "gameCode": "20220417",
+          "gameDateTimeUTC": "2022-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "202204190MIA",
+          "gameCode": "20220419",
+          "gameDateTimeUTC": "2022-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 115
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202204220ATL",
+          "gameCode": "20220422",
+          "gameDateTimeUTC": "2022-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 111
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202204240ATL",
+          "gameCode": "20220424",
+          "gameDateTimeUTC": "2022-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 86
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202204260MIA",
+          "gameCode": "20220426",
+          "gameDateTimeUTC": "2022-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 97
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "CHI"
+      ],
+      "winner": "MIL",
+      "games": [
+        {
+          "gameId": "202204170MIL",
+          "gameCode": "20220417",
+          "gameDateTimeUTC": "2022-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 93
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202204200MIL",
+          "gameCode": "20220420",
+          "gameDateTimeUTC": "2022-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 110
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202204220CHI",
+          "gameCode": "20220422",
+          "gameDateTimeUTC": "2022-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 81
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202204240CHI",
+          "gameCode": "20220424",
+          "gameDateTimeUTC": "2022-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "CHI",
+            "score": 95
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202204270MIL",
+          "gameCode": "20220427",
+          "gameDateTimeUTC": "2022-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 116
+          },
+          "away": {
+            "tri": "CHI",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "NOP"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "202204170PHO",
+          "gameCode": "20220417",
+          "gameDateTimeUTC": "2022-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 110
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202204190PHO",
+          "gameCode": "20220419",
+          "gameDateTimeUTC": "2022-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 114
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "202204220NOP",
+          "gameCode": "20220422",
+          "gameDateTimeUTC": "2022-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202204240NOP",
+          "gameCode": "20220424",
+          "gameDateTimeUTC": "2022-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202204260PHO",
+          "gameCode": "20220426",
+          "gameDateTimeUTC": "2022-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 112
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202204280NOP",
+          "gameCode": "20220428",
+          "gameDateTimeUTC": "2022-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 109
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 115
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "MIL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202205010BOS",
+          "gameCode": "20220501",
+          "gameDateTimeUTC": "2022-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 89
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202205030BOS",
+          "gameCode": "20220503",
+          "gameDateTimeUTC": "2022-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202205070MIL",
+          "gameCode": "20220507",
+          "gameDateTimeUTC": "2022-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202205090MIL",
+          "gameCode": "20220509",
+          "gameDateTimeUTC": "2022-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 108
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202205110BOS",
+          "gameCode": "20220511",
+          "gameDateTimeUTC": "2022-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 107
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202205130MIL",
+          "gameCode": "20220513",
+          "gameDateTimeUTC": "2022-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 95
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202205150BOS",
+          "gameCode": "20220515",
+          "gameDateTimeUTC": "2022-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MEM",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "202205010MEM",
+          "gameCode": "20220501",
+          "gameDateTimeUTC": "2022-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 116
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202205030MEM",
+          "gameCode": "20220503",
+          "gameDateTimeUTC": "2022-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 106
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202205070GSW",
+          "gameCode": "20220507",
+          "gameDateTimeUTC": "2022-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 142
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202205090GSW",
+          "gameCode": "20220509",
+          "gameDateTimeUTC": "2022-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 101
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202205110MEM",
+          "gameCode": "20220511",
+          "gameDateTimeUTC": "2022-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 134
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202205130GSW",
+          "gameCode": "20220513",
+          "gameDateTimeUTC": "2022-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIA",
+        "PHI"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202205020MIA",
+          "gameCode": "20220502",
+          "gameDateTimeUTC": "2022-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202205040MIA",
+          "gameCode": "20220504",
+          "gameDateTimeUTC": "2022-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 119
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202205060PHI",
+          "gameCode": "20220506",
+          "gameDateTimeUTC": "2022-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "202205080PHI",
+          "gameCode": "20220508",
+          "gameDateTimeUTC": "2022-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202205100MIA",
+          "gameCode": "20220510",
+          "gameDateTimeUTC": "2022-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 120
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "202205120PHI",
+          "gameCode": "20220512",
+          "gameDateTimeUTC": "2022-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 90
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 99
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "PHX",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "202205020PHO",
+          "gameCode": "20220502",
+          "gameDateTimeUTC": "2022-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 121
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202205040PHO",
+          "gameCode": "20220504",
+          "gameDateTimeUTC": "2022-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 129
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202205060DAL",
+          "gameCode": "20220506",
+          "gameDateTimeUTC": "2022-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202205080DAL",
+          "gameCode": "20220508",
+          "gameDateTimeUTC": "2022-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202205100PHO",
+          "gameCode": "20220510",
+          "gameDateTimeUTC": "2022-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 110
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "202205120DAL",
+          "gameCode": "20220512",
+          "gameDateTimeUTC": "2022-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 113
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202205150PHO",
+          "gameCode": "20220515",
+          "gameDateTimeUTC": "2022-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 90
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 123
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIA",
+        "BOS"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202205170MIA",
+          "gameCode": "20220517",
+          "gameDateTimeUTC": "2022-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 118
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202205190MIA",
+          "gameCode": "20220519",
+          "gameDateTimeUTC": "2022-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 127
+          }
+        },
+        {
+          "gameId": "202205210BOS",
+          "gameCode": "20220521",
+          "gameDateTimeUTC": "2022-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202205230BOS",
+          "gameCode": "20220523",
+          "gameDateTimeUTC": "2022-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 102
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 82
+          }
+        },
+        {
+          "gameId": "202205250MIA",
+          "gameCode": "20220525",
+          "gameDateTimeUTC": "2022-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 80
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202205270BOS",
+          "gameCode": "20220527",
+          "gameDateTimeUTC": "2022-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202205290MIA",
+          "gameCode": "20220529",
+          "gameDateTimeUTC": "2022-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 100
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "GSW",
+        "DAL"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "202205180GSW",
+          "gameCode": "20220518",
+          "gameDateTimeUTC": "2022-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 112
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "202205200GSW",
+          "gameCode": "20220520",
+          "gameDateTimeUTC": "2022-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 126
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202205220DAL",
+          "gameCode": "20220522",
+          "gameDateTimeUTC": "2022-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202205240DAL",
+          "gameCode": "20220524",
+          "gameDateTimeUTC": "2022-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202205260GSW",
+          "gameCode": "20220526",
+          "gameDateTimeUTC": "2022-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 120
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "GSW",
+        "BOS"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "202206020GSW",
+          "gameCode": "20220602",
+          "gameDateTimeUTC": "2022-06-02T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 108
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "202206050GSW",
+          "gameCode": "20220605",
+          "gameDateTimeUTC": "2022-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 107
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "202206080BOS",
+          "gameCode": "20220608",
+          "gameDateTimeUTC": "2022-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 116
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202206100BOS",
+          "gameCode": "20220610",
+          "gameDateTimeUTC": "2022-06-10T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 97
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202206130GSW",
+          "gameCode": "20220613",
+          "gameDateTimeUTC": "2022-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202206160BOS",
+          "gameCode": "20220616",
+          "gameDateTimeUTC": "2022-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 90
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 103
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-24T13:47:17.969Z"
+}
