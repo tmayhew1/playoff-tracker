@@ -1,0 +1,1249 @@
+{
+  "season": "2022-23",
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "ATL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202304150BOS",
+          "gameCode": "20230415",
+          "gameDateTimeUTC": "2023-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202304180BOS",
+          "gameCode": "20230418",
+          "gameDateTimeUTC": "2023-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 119
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202304210ATL",
+          "gameCode": "20230421",
+          "gameDateTimeUTC": "2023-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 130
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "202304230ATL",
+          "gameCode": "20230423",
+          "gameDateTimeUTC": "2023-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 121
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "202304250BOS",
+          "gameCode": "20230425",
+          "gameDateTimeUTC": "2023-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 117
+          },
+          "away": {
+            "tri": "ATL",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202304270ATL",
+          "gameCode": "20230427",
+          "gameDateTimeUTC": "2023-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "ATL",
+            "score": 120
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 128
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "202304150CLE",
+          "gameCode": "20230415",
+          "gameDateTimeUTC": "2023-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 97
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202304180CLE",
+          "gameCode": "20230418",
+          "gameDateTimeUTC": "2023-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 107
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "202304210NYK",
+          "gameCode": "20230421",
+          "gameDateTimeUTC": "2023-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 99
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 79
+          }
+        },
+        {
+          "gameId": "202304230NYK",
+          "gameCode": "20230423",
+          "gameDateTimeUTC": "2023-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 102
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202304260CLE",
+          "gameCode": "20230426",
+          "gameDateTimeUTC": "2023-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 95
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHI",
+        "BKN"
+      ],
+      "winner": "PHI",
+      "games": [
+        {
+          "gameId": "202304150PHI",
+          "gameCode": "20230415",
+          "gameDateTimeUTC": "2023-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 121
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202304170PHI",
+          "gameCode": "20230417",
+          "gameDateTimeUTC": "2023-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 96
+          },
+          "away": {
+            "tri": "BKN",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "202304200BRK",
+          "gameCode": "20230420",
+          "gameDateTimeUTC": "2023-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 97
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202304220BRK",
+          "gameCode": "20230422",
+          "gameDateTimeUTC": "2023-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "BKN",
+            "score": 88
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 96
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "SAC",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "202304150SAC",
+          "gameCode": "20230415",
+          "gameDateTimeUTC": "2023-04-15T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 126
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202304170SAC",
+          "gameCode": "20230417",
+          "gameDateTimeUTC": "2023-04-17T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 114
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202304200GSW",
+          "gameCode": "20230420",
+          "gameDateTimeUTC": "2023-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 114
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202304230GSW",
+          "gameCode": "20230423",
+          "gameDateTimeUTC": "2023-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 126
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "202304260SAC",
+          "gameCode": "20230426",
+          "gameDateTimeUTC": "2023-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 116
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202304280GSW",
+          "gameCode": "20230428",
+          "gameDateTimeUTC": "2023-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 99
+          },
+          "away": {
+            "tri": "SAC",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202304300SAC",
+          "gameCode": "20230430",
+          "gameDateTimeUTC": "2023-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "SAC",
+            "score": 100
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 120
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "MIN"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202304160DEN",
+          "gameCode": "20230416",
+          "gameDateTimeUTC": "2023-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "202304190DEN",
+          "gameCode": "20230419",
+          "gameDateTimeUTC": "2023-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 122
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202304210MIN",
+          "gameCode": "20230421",
+          "gameDateTimeUTC": "2023-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 111
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "202304230MIN",
+          "gameCode": "20230423",
+          "gameDateTimeUTC": "2023-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 114
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202304250DEN",
+          "gameCode": "20230425",
+          "gameDateTimeUTC": "2023-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 109
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MEM",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202304160MEM",
+          "gameCode": "20230416",
+          "gameDateTimeUTC": "2023-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "202304190MEM",
+          "gameCode": "20230419",
+          "gameDateTimeUTC": "2023-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 103
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202304220LAL",
+          "gameCode": "20230422",
+          "gameDateTimeUTC": "2023-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202304240LAL",
+          "gameCode": "20230424",
+          "gameDateTimeUTC": "2023-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202304260MEM",
+          "gameCode": "20230426",
+          "gameDateTimeUTC": "2023-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 116
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202304280LAL",
+          "gameCode": "20230428",
+          "gameDateTimeUTC": "2023-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 125
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 85
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202304160MIL",
+          "gameCode": "20230416",
+          "gameDateTimeUTC": "2023-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 117
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 130
+          }
+        },
+        {
+          "gameId": "202304190MIL",
+          "gameCode": "20230419",
+          "gameDateTimeUTC": "2023-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 138
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 122
+          }
+        },
+        {
+          "gameId": "202304220MIA",
+          "gameCode": "20230422",
+          "gameDateTimeUTC": "2023-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202304240MIA",
+          "gameCode": "20230424",
+          "gameDateTimeUTC": "2023-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 119
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202304260MIL",
+          "gameCode": "20230426",
+          "gameDateTimeUTC": "2023-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 126
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 128
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "PHX",
+        "LAC"
+      ],
+      "winner": "PHX",
+      "games": [
+        {
+          "gameId": "202304160PHO",
+          "gameCode": "20230416",
+          "gameDateTimeUTC": "2023-04-16T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 110
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202304180PHO",
+          "gameCode": "20230418",
+          "gameDateTimeUTC": "2023-04-18T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 123
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202304200LAC",
+          "gameCode": "20230420",
+          "gameDateTimeUTC": "2023-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 124
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "202304220LAC",
+          "gameCode": "20230422",
+          "gameDateTimeUTC": "2023-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 100
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202304250PHO",
+          "gameCode": "20230425",
+          "gameDateTimeUTC": "2023-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 136
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 130
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DEN",
+        "PHX"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202304290DEN",
+          "gameCode": "20230429",
+          "gameDateTimeUTC": "2023-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 125
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202305010DEN",
+          "gameCode": "20230501",
+          "gameDateTimeUTC": "2023-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 97
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "202305050PHO",
+          "gameCode": "20230505",
+          "gameDateTimeUTC": "2023-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 121
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202305070PHO",
+          "gameCode": "20230507",
+          "gameDateTimeUTC": "2023-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 129
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "202305090DEN",
+          "gameCode": "20230509",
+          "gameDateTimeUTC": "2023-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 118
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202305110PHO",
+          "gameCode": "20230511",
+          "gameDateTimeUTC": "2023-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 100
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 125
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NYK",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202304300NYK",
+          "gameCode": "20230430",
+          "gameDateTimeUTC": "2023-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 101
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202305020NYK",
+          "gameCode": "20230502",
+          "gameDateTimeUTC": "2023-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 111
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202305060MIA",
+          "gameCode": "20230506",
+          "gameDateTimeUTC": "2023-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 105
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202305080MIA",
+          "gameCode": "20230508",
+          "gameDateTimeUTC": "2023-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 109
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202305100NYK",
+          "gameCode": "20230510",
+          "gameDateTimeUTC": "2023-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202305120MIA",
+          "gameCode": "20230512",
+          "gameDateTimeUTC": "2023-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 96
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 92
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "PHI"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202305010BOS",
+          "gameCode": "20230501",
+          "gameDateTimeUTC": "2023-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 115
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202305030BOS",
+          "gameCode": "20230503",
+          "gameDateTimeUTC": "2023-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 121
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 87
+          }
+        },
+        {
+          "gameId": "202305050PHI",
+          "gameCode": "20230505",
+          "gameDateTimeUTC": "2023-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202305070PHI",
+          "gameCode": "20230507",
+          "gameDateTimeUTC": "2023-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 116
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202305090BOS",
+          "gameCode": "20230509",
+          "gameDateTimeUTC": "2023-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202305110PHI",
+          "gameCode": "20230511",
+          "gameDateTimeUTC": "2023-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 86
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202305140BOS",
+          "gameCode": "20230514",
+          "gameDateTimeUTC": "2023-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 112
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 88
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "GSW",
+        "LAL"
+      ],
+      "winner": "LAL",
+      "games": [
+        {
+          "gameId": "202305020GSW",
+          "gameCode": "20230502",
+          "gameDateTimeUTC": "2023-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202305040GSW",
+          "gameCode": "20230504",
+          "gameDateTimeUTC": "2023-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 127
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202305060LAL",
+          "gameCode": "20230506",
+          "gameDateTimeUTC": "2023-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 127
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202305080LAL",
+          "gameCode": "20230508",
+          "gameDateTimeUTC": "2023-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 104
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202305100GSW",
+          "gameCode": "20230510",
+          "gameDateTimeUTC": "2023-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 121
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202305120LAL",
+          "gameCode": "20230512",
+          "gameDateTimeUTC": "2023-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "DEN",
+        "LAL"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202305160DEN",
+          "gameCode": "20230516",
+          "gameDateTimeUTC": "2023-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 132
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "202305180DEN",
+          "gameCode": "20230518",
+          "gameDateTimeUTC": "2023-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202305200LAL",
+          "gameCode": "20230520",
+          "gameDateTimeUTC": "2023-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 108
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202305220LAL",
+          "gameCode": "20230522",
+          "gameDateTimeUTC": "2023-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 113
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "MIA"
+      ],
+      "winner": "MIA",
+      "games": [
+        {
+          "gameId": "202305170BOS",
+          "gameCode": "20230517",
+          "gameDateTimeUTC": "2023-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202305190BOS",
+          "gameCode": "20230519",
+          "gameDateTimeUTC": "2023-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 105
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202305210MIA",
+          "gameCode": "20230521",
+          "gameDateTimeUTC": "2023-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 128
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202305230MIA",
+          "gameCode": "20230523",
+          "gameDateTimeUTC": "2023-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202305250BOS",
+          "gameCode": "20230525",
+          "gameDateTimeUTC": "2023-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 110
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202305270MIA",
+          "gameCode": "20230527",
+          "gameDateTimeUTC": "2023-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 103
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202305290BOS",
+          "gameCode": "20230529",
+          "gameDateTimeUTC": "2023-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 84
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "DEN",
+        "MIA"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202306010DEN",
+          "gameCode": "20230601",
+          "gameDateTimeUTC": "2023-06-01T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 104
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202306040DEN",
+          "gameCode": "20230604",
+          "gameDateTimeUTC": "2023-06-04T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 108
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202306070MIA",
+          "gameCode": "20230607",
+          "gameDateTimeUTC": "2023-06-07T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 94
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202306090MIA",
+          "gameCode": "20230609",
+          "gameDateTimeUTC": "2023-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 95
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202306120DEN",
+          "gameCode": "20230612",
+          "gameDateTimeUTC": "2023-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 89
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-25T13:24:50.363Z"
+}
