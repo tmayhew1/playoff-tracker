@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, TEAM_CONF, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason } from "./scoring";
+import { LGA, valueAdd, valueAddParts, valueAddByCategory, VA_CATEGORY_KEYS, computePoints, potentialPoints, lgaForSeason } from "./scoring";
 import TEAM_COLORS from "./data/team-colors.json";
 
 // Per-team primary color (hex). Used in Explore and anywhere we don't have
@@ -2815,10 +2815,43 @@ function InfoView() {
 
 // Top college players for the season, ranked by Value Added. Data comes from
 // /api/college (baked by scripts/R/fetch_college.R via the bake-college run).
+// Per-category VA breakdown for one college player: a diverging bar per stat
+// (contribution above/below the D-I average), reusing valueAddByCategory.
+function CollegePlayerBreakdown({ player, lga }) {
+  if (player.ast == null || !lga) {
+    return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
+  }
+  const cats = valueAddByCategory(player, lga);
+  const rows = VA_CATEGORY_KEYS.map((k) => ({ k, v: cats[k] || 0 }));
+  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.v)), 0.1);
+  return (
+    <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mb-1.5">VA by category · contribution above / below D-I average</div>
+      {rows.map(({ k, v }) => {
+        const pct = (Math.abs(v) / maxAbs) * 50;
+        const barStyle = v >= 0 ? { left: "50%", width: `${pct}%` } : { right: "50%", width: `${pct}%` };
+        return (
+          <div key={k} className="flex items-center gap-2 py-[3px] text-[11px]">
+            <span className="w-[4.75rem] shrink-0 text-stone-600">{k}</span>
+            <div className="flex-1 relative h-3">
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-stone-300" />
+              <div className="absolute top-0.5 bottom-0.5 rounded-sm" style={{ ...barStyle, background: v >= 0 ? "#1c1917" : "#dc2626" }} />
+            </div>
+            <span className={`w-9 shrink-0 text-right tabular-nums font-semibold ${v < 0 ? "text-red-600" : "text-stone-800"}`}>{v >= 0 ? "+" : ""}{v.toFixed(1)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CollegeView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortMode, setSortMode] = useState("va"); // "va" | "vaPerG"
+  const [teamQuery, setTeamQuery] = useState("");
+  const [expanded, setExpanded] = useState(null);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/college")
@@ -2827,6 +2860,16 @@ function CollegeView() {
       .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });
     return () => { cancelled = true; };
   }, []);
+
+  const q = teamQuery.trim().toLowerCase();
+  const shown = useMemo(() => {
+    if (!data?.players) return [];
+    const metric = (p) => (sortMode === "vaPerG" ? p.vaPerG : p.va) ?? 0;
+    let list = data.players;
+    if (q) list = list.filter((p) => (p.school || "").toLowerCase().includes(q));
+    list = [...list].sort((a, b) => metric(b) - metric(a));
+    return q ? list : list.slice(0, 100); // full team when filtering; else top 100
+  }, [data, q, sortMode]);
 
   if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading college players…</div>;
   if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
@@ -2839,31 +2882,74 @@ function CollegeView() {
     );
   }
 
-  const players = data.players;
+  const metricVal = (p) => (sortMode === "vaPerG" ? p.vaPerG : p.va) ?? 0;
+  const maxMetric = Math.max(...shown.map(metricVal), 0.1);
+  const sortCls = (active) =>
+    `px-2 py-1 text-[10px] uppercase tracking-widest border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300"}`;
+
   return (
     <div>
       <div className="mb-3">
         <h2 className="text-base font-bold text-stone-900">Top College Players</h2>
         <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
-          {data.season} men’s D-I · ranked by Value Added{data.playerPool ? ` · ${data.playerPool.toLocaleString()} players` : ""}
+          {data.season} men’s D-I{data.playerPool ? ` · ${data.playerPool.toLocaleString()} players` : ""}
         </div>
       </div>
+
+      <input
+        type="text"
+        value={teamQuery}
+        onChange={(e) => { setTeamQuery(e.target.value); setExpanded(null); }}
+        placeholder="Filter by team (e.g. Kansas)"
+        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
+      />
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] uppercase tracking-widest text-stone-400">Sort</span>
+        <button onClick={() => setSortMode("va")} className={sortCls(sortMode === "va")}>VA</button>
+        <button onClick={() => setSortMode("vaPerG")} className={sortCls(sortMode === "vaPerG")}>VA/G</button>
+        <span className="ml-auto text-[10px] text-stone-400 tabular-nums">{shown.length}{q ? " match" + (shown.length === 1 ? "" : "es") : ""}</span>
+      </div>
+
       <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-        <span></span><span>Player</span><span className="text-right">PPG</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
+        <span></span><span>Player</span><span className="text-right">PPG</span>
+        <span className={`text-right ${sortMode === "va" ? "text-stone-900 font-bold" : ""}`}>VA</span>
+        <span className={`text-right ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : ""}`}>VA/G</span>
       </div>
-      {players.map((p, i) => (
-        <div key={p.slug || p.name} className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 border-b border-stone-100 text-sm">
-          <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
-          <span className="min-w-0">
-            <span className="font-semibold text-stone-800 block truncate">{p.name}</span>
-            <span className="text-[10px] text-stone-500">{p.school}</span>
-          </span>
-          <span className="text-right tabular-nums text-stone-600">{(p.ppg ?? 0).toFixed(1)}</span>
-          <span className={`text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va ?? 0).toFixed(1)}</span>
-          <span className="text-right tabular-nums text-stone-500">{(p.vaPerG ?? 0).toFixed(1)}</span>
-        </div>
-      ))}
-      <div className="text-[10px] text-stone-400 italic mt-2">Source: College Sports Reference. VA uses 2025-26 college league baselines.</div>
+
+      {shown.length === 0 && (
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{teamQuery.trim()}”.</div>
+      )}
+
+      {shown.map((p, i) => {
+        const key = p.slug || p.name;
+        const open = expanded === key;
+        const pct = (metricVal(p) / maxMetric) * 100;
+        return (
+          <div key={key} className="border-b border-stone-100">
+            <button
+              onClick={() => setExpanded(open ? null : key)}
+              className="w-full grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm text-left hover:bg-stone-50"
+            >
+              <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+              <span className="min-w-0">
+                <span className="font-semibold text-stone-800 block truncate">{p.name}</span>
+                <span className="text-[10px] text-stone-500">{p.school}</span>
+              </span>
+              <span className="text-right tabular-nums text-stone-600">{(p.ppg ?? 0).toFixed(1)}</span>
+              <span className={`text-right tabular-nums font-bold ${sortMode === "va" ? "text-stone-900" : "text-stone-500"} ${p.va < 0 ? "text-red-600" : ""}`}>{(p.va ?? 0).toFixed(1)}</span>
+              <span className={`text-right tabular-nums ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-500"}`}>{(p.vaPerG ?? 0).toFixed(1)}</span>
+            </button>
+            <div className="px-2 pt-1 pb-1.5">
+              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
+                <div className="h-full rounded-sm" style={{ width: `${Math.max(0, pct)}%`, background: metricVal(p) < 0 ? "#dc2626" : "#1c1917" }} />
+              </div>
+            </div>
+            {open && <CollegePlayerBreakdown player={p} lga={data.leagueAverages} />}
+          </div>
+        );
+      })}
+
+      <div className="text-[10px] text-stone-400 italic mt-2">Source: College Sports Reference. VA uses 2025-26 college league baselines. Tap a player for the per-stat breakdown.</div>
     </div>
   );
 }
