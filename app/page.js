@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, TEAM_CONF, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, valueAddParts, valueAddByCategory, VA_CATEGORY_KEYS, computePoints, potentialPoints, lgaForSeason } from "./scoring";
+import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason } from "./scoring";
 import TEAM_COLORS from "./data/team-colors.json";
 
 // Per-team primary color (hex). Used in Explore and anywhere we don't have
@@ -2815,32 +2815,67 @@ function InfoView() {
 
 // Top college players for the season, ranked by Value Added. Data comes from
 // /api/college (baked by scripts/R/fetch_college.R via the bake-college run).
-// Per-category VA breakdown for one college player: a diverging bar per stat
-// (contribution above/below the D-I average), reusing valueAddByCategory.
-function CollegePlayerBreakdown({ player, lga }) {
-  if (player.ast == null || !lga) {
+// Per-category VA breakdown for one college player, mirroring the NBA
+// VABreakdown: diverging +/- bars (per-GAME contribution above/below the D-I
+// average), grouped with separators, plus a Per 36 / Per G stat-label toggle.
+function CollegePlayerBreakdown({ player: p, lga }) {
+  const [rateMode, setRateMode] = useState("per36");
+  if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
   }
-  const cats = valueAddByCategory(player, lga);
-  const rows = VA_CATEGORY_KEYS.map((k) => ({ k, v: cats[k] || 0 }));
-  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.v)), 0.1);
+  const mp = p.mp, gp = p.gp || 1;
+  const twoPm = p.fgm - p.tpm, twoPa = p.fga - p.tpa;
+  const tpAdd = ((p.tpm / (p.tpa || 1)) - lga.la3P) * p.tpa;
+  const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
+  const ftAdd = ((p.ftm / (p.fta || 1)) - lga.laFT) * p.fta;
+  const r36 = (v, tag) => `${((v / mp) * 36).toFixed(1)} ${tag}/36`;
+  const rG = (v, tag) => `${(v / gp).toFixed(1)} ${tag}/G`;
+  const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
+  const cnt = (v, tag) => (rateMode === "perG" ? rG(v, tag) : r36(v, tag));
+
+  const cats = [
+    { key: "Points", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
+    { key: "3-Pointers", value: 3 * tpAdd, label: shot(p.tpm, p.tpa) },
+    { key: "2-Pointers", value: 2 * twoAdd, label: shot(twoPm, twoPa) },
+    { key: "Free Throws", value: ftAdd, label: shot(p.ftm, p.fta) },
+    { key: "Assists", value: ((p.ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG), label: cnt(p.ast, "AST") },
+    { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
+    { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
+    { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
+  ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
+  const maxAbs = Math.max(...cats.map((c) => Math.abs(c.value)), 0.1);
+  const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
+
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
-      <div className="text-[9px] uppercase tracking-widest text-stone-400 mb-1.5">VA by category · contribution above / below D-I average</div>
-      {rows.map(({ k, v }) => {
-        const pct = (Math.abs(v) / maxAbs) * 50;
-        const barStyle = v >= 0 ? { left: "50%", width: `${pct}%` } : { right: "50%", width: `${pct}%` };
+      <div className="flex justify-end mb-1.5">
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
+          <button onClick={() => setRateMode("perG")} className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per G</button>
+        </div>
+      </div>
+      {cats.map((c) => {
+        const pct = (Math.abs(c.value) / maxAbs) * 45;
+        const isPos = c.value >= 0;
+        const perG = c.value / gp;
         return (
-          <div key={k} className="flex items-center gap-2 py-[3px] text-[11px]">
-            <span className="w-[4.75rem] shrink-0 text-stone-600">{k}</span>
-            <div className="flex-1 relative h-3">
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-stone-300" />
-              <div className="absolute top-0.5 bottom-0.5 rounded-sm" style={{ ...barStyle, background: v >= 0 ? "#1c1917" : "#dc2626" }} />
+          <React.Fragment key={c.key}>
+            <div className="flex items-center gap-2 text-[10px] py-[1px]">
+              <span className="w-[4.5rem] shrink-0 text-right text-stone-600">{c.key}</span>
+              <div className="flex-1 relative h-4">
+                <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
+                <div className="absolute inset-y-0.5" style={{ backgroundColor: isPos ? "#1c1917" : "#a8a29e", left: isPos ? "50%" : `${50 - pct}%`, width: `${pct}%` }} />
+              </div>
+              <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(perG, 2)}</span>
+              <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
             </div>
-            <span className={`w-9 shrink-0 text-right tabular-nums font-semibold ${v < 0 ? "text-red-600" : "text-stone-800"}`}>{v >= 0 ? "+" : ""}{v.toFixed(1)}</span>
-          </div>
+            {VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
+          </React.Fragment>
         );
       })}
+      <div className="mt-2 text-center text-[9px] italic text-stone-400">Bars show per-game contribution above / below D-I average</div>
     </div>
   );
 }
@@ -2884,8 +2919,6 @@ function CollegeView() {
 
   const metricVal = (p) => (sortMode === "vaPerG" ? p.vaPerG : p.va) ?? 0;
   const maxMetric = Math.max(...shown.map(metricVal), 0.1);
-  const sortCls = (active) =>
-    `px-2 py-1 text-[10px] uppercase tracking-widest border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300"}`;
 
   return (
     <div>
@@ -2903,17 +2936,15 @@ function CollegeView() {
         placeholder="Filter by team (e.g. Kansas)"
         className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
       />
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] uppercase tracking-widest text-stone-400">Sort</span>
-        <button onClick={() => setSortMode("va")} className={sortCls(sortMode === "va")}>VA</button>
-        <button onClick={() => setSortMode("vaPerG")} className={sortCls(sortMode === "vaPerG")}>VA/G</button>
-        <span className="ml-auto text-[10px] text-stone-400 tabular-nums">{shown.length}{q ? " match" + (shown.length === 1 ? "" : "es") : ""}</span>
-      </div>
+      {q && (
+        <div className="text-[10px] text-stone-400 tabular-nums mb-1 px-2">{shown.length} {shown.length === 1 ? "player" : "players"}</div>
+      )}
 
+      {/* Tap VA or VA/G to sort by that column; the caret marks the active sort. */}
       <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
         <span></span><span>Player</span><span className="text-right">PPG</span>
-        <span className={`text-right ${sortMode === "va" ? "text-stone-900 font-bold" : ""}`}>VA</span>
-        <span className={`text-right ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : ""}`}>VA/G</span>
+        <button onClick={() => setSortMode("va")} className={`text-right uppercase tracking-wider ${sortMode === "va" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA{sortMode === "va" ? " ▾" : ""}</button>
+        <button onClick={() => setSortMode("vaPerG")} className={`text-right uppercase tracking-wider ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA/G{sortMode === "vaPerG" ? " ▾" : ""}</button>
       </div>
 
       {shown.length === 0 && (
