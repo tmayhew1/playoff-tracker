@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
-# Offline test for the college totals parser + VA ranking. Builds a synthetic
-# CBB season-totals page, stubs the network, and checks fetch_player_totals
-# parses every player and that VA ranks the dominant player first. No network.
+# Offline test for the per-school college scraper. Builds a synthetic school
+# index page + a school season page, stubs the network, and checks: the index
+# yields school slugs/names, a school's Totals table parses into players tagged
+# with their school, and VA ranks the dominant player first. No network.
 #
 #   Rscript scripts/R/test-fetch-college.R
 
@@ -9,46 +10,53 @@ dir <- dirname(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = 
 source(file.path(dir, "scrape_common.R"))
 source(file.path(dir, "fetch_college.R"))  # guarded: defines functions only
 
-row <- function(slug, name, school, g, mp, pts, ast, stl, blk, tov, drb, orb, fg, fga, fg3, fg3a, ft, fta)
+# --- fixtures ---
+school_link <- function(slug, name)
+  sprintf('<tr><td data-stat="school_name"><a href="/cbb/schools/%s/men/2026.html">%s</a></td><td data-stat="wins">20</td></tr>', slug, name)
+index_html <- paste0('<html><body><table id="basic_school_stats"><tbody>',
+  school_link("duke", "Duke"), school_link("ucla", "UCLA"), '</tbody></table></body></html>')
+
+prow <- function(slug, name, g, mp, pts, ast, stl, blk, tov, drb, orb, fg, fga, fg3, fg3a, ft, fta)
   sprintf(paste0(
     '<tr><th data-stat="player"><a href="/cbb/players/%s.html">%s</a></th>',
-    '<td data-stat="school_name"><a href="/cbb/schools/x/2026.html">%s</a></td>',
     '<td data-stat="g">%d</td><td data-stat="mp">%d</td><td data-stat="pts">%d</td>',
     '<td data-stat="ast">%d</td><td data-stat="stl">%d</td><td data-stat="blk">%d</td>',
     '<td data-stat="tov">%d</td><td data-stat="drb">%d</td><td data-stat="orb">%d</td>',
     '<td data-stat="fg">%d</td><td data-stat="fga">%d</td><td data-stat="fg3">%d</td>',
     '<td data-stat="fg3a">%d</td><td data-stat="ft">%d</td><td data-stat="fta">%d</td></tr>'),
-    slug, name, school, g, mp, pts, ast, stl, blk, tov, drb, orb, fg, fga, fg3, fg3a, ft, fta)
-
-# header row carries the data-stat columns find_totals_table looks for
-thead <- '<thead><tr><th data-stat="player">Player</th><th data-stat="g">G</th><th data-stat="mp">MP</th><th data-stat="pts">PTS</th></tr></thead>'
-rows <- paste0(
-  row("starxx-1", "Star Player", "Duke", 34, 1150, 820, 150, 60, 40, 70, 180, 40, 280, 520, 90, 220, 170, 200),
-  # repeated mid-table header (must be skipped)
+    slug, name, g, mp, pts, ast, stl, blk, tov, drb, orb, fg, fga, fg3, fg3a, ft, fta)
+# A school page carries a per-game table AND a totals table; we must pick totals.
+# The totals table is wrapped in a comment, like SR lazy-loads it.
+totals_tbl <- paste0('<table id="totals"><tbody>',
+  prow("starxx-1", "Star Player", 34, 1150, 820, 150, 60, 40, 70, 180, 40, 280, 520, 90, 220, 170, 200),
   '<tr class="thead"><td>x</td></tr>',
-  row("rolexx-1", "Role Player", "UCLA", 33, 900, 360, 90, 30, 15, 55, 120, 30, 130, 300, 40, 120, 60, 90),
-  row("benchxx-1", "Bench Guy", "Iowa", 30, 400, 120, 40, 10, 5, 40, 60, 20, 45, 130, 15, 55, 15, 30)
-)
-html <- paste0('<html><body><table id="totals">', thead, '<tbody>', rows, '</tbody></table></body></html>')
+  prow("rolexx-1", "Role Player", 33, 900, 360, 90, 30, 15, 55, 120, 30, 130, 300, 40, 120, 60, 90),
+  '</tbody></table>')
+school_html <- paste0('<html><body>',
+  '<table id="per_game"><tbody>', prow("starxx-1", "Star Player", 34, 34, 24, 4, 2, 1, 2, 5, 1, 8, 15, 3, 6, 5, 6), '</tbody></table>',
+  '<!-- ', totals_tbl, ' --></body></html>')
 
-throttled_fetch <- function(url) html   # network stub (page 2 dedupes -> stop)
+throttled_fetch <- function(url) if (grepl("school-stats", url)) index_html else school_html
 
-players <- fetch_player_totals(2026)
-cat(sprintf("parsed players: %d\n", length(players)))
-stopifnot(length(players) == 3)
+# --- index ---
+schools <- fetch_school_index(2026)
+cat(sprintf("schools: %d -> %s\n", length(schools), paste(vapply(schools, function(s) s$slug, ""), collapse = ", ")))
+stopifnot(length(schools) == 2, schools[[1]]$slug == "duke", schools[[1]]$name == "Duke", schools[[2]]$slug == "ucla")
+
+# --- one school's players (must read the TOTALS table, not per_game) ---
+players <- fetch_school_players(schools[[1]], 2026)
+cat(sprintf("duke players: %d\n", length(players)))
+stopifnot(length(players) == 2)
 star <- Filter(function(p) p$name == "Star Player", players)[[1]]
-stopifnot(star$school == "Duke", star$gp == 34, star$pts == 820, star$slug == "starxx-1")
+stopifnot(star$school == "Duke", star$pts == 820, star$slug == "starxx-1", star$mp == 1150)  # 1150 => totals table, not per_game(34)
 
-# League baselines from the summed totals, then VA per player.
+# --- VA ranks the dominant player first ---
 totals <- list(mp = 0, pts = 0, ast = 0, stl = 0, blk = 0, tov = 0, drb = 0,
                orb = 0, fgm = 0, fga = 0, tpm = 0, tpa = 0, ftm = 0, fta = 0)
 for (p in players) for (k in names(totals)) totals[[k]] <- totals[[k]] + (p[[k]] %||% 0)
 lga <- lga_from_totals(totals)
-ranked <- players
-ranked <- ranked[order(vapply(ranked, function(p) value_add_parts(p, lga)$va, numeric(1)), decreasing = TRUE)]
+ranked <- players[order(vapply(players, function(p) value_add_parts(p, lga)$va, numeric(1)), decreasing = TRUE)]
 cat("VA order:", paste(vapply(ranked, function(p) p$name, ""), collapse = " > "), "\n")
-# The dominant player must rank first; relative order of the rest depends on the
-# (tiny, synthetic) league baselines and isn't a meaningful invariant here.
-stopifnot(ranked[[1]]$name == "Star Player", length(ranked) == 3)
+stopifnot(ranked[[1]]$name == "Star Player")
 
 cat("ALL ASSERTIONS PASSED\n")
