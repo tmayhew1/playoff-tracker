@@ -13,7 +13,6 @@ source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
 
 iso_now <- function() strftime(Sys.time(), "%Y-%m-%dT%H:%M:%OS3Z", tz = "UTC")
-TOP_N <- 100
 CBB <- "https://www.sports-reference.com/cbb"
 
 # League rates from summed totals (mirrors fetch_league_averages.R's
@@ -169,28 +168,34 @@ main <- function(season) {
   for (p in players) for (k in names(totals)) totals[[k]] <- totals[[k]] + (p[[k]] %||% 0)
   lga <- lga_from_totals(totals)
 
+  # Store ALL players (not just the top N): the UI ranks/filters/searches the
+  # full pool, and a player can lead VA/G while sitting outside the VA top 100.
+  # Each row keeps the raw counting stats so the UI can compute the per-category
+  # VA breakdown (valueAddByCategory) without a re-scrape.
+  ri <- function(x) round(x %||% 0)  # raw counting stat (handles per-game fallback floats)
   ranked <- lapply(players, function(p) {
     vp <- value_add_parts(p, lga)
     list(
       name = p$name, school = p$school, slug = if (is.na(p$slug)) NA_character_ else p$slug,
       gp = as.integer(p$gp), mp = round(p$mp, 1),
-      pts = as.integer(p$pts), ppg = round(p$pts / p$gp, 1),
-      va = round(vp$va, 2), eff = round(vp$efficiency, 2),
-      vaPerG = round(vp$va / p$gp, 2)
+      va = round(vp$va, 2), vaPerG = round(vp$va / p$gp, 2), ppg = round(p$pts / p$gp, 1),
+      pts = ri(p$pts), ast = ri(p$ast), stl = ri(p$stl), blk = ri(p$blk),
+      tov = ri(p$tov), drb = ri(p$drb), orb = ri(p$orb),
+      fgm = ri(p$fgm), fga = ri(p$fga), tpm = ri(p$tpm), tpa = ri(p$tpa),
+      ftm = ri(p$ftm), fta = ri(p$fta)
     )
   })
   ranked <- ranked[order(vapply(ranked, function(x) x$va, numeric(1)), decreasing = TRUE)]
-  top <- ranked[seq_len(min(TOP_N, length(ranked)))]
 
   out <- list(
-    season = season, division = "men", players = top,
+    season = season, division = "men", players = ranked,
     playerPool = length(players), schools = length(schools),
     leagueAverages = lga, source = "sports-reference.com/cbb", fetchedAt = iso_now()
   )
   dir.create(DATA_DIR, showWarnings = FALSE, recursive = TRUE)
   path <- file.path(DATA_DIR, sprintf("college-%s.json", season))
   write_json_pretty(out, path)
-  message(sprintf("Wrote top %d of %d players -> %s", length(top), length(players), path))
+  message(sprintf("Wrote %d players (%d schools) -> %s", length(ranked), length(schools), path))
 }
 
 if (sys.nframe() == 0) {
