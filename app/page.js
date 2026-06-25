@@ -2590,6 +2590,61 @@ function CurrentView() {
   );
 }
 
+// Top college players for the season, ranked by Value Added. Data comes from
+// /api/college (baked by scripts/R/fetch_college.R via the bake-college run).
+function CollegeView() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/college")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => { if (!cancelled) { setData(d); setLoading(false); } })
+      .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading college players…</div>;
+  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
+  if (!data || data.missing || !(data.players && data.players.length)) {
+    return (
+      <div className="p-3 bg-white border border-stone-300 text-sm text-stone-600 leading-relaxed">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Top College Players</h2>
+        College data hasn’t been baked yet. Run the <span className="font-semibold">“Bake college players”</span> workflow from the Actions tab to populate the 2025-26 men’s D-I leaders by Value Added.
+      </div>
+    );
+  }
+
+  const players = data.players;
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="text-base font-bold text-stone-900">Top College Players</h2>
+        <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+          {data.season} men’s D-I · ranked by Value Added{data.playerPool ? ` · ${data.playerPool.toLocaleString()} players` : ""}
+        </div>
+      </div>
+      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
+        <span></span><span>Player</span><span className="text-right">PPG</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
+      </div>
+      {players.map((p, i) => (
+        <div key={p.slug || p.name} className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 border-b border-stone-100 text-sm">
+          <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+          <span className="min-w-0">
+            <span className="font-semibold text-stone-800 block truncate">{p.name}</span>
+            <span className="text-[10px] text-stone-500">{p.school}</span>
+          </span>
+          <span className="text-right tabular-nums text-stone-600">{(p.ppg ?? 0).toFixed(1)}</span>
+          <span className={`text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va ?? 0).toFixed(1)}</span>
+          <span className="text-right tabular-nums text-stone-500">{(p.vaPerG ?? 0).toFixed(1)}</span>
+        </div>
+      ))}
+      <div className="text-[10px] text-stone-400 italic mt-2">Source: College Sports Reference. VA uses 2025-26 college league baselines.</div>
+    </div>
+  );
+}
+
 export default function PlayoffTracker() {
   const [tab, setTab] = useState("current");
   const seasons = Object.keys(HISTORY);
@@ -2625,9 +2680,15 @@ export default function PlayoffTracker() {
           >
             Explore
           </button>
+          <button
+            onClick={() => setTab("college")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            College
+          </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : <HistoryView season={tab} />}
+        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

@@ -1,0 +1,43 @@
+name: Bake college players (R)
+
+# Scrapes the season's top men's D-I players (by Value Added) from College
+# Sports Reference and commits app/data/college-<season>.json. Manual trigger:
+# the college season is static once it's over, so this is run on demand rather
+# than daily.
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season (YYYY-YY)"
+        required: true
+        default: "2025-26"
+
+concurrency:
+  group: bake-college
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+
+      - name: Bake college players
+        run: Rscript scripts/R/fetch_college.R "${{ inputs.season }}"
+
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake college players ${{ inputs.season }} [skip ci]"
+          file_pattern: "app/data/college-*.json"
