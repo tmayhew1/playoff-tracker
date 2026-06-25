@@ -42,18 +42,43 @@ slug_from_href <- function(href) {
   if (length(m) >= 2) m[2] else NA_character_
 }
 
-# The school page's season "Totals" table (raw season totals -- NOT the
-# per-game averages table, which shares the same columns).
-find_school_totals_table <- function(doc) {
-  for (id in c("totals", "players_totals", "season-total_totals")) {
-    t <- xml2::xml_find_first(doc, sprintf("//table[@id='%s']", id))
-    if (!inherits(t, "xml_missing")) return(t)
+# Locate the player stats table by its COLUMNS, not its id (the id varies and
+# guessing it is what kept returning 0 players). The season-totals table is the
+# one whose rows carry a bare data-stat="pts" column; the per-game table uses
+# "pts_per_g". Returns list(table=, per_game=) or NULL. Prefers a totals table;
+# falls back to per-game (caller multiplies by games to recover totals).
+find_stats_table <- function(doc) {
+  has <- function(t, q) !inherits(xml2::xml_find_first(t, q), "xml_missing")
+  tables <- xml2::xml_find_all(doc, "//table")
+  for (t in tables) {
+    if (has(t, ".//*[@data-stat='player']") && has(t, ".//td[@data-stat='pts']"))
+      return(list(table = t, per_game = FALSE))
+  }
+  for (t in tables) {
+    if (has(t, ".//*[@data-stat='player']") && has(t, ".//td[@data-stat='pts_per_g']"))
+      return(list(table = t, per_game = TRUE))
   }
   NULL
 }
 
-# Parse one school's totals table into player rows, tagged with the school name.
-parse_player_rows <- function(table, school) {
+# Log the table inventory of a page (first school only) so a failed run reveals
+# the real structure instead of guessing blind.
+debug_tables <- function(doc, slug) {
+  has <- function(t, q) !inherits(xml2::xml_find_first(t, q), "xml_missing")
+  for (t in xml2::xml_find_all(doc, "//table")) {
+    id <- xml2::xml_attr(t, "id")
+    message(sprintf("  [debug %s] table id=%s player=%s pts=%s pts_per_g=%s",
+                    slug, if (is.na(id)) "<none>" else id,
+                    has(t, ".//*[@data-stat='player']"),
+                    has(t, ".//td[@data-stat='pts']"),
+                    has(t, ".//td[@data-stat='pts_per_g']")))
+  }
+}
+
+# Parse a school's stats table into player rows tagged with the school. When the
+# table is per-game, each counting stat is multiplied by games to get a total.
+parse_player_rows <- function(table, school, per_game) {
+  sfx <- function(s) if (per_game) paste0(s, "_per_g") else s
   out <- list()
   for (tr in xml2::xml_find_all(table, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
@@ -63,19 +88,18 @@ parse_player_rows <- function(table, school) {
     if (is.na(name)) next
     name <- trimws(name)
     if (!nzchar(name)) next
-    g  <- num(cell_text(tr, c("g", "games")))
-    mp <- num(cell_text(tr, "mp"))
-    if (g <= 0 || mp <= 0) next
+    g <- num(cell_text(tr, c("g", "games")))
+    if (g <= 0) next
+    mult <- if (per_game) g else 1
+    val <- function(stat) num(cell_text(tr, sfx(stat))) * mult
+    mp <- val("mp")
+    if (mp <= 0) next
     href <- xml2::xml_attr(xml2::xml_find_first(player_cell, ".//a"), "href")
     out[[length(out) + 1]] <- list(
       name = name, slug = slug_from_href(href), school = school, gp = g, mp = mp,
-      pts = num(cell_text(tr, "pts")), ast = num(cell_text(tr, "ast")),
-      stl = num(cell_text(tr, "stl")), blk = num(cell_text(tr, "blk")),
-      tov = num(cell_text(tr, "tov")), drb = num(cell_text(tr, "drb")),
-      orb = num(cell_text(tr, "orb")), fgm = num(cell_text(tr, "fg")),
-      fga = num(cell_text(tr, "fga")), tpm = num(cell_text(tr, "fg3")),
-      tpa = num(cell_text(tr, "fg3a")), ftm = num(cell_text(tr, "ft")),
-      fta = num(cell_text(tr, "fta"))
+      pts = val("pts"), ast = val("ast"), stl = val("stl"), blk = val("blk"),
+      tov = val("tov"), drb = val("drb"), orb = val("orb"), fgm = val("fg"),
+      fga = val("fga"), tpm = val("fg3"), tpa = val("fg3a"), ftm = val("ft"), fta = val("fta")
     )
   }
   out
@@ -104,12 +128,13 @@ fetch_school_index <- function(end_year) {
   out
 }
 
-fetch_school_players <- function(school, end_year) {
+fetch_school_players <- function(school, end_year, debug = FALSE) {
   url <- sprintf("%s/schools/%s/men/%d.html", CBB, school$slug, end_year)
   doc <- parse_html_uncommented(throttled_fetch(url))
-  table <- find_school_totals_table(doc)
-  if (is.null(table)) return(list())
-  parse_player_rows(table, school$name)
+  if (debug) debug_tables(doc, school$slug)
+  found <- find_stats_table(doc)
+  if (is.null(found)) return(list())
+  parse_player_rows(found$table, school$name, found$per_game)
 }
 
 main <- function(season) {
@@ -125,7 +150,7 @@ main <- function(season) {
   failed <- 0
   for (i in seq_along(schools)) {
     s <- schools[[i]]
-    res <- tryCatch(fetch_school_players(s, end_year),
+    res <- tryCatch(fetch_school_players(s, end_year, debug = (i == 1)),
                     error = function(e) { failed <<- failed + 1; message(sprintf("  ! %s: %s", s$slug, conditionMessage(e))); list() })
     for (p in res) players[[length(players) + 1]] <- p
     if (i %% 25 == 0) message(sprintf("  %d/%d schools, %d players", i, length(schools), length(players)))
