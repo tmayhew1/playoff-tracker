@@ -2250,6 +2250,7 @@ function ExploreView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState("season"); // "season" | "player"
 
   useEffect(() => {
     let cancelled = false;
@@ -2267,6 +2268,7 @@ function ExploreView() {
   }, [FALLBACK]);
 
   useEffect(() => {
+    if (mode !== "season") return;
     let cancelled = false;
     setData(null);
     setError(null);
@@ -2281,7 +2283,7 @@ function ExploreView() {
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [season]);
+  }, [season, mode]);
 
   const lga = lgaForSeason(season);
   const byRound = useMemo(() => {
@@ -2292,34 +2294,153 @@ function ExploreView() {
     return out;
   }, [data]);
 
+  const tabCls = (active) =>
+    `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
+
   return (
     <div>
-      <div className="mb-4 p-3 bg-white border border-stone-300">
-        <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
-        <select
-          value={season}
-          onChange={(e) => setSeason(e.target.value)}
-          className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
-        >
-          {seasons.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN and Basketball-Reference.</div>
+      <div className="mb-4 flex gap-2">
+        <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
+        <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
       </div>
 
-      {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
-      {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
-      {!loading && !error && data && (
+      {mode === "player" ? (
+        <PlayerExplorer />
+      ) : (
         <>
-          <PlayoffLeaderboard season={season} lga={lga} />
-          {(["r1", "r2", "r3", "r4"]).map((rk) => (
-            <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
-          ))}
-          {data.series && data.series.length === 0 && (
-            <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+          <div className="mb-4 p-3 bg-white border border-stone-300">
+            <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
+            <select
+              value={season}
+              onChange={(e) => setSeason(e.target.value)}
+              className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
+            >
+              {seasons.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN and Basketball-Reference.</div>
+          </div>
+
+          {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
+          {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
+          {!loading && !error && data && (
+            <>
+              <PlayoffLeaderboard season={season} lga={lga} />
+              {(["r1", "r2", "r3", "r4"]).map((rk) => (
+                <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
+              ))}
+              {data.series && data.series.length === 0 && (
+                <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+              )}
+            </>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+// "By Player" mode: search the cross-season index from /api/players and show a
+// single player's playoff seasons ranked by Value Added.
+function PlayerExplorer() {
+  const [index, setIndex] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [query, setQuery] = useState("");
+  const [selectedKey, setSelectedKey] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/players")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => { if (!cancelled) { setIndex(d.players || []); setLoading(false); } })
+      .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  const keyOf = (p) => p.slug || p.name;
+
+  const matches = useMemo(() => {
+    if (!index) return [];
+    const q = normalizeName(query.trim());
+    if (q.length < 2) return [];
+    return index
+      .filter((p) => normalizeName(p.name).includes(q))
+      .sort((a, b) => b.bestVa - a.bestVa)
+      .slice(0, 30);
+  }, [index, query]);
+
+  const player = useMemo(
+    () => (index && selectedKey ? index.find((p) => keyOf(p) === selectedKey) || null : null),
+    [index, selectedKey]
+  );
+
+  if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
+  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
+
+  if (player) {
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedKey(null)}
+          className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
+        >
+          ‹ Back to search
+        </button>
+        <div className="mb-3">
+          <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
+          <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+            {player.seasons.length} playoff run{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
+            <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
+          <span></span><span>Season</span><span>Team</span><span className="text-right">GP</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
+        </div>
+        {player.seasons.map((s, i) => (
+          <div key={s.season} className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 border-b border-stone-100 text-sm">
+            <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+            <span className="font-semibold text-stone-800 tabular-nums">{s.season}</span>
+            <span className="text-[11px] text-stone-500">{s.team}</span>
+            <span className="text-right tabular-nums text-stone-600">{s.gp}</span>
+            <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
+            <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search a player…"
+        autoFocus
+        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-3"
+      />
+      {query.trim().length < 2 ? (
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">Type a name to see their playoff seasons ranked by Value Added.</div>
+      ) : matches.length === 0 ? (
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
+      ) : (
+        matches.map((p) => (
+          <button
+            key={keyOf(p)}
+            onClick={() => setSelectedKey(keyOf(p))}
+            className="w-full flex items-baseline justify-between gap-2 px-2 py-2 border-b border-stone-100 text-left hover:bg-stone-50"
+          >
+            <span className="text-sm font-semibold text-stone-800">{p.name}</span>
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 shrink-0">
+              {p.seasons.length} run{p.seasons.length === 1 ? "" : "s"} · {p.teams.join("/")} · best{" "}
+              <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
+            </span>
+          </button>
+        ))
       )}
     </div>
   );
