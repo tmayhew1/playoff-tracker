@@ -4,18 +4,17 @@
 #
 #   Rscript scripts/R/fetch_college.R 2025-26
 #
-# Writes app/data/college-<season>.json (top players + the college league
-# baselines used to compute VA). League baselines are derived from the summed
-# player totals themselves, so this needs only the one season-totals source.
-#
-# VA uses the same formula as the NBA side (scrape_common.R::value_add_parts),
-# just measured against college league rates instead of NBA ones.
+# CBB has no single all-player totals page (that capability is paywalled
+# Stathead now), so we walk every D-I school's season page and read its player
+# "Totals" table. League baselines are derived from the summed player totals;
+# VA uses the shared formula (scrape_common.R::value_add_parts).
 
 source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
 
 iso_now <- function() strftime(Sys.time(), "%Y-%m-%dT%H:%M:%OS3Z", tz = "UTC")
 TOP_N <- 100
+CBB <- "https://www.sports-reference.com/cbb"
 
 # League rates from summed totals (mirrors fetch_league_averages.R's
 # lga_from_totals; kept local so the college pipeline is self-contained).
@@ -43,25 +42,18 @@ slug_from_href <- function(href) {
   if (length(m) >= 2) m[2] else NA_character_
 }
 
-# Locate the season-totals table (id has churned; fall back to any table whose
-# header carries the pts/mp/g columns we need).
-find_totals_table <- function(doc) {
-  for (id in c("totals", "totals_stats", "players_totals", "per_game")) {
+# The school page's season "Totals" table (raw season totals -- NOT the
+# per-game averages table, which shares the same columns).
+find_school_totals_table <- function(doc) {
+  for (id in c("totals", "players_totals", "season-total_totals")) {
     t <- xml2::xml_find_first(doc, sprintf("//table[@id='%s']", id))
     if (!inherits(t, "xml_missing")) return(t)
-  }
-  for (t in xml2::xml_find_all(doc, "//table")) {
-    head <- xml2::xml_find_first(t, ".//thead")
-    if (inherits(head, "xml_missing")) next
-    hp <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='pts']"), "xml_missing")
-    hm <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='mp']"), "xml_missing")
-    hg <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='g']"), "xml_missing")
-    if (hp && hm && hg) return(t)
   }
   NULL
 }
 
-parse_rows <- function(table) {
+# Parse one school's totals table into player rows, tagged with the school name.
+parse_player_rows <- function(table, school) {
   out <- list()
   for (tr in xml2::xml_find_all(table, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
@@ -76,10 +68,7 @@ parse_rows <- function(table) {
     if (g <= 0 || mp <= 0) next
     href <- xml2::xml_attr(xml2::xml_find_first(player_cell, ".//a"), "href")
     out[[length(out) + 1]] <- list(
-      name = name,
-      slug = slug_from_href(href),
-      school = cell_text(tr, c("school_name", "team_name", "school", "team_id")),
-      gp = g, mp = mp,
+      name = name, slug = slug_from_href(href), school = school, gp = g, mp = mp,
       pts = num(cell_text(tr, "pts")), ast = num(cell_text(tr, "ast")),
       stl = num(cell_text(tr, "stl")), blk = num(cell_text(tr, "blk")),
       tov = num(cell_text(tr, "tov")), drb = num(cell_text(tr, "drb")),
@@ -92,47 +81,57 @@ parse_rows <- function(table) {
   out
 }
 
-# Pull every player. Pages are followed via ?offset=; we stop when a page adds
-# no new players (handles both paginated and single-table layouts robustly).
-fetch_player_totals <- function(end_year) {
-  base <- sprintf("https://www.sports-reference.com/cbb/seasons/men/%d-totals.html", end_year)
+# All D-I schools for the season, from the school-stats index page.
+fetch_school_index <- function(end_year) {
+  url <- sprintf("%s/seasons/men/%d-school-stats.html", CBB, end_year)
+  message(sprintf("Fetching %s", url))
+  doc <- parse_html_uncommented(throttled_fetch(url))
+  anchors <- xml2::xml_find_all(doc, "//*[@data-stat='school_name']//a")
+  if (length(anchors) == 0) anchors <- xml2::xml_find_all(doc, "//a[contains(@href,'/cbb/schools/')]")
+  out <- list()
   seen <- new.env(parent = emptyenv())
-  players <- list()
-  offset <- 0
-  repeat {
-    url <- if (offset == 0) base else sprintf("%s?offset=%d", base, offset)
-    message(sprintf("Fetching %s", url))
-    doc <- parse_html_uncommented(throttled_fetch(url))
-    table <- find_totals_table(doc)
-    if (is.null(table)) {
-      if (offset == 0) stop("season totals table not found")
-      break
-    }
-    rows <- parse_rows(table)
-    added <- 0
-    for (p in rows) {
-      key <- if (!is.na(p$slug)) p$slug else paste0(p$name, "|", p$school)
-      if (!is.null(seen[[key]])) next
-      seen[[key]] <- TRUE
-      players[[length(players) + 1]] <- p
-      added <- added + 1
-    }
-    message(sprintf("  +%d new (%d total)", added, length(players)))
-    if (added == 0) break          # nothing new -> done (or non-paginated)
-    offset <- offset + 100
-    if (offset > 8000) break        # safety cap (~8000 D-I players)
+  for (a in anchors) {
+    href <- xml2::xml_attr(a, "href")
+    if (is.na(href)) next
+    m <- regmatches(href, regexec("/cbb/schools/([^/]+)/", href))[[1]]
+    if (length(m) < 2) next
+    slug <- m[2]
+    if (!is.null(seen[[slug]])) next
+    seen[[slug]] <- TRUE
+    nm <- trimws(xml2::xml_text(a)); if (!nzchar(nm)) nm <- slug
+    out[[length(out) + 1]] <- list(slug = slug, name = nm)
   }
-  players
+  out
+}
+
+fetch_school_players <- function(school, end_year) {
+  url <- sprintf("%s/schools/%s/men/%d.html", CBB, school$slug, end_year)
+  doc <- parse_html_uncommented(throttled_fetch(url))
+  table <- find_school_totals_table(doc)
+  if (is.null(table)) return(list())
+  parse_player_rows(table, school$name)
 }
 
 main <- function(season) {
   if (!grepl("^[0-9]{4}-[0-9]{2}$", season)) stop("Usage: fetch_college.R <YYYY-YY>")
   end_year <- season_end_year(season)
-  message(sprintf("Baking %s men's college players from sports-reference.com/cbb...", season))
+  message(sprintf("Baking %s men's college players from %s ...", season, CBB))
 
-  players <- fetch_player_totals(end_year)
-  if (length(players) == 0) stop("no players parsed")
-  message(sprintf("  %d players parsed", length(players)))
+  schools <- fetch_school_index(end_year)
+  if (length(schools) == 0) stop("no schools found on the season index")
+  message(sprintf("  %d schools", length(schools)))
+
+  players <- list()
+  failed <- 0
+  for (i in seq_along(schools)) {
+    s <- schools[[i]]
+    res <- tryCatch(fetch_school_players(s, end_year),
+                    error = function(e) { failed <<- failed + 1; message(sprintf("  ! %s: %s", s$slug, conditionMessage(e))); list() })
+    for (p in res) players[[length(players) + 1]] <- p
+    if (i %% 25 == 0) message(sprintf("  %d/%d schools, %d players", i, length(schools), length(players)))
+  }
+  if (length(players) == 0) stop("no players parsed from any school")
+  message(sprintf("  %d players from %d schools (%d fetches failed)", length(players), length(schools), failed))
 
   # League baselines from the summed player totals.
   totals <- list(mp = 0, pts = 0, ast = 0, stl = 0, blk = 0, tov = 0, drb = 0,
@@ -154,13 +153,9 @@ main <- function(season) {
   top <- ranked[seq_len(min(TOP_N, length(ranked)))]
 
   out <- list(
-    season = season,
-    division = "men",
-    players = top,
-    playerPool = length(players),
-    leagueAverages = lga,
-    source = "sports-reference.com/cbb",
-    fetchedAt = iso_now()
+    season = season, division = "men", players = top,
+    playerPool = length(players), schools = length(schools),
+    leagueAverages = lga, source = "sports-reference.com/cbb", fetchedAt = iso_now()
   )
   dir.create(DATA_DIR, showWarnings = FALSE, recursive = TRUE)
   path <- file.path(DATA_DIR, sprintf("college-%s.json", season))
