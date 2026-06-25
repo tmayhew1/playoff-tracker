@@ -2250,6 +2250,7 @@ function ExploreView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState("season"); // "season" | "player"
 
   useEffect(() => {
     let cancelled = false;
@@ -2267,6 +2268,7 @@ function ExploreView() {
   }, [FALLBACK]);
 
   useEffect(() => {
+    if (mode !== "season") return;
     let cancelled = false;
     setData(null);
     setError(null);
@@ -2281,7 +2283,7 @@ function ExploreView() {
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [season]);
+  }, [season, mode]);
 
   const lga = lgaForSeason(season);
   const byRound = useMemo(() => {
@@ -2292,34 +2294,153 @@ function ExploreView() {
     return out;
   }, [data]);
 
+  const tabCls = (active) =>
+    `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
+
   return (
     <div>
-      <div className="mb-4 p-3 bg-white border border-stone-300">
-        <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
-        <select
-          value={season}
-          onChange={(e) => setSeason(e.target.value)}
-          className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
-        >
-          {seasons.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN and Basketball-Reference.</div>
+      <div className="mb-4 flex gap-2">
+        <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
+        <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
       </div>
 
-      {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
-      {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
-      {!loading && !error && data && (
+      {mode === "player" ? (
+        <PlayerExplorer />
+      ) : (
         <>
-          <PlayoffLeaderboard season={season} lga={lga} />
-          {(["r1", "r2", "r3", "r4"]).map((rk) => (
-            <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
-          ))}
-          {data.series && data.series.length === 0 && (
-            <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+          <div className="mb-4 p-3 bg-white border border-stone-300">
+            <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
+            <select
+              value={season}
+              onChange={(e) => setSeason(e.target.value)}
+              className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
+            >
+              {seasons.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN and Basketball-Reference.</div>
+          </div>
+
+          {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
+          {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
+          {!loading && !error && data && (
+            <>
+              <PlayoffLeaderboard season={season} lga={lga} />
+              {(["r1", "r2", "r3", "r4"]).map((rk) => (
+                <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
+              ))}
+              {data.series && data.series.length === 0 && (
+                <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+              )}
+            </>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+// "By Player" mode: search the cross-season index from /api/players and show a
+// single player's playoff seasons ranked by Value Added.
+function PlayerExplorer() {
+  const [index, setIndex] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [query, setQuery] = useState("");
+  const [selectedKey, setSelectedKey] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/players")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => { if (!cancelled) { setIndex(d.players || []); setLoading(false); } })
+      .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  const keyOf = (p) => p.slug || p.name;
+
+  const matches = useMemo(() => {
+    if (!index) return [];
+    const q = normalizeName(query.trim());
+    if (q.length < 2) return [];
+    return index
+      .filter((p) => normalizeName(p.name).includes(q))
+      .sort((a, b) => b.bestVa - a.bestVa)
+      .slice(0, 30);
+  }, [index, query]);
+
+  const player = useMemo(
+    () => (index && selectedKey ? index.find((p) => keyOf(p) === selectedKey) || null : null),
+    [index, selectedKey]
+  );
+
+  if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
+  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
+
+  if (player) {
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedKey(null)}
+          className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
+        >
+          ‹ Back to search
+        </button>
+        <div className="mb-3">
+          <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
+          <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+            {player.seasons.length} playoff run{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
+            <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
+          <span></span><span>Season</span><span>Team</span><span className="text-right">GP</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
+        </div>
+        {player.seasons.map((s, i) => (
+          <div key={s.season} className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 border-b border-stone-100 text-sm">
+            <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+            <span className="font-semibold text-stone-800 tabular-nums">{s.season}</span>
+            <span className="text-[11px] text-stone-500">{s.team}</span>
+            <span className="text-right tabular-nums text-stone-600">{s.gp}</span>
+            <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
+            <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search a player…"
+        autoFocus
+        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-3"
+      />
+      {query.trim().length < 2 ? (
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">Type a name to see their playoff seasons ranked by Value Added.</div>
+      ) : matches.length === 0 ? (
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
+      ) : (
+        matches.map((p) => (
+          <button
+            key={keyOf(p)}
+            onClick={() => setSelectedKey(keyOf(p))}
+            className="w-full flex items-baseline justify-between gap-2 px-2 py-2 border-b border-stone-100 text-left hover:bg-stone-50"
+          >
+            <span className="text-sm font-semibold text-stone-800">{p.name}</span>
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 shrink-0">
+              {p.seasons.length} run{p.seasons.length === 1 ? "" : "s"} · {p.teams.join("/")} · best{" "}
+              <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
+            </span>
+          </button>
+        ))
       )}
     </div>
   );
@@ -2590,6 +2711,163 @@ function CurrentView() {
   );
 }
 
+function timeAgo(iso) {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return null;
+  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+}
+
+// Informational page: data freshness, how the pipeline loads data, and the
+// Value Added formula (mirrored from app/scoring.js).
+function InfoView() {
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/data-status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d) setStatus(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const refreshed = status?.lastRefresh ? new Date(status.lastRefresh) : null;
+
+  // Constants are 2025-26 league baselines (per-minute / per-attempt rates).
+  const SCORING = [
+    { label: "Scoring volume", f: "( PTS/min − 0.409 ) × min" },
+    { label: "3-pt shooting", f: "3 × ( 3PM/3PA − 0.360 ) × 3PA" },
+    { label: "2-pt shooting", f: "2 × ( 2PM/2PA − 0.548 ) × 2PA" },
+    { label: "Free throws", f: "( FTM/FTA − 0.789 ) × FTA" },
+  ];
+  const PLAYDEF = [
+    { label: "Assists", f: "( AST/min − 0.083 ) × min × 2.316 × (1 − 0.470)" },
+    { label: "Steals", f: "( STL/min − 0.032 ) × min × 1.014" },
+    { label: "Blocks", f: "( BLK/min − 0.014 ) × min × 1.014 × 0.738" },
+    { label: "Turnovers", f: "−( TOV/min − 0.052 ) × min × 1.014" },
+  ];
+  const REB = [
+    { label: "Def. rebounds", f: "1.25 × ( DRB/min − 0.122 ) × min × 1.014 × 0.262" },
+    { label: "Off. rebounds", f: "1.25 × ( ORB/min − 0.038 ) × min × 1.014 × 0.738" },
+  ];
+
+  const Group = ({ title, items }) => (
+    <div className="mb-3">
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mb-1">{title}</div>
+      {items.map((it) => (
+        <div key={it.label} className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 py-1 border-b border-stone-100">
+          <span className="text-xs font-semibold text-stone-700">{it.label}</span>
+          <span className="text-[11px] tabular-nums text-stone-500" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{it.f}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      <section className="p-3 bg-white border border-stone-300">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Data status</h2>
+        {status ? (
+          <div className="space-y-1 text-sm text-stone-700">
+            <div>
+              Last refreshed: <span className="font-semibold text-stone-900">{refreshed ? refreshed.toLocaleString() : "—"}</span>
+              {refreshed && <span className="text-stone-400"> ({timeAgo(status.lastRefresh)})</span>}
+            </div>
+            <div className="text-xs text-stone-500">
+              {status.seasonsBaked} season{status.seasonsBaked === 1 ? "" : "s"} stored
+              {status.earliestSeason && ` (${status.earliestSeason} – ${status.latestSeason})`}
+              {status.latestRefreshedSeason && `, most recent bake: ${status.latestRefreshedSeason}.`}
+            </div>
+          </div>
+        ) : (
+          <div className="text-[10px] text-stone-400 italic">Checking…</div>
+        )}
+      </section>
+
+      <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">How the data loads</h2>
+        <p className="mb-2"><span className="font-semibold">Historical playoffs</span> are scraped from <span className="font-semibold">basketball-reference.com</span> by an R pipeline and stored permanently as JSON in the repo. A scheduled job runs <span className="font-semibold">every morning</span>, refreshing the current season and filling in older seasons.</p>
+        <p className="mb-2"><span className="font-semibold">Live games</span> — while a series is in progress — come straight from the NBA feed. When that feed is unavailable, the app falls back to the stored results.</p>
+        <p>Box scores, leaderboards, and the Value Added numbers below are all computed from this same stored data, so what you see is reproducible and consistent across seasons.</p>
+      </section>
+
+      <section className="p-3 bg-white border border-stone-300">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-1">Value Added (VA)</h2>
+        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — a league-average player, given the same workload. Every skill follows one shape:</p>
+        <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
+        </div>
+        <Group title="Scoring" items={SCORING} />
+        <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
+        <Group title="Rebounding" items={REB} />
+        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. The decimals are 2025-26 league averages (rates per minute or per attempt); 1.014 = league points per possession, 2.316 = points per made shot, 0.738 / 0.262 = league DRB% / ORB%. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
+      </section>
+    </div>
+  );
+}
+
+// Top college players for the season, ranked by Value Added. Data comes from
+// /api/college (baked by scripts/R/fetch_college.R via the bake-college run).
+function CollegeView() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/college")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => { if (!cancelled) { setData(d); setLoading(false); } })
+      .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading college players…</div>;
+  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
+  if (!data || data.missing || !(data.players && data.players.length)) {
+    return (
+      <div className="p-3 bg-white border border-stone-300 text-sm text-stone-600 leading-relaxed">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Top College Players</h2>
+        College data hasn’t been baked yet. Run the <span className="font-semibold">“Bake college players”</span> workflow from the Actions tab to populate the 2025-26 men’s D-I leaders by Value Added.
+      </div>
+    );
+  }
+
+  const players = data.players;
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="text-base font-bold text-stone-900">Top College Players</h2>
+        <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+          {data.season} men’s D-I · ranked by Value Added{data.playerPool ? ` · ${data.playerPool.toLocaleString()} players` : ""}
+        </div>
+      </div>
+      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
+        <span></span><span>Player</span><span className="text-right">PPG</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
+      </div>
+      {players.map((p, i) => (
+        <div key={p.slug || p.name} className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 border-b border-stone-100 text-sm">
+          <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+          <span className="min-w-0">
+            <span className="font-semibold text-stone-800 block truncate">{p.name}</span>
+            <span className="text-[10px] text-stone-500">{p.school}</span>
+          </span>
+          <span className="text-right tabular-nums text-stone-600">{(p.ppg ?? 0).toFixed(1)}</span>
+          <span className={`text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{(p.va ?? 0).toFixed(1)}</span>
+          <span className="text-right tabular-nums text-stone-500">{(p.vaPerG ?? 0).toFixed(1)}</span>
+        </div>
+      ))}
+      <div className="text-[10px] text-stone-400 italic mt-2">Source: College Sports Reference. VA uses 2025-26 college league baselines.</div>
+    </div>
+  );
+}
+
 export default function PlayoffTracker() {
   const [tab, setTab] = useState("current");
   const seasons = Object.keys(HISTORY);
@@ -2625,9 +2903,21 @@ export default function PlayoffTracker() {
           >
             Explore
           </button>
+          <button
+            onClick={() => setTab("college")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            College
+          </button>
+          <button
+            onClick={() => setTab("info")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "info" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Info
+          </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : <HistoryView season={tab} />}
+        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );
