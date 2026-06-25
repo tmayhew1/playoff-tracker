@@ -19,21 +19,26 @@ index_html <- paste0('<html><body><table id="basic_school_stats"><tbody>',
 
 # totals row (bare data-stats) and per-game row (_per_g data-stats)
 cell <- function(stat, v) sprintf('<td data-stat="%s">%s</td>', stat, v)
+# Real CBB tables put the name in data-stat="name_display" (with a player link).
 trow <- function(slug, name, g, mp, pts, ast, stl, blk, tov, drb, orb, fg, fga, fg3, fg3a, ft, fta)
-  paste0(sprintf('<tr><th data-stat="player"><a href="/cbb/players/%s.html">%s</a></th>', slug, name),
+  paste0(sprintf('<tr><td data-stat="name_display"><a href="/cbb/players/%s.html">%s</a></td>', slug, name),
     cell("g", g), cell("mp", mp), cell("pts", pts), cell("ast", ast), cell("stl", stl), cell("blk", blk),
     cell("tov", tov), cell("drb", drb), cell("orb", orb), cell("fg", fg), cell("fga", fga),
     cell("fg3", fg3), cell("fg3a", fg3a), cell("ft", ft), cell("fta", fta), '</tr>')
 pgrow <- function(slug, name, g, mp, pts)
-  paste0(sprintf('<tr><th data-stat="player"><a href="/cbb/players/%s.html">%s</a></th>', slug, name),
+  paste0(sprintf('<tr><td data-stat="name_display"><a href="/cbb/players/%s.html">%s</a></td>', slug, name),
     cell("g", g), cell("mp_per_g", mp), cell("pts_per_g", pts), '</tr>')
+# A team-summary row: name_display but NO player link -> must be skipped.
+summary_row <- paste0('<tr><td data-stat="name_display">School Totals</td>',
+  cell("g", 34), cell("mp", 6800), cell("pts", 2600), '</tr>')
 
-pg_table <- paste0('<table id="per_game"><tbody>',
+pg_table <- paste0('<table id="players_per_game"><tbody>',
   pgrow("starxx-1", "Star Player", 34, 33.8, 24.1), '</tbody></table>')
-totals_table <- paste0('<table id="season-totals"><tbody>',
+totals_table <- paste0('<table id="players_totals"><tbody>',
   trow("starxx-1", "Star Player", 34, 1150, 820, 150, 60, 40, 70, 180, 40, 280, 520, 90, 220, 170, 200),
   '<tr class="thead"><td>x</td></tr>',
   trow("rolexx-1", "Role Player", 33, 900, 360, 90, 30, 15, 55, 120, 30, 130, 300, 40, 120, 60, 90),
+  summary_row,
   '</tbody></table>')
 # Per-game visible, totals hidden in a comment (as SR lazy-loads it).
 school_html <- paste0('<html><body>', pg_table, '<!-- ', totals_table, ' --></body></html>')
