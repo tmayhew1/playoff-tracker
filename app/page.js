@@ -2711,6 +2711,108 @@ function CurrentView() {
   );
 }
 
+function timeAgo(iso) {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return null;
+  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+}
+
+// Informational page: data freshness, how the pipeline loads data, and the
+// Value Added formula (mirrored from app/scoring.js).
+function InfoView() {
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/data-status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d) setStatus(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const refreshed = status?.lastRefresh ? new Date(status.lastRefresh) : null;
+
+  // Constants are 2025-26 league baselines (per-minute / per-attempt rates).
+  const SCORING = [
+    { label: "Scoring volume", f: "( PTS/min − 0.409 ) × min" },
+    { label: "3-pt shooting", f: "3 × ( 3PM/3PA − 0.360 ) × 3PA" },
+    { label: "2-pt shooting", f: "2 × ( 2PM/2PA − 0.548 ) × 2PA" },
+    { label: "Free throws", f: "( FTM/FTA − 0.789 ) × FTA" },
+  ];
+  const PLAYDEF = [
+    { label: "Assists", f: "( AST/min − 0.083 ) × min × 2.316 × (1 − 0.470)" },
+    { label: "Steals", f: "( STL/min − 0.032 ) × min × 1.014" },
+    { label: "Blocks", f: "( BLK/min − 0.014 ) × min × 1.014 × 0.738" },
+    { label: "Turnovers", f: "−( TOV/min − 0.052 ) × min × 1.014" },
+  ];
+  const REB = [
+    { label: "Def. rebounds", f: "1.25 × ( DRB/min − 0.122 ) × min × 1.014 × 0.262" },
+    { label: "Off. rebounds", f: "1.25 × ( ORB/min − 0.038 ) × min × 1.014 × 0.738" },
+  ];
+
+  const Group = ({ title, items }) => (
+    <div className="mb-3">
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mb-1">{title}</div>
+      {items.map((it) => (
+        <div key={it.label} className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 py-1 border-b border-stone-100">
+          <span className="text-xs font-semibold text-stone-700">{it.label}</span>
+          <span className="text-[11px] tabular-nums text-stone-500" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{it.f}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      <section className="p-3 bg-white border border-stone-300">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Data status</h2>
+        {status ? (
+          <div className="space-y-1 text-sm text-stone-700">
+            <div>
+              Last refreshed: <span className="font-semibold text-stone-900">{refreshed ? refreshed.toLocaleString() : "—"}</span>
+              {refreshed && <span className="text-stone-400"> ({timeAgo(status.lastRefresh)})</span>}
+            </div>
+            <div className="text-xs text-stone-500">
+              {status.seasonsBaked} season{status.seasonsBaked === 1 ? "" : "s"} stored
+              {status.earliestSeason && ` (${status.earliestSeason} – ${status.latestSeason})`}
+              {status.latestRefreshedSeason && `, most recent bake: ${status.latestRefreshedSeason}.`}
+            </div>
+          </div>
+        ) : (
+          <div className="text-[10px] text-stone-400 italic">Checking…</div>
+        )}
+      </section>
+
+      <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">How the data loads</h2>
+        <p className="mb-2"><span className="font-semibold">Historical playoffs</span> are scraped from <span className="font-semibold">basketball-reference.com</span> by an R pipeline and stored permanently as JSON in the repo. A scheduled job runs <span className="font-semibold">every morning</span>, refreshing the current season and filling in older seasons.</p>
+        <p className="mb-2"><span className="font-semibold">Live games</span> — while a series is in progress — come straight from the NBA feed. When that feed is unavailable, the app falls back to the stored results.</p>
+        <p>Box scores, leaderboards, and the Value Added numbers below are all computed from this same stored data, so what you see is reproducible and consistent across seasons.</p>
+      </section>
+
+      <section className="p-3 bg-white border border-stone-300">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-1">Value Added (VA)</h2>
+        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — a league-average player, given the same workload. Every skill follows one shape:</p>
+        <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
+        </div>
+        <Group title="Scoring" items={SCORING} />
+        <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
+        <Group title="Rebounding" items={REB} />
+        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. The decimals are 2025-26 league averages (rates per minute or per attempt); 1.014 = league points per possession, 2.316 = points per made shot, 0.738 / 0.262 = league DRB% / ORB%. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
+      </section>
+    </div>
+  );
+}
+
 export default function PlayoffTracker() {
   const [tab, setTab] = useState("current");
   const seasons = Object.keys(HISTORY);
@@ -2746,9 +2848,15 @@ export default function PlayoffTracker() {
           >
             Explore
           </button>
+          <button
+            onClick={() => setTab("info")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "info" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Info
+          </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : <HistoryView season={tab} />}
+        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );
