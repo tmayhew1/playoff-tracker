@@ -42,21 +42,25 @@ slug_from_href <- function(href) {
   if (length(m) >= 2) m[2] else NA_character_
 }
 
-# Locate the player stats table by its COLUMNS, not its id (the id varies and
-# guessing it is what kept returning 0 players). The season-totals table is the
-# one whose rows carry a bare data-stat="pts" column; the per-game table uses
-# "pts_per_g". Returns list(table=, per_game=) or NULL. Prefers a totals table;
-# falls back to per-game (caller multiplies by games to recover totals).
+# Locate the per-PLAYER season-totals table. CBB school pages expose (confirmed
+# via the page's table inventory): players_totals / players_per_game (full
+# season, per player) alongside team-summary (season-total_*) and
+# conference-only (*_conf) variants we must avoid. Returns list(table=,
+# per_game=) or NULL; prefers totals, falls back to per-game (caller multiplies
+# by games). The name column is data-stat="name_display" on these tables.
 find_stats_table <- function(doc) {
-  has <- function(t, q) !inherits(xml2::xml_find_first(t, q), "xml_missing")
-  tables <- xml2::xml_find_all(doc, "//table")
-  for (t in tables) {
-    if (has(t, ".//*[@data-stat='player']") && has(t, ".//td[@data-stat='pts']"))
-      return(list(table = t, per_game = FALSE))
-  }
-  for (t in tables) {
-    if (has(t, ".//*[@data-stat='player']") && has(t, ".//td[@data-stat='pts_per_g']"))
-      return(list(table = t, per_game = TRUE))
+  miss <- function(x) inherits(x, "xml_missing")
+  t <- xml2::xml_find_first(doc, "//table[@id='players_totals']")
+  if (!miss(t)) return(list(table = t, per_game = FALSE))
+  t <- xml2::xml_find_first(doc, "//table[@id='players_per_game']")
+  if (!miss(t)) return(list(table = t, per_game = TRUE))
+  # Fallback: any non-conference table with player links + a bare pts column.
+  has <- function(x, q) !miss(xml2::xml_find_first(x, q))
+  for (tb in xml2::xml_find_all(doc, "//table")) {
+    id <- xml2::xml_attr(tb, "id")
+    if (!is.na(id) && grepl("conf", id)) next
+    if (has(tb, ".//tbody//a[contains(@href,'/cbb/players/')]") && has(tb, ".//td[@data-stat='pts']"))
+      return(list(table = tb, per_game = FALSE))
   }
   NULL
 }
@@ -83,18 +87,19 @@ parse_player_rows <- function(table, school, per_game) {
   for (tr in xml2::xml_find_all(table, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
     if (!is.na(cls) && grepl("thead", cls)) next
-    player_cell <- xml2::xml_find_first(tr, ".//*[@data-stat='player']")
-    name <- xml2::xml_text(player_cell)
-    if (is.na(name)) next
-    name <- trimws(name)
+    player_cell <- xml2::xml_find_first(tr, ".//*[@data-stat='player' or @data-stat='name_display']")
+    if (inherits(player_cell, "xml_missing")) next
+    name <- trimws(xml2::xml_text(player_cell))
     if (!nzchar(name)) next
+    href <- xml2::xml_attr(xml2::xml_find_first(player_cell, ".//a"), "href")
+    slug <- slug_from_href(href)
+    if (is.na(slug)) next  # skip team/school summary rows (no player link)
     g <- num(cell_text(tr, c("g", "games")))
     if (g <= 0) next
     mult <- if (per_game) g else 1
     val <- function(stat) num(cell_text(tr, sfx(stat))) * mult
     mp <- val("mp")
     if (mp <= 0) next
-    href <- xml2::xml_attr(xml2::xml_find_first(player_cell, ".//a"), "href")
     out[[length(out) + 1]] <- list(
       name = name, slug = slug_from_href(href), school = school, gp = g, mp = mp,
       pts = val("pts"), ast = val("ast"), stl = val("stl"), blk = val("blk"),
