@@ -44,9 +44,14 @@ current_season_for <- function(d = Sys.Date()) {
   make_season(start)
 }
 
+# A season counts as "present" only when its LEADERBOARD exists. Some older
+# seasons have a history-<season>.json (from the retired pipeline) but no
+# leaderboard-, and the cross-season player index is built from leaderboards --
+# so keying off history would wrongly skip them. Keying off leaderboard makes
+# the gap-fill bake those seasons.
 seasons_present <- function() {
-  files <- list.files(DATA_DIR, pattern = "^history-[0-9]{4}-[0-9]{2}\\.json$")
-  sort(sub("^history-(.*)\\.json$", "\\1", files))
+  files <- list.files(DATA_DIR, pattern = "^leaderboard-[0-9]{4}-[0-9]{2}\\.json$")
+  sort(sub("^leaderboard-(.*)\\.json$", "\\1", files))
 }
 
 run <- function(script, args) {

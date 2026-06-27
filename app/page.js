@@ -2349,6 +2349,8 @@ function PlayerExplorer() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
+  const [openSeason, setOpenSeason] = useState(null);
+  const selectPlayer = (k) => { setSelectedKey(k); setOpenSeason(null); };
 
   useEffect(() => {
     let cancelled = false;
@@ -2384,7 +2386,7 @@ function PlayerExplorer() {
     return (
       <div>
         <button
-          onClick={() => setSelectedKey(null)}
+          onClick={() => selectPlayer(null)}
           className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
         >
           ‹ Back to search
@@ -2399,16 +2401,26 @@ function PlayerExplorer() {
         <div className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
           <span></span><span>Season</span><span>Team</span><span className="text-right">GP</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
         </div>
-        {player.seasons.map((s, i) => (
-          <div key={s.season} className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 border-b border-stone-100 text-sm">
-            <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
-            <span className="font-semibold text-stone-800 tabular-nums">{s.season}</span>
-            <span className="text-[11px] text-stone-500">{s.team}</span>
-            <span className="text-right tabular-nums text-stone-600">{s.gp}</span>
-            <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
-            <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
-          </div>
-        ))}
+        {player.seasons.map((s, i) => {
+          const sOpen = openSeason === s.season;
+          return (
+            <div key={s.season} className="border-b border-stone-100">
+              <div
+                onClick={() => setOpenSeason(sOpen ? null : s.season)}
+                className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-stone-50"
+              >
+                <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+                <span className="font-semibold text-stone-800 tabular-nums">{s.season}</span>
+                <span className="text-[11px] text-stone-500">{s.team}</span>
+                <span className="text-right tabular-nums text-stone-600">{s.gp}</span>
+                <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
+                <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
+              </div>
+              {sOpen && <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} />}
+            </div>
+          );
+        })}
+        <div className="text-[10px] text-stone-400 italic mt-2 px-2">Tap a season for the per-stat breakdown.</div>
       </div>
     );
   }
@@ -2431,7 +2443,7 @@ function PlayerExplorer() {
         matches.map((p) => (
           <button
             key={keyOf(p)}
-            onClick={() => setSelectedKey(keyOf(p))}
+            onClick={() => selectPlayer(keyOf(p))}
             className="w-full flex items-baseline justify-between gap-2 px-2 py-2 border-b border-stone-100 text-left hover:bg-stone-50"
           >
             <span className="text-sm font-semibold text-stone-800">{p.name}</span>
@@ -2818,7 +2830,7 @@ function InfoView() {
 // Per-category VA breakdown for one college player, mirroring the NBA
 // VABreakdown: diverging +/- bars (per-GAME contribution above/below the D-I
 // average), grouped with separators, plus a Per 36 / Per G stat-label toggle.
-function CollegePlayerBreakdown({ player: p, lga }) {
+function VACategoryBreakdown({ player: p, lga }) {
   const [rateMode, setRateMode] = useState("per36");
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -2956,7 +2968,7 @@ function CollegeView() {
 
       {/* Tap VA or VA/G to sort by that column; the caret marks the active sort. */}
       <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-        <span></span><span>Player</span><span className="text-right">PPG</span>
+        <span></span><span>Player</span><span className="text-right">G</span>
         <button onClick={() => setSortMode("va")} className={`text-right uppercase tracking-wider ${sortMode === "va" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA{sortMode === "va" ? " ▾" : ""}</button>
         <button onClick={() => setSortMode("vaPerG")} className={`text-right uppercase tracking-wider ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA/G{sortMode === "vaPerG" ? " ▾" : ""}</button>
       </div>
@@ -2984,7 +2996,7 @@ function CollegeView() {
                   className="text-[10px] text-stone-500 hover:text-stone-900 hover:underline"
                 >{p.school}</button>
               </span>
-              <span className="text-right tabular-nums text-stone-600">{(p.ppg ?? 0).toFixed(1)}</span>
+              <span className="text-right tabular-nums text-stone-600">{p.gp ?? 0}</span>
               <span className={`text-right tabular-nums font-bold ${sortMode === "va" ? "text-stone-900" : "text-stone-500"} ${p.va < 0 ? "text-red-600" : ""}`}>{(p.va ?? 0).toFixed(1)}</span>
               <span className={`text-right tabular-nums ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-500"}`}>{(p.vaPerG ?? 0).toFixed(1)}</span>
             </div>
@@ -2993,7 +3005,7 @@ function CollegeView() {
                 <div className="h-full rounded-sm" style={{ width: `${Math.max(0, pct)}%`, background: metricVal(p) < 0 ? "#dc2626" : "#1c1917" }} />
               </div>
             </div>
-            {open && <CollegePlayerBreakdown player={p} lga={data.leagueAverages} />}
+            {open && <VACategoryBreakdown player={p} lga={data.leagueAverages} />}
           </div>
         );
       })}
