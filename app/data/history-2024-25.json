@@ -1,5 +1,1249 @@
 {
   "season": "2024-25",
-  "generatedAt": null,
-  "series": []
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "LAC"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202504190DEN",
+          "gameCode": "20250419",
+          "gameDateTimeUTC": "2025-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 112
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202504210DEN",
+          "gameCode": "20250421",
+          "gameDateTimeUTC": "2025-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 102
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202504240LAC",
+          "gameCode": "20250424",
+          "gameDateTimeUTC": "2025-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 117
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "202504260LAC",
+          "gameCode": "20250426",
+          "gameDateTimeUTC": "2025-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 99
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202504290DEN",
+          "gameCode": "20250429",
+          "gameDateTimeUTC": "2025-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 131
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202505010LAC",
+          "gameCode": "20250501",
+          "gameDateTimeUTC": "2025-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 111
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202505030DEN",
+          "gameCode": "20250503",
+          "gameDateTimeUTC": "2025-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 120
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "IND",
+        "MIL"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "202504190IND",
+          "gameCode": "20250419",
+          "gameDateTimeUTC": "2025-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 117
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202504220IND",
+          "gameCode": "20250422",
+          "gameDateTimeUTC": "2025-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 123
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202504250MIL",
+          "gameCode": "20250425",
+          "gameDateTimeUTC": "2025-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 117
+          },
+          "away": {
+            "tri": "IND",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202504270MIL",
+          "gameCode": "20250427",
+          "gameDateTimeUTC": "2025-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 103
+          },
+          "away": {
+            "tri": "IND",
+            "score": 129
+          }
+        },
+        {
+          "gameId": "202504290IND",
+          "gameCode": "20250429",
+          "gameDateTimeUTC": "2025-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 119
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAL",
+        "MIN"
+      ],
+      "winner": "MIN",
+      "games": [
+        {
+          "gameId": "202504190LAL",
+          "gameCode": "20250419",
+          "gameDateTimeUTC": "2025-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 95
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202504220LAL",
+          "gameCode": "20250422",
+          "gameDateTimeUTC": "2025-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 94
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 85
+          }
+        },
+        {
+          "gameId": "202504250MIN",
+          "gameCode": "20250425",
+          "gameDateTimeUTC": "2025-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 116
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202504270MIN",
+          "gameCode": "20250427",
+          "gameDateTimeUTC": "2025-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 116
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202504300LAL",
+          "gameCode": "20250430",
+          "gameDateTimeUTC": "2025-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 96
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "DET"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "202504190NYK",
+          "gameCode": "20250419",
+          "gameDateTimeUTC": "2025-04-19T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 123
+          },
+          "away": {
+            "tri": "DET",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202504210NYK",
+          "gameCode": "20250421",
+          "gameDateTimeUTC": "2025-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 94
+          },
+          "away": {
+            "tri": "DET",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202504240DET",
+          "gameCode": "20250424",
+          "gameDateTimeUTC": "2025-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 116
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202504270DET",
+          "gameCode": "20250427",
+          "gameDateTimeUTC": "2025-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 93
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202504290NYK",
+          "gameCode": "20250429",
+          "gameDateTimeUTC": "2025-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 103
+          },
+          "away": {
+            "tri": "DET",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202505010DET",
+          "gameCode": "20250501",
+          "gameDateTimeUTC": "2025-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "DET",
+            "score": 113
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "ORL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202504200BOS",
+          "gameCode": "20250420",
+          "gameDateTimeUTC": "2025-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 103
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202504230BOS",
+          "gameCode": "20250423",
+          "gameDateTimeUTC": "2025-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 109
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202504250ORL",
+          "gameCode": "20250425",
+          "gameDateTimeUTC": "2025-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 95
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202504270ORL",
+          "gameCode": "20250427",
+          "gameDateTimeUTC": "2025-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 98
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202504290BOS",
+          "gameCode": "20250429",
+          "gameDateTimeUTC": "2025-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 120
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 89
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "MIA"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "202504200CLE",
+          "gameCode": "20250420",
+          "gameDateTimeUTC": "2025-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202504230CLE",
+          "gameCode": "20250423",
+          "gameDateTimeUTC": "2025-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202504260MIA",
+          "gameCode": "20250426",
+          "gameDateTimeUTC": "2025-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 87
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 124
+          }
+        },
+        {
+          "gameId": "202504280MIA",
+          "gameCode": "20250428",
+          "gameDateTimeUTC": "2025-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 83
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 138
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "HOU",
+        "GSW"
+      ],
+      "winner": "GSW",
+      "games": [
+        {
+          "gameId": "202504200HOU",
+          "gameCode": "20250420",
+          "gameDateTimeUTC": "2025-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 85
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202504230HOU",
+          "gameCode": "20250423",
+          "gameDateTimeUTC": "2025-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 109
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202504260GSW",
+          "gameCode": "20250426",
+          "gameDateTimeUTC": "2025-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 104
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202504280GSW",
+          "gameCode": "20250428",
+          "gameDateTimeUTC": "2025-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 109
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202504300HOU",
+          "gameCode": "20250430",
+          "gameDateTimeUTC": "2025-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 131
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202505020GSW",
+          "gameCode": "20250502",
+          "gameDateTimeUTC": "2025-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 107
+          },
+          "away": {
+            "tri": "HOU",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202505040HOU",
+          "gameCode": "20250504",
+          "gameDateTimeUTC": "2025-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "HOU",
+            "score": 89
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 103
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "MEM"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "202504200OKC",
+          "gameCode": "20250420",
+          "gameDateTimeUTC": "2025-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 131
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 80
+          }
+        },
+        {
+          "gameId": "202504220OKC",
+          "gameCode": "20250422",
+          "gameDateTimeUTC": "2025-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 118
+          },
+          "away": {
+            "tri": "MEM",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202504240MEM",
+          "gameCode": "20250424",
+          "gameDateTimeUTC": "2025-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 108
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202504260MEM",
+          "gameCode": "20250426",
+          "gameDateTimeUTC": "2025-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "MEM",
+            "score": 115
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 117
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "CLE",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "202505040CLE",
+          "gameCode": "20250504",
+          "gameDateTimeUTC": "2025-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 112
+          },
+          "away": {
+            "tri": "IND",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202505060CLE",
+          "gameCode": "20250506",
+          "gameDateTimeUTC": "2025-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 119
+          },
+          "away": {
+            "tri": "IND",
+            "score": 120
+          }
+        },
+        {
+          "gameId": "202505090IND",
+          "gameCode": "20250509",
+          "gameDateTimeUTC": "2025-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 104
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "202505110IND",
+          "gameCode": "20250511",
+          "gameDateTimeUTC": "2025-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 129
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202505130CLE",
+          "gameCode": "20250513",
+          "gameDateTimeUTC": "2025-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 105
+          },
+          "away": {
+            "tri": "IND",
+            "score": 114
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "NYK"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "202505050BOS",
+          "gameCode": "20250505",
+          "gameDateTimeUTC": "2025-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 105
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202505070BOS",
+          "gameCode": "20250507",
+          "gameDateTimeUTC": "2025-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 90
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "202505100NYK",
+          "gameCode": "20250510",
+          "gameDateTimeUTC": "2025-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 93
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202505120NYK",
+          "gameCode": "20250512",
+          "gameDateTimeUTC": "2025-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 121
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202505140BOS",
+          "gameCode": "20250514",
+          "gameDateTimeUTC": "2025-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 127
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202505160NYK",
+          "gameCode": "20250516",
+          "gameDateTimeUTC": "2025-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 119
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 81
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "OKC",
+        "DEN"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "202505050OKC",
+          "gameCode": "20250505",
+          "gameDateTimeUTC": "2025-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 119
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202505070OKC",
+          "gameCode": "20250507",
+          "gameDateTimeUTC": "2025-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 149
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202505090DEN",
+          "gameCode": "20250509",
+          "gameDateTimeUTC": "2025-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 113
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202505110DEN",
+          "gameCode": "20250511",
+          "gameDateTimeUTC": "2025-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 87
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202505130OKC",
+          "gameCode": "20250513",
+          "gameDateTimeUTC": "2025-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 112
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202505150DEN",
+          "gameCode": "20250515",
+          "gameDateTimeUTC": "2025-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 119
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202505180OKC",
+          "gameCode": "20250518",
+          "gameDateTimeUTC": "2025-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 125
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 93
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "MIN",
+        "GSW"
+      ],
+      "winner": "MIN",
+      "games": [
+        {
+          "gameId": "202505060MIN",
+          "gameCode": "20250506",
+          "gameDateTimeUTC": "2025-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 88
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202505080MIN",
+          "gameCode": "20250508",
+          "gameDateTimeUTC": "2025-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 117
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202505100GSW",
+          "gameCode": "20250510",
+          "gameDateTimeUTC": "2025-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 97
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202505120GSW",
+          "gameCode": "20250512",
+          "gameDateTimeUTC": "2025-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "GSW",
+            "score": 110
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202505140MIN",
+          "gameCode": "20250514",
+          "gameDateTimeUTC": "2025-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 121
+          },
+          "away": {
+            "tri": "GSW",
+            "score": 110
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "OKC",
+        "MIN"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "202505200OKC",
+          "gameCode": "20250520",
+          "gameDateTimeUTC": "2025-05-20T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 114
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 88
+          }
+        },
+        {
+          "gameId": "202505220OKC",
+          "gameCode": "20250522",
+          "gameDateTimeUTC": "2025-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 118
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202505240MIN",
+          "gameCode": "20250524",
+          "gameDateTimeUTC": "2025-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 143
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202505260MIN",
+          "gameCode": "20250526",
+          "gameDateTimeUTC": "2025-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 126
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "202505280OKC",
+          "gameCode": "20250528",
+          "gameDateTimeUTC": "2025-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 124
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "NYK",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "202505210NYK",
+          "gameCode": "20250521",
+          "gameDateTimeUTC": "2025-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 135
+          },
+          "away": {
+            "tri": "IND",
+            "score": 138
+          }
+        },
+        {
+          "gameId": "202505230NYK",
+          "gameCode": "20250523",
+          "gameDateTimeUTC": "2025-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 109
+          },
+          "away": {
+            "tri": "IND",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202505250IND",
+          "gameCode": "20250525",
+          "gameDateTimeUTC": "2025-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 100
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202505270IND",
+          "gameCode": "20250527",
+          "gameDateTimeUTC": "2025-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 130
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202505290NYK",
+          "gameCode": "20250529",
+          "gameDateTimeUTC": "2025-05-29T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 111
+          },
+          "away": {
+            "tri": "IND",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202505310IND",
+          "gameCode": "20250531",
+          "gameDateTimeUTC": "2025-05-31T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 125
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 108
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "OKC",
+        "IND"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "202506050OKC",
+          "gameCode": "20250605",
+          "gameDateTimeUTC": "2025-06-05T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 110
+          },
+          "away": {
+            "tri": "IND",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202506080OKC",
+          "gameCode": "20250608",
+          "gameDateTimeUTC": "2025-06-08T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 123
+          },
+          "away": {
+            "tri": "IND",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202506110IND",
+          "gameCode": "20250611",
+          "gameDateTimeUTC": "2025-06-11T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 116
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202506130IND",
+          "gameCode": "20250613",
+          "gameDateTimeUTC": "2025-06-13T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 104
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202506160OKC",
+          "gameCode": "20250616",
+          "gameDateTimeUTC": "2025-06-16T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 120
+          },
+          "away": {
+            "tri": "IND",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202506190IND",
+          "gameCode": "20250619",
+          "gameDateTimeUTC": "2025-06-19T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 108
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "202506220OKC",
+          "gameCode": "20250622",
+          "gameDateTimeUTC": "2025-06-22T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 103
+          },
+          "away": {
+            "tri": "IND",
+            "score": 91
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-27T15:10:53.730Z"
 }

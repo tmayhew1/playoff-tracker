@@ -1,5 +1,1223 @@
 {
   "season": "2023-24",
-  "generatedAt": null,
-  "series": []
+  "series": [
+    {
+      "round": "r1",
+      "teams": [
+        "CLE",
+        "ORL"
+      ],
+      "winner": "CLE",
+      "games": [
+        {
+          "gameId": "202404200CLE",
+          "gameCode": "20240420",
+          "gameDateTimeUTC": "2024-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 97
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "202404220CLE",
+          "gameCode": "20240422",
+          "gameDateTimeUTC": "2024-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 96
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 86
+          }
+        },
+        {
+          "gameId": "202404250ORL",
+          "gameCode": "20240425",
+          "gameDateTimeUTC": "2024-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 121
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 83
+          }
+        },
+        {
+          "gameId": "202404270ORL",
+          "gameCode": "20240427",
+          "gameDateTimeUTC": "2024-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 112
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "202404300CLE",
+          "gameCode": "20240430",
+          "gameDateTimeUTC": "2024-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 104
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202405030ORL",
+          "gameCode": "20240503",
+          "gameDateTimeUTC": "2024-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "ORL",
+            "score": 103
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202405050CLE",
+          "gameCode": "20240505",
+          "gameDateTimeUTC": "2024-05-05T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 106
+          },
+          "away": {
+            "tri": "ORL",
+            "score": 94
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "DEN",
+        "LAL"
+      ],
+      "winner": "DEN",
+      "games": [
+        {
+          "gameId": "202404200DEN",
+          "gameCode": "20240420",
+          "gameDateTimeUTC": "2024-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 114
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202404220DEN",
+          "gameCode": "20240422",
+          "gameDateTimeUTC": "2024-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 101
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 99
+          }
+        },
+        {
+          "gameId": "202404250LAL",
+          "gameCode": "20240425",
+          "gameDateTimeUTC": "2024-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202404270LAL",
+          "gameCode": "20240427",
+          "gameDateTimeUTC": "2024-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "LAL",
+            "score": 119
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202404290DEN",
+          "gameCode": "20240429",
+          "gameDateTimeUTC": "2024-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 108
+          },
+          "away": {
+            "tri": "LAL",
+            "score": 106
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIN",
+        "PHX"
+      ],
+      "winner": "MIN",
+      "games": [
+        {
+          "gameId": "202404200MIN",
+          "gameCode": "20240420",
+          "gameDateTimeUTC": "2024-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 120
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202404230MIN",
+          "gameCode": "20240423",
+          "gameDateTimeUTC": "2024-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 105
+          },
+          "away": {
+            "tri": "PHX",
+            "score": 93
+          }
+        },
+        {
+          "gameId": "202404260PHO",
+          "gameCode": "20240426",
+          "gameDateTimeUTC": "2024-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 109
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 126
+          }
+        },
+        {
+          "gameId": "202404280PHO",
+          "gameCode": "20240428",
+          "gameDateTimeUTC": "2024-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHX",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 122
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "NYK",
+        "PHI"
+      ],
+      "winner": "NYK",
+      "games": [
+        {
+          "gameId": "202404200NYK",
+          "gameCode": "20240420",
+          "gameDateTimeUTC": "2024-04-20T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 111
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202404220NYK",
+          "gameCode": "20240422",
+          "gameDateTimeUTC": "2024-04-22T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 104
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202404250PHI",
+          "gameCode": "20240425",
+          "gameDateTimeUTC": "2024-04-25T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 125
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202404280PHI",
+          "gameCode": "20240428",
+          "gameDateTimeUTC": "2024-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 92
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202404300NYK",
+          "gameCode": "20240430",
+          "gameDateTimeUTC": "2024-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 106
+          },
+          "away": {
+            "tri": "PHI",
+            "score": 112
+          }
+        },
+        {
+          "gameId": "202405020PHI",
+          "gameCode": "20240502",
+          "gameDateTimeUTC": "2024-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "PHI",
+            "score": 115
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 118
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "BOS",
+        "MIA"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202404210BOS",
+          "gameCode": "20240421",
+          "gameDateTimeUTC": "2024-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 114
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202404240BOS",
+          "gameCode": "20240424",
+          "gameDateTimeUTC": "2024-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 101
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 111
+          }
+        },
+        {
+          "gameId": "202404270MIA",
+          "gameCode": "20240427",
+          "gameDateTimeUTC": "2024-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 84
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202404290MIA",
+          "gameCode": "20240429",
+          "gameDateTimeUTC": "2024-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "MIA",
+            "score": 88
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 102
+          }
+        },
+        {
+          "gameId": "202405010BOS",
+          "gameCode": "20240501",
+          "gameDateTimeUTC": "2024-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 118
+          },
+          "away": {
+            "tri": "MIA",
+            "score": 84
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "LAC",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "202404210LAC",
+          "gameCode": "20240421",
+          "gameDateTimeUTC": "2024-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 109
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202404230LAC",
+          "gameCode": "20240423",
+          "gameDateTimeUTC": "2024-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 93
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 96
+          }
+        },
+        {
+          "gameId": "202404260DAL",
+          "gameCode": "20240426",
+          "gameDateTimeUTC": "2024-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 101
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 90
+          }
+        },
+        {
+          "gameId": "202404280DAL",
+          "gameCode": "20240428",
+          "gameDateTimeUTC": "2024-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 111
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 116
+          }
+        },
+        {
+          "gameId": "202405010LAC",
+          "gameCode": "20240501",
+          "gameDateTimeUTC": "2024-05-01T00:00:00.000Z",
+          "home": {
+            "tri": "LAC",
+            "score": 93
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 123
+          }
+        },
+        {
+          "gameId": "202405030DAL",
+          "gameCode": "20240503",
+          "gameDateTimeUTC": "2024-05-03T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 114
+          },
+          "away": {
+            "tri": "LAC",
+            "score": 101
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "MIL",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "202404210MIL",
+          "gameCode": "20240421",
+          "gameDateTimeUTC": "2024-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 109
+          },
+          "away": {
+            "tri": "IND",
+            "score": 94
+          }
+        },
+        {
+          "gameId": "202404230MIL",
+          "gameCode": "20240423",
+          "gameDateTimeUTC": "2024-04-23T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 108
+          },
+          "away": {
+            "tri": "IND",
+            "score": 125
+          }
+        },
+        {
+          "gameId": "202404260IND",
+          "gameCode": "20240426",
+          "gameDateTimeUTC": "2024-04-26T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 121
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202404280IND",
+          "gameCode": "20240428",
+          "gameDateTimeUTC": "2024-04-28T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 126
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 113
+          }
+        },
+        {
+          "gameId": "202404300MIL",
+          "gameCode": "20240430",
+          "gameDateTimeUTC": "2024-04-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIL",
+            "score": 115
+          },
+          "away": {
+            "tri": "IND",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202405020IND",
+          "gameCode": "20240502",
+          "gameDateTimeUTC": "2024-05-02T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 120
+          },
+          "away": {
+            "tri": "MIL",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r1",
+      "teams": [
+        "OKC",
+        "NOP"
+      ],
+      "winner": "OKC",
+      "games": [
+        {
+          "gameId": "202404210OKC",
+          "gameCode": "20240421",
+          "gameDateTimeUTC": "2024-04-21T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 94
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202404240OKC",
+          "gameCode": "20240424",
+          "gameDateTimeUTC": "2024-04-24T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 124
+          },
+          "away": {
+            "tri": "NOP",
+            "score": 92
+          }
+        },
+        {
+          "gameId": "202404270NOP",
+          "gameCode": "20240427",
+          "gameDateTimeUTC": "2024-04-27T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 85
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202404290NOP",
+          "gameCode": "20240429",
+          "gameDateTimeUTC": "2024-04-29T00:00:00.000Z",
+          "home": {
+            "tri": "NOP",
+            "score": 89
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 97
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "DEN",
+        "MIN"
+      ],
+      "winner": "MIN",
+      "games": [
+        {
+          "gameId": "202405040DEN",
+          "gameCode": "20240504",
+          "gameDateTimeUTC": "2024-05-04T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 99
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202405060DEN",
+          "gameCode": "20240506",
+          "gameDateTimeUTC": "2024-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 80
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202405100MIN",
+          "gameCode": "20240510",
+          "gameDateTimeUTC": "2024-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 90
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202405120MIN",
+          "gameCode": "20240512",
+          "gameDateTimeUTC": "2024-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 107
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 115
+          }
+        },
+        {
+          "gameId": "202405140DEN",
+          "gameCode": "20240514",
+          "gameDateTimeUTC": "2024-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 112
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 97
+          }
+        },
+        {
+          "gameId": "202405160MIN",
+          "gameCode": "20240516",
+          "gameDateTimeUTC": "2024-05-16T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 115
+          },
+          "away": {
+            "tri": "DEN",
+            "score": 70
+          }
+        },
+        {
+          "gameId": "202405190DEN",
+          "gameCode": "20240519",
+          "gameDateTimeUTC": "2024-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "DEN",
+            "score": 90
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "NYK",
+        "IND"
+      ],
+      "winner": "IND",
+      "games": [
+        {
+          "gameId": "202405060NYK",
+          "gameCode": "20240506",
+          "gameDateTimeUTC": "2024-05-06T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 121
+          },
+          "away": {
+            "tri": "IND",
+            "score": 117
+          }
+        },
+        {
+          "gameId": "202405080NYK",
+          "gameCode": "20240508",
+          "gameDateTimeUTC": "2024-05-08T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 130
+          },
+          "away": {
+            "tri": "IND",
+            "score": 121
+          }
+        },
+        {
+          "gameId": "202405100IND",
+          "gameCode": "20240510",
+          "gameDateTimeUTC": "2024-05-10T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 111
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202405120IND",
+          "gameCode": "20240512",
+          "gameDateTimeUTC": "2024-05-12T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 121
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "202405140NYK",
+          "gameCode": "20240514",
+          "gameDateTimeUTC": "2024-05-14T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 121
+          },
+          "away": {
+            "tri": "IND",
+            "score": 91
+          }
+        },
+        {
+          "gameId": "202405170IND",
+          "gameCode": "20240517",
+          "gameDateTimeUTC": "2024-05-17T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 116
+          },
+          "away": {
+            "tri": "NYK",
+            "score": 103
+          }
+        },
+        {
+          "gameId": "202405190NYK",
+          "gameCode": "20240519",
+          "gameDateTimeUTC": "2024-05-19T00:00:00.000Z",
+          "home": {
+            "tri": "NYK",
+            "score": 109
+          },
+          "away": {
+            "tri": "IND",
+            "score": 130
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "BOS",
+        "CLE"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202405070BOS",
+          "gameCode": "20240507",
+          "gameDateTimeUTC": "2024-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 120
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202405090BOS",
+          "gameCode": "20240509",
+          "gameDateTimeUTC": "2024-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 94
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 118
+          }
+        },
+        {
+          "gameId": "202405110CLE",
+          "gameCode": "20240511",
+          "gameDateTimeUTC": "2024-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 93
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202405130CLE",
+          "gameCode": "20240513",
+          "gameDateTimeUTC": "2024-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "CLE",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202405150BOS",
+          "gameCode": "20240515",
+          "gameDateTimeUTC": "2024-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 113
+          },
+          "away": {
+            "tri": "CLE",
+            "score": 98
+          }
+        }
+      ]
+    },
+    {
+      "round": "r2",
+      "teams": [
+        "OKC",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "202405070OKC",
+          "gameCode": "20240507",
+          "gameDateTimeUTC": "2024-05-07T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 117
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 95
+          }
+        },
+        {
+          "gameId": "202405090OKC",
+          "gameCode": "20240509",
+          "gameDateTimeUTC": "2024-05-09T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 110
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 119
+          }
+        },
+        {
+          "gameId": "202405110DAL",
+          "gameCode": "20240511",
+          "gameDateTimeUTC": "2024-05-11T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 105
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 101
+          }
+        },
+        {
+          "gameId": "202405130DAL",
+          "gameCode": "20240513",
+          "gameDateTimeUTC": "2024-05-13T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 96
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 100
+          }
+        },
+        {
+          "gameId": "202405150OKC",
+          "gameCode": "20240515",
+          "gameDateTimeUTC": "2024-05-15T00:00:00.000Z",
+          "home": {
+            "tri": "OKC",
+            "score": 92
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 104
+          }
+        },
+        {
+          "gameId": "202405180DAL",
+          "gameCode": "20240518",
+          "gameDateTimeUTC": "2024-05-18T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 117
+          },
+          "away": {
+            "tri": "OKC",
+            "score": 116
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "BOS",
+        "IND"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202405210BOS",
+          "gameCode": "20240521",
+          "gameDateTimeUTC": "2024-05-21T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 133
+          },
+          "away": {
+            "tri": "IND",
+            "score": 128
+          }
+        },
+        {
+          "gameId": "202405230BOS",
+          "gameCode": "20240523",
+          "gameDateTimeUTC": "2024-05-23T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 126
+          },
+          "away": {
+            "tri": "IND",
+            "score": 110
+          }
+        },
+        {
+          "gameId": "202405250IND",
+          "gameCode": "20240525",
+          "gameDateTimeUTC": "2024-05-25T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 111
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 114
+          }
+        },
+        {
+          "gameId": "202405270IND",
+          "gameCode": "20240527",
+          "gameDateTimeUTC": "2024-05-27T00:00:00.000Z",
+          "home": {
+            "tri": "IND",
+            "score": 102
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 105
+          }
+        }
+      ]
+    },
+    {
+      "round": "r3",
+      "teams": [
+        "MIN",
+        "DAL"
+      ],
+      "winner": "DAL",
+      "games": [
+        {
+          "gameId": "202405220MIN",
+          "gameCode": "20240522",
+          "gameDateTimeUTC": "2024-05-22T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 105
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 108
+          }
+        },
+        {
+          "gameId": "202405240MIN",
+          "gameCode": "20240524",
+          "gameDateTimeUTC": "2024-05-24T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 108
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 109
+          }
+        },
+        {
+          "gameId": "202405260DAL",
+          "gameCode": "20240526",
+          "gameDateTimeUTC": "2024-05-26T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 116
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 107
+          }
+        },
+        {
+          "gameId": "202405280DAL",
+          "gameCode": "20240528",
+          "gameDateTimeUTC": "2024-05-28T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 100
+          },
+          "away": {
+            "tri": "MIN",
+            "score": 105
+          }
+        },
+        {
+          "gameId": "202405300MIN",
+          "gameCode": "20240530",
+          "gameDateTimeUTC": "2024-05-30T00:00:00.000Z",
+          "home": {
+            "tri": "MIN",
+            "score": 103
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 124
+          }
+        }
+      ]
+    },
+    {
+      "round": "r4",
+      "teams": [
+        "BOS",
+        "DAL"
+      ],
+      "winner": "BOS",
+      "games": [
+        {
+          "gameId": "202406060BOS",
+          "gameCode": "20240606",
+          "gameDateTimeUTC": "2024-06-06T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 107
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 89
+          }
+        },
+        {
+          "gameId": "202406090BOS",
+          "gameCode": "20240609",
+          "gameDateTimeUTC": "2024-06-09T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 105
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 98
+          }
+        },
+        {
+          "gameId": "202406120DAL",
+          "gameCode": "20240612",
+          "gameDateTimeUTC": "2024-06-12T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 99
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 106
+          }
+        },
+        {
+          "gameId": "202406140DAL",
+          "gameCode": "20240614",
+          "gameDateTimeUTC": "2024-06-14T00:00:00.000Z",
+          "home": {
+            "tri": "DAL",
+            "score": 122
+          },
+          "away": {
+            "tri": "BOS",
+            "score": 84
+          }
+        },
+        {
+          "gameId": "202406170BOS",
+          "gameCode": "20240617",
+          "gameDateTimeUTC": "2024-06-17T00:00:00.000Z",
+          "home": {
+            "tri": "BOS",
+            "score": 106
+          },
+          "away": {
+            "tri": "DAL",
+            "score": 88
+          }
+        }
+      ]
+    }
+  ],
+  "source": "basketball-reference",
+  "fetchedAt": "2026-06-27T15:06:15.671Z"
 }
