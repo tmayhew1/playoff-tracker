@@ -2967,7 +2967,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   );
 
   return (
-    <div className="ml-[4.5rem] mr-0 my-1.5 pl-2 pr-1 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3">
+    <div className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3">
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
