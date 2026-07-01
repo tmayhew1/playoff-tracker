@@ -262,6 +262,48 @@ const VA_CATEGORY_ORDER = [
 ];
 const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebounds"]);
 
+// --- Category context (By-Player search only) -------------------------------
+// Maps a breakdown category to the raw stat(s) needed to show its rate. Counting
+// cats render per-36 or per-game (toggle); shooting cats render made/att (pct).
+const CAT_COUNTING = {
+  "Points": ["pts", "PTS"], "Assists": ["ast", "AST"], "Steals": ["stl", "STL"],
+  "Blocks": ["blk", "BLK"], "Turnovers": ["tov", "TOV"],
+  "D Rebounds": ["drb", "DRB"], "O Rebounds": ["orb", "ORB"],
+};
+const CAT_SHOOTING = {
+  "3-Pointers": (r) => [r.tpm, r.tpa],
+  "2-Pointers": (r) => [r.fgm - r.tpm, r.fga - r.tpa],
+  "Free Throws": (r) => [r.ftm, r.fta],
+};
+// Short label for a category (used in headings — "Pts", "3P", etc.).
+const CAT_SHORT = {
+  "Points": "Pts", "2-Pointers": "2P", "3-Pointers": "3P", "Free Throws": "FT",
+  "Assists": "Ast", "Turnovers": "TO", "D Rebounds": "DReb", "O Rebounds": "OReb",
+  "Blocks": "Blk", "Steals": "Stl",
+};
+// Rate label for one player-season in one category, respecting the toggle.
+function catRateLabel(r, key, rateMode) {
+  if (CAT_SHOOTING[key]) {
+    const [m, a] = CAT_SHOOTING[key](r);
+    return `${m}/${a} (${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%)`;
+  }
+  const [stat, tag] = CAT_COUNTING[key];
+  const v = r[stat] || 0;
+  return rateMode === "perG"
+    ? `${(v / (r.gp || 1)).toFixed(1)} ${tag}/G`
+    : `${((v / (r.mp || 1)) * 36).toFixed(1)} ${tag}/36`;
+}
+// Per-game category VA — the metric the context ranks/plots everything on.
+function catVAperGame(r, lgaX, key) {
+  return valueAddByCategory(r, lgaX)[key] / (r.gp || 1);
+}
+// Identity match between two player-season rows (slug when both have one,
+// else normalized name). Rows within a season pool are unique per player.
+function samePlayer(a, b) {
+  if (a.slug && b.slug) return a.slug === b.slug;
+  return normalizeName(a.name || "") === normalizeName(b.name || "");
+}
+
 // Helper: aggregate raw stat snapshots into a player object matching what
 // VABreakdown expects (mp/pts/.../fgm/.../va), preserving identity.
 function aggregateSnapshots(base, snapshots) {
@@ -2380,6 +2422,24 @@ function PlayerExplorer() {
     [index, selectedKey]
   );
 
+  // Cross-season/-player pools that power the per-category "league context"
+  // dropdown. Each player-season row is tagged with the owner's name + slug so
+  // the context can rank, place, and find the player within a season or all-time.
+  const contextData = useMemo(() => {
+    if (!index) return null;
+    const allRows = [];
+    const poolsBySeason = new Map();
+    for (const pl of index) {
+      for (const s of pl.seasons) {
+        const row = { ...s, name: pl.name, slug: pl.slug || null };
+        allRows.push(row);
+        if (!poolsBySeason.has(s.season)) poolsBySeason.set(s.season, []);
+        poolsBySeason.get(s.season).push(row);
+      }
+    }
+    return { allRows, poolsBySeason };
+  }, [index]);
+
   if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
   if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
 
@@ -2417,11 +2477,11 @@ function PlayerExplorer() {
                 <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
                 <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
               </div>
-              {sOpen && <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} />}
+              {sOpen && <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} context={contextData ? { ...contextData, self: player } : null} />}
             </div>
           );
         })}
-        <div className="text-[10px] text-stone-400 italic mt-2 px-2">Tap a season for the per-stat breakdown.</div>
+        <div className="text-[10px] text-stone-400 italic mt-2 px-2">Tap a season for the per-stat breakdown, then a category for its league context.</div>
       </div>
     );
   }
@@ -2831,8 +2891,171 @@ function InfoView() {
 // Per-category VA breakdown for one college player, mirroring the NBA
 // VABreakdown: diverging +/- bars (per-GAME contribution above/below the D-I
 // average), grouped with separators, plus a Per 36 / Per G stat-label toggle.
-function VACategoryBreakdown({ player: p, lga }) {
+// League context for one category of one player-season (By-Player search only).
+// Everything is computed from the /api/players index passed in via `context`:
+//   poolsBySeason  Map<season, row[]>  every player-season, grouped by season
+//   allRows        row[]               every player-season, flat (all-time pool)
+//   self           the player object   (name, slug, seasons[]) for identity/trend
+// The ranking metric is per-game category VA so longevity doesn't dominate a
+// per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
+function CategoryContext({ p, catKey, lga, rateMode, context }) {
+  const { poolsBySeason, allRows, self } = context;
+  const selfRow = { ...p, name: self.name, slug: self.slug || null };
+
+  const d = useMemo(() => {
+    // Season pool (views 1 & 2): qualified = played >= 1/3 of this player's GP.
+    const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
+    const pool = (poolsBySeason.get(p.season) || [])
+      .filter((r) => (r.gp || 0) >= floor && r.mp > 0)
+      .map((r) => ({ r, m: catVAperGame(r, lga, catKey) }))
+      .sort((a, b) => b.m - a.m);
+    const N = pool.length;
+    const selfIdx = pool.findIndex((x) => samePlayer(x.r, selfRow));
+    const selfM = selfIdx >= 0 ? pool[selfIdx].m : catVAperGame(selfRow, lga, catKey);
+    // "Better than X% of the N qualified" — strictly-below count over the full
+    // pool, so the top player reads ~99%, not a self-inclusive 100%.
+    const below = pool.filter((x) => x.m < selfM).length;
+    const pctile = N > 0 ? (below / N) * 100 : 0;
+    const vals = pool.map((x) => x.m);
+    const min = N ? vals[N - 1] : 0, max = N ? vals[0] : 0, med = N ? vals[Math.floor(N / 2)] : 0;
+    let lo = Math.max(0, selfIdx - 2), hi = Math.min(N, lo + 5); lo = Math.max(0, hi - 5);
+    const win = pool.slice(lo, hi).map((x, i) => ({ ...x, rank: lo + i + 1 }));
+
+    // All-time (view 4): every player-season, season-accurate baselines.
+    const floorA = Math.min(5, p.gp || 1);
+    const all = allRows
+      .filter((r) => (r.gp || 0) >= floorA && r.mp > 0)
+      .map((r) => ({ r, m: catVAperGame(r, lgaForSeason(r.season), catKey) }))
+      .sort((a, b) => b.m - a.m);
+    const allN = all.length;
+    const allIdx = all.findIndex((x) => x.r.season === p.season && samePlayer(x.r, selfRow));
+    const top = all.slice(0, 3).map((x, i) => ({ ...x, rank: i + 1 }));
+    const selfAll = allIdx >= 0 ? { ...all[allIdx], rank: allIdx + 1 } : null;
+
+    // Trend (view 6): this player's own seasons over time.
+    const mine = [...(self.seasons || [])]
+      .filter((s) => s.mp > 0)
+      .map((s) => ({ season: s.season, m: catVAperGame(s, lgaForSeason(s.season), catKey) }))
+      .sort((a, b) => a.season.localeCompare(b.season));
+
+    return { floor, N, rank: selfIdx + 1, selfM, pctile, min, max, med, win,
+             floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
+  }, [p.season, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow]);
+
+  const short = CAT_SHORT[catKey] || catKey;
+  const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
+  const posOf = (v) => (d.max > d.min ? ((v - d.min) / (d.max - d.min)) * 100 : 50);
+
+  // Trend sparkline geometry.
+  const W = 220, H = 40, pad = 4;
+  const ms = d.mine.map((x) => x.m);
+  const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
+  const tx = (i) => (d.mine.length > 1 ? pad + (i / (d.mine.length - 1)) * (W - 2 * pad) : W / 2);
+  const ty = (v) => H - pad - ((v - tLo) / ((tHi - tLo) || 1)) * (H - 2 * pad);
+  const curIdx = d.mine.findIndex((x) => x.season === p.season);
+
+  const Row = ({ rank, r, m, isSelf }) => (
+    <div className={`grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 items-center px-1 py-[2px] tabular-nums ${isSelf ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
+      <span className="text-right text-[9px] opacity-70">{rank}</span>
+      <span className="truncate text-[10px] font-medium">{r.name}</span>
+      <span className="text-right text-[9px]">{r.gp}</span>
+      <span className="text-right text-[9px]">{mpg(r)}</span>
+      <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
+      <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{catRateLabel(r, catKey, rateMode)}</span>
+    </div>
+  );
+
+  return (
+    <div className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3">
+      {/* View 1 — rank + mini leaderboard */}
+      <div>
+        <div className="flex items-baseline justify-between mb-1">
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">{short} VA/G rank · {p.season}</span>
+          <span className="text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
+        </div>
+        <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA/G</span><span className="text-right">{short}</span>
+        </div>
+        {d.win.map((x) => (
+          <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
+        ))}
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Among playoff players with ≥{d.floor} G ({short} = per-game rate, {rateMode === "perG" ? "per game" : "per 36"}).</div>
+      </div>
+
+      {/* View 2 — percentile + distribution strip */}
+      <div className="border-t border-stone-100 pt-2">
+        <div className="flex items-baseline justify-between mb-1.5">
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">Percentile</span>
+          <span className="text-stone-800"><span className="font-bold">{d.pctile.toFixed(0)}th</span><span className="text-stone-400"> — better than {d.pctile.toFixed(0)}% of {d.N}</span></span>
+        </div>
+        <div className="relative h-2 bg-gradient-to-r from-stone-200 via-stone-300 to-stone-400 rounded-full mx-1">
+          <div className="absolute top-1/2 -translate-y-1/2 w-px h-3 bg-stone-500/60" style={{ left: `${posOf(d.med)}%` }} title="median" />
+          <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-white -translate-x-1/2 -translate-y-1/2" style={{ left: `${posOf(d.selfM)}%` }} />
+        </div>
+        <div className="flex justify-between text-[8px] text-stone-400 mt-0.5 px-1 tabular-nums">
+          <span>low {sgn(d.min)}</span><span>med {sgn(d.med)}</span><span>high {sgn(d.max)}</span>
+        </div>
+      </div>
+
+      {/* View 4 — all-time rank */}
+      <div className="border-t border-stone-100 pt-2">
+        <div className="flex items-baseline justify-between mb-1">
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">All-time {short} VA/G</span>
+          <span className="text-stone-800 font-bold">#{d.allRank}<span className="text-stone-400 font-normal"> of {d.allN}</span></span>
+        </div>
+        {d.top.map((x) => (
+          <div key={"t" + x.rank} className={`grid grid-cols-[1.4rem_1fr_2.9rem] gap-x-1 items-center px-1 py-[2px] tabular-nums ${d.selfAll && x.rank === d.selfAll.rank ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
+            <span className="text-right text-[9px] opacity-70">{x.rank}</span>
+            <span className="truncate text-[10px]">{x.r.name} <span className="opacity-60">{x.r.season}</span></span>
+            <span className="text-right text-[10px] font-semibold">{sgn(x.m)}</span>
+          </div>
+        ))}
+        {d.selfAll && d.allRank > 3 && (
+          <>
+            <div className="text-center text-stone-300 leading-none">⋯</div>
+            <div className="grid grid-cols-[1.4rem_1fr_2.9rem] gap-x-1 items-center px-1 py-[2px] tabular-nums bg-stone-800 text-white rounded-sm">
+              <span className="text-right text-[9px] opacity-70">{d.selfAll.rank}</span>
+              <span className="truncate text-[10px]">{d.selfAll.r.name} <span className="opacity-60">{d.selfAll.r.season}</span></span>
+              <span className="text-right text-[10px] font-semibold">{sgn(d.selfAll.m)}</span>
+            </div>
+          </>
+        )}
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Across all {d.allN} indexed playoff seasons (≥{d.floorA} G).</div>
+      </div>
+
+      {/* View 6 — trend across this player's seasons */}
+      <div className="border-t border-stone-100 pt-2">
+        <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{short} VA/G by season</div>
+        {d.mine.length < 2 ? (
+          <div className="text-[9px] italic text-stone-400 px-1">Only one playoff season on record.</div>
+        ) : (
+          <>
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
+              <line x1={pad} x2={W - pad} y1={ty(0)} y2={ty(0)} stroke="#d6d3d1" strokeWidth="0.75" strokeDasharray="2 2" />
+              <polyline
+                points={d.mine.map((x, i) => `${tx(i)},${ty(x.m)}`).join(" ")}
+                fill="none" stroke="#57534e" strokeWidth="1.25" strokeLinejoin="round" strokeLinecap="round"
+              />
+              {d.mine.map((x, i) => (
+                <circle key={x.season} cx={tx(i)} cy={ty(x.m)} r={i === curIdx ? 3 : 1.75}
+                  fill={i === curIdx ? "#1c1917" : "#a8a29e"} stroke="#fff" strokeWidth={i === curIdx ? 1 : 0.5} />
+              ))}
+            </svg>
+            <div className="flex justify-between text-[8px] text-stone-400 px-1 tabular-nums">
+              <span>{d.mine[0].season} ({sgn(d.mine[0].m)})</span>
+              <span>{d.mine[d.mine.length - 1].season} ({sgn(d.mine[d.mine.length - 1].m)})</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VACategoryBreakdown({ player: p, lga, context = null }) {
   const [rateMode, setRateMode] = useState("per36");
+  const [openCat, setOpenCat] = useState(null);
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
   }
@@ -2873,10 +3096,20 @@ function VACategoryBreakdown({ player: p, lga }) {
         const pct = (Math.abs(c.value) / maxAbs) * 45;
         const isPos = c.value >= 0;
         const perG = c.value / gp;
+        const catOpen = context && openCat === c.key;
         return (
           <React.Fragment key={c.key}>
             <div className="flex items-center gap-2 text-[10px] py-[1px]">
-              <span className="w-[4.5rem] shrink-0 text-right text-stone-600">{c.key}</span>
+              {context ? (
+                <button
+                  onClick={() => setOpenCat(catOpen ? null : c.key)}
+                  className={`w-[4.5rem] shrink-0 text-right underline decoration-dotted decoration-stone-300 underline-offset-2 hover:text-stone-900 ${catOpen ? "text-stone-900 font-semibold" : "text-stone-600"}`}
+                >
+                  {c.key}
+                </button>
+              ) : (
+                <span className="w-[4.5rem] shrink-0 text-right text-stone-600">{c.key}</span>
+              )}
               <div className="flex-1 relative h-4">
                 <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
                 <div className="absolute inset-y-0.5" style={{ backgroundColor: isPos ? "#1c1917" : "#a8a29e", left: isPos ? "50%" : `${50 - pct}%`, width: `${pct}%` }} />
@@ -2884,11 +3117,14 @@ function VACategoryBreakdown({ player: p, lga }) {
               <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(perG, 2)}</span>
               <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
             </div>
+            {catOpen && <CategoryContext p={p} catKey={c.key} lga={lga} rateMode={rateMode} context={context} />}
             {VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
           </React.Fragment>
         );
       })}
-      <div className="mt-2 text-center text-[9px] italic text-stone-400">Bars show per-game contribution above / below D-I average</div>
+      <div className="mt-2 text-center text-[9px] italic text-stone-400">
+        Bars show per-game contribution above / below {context ? "NBA playoff" : "D-I"} average{context ? " · tap a category for league context" : ""}
+      </div>
     </div>
   );
 }
