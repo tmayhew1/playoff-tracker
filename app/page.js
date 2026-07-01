@@ -2948,7 +2948,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const posOf = (v) => (d.max > d.min ? ((v - d.min) / (d.max - d.min)) * 100 : 50);
 
   // Trend sparkline geometry.
-  const W = 220, H = 40, pad = 4;
+  const W = 220, H = 80, pad = 6;
   const ms = d.mine.map((x) => x.m);
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
   const tx = (i) => (d.mine.length > 1 ? pad + (i / (d.mine.length - 1)) * (W - 2 * pad) : W / 2);
