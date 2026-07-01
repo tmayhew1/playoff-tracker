@@ -2983,15 +2983,14 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Among playoff players with ≥{d.floor} G ({short} = per-game rate, {rateMode === "perG" ? "per game" : "per 36"}).</div>
       </div>
 
-      {/* View 2 — percentile + distribution strip */}
+      {/* View 2 — percentile + distribution strip. The percentile reads as a
+          single number floating right above the player's dot on the strip. */}
       <div className="border-t border-stone-100 pt-2">
-        <div className="flex items-baseline justify-between mb-1.5">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">Percentile</span>
-          <span className="text-stone-800"><span className="font-bold">{d.pctile.toFixed(0)}th</span><span className="text-stone-400"> — better than {d.pctile.toFixed(0)}% of {d.N}</span></span>
-        </div>
+        <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-5">Percentile</div>
         <div className="relative h-2 bg-gradient-to-r from-stone-200 via-stone-300 to-stone-400 rounded-full mx-1">
           <div className="absolute top-1/2 -translate-y-1/2 w-px h-3 bg-stone-500/60" style={{ left: `${posOf(d.med)}%` }} title="median" />
           <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-white -translate-x-1/2 -translate-y-1/2" style={{ left: `${posOf(d.selfM)}%` }} />
+          <span className="absolute -top-4 -translate-x-1/2 text-[11px] font-bold text-stone-800 tabular-nums leading-none" style={{ left: `${posOf(d.selfM)}%` }}>{d.pctile.toFixed(0)}</span>
         </div>
         <div className="flex justify-between text-[8px] text-stone-400 mt-0.5 px-1 tabular-nums">
           <span>low {sgn(d.min)}</span><span>med {sgn(d.med)}</span><span>high {sgn(d.max)}</span>
