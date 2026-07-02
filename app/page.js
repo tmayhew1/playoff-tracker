@@ -382,7 +382,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // Per-36 vs per-game normalization for the counting-stat labels (PTS,
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
-  const [rateMode, setRateMode] = useState("per36");
+  const [rateMode, setRateMode] = useState("perG");
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
   // Category rows are tappable when tapping can do something: swap the chart
@@ -2401,15 +2401,8 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
             ) : (
               // No per-game logs outside the playoffs — show the season-total
               // per-category breakdown instead, with the same category
-              // context drill-ins and player prev/next as the playoff view.
-              <VACategoryBreakdown
-                player={p}
-                lga={lga}
-                baseline="NBA"
-                context={contextFor(p)}
-                onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
-                onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
-              />
+              // context drill-ins as the playoff view.
+              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" context={contextFor(p)} />
             ))}
           </div>
         );
@@ -2500,9 +2493,9 @@ function ExploreView() {
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
       </div>
       <div className="mb-4 flex gap-1.5">
+        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
         <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
         <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
-        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
       </div>
 
       {mode === "player" ? (
@@ -2831,13 +2824,7 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
             {sOpen && (scope === "playoffs" ? (
               <PlayerSeasonDrill s={s} indexPlayer={player} context={contextFor(s)} {...navFor(i)} />
             ) : (
-              <VACategoryBreakdown
-                player={s}
-                lga={lgaForSeason(s.season)}
-                baseline="NBA"
-                context={contextFor(s)}
-                {...navFor(i)}
-              />
+              <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} baseline="NBA" context={contextFor(s)} />
             ))}
           </div>
         );
@@ -2881,7 +2868,7 @@ function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
   }, [lb, indexPlayer]);
 
   if (failed || (lb && (!row || !row.games?.length))) {
-    return <VACategoryBreakdown player={s} lga={lgaS} baseline="NBA playoff" context={context} onPrev={onPrev} onNext={onNext} />;
+    return <VACategoryBreakdown player={s} lga={lgaS} baseline="NBA playoff" context={context} />;
   }
   if (!lb) {
     return <div className="px-2 py-3 text-[10px] text-stone-500 italic text-center border-t border-stone-200">Loading game log…</div>;
@@ -3364,13 +3351,14 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
   const posOf = (v) => (d.max > d.min ? ((v - d.min) / (d.max - d.min)) * 100 : 50);
 
-  // Trend sparkline geometry.
-  const W = 220, H = 80, pad = 6;
+  // Trend bars: one bar per season, diverging from a shared zero baseline.
   const ms = d.mine.map((x) => x.m);
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
-  const tx = (i) => (d.mine.length > 1 ? pad + (i / (d.mine.length - 1)) * (W - 2 * pad) : W / 2);
-  const ty = (v) => H - pad - ((v - tLo) / ((tHi - tLo) || 1)) * (H - 2 * pad);
+  const tSpan = (tHi - tLo) || 1;
+  const zeroPct = (tHi / tSpan) * 100; // baseline's offset from the top
   const curIdx = d.mine.findIndex((x) => x.season === seasonKey);
+  // "2000-01" -> ’01 (season's end year)
+  const yearTag = (season) => `’${season.slice(5)}`;
 
   const Row = ({ rank, r, m, isSelf }) => (
     <div className={`grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 items-center px-1 py-[2px] tabular-nums ${isSelf ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
@@ -3440,27 +3428,37 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Across all {d.allN} indexed {scopeNoun} seasons (≥{d.floorA} G).</div>
       </div>
 
-      {/* View 6 — trend across this player's seasons */}
+      {/* View 6 — trend across this player's seasons, one labeled bar each */}
       <div className="border-t border-stone-100 pt-2">
         <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{short} VA/G by season</div>
-        {d.mine.length < 2 ? (
-          <div className="text-[9px] italic text-stone-400 px-1">Only one playoff season on record.</div>
+        {d.mine.length === 0 ? (
+          <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
         ) : (
           <>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
-              <line x1={pad} x2={W - pad} y1={ty(0)} y2={ty(0)} stroke="#d6d3d1" strokeWidth="0.75" strokeDasharray="2 2" />
-              <polyline
-                points={d.mine.map((x, i) => `${tx(i)},${ty(x.m)}`).join(" ")}
-                fill="none" stroke="#57534e" strokeWidth="1.25" strokeLinejoin="round" strokeLinecap="round"
-              />
+            <div className="flex items-stretch gap-[2px] h-20 px-1">
+              {d.mine.map((x, i) => {
+                const hPct = (Math.abs(x.m) / tSpan) * 100;
+                const topPct = x.m >= 0 ? zeroPct - hPct : zeroPct;
+                return (
+                  <div key={x.season} className="flex-1 relative min-w-0" title={`${x.season}: ${sgn(x.m)}`}>
+                    <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${zeroPct}%` }} />
+                    <div
+                      className="absolute inset-x-[12%]"
+                      style={{ top: `${topPct}%`, height: `${Math.max(hPct, 1)}%`, backgroundColor: i === curIdx ? "#1c1917" : "#a8a29e" }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-[2px] px-1 mt-0.5">
               {d.mine.map((x, i) => (
-                <circle key={x.season} cx={tx(i)} cy={ty(x.m)} r={i === curIdx ? 3 : 1.75}
-                  fill={i === curIdx ? "#1c1917" : "#a8a29e"} stroke="#fff" strokeWidth={i === curIdx ? 1 : 0.5} />
+                <span
+                  key={x.season}
+                  className={`flex-1 min-w-0 text-center text-[7px] tabular-nums leading-tight ${i === curIdx ? "text-stone-900 font-bold" : "text-stone-400"}`}
+                >
+                  {yearTag(x.season)}
+                </span>
               ))}
-            </svg>
-            <div className="flex justify-between text-[8px] text-stone-400 px-1 tabular-nums">
-              <span>{d.mine[0].season} ({sgn(d.mine[0].m)})</span>
-              <span>{d.mine[d.mine.length - 1].season} ({sgn(d.mine[d.mine.length - 1].m)})</span>
             </div>
           </>
         )}
@@ -3469,8 +3467,8 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   );
 }
 
-function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, onPrev, onNext }) {
-  const [rateMode, setRateMode] = useState("per36");
+function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }) {
+  const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -3500,22 +3498,8 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, 
   const maxAbs = Math.max(...cats.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
 
-  const hasNav = !!(onPrev || onNext);
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
-      <div className="flex items-stretch gap-1">
-      {hasNav && (
-        <button
-          type="button"
-          disabled={!onPrev}
-          onClick={onPrev}
-          aria-label="Previous"
-          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-        >
-          ‹
-        </button>
-      )}
-      <div className="flex-1 min-w-0">
       <div className="flex justify-end mb-1.5">
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
@@ -3527,19 +3511,20 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, 
         const isPos = c.value >= 0;
         const perG = c.value / gp;
         const catOpen = context && openCat === c.key;
+        // Whole row is the tap target (same as the playoff breakdown), with
+        // the selected row highlighted.
+        const onCatTap = context ? () => setOpenCat(catOpen ? null : c.key) : undefined;
         return (
           <React.Fragment key={c.key}>
-            <div className="flex items-center gap-2 text-[10px] py-[1px]">
-              {context ? (
-                <button
-                  onClick={() => setOpenCat(catOpen ? null : c.key)}
-                  className={`w-[4.5rem] shrink-0 text-right underline decoration-dotted decoration-stone-300 underline-offset-2 hover:text-stone-900 ${catOpen ? "text-stone-900 font-semibold" : "text-stone-600"}`}
-                >
-                  {c.key}
-                </button>
-              ) : (
-                <span className="w-[4.5rem] shrink-0 text-right text-stone-600">{c.key}</span>
-              )}
+            <div
+              className={`flex items-center gap-2 text-[10px] py-[1px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${catOpen ? "bg-stone-200" : ""}`}
+              onClick={onCatTap}
+              role={onCatTap ? "button" : undefined}
+              tabIndex={onCatTap ? 0 : undefined}
+              onKeyDown={onCatTap ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onCatTap(); } } : undefined}
+              aria-pressed={onCatTap ? catOpen : undefined}
+            >
+              <span className={`w-[4.5rem] shrink-0 text-right ${catOpen ? "text-stone-900 font-semibold" : "text-stone-600"}`}>{c.key}</span>
               <div className="flex-1 relative h-4">
                 <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
                 <div className="absolute inset-y-0.5" style={{ backgroundColor: isPos ? "#1c1917" : "#a8a29e", left: isPos ? "50%" : `${50 - pct}%`, width: `${pct}%` }} />
@@ -3554,19 +3539,6 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, 
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
         Bars show per-game contribution above / below {baseline || (context ? "NBA playoff" : "D-I")} average{context ? " · tap a category for league context" : ""}
-      </div>
-      </div>
-      {hasNav && (
-        <button
-          type="button"
-          disabled={!onNext}
-          onClick={onNext}
-          aria-label="Next"
-          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-        >
-          ›
-        </button>
-      )}
       </div>
     </div>
   );
@@ -3696,19 +3668,24 @@ function CollegeView() {
 }
 
 export default function PlayoffTracker() {
-  const [tab, setTab] = useState("current");
+  const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
 
   return (
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Playoff</div>
-          <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Draft Tracker</h1>
-          <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Box Score</div>
+          <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Value Added Tracker</h1>
         </header>
 
         <div className="flex border-b-2 border-stone-900 mb-5 overflow-x-auto">
+          <button
+            onClick={() => setTab("explore")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "explore" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Explore
+          </button>
           <button
             onClick={() => setTab("current")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "current" ? "bg-stone-900 text-white" : "text-stone-500"}`}
@@ -3724,12 +3701,6 @@ export default function PlayoffTracker() {
               {s}
             </button>
           ))}
-          <button
-            onClick={() => setTab("explore")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "explore" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Explore
-          </button>
           <button
             onClick={() => setTab("college")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
