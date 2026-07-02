@@ -1954,10 +1954,15 @@ function exploreSeasonList() {
   return seasons;
 }
 
-function PlayoffLeaderboard({ season, lga }) {
+function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [rsError, setRsError] = useState(null);
+  const [rsLoading, setRsLoading] = useState(false);
+  // Full regular-season rows; feeds the rs/combined scopes AND the per-36
+  // reference tick in the playoff drill-in.
+  const [rsData, setRsData] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [teamFilter, setTeamFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -1973,10 +1978,6 @@ function PlayoffLeaderboard({ season, lga }) {
   // Name of the player whose G cell was just tapped, so we can scroll
   // their row into view after the list re-sorts/filters.
   const [pendingScrollName, setPendingScrollName] = useState(null);
-  // Regular-season totals load independently so a slow BR fetch doesn't
-  // block the leaderboard; the reference tick just appears once it arrives.
-  const [rsLookup, setRsLookup] = useState(null);
-
   useEffect(() => {
     let cancelled = false;
     setData(null);
@@ -1987,8 +1988,10 @@ function PlayoffLeaderboard({ season, lga }) {
     setMinGames(null);
     setPendingScrollName(null);
     setExpanded(null);
-    setRsLookup(null);
+    setRsData(null);
+    setRsError(null);
     setLoading(true);
+    setRsLoading(true);
     fetch(`/api/leaderboard?season=${season}`)
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
@@ -1998,27 +2001,79 @@ function PlayoffLeaderboard({ season, lga }) {
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
+    // Regular-season totals load independently so a slow BR fetch doesn't
+    // block the playoff leaderboard; in playoff scope they only feed the
+    // reference tick, in the other scopes they're the data itself.
     fetch(`/api/regular-season?season=${season}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (cancelled || !d || !Array.isArray(d.players)) return;
-        const bySlug = {}, byName = {}, byNorm = {};
-        for (const p of d.players) {
-          if (p.slug) bySlug[p.slug] = p;
-          // Multiple players can share a name; the leaderboard prefers slug,
-          // but a name lookup is the fallback for the ESPN/live path where
-          // we don't have a BR slug. Keeping the *first* row is fine — the
-          // bake/route already prefers the TOT row when one exists.
-          if (!p.name) continue;
-          if (!byName[p.name]) byName[p.name] = p;
-          const n = normalizeName(p.name);
-          if (n && !byNorm[n]) byNorm[n] = p;
-        }
-        setRsLookup({ bySlug, byName, byNorm });
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
       })
-      .catch(() => {});
+      .then((d) => { if (!cancelled && Array.isArray(d.players)) setRsData(d); })
+      .catch((e) => !cancelled && setRsError(e.message || "Load failed"))
+      .finally(() => !cancelled && setRsLoading(false));
     return () => { cancelled = true; };
   }, [season]);
+
+  // Regular-season rows in leaderboard shape: gp/reb aliases plus VA + EFF
+  // computed against the season's league baselines (rs bakes don't carry VA).
+  const rsPlayers = useMemo(() => {
+    if (!rsData?.players?.length) return null;
+    return rsData.players.map((p) => {
+      const parts = valueAddParts(p, lga);
+      return { ...p, gp: p.g, reb: (p.drb || 0) + (p.orb || 0), va: parts.va, eff: parts.efficiency, games: [] };
+    });
+  }, [rsData, lga]);
+
+  const rsLookup = useMemo(() => {
+    if (!rsData?.players?.length) return null;
+    const bySlug = {}, byName = {}, byNorm = {};
+    for (const p of rsData.players) {
+      if (p.slug) bySlug[p.slug] = p;
+      // Multiple players can share a name; the leaderboard prefers slug,
+      // but a name lookup is the fallback for the ESPN/live path where
+      // we don't have a BR slug. Keeping the *first* row is fine — the
+      // bake/route already prefers the TOT row when one exists.
+      if (!p.name) continue;
+      if (!byName[p.name]) byName[p.name] = p;
+      const n = normalizeName(p.name);
+      if (n && !byNorm[n]) byNorm[n] = p;
+    }
+    return { bySlug, byName, byNorm };
+  }, [rsData]);
+
+  // Combined scope: playoff rows absorb their regular-season counterpart
+  // (slug join, then normalized name), regular-season-only players are kept,
+  // VA/EFF recomputed on the summed totals. If the season has no rs bake yet
+  // this falls back to the playoff rows alone.
+  const combinedPlayers = useMemo(() => {
+    if (!data?.players?.length) return null;
+    const bySlug = new Map(), byNorm = new Map();
+    for (const r of rsPlayers || []) {
+      if (r.slug) bySlug.set(r.slug, r);
+      const n = normalizeName(r.name);
+      if (n && !byNorm.has(n)) byNorm.set(n, r);
+    }
+    const used = new Set();
+    const rows = data.players.map((p) => {
+      const r = (p.slug && bySlug.get(p.slug)) || byNorm.get(normalizeName(p.name)) || null;
+      if (r) used.add(r);
+      const sum = { name: p.name, slug: p.slug || r?.slug, team: p.team, gp: (p.gp || 0) + (r?.gp || 0), games: [] };
+      for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) {
+        sum[k] = (p[k] || 0) + (r ? r[k] || 0 : 0);
+      }
+      sum.reb = sum.drb + sum.orb;
+      const parts = valueAddParts(sum, lga);
+      sum.va = parts.va;
+      sum.eff = parts.efficiency;
+      return sum;
+    });
+    for (const r of rsPlayers || []) {
+      if (!used.has(r)) rows.push(r);
+    }
+    return rows;
+  }, [data, rsPlayers, lga]);
 
   useEffect(() => {
     if (!pendingScrollName) return;
@@ -2028,25 +2083,31 @@ function PlayoffLeaderboard({ season, lga }) {
     setPendingScrollName(null);
   }, [pendingScrollName]);
 
-  if (loading) {
+  const title = scope === "regular" ? "Regular Season Leaderboard"
+    : scope === "combined" ? "Combined Leaderboard"
+    : "Playoff Leaderboard";
+  // What has to finish before this scope can render.
+  const scopeLoading = scope === "regular" ? rsLoading : scope === "combined" ? (loading || rsLoading) : loading;
+  const scopeError = scope === "regular" ? rsError : error;
+  if (scopeLoading) {
     return (
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Playoff Leaderboard</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">{title}</div>
         <div className="text-[10px] text-stone-500 italic py-2 text-center">Aggregating box scores… (first load may take ~10s)</div>
       </div>
     );
   }
-  if (error) {
+  if (scopeError) {
     return (
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Playoff Leaderboard</div>
-        <div className="text-[10px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load — {error}</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">{title}</div>
+        <div className="text-[10px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load — {scopeError}</div>
       </div>
     );
   }
-  if (!data || !data.players?.length) return null;
 
-  const all = data.players;
+  const all = scope === "regular" ? rsPlayers : scope === "combined" ? combinedPlayers : data?.players;
+  if (!all?.length) return null;
   // Composite default sort: each axis (Total VA, VA/G) is scored as a
   // fraction of that axis's leader, then summed. So a player at half
   // the leader's volume scores 0.5 on Total VA — not just "rank #2" —
@@ -2091,7 +2152,7 @@ function PlayoffLeaderboard({ season, lga }) {
   return (
     <div className="mb-4 border border-stone-300 bg-white">
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex items-center justify-between gap-2">
-        <span>Playoff Leaderboard</span>
+        <span>{title}</span>
         <div className="flex items-center gap-1.5">
           {minGames != null && (
             <button
@@ -2117,6 +2178,11 @@ function PlayoffLeaderboard({ season, lga }) {
           })()}
         </div>
       </div>
+      {scope === "combined" && !rsPlayers && (
+        <div className="px-3 py-1.5 text-[9px] italic text-stone-400 border-b border-stone-200">
+          Regular-season totals aren’t baked for {season} yet — showing playoff stats only.
+        </div>
+      )}
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
         <span className="w-10">Team</span>
@@ -2246,7 +2312,7 @@ function PlayoffLeaderboard({ season, lga }) {
               <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
               </div>
             </div>
-            {isOpen && (
+            {isOpen && (scope === "playoffs" ? (
               <VABreakdown
                 p={p}
                 lga={lga}
@@ -2265,7 +2331,11 @@ function PlayoffLeaderboard({ season, lga }) {
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
               />
-            )}
+            ) : (
+              // No per-game logs outside the playoffs — show the season-total
+              // per-category breakdown instead.
+              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" />
+            ))}
           </div>
         );
       });
@@ -2294,6 +2364,9 @@ function ExploreView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState("season"); // "season" | "player"
+  // Which games count: regular season, playoffs, or both summed. Applies to
+  // both By Season and By Player.
+  const [scope, setScope] = useState("playoffs"); // "regular" | "playoffs" | "combined"
 
   useEffect(() => {
     let cancelled = false;
@@ -2311,7 +2384,9 @@ function ExploreView() {
   }, [FALLBACK]);
 
   useEffect(() => {
-    if (mode !== "season") return;
+    // Series box scores only exist for the playoffs; the other scopes render
+    // just the leaderboard.
+    if (mode !== "season" || scope !== "playoffs") return;
     let cancelled = false;
     setData(null);
     setError(null);
@@ -2326,7 +2401,7 @@ function ExploreView() {
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [season, mode]);
+  }, [season, mode, scope]);
 
   const lga = lgaForSeason(season);
   const byRound = useMemo(() => {
@@ -2340,15 +2415,23 @@ function ExploreView() {
   const tabCls = (active) =>
     `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
 
+  const scopeCls = (active) =>
+    `flex-1 text-[9px] uppercase tracking-[0.15em] px-2 py-1.5 border ${active ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
+
   return (
     <div>
-      <div className="mb-4 flex gap-2">
+      <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
       </div>
+      <div className="mb-4 flex gap-1.5">
+        <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
+        <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
+        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
+      </div>
 
       {mode === "player" ? (
-        <PlayerExplorer />
+        <PlayerExplorer scope={scope} />
       ) : (
         <>
           <div className="mb-4 p-3 bg-white border border-stone-300">
@@ -2365,16 +2448,22 @@ function ExploreView() {
             <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN and Basketball-Reference.</div>
           </div>
 
-          {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
-          {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
-          {!loading && !error && data && (
+          {scope !== "playoffs" ? (
+            <PlayoffLeaderboard season={season} lga={lga} scope={scope} />
+          ) : (
             <>
-              <PlayoffLeaderboard season={season} lga={lga} />
-              {(["r1", "r2", "r3", "r4"]).map((rk) => (
-                <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
-              ))}
-              {data.series && data.series.length === 0 && (
-                <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+              {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
+              {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
+              {!loading && !error && data && (
+                <>
+                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} />
+                  {(["r1", "r2", "r3", "r4"]).map((rk) => (
+                    <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
+                  ))}
+                  {data.series && data.series.length === 0 && (
+                    <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -2386,24 +2475,27 @@ function ExploreView() {
 
 // "By Player" mode: search the cross-season index from /api/players and show a
 // single player's playoff seasons ranked by Value Added.
-function PlayerExplorer() {
-  const [index, setIndex] = useState(null);
-  const [loading, setLoading] = useState(true);
+function PlayerExplorer({ scope = "playoffs" }) {
+  // One index per scope, cached so flipping the selector doesn't refetch.
+  const [cache, setCache] = useState({});
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
   const [openSeason, setOpenSeason] = useState(null);
   const selectPlayer = (k) => { setSelectedKey(k); setOpenSeason(null); };
+  const index = cache[scope] || null;
+  const loading = !index && !error;
 
   useEffect(() => {
+    if (cache[scope]) return;
     let cancelled = false;
-    setLoading(true);
-    fetch("/api/players")
+    setError(null);
+    fetch(`/api/players?scope=${scope}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d) => { if (!cancelled) { setIndex(d.players || []); setLoading(false); } })
-      .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });
+      .then((d) => { if (!cancelled) setCache((c) => ({ ...c, [scope]: d.players || [] })); })
+      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
-  }, []);
+  }, [scope, cache]);
 
   const keyOf = (p) => p.slug || p.name;
 
@@ -2443,6 +2535,9 @@ function PlayerExplorer() {
   if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
   if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
 
+  // "3 playoff runs" / "3 regular seasons" / "3 combined seasons"
+  const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
+
   if (player) {
     return (
       <div>
@@ -2455,7 +2550,7 @@ function PlayerExplorer() {
         <div className="mb-3">
           <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
           <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
-            {player.seasons.length} playoff run{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
+            {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
             <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
           </div>
         </div>
@@ -2477,7 +2572,7 @@ function PlayerExplorer() {
                 <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
                 <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
               </div>
-              {sOpen && <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} context={contextData ? { ...contextData, self: player } : null} />}
+              {sOpen && <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} context={contextData ? { ...contextData, self: player, scope } : null} />}
             </div>
           );
         })}
@@ -2497,7 +2592,9 @@ function PlayerExplorer() {
         className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-3"
       />
       {query.trim().length < 2 ? (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">Type a name to see their playoff seasons ranked by Value Added.</div>
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">
+          Type a name to see their {scope === "playoffs" ? "playoff runs" : scope === "regular" ? "regular seasons" : "combined seasons"} ranked by Value Added.
+        </div>
       ) : matches.length === 0 ? (
         <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
       ) : (
@@ -2509,7 +2606,7 @@ function PlayerExplorer() {
           >
             <span className="text-sm font-semibold text-stone-800">{p.name}</span>
             <span className="text-[10px] uppercase tracking-wider text-stone-400 shrink-0">
-              {p.seasons.length} run{p.seasons.length === 1 ? "" : "s"} · {p.teams.join("/")} · best{" "}
+              {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} · {p.teams.join("/")} · best{" "}
               <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
             </span>
           </button>
@@ -2901,6 +2998,9 @@ function InfoView() {
 function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const { poolsBySeason, allRows, self } = context;
   const selfRow = { ...p, name: self.name, slug: self.slug || null };
+  // Pools follow the Explore scope selector; say so in the fine print.
+  const scopeNoun = context.scope === "regular" ? "regular-season"
+    : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
 
   const d = useMemo(() => {
     // Season pool (views 1 & 2): qualified = played >= 1/3 of this player's GP.
@@ -2980,7 +3080,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Among playoff players with ≥{d.floor} G ({short} = per-game rate, {rateMode === "perG" ? "per game" : "per 36"}).</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Among {scopeNoun} players with ≥{d.floor} G ({short} = per-game rate, {rateMode === "perG" ? "per game" : "per 36"}).</div>
       </div>
 
       {/* View 2 — percentile + distribution strip. The percentile reads as a
@@ -3020,7 +3120,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
             </div>
           </>
         )}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Across all {d.allN} indexed playoff seasons (≥{d.floorA} G).</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Across all {d.allN} indexed {scopeNoun} seasons (≥{d.floorA} G).</div>
       </div>
 
       {/* View 6 — trend across this player's seasons */}
@@ -3052,7 +3152,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   );
 }
 
-function VACategoryBreakdown({ player: p, lga, context = null }) {
+function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }) {
   const [rateMode, setRateMode] = useState("per36");
   const [openCat, setOpenCat] = useState(null);
   if (p.ast == null || !lga || !(p.mp > 0)) {
@@ -3122,7 +3222,7 @@ function VACategoryBreakdown({ player: p, lga, context = null }) {
         );
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show per-game contribution above / below {context ? "NBA playoff" : "D-I"} average{context ? " · tap a category for league context" : ""}
+        Bars show per-game contribution above / below {baseline || (context ? "NBA playoff" : "D-I")} average{context ? " · tap a category for league context" : ""}
       </div>
     </div>
   );

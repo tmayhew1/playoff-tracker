@@ -44,14 +44,18 @@ current_season_for <- function(d = Sys.Date()) {
   make_season(start)
 }
 
-# A season counts as "present" only when its LEADERBOARD exists. Some older
-# seasons have a history-<season>.json (from the retired pipeline) but no
-# leaderboard-, and the cross-season player index is built from leaderboards --
-# so keying off history would wrongly skip them. Keying off leaderboard makes
-# the gap-fill bake those seasons.
+# A season counts as "present" only when BOTH its leaderboard AND its
+# regular-season file exist. Keying off a single file wrongly skips seasons an
+# earlier pipeline left half-baked (history- without leaderboard-, or
+# leaderboard- without regular-season-), and the app needs the pair: the
+# cross-season player index reads leaderboards, and the Explore scope selector
+# reads regular-season totals. Requiring both makes the gap-fill re-bake any
+# season missing either.
 seasons_present <- function() {
-  files <- list.files(DATA_DIR, pattern = "^leaderboard-[0-9]{4}-[0-9]{2}\\.json$")
-  sort(sub("^leaderboard-(.*)\\.json$", "\\1", files))
+  season_of <- function(pattern, re) sub(re, "\\1", list.files(DATA_DIR, pattern = pattern))
+  lb <- season_of("^leaderboard-[0-9]{4}-[0-9]{2}\\.json$", "^leaderboard-(.*)\\.json$")
+  rs <- season_of("^regular-season-[0-9]{4}-[0-9]{2}\\.json$", "^regular-season-(.*)\\.json$")
+  sort(intersect(lb, rs))
 }
 
 run <- function(script, args) {
