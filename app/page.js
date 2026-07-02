@@ -281,21 +281,44 @@ const CAT_SHORT = {
   "Assists": "Ast", "Turnovers": "TO", "D Rebounds": "DReb", "O Rebounds": "OReb",
   "Blocks": "Blk", "Steals": "Stl",
 };
-// Rate label for one player-season in one category, respecting the toggle.
+// "Basic" grouping: the ten categories folded into the four buckets the
+// detail view's dividers already imply. Order matches the on-screen groups.
+const VA_GROUPS = [
+  { key: "Scoring", cats: ["Points", "2-Pointers", "3-Pointers", "Free Throws"] },
+  { key: "Passing", cats: ["Assists", "Turnovers"] },
+  { key: "Rebounds", cats: ["D Rebounds", "O Rebounds"] },
+  { key: "Defense", cats: ["Blocks", "Steals"] },
+];
+const VA_GROUP_BY_KEY = Object.fromEntries(VA_GROUPS.map((g) => [g.key, g]));
+// Representative counting stat shown next to a group's summed VA.
+const GROUP_STAT = {
+  "Scoring": [(r) => r.pts || 0, "PTS"],
+  "Passing": [(r) => r.ast || 0, "AST"],
+  "Rebounds": [(r) => (r.drb || 0) + (r.orb || 0), "REB"],
+  "Defense": [(r) => (r.stl || 0) + (r.blk || 0), "STL+BLK"],
+};
+// Rate label for one player-season in one category or group, respecting the toggle.
 function catRateLabel(r, key, rateMode) {
   if (CAT_SHOOTING[key]) {
     const [m, a] = CAT_SHOOTING[key](r);
     return `${m}/${a} (${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%)`;
   }
-  const [stat, tag] = CAT_COUNTING[key];
-  const v = r[stat] || 0;
+  const [statOf, tag] = GROUP_STAT[key] || [];
+  const v = statOf ? statOf(r) : (r[CAT_COUNTING[key][0]] || 0);
+  const t = tag || CAT_COUNTING[key][1];
   return rateMode === "perG"
-    ? `${(v / (r.gp || 1)).toFixed(1)} ${tag}/G`
-    : `${((v / (r.mp || 1)) * 36).toFixed(1)} ${tag}/36`;
+    ? `${(v / (r.gp || 1)).toFixed(1)} ${t}/G`
+    : `${((v / (r.mp || 1)) * 36).toFixed(1)} ${t}/36`;
+}
+// Total category (or group) VA for one stat line.
+function catVATotal(r, lgaX, key) {
+  const by = valueAddByCategory(r, lgaX);
+  const g = VA_GROUP_BY_KEY[key];
+  return g ? g.cats.reduce((s, c) => s + (by[c] || 0), 0) : (by[key] || 0);
 }
 // Per-game category VA — the metric the context ranks/plots everything on.
 function catVAperGame(r, lgaX, key) {
-  return valueAddByCategory(r, lgaX)[key] / (r.gp || 1);
+  return catVATotal(r, lgaX, key) / (r.gp || 1);
 }
 // Identity match between two player-season rows (slug when both have one,
 // else normalized name). Rows within a season pool are unique per player.
@@ -379,6 +402,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // that category's per-game contribution (e.g. "2-Pointers" → 2P VA in
   // each game). Tap again to clear.
   const [selectedCategory, setSelectedCategory] = useState(null);
+  // "basic" folds the ten categories into the four Scoring/Passing/
+  // Rebounds/Defense buckets with summed VA; "detail" is the full list.
+  const [viewMode, setViewMode] = useState("detail");
+  const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
   // Per-36 vs per-game normalization for the counting-stat labels (PTS,
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
@@ -443,13 +470,25 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
 
+  // "Basic" rows: each group's member categories summed, labeled with the
+  // group's representative counting stat.
+  const groupRows = VA_GROUPS.map((g) => {
+    const [statOf, tag] = GROUP_STAT[g.key];
+    return {
+      key: g.key,
+      value: g.cats.reduce((s, k) => s + (categories.find((c) => c.key === k)?.value || 0), 0),
+      label: cnt(statOf(p), tag),
+    };
+  });
+  const activeRows = viewMode === "basic" ? groupRows : categories;
+
   // Per-game series for the spark line. Defaults to whatever the caller
-  // passed (raw per-game VA), but flips to a single category's per-game
-  // contribution when the user taps a category row.
+  // passed (raw per-game VA), but flips to a single category's (or group's)
+  // per-game contribution when the user taps a row.
   const chartValues = (selectedCategory && Array.isArray(byGame))
     ? byGame.map((snap) => {
         if (!snap) return null;
-        const v = valueAddByCategory(snap, lga)[selectedCategory];
+        const v = catVATotal(snap, lga, selectedCategory);
         return Number.isFinite(v) ? v : null;
       })
     : gameSeries;
@@ -466,11 +505,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     const full = valueAddByCategory(regularSeasonTotals, lga);
     const out = {};
     for (const k of Object.keys(full)) out[k] = (full[k] / regularSeasonTotals.g) * referenceScale;
+    for (const g of VA_GROUPS) out[g.key] = g.cats.reduce((s, c) => s + (out[c] || 0), 0);
     return out;
   })();
 
-  const refMagnitudes = refByKey ? Object.values(refByKey).map((v) => Math.abs(v || 0)) : [];
-  const maxAbs = Math.max(...categories.map((c) => Math.abs(c.value)), ...refMagnitudes, 0.5);
+  const refMagnitudes = refByKey ? activeRows.map((c) => Math.abs(refByKey[c.key] || 0)) : [];
+  const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), ...refMagnitudes, 0.5);
   const owner = teams[p.team]?.owner;
   // Accent color drives the chart line/dot and the positive bars. Historical
   // and explore contexts use the player's team color; live/draft uses the
@@ -689,12 +729,29 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           )}
         </div>
       </div>
-      {/* Per 36 / Per G toggle — sits right above the rate-label column
-          on the right, only when the breakdown is in multi-game rate
-          mode. Hidden in single-game drill-ins where rate labels show
-          raw counts (no toggle would apply). */}
-      {effectiveRate && (
-        <div className="flex justify-end mb-1">
+      {/* View toggle (Basic groups vs the full category list) on the left;
+          Per 36 / Per G rate toggle on the right — the latter only in
+          multi-game rate mode (single-game drill-ins show raw counts). */}
+      <div className="flex justify-between items-center mb-1">
+        <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+          <button
+            type="button"
+            onClick={() => switchView("basic")}
+            className={`whitespace-nowrap px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+            aria-pressed={viewMode === "basic"}
+          >
+            Basic
+          </button>
+          <button
+            type="button"
+            onClick={() => switchView("detail")}
+            className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${viewMode === "detail" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+            aria-pressed={viewMode === "detail"}
+          >
+            By Category
+          </button>
+        </div>
+        {effectiveRate && (
           <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
             <button
               type="button"
@@ -713,10 +770,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               Per G
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       <div className="space-y-0.5">
-        {categories.map((c, i) => {
+        {activeRows.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
           const isPos = c.value >= 0;
           const ref = refByKey ? refByKey[c.key] : null;
@@ -776,7 +833,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               {context && atSeasonLevel && isCatSel && (
                 <CategoryContext p={pSeries} catKey={c.key} lga={lga} rateMode={rateMode} context={context} />
               )}
-              {VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
+              {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
             </React.Fragment>
           );
         })}
@@ -3470,6 +3527,9 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
 function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
+  // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
+  const [viewMode, setViewMode] = useState("detail");
+  const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
   }
@@ -3495,18 +3555,33 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
     { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
-  const maxAbs = Math.max(...cats.map((c) => Math.abs(c.value)), 0.1);
+  // "Basic" rows: group members summed, labeled with the group's
+  // representative counting stat.
+  const groupRows = VA_GROUPS.map((g) => {
+    const [statOf, tag] = GROUP_STAT[g.key];
+    return {
+      key: g.key,
+      value: g.cats.reduce((s, k) => s + (cats.find((c) => c.key === k)?.value || 0), 0),
+      label: cnt(statOf(p), tag),
+    };
+  });
+  const activeRows = viewMode === "basic" ? groupRows : cats;
+  const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
 
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
-      <div className="flex justify-end mb-1.5">
+      <div className="flex justify-between items-center mb-1.5">
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <button onClick={() => switchView("basic")} className={`px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Basic</button>
+          <button onClick={() => switchView("detail")} className={`px-1.5 py-0.5 border-l border-stone-300 ${viewMode === "detail" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>By Category</button>
+        </div>
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
           <button onClick={() => setRateMode("perG")} className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per G</button>
         </div>
       </div>
-      {cats.map((c) => {
+      {activeRows.map((c) => {
         const pct = (Math.abs(c.value) / maxAbs) * 45;
         const isPos = c.value >= 0;
         const perG = c.value / gp;
@@ -3533,7 +3608,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
               <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
             </div>
             {catOpen && <CategoryContext p={p} catKey={c.key} lga={lga} rateMode={rateMode} context={context} />}
-            {VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
+            {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
           </React.Fragment>
         );
       })}
