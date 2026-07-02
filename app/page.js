@@ -304,6 +304,50 @@ function samePlayer(a, b) {
   return normalizeName(a.name || "") === normalizeName(b.name || "");
 }
 
+// Promise-cached JSON fetch so By Season and By Player share one network hit
+// for the big payloads (player index, per-season leaderboards, rs totals).
+const _jsonCache = new Map();
+function fetchJsonCached(url) {
+  if (!_jsonCache.has(url)) {
+    _jsonCache.set(url, fetch(url)
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+        return d;
+      })
+      .catch((e) => { _jsonCache.delete(url); throw e; }));
+  }
+  return _jsonCache.get(url);
+}
+
+// Flatten a /api/players index into the pools CategoryContext ranks against:
+// every player-season row (all-time pool) plus the same rows grouped by
+// season. Rows are tagged with the owner's name + slug for identity checks.
+function buildScopePools(indexPlayers) {
+  const allRows = [];
+  const poolsBySeason = new Map();
+  for (const pl of indexPlayers) {
+    for (const s of pl.seasons) {
+      const row = { ...s, name: pl.name, slug: pl.slug || null };
+      allRows.push(row);
+      if (!poolsBySeason.has(s.season)) poolsBySeason.set(s.season, []);
+      poolsBySeason.get(s.season).push(row);
+    }
+  }
+  return { allRows, poolsBySeason };
+}
+
+// Find the index entry for a leaderboard/rs row (slug first, then name).
+function findIndexPlayer(indexPlayers, row) {
+  if (!indexPlayers) return null;
+  if (row.slug) {
+    const hit = indexPlayers.find((pl) => pl.slug === row.slug);
+    if (hit) return hit;
+  }
+  const n = normalizeName(row.name || "");
+  return indexPlayers.find((pl) => normalizeName(pl.name) === n) || null;
+}
+
 // Helper: aggregate raw stat snapshots into a player object matching what
 // VABreakdown expects (mp/pts/.../fgm/.../va), preserving identity.
 function aggregateSnapshots(base, snapshots) {
@@ -324,7 +368,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -341,7 +385,12 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   const [rateMode, setRateMode] = useState("per36");
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
-  const canSelectCategory = canSelect;
+  // Category rows are tappable when tapping can do something: swap the chart
+  // (multi-game views) and/or open the league-context panel.
+  const canSelectCategory = canSelect || !!context;
+  // The context panel compares season totals against the season pool, so it
+  // only renders at the aggregate level — not on a drilled game or series.
+  const atSeasonLevel = !selectedGame && selectedSeriesIdx == null;
 
   let p;
   if (canSelect && selectedGame) {
@@ -724,13 +773,16 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                 )}
                 <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
+              {context && atSeasonLevel && isCatSel && (
+                <CategoryContext p={pSeries} catKey={c.key} lga={lga} rateMode={rateMode} context={context} />
+              )}
               {VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
             </React.Fragment>
           );
         })}
       </div>
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show contribution above/below league average
+        Bars show contribution above/below league average{context && atSeasonLevel ? " · tap a category for league context" : ""}
       </div>
         </div>
         {showNav && !inGameNav && (
@@ -1992,24 +2044,14 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     setRsError(null);
     setLoading(true);
     setRsLoading(true);
-    fetch(`/api/leaderboard?season=${season}`)
-      .then(async (r) => {
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchJsonCached(`/api/leaderboard?season=${season}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     // Regular-season totals load independently so a slow BR fetch doesn't
     // block the playoff leaderboard; in playoff scope they only feed the
     // reference tick, in the other scopes they're the data itself.
-    fetch(`/api/regular-season?season=${season}`)
-      .then(async (r) => {
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
-        return d;
-      })
+    fetchJsonCached(`/api/regular-season?season=${season}`)
       .then((d) => { if (!cancelled && Array.isArray(d.players)) setRsData(d); })
       .catch((e) => !cancelled && setRsError(e.message || "Load failed"))
       .finally(() => !cancelled && setRsLoading(false));
@@ -2074,6 +2116,28 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     }
     return rows;
   }, [data, rsPlayers, lga]);
+
+  // League-context pools for the category drill-ins (same panel as By
+  // Player). The scope index is a multi-MB payload, so it's fetched lazily on
+  // first row expand and cached per scope — and shared with By Player through
+  // fetchJsonCached, so whichever view loads it first pays the cost.
+  const [ctxByScope, setCtxByScope] = useState({});
+  const ctxPlayers = ctxByScope[scope] || null;
+  useEffect(() => {
+    if (expanded == null || ctxByScope[scope]) return;
+    let cancelled = false;
+    fetchJsonCached(`/api/players?scope=${scope}`)
+      .then((d) => { if (!cancelled) setCtxByScope((c) => ({ ...c, [scope]: d.players || [] })); })
+      .catch(() => {}); // context is an enhancement; the breakdown works without it
+    return () => { cancelled = true; };
+  }, [expanded, scope, ctxByScope]);
+  const ctxPools = useMemo(() => (ctxPlayers ? buildScopePools(ctxPlayers) : null), [ctxPlayers]);
+  const contextFor = (p) => {
+    if (!ctxPools) return null;
+    const self = findIndexPlayer(ctxPlayers, p);
+    if (!self) return null;
+    return { ...ctxPools, self, scope, season };
+  };
 
   useEffect(() => {
     if (!pendingScrollName) return;
@@ -2330,13 +2394,22 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 enableSeriesDrill
                 playerConf={TEAM_CONF[p.team] || TEAMS[p.team]?.conf || null}
                 regularSeasonTotals={rsLookup ? (rsLookup.bySlug[p.slug] || rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
+                context={contextFor(p)}
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
               />
             ) : (
               // No per-game logs outside the playoffs — show the season-total
-              // per-category breakdown instead.
-              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" />
+              // per-category breakdown instead, with the same category
+              // context drill-ins and player prev/next as the playoff view.
+              <VACategoryBreakdown
+                player={p}
+                lga={lga}
+                baseline="NBA"
+                context={contextFor(p)}
+                onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
+                onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
+              />
             ))}
           </div>
         );
@@ -2479,12 +2552,12 @@ function ExploreView() {
 // single player's playoff seasons ranked by Value Added.
 function PlayerExplorer({ scope = "playoffs" }) {
   // One index per scope, cached so flipping the selector doesn't refetch.
+  // fetchJsonCached also shares the payload with the By Season context fetch.
   const [cache, setCache] = useState({});
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
-  const [openSeason, setOpenSeason] = useState(null);
-  const selectPlayer = (k) => { setSelectedKey(k); setOpenSeason(null); };
+  const selectPlayer = (k) => setSelectedKey(k);
   const index = cache[scope] || null;
   const loading = !index && !error;
 
@@ -2492,8 +2565,7 @@ function PlayerExplorer({ scope = "playoffs" }) {
     if (cache[scope]) return;
     let cancelled = false;
     setError(null);
-    fetch(`/api/players?scope=${scope}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    fetchJsonCached(`/api/players?scope=${scope}`)
       .then((d) => { if (!cancelled) setCache((c) => ({ ...c, [scope]: d.players || [] })); })
       .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
@@ -2519,67 +2591,21 @@ function PlayerExplorer({ scope = "playoffs" }) {
   // Cross-season/-player pools that power the per-category "league context"
   // dropdown. Each player-season row is tagged with the owner's name + slug so
   // the context can rank, place, and find the player within a season or all-time.
-  const contextData = useMemo(() => {
-    if (!index) return null;
-    const allRows = [];
-    const poolsBySeason = new Map();
-    for (const pl of index) {
-      for (const s of pl.seasons) {
-        const row = { ...s, name: pl.name, slug: pl.slug || null };
-        allRows.push(row);
-        if (!poolsBySeason.has(s.season)) poolsBySeason.set(s.season, []);
-        poolsBySeason.get(s.season).push(row);
-      }
-    }
-    return { allRows, poolsBySeason };
-  }, [index]);
+  const contextData = useMemo(() => (index ? buildScopePools(index) : null), [index]);
 
   if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
   if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
 
-  // "3 playoff runs" / "3 regular seasons" / "3 combined seasons"
-  const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
-
   if (player) {
+    // Keyed so sort/filter/expanded state resets when the player or scope changes.
     return (
-      <div>
-        <button
-          onClick={() => selectPlayer(null)}
-          className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
-        >
-          ‹ Back to search
-        </button>
-        <div className="mb-3">
-          <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
-          <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
-            {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
-            <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-          <span></span><span>Season</span><span>Team</span><span className="text-right">GP</span><span className="text-right">VA</span><span className="text-right">VA/G</span>
-        </div>
-        {player.seasons.map((s, i) => {
-          const sOpen = openSeason === s.season;
-          return (
-            <div key={s.season} className="border-b border-stone-100">
-              <div
-                onClick={() => setOpenSeason(sOpen ? null : s.season)}
-                className="grid grid-cols-[1.5rem_1fr_2.5rem_2rem_3rem_3rem] gap-x-2 items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-stone-50"
-              >
-                <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
-                <span className="font-semibold text-stone-800 tabular-nums">{s.season}</span>
-                <span className="text-[11px] text-stone-500">{s.team}</span>
-                <span className="text-right tabular-nums text-stone-600">{s.gp}</span>
-                <span className={`text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
-                <span className="text-right tabular-nums text-stone-500">{s.vaPerG.toFixed(1)}</span>
-              </div>
-              {sOpen && <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} context={contextData ? { ...contextData, self: player, scope } : null} />}
-            </div>
-          );
-        })}
-        <div className="text-[10px] text-stone-400 italic mt-2 px-2">Tap a season for the per-stat breakdown, then a category for its league context.</div>
-      </div>
+      <PlayerDetail
+        key={`${keyOf(player)}:${scope}`}
+        player={player}
+        scope={scope}
+        contextData={contextData}
+        onBack={() => selectPlayer(null)}
+      />
     );
   }
 
@@ -2608,13 +2634,299 @@ function PlayerExplorer({ scope = "playoffs" }) {
           >
             <span className="text-sm font-semibold text-stone-800">{p.name}</span>
             <span className="text-[10px] uppercase tracking-wider text-stone-400 shrink-0">
-              {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} · {p.teams.join("/")} · best{" "}
-              <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
+              {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} ·{" "}
+              {p.teams.map((t, ti) => (
+                <React.Fragment key={t}>
+                  {ti > 0 && "/"}
+                  <span className="font-semibold" style={{ color: teamColor(t) }}>{t}</span>
+                </React.Fragment>
+              ))}{" "}
+              · best <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
             </span>
           </button>
         ))
       )}
     </div>
+  );
+}
+
+// One player's seasons for the selected scope, rendered with the exact same
+// treatment as the By Season leaderboard: composite default sort with
+// tappable TOT VA / VA/G column headers, team-color badges that filter, a
+// min-games filter on the G column, team-tinted VA bars behind rows, and the
+// landscape-only per-game stat columns. Rows expand to the same drill-ins.
+function PlayerDetail({ player, scope, contextData, onBack }) {
+  const [openSeason, setOpenSeason] = useState(null);
+  const [sortMode, setSortMode] = useState("composite");
+  const [teamFilter, setTeamFilter] = useState(null);
+  const [minGames, setMinGames] = useState(null);
+
+  const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
+  const seasons = player.seasons;
+
+  // Same composite scoring as the By Season leaderboard: each axis as a
+  // fraction of that axis's leader, summed.
+  const vaPerG = (x) => x.va / Math.max(1, x.gp);
+  const safeRatio = (v, max) => (max > 0 ? v / max : 0);
+  const maxVA = Math.max(...seasons.map((x) => x.va));
+  const maxVAperG = Math.max(...seasons.map(vaPerG));
+  const composite = (x) => safeRatio(x.va, maxVA) + safeRatio(vaPerG(x), maxVAperG);
+
+  const effectiveSort = minGames != null ? "vaPerG" : sortMode;
+  const sortedAll =
+    effectiveSort === "totalVA" ? [...seasons].sort((a, b) => b.va - a.va) :
+    effectiveSort === "vaPerG"  ? [...seasons].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
+                                  [...seasons].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
+  const teamFiltered = teamFilter ? sortedAll.filter((x) => x.team === teamFilter) : sortedAll;
+  const shown = minGames != null ? teamFiltered.filter((x) => x.gp >= minGames) : teamFiltered;
+  const maxAbsVa = Math.max(...shown.map((x) => Math.abs(x.va || 0)), 0.5);
+
+  const contextFor = (s) =>
+    contextData ? { ...contextData, self: player, scope, season: s.season } : null;
+  const navFor = (i) => ({
+    onPrev: i > 0 ? () => setOpenSeason(shown[i - 1].season) : undefined,
+    onNext: i < shown.length - 1 ? () => setOpenSeason(shown[i + 1].season) : undefined,
+  });
+
+  return (
+    <div>
+      <button
+        onClick={onBack}
+        className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
+      >
+        ‹ Back to search
+      </button>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
+          <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+            {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
+            <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 pt-1">
+          {minGames != null && (
+            <button
+              onClick={() => setMinGames(null)}
+              className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+              aria-label="Clear min-games filter"
+            >
+              ≥{minGames} games <span className="text-stone-400">×</span>
+            </button>
+          )}
+          {teamFilter && (() => {
+            const c = teamColor(teamFilter);
+            return (
+              <button
+                onClick={() => setTeamFilter(null)}
+                className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
+                style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
+                aria-label={`Clear ${teamFilter} filter`}
+              >
+                {teamFilter} <span className="text-stone-400">×</span>
+              </button>
+            );
+          })()}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
+        <span className="w-6 text-right">#</span>
+        <span className="w-10">Team</span>
+        <span className="flex-1">Season</span>
+        <span className="w-6 text-right">G</span>
+        <span className="hidden sm:block w-8 text-right">PPG</span>
+        <span className="hidden sm:block w-9 text-right">EFF</span>
+        <span className="hidden sm:block w-8 text-right">RPG</span>
+        <span className="hidden sm:block w-8 text-right">APG</span>
+        <span className="hidden sm:block w-8 text-right">SPG</span>
+        <span className="hidden sm:block w-8 text-right">BPG</span>
+        <button
+          type="button"
+          onClick={() => {
+            setMinGames(null);
+            setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
+          }}
+          className={`w-12 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label="Sort by total VA"
+          aria-pressed={effectiveSort === "totalVA"}
+        >
+          TOT VA{effectiveSort === "totalVA" ? " ▼" : ""}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMinGames(null);
+            setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
+          }}
+          className={`w-10 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label="Sort by VA per game"
+          aria-pressed={effectiveSort === "vaPerG"}
+        >
+          VA/G{effectiveSort === "vaPerG" ? " ▼" : ""}
+        </button>
+      </div>
+      {shown.map((s, i) => {
+        const rank = sortedAll.indexOf(s) + 1;
+        const sOpen = openSeason === s.season;
+        const tc = teamColor(s.team);
+        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+        const barColor = s.va >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
+        const barPct = (Math.abs(s.va || 0) / maxAbsVa) * 100;
+        const gp = s.gp || 1;
+        const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
+        return (
+          <div key={s.season} className="border-b border-stone-100 last:border-0">
+            <div className="relative overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 pointer-events-none"
+                style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                aria-hidden
+              />
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setOpenSeason(sOpen ? null : s.season)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpenSeason(sOpen ? null : s.season);
+                  }
+                }}
+                className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""}`}
+              >
+                <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTeamFilter(teamFilter === s.team ? null : s.team);
+                  }}
+                  style={badgeStyle}
+                  className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
+                  aria-label={`Filter by ${s.team}`}
+                >{s.team}</button>
+                <span className="flex-1 truncate text-stone-800 font-semibold tabular-nums">
+                  <span className="text-stone-400 mr-1 font-normal">{sOpen ? "▾" : "▸"}</span>
+                  {s.season}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMinGames(minGames === s.gp ? null : s.gp);
+                  }}
+                  className={`w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === s.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
+                  aria-label={`Filter to seasons with at least ${s.gp} games`}
+                >{s.gp}</button>
+                <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(s.pts / gp).toFixed(1)}</span>
+                <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${eff / gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(eff / gp).toFixed(1)}</span>
+                <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{((s.drb + s.orb) / gp).toFixed(1)}</span>
+                <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(s.ast / gp).toFixed(1)}</span>
+                <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(s.stl / gp).toFixed(1)}</span>
+                <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(s.blk / gp).toFixed(1)}</span>
+                <span className={`w-12 text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
+                <span className={`w-10 text-right tabular-nums ${s.vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{s.vaPerG.toFixed(2)}</span>
+              </div>
+            </div>
+            {sOpen && (scope === "playoffs" ? (
+              <PlayerSeasonDrill s={s} indexPlayer={player} context={contextFor(s)} {...navFor(i)} />
+            ) : (
+              <VACategoryBreakdown
+                player={s}
+                lga={lgaForSeason(s.season)}
+                baseline="NBA"
+                context={contextFor(s)}
+                {...navFor(i)}
+              />
+            ))}
+          </div>
+        );
+      })}
+      <div className="text-[10px] text-stone-400 italic mt-2 px-2">Tap a season for the per-stat breakdown, then a category for its league context.</div>
+    </div>
+  );
+}
+
+// By Player playoff drill-in: lazily fetch the season's leaderboard (which
+// carries the per-game logs and series list) plus the rs totals, then render
+// the exact game-chart VABreakdown the By Season leaderboard uses. Falls back
+// to the season-totals category breakdown when no game log exists.
+function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
+  const season = s.season;
+  const lgaS = lgaForSeason(season);
+  const [lb, setLb] = useState(null);
+  const [rs, setRs] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLb(null);
+    setRs(null);
+    setFailed(false);
+    fetchJsonCached(`/api/leaderboard?season=${season}`)
+      .then((d) => { if (!cancelled) setLb(d); })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    fetchJsonCached(`/api/regular-season?season=${season}`)
+      .then((d) => { if (!cancelled) setRs(d); })
+      .catch(() => {}); // reference ticks are optional
+    return () => { cancelled = true; };
+  }, [season]);
+
+  const row = useMemo(() => {
+    if (!lb?.players) return null;
+    const n = normalizeName(indexPlayer.name);
+    return lb.players.find((p) =>
+      (indexPlayer.slug && p.slug === indexPlayer.slug) || normalizeName(p.name) === n
+    ) || null;
+  }, [lb, indexPlayer]);
+
+  if (failed || (lb && (!row || !row.games?.length))) {
+    return <VACategoryBreakdown player={s} lga={lgaS} baseline="NBA playoff" context={context} onPrev={onPrev} onNext={onNext} />;
+  }
+  if (!lb) {
+    return <div className="px-2 py-3 text-[10px] text-stone-500 italic text-center border-t border-stone-200">Loading game log…</div>;
+  }
+
+  const roundBySeries = Object.fromEntries((lb.series || []).map((x) => [x.idx, x.round]));
+  const values = row.games.map((g) => g.va);
+  const byGame = row.games.map((g) => g.va == null ? null : ({
+    team: row.team, name: row.name, gp: 1, va: g.va,
+    mp: g.mp, pts: g.pts, reb: g.reb, drb: g.drb, orb: g.orb,
+    ast: g.ast, stl: g.stl, blk: g.blk, tov: g.tov,
+    fgm: g.fgm, fga: g.fga, tpm: g.tpm, tpa: g.tpa, ftm: g.ftm, fta: g.fta,
+  }));
+  const gameContext = row.games.map((g) => ({ opp: g.opp, seriesIdx: g.seriesIdx, seriesGameNumber: g.seriesGameNumber, round: roundBySeries[g.seriesIdx] }));
+  const partitions = [];
+  for (let j = 1; j < row.games.length; j++) {
+    if (row.games[j].seriesIdx !== row.games[j - 1].seriesIdx) partitions.push(j);
+  }
+  const rsTotals = rs?.players
+    ? (rs.players.find((p) => (row.slug && p.slug === row.slug))
+      || rs.players.find((p) => p.name === row.name)
+      || rs.players.find((p) => normalizeName(p.name) === normalizeName(row.name))
+      || null)
+    : null;
+
+  return (
+    <VABreakdown
+      p={row}
+      lga={lgaS}
+      teams={{}}
+      rate
+      gameSeries={values}
+      byGame={byGame}
+      gameContext={gameContext}
+      partitions={partitions}
+      useTeamColor
+      breakdownTitle="Playoff Breakdown"
+      gameTileLabel="Playoff Game"
+      enableSeriesDrill
+      playerConf={TEAM_CONF[row.team] || TEAMS[row.team]?.conf || null}
+      regularSeasonTotals={rsTotals}
+      context={context}
+      onPrev={onPrev}
+      onNext={onNext}
+    />
   );
 }
 
@@ -2999,6 +3311,9 @@ function InfoView() {
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
 function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const { poolsBySeason, allRows, self } = context;
+  // Leaderboard rows don't carry a season field (the whole board is one
+  // season) — the caller passes it on the context instead.
+  const seasonKey = p.season || context.season;
   const selfRow = { ...p, name: self.name, slug: self.slug || null };
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
@@ -3007,7 +3322,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const d = useMemo(() => {
     // Season pool (views 1 & 2): qualified = played >= 1/3 of this player's GP.
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
-    const pool = (poolsBySeason.get(p.season) || [])
+    const pool = (poolsBySeason.get(seasonKey) || [])
       .filter((r) => (r.gp || 0) >= floor && r.mp > 0)
       .map((r) => ({ r, m: catVAperGame(r, lga, catKey) }))
       .sort((a, b) => b.m - a.m);
@@ -3030,7 +3345,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
       .map((r) => ({ r, m: catVAperGame(r, lgaForSeason(r.season), catKey) }))
       .sort((a, b) => b.m - a.m);
     const allN = all.length;
-    const allIdx = all.findIndex((x) => x.r.season === p.season && samePlayer(x.r, selfRow));
+    const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
     const top = all.slice(0, 3).map((x, i) => ({ ...x, rank: i + 1 }));
     const selfAll = allIdx >= 0 ? { ...all[allIdx], rank: allIdx + 1 } : null;
 
@@ -3042,7 +3357,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
 
     return { floor, N, rank: selfIdx + 1, selfM, pctile, min, max, med, win,
              floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
-  }, [p.season, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow]);
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow]);
 
   const short = CAT_SHORT[catKey] || catKey;
   const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
@@ -3055,7 +3370,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
   const tx = (i) => (d.mine.length > 1 ? pad + (i / (d.mine.length - 1)) * (W - 2 * pad) : W / 2);
   const ty = (v) => H - pad - ((v - tLo) / ((tHi - tLo) || 1)) * (H - 2 * pad);
-  const curIdx = d.mine.findIndex((x) => x.season === p.season);
+  const curIdx = d.mine.findIndex((x) => x.season === seasonKey);
 
   const Row = ({ rank, r, m, isSelf }) => (
     <div className={`grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 items-center px-1 py-[2px] tabular-nums ${isSelf ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
@@ -3073,7 +3388,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{short} VA/G rank · {p.season}</span>
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">{short} VA/G rank · {seasonKey}</span>
           <span className="text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
@@ -3154,7 +3469,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   );
 }
 
-function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }) {
+function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, onPrev, onNext }) {
   const [rateMode, setRateMode] = useState("per36");
   const [openCat, setOpenCat] = useState(null);
   if (p.ast == null || !lga || !(p.mp > 0)) {
@@ -3185,8 +3500,22 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   const maxAbs = Math.max(...cats.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
 
+  const hasNav = !!(onPrev || onNext);
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
+      <div className="flex items-stretch gap-1">
+      {hasNav && (
+        <button
+          type="button"
+          disabled={!onPrev}
+          onClick={onPrev}
+          aria-label="Previous"
+          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+        >
+          ‹
+        </button>
+      )}
+      <div className="flex-1 min-w-0">
       <div className="flex justify-end mb-1.5">
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
@@ -3225,6 +3554,19 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
         Bars show per-game contribution above / below {baseline || (context ? "NBA playoff" : "D-I")} average{context ? " · tap a category for league context" : ""}
+      </div>
+      </div>
+      {hasNav && (
+        <button
+          type="button"
+          disabled={!onNext}
+          onClick={onNext}
+          aria-label="Next"
+          className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
+        >
+          ›
+        </button>
+      )}
       </div>
     </div>
   );
