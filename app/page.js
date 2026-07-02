@@ -2493,9 +2493,9 @@ function ExploreView() {
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
       </div>
       <div className="mb-4 flex gap-1.5">
+        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
         <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
         <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
-        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
       </div>
 
       {mode === "player" ? (
@@ -3668,15 +3668,15 @@ function CollegeView() {
 }
 
 export default function PlayoffTracker() {
-  const [tab, setTab] = useState("current");
+  const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
 
   return (
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Playoff</div>
-          <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Draft Tracker</h1>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA</div>
+          <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Value Added Tracker</h1>
           <div className="mt-1 text-xs text-stone-600">Spencer <span className="text-stone-400 mx-1">vs</span> Trey</div>
         </header>
 

@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "2026 Playoff Draft Tracker",
-  description: "Spencer vs. Trey · live projected points",
+  title: "NBA Value Added Tracker",
+  description: "Spencer vs. Trey · Value Added across every NBA season",
 };
 
 export default function RootLayout({ children }) {
