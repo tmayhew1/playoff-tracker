@@ -2144,9 +2144,11 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
 
   // seriesIdx → round lookup, so each game row can carry its round into
-  // the VABreakdown drill-in title ("Western Semis vs. MIN" etc.).
+  // the VABreakdown drill-in title ("Western Semis vs. MIN" etc.). `data` can
+  // still be null here in regular scope, which doesn't wait for the (slow)
+  // playoff aggregation it doesn't use.
   const roundBySeries = Object.fromEntries(
-    (data.series || []).map((s) => [s.idx, s.round])
+    (data?.series || []).map((s) => [s.idx, s.round])
   );
 
   return (
