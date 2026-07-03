@@ -3795,8 +3795,12 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
           <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-white -translate-x-1/2 -translate-y-1/2" style={{ left: `${posOf(d.selfM)}%` }} />
           <span className="absolute -top-4 -translate-x-1/2 text-[11px] font-bold text-stone-800 tabular-nums leading-none" style={{ left: `${posOf(d.selfM)}%` }}>{d.pctile.toFixed(0)}</span>
         </div>
-        <div className="flex justify-between text-[8px] text-stone-400 mt-0.5 px-1 tabular-nums">
-          <span>low {sgn(d.min)}</span><span>med {sgn(d.med)}</span><span>high {sgn(d.max)}</span>
+        {/* "med" sits under the median tick's actual position on the strip
+            (clamped a little off the edges so it can't collide with low/high). */}
+        <div className="relative h-3 text-[8px] text-stone-400 mt-0.5 px-1 tabular-nums">
+          <span className="absolute left-1">low {sgn(d.min)}</span>
+          <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${Math.min(82, Math.max(18, posOf(d.med)))}%` }}>med {sgn(d.med)}</span>
+          <span className="absolute right-1">high {sgn(d.max)}</span>
         </div>
       </div>
 
