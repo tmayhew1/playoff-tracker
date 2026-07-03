@@ -3527,11 +3527,20 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const leader = d.diff >= 0 ? a : b;
 
-  // Career overlay: both players' seasons aligned by career year.
+  // Career overlay: both players' seasons aligned by career year. With a
+  // category selected it shows that category's per-game VA per season
+  // (era-fair: each season vs its own baselines); otherwise total VA/G.
+  // Diverging from a shared zero baseline, since category VA (Turnovers!)
+  // can be negative season after season.
   const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
-  const careerMax = Math.max(...aSeasons.map((s) => Math.abs(s.vaPerG || 0)), ...bAll.map((s) => Math.abs(s.vaPerG || 0)), 0.1);
+  const careerVal = (s) => (openKey ? catVAperGame(s, lgaForSeason(s.season), openKey) : (s.vaPerG || 0));
+  const cvals = [...aSeasons, ...bAll].map(careerVal);
+  const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
+  const cSpan = (cHi - cLo) || 1;
+  const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
+  const careerLabel = openKey ? `${CAT_SHORT[openKey] || openKey} VA/G by career year` : "VA/G by career year";
 
   const Swatch = ({ color, outline }) => (
     <span
@@ -3623,27 +3632,30 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       {/* Career-year overlay */}
       {slots > 1 && (
         <div className="mt-2 pt-2 border-t border-stone-100">
-          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">VA/G by career year</div>
+          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{careerLabel}</div>
           <div className="flex items-stretch gap-[2px] h-16 px-1">
             {Array.from({ length: slots }, (_, i) => {
               const as = aSeasons[i], bs = bAll[i];
               const bar = (s, color, side) => {
                 if (!s) return null;
-                const h = (Math.abs(s.vaPerG || 0) / careerMax) * 100;
+                const v = careerVal(s);
+                const h = (Math.abs(v) / cSpan) * 100;
+                const topPct = v >= 0 ? cZeroPct - h : cZeroPct;
                 const isSel = s.season === (side === "a" ? a.season : b.season);
                 const fill = side === "a"
                   ? { backgroundColor: color }
                   : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` };
                 return (
                   <div
-                    className={`absolute bottom-0 box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
-                    style={{ height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
-                    title={`${s.season}: ${(s.vaPerG || 0).toFixed(2)} VA/G`}
+                    className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
+                    style={{ top: `${topPct}%`, height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
+                    title={`${s.season}: ${v.toFixed(2)}${openKey ? ` ${CAT_SHORT[openKey] || openKey}` : ""} VA/G`}
                   />
                 );
               };
               return (
                 <div key={i} className="flex-1 relative min-w-0">
+                  <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
                   {bar(as, ca, "a")}
                   {bar(bs, cb, "b")}
                 </div>
