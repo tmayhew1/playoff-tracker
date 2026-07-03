@@ -126,6 +126,85 @@ value_add_parts <- function(p, lga) {
        efficiency = efficiency)
 }
 
+# League rates from summed raw totals (player- or team-level; only ratios are
+# used, so the level doesn't matter). Shared by fetch_league_averages.R and
+# recompute_derived.R; fetch_college.R keeps its own copy to stay self-contained.
+lga_from_totals <- function(t) {
+  safe <- function(a, b) if (b > 0) a / b else 0
+  twoPm <- t$fgm - t$tpm
+  twoPa <- t$fga - t$tpa
+  reb <- t$drb + t$orb
+  # Hollinger possessions estimate: FGA - ORB + TO + 0.475*FTA.
+  poss <- t$fga - t$orb + t$tov + 0.475 * t$fta
+  list(
+    la3P = safe(t$tpm, t$tpa),
+    la2P = safe(twoPm, twoPa),
+    laFT = safe(t$ftm, t$fta),
+    laFG = safe(t$fgm, t$fga),
+    laPTSperM = safe(t$pts, t$mp),
+    laASTperM = safe(t$ast, t$mp),
+    laSTLperM = safe(t$stl, t$mp),
+    laBLKperM = safe(t$blk, t$mp),
+    laTOVperM = safe(t$tov, t$mp),
+    laDRBperM = safe(t$drb, t$mp),
+    laORBperM = safe(t$orb, t$mp),
+    laPTSperMake = safe(t$pts, t$fgm),
+    laPTSperPoss = safe(t$pts, poss),
+    laDRBrate = safe(t$drb, reb),
+    laORBrate = safe(t$orb, reb)
+  )
+}
+
+# Minutes-weighted median of a per-minute rate: the rate of the median league
+# MINUTE. Splits the league's minutes in half - half of all NBA minutes are
+# played at a higher rate, half lower. Preferred over the plain per-player
+# median because it doesn't let 40-minute-per-season call-ups outvote
+# starters, and over the aggregate mean because a handful of high-usage stars
+# skew that upward. (To switch to the plain per-player median: replace the
+# cumulative-minutes step with the middle element of `rate[o]`.)
+weighted_median_rate <- function(stat, mp) {
+  keep <- mp > 0
+  stat <- stat[keep]; mp <- mp[keep]
+  if (!length(mp)) return(0)
+  rate <- stat / mp
+  o <- order(rate)
+  cum <- cumsum(mp[o])
+  rate[o][which(cum >= cum[length(cum)] / 2)[1]]
+}
+
+# League baselines from per-player season rows. Per-minute baselines are the
+# minutes-weighted MEDIAN player rate (skew-resistant, per the app's VA
+# definition); shooting percentages and the conversion constants (points per
+# make / per possession, rebound shares) stay aggregate ratios, since those
+# translate stats into points rather than define "typical".
+lga_from_players <- function(players) {
+  g <- function(k) vapply(players, function(p) as.numeric(p[[k]] %||% 0), numeric(1))
+  mp <- g("mp")
+  totals <- list()
+  for (k in c("mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb",
+              "fgm", "fga", "tpm", "tpa", "ftm", "fta")) {
+    totals[[k]] <- sum(g(k))
+  }
+  base <- lga_from_totals(totals)
+  base$laPTSperM <- weighted_median_rate(g("pts"), mp)
+  base$laASTperM <- weighted_median_rate(g("ast"), mp)
+  base$laSTLperM <- weighted_median_rate(g("stl"), mp)
+  base$laBLKperM <- weighted_median_rate(g("blk"), mp)
+  base$laTOVperM <- weighted_median_rate(g("tov"), mp)
+  base$laDRBperM <- weighted_median_rate(g("drb"), mp)
+  base$laORBperM <- weighted_median_rate(g("orb"), mp)
+  base
+}
+
+# Sanity band for a season's scoring baseline (median points per player-
+# minute). Weighted medians across 1980-2026 live between ~0.37 (dead-ball
+# early 00s) and ~0.46 (80s pace / modern era); the band catches mis-parsed
+# source tables, which land far outside it. Used both to refuse writing junk
+# and to spot existing junk that needs a refetch.
+lga_plausible <- function(l) {
+  !is.null(l) && !is.null(l$laPTSperM) && l$laPTSperM > 0.33 && l$laPTSperM < 0.52
+}
+
 # --- League averages -------------------------------------------------------
 load_league_averages <- function() {
   if (!file.exists(LGA_PATH)) return(list())

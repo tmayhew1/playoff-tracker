@@ -868,7 +868,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         })}
       </div>
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show contribution above/below league average{context && atSeasonLevel ? " · tap a category for league context" : ""}
+        Bars show contribution above/below the league baseline (median rates){context && atSeasonLevel ? " · tap a category for league context" : ""}
       </div>
       </>
       )}
@@ -3359,14 +3359,14 @@ function InfoView() {
 
       <section className="p-3 bg-white border border-stone-300">
         <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-1">Value Added (VA)</h2>
-        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — a league-average player, given the same workload. Every skill follows one shape:</p>
+        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — the typical NBA player, given the same workload. Every skill follows one shape:</p>
         <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
         </div>
         <Group title="Scoring" items={SCORING} />
         <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
         <Group title="Rebounding" items={REB} />
-        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. The decimals are 2025-26 league averages (rates per minute or per attempt); 1.014 = league points per possession, 2.316 = points per made shot, 0.738 / 0.262 = league DRB% / ORB%. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
+        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
       </section>
     </div>
   );
@@ -3504,13 +3504,23 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const cbEdge = `1px solid ${cb}`;
 
   const d = useMemo(() => {
+    // Percentiles rank against EVERY indexed player-season (all-time pool),
+    // each row measured era-fair against its own season's baselines. One pass
+    // over the pool computes all categories at once; the >=5 G floor matches
+    // the all-time rank in the context card.
+    const pool = context.allRows.filter((r) => (r.gp || 0) >= 5 && r.mp > 0);
+    const poolVals = pool.map((r) => {
+      const lgaX = lgaForSeason(r.season);
+      const out = {};
+      for (const key of keys) out[key] = catVAperGame(r, lgaX, key);
+      return out;
+    });
     const pctFor = (row, lgaX, key) => {
-      const floor = Math.max(1, Math.ceil((row.gp || 1) / 3));
-      const pool = (context.poolsBySeason.get(row.season) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
-      if (!pool.length) return null;
+      if (!poolVals.length) return null;
       const v = catVAperGame(row, lgaX, key);
-      const below = pool.filter((r) => catVAperGame(r, lgaX, key) < v).length;
-      return (below / pool.length) * 100;
+      let below = 0;
+      for (const pv of poolVals) if (pv[key] < v) below++;
+      return (below / poolVals.length) * 100;
     };
     const rows = keys.map((key) => ({
       key,
@@ -3527,20 +3537,20 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const leader = d.diff >= 0 ? a : b;
 
-  // Career overlay: both players' seasons aligned by career year. With a
-  // category selected it shows that category's per-game VA per season
-  // (era-fair: each season vs its own baselines); otherwise total VA/G.
+  // Career overlay: both players' seasons aligned by career year, showing
+  // TOTAL VA per season. With a category selected it shows that category's
+  // total VA per season (era-fair: each season vs its own baselines).
   // Diverging from a shared zero baseline, since category VA (Turnovers!)
   // can be negative season after season.
   const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
-  const careerVal = (s) => (openKey ? catVAperGame(s, lgaForSeason(s.season), openKey) : (s.vaPerG || 0));
+  const careerVal = (s) => (openKey ? catVATotal(s, lgaForSeason(s.season), openKey) : (s.va || 0));
   const cvals = [...aSeasons, ...bAll].map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
   const cSpan = (cHi - cLo) || 1;
   const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
-  const careerLabel = openKey ? `${CAT_SHORT[openKey] || openKey} VA/G by career year` : "VA/G by career year";
+  const careerLabel = openKey ? `${CAT_SHORT[openKey] || openKey} total VA by career year` : "Total VA by career year";
 
   const Swatch = ({ color, outline }) => (
     <span
@@ -3625,8 +3635,8 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       })}
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
-          ? "Per-game VA, each vs their own season’s league average"
-          : "Percentile within each player’s own season (qualified players)") + " · tap a row for the raw stats"}
+          ? "Per-game VA, each vs their own season’s league baseline"
+          : "Percentile across every indexed player-season, ≥5 G, each vs their own era") + " · tap a row for the raw stats"}
       </div>
 
       {/* Career-year overlay */}
@@ -3649,7 +3659,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
                     style={{ top: `${topPct}%`, height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
-                    title={`${s.season}: ${v.toFixed(2)}${openKey ? ` ${CAT_SHORT[openKey] || openKey}` : ""} VA/G`}
+                    title={`${s.season}: ${v.toFixed(1)}${openKey ? ` ${CAT_SHORT[openKey] || openKey}` : ""} VA`}
                   />
                 );
               };
@@ -3995,7 +4005,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         );
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show per-game contribution above / below {baseline || (context ? "NBA playoff" : "D-I")} average{context ? " · tap a category for league context" : ""}
+        Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{context ? " · tap a category for league context" : ""}
       </div>
       </>
       )}
