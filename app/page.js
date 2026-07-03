@@ -3470,8 +3470,28 @@ function ComparePicker({ context, onPick, onCancel }) {
 // OWN season's league baselines (era-fair). Three pieces: a category-win
 // tally, per-category paired team-color bars (or per-season-percentile dots),
 // and a career-year VA/G overlay.
+// One player's stat columns for the compare drill-in: shooting categories get
+// made/att · pct · makes-per-game, everything else raw total · per-G · per-36.
+function compareStatLine(r, key) {
+  if (CAT_SHOOTING[key]) {
+    const [m, a] = CAT_SHOOTING[key](r);
+    return {
+      header: ["M/A", "PCT", "M/G"],
+      cols: [`${m}/${a}`, `${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%`, (m / (r.gp || 1)).toFixed(1)],
+    };
+  }
+  const [statOf] = GROUP_STAT[key] || [];
+  const v = statOf ? statOf(r) : (r[CAT_COUNTING[key][0]] || 0);
+  return {
+    header: ["TOT", "PER G", "PER 36"],
+    cols: [String(Math.round(v)), (v / (r.gp || 1)).toFixed(1), ((v / (r.mp || 1)) * 36).toFixed(1)],
+  };
+}
+
 function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const [mode, setMode] = useState("values"); // "values" | "pct"
+  // Tap a category row to expand both players' raw / per-game / per-36 stats.
+  const [openKey, setOpenKey] = useState(null);
   const keys = viewMode === "basic" ? VA_GROUPS.map((g) => g.key) : VA_CATEGORY_ORDER;
   const lgaA = lgaForSeason(a.season);
   const lgaB = lgaForSeason(b.season);
@@ -3537,10 +3557,19 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
           <button onClick={() => setMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${mode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
         </div>
       </div>
-      {d.rows.map((r) => (
+      {d.rows.map((r) => {
+        const isOpen = openKey === r.key;
+        return (
         <React.Fragment key={r.key}>
-          <div className="flex items-center gap-2 py-[1px]">
-            <span className="w-[4.5rem] shrink-0 text-right text-stone-600">{r.key}</span>
+          <div
+            className={`flex items-center gap-2 py-[1px] -mx-1 px-1 cursor-pointer ${isOpen ? "bg-stone-200" : ""}`}
+            onClick={() => setOpenKey(isOpen ? null : r.key)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenKey(isOpen ? null : r.key); } }}
+            aria-pressed={isOpen}
+          >
+            <span className={`w-[4.5rem] shrink-0 text-right ${isOpen ? "text-stone-900 font-semibold" : "text-stone-600"}`}>{r.key}</span>
             {mode === "values" ? (
               <>
                 <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, r.key, rateMode)} · ${b.name}: ${catRateLabel(b, r.key, rateMode)}`}>
@@ -3563,13 +3592,32 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
               </>
             )}
           </div>
+          {isOpen && (() => {
+            const la = compareStatLine(a, r.key), lb = compareStatLine(b, r.key);
+            const line = (row, l, color, outline, gp) => (
+              <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700">
+                <span className="truncate text-[10px] font-semibold" style={{ color }}><Swatch color={color} outline={outline} />{row.name} {seasonTag(row.season)} <span className="text-stone-400 font-normal">({gp} G)</span></span>
+                {l.cols.map((c, i) => <span key={i} className="text-right text-[10px]">{c}</span>)}
+              </div>
+            );
+            return (
+              <div className="my-1 px-1 py-1.5 bg-white border border-stone-200 rounded">
+                <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+                  <span></span>{la.header.map((h) => <span key={h} className="text-right">{h}</span>)}
+                </div>
+                {line(a, la, ca, false, a.gp || 0)}
+                {line(b, lb, cb, true, b.gp || 0)}
+              </div>
+            );
+          })()}
           {viewMode === "detail" && VA_PARTITIONS_AFTER.has(r.key) && <div className="my-1 border-t border-stone-200" />}
         </React.Fragment>
-      ))}
+      );
+      })}
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
-        {mode === "values"
+        {(mode === "values"
           ? "Per-game VA, each vs their own season’s league average"
-          : "Percentile within each player’s own season (qualified players)"}
+          : "Percentile within each player’s own season (qualified players)") + " · tap a row for the raw stats"}
       </div>
 
       {/* Career-year overlay */}
