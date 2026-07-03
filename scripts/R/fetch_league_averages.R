@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Scrapes basketball-reference's team-totals table for each season and
+# Fetches basketball-reference's PLAYER season-totals page for each season and
 # derives the league-wide rates the VA formula needs, merging into
 # app/data/league-averages.json. Existing entries are preserved unless
 # --force is passed.
@@ -7,7 +7,15 @@
 #   Rscript scripts/R/fetch_league_averages.R 1979-80
 #   Rscript scripts/R/fetch_league_averages.R 1970-71 1995-96 --force
 #
-# Port of the retired scripts/fetch-league-averages.mjs.
+# Why the player-totals page (NBA_<year>_totals.html) and not the season
+# index's team-totals table: the team table's id/layout has churned across
+# eras and the old fallback quietly matched a table with inflated minutes,
+# which poisoned laPTSperM (and every other per-minute rate) for 1996-97
+# through 2025-26 — modern baselines implied ~80-97 team PPG when the real
+# numbers were ~95-115. The player-totals page is the exact page the
+# regular-season bake already parses correctly, and every derived rate is a
+# ratio of sums, so player-level totals give identical results. A plausibility
+# gate refuses to write junk if the layout ever shifts again.
 
 source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
@@ -30,45 +38,49 @@ if (end_year < start_year) {
   stop(sprintf("endSeason (%s) is before startSeason (%s)", end_season, start_season))
 }
 
-# Find the team-totals table. BR table ids have churned; fall back to any
-# table whose <thead> shows fga/mp/pts and whose tbody has 8-60 rows.
+# Locate the per-player season-totals table (same id list the regular-season
+# bake in fetch_historical.R uses).
 find_totals_table <- function(doc) {
-  for (id in c("totals-team", "team_totals", "team-stats-base", "totals_team")) {
+  for (id in c("totals_stats", "players_totals", "totals", "per_game_stats")) {
     t <- xml2::xml_find_first(doc, sprintf("//table[@id='%s']", id))
     if (!inherits(t, "xml_missing")) return(t)
   }
-  tables <- xml2::xml_find_all(doc, "//table")
-  for (t in tables) {
+  for (t in xml2::xml_find_all(doc, "//table")) {
     head <- xml2::xml_find_first(t, ".//thead")
     if (inherits(head, "xml_missing")) next
-    has_fga <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='fga']"), "xml_missing")
-    has_mp  <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='mp']"),  "xml_missing")
-    has_pts <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='pts']"), "xml_missing")
-    rows <- length(xml2::xml_find_all(t, ".//tbody/tr"))
-    if (has_fga && has_mp && has_pts && rows >= 8 && rows <= 60) return(t)
+    hp <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='pts']"), "xml_missing")
+    hg <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='g']"),   "xml_missing")
+    hm <- !inherits(xml2::xml_find_first(head, ".//*[@data-stat='mp']"),  "xml_missing")
+    if (hp && hg && hm) return(t)
   }
   NULL
 }
 
 fetch_league_totals <- function(season) {
   year_end <- season_end_year(season)
-  url <- sprintf("https://www.basketball-reference.com/leagues/NBA_%d.html", year_end)
+  url <- sprintf("https://www.basketball-reference.com/leagues/NBA_%d_totals.html", year_end)
   message(sprintf("Fetching %s", url))
   doc <- parse_html_uncommented(throttled_fetch(url))
   table <- find_totals_table(doc)
-  if (is.null(table)) stop("team totals table not found")
+  if (is.null(table)) stop("player totals table not found")
 
+  # Sum every player row once: traded players appear as per-team rows plus a
+  # TOT aggregate, so keep the first row per player (BR lists TOT first) to
+  # avoid double counting.
   totals <- list(mp = 0, pts = 0, ast = 0, stl = 0, blk = 0, tov = 0, drb = 0,
                  orb = 0, fgm = 0, fga = 0, tpm = 0, tpa = 0, ftm = 0, fta = 0)
+  seen <- new.env(parent = emptyenv())
   rows <- 0
-  trs <- xml2::xml_find_all(table, ".//tbody/tr")
-  for (tr in trs) {
+  for (tr in xml2::xml_find_all(table, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
     if (!is.na(cls) && grepl("thead", cls)) next
-    team_name <- cell_text(tr, c("team", "team_id", "team_name", "team_name_abbr"))
-    # Skip "League Average"/"League Total" summary rows; we sum teams ourselves.
-    if (grepl("league", team_name, ignore.case = TRUE)) next
-    mp <- num(cell_text(tr, "mp"))
+    name <- cell_text(tr, c("player", "name_display", "name"))
+    if (!nzchar(name) || grepl("league average", name, ignore.case = TRUE)) next
+    href <- xml2::xml_attr(xml2::xml_find_first(tr, ".//a[contains(@href,'/players/')]"), "href")
+    key <- if (!is.na(href)) href else name
+    if (!is.null(seen[[key]])) next
+    seen[[key]] <- TRUE
+    mp <- num(cell_text(tr, c("mp", "mp_total")))
     if (mp <= 0) next
     rows <- rows + 1
     totals$mp  <- totals$mp  + mp
@@ -86,34 +98,8 @@ fetch_league_totals <- function(season) {
     totals$ftm <- totals$ftm + num(cell_text(tr, "ft"))
     totals$fta <- totals$fta + num(cell_text(tr, "fta"))
   }
-  if (rows < 8) stop(sprintf("only %d team rows parsed; table layout may have changed", rows))
+  if (rows < 100) stop(sprintf("only %d player rows parsed; table layout may have changed", rows))
   totals
-}
-
-lga_from_totals <- function(t) {
-  safe <- function(a, b) if (b > 0) a / b else 0
-  twoPm <- t$fgm - t$tpm
-  twoPa <- t$fga - t$tpa
-  reb <- t$drb + t$orb
-  # Hollinger possessions estimate: FGA - ORB + TO + 0.475*FTA.
-  poss <- t$fga - t$orb + t$tov + 0.475 * t$fta
-  list(
-    la3P = safe(t$tpm, t$tpa),
-    la2P = safe(twoPm, twoPa),
-    laFT = safe(t$ftm, t$fta),
-    laFG = safe(t$fgm, t$fga),
-    laPTSperM = safe(t$pts, t$mp),
-    laASTperM = safe(t$ast, t$mp),
-    laSTLperM = safe(t$stl, t$mp),
-    laBLKperM = safe(t$blk, t$mp),
-    laTOVperM = safe(t$tov, t$mp),
-    laDRBperM = safe(t$drb, t$mp),
-    laORBperM = safe(t$orb, t$mp),
-    laPTSperMake = safe(t$pts, t$fgm),
-    laPTSperPoss = safe(t$pts, poss),
-    laDRBrate = safe(t$drb, reb),
-    laORBrate = safe(t$orb, reb)
-  )
 }
 
 main <- function() {
@@ -130,6 +116,10 @@ main <- function() {
     res <- tryCatch({
       totals <- fetch_league_totals(season)
       lga <- lga_from_totals(totals)
+      if (!lga_plausible(lga)) {
+        stop(sprintf("implausible laPTSperM=%.4f (expected 0.36-0.56); refusing to write",
+                     lga$laPTSperM))
+      }
       existing[[season]] <<- lga
       added <<- added + 1
       message(sprintf("  ok %s - laPTSperM=%.3f, la3P=%.3f, laFG=%.3f",

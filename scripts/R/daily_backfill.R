@@ -29,6 +29,7 @@ source(file.path(dirname(sub("^--file=", "",
 RSCRIPT <- file.path(R.home("bin"), "Rscript")
 HIST_R  <- file.path(R_DIR, "fetch_historical.R")
 LGA_R   <- file.path(R_DIR, "fetch_league_averages.R")
+RECOMP_R <- file.path(R_DIR, "recompute_derived.R")
 
 env_or <- function(name, default) {
   v <- Sys.getenv(name, unset = "")
@@ -63,12 +64,20 @@ run <- function(script, args) {
   status == 0
 }
 
-# Make sure league averages exist for a season before baking it (the bake
-# refuses to run without them, to avoid nonsense VA).
+# Make sure PLAUSIBLE league averages exist for a season before baking it (the
+# bake refuses to run without them, to avoid nonsense VA). An implausible
+# entry (see scrape_common.R::lga_plausible - the 1996-97+ corruption) is
+# force-refetched rather than trusted.
 ensure_lga <- function(season) {
-  if (!is.null(load_league_averages()[[season]])) return(TRUE)
-  message(sprintf("  league averages missing for %s - fetching", season))
-  run(LGA_R, c(season, season))
+  l <- load_league_averages()[[season]]
+  if (lga_plausible(l)) return(TRUE)
+  if (is.null(l)) {
+    message(sprintf("  league averages missing for %s - fetching", season))
+    return(run(LGA_R, c(season, season)))
+  }
+  message(sprintf("  league averages for %s implausible (laPTSperM=%.4f) - refetching", season, l$laPTSperM))
+  ok <- run(LGA_R, c(season, season, "--force"))
+  ok && lga_plausible(load_league_averages()[[season]])
 }
 
 bake_season <- function(season) {
@@ -116,6 +125,12 @@ main <- function() {
     message(sprintf("Refreshing current season %s", current))
     bake_season(current)
   }
+
+  # 3. Consistency pass: rebuild league averages from the regular-season
+  # bakes and recompute the baked leaderboard VA against them, so derived
+  # numbers can never drift from the raw data again.
+  message("Recomputing derived numbers (league averages + baked VA)")
+  run(RECOMP_R, character(0))
 
   message(sprintf("Done. Backfilled %d past season(s); refreshed %s.", filled, current))
 }

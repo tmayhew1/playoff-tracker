@@ -126,6 +126,44 @@ value_add_parts <- function(p, lga) {
        efficiency = efficiency)
 }
 
+# League rates from summed raw totals (player- or team-level; only ratios are
+# used, so the level doesn't matter). Shared by fetch_league_averages.R and
+# recompute_derived.R; fetch_college.R keeps its own copy to stay self-contained.
+lga_from_totals <- function(t) {
+  safe <- function(a, b) if (b > 0) a / b else 0
+  twoPm <- t$fgm - t$tpm
+  twoPa <- t$fga - t$tpa
+  reb <- t$drb + t$orb
+  # Hollinger possessions estimate: FGA - ORB + TO + 0.475*FTA.
+  poss <- t$fga - t$orb + t$tov + 0.475 * t$fta
+  list(
+    la3P = safe(t$tpm, t$tpa),
+    la2P = safe(twoPm, twoPa),
+    laFT = safe(t$ftm, t$fta),
+    laFG = safe(t$fgm, t$fga),
+    laPTSperM = safe(t$pts, t$mp),
+    laASTperM = safe(t$ast, t$mp),
+    laSTLperM = safe(t$stl, t$mp),
+    laBLKperM = safe(t$blk, t$mp),
+    laTOVperM = safe(t$tov, t$mp),
+    laDRBperM = safe(t$drb, t$mp),
+    laORBperM = safe(t$orb, t$mp),
+    laPTSperMake = safe(t$pts, t$fgm),
+    laPTSperPoss = safe(t$pts, poss),
+    laDRBrate = safe(t$drb, reb),
+    laORBrate = safe(t$orb, reb)
+  )
+}
+
+# Sanity band for a season's league scoring rate (points per player-minute).
+# Real NBA seasons live between ~0.38 (dead-ball late 90s) and ~0.48 (fast
+# eras); the corrupted 1996-97..2025-26 entries this guards against sat at
+# 0.33-0.41 because a mis-parsed source table inflated minutes. Used both to
+# refuse writing junk and to spot existing junk that needs a refetch.
+lga_plausible <- function(l) {
+  !is.null(l) && !is.null(l$laPTSperM) && l$laPTSperM > 0.36 && l$laPTSperM < 0.56
+}
+
 # --- League averages -------------------------------------------------------
 load_league_averages <- function() {
   if (!file.exists(LGA_PATH)) return(list())
