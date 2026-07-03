@@ -10,11 +10,12 @@
 #      recomputed from the file's own raw stats against the (possibly just
 #      corrected) season baselines, and players are re-sorted by va.
 #
-# Exists because a mis-parsed team-totals table once poisoned the 1996-97..
-# 2025-26 baselines (inflated minutes -> every per-minute rate ~12-19% low),
-# which also inflated every baked VA for those seasons. Running this after
-# each daily bake keeps baselines and baked VA permanently consistent with
-# the raw data.
+# Exists because the historical baselines mixed two definitions across eras
+# (aggregate means before 1996-97, per-player rates after), which made
+# cross-era VA comparisons apples-to-oranges. The single definition now lives
+# in scrape_common.R::lga_from_players (minutes-weighted MEDIAN per-minute
+# rates; aggregate shooting ratios); running this after each daily bake keeps
+# baselines and baked VA permanently consistent with the raw data.
 #
 #   Rscript scripts/R/recompute_derived.R
 #
@@ -22,9 +23,6 @@
 
 source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
-
-STAT_KEYS <- c("mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb",
-               "fgm", "fga", "tpm", "tpa", "ftm", "fta")
 
 rs_season_of <- function(f) sub("^regular-season-(.*)\\.json$", "\\1", f)
 lb_season_of <- function(f) sub("^leaderboard-(.*)\\.json$", "\\1", f)
@@ -37,11 +35,7 @@ rebuild_lga <- function() {
   for (f in files) {
     season <- rs_season_of(f)
     d <- jsonlite::fromJSON(file.path(DATA_DIR, f), simplifyVector = FALSE)
-    totals <- setNames(as.list(rep(0, length(STAT_KEYS))), STAT_KEYS)
-    for (p in d$players) {
-      for (k in STAT_KEYS) totals[[k]] <- totals[[k]] + (p[[k]] %||% 0)
-    }
-    lga <- lga_from_totals(totals)
+    lga <- lga_from_players(d$players)
     if (!lga_plausible(lga)) {
       message(sprintf("  !! %s: rebuilt laPTSperM=%.4f implausible - keeping old entry", season, lga$laPTSperM))
       next

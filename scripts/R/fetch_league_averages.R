@@ -8,14 +8,13 @@
 #   Rscript scripts/R/fetch_league_averages.R 1970-71 1995-96 --force
 #
 # Why the player-totals page (NBA_<year>_totals.html) and not the season
-# index's team-totals table: the team table's id/layout has churned across
-# eras and the old fallback quietly matched a table with inflated minutes,
-# which poisoned laPTSperM (and every other per-minute rate) for 1996-97
-# through 2025-26 — modern baselines implied ~80-97 team PPG when the real
-# numbers were ~95-115. The player-totals page is the exact page the
-# regular-season bake already parses correctly, and every derived rate is a
-# ratio of sums, so player-level totals give identical results. A plausibility
-# gate refuses to write junk if the layout ever shifts again.
+# index's team-totals table: (1) the per-minute baselines are minutes-weighted
+# MEDIAN player rates (see scrape_common.R::lga_from_players), which need
+# per-player rows, not team sums; (2) the team table's id/layout churned
+# across eras and the old fallback quietly matched the wrong table, leaving
+# 1996-97+ baselines on a different definition than earlier seasons. This is
+# the exact page the regular-season bake already parses correctly, and a
+# plausibility gate refuses to write junk if the layout ever shifts again.
 
 source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
@@ -56,7 +55,11 @@ find_totals_table <- function(doc) {
   NULL
 }
 
-fetch_league_totals <- function(season) {
+# Every player's season row, one per player: traded players appear as
+# per-team rows plus a TOT aggregate, so keep the first row per player (BR
+# lists TOT first). Per-player rows (not just sums) because the per-minute
+# baselines are minutes-weighted MEDIANS.
+fetch_league_players <- function(season) {
   year_end <- season_end_year(season)
   url <- sprintf("https://www.basketball-reference.com/leagues/NBA_%d_totals.html", year_end)
   message(sprintf("Fetching %s", url))
@@ -64,13 +67,8 @@ fetch_league_totals <- function(season) {
   table <- find_totals_table(doc)
   if (is.null(table)) stop("player totals table not found")
 
-  # Sum every player row once: traded players appear as per-team rows plus a
-  # TOT aggregate, so keep the first row per player (BR lists TOT first) to
-  # avoid double counting.
-  totals <- list(mp = 0, pts = 0, ast = 0, stl = 0, blk = 0, tov = 0, drb = 0,
-                 orb = 0, fgm = 0, fga = 0, tpm = 0, tpa = 0, ftm = 0, fta = 0)
   seen <- new.env(parent = emptyenv())
-  rows <- 0
+  players <- list()
   for (tr in xml2::xml_find_all(table, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
     if (!is.na(cls) && grepl("thead", cls)) next
@@ -82,24 +80,21 @@ fetch_league_totals <- function(season) {
     seen[[key]] <- TRUE
     mp <- num(cell_text(tr, c("mp", "mp_total")))
     if (mp <= 0) next
-    rows <- rows + 1
-    totals$mp  <- totals$mp  + mp
-    totals$pts <- totals$pts + num(cell_text(tr, "pts"))
-    totals$ast <- totals$ast + num(cell_text(tr, "ast"))
-    totals$stl <- totals$stl + num(cell_text(tr, "stl"))
-    totals$blk <- totals$blk + num(cell_text(tr, "blk"))
-    totals$tov <- totals$tov + num(cell_text(tr, "tov"))
-    totals$drb <- totals$drb + num(cell_text(tr, "drb"))
-    totals$orb <- totals$orb + num(cell_text(tr, "orb"))
-    totals$fgm <- totals$fgm + num(cell_text(tr, "fg"))
-    totals$fga <- totals$fga + num(cell_text(tr, "fga"))
-    totals$tpm <- totals$tpm + num(cell_text(tr, "fg3"))
-    totals$tpa <- totals$tpa + num(cell_text(tr, "fg3a"))
-    totals$ftm <- totals$ftm + num(cell_text(tr, "ft"))
-    totals$fta <- totals$fta + num(cell_text(tr, "fta"))
+    players[[length(players) + 1]] <- list(
+      mp = mp,
+      pts = num(cell_text(tr, "pts")), ast = num(cell_text(tr, "ast")),
+      stl = num(cell_text(tr, "stl")), blk = num(cell_text(tr, "blk")),
+      tov = num(cell_text(tr, "tov")), drb = num(cell_text(tr, "drb")),
+      orb = num(cell_text(tr, "orb")), fgm = num(cell_text(tr, "fg")),
+      fga = num(cell_text(tr, "fga")), tpm = num(cell_text(tr, "fg3")),
+      tpa = num(cell_text(tr, "fg3a")), ftm = num(cell_text(tr, "ft")),
+      fta = num(cell_text(tr, "fta"))
+    )
   }
-  if (rows < 100) stop(sprintf("only %d player rows parsed; table layout may have changed", rows))
-  totals
+  if (length(players) < 100) {
+    stop(sprintf("only %d player rows parsed; table layout may have changed", length(players)))
+  }
+  players
 }
 
 main <- function() {
@@ -114,8 +109,8 @@ main <- function() {
       next
     }
     res <- tryCatch({
-      totals <- fetch_league_totals(season)
-      lga <- lga_from_totals(totals)
+      players <- fetch_league_players(season)
+      lga <- lga_from_players(players)
       if (!lga_plausible(lga)) {
         stop(sprintf("implausible laPTSperM=%.4f (expected 0.36-0.56); refusing to write",
                      lga$laPTSperM))

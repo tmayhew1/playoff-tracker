@@ -868,7 +868,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
         })}
       </div>
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show contribution above/below league average{context && atSeasonLevel ? " · tap a category for league context" : ""}
+        Bars show contribution above/below the league baseline (median rates){context && atSeasonLevel ? " · tap a category for league context" : ""}
       </div>
       </>
       )}
@@ -3359,14 +3359,14 @@ function InfoView() {
 
       <section className="p-3 bg-white border border-stone-300">
         <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-1">Value Added (VA)</h2>
-        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — a league-average player, given the same workload. Every skill follows one shape:</p>
+        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — the typical NBA player, given the same workload. Every skill follows one shape:</p>
         <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
         </div>
         <Group title="Scoring" items={SCORING} />
         <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
         <Group title="Rebounding" items={REB} />
-        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. The decimals are 2025-26 league averages (rates per minute or per attempt); 1.014 = league points per possession, 2.316 = points per made shot, 0.738 / 0.262 = league DRB% / ORB%. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
+        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
       </section>
     </div>
   );
@@ -3625,7 +3625,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       })}
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
-          ? "Per-game VA, each vs their own season’s league average"
+          ? "Per-game VA, each vs their own season’s league baseline"
           : "Percentile within each player’s own season (qualified players)") + " · tap a row for the raw stats"}
       </div>
 
@@ -3995,7 +3995,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         );
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show per-game contribution above / below {baseline || (context ? "NBA playoff" : "D-I")} average{context ? " · tap a category for league context" : ""}
+        Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{context ? " · tap a category for league context" : ""}
       </div>
       </>
       )}
