@@ -406,6 +406,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // Rebounds/Defense buckets with summed VA; "detail" is the full list.
   const [viewMode, setViewMode] = useState("detail");
   const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
+  // Head-to-head comparison against another player-season from the same scope.
+  const [compare, setCompare] = useState(null);
+  const [picking, setPicking] = useState(false);
   // Per-36 vs per-game normalization for the counting-stat labels (PTS,
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
@@ -751,6 +754,14 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             By Category
           </button>
         </div>
+        {context && atSeasonLevel && (
+          <CompareButton
+            compare={compare}
+            picking={picking}
+            onOpen={() => setPicking((v) => !v)}
+            onClear={() => { setCompare(null); setPicking(false); }}
+          />
+        )}
         {effectiveRate && (
           <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
             <button
@@ -772,6 +783,24 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           </div>
         )}
       </div>
+      {picking && context && atSeasonLevel && (
+        <ComparePicker
+          context={context}
+          onPick={(sel) => { setCompare(sel); setPicking(false); }}
+          onCancel={() => setPicking(false)}
+        />
+      )}
+      {compare && context && atSeasonLevel ? (
+        <ComparePanel
+          a={{ ...pSeries, season: pSeries.season || context.season, name: pSeries.name || context.self?.name, slug: pSeries.slug || context.self?.slug || null }}
+          b={compare.row}
+          bSeasons={compare.seasons}
+          context={context}
+          rateMode={rateMode}
+          viewMode={viewMode}
+        />
+      ) : (
+      <>
       <div className="space-y-0.5">
         {activeRows.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
@@ -841,6 +870,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
         Bars show contribution above/below league average{context && atSeasonLevel ? " · tap a category for league context" : ""}
       </div>
+      </>
+      )}
         </div>
         {showNav && !inGameNav && (
           <button
@@ -3346,6 +3377,316 @@ function InfoView() {
 // Per-category VA breakdown for one college player, mirroring the NBA
 // VABreakdown: diverging +/- bars (per-GAME contribution above/below the D-I
 // average), grouped with separators, plus a Per 36 / Per G stat-label toggle.
+// "’26" for "2025-26" — season's end year, short form.
+const seasonTag = (s) => "’" + (s || "").slice(5);
+
+// --- Compare (both breakdowns) ----------------------------------------------
+// Group the context pools back into players for the Compare picker.
+function buildComparePlayers(allRows) {
+  const m = new Map();
+  for (const r of allRows) {
+    const k = r.slug || "n:" + normalizeName(r.name);
+    let e = m.get(k);
+    if (!e) m.set(k, (e = { name: r.name, slug: r.slug || null, seasons: [] }));
+    e.seasons.push(r);
+    if (r.season > (e._latest || "")) { e.name = r.name; e._latest = r.season; }
+  }
+  const out = [...m.values()];
+  for (const e of out) {
+    delete e._latest;
+    e.seasons.sort((x, y) => y.season.localeCompare(x.season));
+    e.bestVa = Math.max(...e.seasons.map((s) => s.va || 0));
+  }
+  return out;
+}
+
+// Inline picker: search a player from the scope index, then tap one of their
+// seasons. onPick gets { name, slug, seasons, row }.
+function ComparePicker({ context, onPick, onCancel }) {
+  const [query, setQuery] = useState("");
+  const [sel, setSel] = useState(null);
+  const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  const matches = useMemo(() => {
+    const q = normalizeName(query.trim());
+    if (q.length < 2) return [];
+    return players
+      .filter((pl) => normalizeName(pl.name).includes(q))
+      .sort((a, b) => b.bestVa - a.bestVa)
+      .slice(0, 12);
+  }, [players, query]);
+
+  return (
+    <div className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="uppercase tracking-wider text-[9px] text-stone-500">Compare against…</span>
+        <button onClick={onCancel} className="text-stone-400 hover:text-stone-700 px-1" aria-label="Cancel compare">✕</button>
+      </div>
+      {!sel ? (
+        <>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search a player…"
+            autoFocus
+            className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
+          />
+          {matches.map((pl) => (
+            <button
+              key={pl.slug || pl.name}
+              onClick={() => setSel(pl)}
+              className="w-full flex items-baseline justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-stone-50"
+            >
+              <span className="font-semibold text-stone-800">{pl.name}</span>
+              <span className="text-[9px] text-stone-400">{pl.seasons.length} seasons · best <span className="tabular-nums text-stone-600">{pl.bestVa.toFixed(1)}</span></span>
+            </button>
+          ))}
+        </>
+      ) : (
+        <>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="font-semibold text-stone-800">{sel.name}</span>
+            <button onClick={() => setSel(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {sel.seasons.map((s) => (
+              <button
+                key={s.season}
+                onClick={() => onPick({ name: sel.name, slug: sel.slug, seasons: sel.seasons, row: s })}
+                className="px-1.5 py-0.5 border border-stone-300 hover:border-amber-500 hover:bg-amber-50 tabular-nums"
+                style={{ color: teamColor(s.team) }}
+              >
+                {seasonTag(s.season)} {s.team} <span className="text-stone-500">{(s.vaPerG ?? 0).toFixed(1)}/G</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Head-to-head comparison of two player-seasons, each measured against their
+// OWN season's league baselines (era-fair). Three pieces: a category-win
+// tally, per-category paired team-color bars (or per-season-percentile dots),
+// and a career-year VA/G overlay.
+// One player's stat columns for the compare drill-in: shooting categories get
+// made/att · pct · makes-per-game, everything else raw total · per-G · per-36.
+function compareStatLine(r, key) {
+  if (CAT_SHOOTING[key]) {
+    const [m, a] = CAT_SHOOTING[key](r);
+    return {
+      header: ["M/A", "PCT", "M/G"],
+      cols: [`${m}/${a}`, `${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%`, (m / (r.gp || 1)).toFixed(1)],
+    };
+  }
+  const [statOf] = GROUP_STAT[key] || [];
+  const v = statOf ? statOf(r) : (r[CAT_COUNTING[key][0]] || 0);
+  return {
+    header: ["TOT", "PER G", "PER 36"],
+    cols: [String(Math.round(v)), (v / (r.gp || 1)).toFixed(1), ((v / (r.mp || 1)) * 36).toFixed(1)],
+  };
+}
+
+function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
+  const [mode, setMode] = useState("values"); // "values" | "pct"
+  // Tap a category row to expand both players' raw / per-game / per-36 stats.
+  const [openKey, setOpenKey] = useState(null);
+  const keys = viewMode === "basic" ? VA_GROUPS.map((g) => g.key) : VA_CATEGORY_ORDER;
+  const lgaA = lgaForSeason(a.season);
+  const lgaB = lgaForSeason(b.season);
+  const ca = teamColor(a.team);
+  const cb = teamColor(b.team);
+  // The comparison side always renders as a LIGHT fill with a team-colored
+  // outline, so the two sides stay distinguishable even when both player-
+  // seasons share a franchise color (Jokić ’26 vs Jokić ’23).
+  const cbFill = withAlpha(cb, 0.25);
+  const cbEdge = `1px solid ${cb}`;
+
+  const d = useMemo(() => {
+    const pctFor = (row, lgaX, key) => {
+      const floor = Math.max(1, Math.ceil((row.gp || 1) / 3));
+      const pool = (context.poolsBySeason.get(row.season) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
+      if (!pool.length) return null;
+      const v = catVAperGame(row, lgaX, key);
+      const below = pool.filter((r) => catVAperGame(r, lgaX, key) < v).length;
+      return (below / pool.length) * 100;
+    };
+    const rows = keys.map((key) => ({
+      key,
+      av: catVAperGame(a, lgaA, key),
+      bv: catVAperGame(b, lgaB, key),
+      apct: pctFor(a, lgaA, key),
+      bpct: pctFor(b, lgaB, key),
+    }));
+    const diff = rows.reduce((s, r) => s + r.av - r.bv, 0);
+    return { rows, diff };
+  }, [a, b, keys, lgaA, lgaB, context]);
+
+  const maxAbs = Math.max(...d.rows.flatMap((r) => [Math.abs(r.av), Math.abs(r.bv)]), 0.1);
+  const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  const leader = d.diff >= 0 ? a : b;
+
+  // Career overlay: both players' seasons aligned by career year.
+  const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
+  const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
+  const slots = Math.max(aSeasons.length, bAll.length);
+  const careerMax = Math.max(...aSeasons.map((s) => Math.abs(s.vaPerG || 0)), ...bAll.map((s) => Math.abs(s.vaPerG || 0)), 0.1);
+
+  const Swatch = ({ color, outline }) => (
+    <span
+      className="inline-block w-2 h-2 rounded-sm align-middle mx-1"
+      style={outline ? { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` } : { backgroundColor: color }}
+    />
+  );
+
+  return (
+    <div className="text-[10px]">
+      {/* Legend + tally (the head-to-head scorecard header) */}
+      <div className="flex items-center justify-between gap-2 mb-0.5">
+        <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {seasonTag(a.season)}</span>
+        <span className="text-stone-400 shrink-0">vs</span>
+        <span className="font-semibold truncate text-right" style={{ color: cb }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+      </div>
+      <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
+        {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
+      </div>
+      <div className="flex justify-end mb-1">
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <button onClick={() => setMode("values")} className={`px-1.5 py-0.5 ${mode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
+          <button onClick={() => setMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${mode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
+        </div>
+      </div>
+      {d.rows.map((r) => {
+        const isOpen = openKey === r.key;
+        return (
+        <React.Fragment key={r.key}>
+          <div
+            className={`flex items-center gap-2 py-[1px] -mx-1 px-1 cursor-pointer ${isOpen ? "bg-stone-200" : ""}`}
+            onClick={() => setOpenKey(isOpen ? null : r.key)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenKey(isOpen ? null : r.key); } }}
+            aria-pressed={isOpen}
+          >
+            <span className={`w-[4.5rem] shrink-0 text-right ${isOpen ? "text-stone-900 font-semibold" : "text-stone-600"}`}>{r.key}</span>
+            {mode === "values" ? (
+              <>
+                <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, r.key, rateMode)} · ${b.name}: ${catRateLabel(b, r.key, rateMode)}`}>
+                  <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
+                  <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / maxAbs) * 45}%`, width: `${(Math.abs(r.av) / maxAbs) * 45}%` }} />
+                  <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / maxAbs) * 45}%`, width: `${(Math.abs(r.bv) / maxAbs) * 45}%` }} />
+                </div>
+                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
+                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: cb }}>{sgn(r.bv)}</span>
+              </>
+            ) : (
+              <>
+                <div className="flex-1 relative h-4">
+                  <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1 bg-stone-200 rounded-full" />
+                  {r.apct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.apct}%`, backgroundColor: ca }} />}
+                  {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
+                </div>
+                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{r.apct != null ? r.apct.toFixed(0) : "–"}</span>
+                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: cb }}>{r.bpct != null ? r.bpct.toFixed(0) : "–"}</span>
+              </>
+            )}
+          </div>
+          {isOpen && (() => {
+            const la = compareStatLine(a, r.key), lb = compareStatLine(b, r.key);
+            const line = (row, l, color, outline, gp) => (
+              <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700">
+                <span className="truncate text-[10px] font-semibold" style={{ color }}><Swatch color={color} outline={outline} />{row.name} {seasonTag(row.season)} <span className="text-stone-400 font-normal">({gp} G)</span></span>
+                {l.cols.map((c, i) => <span key={i} className="text-right text-[10px]">{c}</span>)}
+              </div>
+            );
+            return (
+              <div className="my-1 px-1 py-1.5 bg-white border border-stone-200 rounded">
+                <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+                  <span></span>{la.header.map((h) => <span key={h} className="text-right">{h}</span>)}
+                </div>
+                {line(a, la, ca, false, a.gp || 0)}
+                {line(b, lb, cb, true, b.gp || 0)}
+              </div>
+            );
+          })()}
+          {viewMode === "detail" && VA_PARTITIONS_AFTER.has(r.key) && <div className="my-1 border-t border-stone-200" />}
+        </React.Fragment>
+      );
+      })}
+      <div className="mt-1 text-center text-[9px] italic text-stone-400">
+        {(mode === "values"
+          ? "Per-game VA, each vs their own season’s league average"
+          : "Percentile within each player’s own season (qualified players)") + " · tap a row for the raw stats"}
+      </div>
+
+      {/* Career-year overlay */}
+      {slots > 1 && (
+        <div className="mt-2 pt-2 border-t border-stone-100">
+          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">VA/G by career year</div>
+          <div className="flex items-stretch gap-[2px] h-16 px-1">
+            {Array.from({ length: slots }, (_, i) => {
+              const as = aSeasons[i], bs = bAll[i];
+              const bar = (s, color, side) => {
+                if (!s) return null;
+                const h = (Math.abs(s.vaPerG || 0) / careerMax) * 100;
+                const isSel = s.season === (side === "a" ? a.season : b.season);
+                const fill = side === "a"
+                  ? { backgroundColor: color }
+                  : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` };
+                return (
+                  <div
+                    className={`absolute bottom-0 box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
+                    style={{ height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
+                    title={`${s.season}: ${(s.vaPerG || 0).toFixed(2)} VA/G`}
+                  />
+                );
+              };
+              return (
+                <div key={i} className="flex-1 relative min-w-0">
+                  {bar(as, ca, "a")}
+                  {bar(bs, cb, "b")}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex gap-[2px] px-1 mt-0.5">
+            {Array.from({ length: slots }, (_, i) => (
+              <span key={i} className="flex-1 min-w-0 text-center text-[7px] tabular-nums text-stone-400">{i + 1}</span>
+            ))}
+          </div>
+          <div className="text-center text-[8px] italic text-stone-400 mt-0.5">Seasons aligned by career year · compared seasons at full strength</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Gold Compare chip for the breakdown toggle rows: opens the picker, then
+// shows the active comparison with a clear ✕.
+function CompareButton({ compare, picking, onOpen, onClear }) {
+  if (compare) {
+    return (
+      <button
+        onClick={onClear}
+        className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-amber-500 bg-amber-400 text-stone-900 font-semibold inline-flex items-center gap-1"
+        aria-label="Clear comparison"
+      >
+        vs {compare.name.split(" ").slice(-1)[0]} {seasonTag(compare.row.season)} <span className="opacity-60">✕</span>
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onOpen}
+      className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold ${picking ? "border-amber-500 bg-amber-100 text-amber-700" : "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300"}`}
+      aria-pressed={picking}
+    >
+      Compare
+    </button>
+  );
+}
+
 // League context for one category of one player-season (By-Player search only).
 // Everything is computed from the /api/players index passed in via `context`:
 //   poolsBySeason  Map<season, row[]>  every player-season, grouped by season
@@ -3529,6 +3870,9 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   const [openCat, setOpenCat] = useState(null);
   // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
   const [viewMode, setViewMode] = useState("detail");
+  // Head-to-head comparison against another player-season from the same scope.
+  const [compare, setCompare] = useState(null);
+  const [picking, setPicking] = useState(false);
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -3568,19 +3912,41 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   const activeRows = viewMode === "basic" ? groupRows : cats;
   const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
+  // Primary row for the compare panel — leaderboard rows carry no season/name
+  // of their own; the context fills the gaps.
+  const aRow = { ...p, season: p.season || context?.season, name: p.name || context?.self?.name, slug: p.slug || context?.self?.slug || null };
 
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
-      <div className="flex justify-between items-center mb-1.5">
+      <div className="flex justify-between items-center gap-1 mb-1.5">
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => switchView("basic")} className={`px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Basic</button>
           <button onClick={() => switchView("detail")} className={`px-1.5 py-0.5 border-l border-stone-300 ${viewMode === "detail" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>By Category</button>
         </div>
+        {context && (
+          <CompareButton
+            compare={compare}
+            picking={picking}
+            onOpen={() => setPicking((v) => !v)}
+            onClear={() => { setCompare(null); setPicking(false); }}
+          />
+        )}
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
           <button onClick={() => setRateMode("perG")} className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per G</button>
         </div>
       </div>
+      {picking && context && (
+        <ComparePicker
+          context={context}
+          onPick={(sel) => { setCompare(sel); setPicking(false); }}
+          onCancel={() => setPicking(false)}
+        />
+      )}
+      {compare && context ? (
+        <ComparePanel a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} viewMode={viewMode} />
+      ) : (
+      <>
       {activeRows.map((c) => {
         const pct = (Math.abs(c.value) / maxAbs) * 45;
         const isPos = c.value >= 0;
@@ -3615,6 +3981,8 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
         Bars show per-game contribution above / below {baseline || (context ? "NBA playoff" : "D-I")} average{context ? " · tap a category for league context" : ""}
       </div>
+      </>
+      )}
     </div>
   );
 }
