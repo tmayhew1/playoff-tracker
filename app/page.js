@@ -3476,8 +3476,12 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const lgaA = lgaForSeason(a.season);
   const lgaB = lgaForSeason(b.season);
   const ca = teamColor(a.team);
-  const cbRaw = teamColor(b.team);
-  const cb = cbRaw === ca ? "#57534e" : cbRaw; // same-franchise matchups stay legible
+  const cb = teamColor(b.team);
+  // The comparison side always renders as a LIGHT fill with a team-colored
+  // outline, so the two sides stay distinguishable even when both player-
+  // seasons share a franchise color (Jokić ’26 vs Jokić ’23).
+  const cbFill = withAlpha(cb, 0.25);
+  const cbEdge = `1px solid ${cb}`;
 
   const d = useMemo(() => {
     const pctFor = (row, lgaX, key) => {
@@ -3495,16 +3499,13 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       apct: pctFor(a, lgaA, key),
       bpct: pctFor(b, lgaB, key),
     }));
-    const wins = rows.filter((r) => r.av > r.bv).length;
-    const losses = rows.filter((r) => r.bv > r.av).length;
     const diff = rows.reduce((s, r) => s + r.av - r.bv, 0);
-    return { rows, wins, losses, diff };
+    return { rows, diff };
   }, [a, b, keys, lgaA, lgaB, context]);
 
   const maxAbs = Math.max(...d.rows.flatMap((r) => [Math.abs(r.av), Math.abs(r.bv)]), 0.1);
   const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const leader = d.diff >= 0 ? a : b;
-  const leadTally = d.diff >= 0 ? d.wins : d.losses;
 
   // Career overlay: both players' seasons aligned by career year.
   const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
@@ -3512,7 +3513,12 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const slots = Math.max(aSeasons.length, bAll.length);
   const careerMax = Math.max(...aSeasons.map((s) => Math.abs(s.vaPerG || 0)), ...bAll.map((s) => Math.abs(s.vaPerG || 0)), 0.1);
 
-  const Swatch = ({ color }) => <span className="inline-block w-2 h-2 rounded-sm align-middle mr-1" style={{ backgroundColor: color }} />;
+  const Swatch = ({ color, outline }) => (
+    <span
+      className="inline-block w-2 h-2 rounded-sm align-middle mx-1"
+      style={outline ? { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` } : { backgroundColor: color }}
+    />
+  );
 
   return (
     <div className="text-[10px]">
@@ -3520,10 +3526,10 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {seasonTag(a.season)}</span>
         <span className="text-stone-400 shrink-0">vs</span>
-        <span className="font-semibold truncate text-right" style={{ color: cb }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} /></span>
+        <span className="font-semibold truncate text-right" style={{ color: cb }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
       </div>
-      <div className="text-center text-[9px] text-stone-500 mb-1.5">
-        <span className="font-semibold text-stone-700">{leader.name}</span> takes {leadTally} of {keys.length} · <span className={`tabular-nums font-semibold ${d.diff >= 0 ? "" : ""}`} style={{ color: d.diff >= 0 ? ca : cb }}>{sgn(Math.abs(d.diff))} VA/G</span> overall
+      <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
+        {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
       </div>
       <div className="flex justify-end mb-1">
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
@@ -3540,7 +3546,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                 <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, r.key, rateMode)} · ${b.name}: ${catRateLabel(b, r.key, rateMode)}`}>
                   <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
                   <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / maxAbs) * 45}%`, width: `${(Math.abs(r.av) / maxAbs) * 45}%` }} />
-                  <div className="absolute h-[7px] bottom-[3px]" style={{ backgroundColor: cb, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / maxAbs) * 45}%`, width: `${(Math.abs(r.bv) / maxAbs) * 45}%` }} />
+                  <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / maxAbs) * 45}%`, width: `${(Math.abs(r.bv) / maxAbs) * 45}%` }} />
                 </div>
                 <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
                 <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: cb }}>{sgn(r.bv)}</span>
@@ -3550,7 +3556,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                 <div className="flex-1 relative h-4">
                   <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1 bg-stone-200 rounded-full" />
                   {r.apct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.apct}%`, backgroundColor: ca }} />}
-                  {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.bpct}%`, backgroundColor: cb }} />}
+                  {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
                 </div>
                 <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{r.apct != null ? r.apct.toFixed(0) : "–"}</span>
                 <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: cb }}>{r.bpct != null ? r.bpct.toFixed(0) : "–"}</span>
@@ -3577,10 +3583,13 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                 if (!s) return null;
                 const h = (Math.abs(s.vaPerG || 0) / careerMax) * 100;
                 const isSel = s.season === (side === "a" ? a.season : b.season);
+                const fill = side === "a"
+                  ? { backgroundColor: color }
+                  : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` };
                 return (
                   <div
-                    className={`absolute bottom-0 ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
-                    style={{ height: `${Math.max(h, 1.5)}%`, backgroundColor: color, opacity: isSel ? 1 : 0.4 }}
+                    className={`absolute bottom-0 box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
+                    style={{ height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
                     title={`${s.season}: ${(s.vaPerG || 0).toFixed(2)} VA/G`}
                   />
                 );
