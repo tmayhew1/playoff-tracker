@@ -3497,11 +3497,15 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const lgaB = lgaForSeason(b.season);
   const ca = teamColor(a.team);
   const cb = teamColor(b.team);
-  // The comparison side always renders as a LIGHT fill with a team-colored
-  // outline, so the two sides stay distinguishable even when both player-
-  // seasons share a franchise color (Jokić ’26 vs Jokić ’23).
+  // The comparison side is "wrapped in gold": every one of the compared
+  // player's marks gets the Compare-chip amber as its outline/highlight, with
+  // a light team-color fill inside. Ties the whole B column visually to the
+  // gold "VS ..." chip and keeps the sides distinguishable even when both
+  // player-seasons share a franchise color (Jokić ’26 vs Jokić ’23).
+  const GOLD = "#f59e0b";                    // border-amber-500, same as the chip
+  const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
   const cbFill = withAlpha(cb, 0.25);
-  const cbEdge = `1px solid ${cb}`;
+  const cbEdge = `1px solid ${GOLD}`;
 
   const d = useMemo(() => {
     // Percentiles rank against EVERY indexed player-season (all-time pool),
@@ -3555,7 +3559,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const Swatch = ({ color, outline }) => (
     <span
       className="inline-block w-2 h-2 rounded-sm align-middle mx-1"
-      style={outline ? { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` } : { backgroundColor: color }}
+      style={outline ? { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${GOLD}` } : { backgroundColor: color }}
     />
   );
 
@@ -3565,7 +3569,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {seasonTag(a.season)}</span>
         <span className="text-stone-400 shrink-0">vs</span>
-        <span className="font-semibold truncate text-right" style={{ color: cb }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+        <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
       </div>
       <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
         {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
@@ -3597,7 +3601,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                   <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / maxAbs) * 45}%`, width: `${(Math.abs(r.bv) / maxAbs) * 45}%` }} />
                 </div>
                 <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
-                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: cb }}>{sgn(r.bv)}</span>
+                <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
               </>
             ) : (
               <>
@@ -3607,14 +3611,17 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                   {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
                 </div>
                 <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{r.apct != null ? r.apct.toFixed(0) : "–"}</span>
-                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: cb }}>{r.bpct != null ? r.bpct.toFixed(0) : "–"}</span>
+                <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{r.bpct != null ? r.bpct.toFixed(0) : "–"}</span>
               </>
             )}
           </div>
           {isOpen && (() => {
             const la = compareStatLine(a, r.key), lb = compareStatLine(b, r.key);
             const line = (row, l, color, outline, gp) => (
-              <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700">
+              <div
+                className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700 rounded-sm"
+                style={outline ? { backgroundColor: GOLD_BG } : undefined}
+              >
                 <span className="truncate text-[10px] font-semibold" style={{ color }}><Swatch color={color} outline={outline} />{row.name} {seasonTag(row.season)} <span className="text-stone-400 font-normal">({gp} G)</span></span>
                 {l.cols.map((c, i) => <span key={i} className="text-right text-[10px]">{c}</span>)}
               </div>
@@ -3654,7 +3661,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                 const isSel = s.season === (side === "a" ? a.season : b.season);
                 const fill = side === "a"
                   ? { backgroundColor: color }
-                  : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${color}` };
+                  : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${GOLD}` };
                 return (
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
