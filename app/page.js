@@ -409,6 +409,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
+  const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
   // Per-36 vs per-game normalization for the counting-stat labels (PTS,
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
@@ -732,9 +733,39 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           )}
         </div>
       </div>
-      {/* View toggle (Basic groups vs the full category list) on the left;
-          Per 36 / Per G rate toggle on the right — the latter only in
-          multi-game rate mode (single-game drill-ins show raw counts). */}
+      {/* Toggle row. Normal view: Basic/By Category left, Compare center,
+          Per 36 / Per G right (rate toggle only in multi-game rate mode).
+          Comparing: the gold vs-chip takes the left slot and the
+          Values/Percentiles mode toggle takes the right; view/rate toggles
+          hide since the compare view is Basic-first with its own drill-down. */}
+      {compare && context && atSeasonLevel ? (
+        <div className="flex justify-between items-center mb-1">
+          <CompareButton
+            compare={compare}
+            picking={picking}
+            onOpen={() => setPicking((v) => !v)}
+            onClear={() => { setCompare(null); setPicking(false); }}
+          />
+          <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+            <button
+              type="button"
+              onClick={() => setCompareMode("values")}
+              className={`whitespace-nowrap px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              aria-pressed={compareMode === "values"}
+            >
+              Values
+            </button>
+            <button
+              type="button"
+              onClick={() => setCompareMode("pct")}
+              className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+              aria-pressed={compareMode === "pct"}
+            >
+              Percentiles
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="flex justify-between items-center mb-1">
         <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
           <button
@@ -783,6 +814,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           </div>
         )}
       </div>
+      )}
       {picking && context && atSeasonLevel && (
         <ComparePicker
           context={context}
@@ -797,7 +829,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           bSeasons={compare.seasons}
           context={context}
           rateMode={rateMode}
-          viewMode={viewMode}
+          mode={compareMode}
+          setMode={setCompareMode}
         />
       ) : (
       <>
@@ -3380,6 +3413,21 @@ function InfoView() {
 // "’26" for "2025-26" — season's end year, short form.
 const seasonTag = (s) => "’" + (s || "").slice(5);
 
+// Compare-side gold, shared by the chip, wrappers, and highlights.
+const GOLD = "#f59e0b";                    // border-amber-500
+const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
+
+// Percentile display honoring significant digits at the top end: integers up
+// to 99, then 99.5–99.9, then 99.95–99.99. A flat 100 is reserved for the #1
+// player-season in the category (isTop).
+function formatPercentile(p, isTop) {
+  if (p == null) return "–";
+  if (isTop) return "100";
+  if (p >= 99.95) return Math.min(p, 99.99).toFixed(2);
+  if (p >= 99.5) return Math.min(p, 99.9).toFixed(1);
+  return String(Math.min(Math.round(p), 99));
+}
+
 // --- Compare (both breakdowns) ----------------------------------------------
 // Group the context pools back into players for the Compare picker.
 function buildComparePlayers(allRows) {
@@ -3488,58 +3536,71 @@ function compareStatLine(r, key) {
   };
 }
 
-function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
-  const [mode, setMode] = useState("values"); // "values" | "pct"
-  // Tap a category row to expand both players' raw / per-game / per-36 stats.
-  const [openKey, setOpenKey] = useState(null);
-  const keys = viewMode === "basic" ? VA_GROUPS.map((g) => g.key) : VA_CATEGORY_ORDER;
+function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
+  // The compare view is Basic-first: the four groups are the top level, a tap
+  // on a group drops down its member categories, and a tap on a member opens
+  // the raw-stats table. (The Basic/By Category and Per 36/Per G toggles are
+  // hidden while comparing; the Values/Percentiles mode lives in the parent's
+  // toggle row.)
+  const [openGroup, setOpenGroup] = useState(null);
+  const [openKey, setOpenKey] = useState(null); // member category with raw stats open
   const lgaA = lgaForSeason(a.season);
   const lgaB = lgaForSeason(b.season);
   const ca = teamColor(a.team);
   const cb = teamColor(b.team);
-  // The comparison side is "wrapped in gold": every one of the compared
-  // player's marks gets the Compare-chip amber as its outline/highlight, with
-  // a light team-color fill inside. Ties the whole B column visually to the
-  // gold "VS ..." chip and keeps the sides distinguishable even when both
-  // player-seasons share a franchise color (Jokić ’26 vs Jokić ’23).
-  const GOLD = "#f59e0b";                    // border-amber-500, same as the chip
-  const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
+  // The comparison side is "wrapped in gold" (the Compare-chip amber) with a
+  // light team-color fill inside — see GOLD/GOLD_BG.
   const cbFill = withAlpha(cb, 0.25);
   const cbEdge = `1px solid ${GOLD}`;
+
+  const GROUP_KEYS = VA_GROUPS.map((g) => g.key);
+  const ALL_KEYS = [...GROUP_KEYS, ...VA_CATEGORY_ORDER];
 
   const d = useMemo(() => {
     // Percentiles rank against EVERY indexed player-season (all-time pool),
     // each row measured era-fair against its own season's baselines. One pass
-    // over the pool computes all categories at once; the >=5 G floor matches
-    // the all-time rank in the context card.
+    // over the pool computes every group + category at once; the >=5 G floor
+    // matches the all-time rank in the context card. The pool max per key
+    // marks the #1 season, the only one allowed to display a flat 100.
     const pool = context.allRows.filter((r) => (r.gp || 0) >= 5 && r.mp > 0);
+    const maxByKey = {};
     const poolVals = pool.map((r) => {
       const lgaX = lgaForSeason(r.season);
       const out = {};
-      for (const key of keys) out[key] = catVAperGame(r, lgaX, key);
+      for (const key of ALL_KEYS) {
+        out[key] = catVAperGame(r, lgaX, key);
+        if (maxByKey[key] == null || out[key] > maxByKey[key]) maxByKey[key] = out[key];
+      }
       return out;
     });
-    const pctFor = (row, lgaX, key) => {
+    const pctFor = (v, key) => {
       if (!poolVals.length) return null;
-      const v = catVAperGame(row, lgaX, key);
       let below = 0;
       for (const pv of poolVals) if (pv[key] < v) below++;
       return (below / poolVals.length) * 100;
     };
-    const rows = keys.map((key) => ({
-      key,
-      av: catVAperGame(a, lgaA, key),
-      bv: catVAperGame(b, lgaB, key),
-      apct: pctFor(a, lgaA, key),
-      bpct: pctFor(b, lgaB, key),
-    }));
-    const diff = rows.reduce((s, r) => s + r.av - r.bv, 0);
+    const rows = {};
+    for (const key of ALL_KEYS) {
+      const av = catVAperGame(a, lgaA, key);
+      const bv = catVAperGame(b, lgaB, key);
+      rows[key] = {
+        key, av, bv,
+        apct: pctFor(av, key), bpct: pctFor(bv, key),
+        // #1 in the category = at least the pool max. Epsilon absorbs the tiny
+        // mp-rounding gap between a leaderboard row (full-precision minutes)
+        // and its own copy in the index pool (minutes rounded to 0.1).
+        atop: maxByKey[key] != null && av >= maxByKey[key] - 1e-6,
+        btop: maxByKey[key] != null && bv >= maxByKey[key] - 1e-6,
+      };
+    }
+    const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
     return { rows, diff };
-  }, [a, b, keys, lgaA, lgaB, context]);
+  }, [a, b, lgaA, lgaB, context]);
 
-  const maxAbs = Math.max(...d.rows.flatMap((r) => [Math.abs(r.av), Math.abs(r.bv)]), 0.1);
   const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const leader = d.diff >= 0 ? a : b;
+  // Bars scale per level: groups against groups, members against their group.
+  const scaleFor = (ks) => Math.max(...ks.flatMap((k) => [Math.abs(d.rows[k].av), Math.abs(d.rows[k].bv)]), 0.1);
 
   // Career overlay: both players' seasons aligned by career year, showing
   // TOTAL VA per season. With a category selected it shows that category's
@@ -3549,12 +3610,14 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
   const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
-  const careerVal = (s) => (openKey ? catVATotal(s, lgaForSeason(s.season), openKey) : (s.va || 0));
+  // Deepest selection wins: an open member category, else the open group.
+  const activeKey = openKey || openGroup;
+  const careerVal = (s) => (activeKey ? catVATotal(s, lgaForSeason(s.season), activeKey) : (s.va || 0));
   const cvals = [...aSeasons, ...bAll].map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
   const cSpan = (cHi - cLo) || 1;
   const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
-  const careerLabel = openKey ? `${CAT_SHORT[openKey] || openKey} total VA by career year` : "Total VA by career year";
+  const careerLabel = activeKey ? `${CAT_SHORT[activeKey] || activeKey} total VA by career year` : "Total VA by career year";
 
   const Swatch = ({ color, outline }) => (
     <span
@@ -3574,76 +3637,88 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
       <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
         {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
       </div>
-      <div className="flex justify-end mb-1">
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
-          <button onClick={() => setMode("values")} className={`px-1.5 py-0.5 ${mode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
-          <button onClick={() => setMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${mode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
-        </div>
-      </div>
-      {d.rows.map((r) => {
-        const isOpen = openKey === r.key;
-        return (
-        <React.Fragment key={r.key}>
-          <div
-            className={`flex items-center gap-2 py-[1px] -mx-1 px-1 cursor-pointer ${isOpen ? "bg-stone-200" : ""}`}
-            onClick={() => setOpenKey(isOpen ? null : r.key)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenKey(isOpen ? null : r.key); } }}
-            aria-pressed={isOpen}
-          >
-            <span className={`w-[4.5rem] shrink-0 text-right ${isOpen ? "text-stone-900 font-semibold" : "text-stone-600"}`}>{r.key}</span>
-            {mode === "values" ? (
-              <>
-                <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, r.key, rateMode)} · ${b.name}: ${catRateLabel(b, r.key, rateMode)}`}>
-                  <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
-                  <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / maxAbs) * 45}%`, width: `${(Math.abs(r.av) / maxAbs) * 45}%` }} />
-                  <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / maxAbs) * 45}%`, width: `${(Math.abs(r.bv) / maxAbs) * 45}%` }} />
-                </div>
-                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
-                <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
-              </>
-            ) : (
-              <>
-                <div className="flex-1 relative h-4">
-                  <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1 bg-stone-200 rounded-full" />
-                  {r.apct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.apct}%`, backgroundColor: ca }} />}
-                  {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
-                </div>
-                <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{r.apct != null ? r.apct.toFixed(0) : "–"}</span>
-                <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{r.bpct != null ? r.bpct.toFixed(0) : "–"}</span>
-              </>
-            )}
-          </div>
-          {isOpen && (() => {
-            const la = compareStatLine(a, r.key), lb = compareStatLine(b, r.key);
-            const line = (row, l, color, outline, gp) => (
+      {VA_GROUPS.map((g) => {
+        const groupOpen = openGroup === g.key;
+        const rowFor = (key, scale, member) => {
+          const r = d.rows[key];
+          const isOpen = member ? openKey === key : groupOpen;
+          const toggle = member
+            ? () => setOpenKey(openKey === key ? null : key)
+            : () => { setOpenGroup(groupOpen ? null : g.key); setOpenKey(null); };
+          return (
+            <React.Fragment key={key}>
               <div
-                className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700 rounded-sm"
-                style={outline ? { backgroundColor: GOLD_BG } : undefined}
+                className={`flex items-center gap-2 py-[1px] -mx-1 px-1 cursor-pointer ${isOpen ? "bg-stone-200" : ""}`}
+                onClick={toggle}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
+                aria-pressed={isOpen}
               >
-                <span className="truncate text-[10px] font-semibold" style={{ color }}><Swatch color={color} outline={outline} />{row.name} {seasonTag(row.season)} <span className="text-stone-400 font-normal">({gp} G)</span></span>
-                {l.cols.map((c, i) => <span key={i} className="text-right text-[10px]">{c}</span>)}
+                <span className={`w-[4.5rem] shrink-0 text-right ${member ? "" : "font-semibold"} ${isOpen ? "text-stone-900 font-semibold" : member ? "text-stone-500" : "text-stone-700"}`}>
+                  {!member && <span className="text-stone-400 mr-0.5 font-normal">{isOpen ? "▾" : "▸"}</span>}{key}
+                </span>
+                {mode === "values" ? (
+                  <>
+                    <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, key, rateMode)} · ${b.name}: ${catRateLabel(b, key, rateMode)}`}>
+                      <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
+                      <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / scale) * 45}%`, width: `${(Math.abs(r.av) / scale) * 45}%` }} />
+                      <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / scale) * 45}%`, width: `${(Math.abs(r.bv) / scale) * 45}%` }} />
+                    </div>
+                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
+                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 relative h-4">
+                      <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1 bg-stone-200 rounded-full" />
+                      {r.apct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.apct}%`, backgroundColor: ca }} />}
+                      {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
+                    </div>
+                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{formatPercentile(r.apct, r.atop)}</span>
+                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{formatPercentile(r.bpct, r.btop)}</span>
+                  </>
+                )}
               </div>
-            );
-            return (
-              <div className="my-1 px-1 py-1.5 bg-white border border-stone-200 rounded">
-                <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-                  <span></span>{la.header.map((h) => <span key={h} className="text-right">{h}</span>)}
-                </div>
-                {line(a, la, ca, false, a.gp || 0)}
-                {line(b, lb, cb, true, b.gp || 0)}
+              {member && isOpen && (() => {
+                const la = compareStatLine(a, key), lb = compareStatLine(b, key);
+                const line = (row, l, color, outline, gp) => (
+                  <div
+                    className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700 rounded-sm"
+                    style={outline ? { backgroundColor: GOLD_BG } : undefined}
+                  >
+                    <span className="truncate text-[10px] font-semibold" style={{ color }}><Swatch color={color} outline={outline} />{row.name} {seasonTag(row.season)} <span className="text-stone-400 font-normal">({gp} G)</span></span>
+                    {l.cols.map((c, i) => <span key={i} className="text-right text-[10px]">{c}</span>)}
+                  </div>
+                );
+                return (
+                  <div className="my-1 px-1 py-1.5 bg-white border border-stone-200 rounded">
+                    <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+                      <span></span>{la.header.map((h) => <span key={h} className="text-right">{h}</span>)}
+                    </div>
+                    {line(a, la, ca, false, a.gp || 0)}
+                    {line(b, lb, cb, true, b.gp || 0)}
+                  </div>
+                );
+              })()}
+            </React.Fragment>
+          );
+        };
+        return (
+          <React.Fragment key={g.key}>
+            {rowFor(g.key, scaleFor(GROUP_KEYS), false)}
+            {groupOpen && (
+              <div className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
+                {g.cats.map((ck) => rowFor(ck, scaleFor(g.cats), true))}
               </div>
-            );
-          })()}
-          {viewMode === "detail" && VA_PARTITIONS_AFTER.has(r.key) && <div className="my-1 border-t border-stone-200" />}
-        </React.Fragment>
-      );
+            )}
+          </React.Fragment>
+        );
       })}
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
           ? "Per-game VA, each vs their own season’s league baseline"
-          : "Percentile across every indexed player-season, ≥5 G, each vs their own era") + " · tap a row for the raw stats"}
+          : "Percentile across every indexed player-season, ≥5 G, each vs their own era") + " · tap a group for its categories, a category for raw stats"}
       </div>
 
       {/* Career-year overlay */}
@@ -3666,7 +3741,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
                     style={{ top: `${topPct}%`, height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
-                    title={`${s.season}: ${v.toFixed(1)}${openKey ? ` ${CAT_SHORT[openKey] || openKey}` : ""} VA`}
+                    title={`${s.season}: ${v.toFixed(1)}${activeKey ? ` ${CAT_SHORT[activeKey] || activeKey}` : ""} VA`}
                   />
                 );
               };
@@ -3695,10 +3770,12 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, viewMode }) {
 // shows the active comparison with a clear ✕.
 function CompareButton({ compare, picking, onOpen, onClear }) {
   if (compare) {
+    // Active chip wears the same LIGHT gold as the compared player's wrappers.
     return (
       <button
         onClick={onClear}
-        className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-amber-500 bg-amber-400 text-stone-900 font-semibold inline-flex items-center gap-1"
+        className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+        style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         aria-label="Clear comparison"
       >
         vs {compare.name.split(" ").slice(-1)[0]} {seasonTag(compare.row.season)} <span className="opacity-60">✕</span>
@@ -3906,6 +3983,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
+  const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -3951,6 +4029,23 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
 
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
+      {compare && context ? (
+        // Comparison toggle row: the gold vs-chip left (where Basic/By
+        // Category lives) and Values/Percentiles right (where Per 36/Per G
+        // lives); the view/rate toggles hide while comparing.
+        <div className="flex justify-between items-center gap-1 mb-1.5">
+          <CompareButton
+            compare={compare}
+            picking={picking}
+            onOpen={() => setPicking((v) => !v)}
+            onClear={() => { setCompare(null); setPicking(false); }}
+          />
+          <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+            <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
+            <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
+          </div>
+        </div>
+      ) : (
       <div className="flex justify-between items-center gap-1 mb-1.5">
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => switchView("basic")} className={`px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Basic</button>
@@ -3969,6 +4064,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
           <button onClick={() => setRateMode("perG")} className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per G</button>
         </div>
       </div>
+      )}
       {picking && context && (
         <ComparePicker
           context={context}
@@ -3977,7 +4073,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         />
       )}
       {compare && context ? (
-        <ComparePanel a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} viewMode={viewMode} />
+        <ComparePanel a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
       ) : (
       <>
       {activeRows.map((c) => {
