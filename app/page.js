@@ -3518,22 +3518,38 @@ function ComparePicker({ context, onPick, onCancel }) {
 // OWN season's league baselines (era-fair). Three pieces: a category-win
 // tally, per-category paired team-color bars (or per-season-percentile dots),
 // and a career-year VA/G overlay.
-// One player's stat columns for the compare drill-in: shooting categories get
-// made/att · pct · makes-per-game, everything else raw total · per-G · per-36.
-function compareStatLine(r, key) {
-  if (CAT_SHOOTING[key]) {
-    const [m, a] = CAT_SHOOTING[key](r);
-    return {
-      header: ["M/A", "PCT", "M/G"],
-      cols: [`${m}/${a}`, `${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%`, (m / (r.gp || 1)).toFixed(1)],
-    };
-  }
-  const [statOf] = GROUP_STAT[key] || [];
-  const v = statOf ? statOf(r) : (r[CAT_COUNTING[key][0]] || 0);
-  return {
-    header: ["TOT", "PER G", "PER 36"],
-    cols: [String(Math.round(v)), (v / (r.gp || 1)).toFixed(1), ((v / (r.mp || 1)) * 36).toFixed(1)],
+// Raw-stats drill for one category, laid out as metric-ROWS × player-COLUMNS
+// (the winner of each row is flagged so the UI can circle it). Counting cats:
+// per-game / per-36 / total; shooting cats: made-att per game / pct / total
+// makes. Fewer turnovers wins.
+function compareStatRows(a, b, key) {
+  const rows = [];
+  const push = (label, aDisp, bDisp, aCmp, bCmp, lowerBetter = false) => {
+    let win = null;
+    if (aCmp !== bCmp) {
+      const aBetter = lowerBetter ? aCmp < bCmp : aCmp > bCmp;
+      win = aBetter ? "a" : "b";
+    }
+    rows.push({ label, a: aDisp, b: bDisp, win });
   };
+  if (CAT_SHOOTING[key]) {
+    const [am, aa] = CAT_SHOOTING[key](a), [bm, ba] = CAT_SHOOTING[key](b);
+    const agp = a.gp || 1, bgp = b.gp || 1;
+    push("M/A per G", `${(am / agp).toFixed(1)}/${(aa / agp).toFixed(1)}`,
+      `${(bm / bgp).toFixed(1)}/${(ba / bgp).toFixed(1)}`, am / agp, bm / bgp);
+    push("%", `${aa > 0 ? ((am / aa) * 100).toFixed(1) : "0.0"}%`,
+      `${ba > 0 ? ((bm / ba) * 100).toFixed(1) : "0.0"}%`, aa > 0 ? am / aa : 0, ba > 0 ? bm / ba : 0);
+    push("Tot M", String(Math.round(am)), String(Math.round(bm)), am, bm);
+    return rows;
+  }
+  const tag = CAT_COUNTING[key] ? CAT_COUNTING[key][1] : (GROUP_STAT[key] || [null, ""])[1];
+  const statOf = CAT_COUNTING[key] ? (r) => (r[CAT_COUNTING[key][0]] || 0) : (GROUP_STAT[key] || [() => 0])[0];
+  const av = statOf(a), bv = statOf(b);
+  const lower = key === "Turnovers";
+  push(`${tag}/G`, (av / (a.gp || 1)).toFixed(1), (bv / (b.gp || 1)).toFixed(1), av / (a.gp || 1), bv / (b.gp || 1), lower);
+  push(`${tag}/36`, ((av / (a.mp || 1)) * 36).toFixed(1), ((bv / (b.mp || 1)) * 36).toFixed(1), (av / (a.mp || 1)) * 36, (bv / (b.mp || 1)) * 36, lower);
+  push("Tot", String(Math.round(av)), String(Math.round(bv)), av, bv, lower);
+  return rows;
 }
 
 function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
@@ -3681,23 +3697,38 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
                 )}
               </div>
               {member && isOpen && (() => {
-                const la = compareStatLine(a, key), lb = compareStatLine(b, key);
-                const line = (row, l, color, outline, gp) => (
-                  <div
-                    className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 items-center px-1 py-[2px] tabular-nums text-stone-700 rounded-sm"
-                    style={outline ? { backgroundColor: GOLD_BG } : undefined}
-                  >
-                    <span className="truncate text-[10px] font-semibold" style={{ color }}><Swatch color={color} outline={outline} />{row.name} {seasonTag(row.season)} <span className="text-stone-400 font-normal">({gp} G)</span></span>
-                    {l.cols.map((c, i) => <span key={i} className="text-right text-[10px]">{c}</span>)}
+                // Flipped raw-stats card: player columns, metric rows, the
+                // leader of each row circled (per the mock). B column keeps the
+                // gold identity tint.
+                const rows = compareStatRows(a, b, key);
+                const head = (row, color, gold) => (
+                  <div className={`min-w-0 px-1 py-0.5 rounded-sm ${gold ? "" : ""}`} style={gold ? { backgroundColor: GOLD_BG } : undefined}>
+                    <div className="flex items-center gap-0.5 justify-end">
+                      <Swatch color={color} outline={gold} />
+                      <span className="truncate font-semibold text-[10px] leading-tight" style={{ color }}>{row.name}</span>
+                    </div>
+                    <div className="text-[8px] text-stone-400 text-right leading-tight">{seasonTag(row.season)} · {row.gp || 0} G</div>
+                  </div>
+                );
+                const cell = (disp, win, gold) => (
+                  <div className="px-1 py-[1px] rounded-sm text-right" style={gold ? { backgroundColor: GOLD_BG } : undefined}>
+                    <span className={`inline-block tabular-nums text-[10px] leading-tight ${win ? "font-bold text-stone-900 ring-1 ring-stone-500 rounded-full px-1.5 py-[1px]" : "text-stone-600 px-1.5 py-[1px]"}`}>{disp}</span>
                   </div>
                 );
                 return (
-                  <div className="my-1 px-1 py-1.5 bg-white border border-stone-200 rounded">
-                    <div className="grid grid-cols-[1fr_3.4rem_3.4rem_3.4rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-                      <span></span>{la.header.map((h) => <span key={h} className="text-right">{h}</span>)}
+                  <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
+                    <div className="grid grid-cols-[2.6rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
+                      <span></span>
+                      {head(a, ca, false)}
+                      {head(b, cb, true)}
                     </div>
-                    {line(a, la, ca, false, a.gp || 0)}
-                    {line(b, lb, cb, true, b.gp || 0)}
+                    {rows.map((r) => (
+                      <div key={r.label} className="grid grid-cols-[2.6rem_1fr_1fr] gap-x-1 items-center py-[2px]">
+                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right">{r.label}</span>
+                        {cell(r.a, r.win === "a", false)}
+                        {cell(r.b, r.win === "b", true)}
+                      </div>
+                    ))}
                   </div>
                 );
               })()}
