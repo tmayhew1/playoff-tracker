@@ -3483,10 +3483,15 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     if (!qNorm) return [];
     const selfSlug = self.slug || null;
     const selfNormName = normalizeName(self.name || "");
+    // Only comp players in a similar minutes role: a 35-MPG star shouldn't
+    // match a 15-20 MPG bench player even if their per-minute shape is close.
+    const qMPG = self.mp / (self.gp || 1);
+    const MPG_BAND = 7;
     const best = new Map(); // decade -> {r, score, cos}
     for (const r of context.allRows) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
       if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
+      if (Math.abs(r.mp / (r.gp || 1) - qMPG) > MPG_BAND) continue;
       const v = perGameVAVec(r, lgaForSeason(r.season));
       const n = Math.hypot(...v);
       if (!n) continue;
