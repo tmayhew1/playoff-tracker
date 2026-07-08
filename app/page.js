@@ -3630,8 +3630,23 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
   // the raw-stats table. (The Basic/By Category and Per 36/Per G toggles are
   // hidden while comparing; the Values/Percentiles mode lives in the parent's
   // toggle row.)
-  const [openGroup, setOpenGroup] = useState(null);
+  // Groups are an independent accordion — any number can be open at once.
+  // The raw-stats card (a member category) stays single-open.
+  const [openGroups, setOpenGroups] = useState(() => new Set());
   const [openKey, setOpenKey] = useState(null); // member category with raw stats open
+  const toggleGroup = (gk, cats) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(gk)) {
+        next.delete(gk);
+        // Closing a group hides its members, so drop an open raw card inside it.
+        if (openKey && cats.includes(openKey)) setOpenKey(null);
+      } else {
+        next.add(gk); // insertion order = most-recently-opened last (drives the chart)
+      }
+      return next;
+    });
+  };
   const lgaA = lgaForSeason(a.season);
   const lgaB = lgaForSeason(b.season);
   const ca = teamColor(a.team);
@@ -3699,7 +3714,9 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
   // Deepest selection wins: an open member category, else the open group.
-  const activeKey = openKey || openGroup;
+  // The career overlay follows the deepest interaction: an open raw-stats card
+  // wins; otherwise the most-recently-opened group (Set insertion order).
+  const activeKey = openKey || ([...openGroups].at(-1) ?? null);
   const careerVal = (s) => (activeKey ? catVATotal(s, lgaForSeason(s.season), activeKey) : (s.va || 0));
   const cvals = [...aSeasons, ...bAll].map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
@@ -3726,13 +3743,13 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
         {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
       </div>
       {VA_GROUPS.map((g) => {
-        const groupOpen = openGroup === g.key;
+        const groupOpen = openGroups.has(g.key);
         const rowFor = (key, scale, member) => {
           const r = d.rows[key];
           const isOpen = member ? openKey === key : groupOpen;
           const toggle = member
             ? () => setOpenKey(openKey === key ? null : key)
-            : () => { setOpenGroup(groupOpen ? null : g.key); setOpenKey(null); };
+            : () => toggleGroup(g.key, g.cats);
           return (
             <React.Fragment key={key}>
               <div
