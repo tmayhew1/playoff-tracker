@@ -320,6 +320,14 @@ function catVATotal(r, lgaX, key) {
 function catVAperGame(r, lgaX, key) {
   return catVATotal(r, lgaX, key) / (r.gp || 1);
 }
+// Per-game VA vector across all ten categories (VA_CATEGORY_ORDER), one
+// valueAddByCategory call. This is the "shape" of a player-season used for the
+// closest-comps similarity in the compare picker.
+function perGameVAVec(r, lgaX) {
+  const by = valueAddByCategory(r, lgaX);
+  const gp = r.gp || 1;
+  return VA_CATEGORY_ORDER.map((k) => (by[k] || 0) / gp);
+}
 // Identity match between two player-season rows (slug when both have one,
 // else normalized name). Rows within a season pool are unique per player.
 function samePlayer(a, b) {
@@ -818,6 +826,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       {picking && context && atSeasonLevel && (
         <ComparePicker
           context={context}
+          self={{ ...pSeries, season: pSeries.season || context.season, name: pSeries.name || context.self?.name, slug: pSeries.slug || context.self?.slug || null }}
           onPick={(sel) => { setCompare(sel); setPicking(false); }}
           onCancel={() => setPicking(false)}
         />
@@ -3450,7 +3459,7 @@ function buildComparePlayers(allRows) {
 
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
-function ComparePicker({ context, onPick, onCancel }) {
+function ComparePicker({ context, self = null, onPick, onCancel }) {
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);
   const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
@@ -3462,6 +3471,46 @@ function ComparePicker({ context, onPick, onCancel }) {
       .sort((a, b) => b.bestVa - a.bestVa)
       .slice(0, 12);
   }, [players, query]);
+
+  // Closest comps: the nearest player-seasons to `self` by per-game VA-category
+  // shape, one per decade. Similarity = cosine of the two 10-dim VA vectors
+  // (a dot product of unit vectors) weighted by magnitude closeness, so a comp
+  // matches both the archetype AND the overall level. Shown before searching.
+  const comps = useMemo(() => {
+    if (!self || !(self.mp > 0)) return [];
+    const qVec = perGameVAVec(self, lgaForSeason(self.season));
+    const qNorm = Math.hypot(...qVec);
+    if (!qNorm) return [];
+    const selfSlug = self.slug || null;
+    const selfNormName = normalizeName(self.name || "");
+    const best = new Map(); // decade -> {r, score, cos}
+    for (const r of context.allRows) {
+      if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
+      if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
+      const v = perGameVAVec(r, lgaForSeason(r.season));
+      const n = Math.hypot(...v);
+      if (!n) continue;
+      let dot = 0;
+      for (let i = 0; i < qVec.length; i++) dot += qVec[i] * v[i];
+      const cos = dot / (qNorm * n);
+      if (cos < 0.3) continue; // clearly different archetype — never a "comp"
+      const magSim = Math.min(qNorm, n) / Math.max(qNorm, n);
+      const score = cos * magSim;
+      const dec = Math.floor(parseInt(r.season.slice(0, 4), 10) / 10) * 10;
+      const cur = best.get(dec);
+      if (!cur || score > cur.score) best.set(dec, { r, score, cos });
+    }
+    // One per decade, most recent first; fill to >=3 with next-best overall.
+    let picks = [...best.values()].sort((a, b) => b.r.season.localeCompare(a.r.season));
+    if (picks.length > 5) picks = picks.slice(0, 5);
+    return picks;
+  }, [self, context]);
+
+  const pickComp = (r) => {
+    const pl = players.find((p) => (r.slug ? p.slug === r.slug : normalizeName(p.name) === normalizeName(r.name)));
+    const row = (pl && pl.seasons.find((s) => s.season === r.season)) || r;
+    onPick({ name: pl?.name || r.name, slug: pl?.slug || r.slug || null, seasons: pl?.seasons || [r], row });
+  };
 
   return (
     <div className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px]">
@@ -3479,6 +3528,24 @@ function ComparePicker({ context, onPick, onCancel }) {
             autoFocus
             className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
           />
+          {query.trim() === "" && comps.length > 0 && (
+            <div className="mb-1">
+              <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">Closest comps · nearest VA profile per decade</div>
+              {comps.map(({ r, cos }) => (
+                <button
+                  key={r.season + (r.slug || r.name)}
+                  onClick={() => pickComp(r)}
+                  className="w-full flex items-center justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-amber-50"
+                >
+                  <span className="truncate min-w-0">
+                    <span className="font-semibold" style={{ color: teamColor(r.team) }}>{r.name}</span>
+                    <span className="text-stone-400"> {seasonTag(r.season)} · {r.team}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-[9px] text-stone-500">{Math.round(cos * 100)}% match</span>
+                </button>
+              ))}
+            </div>
+          )}
           {matches.map((pl) => (
             <button
               key={pl.slug || pl.name}
@@ -4099,6 +4166,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       {picking && context && (
         <ComparePicker
           context={context}
+          self={aRow}
           onPick={(sel) => { setCompare(sel); setPicking(false); }}
           onCancel={() => setPicking(false)}
         />
