@@ -3813,6 +3813,33 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
       <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
         {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
       </div>
+      {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
+          opens (or closes) every group and every raw-stats card at once. */}
+      <div className="flex items-stretch gap-1">
+      {(() => {
+        const allOpen = openGroups.size >= VA_GROUPS.length && openKeys.size >= VA_CATEGORY_ORDER.length;
+        const toggleAll = () => {
+          if (allOpen) {
+            setOpenGroups(new Set());
+            setOpenKeys(new Set());
+          } else {
+            setOpenGroups(new Set(GROUP_KEYS));
+            setOpenKeys(new Set(VA_CATEGORY_ORDER));
+          }
+        };
+        return (
+          <button
+            type="button"
+            onClick={toggleAll}
+            aria-pressed={allOpen}
+            className="shrink-0 w-4 rounded-sm border border-stone-200 bg-white text-[8px] uppercase tracking-[0.15em] text-stone-400 hover:text-stone-700 hover:border-stone-300 flex items-center justify-center"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          >
+            {allOpen ? "Collapse All" : "Expand All"}
+          </button>
+        );
+      })()}
+      <div className="flex-1 min-w-0">
       {VA_GROUPS.map((g) => {
         const groupOpen = openGroups.has(g.key);
         const rowFor = (key, scale, member) => {
@@ -3906,6 +3933,8 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
           </React.Fragment>
         );
       })}
+      </div>
+      </div>
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
           ? "Per-game VA, each vs their own season’s league baseline"
