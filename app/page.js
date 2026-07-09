@@ -833,6 +833,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       )}
       {compare && context && atSeasonLevel ? (
         <ComparePanel
+          key={`${compare.row.season}:${compare.slug || compare.name}`}
           a={{ ...pSeries, season: pSeries.season || context.season, name: pSeries.name || context.self?.name, slug: pSeries.slug || context.self?.slug || null }}
           b={compare.row}
           bSeasons={compare.seasons}
@@ -3605,22 +3606,25 @@ function compareStatRows(a, b, key) {
     rows.push({ label, a: aDisp, b: bDisp, win });
   };
   if (CAT_SHOOTING[key]) {
+    // "2PM/2PA · 2P% · TOT 2PM" (per-game made/att in the first row).
+    const t = CAT_SHORT[key]; // 2P / 3P / FT
     const [am, aa] = CAT_SHOOTING[key](a), [bm, ba] = CAT_SHOOTING[key](b);
     const agp = a.gp || 1, bgp = b.gp || 1;
-    push("M/A per G", `${(am / agp).toFixed(1)}/${(aa / agp).toFixed(1)}`,
+    push(`${t}M/${t}A`, `${(am / agp).toFixed(1)}/${(aa / agp).toFixed(1)}`,
       `${(bm / bgp).toFixed(1)}/${(ba / bgp).toFixed(1)}`, am / agp, bm / bgp);
-    push("%", `${aa > 0 ? ((am / aa) * 100).toFixed(1) : "0.0"}%`,
+    push(`${t}%`, `${aa > 0 ? ((am / aa) * 100).toFixed(1) : "0.0"}%`,
       `${ba > 0 ? ((bm / ba) * 100).toFixed(1) : "0.0"}%`, aa > 0 ? am / aa : 0, ba > 0 ? bm / ba : 0);
-    push("Tot M", String(Math.round(am)), String(Math.round(bm)), am, bm);
+    push(`TOT ${t}M`, String(Math.round(am)), String(Math.round(bm)), am, bm);
     return rows;
   }
+  // "PTS/G · PTS/36 · TOT PTS" (AST, TOV, DRB, ORB, STL, BLK likewise).
   const tag = CAT_COUNTING[key] ? CAT_COUNTING[key][1] : (GROUP_STAT[key] || [null, ""])[1];
   const statOf = CAT_COUNTING[key] ? (r) => (r[CAT_COUNTING[key][0]] || 0) : (GROUP_STAT[key] || [() => 0])[0];
   const av = statOf(a), bv = statOf(b);
   const lower = key === "Turnovers";
   push(`${tag}/G`, (av / (a.gp || 1)).toFixed(1), (bv / (b.gp || 1)).toFixed(1), av / (a.gp || 1), bv / (b.gp || 1), lower);
   push(`${tag}/36`, ((av / (a.mp || 1)) * 36).toFixed(1), ((bv / (b.mp || 1)) * 36).toFixed(1), (av / (a.mp || 1)) * 36, (bv / (b.mp || 1)) * 36, lower);
-  push("Tot", String(Math.round(av)), String(Math.round(bv)), av, bv, lower);
+  push(`TOT ${tag}`, String(Math.round(av)), String(Math.round(bv)), av, bv, lower);
   return rows;
 }
 
@@ -3630,20 +3634,33 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
   // the raw-stats table. (The Basic/By Category and Per 36/Per G toggles are
   // hidden while comparing; the Values/Percentiles mode lives in the parent's
   // toggle row.)
-  // Groups are an independent accordion — any number can be open at once.
-  // The raw-stats card (a member category) stays single-open.
+  // Groups AND raw-stats cards are independent accordions — any number can be
+  // open at once, and they stay open for the life of this comparison (the
+  // panel is keyed by the comparison at its call sites, so picking a different
+  // player-season or season row resets everything).
   const [openGroups, setOpenGroups] = useState(() => new Set());
-  const [openKey, setOpenKey] = useState(null); // member category with raw stats open
+  const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
       const next = new Set(prev);
       if (next.has(gk)) {
         next.delete(gk);
-        // Closing a group hides its members, so drop an open raw card inside it.
-        if (openKey && cats.includes(openKey)) setOpenKey(null);
+        // Closing a group hides its members, so drop open raw cards inside it.
+        setOpenKeys((ks) => {
+          const nk = new Set(ks);
+          for (const c of cats) nk.delete(c);
+          return nk;
+        });
       } else {
         next.add(gk); // insertion order = most-recently-opened last (drives the chart)
       }
+      return next;
+    });
+  };
+  const toggleKey = (k) => {
+    setOpenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
       return next;
     });
   };
@@ -3716,13 +3733,39 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
   // Deepest selection wins: an open member category, else the open group.
   // The career overlay follows the deepest interaction: an open raw-stats card
   // wins; otherwise the most-recently-opened group (Set insertion order).
-  const activeKey = openKey || ([...openGroups].at(-1) ?? null);
+  const activeKey = ([...openKeys].at(-1) ?? null) || ([...openGroups].at(-1) ?? null);
   const careerVal = (s) => (activeKey ? catVATotal(s, lgaForSeason(s.season), activeKey) : (s.va || 0));
   const cvals = [...aSeasons, ...bAll].map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
   const cSpan = (cHi - cLo) || 1;
   const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
   const careerLabel = activeKey ? `${CAT_SHORT[activeKey] || activeKey} total VA by career year` : "Total VA by career year";
+
+  // Playoff scope only: both players' game logs (per-game VA), fetched lazily
+  // from the seasons' leaderboards, for the side-by-side run chart.
+  const isPlayoffScope = context.scope === "playoffs";
+  const [gameLogs, setGameLogs] = useState(null); // { a: [{va, opp}], b: [...] }
+  useEffect(() => {
+    if (!isPlayoffScope) return;
+    let cancelled = false;
+    const find = (d, row) => {
+      const n = normalizeName(row.name || "");
+      const p = (d.players || []).find((x) => (row.slug && x.slug === row.slug) || normalizeName(x.name) === n);
+      const gs = (p?.games || []).filter((g) => g.va != null).map((g) => ({ va: g.va, opp: g.opp }));
+      return gs.length ? gs : null;
+    };
+    Promise.all([
+      fetchJsonCached(`/api/leaderboard?season=${a.season}`).catch(() => null),
+      fetchJsonCached(`/api/leaderboard?season=${b.season}`).catch(() => null),
+    ]).then(([da, db]) => {
+      if (cancelled) return;
+      setGameLogs({ a: da ? find(da, a) : null, b: db ? find(db, b) : null });
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [a.season, a.slug, a.name, b.season, b.slug, b.name, isPlayoffScope]);
+  const runA = gameLogs?.a || null, runB = gameLogs?.b || null;
+  const showRuns = isPlayoffScope && !!(runA && runB);
 
   const Swatch = ({ color, outline }) => (
     <span
@@ -3746,9 +3789,9 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
         const groupOpen = openGroups.has(g.key);
         const rowFor = (key, scale, member) => {
           const r = d.rows[key];
-          const isOpen = member ? openKey === key : groupOpen;
+          const isOpen = member ? openKeys.has(key) : groupOpen;
           const toggle = member
-            ? () => setOpenKey(openKey === key ? null : key)
+            ? () => toggleKey(key)
             : () => toggleGroup(g.key, g.cats);
           return (
             <React.Fragment key={key}>
@@ -3806,13 +3849,13 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
                 );
                 return (
                   <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
-                    <div className="grid grid-cols-[2.6rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
+                    <div className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
                       <span></span>
                       {head(a, ca, false)}
                       {head(b, cb, true)}
                     </div>
                     {rows.map((r) => (
-                      <div key={r.label} className="grid grid-cols-[2.6rem_1fr_1fr] gap-x-1 items-center py-[2px]">
+                      <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
                         <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right">{r.label}</span>
                         {cell(r.a, r.win === "a", false)}
                         {cell(r.b, r.win === "b", true)}
@@ -3840,6 +3883,51 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
           ? "Per-game VA, each vs their own season’s league baseline"
           : "Percentile across every indexed player-season, ≥5 G, each vs their own era") + " · tap a group for its categories, a category for raw stats"}
       </div>
+
+      {/* Playoff runs, game by game (playoffs scope only) */}
+      {showRuns && (
+        <div className="mt-2 pt-2 border-t border-stone-100">
+          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">VA by playoff game</div>
+          {(() => {
+            const maxN = Math.max(runA.length, runB.length);
+            const vals = [...runA.map((g) => g.va), ...runB.map((g) => g.va), 0];
+            const lo = Math.min(...vals), hi = Math.max(...vals);
+            const span = (hi - lo) || 1;
+            const W = 300, H = 90, padX = 6, padY = 6;
+            const x = (i) => (maxN > 1 ? padX + (i / (maxN - 1)) * (W - 2 * padX) : W / 2);
+            const y = (v) => padY + (1 - (v - lo) / span) * (H - 2 * padY);
+            const pts = (run) => run.map((g, i) => `${x(i)},${y(g.va)}`).join(" ");
+            const ticks = [];
+            for (let t = 5; t <= maxN; t += 5) ticks.push(t);
+            return (
+              <>
+                <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
+                  <line x1={padX} x2={W - padX} y1={y(0)} y2={y(0)} stroke="#d6d3d1" strokeWidth="0.75" strokeDasharray="2 2" />
+                  <polyline points={pts(runA)} fill="none" stroke={ca} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+                  <polyline points={pts(runB)} fill="none" stroke={cb} strokeWidth="1.5" strokeDasharray="5 3" strokeLinejoin="round" strokeLinecap="round" />
+                  {runB.map((g, i) => (
+                    <circle key={"b" + i} cx={x(i)} cy={y(g.va)} r="2.4" fill={cbFill} stroke={GOLD} strokeWidth="1">
+                      <title>{`${b.name} G${i + 1}${g.opp ? " vs " + g.opp : ""}: ${g.va.toFixed(1)}`}</title>
+                    </circle>
+                  ))}
+                  {runA.map((g, i) => (
+                    <circle key={"a" + i} cx={x(i)} cy={y(g.va)} r="2" fill={ca}>
+                      <title>{`${a.name} G${i + 1}${g.opp ? " vs " + g.opp : ""}: ${g.va.toFixed(1)}`}</title>
+                    </circle>
+                  ))}
+                </svg>
+                <div className="relative h-3 text-[7px] text-stone-400 tabular-nums">
+                  <span className="absolute left-0">G1</span>
+                  {ticks.map((t) => (
+                    <span key={t} className="absolute -translate-x-1/2" style={{ left: `${(x(t - 1) / W) * 100}%` }}>{t}</span>
+                  ))}
+                </div>
+                <div className="text-center text-[8px] italic text-stone-400">Per-game VA through each player’s own run, aligned at Game 1</div>
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Career-year overlay */}
       {slots > 1 && (
@@ -4194,7 +4282,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         />
       )}
       {compare && context ? (
-        <ComparePanel a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
+        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
       ) : (
       <>
       {activeRows.map((c) => {
