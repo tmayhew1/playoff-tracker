@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, TEAM_CONF, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
 import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason } from "./scoring";
@@ -3568,7 +3568,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
   //   sim    — cosine similarity (archetype match)
   //   imp    — magnitude similarity (how close their overall VA level is)
   //   impsim — the two multiplied (holistic closeness)
-  const [compMetric, setCompMetric] = useState("sim");
+  const [compMetric, setCompMetric] = useState("impsim");
 
   // The expensive O(pool) similarity pass. Each surviving candidate carries all
   // three ranking values so the metric toggle can re-sort without recomputing
@@ -3624,8 +3624,18 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     onPick({ name: pl?.name || r.name, slug: pl?.slug || r.slug || null, seasons: pl?.seasons || [r], row });
   };
 
+  // On mobile the on-screen keyboard covers the lower half of the viewport,
+  // which would bury the results that render below the search box. Pin the
+  // picker to the top of the viewport when the field gains focus so the
+  // matches/comps stay visible above the keyboard. Deferred so the scroll runs
+  // after the keyboard has begun opening.
+  const panelRef = useRef(null);
+  const onSearchFocus = () => {
+    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+  };
+
   return (
-    <div className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px]">
+    <div ref={panelRef} className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px] scroll-mt-2">
       <div className="flex items-center justify-between mb-1.5">
         <span className="uppercase tracking-wider text-[9px] text-stone-500">Compare against…</span>
         <button onClick={onCancel} className="text-stone-400 hover:text-stone-700 px-1" aria-label="Cancel compare">✕</button>
@@ -3636,6 +3646,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={onSearchFocus}
             placeholder="Search a player…"
             autoFocus
             className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
