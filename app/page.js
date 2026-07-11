@@ -3685,7 +3685,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
               {comps.map(({ dec, list }) => (
                 <div key={dec} className="flex items-center gap-1.5 py-0.5 border-b border-stone-100 last:border-0">
                   <span className="shrink-0 w-7 text-[8px] uppercase tracking-wider text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
-                  <div className="flex gap-1 overflow-x-auto min-w-0 pb-0.5">
+                  <div className="flex gap-1 overflow-x-auto no-scrollbar min-w-0 pb-0.5">
                     {list.map((item) => {
                       const { r } = item;
                       const pct = Math.min(99, Math.round(metricVal(item) * 100));
@@ -4579,7 +4579,7 @@ export default function PlayoffTracker() {
           <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Value Added Tracker</h1>
         </header>
 
-        <div className="flex border-b-2 border-stone-900 mb-5 overflow-x-auto">
+        <div className="flex border-b-2 border-stone-900 mb-5 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setTab("explore")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "explore" ? "bg-stone-900 text-white" : "text-stone-500"}`}

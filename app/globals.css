@@ -8,3 +8,13 @@ html, body {
   background: #f5f5f4;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Horizontal chip/tab strips scroll without showing a scrollbar
+   (swipe/drag/wheel scrolling is unaffected). */
+.no-scrollbar {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* legacy Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;              /* Safari + Chrome */
+}
