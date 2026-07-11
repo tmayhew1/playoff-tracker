@@ -3860,8 +3860,6 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
 
   const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const leader = d.diff >= 0 ? a : b;
-  // Bars scale per level: groups against groups, members against their group.
-  const scaleFor = (ks) => Math.max(...ks.flatMap((k) => [Math.abs(d.rows[k].av), Math.abs(d.rows[k].bv)]), 0.1);
 
   // Career overlay: both players' seasons aligned by career year, showing
   // TOTAL VA per season. With a category selected it shows that category's
@@ -3927,50 +3925,75 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
         );
       })()}
       <div className="flex-1 min-w-0">
-      {VA_GROUPS.map((g) => {
-        const groupOpen = openGroups.has(g.key);
-        const rowFor = (key, scale, member) => {
-          const r = d.rows[key];
-          const isOpen = member ? openKeys.has(key) : groupOpen;
-          const toggle = member
-            ? () => toggleKey(key)
-            : () => toggleGroup(g.key, g.cats);
+      {(() => {
+        // Rotated 90°: each level is a strip of paired vertical columns off a
+        // shared zero baseline — side-by-side heights read faster than
+        // opposing horizontal bars. Values sit stacked above each pair (A
+        // over gold-wrapped B), the tappable label below. Open groups render
+        // their member categories as a smaller strip beneath, raw-stat cards
+        // below that — the drill-in and accordion semantics are unchanged.
+        const ColumnStrip = ({ keys, member }) => {
+          const H = member ? 44 : 60; // chart band height (px)
+          const vals = keys.flatMap((k) => [d.rows[k].av, d.rows[k].bv]);
+          const hi = Math.max(0, ...vals), lo = Math.min(0, ...vals);
+          const span = (hi - lo) || 1;
+          const zeroPct = (hi / span) * 100;
+          const barPos = (v) => (v >= 0
+            ? { top: `${zeroPct - (v / span) * 100}%`, height: `${(v / span) * 100}%` }
+            : { top: `${zeroPct}%`, height: `${(-v / span) * 100}%` });
           return (
-            <React.Fragment key={key}>
-              <div
-                className={`flex items-center gap-2 py-[1px] -mx-1 px-1 cursor-pointer ${isOpen ? "bg-stone-200" : ""}`}
-                onClick={toggle}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
-                aria-pressed={isOpen}
-              >
-                <span className={`w-[4.5rem] shrink-0 text-right ${member ? "" : "font-semibold"} ${isOpen ? "text-stone-900 font-semibold" : member ? "text-stone-500" : "text-stone-700"}`}>
-                  {!member && <span className="text-stone-400 mr-0.5 font-normal">{isOpen ? "▾" : "▸"}</span>}{key}
-                </span>
-                {mode === "values" ? (
-                  <>
-                    <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, key, rateMode)} · ${b.name}: ${catRateLabel(b, key, rateMode)}`}>
-                      <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
-                      <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / scale) * 45}%`, width: `${(Math.abs(r.av) / scale) * 45}%` }} />
-                      <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / scale) * 45}%`, width: `${(Math.abs(r.bv) / scale) * 45}%` }} />
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${keys.length}, minmax(0, 1fr))` }}>
+              {keys.map((key) => {
+                const r = d.rows[key];
+                const isOpen = member ? openKeys.has(key) : openGroups.has(key);
+                const toggle = member
+                  ? () => toggleKey(key)
+                  : () => toggleGroup(key, VA_GROUP_BY_KEY[key].cats);
+                return (
+                  <div
+                    key={key}
+                    className={`px-0.5 py-0.5 rounded-sm cursor-pointer ${isOpen ? "bg-stone-200" : "hover:bg-stone-100"}`}
+                    onClick={toggle}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
+                    aria-pressed={isOpen}
+                    title={`${a.name}: ${catRateLabel(a, key, rateMode)} · ${b.name}: ${catRateLabel(b, key, rateMode)}`}
+                  >
+                    <div className="text-center tabular-nums font-semibold" style={{ color: ca }}>
+                      {mode === "values" ? sgn(r.av) : formatPercentile(r.apct, r.atop)}
                     </div>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex-1 relative h-4">
-                      <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1 bg-stone-200 rounded-full" />
-                      {r.apct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.apct}%`, backgroundColor: ca }} />}
-                      {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
+                    <div className="text-center tabular-nums font-semibold rounded-sm mx-auto w-fit px-1" style={{ color: cb, backgroundColor: GOLD_BG }}>
+                      {mode === "values" ? sgn(r.bv) : formatPercentile(r.bpct, r.btop)}
                     </div>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{formatPercentile(r.apct, r.atop)}</span>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{formatPercentile(r.bpct, r.btop)}</span>
-                  </>
-                )}
-              </div>
-              {member && isOpen && (() => {
+                    <div className="relative mt-0.5" style={{ height: H }}>
+                      {mode === "values" ? (
+                        <>
+                          <div className="absolute inset-x-0 h-px bg-stone-300" style={{ top: `${zeroPct}%` }} />
+                          <div className="relative mx-auto h-full" style={{ maxWidth: 76 }}>
+                            <div className="absolute" style={{ backgroundColor: ca, left: "12%", width: "34%", ...barPos(r.av) }} />
+                            <div className="absolute box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: "54%", width: "34%", ...barPos(r.bv) }} />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="absolute left-1/2 -translate-x-1/2 inset-y-0 w-1 bg-stone-200 rounded-full" />
+                          {r.apct != null && <div className="absolute left-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ top: `${100 - r.apct}%`, backgroundColor: ca }} />}
+                          {r.bpct != null && <div className="absolute left-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ top: `${100 - r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
+                        </>
+                      )}
+                    </div>
+                    <div className={`mt-0.5 text-center leading-tight truncate ${member ? "text-[8px] uppercase tracking-wider" : "font-semibold"} ${isOpen ? "text-stone-900" : member ? "text-stone-500" : "text-stone-700"}`}>
+                      {!member && <span className="text-stone-400 mr-0.5 font-normal">{isOpen ? "▾" : "▸"}</span>}
+                      {member ? (CAT_SHORT[key] || key) : key}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        };
+        const rawCard = (key) => (() => {
                 // Flipped raw-stats card: player columns, metric rows, the
                 // leader of each row circled (per the mock). B column keeps the
                 // gold identity tint.
@@ -3990,7 +4013,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
                   </div>
                 );
                 return (
-                  <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
+                  <div key={key} className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
                     <div className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
                       <span></span>
                       {head(a, ca, false)}
@@ -4005,21 +4028,19 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
                     ))}
                   </div>
                 );
-              })()}
-            </React.Fragment>
-          );
-        };
+              })();
         return (
-          <React.Fragment key={g.key}>
-            {rowFor(g.key, scaleFor(GROUP_KEYS), false)}
-            {groupOpen && (
-              <div className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
-                {g.cats.map((ck) => rowFor(ck, scaleFor(g.cats), true))}
+          <>
+            <ColumnStrip keys={GROUP_KEYS} member={false} />
+            {VA_GROUPS.filter((g) => openGroups.has(g.key)).map((g) => (
+              <div key={g.key} className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
+                <ColumnStrip keys={g.cats} member />
+                {g.cats.filter((ck) => openKeys.has(ck)).map((ck) => rawCard(ck))}
               </div>
-            )}
-          </React.Fragment>
+            ))}
+          </>
         );
-      })}
+      })()}
       </div>
       </div>
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
