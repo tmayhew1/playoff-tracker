@@ -117,7 +117,10 @@ main <- function() {
       next
     }
     year_end <- season_end_year(season)
-    ok <- tryCatch({
+    # tryCatch RETURNS the entry (NULL on failure); assignment happens out
+    # here in main's own scope. (`<<-` inside the expression would search
+    # from the global env and miss main's locals — "object not found".)
+    res <- tryCatch({
       rs_url <- sprintf("https://www.basketball-reference.com/leagues/NBA_%d_per_poss.html", year_end)
       message(sprintf("Fetching %s", rs_url))
       rs <- parse_def_ratings(rs_url)
@@ -136,17 +139,20 @@ main <- function() {
       })
       entry <- list(rs = rs)
       if (!is.null(po)) entry$po <- po
-      existing[[season]] <<- entry
-      added <<- added + 1
       message(sprintf("  ok %s - %d rs players (median DRtg %.0f)%s",
                       season, length(rs), stats::median(unlist(rs)),
                       if (is.null(po)) "" else sprintf(", %d po players", length(po))))
-      TRUE
+      entry
     }, error = function(e) {
       message(sprintf("  x %s - %s", season, conditionMessage(e)))
-      failed <<- failed + 1
-      FALSE
+      NULL
     })
+    if (!is.null(res)) {
+      existing[[season]] <- res
+      added <- added + 1
+    } else {
+      failed <- failed + 1
+    }
   }
 
   existing <- existing[order(names(existing))]

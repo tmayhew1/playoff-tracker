@@ -372,6 +372,47 @@ function fetchJsonCached(url) {
   return _jsonCache.get(url);
 }
 
+// --- D Rating: the fifth category behind VA+ ---------------------------------
+// A player's defensive net rating turned into points: how many points his
+// defense saves (or gives up) versus a league-average defender across the
+// possessions he's actually on the floor for.
+//   dVA = (league DRtg − player DRtg)/100 × laPOSSperM × MP
+// DRtg is basketball-reference's individual Defensive Rating (points allowed
+// per 100 possessions); the league line is laPTSperPoss×100; laPOSSperM
+// (possessions per on-court minute, pace/48) converts the per-possession
+// margin into per-minute, and MP scales it to the view's span. VA+ = VA + dVA.
+// Null (→ hidden in the UI) when the player-season has no rating or the
+// baselines predate laPOSSperM.
+function defVATotal(mp, lgaX, drtg) {
+  if (drtg == null || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(mp > 0)) return null;
+  return ((lgaX.laPTSperPoss * 100 - drtg) / 100) * lgaX.laPOSSperM * mp;
+}
+
+// DRtg lookup for a player-season. `pref` picks the sample: "po" for playoff
+// views, "rs" otherwise; the other side is the fallback so a player with only
+// one sample still gets a rating.
+function defRtgFor(defs, season, slug, pref = "rs") {
+  if (!defs || !season || !slug) return null;
+  const e = defs[season];
+  if (!e) return null;
+  const other = pref === "po" ? "rs" : "po";
+  return e[pref]?.[slug] ?? e[other]?.[slug] ?? null;
+}
+
+// One shared fetch of the baked ratings; components render without them
+// (VA+ simply absent) until the map arrives.
+function useDefRatings() {
+  const [defs, setDefs] = useState(null);
+  useEffect(() => {
+    let ok = true;
+    fetchJsonCached("/api/def-ratings")
+      .then((d) => { if (ok) setDefs(d.seasons || {}); })
+      .catch(() => {});
+    return () => { ok = false; };
+  }, []);
+  return defs;
+}
+
 // Flatten a /api/players index into the pools CategoryContext ranks against:
 // every player-season row (all-time pool) plus the same rows grouped by
 // season. Rows are tagged with the owner's name + slug for identity checks.
@@ -420,7 +461,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs" }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -461,6 +502,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
   const [rateMode, setRateMode] = useState("perG");
+  // Baked defensive ratings (the D-Rating category / VA+). Must load before
+  // the early returns below — hooks are unconditional.
+  const defs = useDefRatings();
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
   // Category rows are tappable when tapping can do something: swap the chart
@@ -531,6 +575,17 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       label: cnt(statOf(p), tag),
     };
   });
+  // The fifth category — D Rating — and VA+ (= VA + dVA). The season DRtg is
+  // applied to the current view's minutes, so a drilled game shows that
+  // game's share. No drill-in: DRtg is one season-level number, not a stat
+  // with per-game splits.
+  const seasonKey = season || pSeries.season || null;
+  const drtg = defRtgFor(defs, seasonKey, pSeries.slug, defScope);
+  const dVA = defVATotal(mp, lga, drtg);
+  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
+  if (dVA != null) {
+    groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
+  }
   const activeRows = viewMode === "basic" ? groupRows : categories;
 
   // Per-game series for the spark line. Defaults to whatever the caller
@@ -557,6 +612,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     const out = {};
     for (const k of Object.keys(full)) out[k] = (full[k] / regularSeasonTotals.g) * referenceScale;
     for (const g of VA_GROUPS) out[g.key] = g.cats.reduce((s, c) => s + (out[c] || 0), 0);
+    // D Rating reference: the player's rs defensive value over rs minutes,
+    // per game — same "what he normally produces" tick the groups get.
+    const dRef = defVATotal(regularSeasonTotals.mp, lga, defRtgFor(defs, seasonKey, pSeries.slug, "rs"));
+    if (dRef != null) out["D Rating"] = (dRef / regularSeasonTotals.g) * referenceScale;
     return out;
   })();
 
@@ -719,13 +778,23 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           <div className="sm:order-2 sm:flex-1">
             {/* Total Value Added — label + value inline, no background. While
                 comparing, the compared player's figure rides along in gold. */}
-            <div className="flex items-baseline justify-center gap-2 mb-2">
+            <div className={`flex items-baseline justify-center gap-2 ${vaPlus != null ? "mb-0.5" : "mb-2"}`}>
               <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
               {compare && atSeasonLevel && (
                 <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: teamColor(compare.row.team), backgroundColor: GOLD_BG }}>{(compare.row.va ?? 0).toFixed(1)}</span>
               )}
             </div>
+            {vaPlus != null && (
+              <div
+                className="flex items-baseline justify-center gap-2 mb-2"
+                title={`VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+              >
+                <span className="text-[9px] uppercase tracking-widest text-stone-400">VA+</span>
+                <span className={`tabular-nums text-sm font-bold leading-none ${vaPlus < 0 ? "text-red-600" : "text-stone-900"}`}>{vaPlus.toFixed(2)}</span>
+                <span className={`text-[9px] tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}>D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
+              </div>
+            )}
             <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
@@ -906,7 +975,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           const refMagPct = ref != null && Number.isFinite(ref) ? (Math.abs(ref) / maxAbs) * 45 : null;
           const refLeftPct = refMagPct != null ? (ref >= 0 ? 50 + refMagPct : 50 - refMagPct) : null;
           const isCatSel = selectedCategory === c.key;
-          const onCatTap = canSelectCategory
+          const onCatTap = canSelectCategory && !c.noDrill
             ? () => setSelectedCategory(isCatSel ? null : c.key)
             : undefined;
           // Explicit "+" prefix for positive VA contributions so a row's
@@ -1904,6 +1973,8 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                         lga={lga}
                         teams={teamsMap}
                         rate
+                        season={season}
+                        defScope="po"
                         gameSeries={p.games}
                         byGame={p.byGame}
                         useTeamColor={useTeamColor}
@@ -2569,6 +2640,8 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 lga={lga}
                 teams={{}}
                 rate
+                season={season}
+                defScope={scope === "playoffs" ? "po" : "rs"}
                 gameSeries={values}
                 byGame={byGame}
                 gameContext={gameContext}
@@ -3085,6 +3158,8 @@ function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
       lga={lgaS}
       teams={{}}
       rate
+      season={season}
+      defScope="po"
       gameSeries={values}
       byGame={byGame}
       gameContext={gameContext}
@@ -4311,6 +4386,9 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // Baked defensive ratings (D-Rating category / VA+); college rows simply
+  // never match and VA+ stays hidden there.
+  const defs = useDefRatings();
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -4347,6 +4425,15 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       label: cnt(statOf(p), tag),
     };
   });
+  // Fifth category: D Rating (season DRtg vs league over the row's minutes),
+  // and VA+ = VA + dVA. Regular-season rating; no drill-in (one number, no
+  // per-game splits).
+  const drtg = defRtgFor(defs, p.season || context?.season, p.slug || context?.self?.slug, "rs");
+  const dVA = defVATotal(mp, lga, drtg);
+  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
+  if (dVA != null) {
+    groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
+  }
   const activeRows = viewMode === "basic" ? groupRows : cats;
   const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
@@ -4404,6 +4491,16 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
       ) : (
       <>
+      {vaPlus != null && (
+        <div
+          className="text-center text-[9px] mb-1"
+          title={`VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+        >
+          <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>
+          <span className={`tabular-nums font-bold ${vaPlus < 0 ? "text-red-600" : "text-stone-800"}`}>{vaPlus.toFixed(1)}</span>
+          <span className={`tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}> · D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
+        </div>
+      )}
       {activeRows.map((c) => {
         const pct = (Math.abs(c.value) / maxAbs) * 45;
         const isPos = c.value >= 0;
@@ -4411,7 +4508,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         const catOpen = context && openCat === c.key;
         // Whole row is the tap target (same as the playoff breakdown), with
         // the selected row highlighted.
-        const onCatTap = context ? () => setOpenCat(catOpen ? null : c.key) : undefined;
+        const onCatTap = context && !c.noDrill ? () => setOpenCat(catOpen ? null : c.key) : undefined;
         return (
           <React.Fragment key={c.key}>
             <div
