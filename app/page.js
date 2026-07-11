@@ -3618,6 +3618,20 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     }));
   }, [rawComps, compMetric]);
 
+  const compKey = (r) => r.season + (r.slug || r.name);
+  // The single best comp across every decade by the selected metric — gold-lit
+  // so the strongest match stands out no matter which decade row it lands in.
+  const bestCompKey = useMemo(() => {
+    let key = null, best = -Infinity;
+    for (const { list } of comps) {
+      for (const item of list) {
+        const v = metricVal(item);
+        if (v > best) { best = v; key = compKey(item.r); }
+      }
+    }
+    return key;
+  }, [comps, compMetric]);
+
   const pickComp = (r) => {
     const pl = players.find((p) => (r.slug ? p.slug === r.slug : normalizeName(p.name) === normalizeName(r.name)));
     const row = (pl && pl.seasons.find((s) => s.season === r.season)) || r;
@@ -3675,12 +3689,14 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
                     {list.map((item) => {
                       const { r } = item;
                       const pct = Math.min(99, Math.round(metricVal(item) * 100));
+                      const isBest = compKey(r) === bestCompKey;
                       return (
                         <button
-                          key={r.season + (r.slug || r.name)}
+                          key={compKey(r)}
                           onClick={() => pickComp(r)}
-                          className="shrink-0 px-1.5 py-0.5 border border-stone-200 rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap"
-                          title={`${r.name} ${r.season} · ${r.team} · ${pct}% ${COMP_METRIC_WORD[compMetric]}`}
+                          className={`shrink-0 px-1.5 py-0.5 border rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap ${isBest ? "border-amber-500" : "border-stone-200"}`}
+                          style={isBest ? { backgroundColor: GOLD_BG, borderColor: GOLD } : undefined}
+                          title={`${r.name} ${r.season} · ${r.team} · ${pct}% ${COMP_METRIC_WORD[compMetric]}${isBest ? " · best match" : ""}`}
                         >
                           <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
