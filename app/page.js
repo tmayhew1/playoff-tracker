@@ -4134,15 +4134,18 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
     : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
 
   const d = useMemo(() => {
+    // Every rank/percentile/trend in this card is TOTAL category VA (not
+    // per-game), matching the leaderboard's own ordering — so a full season
+    // outranks a half one at the same rate.
     // Season pool (views 1 & 2): qualified = played >= 1/3 of this player's GP.
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || [])
       .filter((r) => (r.gp || 0) >= floor && r.mp > 0)
-      .map((r) => ({ r, m: catVAperGame(r, lga, catKey) }))
+      .map((r) => ({ r, m: catVATotal(r, lga, catKey) }))
       .sort((a, b) => b.m - a.m);
     const N = pool.length;
     const selfIdx = pool.findIndex((x) => samePlayer(x.r, selfRow));
-    const selfM = selfIdx >= 0 ? pool[selfIdx].m : catVAperGame(selfRow, lga, catKey);
+    const selfM = selfIdx >= 0 ? pool[selfIdx].m : catVATotal(selfRow, lga, catKey);
     // "Better than X% of the N qualified" — strictly-below count over the full
     // pool, so the top player reads ~99%, not a self-inclusive 100%.
     const below = pool.filter((x) => x.m < selfM).length;
@@ -4156,7 +4159,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
     const floorA = Math.min(5, p.gp || 1);
     const all = allRows
       .filter((r) => (r.gp || 0) >= floorA && r.mp > 0)
-      .map((r) => ({ r, m: catVAperGame(r, lgaForSeason(r.season), catKey) }))
+      .map((r) => ({ r, m: catVATotal(r, lgaForSeason(r.season), catKey) }))
       .sort((a, b) => b.m - a.m);
     const allN = all.length;
     const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
@@ -4166,7 +4169,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
     // Trend (view 6): this player's own seasons over time.
     const mine = [...(self.seasons || [])]
       .filter((s) => s.mp > 0)
-      .map((s) => ({ season: s.season, m: catVAperGame(s, lgaForSeason(s.season), catKey) }))
+      .map((s) => ({ season: s.season, m: catVATotal(s, lgaForSeason(s.season), catKey) }))
       .sort((a, b) => a.season.localeCompare(b.season));
 
     return { floor, N, rank: selfIdx + 1, selfM, pctile, min, max, med, win,
@@ -4174,7 +4177,8 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow]);
 
   const short = CAT_SHORT[catKey] || catKey;
-  const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  // Total VA is a whole-season figure, so one decimal (matches the leaderboard).
+  const sgn = (v, dp = 1) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
   const posOf = (v) => (d.max > d.min ? ((v - d.min) / (d.max - d.min)) * 100 : 50);
 
@@ -4203,16 +4207,16 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{short} VA/G rank · {seasonKey}</span>
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">{short} VA rank · {seasonKey}</span>
           <span className="text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA/G</span><span className="text-right">{short}</span>
+          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA</span><span className="text-right">{short}</span>
         </div>
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Among {scopeNoun} players with ≥{d.floor} G ({short} = per-game rate, {rateMode === "perG" ? "per game" : "per 36"}).</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Ranked by total {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
       </div>
 
       {/* View 2 — percentile + distribution strip. The percentile reads as a
@@ -4236,7 +4240,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
       {/* View 4 — all-time rank */}
       <div className="border-t border-stone-100 pt-2">
         <div className="flex items-baseline justify-between mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">All-time {short} VA/G</span>
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">All-time {short} VA</span>
           <span className="text-stone-800 font-bold">#{d.allRank}<span className="text-stone-400 font-normal"> of {d.allN}</span></span>
         </div>
         {d.top.map((x) => (
@@ -4261,7 +4265,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
 
       {/* View 6 — trend across this player's seasons, one labeled bar each */}
       <div className="border-t border-stone-100 pt-2">
-        <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{short} VA/G by season</div>
+        <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{short} VA by season</div>
         {d.mine.length === 0 ? (
           <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
         ) : (
