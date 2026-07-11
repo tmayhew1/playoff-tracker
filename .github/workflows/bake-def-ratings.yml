@@ -7,6 +7,15 @@ name: Bake defensive ratings (R)
 # and commits the JSON back to that branch. Day-to-day freshness of the
 # current season is handled by the daily backfill workflow.
 on:
+  # Push trigger: scoped to the feature branch + pipeline files so the full
+  # bake starts on push without needing a manual dispatch (the automation
+  # token can't dispatch workflows). Re-runs are cheap no-ops once the data
+  # is present, and the bot's own data commit is [skip ci].
+  push:
+    branches: ["claude/va-plus-def-rating"]
+    paths:
+      - "scripts/R/fetch_def_ratings.R"
+      - ".github/workflows/bake-def-ratings.yml"
   workflow_dispatch:
     inputs:
       start_season:
