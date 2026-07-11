@@ -3490,6 +3490,14 @@ function shortName(name) {
   return last;
 }
 
+// Like shortName but prefixed with the first initial ("Trey Murphy III" ->
+// "T. Murphy III"), so comp chips disambiguate same-surname players.
+function compName(name) {
+  const parts = (name || "").trim().split(/\s+/);
+  if (parts.length <= 1) return name || "";
+  return `${parts[0].charAt(0).toUpperCase()}. ${shortName(name)}`;
+}
+
 // Compare-side gold, shared by the chip, wrappers, and highlights.
 const GOLD = "#f59e0b";                    // border-amber-500
 const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
@@ -3623,7 +3631,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
                         className="shrink-0 px-1.5 py-0.5 border border-stone-200 rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap"
                         title={`${r.name} ${r.season} · ${r.team} · ${Math.min(99, Math.round(cos * 100))}% match`}
                       >
-                        <span className="font-semibold" style={{ color: teamColor(r.team) }}>{shortName(r.name)}</span>
+                        <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
                         <span className="text-stone-400"> {seasonTag(r.season)}</span>
                         <span className="text-stone-500 tabular-nums text-[9px]"> {Math.min(99, Math.round(cos * 100))}%</span>
                       </button>
