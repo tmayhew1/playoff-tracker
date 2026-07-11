@@ -773,7 +773,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
                   onSelect={canSelect ? handleChartSelect : undefined}
                   partitions={partitions}
                   seriesRange={seriesRange}
-                  label={compare && atSeasonLevel && compareRun ? `VA by Game · vs ${compare.name.split(" ").slice(-1)[0]} ${seasonTag(compare.row.season)}` : chartLabel}
+                  label={compare && atSeasonLevel && compareRun ? `VA by Game · vs ${shortName(compare.name)} ${seasonTag(compare.row.season)}` : chartLabel}
                   avgOther={avgOther}
                   avgSelected={avgSelected}
                   overlayValues={compare && atSeasonLevel ? compareRun : null}
@@ -3477,6 +3477,19 @@ function InfoView() {
 // "’26" for "2025-26" — season's end year, short form.
 const seasonTag = (s) => "’" + (s || "").slice(5);
 
+// Chip-sized surname: the last token, keeping generational suffixes attached
+// ("Trey Murphy III" -> "Murphy III", "Gary Payton II" -> "Payton II",
+// "Tim Hardaway Jr." -> "Hardaway Jr.").
+function shortName(name) {
+  const parts = (name || "").trim().split(/\s+/);
+  if (parts.length <= 1) return name || "";
+  const last = parts[parts.length - 1];
+  if (parts.length >= 3 && /^(jr\.?|sr\.?|ii|iii|iv|v)$/i.test(last)) {
+    return parts.slice(-2).join(" ");
+  }
+  return last;
+}
+
 // Compare-side gold, shared by the chip, wrappers, and highlights.
 const GOLD = "#f59e0b";                    // border-amber-500
 const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
@@ -3528,9 +3541,13 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
   }, [players, query]);
 
   // Closest comps: the nearest player-seasons to `self` by per-game VA-category
-  // shape, one per decade. Similarity = cosine of the two 10-dim VA vectors
-  // (a dot product of unit vectors) weighted by magnitude closeness, so a comp
-  // matches both the archetype AND the overall level. Shown before searching.
+  // shape — the full ranked list per decade, best match first. Similarity =
+  // cosine of the two 10-dim VA vectors (a dot product of unit vectors);
+  // magnitude-weighted score breaks ties so equal-% chips still order by how
+  // close the overall level is. The ±7 MPG band keeps comps in a similar
+  // minutes role. Shown before searching. The single O(pool) similarity pass
+  // is unchanged; keeping 12 per decade instead of 1 costs nothing extra.
+  const COMPS_PER_DECADE = 12;
   const comps = useMemo(() => {
     if (!self || !(self.mp > 0)) return [];
     const qVec = perGameVAVec(self, lgaForSeason(self.season));
@@ -3542,7 +3559,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     // match a 15-20 MPG bench player even if their per-minute shape is close.
     const qMPG = self.mp / (self.gp || 1);
     const MPG_BAND = 7;
-    const best = new Map(); // decade -> {r, score, cos}
+    const byDecade = new Map(); // decade -> [{r, score, cos}]
     for (const r of context.allRows) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
       if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
@@ -3555,15 +3572,19 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
       const cos = dot / (qNorm * n);
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
       const magSim = Math.min(qNorm, n) / Math.max(qNorm, n);
-      const score = cos * magSim;
       const dec = Math.floor(parseInt(r.season.slice(0, 4), 10) / 10) * 10;
-      const cur = best.get(dec);
-      if (!cur || score > cur.score) best.set(dec, { r, score, cos });
+      let arr = byDecade.get(dec);
+      if (!arr) byDecade.set(dec, (arr = []));
+      arr.push({ r, score: cos * magSim, cos });
     }
-    // One per decade, most recent first; fill to >=3 with next-best overall.
-    let picks = [...best.values()].sort((a, b) => b.r.season.localeCompare(a.r.season));
-    if (picks.length > 5) picks = picks.slice(0, 5);
-    return picks;
+    return [...byDecade.entries()]
+      .sort((x, y) => y[0] - x[0]) // most recent decade first
+      .map(([dec, arr]) => ({
+        dec,
+        list: arr
+          .sort((x, y) => (y.cos - x.cos) || (y.score - x.score))
+          .slice(0, COMPS_PER_DECADE),
+      }));
   }, [self, context]);
 
   const pickComp = (r) => {
@@ -3590,19 +3611,25 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
           />
           {query.trim() === "" && comps.length > 0 && (
             <div className="mb-1">
-              <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">Closest comps · nearest VA profile per decade</div>
-              {comps.map(({ r, cos }) => (
-                <button
-                  key={r.season + (r.slug || r.name)}
-                  onClick={() => pickComp(r)}
-                  className="w-full flex items-center justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-amber-50"
-                >
-                  <span className="truncate min-w-0">
-                    <span className="font-semibold" style={{ color: teamColor(r.team) }}>{r.name}</span>
-                    <span className="text-stone-400"> {seasonTag(r.season)} · {r.team}</span>
-                  </span>
-                  <span className="shrink-0 tabular-nums text-[9px] text-stone-500">{Math.round(cos * 100)}% match</span>
-                </button>
+              <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">Closest comps · best match first, by decade</div>
+              {comps.map(({ dec, list }) => (
+                <div key={dec} className="flex items-center gap-1.5 py-0.5 border-b border-stone-100 last:border-0">
+                  <span className="shrink-0 w-7 text-[8px] uppercase tracking-wider text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
+                  <div className="flex gap-1 overflow-x-auto min-w-0 pb-0.5">
+                    {list.map(({ r, cos }) => (
+                      <button
+                        key={r.season + (r.slug || r.name)}
+                        onClick={() => pickComp(r)}
+                        className="shrink-0 px-1.5 py-0.5 border border-stone-200 rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap"
+                        title={`${r.name} ${r.season} · ${r.team} · ${Math.min(99, Math.round(cos * 100))}% match`}
+                      >
+                        <span className="font-semibold" style={{ color: teamColor(r.team) }}>{shortName(r.name)}</span>
+                        <span className="text-stone-400"> {seasonTag(r.season)}</span>
+                        <span className="text-stone-500 tabular-nums text-[9px]"> {Math.min(99, Math.round(cos * 100))}%</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -3998,7 +4025,7 @@ function CompareButton({ compare, picking, onOpen, onClear }) {
         style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         aria-label="Clear comparison"
       >
-        vs {compare.name.split(" ").slice(-1)[0]} {seasonTag(compare.row.season)} <span className="opacity-60">✕</span>
+        vs {shortName(compare.name)} {seasonTag(compare.row.season)} <span className="opacity-60">✕</span>
       </button>
     );
   }
