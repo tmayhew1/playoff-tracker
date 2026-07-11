@@ -30,6 +30,7 @@ RSCRIPT <- file.path(R.home("bin"), "Rscript")
 HIST_R  <- file.path(R_DIR, "fetch_historical.R")
 LGA_R   <- file.path(R_DIR, "fetch_league_averages.R")
 RECOMP_R <- file.path(R_DIR, "recompute_derived.R")
+DEF_R   <- file.path(R_DIR, "fetch_def_ratings.R")
 
 env_or <- function(name, default) {
   v <- Sys.getenv(name, unset = "")
@@ -126,7 +127,14 @@ main <- function() {
     bake_season(current)
   }
 
-  # 3. Consistency pass: rebuild league averages from the regular-season
+  # 3. Defensive ratings (the D-Rating category behind VA+): refresh the
+  # current season and fill any missing past seasons (present ones are
+  # skipped without --force, so the range pass is cheap).
+  message(sprintf("Refreshing defensive ratings %s", current))
+  run(DEF_R, c(current, current, "--force"))
+  run(DEF_R, c(min_season, current))
+
+  # 4. Consistency pass: rebuild league averages from the regular-season
   # bakes and recompute the baked leaderboard VA against them, so derived
   # numbers can never drift from the raw data again.
   message("Recomputing derived numbers (league averages + baked VA)")
