@@ -3533,6 +3533,14 @@ function buildComparePlayers(allRows) {
   return out;
 }
 
+// The three ways to rank/label closest comps. Order matches the toggle.
+const COMP_METRIC_OPTS = [
+  { key: "imp", label: "Imp", word: "impact", title: "Impact — how close their overall per-game VA level is to this player's" },
+  { key: "sim", label: "Sim", word: "similarity", title: "Similarity — cosine match of the two VA-by-category profiles" },
+  { key: "impsim", label: "Imp×Sim", word: "imp×sim", title: "Impact × Similarity — the two combined into one closeness score" },
+];
+const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
+
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
 function ComparePicker({ context, self = null, onPick, onCancel }) {
@@ -3556,7 +3564,16 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
   // minutes role. Shown before searching. The single O(pool) similarity pass
   // is unchanged; keeping 12 per decade instead of 1 costs nothing extra.
   const COMPS_PER_DECADE = 12;
-  const comps = useMemo(() => {
+  // Which quantity the comps are ranked/shown by (see COMP_METRIC_OPTS):
+  //   sim    — cosine similarity (archetype match)
+  //   imp    — magnitude similarity (how close their overall VA level is)
+  //   impsim — the two multiplied (holistic closeness)
+  const [compMetric, setCompMetric] = useState("sim");
+
+  // The expensive O(pool) similarity pass. Each surviving candidate carries all
+  // three ranking values so the metric toggle can re-sort without recomputing
+  // any dot products. Keyed only on [self, context], so toggling is cheap.
+  const rawComps = useMemo(() => {
     if (!self || !(self.mp > 0)) return [];
     const qVec = perGameVAVec(self, lgaForSeason(self.season));
     const qNorm = Math.hypot(...qVec);
@@ -3567,7 +3584,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     // match a 15-20 MPG bench player even if their per-minute shape is close.
     const qMPG = self.mp / (self.gp || 1);
     const MPG_BAND = 7;
-    const byDecade = new Map(); // decade -> [{r, score, cos}]
+    const byDecade = new Map(); // decade -> [{r, cos, mag, score}]
     for (const r of context.allRows) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
       if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
@@ -3579,21 +3596,27 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
       for (let i = 0; i < qVec.length; i++) dot += qVec[i] * v[i];
       const cos = dot / (qNorm * n);
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
-      const magSim = Math.min(qNorm, n) / Math.max(qNorm, n);
+      const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
       const dec = Math.floor(parseInt(r.season.slice(0, 4), 10) / 10) * 10;
       let arr = byDecade.get(dec);
       if (!arr) byDecade.set(dec, (arr = []));
-      arr.push({ r, score: cos * magSim, cos });
+      arr.push({ r, cos, mag, score: cos * mag });
     }
-    return [...byDecade.entries()]
-      .sort((x, y) => y[0] - x[0]) // most recent decade first
-      .map(([dec, arr]) => ({
-        dec,
-        list: arr
-          .sort((x, y) => (y.cos - x.cos) || (y.score - x.score))
-          .slice(0, COMPS_PER_DECADE),
-      }));
+    return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
   }, [self, context]);
+
+  // Value of the currently selected metric for a candidate.
+  const metricVal = (o) => (compMetric === "imp" ? o.mag : compMetric === "impsim" ? o.score : o.cos);
+
+  // Re-rank each decade by the selected metric (no dot products — just a sort).
+  const comps = useMemo(() => {
+    return rawComps.map(([dec, arr]) => ({
+      dec,
+      list: [...arr]
+        .sort((x, y) => (metricVal(y) - metricVal(x)) || (y.cos - x.cos))
+        .slice(0, COMPS_PER_DECADE),
+    }));
+  }, [rawComps, compMetric]);
 
   const pickComp = (r) => {
     const pl = players.find((p) => (r.slug ? p.slug === r.slug : normalizeName(p.name) === normalizeName(r.name)));
@@ -3619,23 +3642,41 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
           />
           {query.trim() === "" && comps.length > 0 && (
             <div className="mb-1">
-              <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">Closest comps · best match first, by decade</div>
+              <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
+                <span className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0">Closest comps · by decade</span>
+                <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
+                  {COMP_METRIC_OPTS.map((o) => (
+                    <button
+                      key={o.key}
+                      onClick={() => setCompMetric(o.key)}
+                      title={o.title}
+                      className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider ${compMetric === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {comps.map(({ dec, list }) => (
                 <div key={dec} className="flex items-center gap-1.5 py-0.5 border-b border-stone-100 last:border-0">
                   <span className="shrink-0 w-7 text-[8px] uppercase tracking-wider text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
                   <div className="flex gap-1 overflow-x-auto min-w-0 pb-0.5">
-                    {list.map(({ r, cos }) => (
-                      <button
-                        key={r.season + (r.slug || r.name)}
-                        onClick={() => pickComp(r)}
-                        className="shrink-0 px-1.5 py-0.5 border border-stone-200 rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap"
-                        title={`${r.name} ${r.season} · ${r.team} · ${Math.min(99, Math.round(cos * 100))}% match`}
-                      >
-                        <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
-                        <span className="text-stone-400"> {seasonTag(r.season)}</span>
-                        <span className="text-stone-500 tabular-nums text-[9px]"> {Math.min(99, Math.round(cos * 100))}%</span>
-                      </button>
-                    ))}
+                    {list.map((item) => {
+                      const { r } = item;
+                      const pct = Math.min(99, Math.round(metricVal(item) * 100));
+                      return (
+                        <button
+                          key={r.season + (r.slug || r.name)}
+                          onClick={() => pickComp(r)}
+                          className="shrink-0 px-1.5 py-0.5 border border-stone-200 rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap"
+                          title={`${r.name} ${r.season} · ${r.team} · ${pct}% ${COMP_METRIC_WORD[compMetric]}`}
+                        >
+                          <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
+                          <span className="text-stone-400"> {seasonTag(r.season)}</span>
+                          <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
