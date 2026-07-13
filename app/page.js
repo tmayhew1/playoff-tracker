@@ -374,18 +374,44 @@ function fetchJsonCached(url) {
 
 // --- D Rating: the fifth category behind VA+ ---------------------------------
 // A player's defensive net rating turned into points: how many points his
-// defense saves (or gives up) versus a league-average defender across the
-// possessions he's actually on the floor for.
-//   dVA = (league DRtg − player DRtg)/100 × laPOSSperM × MP
-// DRtg is basketball-reference's individual Defensive Rating (points allowed
-// per 100 possessions); the league line is laPTSperPoss×100; laPOSSperM
-// (possessions per on-court minute, pace/48) converts the per-possession
-// margin into per-minute, and MP scales it to the view's span. VA+ = VA + dVA.
-// Null (→ hidden in the UI) when the player-season has no rating or the
-// baselines predate laPOSSperM.
-function defVATotal(mp, lgaX, drtg) {
-  if (drtg == null || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(mp > 0)) return null;
-  return ((lgaX.laPTSperPoss * 100 - drtg) / 100) * lgaX.laPOSSperM * mp;
+// defense saves (or gives up) across the possessions he's actually on the
+// floor for. The net splits into two parts so a team-rider on an elite
+// defense isn't credited like an anchor:
+//
+//   net  = (teamDRtg − playerDRtg)  +  w × (leagueDRtg − teamDRtg)
+//   dVA  = net/100 × laPOSSperM × MP        VA+ = VA + dVA
+//
+// The first term is the player's edge over his own team's defense; the
+// second inherits a share of the team's collective edge vs league. The
+// share w is objective: the equal 1-of-5 split scaled by the player's
+// stock-rate (STL+BLK per minute) relative to his team's —
+//   w = clamp(0.2 × playerStockRate / teamStockRate, 0.05, 1)
+// — which conserves the team pot exactly (shares sum to the team's whole
+// edge) and routes it to whoever produces the defensive events. Multi-team
+// rows (2TM) and seasons without team maps fall back to the plain
+// vs-league form (w=1 on the whole net). DRtg is basketball-reference's
+// individual Defensive Rating; the league line is laPTSperPoss×100;
+// laPOSSperM (pace/48) converts per-possession into per-minute. Null (→
+// hidden in the UI) when the player-season has no rating.
+const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
+const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
+function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
+  const drtg = defRtgFor(defs, season, row?.slug, pref);
+  if (drtg == null || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
+  const la = lgaX.laPTSperPoss * 100;
+  const e = defs?.[season];
+  const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
+  const t = tmap?.[row?.team];
+  let net, w = null, teamDrtg = null;
+  if (t && t.drtg > 0 && t.stkpm > 0 && row.mp > 0) {
+    const ratio = (((row.stl || 0) + (row.blk || 0)) / row.mp) / t.stkpm;
+    w = Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, DEF_TEAM_SHARE_BASE * ratio));
+    teamDrtg = t.drtg;
+    net = (teamDrtg - drtg) + w * (la - teamDrtg);
+  } else {
+    net = la - drtg;
+  }
+  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la };
 }
 
 // DRtg lookup for a player-season. `pref` picks the sample: "po" for playoff
@@ -575,13 +601,15 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       label: cnt(statOf(p), tag),
     };
   });
-  // The fifth category — D Rating — and VA+ (= VA + dVA). The season DRtg is
-  // applied to the current view's minutes, so a drilled game shows that
-  // game's share. No drill-in: DRtg is one season-level number, not a stat
-  // with per-game splits.
+  // The fifth category — D Rating — and VA+ (= VA + dVA). The season DRtg
+  // (and season stock rate, for the team-share weight) come from the season
+  // aggregate; the current view's minutes scale it, so a drilled game shows
+  // that game's share. No drill-in: DRtg is one season-level number, not a
+  // stat with per-game splits.
   const seasonKey = season || pSeries.season || null;
-  const drtg = defRtgFor(defs, seasonKey, pSeries.slug, defScope);
-  const dVA = defVATotal(mp, lga, drtg);
+  const dInfo = defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope);
+  const drtg = dInfo?.drtg ?? null;
+  const dVA = dInfo?.dva ?? null;
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
   if (dVA != null) {
     groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
@@ -614,7 +642,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     for (const g of VA_GROUPS) out[g.key] = g.cats.reduce((s, c) => s + (out[c] || 0), 0);
     // D Rating reference: the player's rs defensive value over rs minutes,
     // per game — same "what he normally produces" tick the groups get.
-    const dRef = defVATotal(regularSeasonTotals.mp, lga, defRtgFor(defs, seasonKey, pSeries.slug, "rs"));
+    const dRef = defVAInfo(regularSeasonTotals, regularSeasonTotals.mp, lga, defs, seasonKey, "rs")?.dva ?? null;
     if (dRef != null) out["D Rating"] = (dRef / regularSeasonTotals.g) * referenceScale;
     return out;
   })();
@@ -788,7 +816,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
             {vaPlus != null && (
               <div
                 className="flex items-baseline justify-center gap-2 mb-2"
-                title={`VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+                title={dInfo?.w != null
+                  ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (share = stock-rate × the 1-in-5 split)`
+                  : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
               >
                 <span className="text-[9px] uppercase tracking-widest text-stone-400">VA+</span>
                 <span className={`tabular-nums text-sm font-bold leading-none ${vaPlus < 0 ? "text-red-600" : "text-stone-900"}`}>{vaPlus.toFixed(2)}</span>
@@ -4425,11 +4455,16 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       label: cnt(statOf(p), tag),
     };
   });
-  // Fifth category: D Rating (season DRtg vs league over the row's minutes),
-  // and VA+ = VA + dVA. Regular-season rating; no drill-in (one number, no
-  // per-game splits).
-  const drtg = defRtgFor(defs, p.season || context?.season, p.slug || context?.self?.slug, "rs");
-  const dVA = defVATotal(mp, lga, drtg);
+  // Fifth category: D Rating — the player's edge over his own team's
+  // defense plus his stock-rate share of the team's edge vs league (see
+  // defVAInfo) — and VA+ = VA + dVA. Regular-season rating; no drill-in
+  // (one number, no per-game splits).
+  const dInfo = defVAInfo(
+    { ...p, slug: p.slug || context?.self?.slug },
+    mp, lga, defs, p.season || context?.season, "rs"
+  );
+  const drtg = dInfo?.drtg ?? null;
+  const dVA = dInfo?.dva ?? null;
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
   if (dVA != null) {
     groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
@@ -4494,7 +4529,9 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       {vaPlus != null && (
         <div
           className="text-center text-[9px] mb-1"
-          title={`VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+          title={dInfo?.w != null
+            ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (share = stock-rate × the 1-in-5 split)`
+            : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
         >
           <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>
           <span className={`tabular-nums font-bold ${vaPlus < 0 ? "text-red-600" : "text-stone-800"}`}>{vaPlus.toFixed(1)}</span>
