@@ -383,23 +383,25 @@ function fetchJsonCached(url) {
 //
 // The first term is the player's edge over his own team's defense; the
 // second inherits a share of the team's collective edge vs league. The
-// share w is objective and direction-aware:
-//   team edge ≥ 0 (credit is EARNED): the equal 1-of-5 split scaled by the
-//     player's stock-rate (STL+BLK per minute) relative to his team's —
-//     w = clamp(0.2 × playerStockRate / teamStockRate, 0.05, 1) — routing
-//     the collective edge to whoever produces the defensive events;
-//   team edge < 0 (blame is COLLECTIVE): flat w = 0.2, all five on the
-//     floor own the failure equally. Splitting blame by stock share would
-//     punish defensive activity, and splitting by inverse share would
-//     double-count — stops are already the input to the individual DRtg,
-//     so sieves are charged in the first term.
-// Both branches conserve the team pot exactly (shares sum to the team's
-// whole edge) and the contribution is continuous at edge = 0. Multi-team
-// rows (2TM) and seasons without team maps fall back to the plain
-// vs-league form (w=1 on the whole net). DRtg is basketball-reference's
-// individual Defensive Rating; the league line is laPTSperPoss×100;
-// laPOSSperM (pace/48) converts per-possession into per-minute. Null (→
-// hidden in the UI) when the player-season has no rating.
+// share w is objective and direction-aware, built from the EARNED share —
+// the equal 1-of-5 split scaled by the player's stock-rate (STL+BLK per
+// minute) relative to his team's:
+//   earned = clamp(0.2 × playerStockRate / teamStockRate, 0.05, 1)
+//   team edge ≥ 0 (credit is EARNED): w = earned — the collective edge
+//     flows to whoever produces the defensive events;
+//   team edge < 0 (blame SHRINKS with activity): w = clamp(0.4 − earned)
+//     — the earned share mirrored around the 1-in-5 split, so contesting
+//     shields you from the collective failure and passivity draws more
+//     of it. (A flat split punished nobody but also shielded nobody; a
+//     stock-share split punished activity outright.)
+// Both branches conserve the team pot exactly up to the clamps (mirrored
+// shares also average 1-in-5 across a roster) and the contribution is
+// continuous at edge = 0. Multi-team rows (2TM) and seasons without team
+// maps fall back to the plain vs-league form (w=1 on the whole net). DRtg
+// is basketball-reference's individual Defensive Rating; the league line
+// is laPTSperPoss×100; laPOSSperM (pace/48) converts per-possession into
+// per-minute. Null (→ hidden in the UI) when the player-season has no
+// rating.
 const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
 const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
 function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
@@ -413,12 +415,10 @@ function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   if (t && t.drtg > 0 && t.stkpm > 0 && row.mp > 0) {
     teamDrtg = t.drtg;
     const edge = la - teamDrtg;
-    if (edge >= 0) {
-      const ratio = (((row.stl || 0) + (row.blk || 0)) / row.mp) / t.stkpm;
-      w = Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, DEF_TEAM_SHARE_BASE * ratio));
-    } else {
-      w = DEF_TEAM_SHARE_BASE;
-    }
+    const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
+    const ratio = (((row.stl || 0) + (row.blk || 0)) / row.mp) / t.stkpm;
+    const earned = clampW(DEF_TEAM_SHARE_BASE * ratio);
+    w = edge >= 0 ? earned : clampW(2 * DEF_TEAM_SHARE_BASE - earned);
     net = (teamDrtg - drtg) + w * edge;
   } else {
     net = la - drtg;
@@ -829,7 +829,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
               <div
                 className="flex items-baseline justify-center gap-2 mb-2"
                 title={dInfo?.w != null
-                  ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges split evenly 1-in-5)`
+                  ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)`
                   : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
               >
                 <span className="text-[9px] uppercase tracking-widest text-stone-400">VA+</span>
@@ -4542,7 +4542,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         <div
           className="text-center text-[9px] mb-1"
           title={dInfo?.w != null
-            ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges split evenly 1-in-5)`
+            ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)`
             : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
         >
           <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>
@@ -4791,7 +4791,7 @@ function DRatingView() {
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
-          IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate, minus edges split evenly) ·
+          IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
           both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
         </div>
       )}
