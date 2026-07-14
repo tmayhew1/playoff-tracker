@@ -2334,6 +2334,11 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   // Name of the player whose G cell was just tapped, so we can scroll
   // their row into view after the list re-sorts/filters.
   const [pendingScrollName, setPendingScrollName] = useState(null);
+  // VA vs VA+ (VA + defensive net rating). VA+ re-scores the whole board:
+  // sort, the TOT/VA-G columns, and the bar widths all switch.
+  const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
+  const defs = useDefRatings();
+  const defScope = scope === "playoffs" ? "po" : "rs";
   useEffect(() => {
     let cancelled = false;
     setData(null);
@@ -2491,12 +2496,17 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   // own narrow cohort (free 1.0) and low-GP players' cohort is everyone
   // (so it equals the overall VA/G score exactly). Volume + rate is
   // the clean orthogonal split.
-  const vaPerG = (p) => p.va / Math.max(1, p.gp);
+  // The active total for a row — VA, or VA+ (VA + dVA) when the toggle is on.
+  // dVA is 0 when a player-season has no rating, so VA+ always exists.
+  const vaOf = (p) => metric === "vaPlus"
+    ? (p.va || 0) + (defVAInfo(p, p.mp, lga, defs, season, defScope)?.dva || 0)
+    : (p.va || 0);
+  const vaPerG = (p) => vaOf(p) / Math.max(1, p.gp);
   const safeRatio = (v, max) => (max > 0 ? v / max : 0);
-  const maxVA = Math.max(...all.map((p) => p.va));
+  const maxVA = Math.max(...all.map((p) => vaOf(p)));
   const maxVAperG = Math.max(...all.map((p) => vaPerG(p)));
   const composite = (p) =>
-    safeRatio(p.va, maxVA) + safeRatio(vaPerG(p), maxVAperG);
+    safeRatio(vaOf(p), maxVA) + safeRatio(vaPerG(p), maxVAperG);
 
   // Min-games filter forces VA/G order. Otherwise honour the column
   // header the user clicked (composite by default). Total VA is the
@@ -2504,9 +2514,9 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   // doesn't quietly drift if the server-side input order ever shifts.
   const effectiveSort = minGames != null ? "vaPerG" : sortMode;
   const sortedAll =
-    effectiveSort === "totalVA" ? [...all].sort((a, b) => b.va - a.va) :
-    effectiveSort === "vaPerG"  ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
-                                  [...all].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
+    effectiveSort === "totalVA" ? [...all].sort((a, b) => vaOf(b) - vaOf(a)) :
+    effectiveSort === "vaPerG"  ? [...all].sort((a, b) => vaPerG(b) - vaPerG(a) || vaOf(b) - vaOf(a)) :
+                                  [...all].sort((a, b) => composite(b) - composite(a) || vaOf(b) - vaOf(a));
   const teamFiltered = teamFilter ? sortedAll.filter((p) => p.team === teamFilter) : sortedAll;
   const filtered = minGames != null ? teamFiltered.filter((p) => p.gp >= minGames) : teamFiltered;
   const shown = (showAll || teamFilter || minGames != null) ? filtered : filtered.slice(0, 10);
@@ -2524,6 +2534,23 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex items-center justify-between gap-2">
         <span>{title}</span>
         <div className="flex items-center gap-1.5">
+          {/* VA vs VA+ (adds defensive net rating). Midnight purple when on. */}
+          <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
+            <button
+              type="button"
+              onClick={() => setMetric("va")}
+              className="px-1.5 py-0.5"
+              style={metric === "va" ? { backgroundColor: MIDNIGHT_PURPLE, color: "#fff" } : { backgroundColor: "#fff", color: "#78716c" }}
+              aria-pressed={metric === "va"}
+            >VA</button>
+            <button
+              type="button"
+              onClick={() => setMetric("vaPlus")}
+              className="px-1.5 py-0.5 border-l"
+              style={metric === "vaPlus" ? { backgroundColor: MIDNIGHT_PURPLE, color: "#fff", borderColor: MIDNIGHT_PURPLE } : { backgroundColor: "#fff", color: "#78716c", borderColor: "#d6d3d1" }}
+              aria-pressed={metric === "vaPlus"}
+            >VA+</button>
+          </div>
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
@@ -2574,7 +2601,7 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
           aria-label="Sort by total VA"
           aria-pressed={effectiveSort === "totalVA"}
         >
-          TOT VA{effectiveSort === "totalVA" ? " ▼" : ""}
+          {metric === "vaPlus" ? "TOT VA+" : "TOT VA"}{effectiveSort === "totalVA" ? " ▼" : ""}
         </button>
         <button
           type="button"
@@ -2586,13 +2613,13 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
           aria-label="Sort by VA per game"
           aria-pressed={effectiveSort === "vaPerG"}
         >
-          VA/G{effectiveSort === "vaPerG" ? " ▼" : ""}
+          {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▼" : ""}
         </button>
       </div>
       {(() => {
         // VA bar scale — proportional to abs(VA) over the visible list.
         // Computed once per render so all rows share the same denominator.
-        const maxAbsVa = Math.max(...shown.map((p) => Math.abs(p.va || 0)), 0.5);
+        const maxAbsVa = Math.max(...shown.map((p) => Math.abs(vaOf(p))), 0.5);
         return shown.map((p, i) => {
         // Keep the overall rank (1, 7, 13…) even when filters trim the
         // visible list. With the min-games filter on, "overall" means
@@ -2602,10 +2629,11 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         const isOpen = expanded === rowKey;
         const tc = teamColor(p.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
-        const barColor = p.va >= 0
+        const rowVa = vaOf(p);
+        const barColor = rowVa >= 0
           ? withAlpha(tc, 0.16)
           : withAlpha("#dc2626", 0.10);
-        const barPct = (Math.abs(p.va || 0) / maxAbsVa) * 100;
+        const barPct = (Math.abs(rowVa) / maxAbsVa) * 100;
         // Player's playoff games already chronological from server, with
         // null-va slots for games they sat out inside a series they played
         // (kept so the chart shows a gap and the title uses the true series
@@ -2622,7 +2650,7 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         for (let j = 1; j < p.games.length; j++) {
           if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
         }
-        const vaPerG = p.gp > 0 ? p.va / p.gp : 0;
+        const vaPerG = p.gp > 0 ? rowVa / p.gp : 0;
         return (
           <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             {/* Bar wraps just the click row, not the expanded breakdown —
@@ -2678,7 +2706,7 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.ast / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.stl / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.blk / p.gp).toFixed(1)}</span>
-              <span className={`w-12 text-right tabular-nums font-bold ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(1)}</span>
+              <span className={`w-12 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
               <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
               </div>
             </div>
@@ -3624,6 +3652,7 @@ function compName(name) {
 // Compare-side gold, shared by the chip, wrappers, and highlights.
 const GOLD = "#f59e0b";                    // border-amber-500
 const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
+const MIDNIGHT_PURPLE = "#2e1065";          // violet-950 — the VA+ accent
 
 // Percentile display honoring significant digits at the top end: integers up
 // to 99, then 99.5–99.9, then 99.95–99.99. A flat 100 is reserved for the #1
