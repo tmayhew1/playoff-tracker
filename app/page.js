@@ -384,9 +384,12 @@ function fetchJsonCached(url) {
 // The first term is the player's edge over his own team's defense; the
 // second inherits a share of the team's collective edge vs league. The
 // share w is objective and direction-aware, built from the EARNED share —
-// the equal 1-of-5 split scaled by the player's stock-rate (STL+BLK per
-// minute) relative to his team's:
-//   earned = clamp(0.2 × playerStockRate / teamStockRate, 0.05, 1)
+// the equal 1-of-5 split scaled by the player's stock-rate relative to his
+// team's, with stocks valued exactly as VA values them: a steal ends the
+// possession outright, a block only when the defense rebounds it, so
+// blocks weigh laDRBrate (~0.7) of a steal —
+//   stockRate = (STL + laDRBrate × BLK) per minute
+//   earned    = clamp(0.2 × playerStockRate / teamStockRate, 0.05, 1)
 //   team edge ≥ 0 (credit is EARNED): w = earned — the collective edge
 //     flows to whoever produces the defensive events;
 //   team edge < 0 (blame SHRINKS with activity): w = clamp(0.4 − earned)
@@ -411,12 +414,15 @@ function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   const e = defs?.[season];
   const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
   const t = tmap?.[row?.team];
+  // Blocks weigh what VA says they're worth: laDRBrate of a steal.
+  const bw = lgaX.laDRBrate > 0 ? lgaX.laDRBrate : 1;
+  const teamStockRate = t ? (t.stlpm || 0) + bw * (t.blkpm || 0) : 0;
   let net, w = null, teamDrtg = null;
-  if (t && t.drtg > 0 && t.stkpm > 0 && row.mp > 0) {
+  if (t && t.drtg > 0 && teamStockRate > 0 && row.mp > 0) {
     teamDrtg = t.drtg;
     const edge = la - teamDrtg;
     const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
-    const ratio = (((row.stl || 0) + (row.blk || 0)) / row.mp) / t.stkpm;
+    const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;
     const earned = clampW(DEF_TEAM_SHARE_BASE * ratio);
     w = edge >= 0 ? earned : clampW(2 * DEF_TEAM_SHARE_BASE - earned);
     net = (teamDrtg - drtg) + w * edge;

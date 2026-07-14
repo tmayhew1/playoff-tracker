@@ -100,9 +100,11 @@ recompute_leaderboards <- function(lgas) {
 #   drtg  — minutes-weighted mean of the members' individual DRtg (this
 #           reconstructs the team's defensive rating: Oliver's player DRtg
 #           is centered on the team's),
-#   stkpm — the team's steals+blocks per player-minute (the denominator of
-#           each player's stock-rate share, which sets how much of the
-#           team's collective edge he inherits).
+#   stlpm / blkpm — the team's steals and blocks per player-minute, kept
+#           separate so the app can weight blocks by that season's
+#           laDRBrate (the same valuation VA gives them: a block only ends
+#           the possession when the defense rebounds it) when computing
+#           each player's stock-rate share of the team's edge.
 # "team" comes from the regular-season bake, "teamPo" from the playoff
 # leaderboard roster. Derived data, no network; fetch_def_ratings.R only
 # writes rs/po, so this pass (re)builds the team maps after every bake.
@@ -116,18 +118,19 @@ def_team_map <- function(players, ratings) {
     # Multi-team aggregate rows (2TM/3TM/TOT) carry no single team context.
     if (!nzchar(t) || grepl("TM$", t) || t == "TOT" || mp <= 0) next
     a <- acc[[t]]
-    if (is.null(a)) a <- c(0, 0, 0, 0)  # drtg*mp, rated mp, stocks, all mp
+    if (is.null(a)) a <- c(0, 0, 0, 0, 0)  # drtg*mp, rated mp, stl, blk, all mp
     v <- ratings[[as.character(p$slug %||% "")]]
     if (!is.null(v)) { a[1] <- a[1] + as.numeric(v) * mp; a[2] <- a[2] + mp }
-    a[3] <- a[3] + as.numeric(p$stl %||% 0) + as.numeric(p$blk %||% 0)
-    a[4] <- a[4] + mp
+    a[3] <- a[3] + as.numeric(p$stl %||% 0)
+    a[4] <- a[4] + as.numeric(p$blk %||% 0)
+    a[5] <- a[5] + mp
     acc[[t]] <- a
   }
   out <- list()
   for (t in sort(names(acc))) {
     a <- acc[[t]]
-    if (a[2] <= 0 || a[4] <= 0) next
-    out[[t]] <- list(drtg = a[1] / a[2], stkpm = a[3] / a[4])
+    if (a[2] <= 0 || a[5] <= 0) next
+    out[[t]] <- list(drtg = a[1] / a[2], stlpm = a[3] / a[5], blkpm = a[4] / a[5])
   }
   out
 }
