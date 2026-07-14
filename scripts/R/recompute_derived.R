@@ -94,11 +94,80 @@ recompute_leaderboards <- function(lgas) {
   message(sprintf("leaderboards: %d file(s) rewritten (of %d)", touched, length(files)))
 }
 
+# --- 3. Team defensive context in def-ratings.json --------------------------
+# For each season, aggregate the roster into per-team context the app's
+# D-Rating composite needs:
+#   drtg  — minutes-weighted mean of the members' individual DRtg (this
+#           reconstructs the team's defensive rating: Oliver's player DRtg
+#           is centered on the team's),
+#   stlpm / blkpm — the team's steals and blocks per player-minute, kept
+#           separate so the app can weight blocks by that season's
+#           laDRBrate (the same valuation VA gives them: a block only ends
+#           the possession when the defense rebounds it) when computing
+#           each player's stock-rate share of the team's edge.
+# "team" comes from the regular-season bake, "teamPo" from the playoff
+# leaderboard roster. Derived data, no network; fetch_def_ratings.R only
+# writes rs/po, so this pass (re)builds the team maps after every bake.
+DEF_PATH <- file.path(DATA_DIR, "def-ratings.json")
+
+def_team_map <- function(players, ratings) {
+  acc <- list()
+  for (p in players) {
+    t <- as.character(p$team %||% "")
+    mp <- as.numeric(p$mp %||% 0)
+    # Multi-team aggregate rows (2TM/3TM/TOT) carry no single team context.
+    if (!nzchar(t) || grepl("TM$", t) || t == "TOT" || mp <= 0) next
+    a <- acc[[t]]
+    if (is.null(a)) a <- c(0, 0, 0, 0, 0)  # drtg*mp, rated mp, stl, blk, all mp
+    v <- ratings[[as.character(p$slug %||% "")]]
+    if (!is.null(v)) { a[1] <- a[1] + as.numeric(v) * mp; a[2] <- a[2] + mp }
+    a[3] <- a[3] + as.numeric(p$stl %||% 0)
+    a[4] <- a[4] + as.numeric(p$blk %||% 0)
+    a[5] <- a[5] + mp
+    acc[[t]] <- a
+  }
+  out <- list()
+  for (t in sort(names(acc))) {
+    a <- acc[[t]]
+    if (a[2] <= 0 || a[5] <= 0) next
+    out[[t]] <- list(drtg = a[1] / a[2], stlpm = a[3] / a[5], blkpm = a[4] / a[5])
+  }
+  out
+}
+
+rebuild_def_teams <- function() {
+  if (!file.exists(DEF_PATH)) {
+    message("def-ratings.json not baked yet - skipping team maps")
+    return(invisible())
+  }
+  defs <- jsonlite::fromJSON(DEF_PATH, simplifyVector = FALSE)
+  touched <- 0
+  for (season in names(defs)) {
+    entry <- defs[[season]]
+    rs_path <- file.path(DATA_DIR, sprintf("regular-season-%s.json", season))
+    lb_path <- file.path(DATA_DIR, sprintf("leaderboard-%s.json", season))
+    if (file.exists(rs_path) && !is.null(entry$rs)) {
+      rs <- jsonlite::fromJSON(rs_path, simplifyVector = FALSE)
+      entry$team <- def_team_map(rs$players, entry$rs)
+      touched <- touched + 1
+    }
+    if (file.exists(lb_path) && !is.null(entry$po)) {
+      lb <- jsonlite::fromJSON(lb_path, simplifyVector = FALSE)
+      entry$teamPo <- def_team_map(lb$players, entry$po)
+    }
+    defs[[season]] <- entry
+  }
+  write_json_pretty(defs, DEF_PATH)
+  message(sprintf("def-ratings.json: team context rebuilt for %d season(s)", touched))
+}
+
 main <- function() {
   message("Rebuilding league averages from regular-season bakes ...")
   lgas <- rebuild_lga()
   message("Recomputing baked leaderboard VA ...")
   recompute_leaderboards(lgas)
+  message("Rebuilding team defensive context ...")
+  rebuild_def_teams()
   message("Done.")
 }
 

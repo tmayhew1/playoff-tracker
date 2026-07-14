@@ -372,6 +372,91 @@ function fetchJsonCached(url) {
   return _jsonCache.get(url);
 }
 
+// --- D Rating: the fifth category behind VA+ ---------------------------------
+// A player's defensive net rating turned into points: how many points his
+// defense saves (or gives up) across the possessions he's actually on the
+// floor for. The net splits into two parts so a team-rider on an elite
+// defense isn't credited like an anchor:
+//
+//   net  = (teamDRtg − playerDRtg)  +  w × (leagueDRtg − teamDRtg)
+//   dVA  = net/100 × laPOSSperM × MP        VA+ = VA + dVA
+//
+// The first term is the player's edge over his own team's defense; the
+// second inherits a share of the team's collective edge vs league. The
+// share w is objective and direction-aware, built from the EARNED share —
+// the equal 1-of-5 split scaled by the player's stock-rate relative to his
+// team's, with stocks valued exactly as VA values them: a steal ends the
+// possession outright, a block only when the defense rebounds it, so
+// blocks weigh laDRBrate (~0.7) of a steal —
+//   stockRate = (STL + laDRBrate × BLK) per minute
+//   earned    = clamp(0.2 × playerStockRate / teamStockRate, 0.05, 1)
+//   team edge ≥ 0 (credit is EARNED): w = earned — the collective edge
+//     flows to whoever produces the defensive events;
+//   team edge < 0 (blame SHRINKS with activity): w = clamp(0.4 − earned)
+//     — the earned share mirrored around the 1-in-5 split, so contesting
+//     shields you from the collective failure and passivity draws more
+//     of it. (A flat split punished nobody but also shielded nobody; a
+//     stock-share split punished activity outright.)
+// Both branches conserve the team pot exactly up to the clamps (mirrored
+// shares also average 1-in-5 across a roster) and the contribution is
+// continuous at edge = 0. Multi-team rows (2TM) and seasons without team
+// maps fall back to the plain vs-league form (w=1 on the whole net). DRtg
+// is basketball-reference's individual Defensive Rating; the league line
+// is laPTSperPoss×100; laPOSSperM (pace/48) converts per-possession into
+// per-minute. Null (→ hidden in the UI) when the player-season has no
+// rating.
+const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
+const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
+function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
+  const drtg = defRtgFor(defs, season, row?.slug, pref);
+  if (drtg == null || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
+  const la = lgaX.laPTSperPoss * 100;
+  const e = defs?.[season];
+  const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
+  const t = tmap?.[row?.team];
+  // Blocks weigh what VA says they're worth: laDRBrate of a steal.
+  const bw = lgaX.laDRBrate > 0 ? lgaX.laDRBrate : 1;
+  const teamStockRate = t ? (t.stlpm || 0) + bw * (t.blkpm || 0) : 0;
+  let net, w = null, teamDrtg = null;
+  if (t && t.drtg > 0 && teamStockRate > 0 && row.mp > 0) {
+    teamDrtg = t.drtg;
+    const edge = la - teamDrtg;
+    const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
+    const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;
+    const earned = clampW(DEF_TEAM_SHARE_BASE * ratio);
+    w = edge >= 0 ? earned : clampW(2 * DEF_TEAM_SHARE_BASE - earned);
+    net = (teamDrtg - drtg) + w * edge;
+  } else {
+    net = la - drtg;
+  }
+  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la };
+}
+
+// DRtg lookup for a player-season. `pref` picks the sample: "po" for playoff
+// views, "rs" otherwise; the other side is the fallback so a player with only
+// one sample still gets a rating.
+function defRtgFor(defs, season, slug, pref = "rs") {
+  if (!defs || !season || !slug) return null;
+  const e = defs[season];
+  if (!e) return null;
+  const other = pref === "po" ? "rs" : "po";
+  return e[pref]?.[slug] ?? e[other]?.[slug] ?? null;
+}
+
+// One shared fetch of the baked ratings; components render without them
+// (VA+ simply absent) until the map arrives.
+function useDefRatings() {
+  const [defs, setDefs] = useState(null);
+  useEffect(() => {
+    let ok = true;
+    fetchJsonCached("/api/def-ratings")
+      .then((d) => { if (ok) setDefs(d.seasons || {}); })
+      .catch(() => {});
+    return () => { ok = false; };
+  }, []);
+  return defs;
+}
+
 // Flatten a /api/players index into the pools CategoryContext ranks against:
 // every player-season row (all-time pool) plus the same rows grouped by
 // season. Rows are tagged with the owner's name + slug for identity checks.
@@ -420,7 +505,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs" }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -461,6 +546,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
   const [rateMode, setRateMode] = useState("perG");
+  // Baked defensive ratings (the D-Rating category / VA+). Must load before
+  // the early returns below — hooks are unconditional.
+  const defs = useDefRatings();
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
   // Category rows are tappable when tapping can do something: swap the chart
@@ -531,6 +619,19 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
       label: cnt(statOf(p), tag),
     };
   });
+  // The fifth category — D Rating — and VA+ (= VA + dVA). The season DRtg
+  // (and season stock rate, for the team-share weight) come from the season
+  // aggregate; the current view's minutes scale it, so a drilled game shows
+  // that game's share. No drill-in: DRtg is one season-level number, not a
+  // stat with per-game splits.
+  const seasonKey = season || pSeries.season || null;
+  const dInfo = defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope);
+  const drtg = dInfo?.drtg ?? null;
+  const dVA = dInfo?.dva ?? null;
+  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
+  if (dVA != null) {
+    groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
+  }
   const activeRows = viewMode === "basic" ? groupRows : categories;
 
   // Per-game series for the spark line. Defaults to whatever the caller
@@ -557,6 +658,10 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     const out = {};
     for (const k of Object.keys(full)) out[k] = (full[k] / regularSeasonTotals.g) * referenceScale;
     for (const g of VA_GROUPS) out[g.key] = g.cats.reduce((s, c) => s + (out[c] || 0), 0);
+    // D Rating reference: the player's rs defensive value over rs minutes,
+    // per game — same "what he normally produces" tick the groups get.
+    const dRef = defVAInfo(regularSeasonTotals, regularSeasonTotals.mp, lga, defs, seasonKey, "rs")?.dva ?? null;
+    if (dRef != null) out["D Rating"] = (dRef / regularSeasonTotals.g) * referenceScale;
     return out;
   })();
 
@@ -719,13 +824,25 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           <div className="sm:order-2 sm:flex-1">
             {/* Total Value Added — label + value inline, no background. While
                 comparing, the compared player's figure rides along in gold. */}
-            <div className="flex items-baseline justify-center gap-2 mb-2">
+            <div className={`flex items-baseline justify-center gap-2 ${vaPlus != null ? "mb-0.5" : "mb-2"}`}>
               <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
               {compare && atSeasonLevel && (
                 <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: teamColor(compare.row.team), backgroundColor: GOLD_BG }}>{(compare.row.va ?? 0).toFixed(1)}</span>
               )}
             </div>
+            {vaPlus != null && (
+              <div
+                className="flex items-baseline justify-center gap-2 mb-2"
+                title={dInfo?.w != null
+                  ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)`
+                  : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+              >
+                <span className="text-[9px] uppercase tracking-widest text-stone-400">VA+</span>
+                <span className={`tabular-nums text-sm font-bold leading-none ${vaPlus < 0 ? "text-red-600" : "text-stone-900"}`}>{vaPlus.toFixed(2)}</span>
+                <span className={`text-[9px] tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}>D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
+              </div>
+            )}
             <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
@@ -906,7 +1023,7 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
           const refMagPct = ref != null && Number.isFinite(ref) ? (Math.abs(ref) / maxAbs) * 45 : null;
           const refLeftPct = refMagPct != null ? (ref >= 0 ? 50 + refMagPct : 50 - refMagPct) : null;
           const isCatSel = selectedCategory === c.key;
-          const onCatTap = canSelectCategory
+          const onCatTap = canSelectCategory && !c.noDrill
             ? () => setSelectedCategory(isCatSel ? null : c.key)
             : undefined;
           // Explicit "+" prefix for positive VA contributions so a row's
@@ -1904,6 +2021,8 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                         lga={lga}
                         teams={teamsMap}
                         rate
+                        season={season}
+                        defScope="po"
                         gameSeries={p.games}
                         byGame={p.byGame}
                         useTeamColor={useTeamColor}
@@ -2569,6 +2688,8 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 lga={lga}
                 teams={{}}
                 rate
+                season={season}
+                defScope={scope === "playoffs" ? "po" : "rs"}
                 gameSeries={values}
                 byGame={byGame}
                 gameContext={gameContext}
@@ -3085,6 +3206,8 @@ function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
       lga={lgaS}
       teams={{}}
       rate
+      season={season}
+      defScope="po"
       gameSeries={values}
       byGame={byGame}
       gameContext={gameContext}
@@ -4311,6 +4434,9 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // Baked defensive ratings (D-Rating category / VA+); college rows simply
+  // never match and VA+ stays hidden there.
+  const defs = useDefRatings();
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -4347,6 +4473,20 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
       label: cnt(statOf(p), tag),
     };
   });
+  // Fifth category: D Rating — the player's edge over his own team's
+  // defense plus his stock-rate share of the team's edge vs league (see
+  // defVAInfo) — and VA+ = VA + dVA. Regular-season rating; no drill-in
+  // (one number, no per-game splits).
+  const dInfo = defVAInfo(
+    { ...p, slug: p.slug || context?.self?.slug },
+    mp, lga, defs, p.season || context?.season, "rs"
+  );
+  const drtg = dInfo?.drtg ?? null;
+  const dVA = dInfo?.dva ?? null;
+  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
+  if (dVA != null) {
+    groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
+  }
   const activeRows = viewMode === "basic" ? groupRows : cats;
   const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
@@ -4404,6 +4544,18 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
       ) : (
       <>
+      {vaPlus != null && (
+        <div
+          className="text-center text-[9px] mb-1"
+          title={dInfo?.w != null
+            ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)`
+            : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+        >
+          <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>
+          <span className={`tabular-nums font-bold ${vaPlus < 0 ? "text-red-600" : "text-stone-800"}`}>{vaPlus.toFixed(1)}</span>
+          <span className={`tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}> · D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
+        </div>
+      )}
       {activeRows.map((c) => {
         const pct = (Math.abs(c.value) / maxAbs) * 45;
         const isPos = c.value >= 0;
@@ -4411,7 +4563,7 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
         const catOpen = context && openCat === c.key;
         // Whole row is the tap target (same as the playoff breakdown), with
         // the selected row highlighted.
-        const onCatTap = context ? () => setOpenCat(catOpen ? null : c.key) : undefined;
+        const onCatTap = context && !c.noDrill ? () => setOpenCat(catOpen ? null : c.key) : undefined;
         return (
           <React.Fragment key={c.key}>
             <div
@@ -4567,6 +4719,119 @@ function CollegeView() {
   );
 }
 
+// Data-browser tab for the D-Rating / VA+ decomposition: every player-season
+// laid out as DRTG · team DRTG · team-share w · the two net terms · dVA/G, so
+// the composite is inspectable without tooltips (useless on touch). IND is
+// the player's per-100 edge over his own team's defense; TM+ is his
+// stock-rate share of the team's edge vs the league line; NET/G applies
+// IND+TM+ over his possessions. Rows sort by dVA per game.
+function DRatingView() {
+  const defs = useDefRatings();
+  const seasons = useMemo(() => Object.keys(defs || {}).sort().reverse(), [defs]);
+  const [season, setSeason] = useState(null);
+  const [scope, setScope] = useState("rs"); // "rs" | "po"
+  const [query, setQuery] = useState("");
+  const [rows, setRows] = useState(null);
+  const sel = season || seasons[0] || null;
+
+  useEffect(() => {
+    if (!sel) return;
+    let cancelled = false;
+    setRows(null);
+    fetchJsonCached(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
+      .then((d) => { if (!cancelled) setRows(d.players || []); })
+      .catch(() => { if (!cancelled) setRows([]); });
+    return () => { cancelled = true; };
+  }, [sel, scope]);
+
+  const lga = sel ? lgaForSeason(sel) : null;
+  const list = useMemo(() => {
+    if (!rows || !defs || !sel || !lga) return null;
+    const q = normalizeName(query.trim());
+    // Without a search, keep to rotation-sized samples so noise doesn't
+    // crowd the top; a search shows anyone.
+    const minMp = scope === "po" ? 40 : 100;
+    const out = [];
+    for (const r of rows) {
+      if (!(r.mp > 0)) continue;
+      if (q ? !normalizeName(r.name || "").includes(q) : r.mp < minMp) continue;
+      const info = defVAInfo(r, r.mp, lga, defs, sel, scope);
+      if (!info) continue;
+      const gp = r.gp ?? r.g ?? 0;
+      out.push({
+        r, gp, info,
+        within: info.teamDrtg != null ? info.teamDrtg - info.drtg : null,
+        tmShare: info.teamDrtg != null ? info.w * (info.laDRtg - info.teamDrtg) : null,
+        perG: gp > 0 ? info.dva / gp : 0,
+      });
+    }
+    out.sort((a, b) => b.perG - a.perG);
+    return out;
+  }, [rows, defs, sel, lga, query, scope]);
+
+  const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+  const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.2rem_2.2rem_2rem_2.3rem_2.3rem_2.6rem] gap-x-1 items-center";
+
+  return (
+    <div className="text-[10px]">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <select
+          value={sel || ""}
+          onChange={(e) => { setSeason(e.target.value); }}
+          className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
+        >
+          {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
+          <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search…"
+          className="flex-1 min-w-[6rem] text-[10px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
+        />
+      </div>
+      {lga && (
+        <div className="text-[9px] text-stone-400 mb-1.5">
+          League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
+          IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
+          both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
+        </div>
+      )}
+      <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+        <span>#</span><span>Player</span>
+        <span className="text-right">DRTG</span><span className="text-right">Team</span>
+        <span className="text-right">W</span><span className="text-right">IND</span>
+        <span className="text-right">TM+</span><span className="text-right">D/G</span>
+      </div>
+      {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
+      {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
+      {list && list.map(({ r, info, within, tmShare, perG }, i) => (
+        <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
+          <span className="text-stone-400 tabular-nums">{i + 1}</span>
+          <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
+            {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
+          </span>
+          <span className="text-right tabular-nums text-stone-700">{Math.round(info.drtg)}</span>
+          <span className="text-right tabular-nums text-stone-500">{info.teamDrtg != null ? info.teamDrtg.toFixed(1) : "–"}</span>
+          <span className="text-right tabular-nums text-stone-500">{info.w != null ? `${Math.round(info.w * 100)}%` : "LG"}</span>
+          <span className={`text-right tabular-nums ${within != null && within < 0 ? "text-red-600" : "text-stone-700"}`}>{within != null ? sgn1(within) : "–"}</span>
+          <span className={`text-right tabular-nums ${tmShare != null && tmShare < 0 ? "text-red-600" : "text-stone-700"}`}>{tmShare != null ? sgn1(tmShare) : "–"}</span>
+          <span className={`text-right tabular-nums font-semibold ${perG < 0 ? "text-red-600" : "text-stone-900"}`}>{(perG > 0 ? "+" : "") + perG.toFixed(2)}</span>
+        </div>
+      ))}
+      {list && list.length > 0 && (
+        <div className="mt-2 text-center text-[9px] italic text-stone-400">
+          {query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}sorted by defensive VA per game
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PlayoffTracker() {
   const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
@@ -4608,6 +4873,12 @@ export default function PlayoffTracker() {
             College
           </button>
           <button
+            onClick={() => setTab("drating")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "drating" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            D Rating
+          </button>
+          <button
             onClick={() => setTab("info")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "info" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
@@ -4615,7 +4886,7 @@ export default function PlayoffTracker() {
           </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

@@ -1,0 +1,67 @@
+name: Bake defensive ratings (R)
+
+# One-shot/backfill bake of per-player Defensive Ratings (DRtg) from
+# basketball-reference's per-100-possessions pages into
+# app/data/def-ratings.json — the data behind the app's fifth "D Rating"
+# category and the VA+ metric. Runs on whatever ref it is dispatched from
+# and commits the JSON back to that branch. Day-to-day freshness of the
+# current season is handled by the daily backfill workflow.
+on:
+  # Push trigger: scoped to the feature branch + pipeline files so the full
+  # bake starts on push without needing a manual dispatch (the automation
+  # token can't dispatch workflows). Re-runs are cheap no-ops once the data
+  # is present, and the bot's own data commit is [skip ci].
+  push:
+    branches: ["claude/va-plus-def-rating"]
+    paths:
+      - "scripts/R/fetch_def_ratings.R"
+      - ".github/workflows/bake-def-ratings.yml"
+  workflow_dispatch:
+    inputs:
+      start_season:
+        description: "First season to bake (YYYY-YY)"
+        required: false
+        default: "1979-80"
+      end_season:
+        description: "Last season to bake (YYYY-YY)"
+        required: false
+        default: "2025-26"
+      force:
+        description: "Refetch seasons already present"
+        required: false
+        default: "false"
+
+concurrency:
+  group: bake-def-ratings-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    # ~47 seasons x 2 pages x 2.5s politeness delay + parsing ≈ well under this.
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+
+      - name: Fetch defensive ratings
+        run: >
+          Rscript scripts/R/fetch_def_ratings.R
+          "${{ inputs.start_season || '1979-80' }}"
+          "${{ inputs.end_season || '2025-26' }}"
+          ${{ (inputs.force == 'true') && '--force' || '' }}
+
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake defensive ratings (R) [skip ci]"
+          file_pattern: "app/data/def-ratings.json"

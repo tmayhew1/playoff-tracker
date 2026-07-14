@@ -108,6 +108,9 @@ main <- function() {
       skipped <- skipped + 1
       next
     }
+    # tryCatch RETURNS the rates (NULL on failure); assignment happens out
+    # here in main's own scope. (`<<-` inside the expression searches from
+    # the global env and misses main's locals — "object not found".)
     res <- tryCatch({
       players <- fetch_league_players(season)
       lga <- lga_from_players(players)
@@ -115,16 +118,19 @@ main <- function() {
         stop(sprintf("implausible laPTSperM=%.4f (expected 0.36-0.56); refusing to write",
                      lga$laPTSperM))
       }
-      existing[[season]] <<- lga
-      added <<- added + 1
       message(sprintf("  ok %s - laPTSperM=%.3f, la3P=%.3f, laFG=%.3f",
                       season, lga$laPTSperM, lga$la3P, lga$laFG))
-      TRUE
+      lga
     }, error = function(e) {
       message(sprintf("  x %s - %s", season, conditionMessage(e)))
-      failed <<- failed + 1
-      FALSE
+      NULL
     })
+    if (!is.null(res)) {
+      existing[[season]] <- res
+      added <- added + 1
+    } else {
+      failed <- failed + 1
+    }
   }
 
   # Sort keys for a clean diff.

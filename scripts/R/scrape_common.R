@@ -137,6 +137,11 @@ lga_from_totals <- function(t) {
   # Hollinger possessions estimate: FGA - ORB + TO + 0.475*FTA.
   poss <- t$fga - t$orb + t$tov + 0.475 * t$fta
   list(
+    # Possessions per on-court minute: mp sums PLAYER minutes (5 per team
+    # minute), so 5*poss/mp = possessions per team-minute (= pace/48). This
+    # scales a player's minutes into possessions defended — the normalizer
+    # for the D-Rating category behind VA+.
+    laPOSSperM = safe(5 * poss, t$mp),
     la3P = safe(t$tpm, t$tpa),
     la2P = safe(twoPm, twoPa),
     laFT = safe(t$ftm, t$fta),
