@@ -596,6 +596,17 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   };
   const shoot = (m, att, tag) => (effectiveRate ? shot(m, att) : `${m}/${att} ${tag}`);
 
+  // D Rating — the fifth defensive stat, folded in under Defense. Season
+  // DRtg (and season stock rate, for the team-share weight) come from the
+  // season aggregate; the current view's minutes scale it, so a drilled
+  // game shows that game's share. No drill-in: DRtg is one season-level
+  // number, not a stat with per-game splits. VA+ = VA + dVA.
+  const seasonKey = season || pSeries.season || null;
+  const dInfo = defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope);
+  const drtg = dInfo?.drtg ?? null;
+  const dVA = dInfo?.dva ?? null;
+  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
+
   const categories = [
     { key: "Points", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
     { key: "3-Pointers", value: 3 * tpAdd, label: shoot(p.tpm, p.tpa, "3P") },
@@ -608,30 +619,18 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
+  // D Rating rides at the very end, after Steals — the last Defense member.
+  if (dVA != null) categories.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
 
   // "Basic" rows: each group's member categories summed, labeled with the
-  // group's representative counting stat.
+  // group's representative counting stat. D Rating rides with Defense, so
+  // the four groups sum to VA+ (not VA) whenever it's present.
   const groupRows = VA_GROUPS.map((g) => {
     const [statOf, tag] = GROUP_STAT[g.key];
-    return {
-      key: g.key,
-      value: g.cats.reduce((s, k) => s + (categories.find((c) => c.key === k)?.value || 0), 0),
-      label: cnt(statOf(p), tag),
-    };
+    let value = g.cats.reduce((s, k) => s + (categories.find((c) => c.key === k)?.value || 0), 0);
+    if (g.key === "Defense" && dVA != null) value += dVA;
+    return { key: g.key, value, label: cnt(statOf(p), tag) };
   });
-  // The fifth category — D Rating — and VA+ (= VA + dVA). The season DRtg
-  // (and season stock rate, for the team-share weight) come from the season
-  // aggregate; the current view's minutes scale it, so a drilled game shows
-  // that game's share. No drill-in: DRtg is one season-level number, not a
-  // stat with per-game splits.
-  const seasonKey = season || pSeries.season || null;
-  const dInfo = defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope);
-  const drtg = dInfo?.drtg ?? null;
-  const dVA = dInfo?.dva ?? null;
-  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
-  if (dVA != null) {
-    groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
-  }
   const activeRows = viewMode === "basic" ? groupRows : categories;
 
   // Per-game series for the spark line. Defaults to whatever the caller
@@ -4480,6 +4479,18 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
   const cnt = (v, tag) => (rateMode === "perG" ? rG(v, tag) : r36(v, tag));
 
+  // D Rating — the player's edge over his own team's defense plus his
+  // stock-rate share of the team's edge vs league (see defVAInfo). Folded
+  // in under Defense; VA+ = VA + dVA. Regular-season rating; no drill-in
+  // (one season number, no per-game splits).
+  const dInfo = defVAInfo(
+    { ...p, slug: p.slug || context?.self?.slug },
+    mp, lga, defs, p.season || context?.season, "rs"
+  );
+  const drtg = dInfo?.drtg ?? null;
+  const dVA = dInfo?.dva ?? null;
+  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
+
   const cats = [
     { key: "Points", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
     { key: "3-Pointers", value: 3 * tpAdd, label: shot(p.tpm, p.tpa) },
@@ -4492,30 +4503,17 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
     { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
     { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
-  // "Basic" rows: group members summed, labeled with the group's
-  // representative counting stat.
+  // D Rating rides at the very end, after Steals — the last Defense member.
+  if (dVA != null) cats.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
+
+  // "Basic" rows: group members summed. D Rating rides with Defense, so the
+  // four groups sum to VA+ (not VA) whenever it's present.
   const groupRows = VA_GROUPS.map((g) => {
     const [statOf, tag] = GROUP_STAT[g.key];
-    return {
-      key: g.key,
-      value: g.cats.reduce((s, k) => s + (cats.find((c) => c.key === k)?.value || 0), 0),
-      label: cnt(statOf(p), tag),
-    };
+    let value = g.cats.reduce((s, k) => s + (cats.find((c) => c.key === k)?.value || 0), 0);
+    if (g.key === "Defense" && dVA != null) value += dVA;
+    return { key: g.key, value, label: cnt(statOf(p), tag) };
   });
-  // Fifth category: D Rating — the player's edge over his own team's
-  // defense plus his stock-rate share of the team's edge vs league (see
-  // defVAInfo) — and VA+ = VA + dVA. Regular-season rating; no drill-in
-  // (one number, no per-game splits).
-  const dInfo = defVAInfo(
-    { ...p, slug: p.slug || context?.self?.slug },
-    mp, lga, defs, p.season || context?.season, "rs"
-  );
-  const drtg = dInfo?.drtg ?? null;
-  const dVA = dInfo?.dva ?? null;
-  const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
-  if (dVA != null) {
-    groupRows.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
-  }
   const activeRows = viewMode === "basic" ? groupRows : cats;
   const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), 0.1);
   const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
