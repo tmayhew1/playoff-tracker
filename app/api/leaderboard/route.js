@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { lgaForSeason, valueAddParts } from "../../scoring";
+import { loadZoneSide, attachZoneFields } from "../_lib/zones";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -144,6 +145,7 @@ export async function GET(req) {
   // Prefer baked static JSON when available — produced by the bake script.
   const baked = await loadBaked(season);
   if (baked) {
+    attachZoneFields(baked.players, await loadZoneSide(season, "po"));
     return new Response(JSON.stringify(baked), {
       status: 200,
       headers: {
@@ -329,6 +331,7 @@ export async function GET(req) {
 
     const players = [...agg.values()];
     players.sort((a, b) => b.va - a.va);
+    attachZoneFields(players, await loadZoneSide(season, "po"));
 
     return new Response(JSON.stringify({
       season, series: seriesMeta, players, fetchedAt: new Date().toISOString(),

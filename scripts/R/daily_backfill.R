@@ -31,6 +31,7 @@ HIST_R  <- file.path(R_DIR, "fetch_historical.R")
 LGA_R   <- file.path(R_DIR, "fetch_league_averages.R")
 RECOMP_R <- file.path(R_DIR, "recompute_derived.R")
 DEF_R   <- file.path(R_DIR, "fetch_def_ratings.R")
+SHOOTING_R <- file.path(R_DIR, "fetch_shooting_splits.R")
 
 env_or <- function(name, default) {
   v <- Sys.getenv(name, unset = "")
@@ -139,6 +140,18 @@ main <- function() {
   # numbers can never drift from the raw data again.
   message("Recomputing derived numbers (league averages + baked VA)")
   run(RECOMP_R, character(0))
+
+  # 5. Shot-distance zone splits (0-3/3-10/10-16/16-3P): refresh the current
+  # season and fill any missing seasons back to 1996-97 (BR has no
+  # shot-location data before that; the script skips earlier seasons
+  # itself, so it's safe to just pass the full covered range). Runs after
+  # the consistency pass so its zoneFG merge into league-averages.json
+  # lands on top of freshly rebuilt baselines, not the other way around
+  # (rebuild_lga() also preserves zoneFG on its own if the order ever
+  # changes, but this keeps the pipeline's data flow easy to follow).
+  message(sprintf("Refreshing shooting splits %s", current))
+  run(SHOOTING_R, c(current, current, "--force"))
+  run(SHOOTING_R, c(min_season, current))
 
   message(sprintf("Done. Backfilled %d past season(s); refreshed %s.", filled, current))
 }

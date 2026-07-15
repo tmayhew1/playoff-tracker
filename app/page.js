@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, TEAM_CONF, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason } from "./scoring";
+import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "./scoring";
 import TEAM_COLORS from "./data/team-colors.json";
 
 // Per-team primary color (hex). Used in Explore and anywhere we don't have
@@ -2410,7 +2410,14 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
       const r = (p.slug && bySlug.get(p.slug)) || byNorm.get(normalizeName(p.name)) || null;
       if (r) used.add(r);
       const sum = { name: p.name, slug: p.slug || r?.slug, team: p.team, gp: (p.gp || 0) + (r?.gp || 0), games: [] };
-      for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) {
+      // Includes the shot-distance zone m/a keys (z03m/z03a/...) alongside
+      // the box-score fields, so this combined row still carries zone data
+      // for the compare card's 2-Pointers zone rows and the closest-comps
+      // Shoot metric — both were silently disabled here before, since this
+      // list predates the zones feature and summed the box score fields
+      // only.
+      for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta",
+                        ...ZONES.flatMap((z) => [z.mKey, z.aKey])]) {
         sum[k] = (p[k] || 0) + (r ? r[k] || 0 : 0);
       }
       sum.reb = sum.drb + sum.orb;
@@ -3684,11 +3691,12 @@ function buildComparePlayers(allRows) {
   return out;
 }
 
-// The three ways to rank/label closest comps. Order matches the toggle.
+// The four ways to rank/label closest comps. Order matches the toggle.
 const COMP_METRIC_OPTS = [
   { key: "imp", label: "Imp", word: "impact", title: "Impact — how close their overall per-game VA level is to this player's" },
   { key: "sim", label: "Sim", word: "similarity", title: "Similarity — cosine match of the two VA-by-category profiles" },
   { key: "impsim", label: "Imp×Sim", word: "imp×sim", title: "Impact × Similarity — the two combined into one closeness score" },
+  { key: "shoot", label: "Shoot", word: "shooting profile", title: "Shoot — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+)" },
 ];
 const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
 
@@ -3721,9 +3729,17 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
   //   impsim — the two multiplied (holistic closeness)
   const [compMetric, setCompMetric] = useState("impsim");
 
-  // The expensive O(pool) similarity pass. Each surviving candidate carries all
-  // three ranking values so the metric toggle can re-sort without recomputing
-  // any dot products. Keyed only on [self, context], so toggling is cheap.
+  // The expensive O(pool) similarity pass. Each surviving candidate carries
+  // all four ranking values so the metric toggle can re-sort without
+  // recomputing any dot products. Keyed only on [self, context], so toggling
+  // is cheap. shootCos/shootMag/shootScore are the same cosine × magnitude
+  // shape as cos/mag/score, just over the 6-dim shooting-profile vector (the
+  // 4 shot-distance zones plus 3-Pointers and Free Throws — see
+  // shootProfileVec) instead of the 10-dim box-category vector — null when
+  // either side has no zone data (pre-1996-97, or a season the
+  // shooting-splits bake hasn't reached).
+  const selfShootVec = self ? shootProfileVec(self, lgaForSeason(self.season)) : null;
+  const selfShootNorm = selfShootVec ? Math.hypot(...selfShootVec) : 0;
   const rawComps = useMemo(() => {
     if (!self || !(self.mp > 0)) return [];
     const qVec = perGameVAVec(self, lgaForSeason(self.season));
@@ -3731,11 +3747,12 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     if (!qNorm) return [];
     const selfSlug = self.slug || null;
     const selfNormName = normalizeName(self.name || "");
+    const shootOk = selfShootVec && selfShootNorm > 0;
     // Only comp players in a similar minutes role: a 35-MPG star shouldn't
     // match a 15-20 MPG bench player even if their per-minute shape is close.
     const qMPG = self.mp / (self.gp || 1);
     const MPG_BAND = 7;
-    const byDecade = new Map(); // decade -> [{r, cos, mag, score}]
+    const byDecade = new Map(); // decade -> [{r, cos, mag, score, shootCos, shootMag, shootScore}]
     for (const r of context.allRows) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
       if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
@@ -3748,22 +3765,45 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
       const cos = dot / (qNorm * n);
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
       const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
+      let shootCos = null, shootMag = null, shootScore = null;
+      if (shootOk) {
+        const zv = shootProfileVec(r, lgaForSeason(r.season));
+        const zn = zv ? Math.hypot(...zv) : 0;
+        if (zn > 0) {
+          let zdot = 0;
+          for (let i = 0; i < selfShootVec.length; i++) zdot += selfShootVec[i] * zv[i];
+          const zc = zdot / (selfShootNorm * zn);
+          if (zc >= 0.3) { // same "clearly different archetype" floor, on the shooting profile
+            shootCos = zc;
+            shootMag = Math.min(selfShootNorm, zn) / Math.max(selfShootNorm, zn);
+            shootScore = shootCos * shootMag;
+          }
+        }
+      }
       const dec = Math.floor(parseInt(r.season.slice(0, 4), 10) / 10) * 10;
       let arr = byDecade.get(dec);
       if (!arr) byDecade.set(dec, (arr = []));
-      arr.push({ r, cos, mag, score: cos * mag });
+      arr.push({ r, cos, mag, score: cos * mag, shootCos, shootMag, shootScore });
     }
     return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
-  }, [self, context]);
+  }, [self, context, selfShootVec, selfShootNorm]);
 
   // Value of the currently selected metric for a candidate.
-  const metricVal = (o) => (compMetric === "imp" ? o.mag : compMetric === "impsim" ? o.score : o.cos);
+  const metricVal = (o) => (
+    compMetric === "imp" ? o.mag
+    : compMetric === "impsim" ? o.score
+    : compMetric === "shoot" ? (o.shootScore ?? -Infinity)
+    : o.cos
+  );
 
-  // Re-rank each decade by the selected metric (no dot products — just a sort).
+  // Re-rank each decade by the selected metric (no dot products — just a
+  // sort). "Shoot" additionally drops candidates with no zone-VA overlap
+  // rather than showing them at the bottom with a meaningless score.
   const comps = useMemo(() => {
     return rawComps.map(([dec, arr]) => ({
       dec,
       list: [...arr]
+        .filter((o) => compMetric !== "shoot" || o.shootScore != null)
         .sort((x, y) => (metricVal(y) - metricVal(x)) || (y.cos - x.cos))
         .slice(0, COMPS_PER_DECADE),
     }));
@@ -3821,16 +3861,24 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
               <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
                 <span className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0">Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
-                  {COMP_METRIC_OPTS.map((o) => (
-                    <button
-                      key={o.key}
-                      onClick={() => setCompMetric(o.key)}
-                      title={o.title}
-                      className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider ${compMetric === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
+                  {COMP_METRIC_OPTS.map((o) => {
+                    // "Shoot" needs self to have zone-shot data for its
+                    // season (1996-97+, and the shooting-splits bake has to
+                    // have reached it) — hide the option rather than show a
+                    // toggle that can never produce a match.
+                    const disabled = o.key === "shoot" && !(selfShootNorm > 0);
+                    return (
+                      <button
+                        key={o.key}
+                        onClick={() => !disabled && setCompMetric(o.key)}
+                        disabled={disabled}
+                        title={disabled ? "No shot-distance data for this player-season" : o.title}
+                        className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider ${disabled ? "bg-stone-50 text-stone-300 cursor-not-allowed" : compMetric === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
+                      >
+                        {o.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               {comps.map(({ dec, list }) => (
@@ -3903,7 +3951,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
 // (the winner of each row is flagged so the UI can circle it). Counting cats:
 // per-game / per-36 / total; shooting cats: made-att per game / pct / total
 // makes. Fewer turnovers wins.
-function compareStatRows(a, b, key) {
+function compareStatRows(a, b, key, lgaA, lgaB) {
   const rows = [];
   const push = (label, aDisp, bDisp, aCmp, bCmp, lowerBetter = false) => {
     let win = null;
@@ -3923,6 +3971,27 @@ function compareStatRows(a, b, key) {
     push(`${t}%`, `${aa > 0 ? ((am / aa) * 100).toFixed(1) : "0.0"}%`,
       `${ba > 0 ? ((bm / ba) * 100).toFixed(1) : "0.0"}%`, aa > 0 ? am / aa : 0, ba > 0 ? bm / ba : 0);
     push(`TOT ${t}M`, String(Math.round(am)), String(Math.round(bm)), am, bm);
+    // Shot-distance zone breakdown, under the 2-Pointers card only: made/att
+    // (FG%) plus that zone's points of value vs. its own season's league
+    // zone FG% — the same "measured against your own era" idiom the rest
+    // of the app uses, just at the granularity of one distance zone.
+    if (key === "2-Pointers" && hasZoneData(a) && hasZoneData(b) && lgaA?.zoneFG && lgaB?.zoneFG) {
+      const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+      const zoneDisp = (m, att, val) => (
+        <>
+          {`${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`}{" "}
+          <span className={val >= 0 ? "text-emerald-600" : "text-red-600"}>{sgn1(val)}</span>
+        </>
+      );
+      for (const z of ZONES) {
+        const azm = a[z.mKey] || 0, aza = a[z.aKey] || 0;
+        const bzm = b[z.mKey] || 0, bza = b[z.aKey] || 0;
+        const aPct = aza > 0 ? azm / aza : 0, bPct = bza > 0 ? bzm / bza : 0;
+        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]);
+        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]);
+        push(z.label, zoneDisp(azm, aza, aVal), zoneDisp(bzm, bza, bVal), aPct, bPct);
+      }
+    }
     return rows;
   }
   // "PTS/G · PTS/36 · TOT PTS" (AST, TOV, DRB, ORB, STL, BLK likewise).
@@ -4141,7 +4210,7 @@ function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
                 // Flipped raw-stats card: player columns, metric rows, the
                 // leader of each row circled (per the mock). B column keeps the
                 // gold identity tint.
-                const rows = compareStatRows(a, b, key);
+                const rows = compareStatRows(a, b, key, lgaA, lgaB);
                 const head = (row, color, gold) => (
                   <div className={`min-w-0 px-1 py-0.5 rounded-sm ${gold ? "" : ""}`} style={gold ? { backgroundColor: GOLD_BG } : undefined}>
                     <div className="flex items-center gap-0.5 justify-end">
@@ -4859,6 +4928,164 @@ function DRatingView() {
   );
 }
 
+// Data-browser tab for shot-distance zone splits (0-3/3-10/10-16/16ft-3PT):
+// every player-season laid out as M/A (FG%) per zone plus that zone's
+// points of value vs. this SEASON'S REGULAR-SEASON league zone FG% (the
+// same era-fair, RS-baseline-for-both-RS-and-playoffs convention VA/VA+
+// already use — see lgaForSeason). This is the granular "search shooting
+// impact vs league average by distance" view the compare card's zone rows
+// (under the 2-Pointers card) don't have room for. Sorted by total zone
+// value; season list comes from whichever seasons have a baked
+// shooting-<season>.json (basketball-reference has no shot-location data
+// before 1996-97).
+// Sums two /api/shooting player arrays' zone makes/attempts into one row per
+// player, joined by slug then normalized name — mirrors /api/players'
+// server-side "combined" scope (which already sums RS+PO zone fields via
+// RAW_KEYS), just done client-side since this view fetches straight from
+// /api/shooting rather than through /api/players.
+function combineZonePlayers(rsPlayers, poPlayers) {
+  const byKey = new Map();
+  const add = (p) => {
+    const key = p.slug ? "s:" + p.slug : "n:" + normalizeName(p.name || "");
+    let e = byKey.get(key);
+    if (!e) {
+      e = { slug: p.slug || null, name: p.name, team: p.team };
+      for (const z of ZONES) e[z.key] = { fgm: 0, fga: 0 };
+      byKey.set(key, e);
+    }
+    for (const z of ZONES) {
+      e[z.key].fgm += p[z.key]?.fgm || 0;
+      e[z.key].fga += p[z.key]?.fga || 0;
+    }
+  };
+  (rsPlayers || []).forEach(add);
+  (poPlayers || []).forEach(add);
+  return [...byKey.values()];
+}
+
+function ShotZonesView() {
+  const [seasons, setSeasons] = useState([]);
+  const [season, setSeason] = useState(null);
+  const [scope, setScope] = useState("rs"); // "rs" | "po" | "combined"
+  const [query, setQuery] = useState("");
+  const [data, setData] = useState(null);
+  const sel = season || seasons[0] || null;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJsonCached("/api/shooting")
+      .then((d) => { if (!cancelled) setSeasons([...(d.seasons || [])].sort().reverse()); })
+      .catch(() => { if (!cancelled) setSeasons([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!sel) return;
+    let cancelled = false;
+    setData(null);
+    fetchJsonCached(`/api/shooting?season=${sel}`)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch(() => { if (!cancelled) setData({}); });
+    return () => { cancelled = true; };
+  }, [sel]);
+
+  const lga = sel ? lgaForSeason(sel) : null;
+  const list = useMemo(() => {
+    const rows = scope === "combined"
+      ? (data?.rs || data?.po ? combineZonePlayers(data?.rs?.players, data?.po?.players) : null)
+      : data?.[scope]?.players;
+    if (!rows || !lga?.zoneFG) return null;
+    const q = normalizeName(query.trim());
+    // Without a search, keep to volume-qualified samples (total 2-point
+    // attempts across all 4 zones) so noise doesn't crowd the top.
+    const minAtt = scope === "po" ? 20 : 50;
+    const out = [];
+    for (const r of rows) {
+      // /api/shooting serves the bake's raw per-zone shape ({fgm,fga} nested
+      // under each zone key) — NOT the flattened z03m/z03a fields /api/players
+      // merges onto its rows. Read r[z.key].fgm/.fga here, not r[z.mKey]/[z.aKey].
+      const totalAtt = ZONES.reduce((s, z) => s + (r[z.key]?.fga || 0), 0);
+      if (q ? !normalizeName(r.name || "").includes(q) : totalAtt < minAtt) continue;
+      const zones = ZONES.map((z) => {
+        const m = r[z.key]?.fgm || 0, att = r[z.key]?.fga || 0;
+        return { z, m, att, pct: att > 0 ? m / att : 0, val: zoneShotValue(m, att, lga.zoneFG[z.key]) };
+      });
+      const total = zones.reduce((s, x) => s + x.val, 0);
+      out.push({ r, zones, total });
+    }
+    out.sort((a, b) => b.total - a.total);
+    return out;
+  }, [data, scope, lga, query]);
+
+  const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+  const cols = "grid grid-cols-[1.4rem_minmax(0,1fr)_2.6rem_2.6rem_2.6rem_2.6rem_2.8rem] gap-x-1 items-center";
+
+  return (
+    <div className="text-[10px]">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <select
+          value={sel || ""}
+          onChange={(e) => { setSeason(e.target.value); }}
+          className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
+        >
+          {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <button onClick={() => setScope("combined")} className={`px-1.5 py-0.5 ${scope === "combined" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Combined</button>
+          <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
+          <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search…"
+          className="flex-1 min-w-[6rem] text-[10px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
+        />
+      </div>
+      {!seasons.length && (
+        <div className="py-4 text-center text-stone-400 italic">
+          No shooting splits baked yet — basketball-reference only has shot-location data from 1996-97 on.
+        </div>
+      )}
+      {seasons.length > 0 && (
+        <>
+          <div className="text-[9px] text-stone-400 mb-1.5">
+            Each zone shows M/A (FG%) and that zone's points of value vs. {sel}'s league FG% at that distance (regular-season baseline, same as the rest of VA) · Total sums the 4 zones
+          </div>
+          <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+            <span>#</span><span>Player</span>
+            {ZONES.map((z) => <span key={z.key} className="text-right">{z.label}</span>)}
+            <span className="text-right">Total</span>
+          </div>
+          {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
+          {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
+          {list && list.map(({ r, zones, total }, i) => (
+            <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[3px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
+              <span className="text-stone-400 tabular-nums">{i + 1}</span>
+              <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
+                {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
+              </span>
+              {zones.map(({ z, m, att, pct, val }) => (
+                <span key={z.key} className="text-right leading-tight">
+                  <span className="block tabular-nums text-stone-500 text-[8px]">{m}/{att} ({(pct * 100).toFixed(0)}%)</span>
+                  <span className={`block tabular-nums font-semibold ${val < 0 ? "text-red-600" : "text-stone-900"}`}>{sgn1(val)}</span>
+                </span>
+              ))}
+              <span className={`text-right tabular-nums font-bold ${total < 0 ? "text-red-600" : "text-stone-900"}`}>{sgn1(total)}</span>
+            </div>
+          ))}
+          {list && list.length > 0 && (
+            <div className="mt-2 text-center text-[9px] italic text-stone-400">
+              {query.trim() === "" ? `Min ${scope === "po" ? 20 : 50} 2-point attempts · search to include everyone · ` : ""}sorted by total shot-zone value
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function PlayoffTracker() {
   const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
@@ -4906,6 +5133,12 @@ export default function PlayoffTracker() {
             D Rating
           </button>
           <button
+            onClick={() => setTab("shotzones")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "shotzones" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Shot Zones
+          </button>
+          <button
             onClick={() => setTab("info")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "info" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
@@ -4913,7 +5146,7 @@ export default function PlayoffTracker() {
           </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

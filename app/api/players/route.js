@@ -16,14 +16,25 @@ export const runtime = "nodejs";
 
 const LB_RE = /^leaderboard-(\d{4}-\d{2})\.json$/;
 const RS_RE = /^regular-season-(\d{4}-\d{2})\.json$/;
+const SHOOTING_RE = /^shooting-(\d{4}-\d{2})\.json$/;
 const r2 = (n) => Math.round((n || 0) * 100) / 100;
 const r1 = (n) => Math.round((n || 0) * 10) / 10;
 // Normalize a name for slug-less joins: strip diacritics + punctuation, lower.
 const norm = (s) => (s || "")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+// Shot-distance zone makes/attempts (basketball-reference's Shooting page,
+// baked by fetch_shooting_splits.R \u2014 see loadZoneMap/attachZones below).
+// Summed generically alongside the rest of RAW_KEYS, so "combined" scope,
+// per-season `raw`, and career totals all pick them up for free; seasons
+// with no zone data (pre-1996-97, or not yet baked) just stay 0.
+const ZONE_SPEC = [
+  ["z03", "z03m", "z03a"], ["z310", "z310m", "z310a"],
+  ["z1016", "z1016m", "z1016a"], ["z16xp", "z16xpm", "z16xpa"],
+];
 const RAW_KEYS = ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb",
-  "fgm", "fga", "tpm", "tpa", "ftm", "fta"];
+  "fgm", "fga", "tpm", "tpa", "ftm", "fta",
+  ...ZONE_SPEC.flatMap(([, mk, ak]) => [mk, ak])];
 
 // Every player-season row from files matching `re`. Regular-season bakes call
 // games `g` instead of `gp`; normalize here so downstream code sees one shape.
@@ -44,6 +55,54 @@ async function loadRows(dir, files, re) {
     }
   }
   return { rows, fileCount: matched.length };
+}
+
+// season -> "rs"|"po" -> join key -> flat zone fields, from every baked
+// shooting-<season>.json. Loaded once per request and consulted by
+// attachZones() for both the LB_RE (playoffs) and RS_RE (regular) row sets.
+async function loadZoneMap(dir, files) {
+  const map = new Map();
+  for (const f of files.filter((f) => SHOOTING_RE.test(f))) {
+    let data;
+    try {
+      data = JSON.parse(await readFile(join(dir, f), "utf8"));
+    } catch {
+      continue;
+    }
+    const season = data.season;
+    if (!season) continue;
+    const bySide = map.get(season) || {};
+    for (const side of ["rs", "po"]) {
+      const players = data[side]?.players;
+      if (!players) continue;
+      const byKey = new Map();
+      for (const p of players) {
+        const flat = {};
+        for (const [zk, mk, ak] of ZONE_SPEC) {
+          flat[mk] = p[zk]?.fgm || 0;
+          flat[ak] = p[zk]?.fga || 0;
+        }
+        const key = p.slug ? "s:" + p.slug : "n:" + norm(p.name || "");
+        byKey.set(key, flat);
+      }
+      bySide[side] = byKey;
+    }
+    map.set(season, bySide);
+  }
+  return map;
+}
+
+// Attaches one side's ("rs" or "po") zone fields onto rows in place, joined
+// by slug first then normalized name — same join key combineRows() already
+// uses. Rows with no match (no zone data for that season/player) are left
+// untouched; RAW_KEYS' generic `p[k] || 0` summing treats that as zero.
+function attachZones(rows, zoneMap, side) {
+  for (const { season, p } of rows) {
+    const byKey = zoneMap.get(season)?.[side];
+    if (!byKey) continue;
+    const flat = (p.slug && byKey.get("s:" + p.slug)) || byKey.get("n:" + norm(p.name || ""));
+    if (flat) Object.assign(p, flat);
+  }
 }
 
 // Per-season merge: playoff rows absorb their regular-season counterpart
@@ -87,17 +146,24 @@ export async function GET(req) {
     files = [];
   }
 
-  // Pass 1: gather every player-season row for the requested scope.
+  // Pass 1: gather every player-season row for the requested scope, then
+  // attach shot-distance zone fields from the matching side ("po" for
+  // playoff rows, "rs" for regular-season rows) of each shooting-<season>.json.
+  const zoneMap = await loadZoneMap(dir, files);
   let rows, fileCount;
   if (scope === "regular") {
     ({ rows, fileCount } = await loadRows(dir, files, RS_RE));
+    attachZones(rows, zoneMap, "rs");
   } else if (scope === "combined") {
     const lb = await loadRows(dir, files, LB_RE);
+    attachZones(lb.rows, zoneMap, "po");
     const rs = await loadRows(dir, files, RS_RE);
+    attachZones(rs.rows, zoneMap, "rs");
     rows = combineRows(lb.rows, rs.rows);
     fileCount = Math.max(lb.fileCount, rs.fileCount);
   } else {
     ({ rows, fileCount } = await loadRows(dir, files, LB_RE));
+    attachZones(rows, zoneMap, "po");
   }
 
   // Playoff bakes carry VA; regular/combined rows need it computed against the

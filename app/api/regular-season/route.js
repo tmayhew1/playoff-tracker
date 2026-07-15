@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as cheerio from "cheerio";
+import { loadZoneSide, attachZoneFields } from "../_lib/zones";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -119,6 +120,7 @@ export async function GET(req) {
 
   const baked = await loadBaked(season);
   if (baked) {
+    attachZoneFields(baked.players, await loadZoneSide(season, "rs"));
     return new Response(JSON.stringify(baked), {
       status: 200,
       headers: {
@@ -131,6 +133,7 @@ export async function GET(req) {
   const endYear = Number(season.slice(0, 4)) + 1;
   try {
     const players = await fetchTotalsFromBR(endYear);
+    attachZoneFields(players, await loadZoneSide(season, "rs"));
     return new Response(JSON.stringify({
       season, players, source: "basketball-reference", fetchedAt: new Date().toISOString(),
     }), {
