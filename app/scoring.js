@@ -115,6 +115,26 @@ export function zoneVAVec(r, lga) {
   return ZONES.map((z) => zoneShotValue(r[z.mKey] || 0, r[z.aKey] || 0, lga.zoneFG[z.key]) / gp);
 }
 
+// Per-game "shooting profile" vector for the closest-comps SHOOT metric: the
+// 4 shot-distance zones plus 3-Pointers and Free Throws, in the same
+// "points of value vs league average" units (valueAddByCategory already
+// values a 3 at 3x a make-rate delta and a free throw at 1x — same shape as
+// zoneShotValue's 2x for a 2-pointer — so this just appends them). A rim-
+// running big and a movement shooter should NOT look similar just because
+// their 2-point zone mix happens to match; 3-point volume/efficiency is
+// often the single biggest differentiator of a "shooting profile" and was
+// missing from the zone-only vector. Null under the same condition
+// zoneVAVec is null (no shot-distance data for this row/season) — 3P/FT VA
+// exists for virtually every season, but a shooting profile without shot-
+// location context isn't what this vector is for.
+export function shootProfileVec(r, lga) {
+  const zv = zoneVAVec(r, lga);
+  if (!zv) return null;
+  const gp = r.gp || 1;
+  const by = valueAddByCategory(r, lga);
+  return [...zv, (by["3-Pointers"] || 0) / gp, (by["Free Throws"] || 0) / gp];
+}
+
 export function computeMatchups(winners) {
   const t = {};
   BRACKET.r1.forEach((s) => (t[s.id] = s.teams.slice()));

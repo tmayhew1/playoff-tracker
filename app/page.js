@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { HISTORY, scoreHistory, historyRounds } from "./historical";
 import { TEAMS, TEAM_CONF, BRACKET, ROUND_BASE, STORAGE_KEY } from "./teams";
-import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason, ZONES, zoneShotValue, hasZoneData, zoneVAVec } from "./scoring";
+import { LGA, valueAdd, valueAddParts, valueAddByCategory, computePoints, potentialPoints, lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "./scoring";
 import TEAM_COLORS from "./data/team-colors.json";
 
 // Per-team primary color (hex). Used in Explore and anywhere we don't have
@@ -3689,7 +3689,7 @@ const COMP_METRIC_OPTS = [
   { key: "imp", label: "Imp", word: "impact", title: "Impact — how close their overall per-game VA level is to this player's" },
   { key: "sim", label: "Sim", word: "similarity", title: "Similarity — cosine match of the two VA-by-category profiles" },
   { key: "impsim", label: "Imp×Sim", word: "imp×sim", title: "Impact × Similarity — the two combined into one closeness score" },
-  { key: "shoot", label: "Shoot", word: "shooting profile", title: "Shoot — cosine × magnitude match of the two shot-distance-zone value profiles (needs zone data, 1996-97+)" },
+  { key: "shoot", label: "Shoot", word: "shooting profile", title: "Shoot — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+)" },
 ];
 const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
 
@@ -3726,11 +3726,13 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
   // all four ranking values so the metric toggle can re-sort without
   // recomputing any dot products. Keyed only on [self, context], so toggling
   // is cheap. shootCos/shootMag/shootScore are the same cosine × magnitude
-  // shape as cos/mag/score, just over the 4-dim zone-VA vector instead of
-  // the 10-dim box-category vector — null when either side has no zone data
-  // (pre-1996-97, or a season the shooting-splits bake hasn't reached).
-  const selfZoneVec = self ? zoneVAVec(self, lgaForSeason(self.season)) : null;
-  const selfZoneNorm = selfZoneVec ? Math.hypot(...selfZoneVec) : 0;
+  // shape as cos/mag/score, just over the 6-dim shooting-profile vector (the
+  // 4 shot-distance zones plus 3-Pointers and Free Throws — see
+  // shootProfileVec) instead of the 10-dim box-category vector — null when
+  // either side has no zone data (pre-1996-97, or a season the
+  // shooting-splits bake hasn't reached).
+  const selfShootVec = self ? shootProfileVec(self, lgaForSeason(self.season)) : null;
+  const selfShootNorm = selfShootVec ? Math.hypot(...selfShootVec) : 0;
   const rawComps = useMemo(() => {
     if (!self || !(self.mp > 0)) return [];
     const qVec = perGameVAVec(self, lgaForSeason(self.season));
@@ -3738,7 +3740,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     if (!qNorm) return [];
     const selfSlug = self.slug || null;
     const selfNormName = normalizeName(self.name || "");
-    const shootOk = selfZoneVec && selfZoneNorm > 0;
+    const shootOk = selfShootVec && selfShootNorm > 0;
     // Only comp players in a similar minutes role: a 35-MPG star shouldn't
     // match a 15-20 MPG bench player even if their per-minute shape is close.
     const qMPG = self.mp / (self.gp || 1);
@@ -3758,15 +3760,15 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
       const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
       let shootCos = null, shootMag = null, shootScore = null;
       if (shootOk) {
-        const zv = zoneVAVec(r, lgaForSeason(r.season));
+        const zv = shootProfileVec(r, lgaForSeason(r.season));
         const zn = zv ? Math.hypot(...zv) : 0;
         if (zn > 0) {
           let zdot = 0;
-          for (let i = 0; i < selfZoneVec.length; i++) zdot += selfZoneVec[i] * zv[i];
-          const zc = zdot / (selfZoneNorm * zn);
+          for (let i = 0; i < selfShootVec.length; i++) zdot += selfShootVec[i] * zv[i];
+          const zc = zdot / (selfShootNorm * zn);
           if (zc >= 0.3) { // same "clearly different archetype" floor, on the shooting profile
             shootCos = zc;
-            shootMag = Math.min(selfZoneNorm, zn) / Math.max(selfZoneNorm, zn);
+            shootMag = Math.min(selfShootNorm, zn) / Math.max(selfShootNorm, zn);
             shootScore = shootCos * shootMag;
           }
         }
@@ -3777,7 +3779,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
       arr.push({ r, cos, mag, score: cos * mag, shootCos, shootMag, shootScore });
     }
     return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
-  }, [self, context, selfZoneVec, selfZoneNorm]);
+  }, [self, context, selfShootVec, selfShootNorm]);
 
   // Value of the currently selected metric for a candidate.
   const metricVal = (o) => (
@@ -3857,7 +3859,7 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
                     // season (1996-97+, and the shooting-splits bake has to
                     // have reached it) — hide the option rather than show a
                     // toggle that can never produce a match.
-                    const disabled = o.key === "shoot" && !(selfZoneNorm > 0);
+                    const disabled = o.key === "shoot" && !(selfShootNorm > 0);
                     return (
                       <button
                         key={o.key}
