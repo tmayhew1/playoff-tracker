@@ -90,7 +90,12 @@ find_shooting_table <- function(doc) {
 # 3-10, 10-16, 16-3P, 3P), so the FIRST occurrence of a zone label is the
 # share column and the SECOND is the percentage column.
 resolve_zone_cols <- function(table) {
-  labels <- norm_label(header_leaf_labels(table))
+  raw_labels <- header_leaf_labels(table)
+  labels <- norm_label(raw_labels)
+  if (Sys.getenv("SHOOTING_DEBUG_HEADERS", "") == "1") {
+    message("  [debug] resolved header labels:")
+    message("  ", paste(sprintf("%d:%s(%s)", seq_along(raw_labels), raw_labels, labels), collapse = " | "))
+  }
   prefixes <- c(z03 = "03", z310 = "310", z1016 = "1016", z16xp = "163p")
   cols <- list()
   for (k in ZONE_KEYS) {
