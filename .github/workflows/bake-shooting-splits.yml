@@ -56,16 +56,11 @@ jobs:
         run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
 
       - name: Fetch shooting splits
-        env:
-          # TEMPORARY: dumps the resolved header-column labels to the log so
-          # the zone-column resolution can be fixed against real markup.
-          # Remove once fetch_shooting_splits.R is producing plausible rates.
-          SHOOTING_DEBUG_HEADERS: "1"
         run: >
           Rscript scripts/R/fetch_shooting_splits.R
           "${{ inputs.start_season || '1996-97' }}"
           "${{ inputs.end_season || '2025-26' }}"
-          --force
+          ${{ (inputs.force == 'true') && '--force' || '' }}
 
       - name: Commit baked JSON
         uses: stefanzweifel/git-auto-commit-action@v5

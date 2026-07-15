@@ -4965,10 +4965,13 @@ function ShotZonesView() {
     const minAtt = scope === "po" ? 20 : 50;
     const out = [];
     for (const r of rows) {
-      const totalAtt = ZONES.reduce((s, z) => s + (r[z.aKey] || 0), 0);
+      // /api/shooting serves the bake's raw per-zone shape ({fgm,fga} nested
+      // under each zone key) — NOT the flattened z03m/z03a fields /api/players
+      // merges onto its rows. Read r[z.key].fgm/.fga here, not r[z.mKey]/[z.aKey].
+      const totalAtt = ZONES.reduce((s, z) => s + (r[z.key]?.fga || 0), 0);
       if (q ? !normalizeName(r.name || "").includes(q) : totalAtt < minAtt) continue;
       const zones = ZONES.map((z) => {
-        const m = r[z.mKey] || 0, att = r[z.aKey] || 0;
+        const m = r[z.key]?.fgm || 0, att = r[z.key]?.fga || 0;
         return { z, m, att, pct: att > 0 ? m / att : 0, val: zoneShotValue(m, att, lga.zoneFG[z.key]) };
       });
       const total = zones.reduce((s, x) => s + x.val, 0);
