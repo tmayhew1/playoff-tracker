@@ -2410,7 +2410,14 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
       const r = (p.slug && bySlug.get(p.slug)) || byNorm.get(normalizeName(p.name)) || null;
       if (r) used.add(r);
       const sum = { name: p.name, slug: p.slug || r?.slug, team: p.team, gp: (p.gp || 0) + (r?.gp || 0), games: [] };
-      for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) {
+      // Includes the shot-distance zone m/a keys (z03m/z03a/...) alongside
+      // the box-score fields, so this combined row still carries zone data
+      // for the compare card's 2-Pointers zone rows and the closest-comps
+      // Shoot metric — both were silently disabled here before, since this
+      // list predates the zones feature and summed the box score fields
+      // only.
+      for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta",
+                        ...ZONES.flatMap((z) => [z.mKey, z.aKey])]) {
         sum[k] = (p[k] || 0) + (r ? r[k] || 0 : 0);
       }
       sum.reb = sum.drb + sum.orb;
