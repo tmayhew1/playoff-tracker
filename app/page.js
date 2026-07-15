@@ -4931,10 +4931,35 @@ function DRatingView() {
 // value; season list comes from whichever seasons have a baked
 // shooting-<season>.json (basketball-reference has no shot-location data
 // before 1996-97).
+// Sums two /api/shooting player arrays' zone makes/attempts into one row per
+// player, joined by slug then normalized name — mirrors /api/players'
+// server-side "combined" scope (which already sums RS+PO zone fields via
+// RAW_KEYS), just done client-side since this view fetches straight from
+// /api/shooting rather than through /api/players.
+function combineZonePlayers(rsPlayers, poPlayers) {
+  const byKey = new Map();
+  const add = (p) => {
+    const key = p.slug ? "s:" + p.slug : "n:" + normalizeName(p.name || "");
+    let e = byKey.get(key);
+    if (!e) {
+      e = { slug: p.slug || null, name: p.name, team: p.team };
+      for (const z of ZONES) e[z.key] = { fgm: 0, fga: 0 };
+      byKey.set(key, e);
+    }
+    for (const z of ZONES) {
+      e[z.key].fgm += p[z.key]?.fgm || 0;
+      e[z.key].fga += p[z.key]?.fga || 0;
+    }
+  };
+  (rsPlayers || []).forEach(add);
+  (poPlayers || []).forEach(add);
+  return [...byKey.values()];
+}
+
 function ShotZonesView() {
   const [seasons, setSeasons] = useState([]);
   const [season, setSeason] = useState(null);
-  const [scope, setScope] = useState("rs"); // "rs" | "po"
+  const [scope, setScope] = useState("rs"); // "rs" | "po" | "combined"
   const [query, setQuery] = useState("");
   const [data, setData] = useState(null);
   const sel = season || seasons[0] || null;
@@ -4959,7 +4984,9 @@ function ShotZonesView() {
 
   const lga = sel ? lgaForSeason(sel) : null;
   const list = useMemo(() => {
-    const rows = data?.[scope]?.players;
+    const rows = scope === "combined"
+      ? (data?.rs || data?.po ? combineZonePlayers(data?.rs?.players, data?.po?.players) : null)
+      : data?.[scope]?.players;
     if (!rows || !lga?.zoneFG) return null;
     const q = normalizeName(query.trim());
     // Without a search, keep to volume-qualified samples (total 2-point
@@ -4997,7 +5024,8 @@ function ShotZonesView() {
           {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
-          <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
+          <button onClick={() => setScope("combined")} className={`px-1.5 py-0.5 ${scope === "combined" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Combined</button>
+          <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
           <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
         </div>
         <input
