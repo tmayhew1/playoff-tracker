@@ -47,6 +47,10 @@ rebuild_lga <- function() {
                       if (is.na(old_rate)) "(none)" else sprintf("%.4f", old_rate), lga$laPTSperM))
       changed <- changed + 1
     }
+    # zoneFG (shot-distance league averages) isn't derived here - it comes
+    # from fetch_shooting_splits.R's own scrape - so carry it through rather
+    # than dropping it on every rebuild.
+    if (!is.null(old$zoneFG)) lga$zoneFG <- old$zoneFG
     existing[[season]] <- lga
   }
   existing <- existing[order(names(existing))]

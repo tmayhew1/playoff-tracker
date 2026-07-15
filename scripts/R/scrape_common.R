@@ -79,6 +79,68 @@ parse_minutes <- function(v) {
 
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || is.na(a)) b else a
 
+# --- Positional (header-driven) column lookup -------------------------------
+# Some BR pages (the per-season "Shooting" stats table) group several columns
+# under a shared over-header ("% of FGA by Distance", "FG% by Distance"),
+# repeating leaf labels ("0-3", "3-10", ...) under each group. The internal
+# data-stat attribute names for those leaf columns aren't documented and BR's
+# markup has churned before, so cell_text()'s data-stat lookup isn't a safe
+# bet here. These two helpers instead resolve columns by their VISIBLE header
+# text, which is far more stable, then read body cells by position.
+
+# Normalized form of a header label for fuzzy matching ("16-3P" -> "163p"),
+# collapsing hyphen/en-dash/whitespace differences BR might use across eras.
+# Vectorized (called on a whole header-label vector), so this can't use the
+# scalar %||% helper — ifelse() handles an NA element without erroring.
+norm_label <- function(s) tolower(gsub("[^0-9a-zA-Z]", "", ifelse(is.na(s), "", s)))
+
+# Resolve a table's <thead> (one or two header rows) into one leaf label per
+# body column, in document order. A single-row header just expands each
+# cell's colspan; a two-row header treats the second-to-last row as group
+# headers (rowspan=2 cells belong to no group and pass straight through) and
+# the last row as the leaf labels filling the remaining (non-rowspan) slots.
+# Body rows in these stat tables are always one flat cell per column, so the
+# returned index lines up directly with cell_text_at()'s position.
+header_leaf_labels <- function(table) {
+  head_rows <- xml2::xml_find_all(table, ".//thead/tr")
+  if (length(head_rows) == 0) return(character(0))
+  get_cells <- function(tr) {
+    nodes <- xml2::xml_find_all(tr, "./th | ./td")
+    span <- function(attr) vapply(nodes, function(n) {
+      v <- xml2::xml_attr(n, attr); if (is.na(v)) 1L else as.integer(v)
+    }, integer(1))
+    list(text = trimws(xml2::xml_text(nodes)), colspan = span("colspan"), rowspan = span("rowspan"))
+  }
+  if (length(head_rows) == 1) {
+    c1 <- get_cells(head_rows[[1]])
+    return(unlist(Map(function(t, n) rep(t, n), c1$text, c1$colspan), use.names = FALSE))
+  }
+  r1 <- get_cells(head_rows[[length(head_rows) - 1L]])
+  r2 <- get_cells(head_rows[[length(head_rows)]])
+  labels <- character(0)
+  r2_i <- 1L
+  for (i in seq_along(r1$text)) {
+    if (r1$rowspan[i] >= 2L) {
+      labels <- c(labels, rep(r1$text[i], r1$colspan[i]))
+    } else {
+      for (k in seq_len(r1$colspan[i])) {
+        lbl <- if (r2_i <= length(r2$text)) r2$text[r2_i] else r1$text[i]
+        labels <- c(labels, lbl)
+        r2_i <- r2_i + 1L
+      }
+    }
+  }
+  labels
+}
+
+# The idx-th (1-based) th/td in a body row's own document order — matches
+# header_leaf_labels()'s column index one-for-one.
+cell_text_at <- function(tr, idx) {
+  nodes <- xml2::xml_find_all(tr, "./th | ./td")
+  if (idx < 1 || idx > length(nodes)) return("")
+  trimws(xml2::xml_text(nodes[[idx]]))
+}
+
 # Text of the first cell matching any of the given data-stat keys, "" if none.
 # Matches th or td (player name lives in a th).
 cell_text <- function(tr, keys) {

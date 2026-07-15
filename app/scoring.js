@@ -72,6 +72,49 @@ export function valueAddByCategory(p, lga = LGA) {
   };
 }
 
+// --- Shot-distance zones -----------------------------------------------
+// basketball-reference's per-season Shooting page splits 2-point shots into
+// four distance zones. Baked by scripts/R/fetch_shooting_splits.R into
+// shooting-<season>.json (per-player z03m/z03a etc., merged onto a row's
+// raw stats by /api/players) and league-averages.json's `zoneFG` key
+// (RS-baseline rates per season, matching how la2P/la3P are already
+// RS-baseline for both RS and playoff VA). Deliberately kept OUT of
+// VA_CATEGORY_KEYS/valueAddByCategory — basketball-reference has no
+// shot-location data before 1996-97, so folding zone VA into the core
+// per-category vectors would punch holes in every earlier season's
+// closest-comps shape and career totals. This is parallel, informational
+// data: a zone breakdown under the 2-Pointers compare card and its own
+// searchable "Shot Zones" view, never the existing VA/VA+ numbers.
+export const ZONES = [
+  { key: "z03", mKey: "z03m", aKey: "z03a", label: "0-3 ft" },
+  { key: "z310", mKey: "z310m", aKey: "z310a", label: "3-10 ft" },
+  { key: "z1016", mKey: "z1016m", aKey: "z1016a", label: "10-16 ft" },
+  { key: "z16xp", mKey: "z16xpm", aKey: "z16xpa", label: "16 ft-3PT" },
+];
+
+// Points of value a zone's shooting adds vs. that zone's league-average FG%
+// — the same shape as the `twoAdd` term in valueAddParts/valueAddByCategory,
+// just parameterized per zone instead of the 2-point shot as a whole.
+export function zoneShotValue(fgm, fga, leagueFgPct) {
+  return 2 * ((fgm / (fga || 1)) - (leagueFgPct || 0)) * fga;
+}
+
+// True when a row carries any shot-distance zone data for its season/scope.
+export function hasZoneData(r) {
+  return ZONES.some((z) => (r?.[z.aKey] || 0) > 0);
+}
+
+// Per-game zone-VA vector (ZONES order), mirroring perGameVAVec's shape
+// (app/page.js) but over the 4 shot-distance zones instead of the 10 box
+// categories. Null when the row or that season's league averages have no
+// zone data — callers hide the feature rather than show a bogus all-zero
+// profile (same precedent as defVAInfo() returning null for VA+).
+export function zoneVAVec(r, lga) {
+  if (!lga?.zoneFG || !hasZoneData(r)) return null;
+  const gp = r.gp || 1;
+  return ZONES.map((z) => zoneShotValue(r[z.mKey] || 0, r[z.aKey] || 0, lga.zoneFG[z.key]) / gp);
+}
+
 export function computeMatchups(winners) {
   const t = {};
   BRACKET.r1.forEach((s) => (t[s.id] = s.teams.slice()));
