@@ -20,6 +20,14 @@
 #     so zoneFga = round(totalFga * pctOfFga) and zoneFgm =
 #     round(zoneFga * zoneFgPct). Small rounding noise is expected and
 #     tolerated the same way the rest of this pipeline tolerates it.
+#     totalFga does NOT come from the shooting page itself — that page has
+#     no raw attempts column at all (confirmed against a live fetch: Rk,
+#     Player, Age, Team, Pos, G, GS, MP, FG%, Dist., then the %FGA/FG%-by-
+#     distance groups, "% of FG Ast'd", Dunks, Corner 3s, Heaves, Awards —
+#     nothing labeled bare "FGA"; the "%FGA" Dunks-share column normalizes
+#     to the same "fga" key and is NOT the total). totalFga instead comes
+#     from the sibling regular-season-<season>.json / leaderboard-<season>.json
+#     bakes already on disk (see load_player_fga()), joined by slug/name.
 #   app/data/league-averages.json     season entry gains a "zoneFG" key
 #                                      { z03, z310, z1016, z16xp } (RS rates,
 #                                      matching how la2P/la3P are already
@@ -84,11 +92,12 @@ find_shooting_table <- function(doc) {
   NULL
 }
 
-# Column indices for the 4 zone pairs (share-of-FGA, FG%) plus total FGA,
-# resolved from the header's visible text. BR lists "% of FGA by Distance"
-# before "FG% by Distance", both with the same six sub-labels (2P, 0-3,
-# 3-10, 10-16, 16-3P, 3P), so the FIRST occurrence of a zone label is the
-# share column and the SECOND is the percentage column.
+# Column indices for the 4 zone pairs (share-of-FGA, FG%), resolved from the
+# header's visible text. BR lists "% of FGA by Distance" before "FG% by
+# Distance", both with the same six sub-labels (2P, 0-3, 3-10, 10-16,
+# 16-3P, 3P), so the FIRST occurrence of a zone label is the share column
+# and the SECOND is the percentage column. (No FGA column to resolve here —
+# see the file header comment; totalFga comes from load_player_fga().)
 resolve_zone_cols <- function(table) {
   raw_labels <- header_leaf_labels(table)
   labels <- norm_label(raw_labels)
@@ -105,17 +114,59 @@ resolve_zone_cols <- function(table) {
     }
     cols[[k]] <- list(pct = hits[1], fgpct = hits[2])
   }
-  fga_hits <- which(labels == "fga")
-  if (length(fga_hits) < 1) stop("FGA column not found")
-  cols$fga <- fga_hits[1]
   cols
 }
 
-# One player-season row per qualifying player from a shooting page. Traded
+# ASCII-folded, punctuation-collapsed name key for slug-less joins (mirrors
+# the JS `norm()` helper in app/api/players/route.js).
+norm_name <- function(s) {
+  s <- tryCatch(iconv(s, to = "ASCII//TRANSLIT"), error = function(e) s, warning = function(w) s)
+  tolower(trimws(gsub("[^a-zA-Z0-9]+", " ", s %||% "")))
+}
+
+# slug -> total-season FGA and normalized-name -> total-season FGA, from the
+# sibling bake already on disk: regular-season-<season>.json for "rs",
+# leaderboard-<season>.json for "po". NULL if that bake doesn't exist yet
+# (the season hasn't been baked by fetch_historical.R), which the caller
+# treats as "can't determine attempts, skip this season/scope".
+load_player_fga <- function(season, scope) {
+  path <- file.path(DATA_DIR, if (scope == "po") sprintf("leaderboard-%s.json", season)
+                               else sprintf("regular-season-%s.json", season))
+  if (!file.exists(path)) return(NULL)
+  d <- jsonlite::fromJSON(path, simplifyVector = FALSE)
+  by_slug <- new.env(parent = emptyenv())
+  by_name <- new.env(parent = emptyenv())
+  for (p in (if (is.null(d$players)) list() else d$players)) {
+    fga <- suppressWarnings(as.numeric(p$fga %||% 0))
+    if (is.na(fga) || fga <= 0) next
+    slug <- p$slug
+    if (!is.null(slug) && !is.na(slug) && nzchar(slug)) assign(slug, fga, envir = by_slug)
+    nm <- norm_name(p$name %||% "")
+    if (nzchar(nm) && !exists(nm, envir = by_name, inherits = FALSE)) assign(nm, fga, envir = by_name)
+  }
+  list(by_slug = by_slug, by_name = by_name)
+}
+
+# Total-season FGA for one shooting-page row, joined by slug first then
+# normalized name. NULL if no match (can't derive zone attempt counts).
+fga_for <- function(fgamap, slug, name) {
+  if (is.null(fgamap)) return(NULL)
+  if (!is.na(slug) && nzchar(slug) && exists(slug, envir = fgamap$by_slug, inherits = FALSE)) {
+    return(get(slug, envir = fgamap$by_slug, inherits = FALSE))
+  }
+  nm <- norm_name(name)
+  if (nzchar(nm) && exists(nm, envir = fgamap$by_name, inherits = FALSE)) {
+    return(get(nm, envir = fgamap$by_name, inherits = FALSE))
+  }
+  NULL
+}
+
+# One player-season row per qualifying player from a shooting page, using
+# `fgamap` (see load_player_fga()) for each row's total-season FGA. Traded
 # players appear as per-team rows plus a TOT aggregate; keep the aggregate
 # when one shows up (mirrors fetch_historical.R::fetch_regular_season_totals,
 # which doesn't assume TOT is always listed first).
-parse_shooting_page <- function(url) {
+parse_shooting_page <- function(url, fgamap) {
   doc <- parse_html_uncommented(throttled_fetch(url))
   table <- find_shooting_table(doc)
   if (is.null(table)) stop("shooting table not found")
@@ -129,8 +180,8 @@ parse_shooting_page <- function(url) {
     href <- xml2::xml_attr(xml2::xml_find_first(tr, ".//a[contains(@href,'/players/')]"), "href")
     slug <- if (!is.na(href)) sub("\\.html$", "", basename(href)) else NA_character_
     team <- cell_text(tr, c("team_id", "team_name_abbr", "team"))
-    fga <- num(cell_text_at(tr, cols$fga))
-    if (fga <= 0) next
+    fga <- fga_for(fgamap, slug, name)
+    if (is.null(fga) || fga <= 0) next
     zones <- list()
     for (k in ZONE_KEYS) {
       pct <- num(cell_text_at(tr, cols[[k]]$pct))
@@ -200,9 +251,13 @@ main <- function() {
     }
 
     res <- tryCatch({
+      rs_fgamap <- load_player_fga(season, "rs")
+      if (is.null(rs_fgamap)) {
+        stop(sprintf("no regular-season-%s.json baked yet - can't determine total FGA", season))
+      }
       rs_url <- sprintf("https://www.basketball-reference.com/leagues/NBA_%d_shooting.html", year_end)
       message(sprintf("Fetching %s", rs_url))
-      rs_players <- parse_shooting_page(rs_url)
+      rs_players <- parse_shooting_page(rs_url, rs_fgamap)
       rs_totals <- league_zone_totals(rs_players)
       rs_rates <- zone_rates_from_totals(rs_totals)
       if (!zone_plausible(rs_rates, length(rs_players))) {
@@ -211,9 +266,11 @@ main <- function() {
           length(rs_players), rs_rates$z03, rs_rates$z310, rs_rates$z1016, rs_rates$z16xp))
       }
       po_players <- tryCatch({
+        po_fgamap <- load_player_fga(season, "po")
+        if (is.null(po_fgamap)) stop(sprintf("no leaderboard-%s.json baked yet", season))
         po_url <- sprintf("https://www.basketball-reference.com/playoffs/NBA_%d_shooting.html", year_end)
         message(sprintf("Fetching %s", po_url))
-        p <- parse_shooting_page(po_url)
+        p <- parse_shooting_page(po_url, po_fgamap)
         if (length(p) >= 30) p else NULL
       }, error = function(e) {
         message(sprintf("  (no playoff shooting splits for %s - %s)", season, conditionMessage(e)))
