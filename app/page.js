@@ -5097,11 +5097,11 @@ export default function PlayoffTracker() {
   return (
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <header className="mb-4">
+        <header className="mb-4 text-center">
           {/* "Trey's" rides the eyebrow in the serif display face — bigger and
               styled apart from the small-caps tag; the title drops a step so
-              the two lines read more evenly. */}
-          <div className="flex items-baseline gap-1.5 mb-1">
+              the two lines read more evenly. Both lines centered as a unit. */}
+          <div className="flex items-baseline justify-center gap-1.5 mb-1">
             <span className="text-xl font-bold italic text-stone-800 leading-none" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Trey&rsquo;s</span>
             <span className="text-xs uppercase tracking-[0.3em] text-stone-500">NBA Box Score</span>
           </div>
