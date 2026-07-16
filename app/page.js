@@ -3259,6 +3259,10 @@ function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
   );
 }
 
+// Live-season bracket picker + scoreboard. Currently unwired: the 2025-26
+// playoffs are over and that tab now renders through HistoryView like every
+// other finished season. Re-wire this (new teams.js draft + a "current" tab
+// in PlayoffTracker) when the 2026-27 playoffs start.
 function CurrentView() {
   const [winners, setWinners] = useState({});
   const [gameWins, setGameWins] = useState({});
@@ -5094,8 +5098,14 @@ export default function PlayoffTracker() {
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">NBA Box Score</div>
-          <h1 className="text-3xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Value Added Tracker</h1>
+          {/* "Trey's" rides the eyebrow in the serif display face — bigger and
+              styled apart from the small-caps tag; the title drops a step so
+              the two lines read more evenly. */}
+          <div className="flex items-baseline gap-1.5 mb-1">
+            <span className="text-xl font-bold italic text-stone-800 leading-none" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Trey&rsquo;s</span>
+            <span className="text-xs uppercase tracking-[0.3em] text-stone-500">NBA Box Score</span>
+          </div>
+          <h1 className="text-2xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Value Added Tracker</h1>
         </header>
 
         <div className="flex border-b-2 border-stone-900 mb-5 overflow-x-auto no-scrollbar">
@@ -5104,12 +5114,6 @@ export default function PlayoffTracker() {
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "explore" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
             Explore
-          </button>
-          <button
-            onClick={() => setTab("current")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "current" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            2025-26
           </button>
           {seasons.map((s) => (
             <button
@@ -5146,7 +5150,7 @@ export default function PlayoffTracker() {
           </button>
         </div>
 
-        {tab === "current" ? <CurrentView /> : tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+        {tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

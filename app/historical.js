@@ -1,16 +1,69 @@
 // Historical past-year draft results.
 
+import games202526 from "./data/history-2025-26.json";
 import games202425 from "./data/history-2024-25.json";
 import games202324 from "./data/history-2023-24.json";
 
 // Baked per-game data + box scores, produced by scripts/R/fetch_historical.R.
 // Empty `series` until the script is run; the UI degrades gracefully.
 export const HISTORY_GAMES = {
+  "2025-26": games202526,
   "2024-25": games202425,
   "2023-24": games202324,
 };
 
 export const HISTORY = {
+  "2025-26": {
+    label: "2025-26 Season",
+    champion: "New York Knicks",
+    teams: {
+      // Spencer
+      SAS: { name: "Spurs",    seed: 2, owner: "Spencer", conf: "W" },
+      DEN: { name: "Nuggets",  seed: 3, owner: "Spencer", conf: "W" },
+      CLE: { name: "Cavs",     seed: 4, owner: "Spencer", conf: "E" },
+      HOU: { name: "Rockets",  seed: 5, owner: "Spencer", conf: "W" },
+      NYK: { name: "Knicks",   seed: 3, owner: "Spencer", conf: "E" },
+      ORL: { name: "Magic",    seed: 8, owner: "Spencer", conf: "E" },
+      PHI: { name: "76ers",    seed: 7, owner: "Spencer", conf: "E" },
+      PHX: { name: "Suns",     seed: 8, owner: "Spencer", conf: "W" },
+      // Trey
+      OKC: { name: "Thunder",  seed: 1, owner: "Trey",    conf: "W" },
+      BOS: { name: "Celtics",  seed: 2, owner: "Trey",    conf: "E" },
+      MIN: { name: "Wolves",   seed: 6, owner: "Trey",    conf: "W" },
+      DET: { name: "Pistons",  seed: 1, owner: "Trey",    conf: "E" },
+      ATL: { name: "Hawks",    seed: 6, owner: "Trey",    conf: "E" },
+      LAL: { name: "Lakers",   seed: 4, owner: "Trey",    conf: "W" },
+      TOR: { name: "Raptors",  seed: 5, owner: "Trey",    conf: "E" },
+      POR: { name: "Blazers",  seed: 7, owner: "Trey",    conf: "W" },
+    },
+    // Results straight from the baked history-2025-26.json series winners.
+    bracket: {
+      r1: [
+        { teams: ["DET", "ORL"], winner: "DET" },
+        { teams: ["CLE", "TOR"], winner: "CLE" },
+        { teams: ["NYK", "ATL"], winner: "NYK" },
+        { teams: ["BOS", "PHI"], winner: "PHI" },
+        { teams: ["OKC", "PHX"], winner: "OKC" },
+        { teams: ["LAL", "HOU"], winner: "LAL" },
+        { teams: ["DEN", "MIN"], winner: "MIN" },
+        { teams: ["SAS", "POR"], winner: "SAS" },
+      ],
+      r2: [
+        { teams: ["DET", "CLE"], winner: "CLE" },
+        { teams: ["NYK", "PHI"], winner: "NYK" },
+        { teams: ["OKC", "LAL"], winner: "OKC" },
+        { teams: ["SAS", "MIN"], winner: "SAS" },
+      ],
+      r3: [
+        { teams: ["NYK", "CLE"], winner: "NYK" },
+        { teams: ["OKC", "SAS"], winner: "SAS" },
+      ],
+      r4: [
+        { teams: ["SAS", "NYK"], winner: "NYK" },
+      ],
+    },
+  },
+
   "2024-25": {
     label: "2024-25 Season",
     champion: "Oklahoma City Thunder",
