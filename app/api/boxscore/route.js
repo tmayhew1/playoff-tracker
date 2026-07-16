@@ -1,5 +1,89 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 export const runtime = "nodejs";
 export const maxDuration = 15;
+
+// Basketball-reference box id: YYYYMMDD + "0" + home tricode. This is what
+// the R bake writes into history-<season>.json, so it's the id shape every
+// historical series in the app carries. Neither the NBA live CDN nor ESPN
+// knows these ids — they must be served from the bakes.
+const BR_ID_RE = /^(\d{4})(\d{2})\d{2}0[A-Z]{3}$/;
+
+async function readBaked(name) {
+  try {
+    return JSON.parse(await readFile(join(process.cwd(), "app", "data", name), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// Reconstruct a full box score for a BR game id from the baked data:
+// history-<season>.json pins the matchup + final score, and every player's
+// per-game stat line for that gameId lives in leaderboard-<season>.json.
+// Season derivation: playoff games always fall in the season's END year
+// (Apr-Jun normally, Aug-Oct for the 2020 bubble), so startYear = YYYY - 1.
+// Returns null when the id isn't BR-shaped or the season isn't baked, so
+// the caller can fall through to the live/ESPN paths.
+async function bakedBox(gameId) {
+  const m = BR_ID_RE.exec(gameId);
+  if (!m) return null;
+  const startYear = parseInt(m[1], 10) - 1;
+  const season = `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+  const [hist, lb] = await Promise.all([
+    readBaked(`history-${season}.json`),
+    readBaked(`leaderboard-${season}.json`),
+  ]);
+  if (!hist || !lb) return null;
+  let game = null;
+  for (const s of hist.series || []) {
+    game = (s.games || []).find((g) => g.gameId === gameId);
+    if (game) break;
+  }
+  if (!game) return null;
+  const homeTri = game.home?.tri, awayTri = game.away?.tri;
+  const home = [], away = [];
+  for (const p of lb.players || []) {
+    if (p.team !== homeTri && p.team !== awayTri) continue;
+    const row = (p.games || []).find((g) => g.gameId === gameId);
+    if (!row || !(row.mp > 0)) continue;
+    const out = {
+      name: p.name,
+      // The bake carries no starter/on-court info; both only affect
+      // styling (bold names, live partitioning) and neither applies to a
+      // finished historical game.
+      starter: false,
+      oncourt: false,
+      mp: row.mp || 0,
+      pts: row.pts || 0,
+      reb: row.reb || 0,
+      drb: row.drb || 0,
+      orb: row.orb || 0,
+      ast: row.ast || 0,
+      stl: row.stl || 0,
+      blk: row.blk || 0,
+      tov: row.tov || 0,
+      fgm: row.fgm || 0,
+      fga: row.fga || 0,
+      tpm: row.tpm || 0,
+      tpa: row.tpa || 0,
+      ftm: row.ftm || 0,
+      fta: row.fta || 0,
+      plusMinus: 0,
+    };
+    (p.team === homeTri ? home : away).push(out);
+  }
+  if (!home.length && !away.length) return null;
+  return {
+    gameId,
+    status: "Final",
+    gameStatus: 3,
+    home: { tri: homeTri, score: game.home?.score ?? 0, players: home },
+    away: { tri: awayTri, score: game.away?.score ?? 0, players: away },
+    source: "bake",
+    fetchedAt: new Date().toISOString(),
+  };
+}
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
@@ -168,6 +252,20 @@ export async function GET(req) {
   if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
   let body = null;
   let liveCache = true;
+
+  // Bake-first: basketball-reference ids (everything the historical bakes
+  // emit) are answered entirely from app/data — the NBA CDN and ESPN would
+  // both 404 on them anyway.
+  const baked = await bakedBox(gameId);
+  if (baked) {
+    return new Response(JSON.stringify(baked), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    });
+  }
 
   if (src === "espn") {
     // Historical games are ESPN ids; the CDN always 404s for them, so the
