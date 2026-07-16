@@ -3756,6 +3756,15 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
     // match a 15-20 MPG bench player even if their per-minute shape is close.
     const qMPG = self.mp / (self.gp || 1);
     const MPG_BAND = 7;
+    // Shot diet: share of field-goal attempts taken from three (2PA:3PA in
+    // bounded form — 0 for a player who never shoots threes). Two players can
+    // post identical 3P *impact* (both ~0 vs league) while taking wildly
+    // different shares of their shots from deep — a high-volume league-average
+    // bomber vs someone who lives at the rim. Their matching zero 3P-VA makes
+    // them look like shooting twins, so gate Shoot comps on a similar 3PA
+    // rate, the same way MPG_BAND gates the whole pool on minutes role.
+    const q3Rate = self.fga > 0 ? self.tpa / self.fga : 0;
+    const THREE_RATE_BAND = 0.15;
     const byDecade = new Map(); // decade -> [{r, cos, mag, score, shootCos, shootMag, shootScore}]
     for (const r of context.allRows) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
@@ -3770,7 +3779,8 @@ function ComparePicker({ context, self = null, onPick, onCancel }) {
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
       const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
       let shootCos = null, shootMag = null, shootScore = null;
-      if (shootOk) {
+      const r3Rate = r.fga > 0 ? r.tpa / r.fga : 0;
+      if (shootOk && Math.abs(r3Rate - q3Rate) <= THREE_RATE_BAND) {
         const zv = shootProfileVec(r, lgaForSeason(r.season));
         const zn = zv ? Math.hypot(...zv) : 0;
         if (zn > 0) {
