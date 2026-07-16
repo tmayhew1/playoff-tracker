@@ -3991,10 +3991,11 @@ function compareStatRows(a, b, key, lgaA, lgaB) {
       for (const z of ZONES) {
         const azm = a[z.mKey] || 0, aza = a[z.aKey] || 0;
         const bzm = b[z.mKey] || 0, bza = b[z.aKey] || 0;
-        const aPct = aza > 0 ? azm / aza : 0, bPct = bza > 0 ? bzm / bza : 0;
+        // Winner is decided by per-game value added vs league, not raw FG% —
+        // a higher zone FG% on lower volume can still add less value.
         const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]) / agp;
         const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]) / bgp;
-        push(z.label, zoneDisp(azm / agp, aza / agp, aVal), zoneDisp(bzm / bgp, bza / bgp, bVal), aPct, bPct);
+        push(z.label, zoneDisp(azm / agp, aza / agp, aVal), zoneDisp(bzm / bgp, bza / bgp, bVal), aVal, bVal);
       }
     }
     return rows;
