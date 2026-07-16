@@ -3975,15 +3975,16 @@ function compareStatRows(a, b, key, lgaA, lgaB) {
     push(`${t}%`, `${aa > 0 ? ((am / aa) * 100).toFixed(1) : "0.0"}%`,
       `${ba > 0 ? ((bm / ba) * 100).toFixed(1) : "0.0"}%`, aa > 0 ? am / aa : 0, ba > 0 ? bm / ba : 0);
     push(`TOT ${t}M`, String(Math.round(am)), String(Math.round(bm)), am, bm);
-    // Shot-distance zone breakdown, under the 2-Pointers card only: made/att
-    // (FG%) plus that zone's points of value vs. its own season's league
-    // zone FG% — the same "measured against your own era" idiom the rest
-    // of the app uses, just at the granularity of one distance zone.
+    // Shot-distance zone breakdown, under the 2-Pointers card only: per-game
+    // made/att (FG%) plus that zone's points of value PER GAME vs. its own
+    // season's league zone FG% — matches the M/A row above (already
+    // per-game) and every other VA figure in this panel, so a longer
+    // sample size never inflates a zone's apparent value.
     if (key === "2-Pointers" && hasZoneData(a) && hasZoneData(b) && lgaA?.zoneFG && lgaB?.zoneFG) {
       const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
       const zoneDisp = (m, att, val) => (
         <>
-          {`${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`}{" "}
+          {`${m.toFixed(1)}/${att.toFixed(1)} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`}{" "}
           <span className={val >= 0 ? "text-emerald-600" : "text-red-600"}>{sgn1(val)}</span>
         </>
       );
@@ -3991,9 +3992,9 @@ function compareStatRows(a, b, key, lgaA, lgaB) {
         const azm = a[z.mKey] || 0, aza = a[z.aKey] || 0;
         const bzm = b[z.mKey] || 0, bza = b[z.aKey] || 0;
         const aPct = aza > 0 ? azm / aza : 0, bPct = bza > 0 ? bzm / bza : 0;
-        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]);
-        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]);
-        push(z.label, zoneDisp(azm, aza, aVal), zoneDisp(bzm, bza, bVal), aPct, bPct);
+        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]) / agp;
+        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]) / bgp;
+        push(z.label, zoneDisp(azm / agp, aza / agp, aVal), zoneDisp(bzm / bgp, bza / bgp, bVal), aPct, bPct);
       }
     }
     return rows;
