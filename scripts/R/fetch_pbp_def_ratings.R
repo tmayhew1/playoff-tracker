@@ -212,7 +212,9 @@ main <- function() {
 
   added <- 0; skipped <- 0; failed <- 0
   for (season in seasons) {
-    entry <- existing[[season]] %||% list()
+    # (Not %||%: is.na() on a multi-element season entry errors on R >= 4.3.)
+    entry <- existing[[season]]
+    if (is.null(entry)) entry <- list()
     if (!is.null(entry$rsPbp) && !force) {
       message(sprintf("  Skipping %s (rsPbp already present; pass --force to overwrite)", season))
       skipped <- skipped + 1
