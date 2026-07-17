@@ -402,7 +402,7 @@ function fetchJsonCached(url) {
 // continuous at edge = 0. Multi-team rows (2TM) and seasons without team
 // maps fall back to the plain vs-league form (w=1 on the whole net). DRtg
 // is the on-court play-by-play rating (actual points allowed per 100
-// possessions while on the floor, 1996-97+) when baked, else
+// possessions while on the floor, 2000-01+) when baked, else
 // basketball-reference's box-score-estimated individual Defensive Rating —
 // see defRtgEntryFor. The league line is laPTSperPoss×100; laPOSSperM
 // (pace/48) converts per-possession into per-minute. Null (→ hidden in the
@@ -442,7 +442,7 @@ function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
 
 // DRtg lookup for a player-season. Prefers the on-court play-by-play rating
 // (rsPbp/poPbp — actual points allowed per 100 possessions while on the
-// floor, baked from stats.nba.com for 1996-97+) and falls back to
+// floor, baked from api.pbpstats.com for 2000-01+) and falls back to
 // basketball-reference's box-score estimate for earlier seasons or unjoined
 // players. Within each source, `pref` picks the sample ("po" for playoff
 // views, "rs" otherwise) and the other side backstops it so a player with
@@ -4926,7 +4926,7 @@ function DRatingView() {
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
-          DRTG = on-court (play-by-play) from 1996-97, box-score estimate before ·
+          DRTG = on-court (play-by-play) from 2000-01, box-score estimate before ·
           IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
           both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
         </div>

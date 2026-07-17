@@ -136,11 +136,10 @@ main <- function() {
   run(DEF_R, c(current, current, "--force"))
   run(DEF_R, c(min_season, current))
 
-  # 3b. On-court (play-by-play) defensive ratings from stats.nba.com — the
-  # *Pbp keys the app prefers over the box-score estimate for 1996-97+.
-  # The API blocks some automated environments; run() already treats a
-  # failed script as non-fatal, so a blocked day just keeps yesterday's
-  # numbers.
+  # 3b. On-court (play-by-play) defensive ratings from api.pbpstats.com —
+  # the *Pbp keys the app prefers over the box-score estimate for 2000-01+.
+  # run() already treats a failed script as non-fatal, so an unreachable
+  # API just keeps yesterday's numbers.
   message(sprintf("Refreshing on-court (PBP) defensive ratings %s", current))
   run(PBP_DEF_R, c(current, current, "--force"))
   run(PBP_DEF_R, c(min_season, current))

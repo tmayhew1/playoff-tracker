@@ -1,10 +1,10 @@
 name: Bake on-court (PBP) defensive ratings (R)
 
 # One-shot/backfill bake of actual on-court defensive ratings (points
-# allowed per 100 possessions while on the floor, from stats.nba.com's
-# play-by-play-derived advanced stats) into app/data/def-ratings.json as
+# allowed per 100 possessions while on the floor, from api.pbpstats.com's
+# play-by-play totals) into app/data/def-ratings.json as
 # the rsPbp/poPbp/teamPbp/teamPoPbp keys the app prefers over the
-# basketball-reference box-score estimates for 1996-97+. Runs on whatever
+# basketball-reference box-score estimates for 2000-01+. Runs on whatever
 # ref it is dispatched from and commits the JSON back to that branch.
 # Day-to-day freshness of the current season is handled by the daily
 # backfill workflow.
@@ -21,9 +21,9 @@ on:
   workflow_dispatch:
     inputs:
       start_season:
-        description: "First season to bake (YYYY-YY; clamped to 1996-97)"
+        description: "First season to bake (YYYY-YY; clamped to 2000-01)"
         required: false
-        default: "1996-97"
+        default: "2000-01"
       end_season:
         description: "Last season to bake (YYYY-YY)"
         required: false
@@ -59,7 +59,7 @@ jobs:
       - name: Fetch on-court defensive ratings
         run: >
           Rscript scripts/R/fetch_pbp_def_ratings.R
-          "${{ inputs.start_season || '1996-97' }}"
+          "${{ inputs.start_season || '2000-01' }}"
           "${{ inputs.end_season || '2025-26' }}"
           ${{ (inputs.force == 'true') && '--force' || '' }}
 
