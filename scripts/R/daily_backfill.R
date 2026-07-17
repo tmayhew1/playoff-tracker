@@ -31,6 +31,7 @@ HIST_R  <- file.path(R_DIR, "fetch_historical.R")
 LGA_R   <- file.path(R_DIR, "fetch_league_averages.R")
 RECOMP_R <- file.path(R_DIR, "recompute_derived.R")
 DEF_R   <- file.path(R_DIR, "fetch_def_ratings.R")
+PBP_DEF_R <- file.path(R_DIR, "fetch_pbp_def_ratings.R")
 SHOOTING_R <- file.path(R_DIR, "fetch_shooting_splits.R")
 
 env_or <- function(name, default) {
@@ -134,6 +135,15 @@ main <- function() {
   message(sprintf("Refreshing defensive ratings %s", current))
   run(DEF_R, c(current, current, "--force"))
   run(DEF_R, c(min_season, current))
+
+  # 3b. On-court (play-by-play) defensive ratings from stats.nba.com — the
+  # *Pbp keys the app prefers over the box-score estimate for 1996-97+.
+  # The API blocks some automated environments; run() already treats a
+  # failed script as non-fatal, so a blocked day just keeps yesterday's
+  # numbers.
+  message(sprintf("Refreshing on-court (PBP) defensive ratings %s", current))
+  run(PBP_DEF_R, c(current, current, "--force"))
+  run(PBP_DEF_R, c(min_season, current))
 
   # 4. Consistency pass: rebuild league averages from the regular-season
   # bakes and recompute the baked leaderboard VA against them, so derived

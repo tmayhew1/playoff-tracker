@@ -401,25 +401,33 @@ function fetchJsonCached(url) {
 // shares also average 1-in-5 across a roster) and the contribution is
 // continuous at edge = 0. Multi-team rows (2TM) and seasons without team
 // maps fall back to the plain vs-league form (w=1 on the whole net). DRtg
-// is basketball-reference's individual Defensive Rating; the league line
-// is laPTSperPoss×100; laPOSSperM (pace/48) converts per-possession into
-// per-minute. Null (→ hidden in the UI) when the player-season has no
-// rating.
+// is the on-court play-by-play rating (actual points allowed per 100
+// possessions while on the floor, 1996-97+) when baked, else
+// basketball-reference's box-score-estimated individual Defensive Rating —
+// see defRtgEntryFor. The league line is laPTSperPoss×100; laPOSSperM
+// (pace/48) converts per-possession into per-minute. Null (→ hidden in the
+// UI) when the player-season has no rating.
 const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
 const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
 function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
-  const drtg = defRtgFor(defs, season, row?.slug, pref);
+  const ent = defRtgEntryFor(defs, season, row?.slug, pref);
+  const drtg = ent?.drtg;
   if (drtg == null || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
   const la = lgaX.laPTSperPoss * 100;
   const e = defs?.[season];
   const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
   const t = tmap?.[row?.team];
+  // A PBP player rating must subtract a PBP team rating (same
+  // counted-possession scale); stock rates still come from the BR team map
+  // (they're plain box stats, identical either way).
+  const pbpTmap = pref === "po" ? (e?.teamPoPbp || e?.teamPbp) : (e?.teamPbp || e?.teamPoPbp);
+  const pbpTeamDrtg = ent?.pbp ? pbpTmap?.[row?.team] : null;
   // Blocks weigh what VA says they're worth: laDRBrate of a steal.
   const bw = lgaX.laDRBrate > 0 ? lgaX.laDRBrate : 1;
   const teamStockRate = t ? (t.stlpm || 0) + bw * (t.blkpm || 0) : 0;
   let net, w = null, teamDrtg = null;
   if (t && t.drtg > 0 && teamStockRate > 0 && row.mp > 0) {
-    teamDrtg = t.drtg;
+    teamDrtg = pbpTeamDrtg > 0 ? pbpTeamDrtg : t.drtg;
     const edge = la - teamDrtg;
     const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
     const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;
@@ -429,18 +437,27 @@ function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   } else {
     net = la - drtg;
   }
-  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la };
+  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la, pbp: !!ent.pbp };
 }
 
-// DRtg lookup for a player-season. `pref` picks the sample: "po" for playoff
-// views, "rs" otherwise; the other side is the fallback so a player with only
-// one sample still gets a rating.
-function defRtgFor(defs, season, slug, pref = "rs") {
+// DRtg lookup for a player-season. Prefers the on-court play-by-play rating
+// (rsPbp/poPbp — actual points allowed per 100 possessions while on the
+// floor, baked from stats.nba.com for 1996-97+) and falls back to
+// basketball-reference's box-score estimate for earlier seasons or unjoined
+// players. Within each source, `pref` picks the sample ("po" for playoff
+// views, "rs" otherwise) and the other side backstops it so a player with
+// only one sample still gets a rating. The `pbp` flag tells defVAInfo which
+// team-rating scale to subtract against — nba.com counts possessions where
+// BR estimates them, and the two sit ~1 pt/100 apart.
+function defRtgEntryFor(defs, season, slug, pref = "rs") {
   if (!defs || !season || !slug) return null;
   const e = defs[season];
   if (!e) return null;
   const other = pref === "po" ? "rs" : "po";
-  return e[pref]?.[slug] ?? e[other]?.[slug] ?? null;
+  const pbp = e[pref + "Pbp"]?.[slug] ?? e[other + "Pbp"]?.[slug];
+  if (pbp != null) return { drtg: pbp, pbp: true };
+  const est = e[pref]?.[slug] ?? e[other]?.[slug];
+  return est != null ? { drtg: est, pbp: false } : null;
 }
 
 // One shared fetch of the baked ratings; components render without them
@@ -4909,6 +4926,7 @@ function DRatingView() {
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
+          DRTG = on-court (play-by-play) from 1996-97, box-score estimate before ·
           IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
           both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
         </div>
