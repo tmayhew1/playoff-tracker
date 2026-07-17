@@ -141,20 +141,25 @@ MIN_MINUTES <- 25
 
 num_of <- function(v) suppressWarnings(as.numeric(v %||% NA))
 
-# pbpstats' API returns a VARYING column subset per request (load-balanced
-# backends answer with different cached column sets — bake run #3's log shows
-# the same endpoint including OpponentPoints on one call and omitting it on
-# the next). So a missing required column is transient, not a schema break:
-# refetch and reparse a few times before giving up. The final error still
-# carries the row-key dump for a genuine schema change.
+# pbpstats' API serves CACHED responses keyed by query string, and a cached
+# blob carries whatever column subset the request that warmed it computed —
+# bake runs #3/#4 showed some season queries permanently missing
+# OpponentPoints while identical queries for other seasons had it, and
+# retries of the same URL just re-read the same bad cache entry. So on
+# retries, vary the query string with a throwaway param: new cache key, fresh
+# compute, full column set. The final error still carries the row-key dump
+# for a genuine schema change.
 fetch_parsed <- function(params, parse_fn, tries = 4) {
   err <- NULL
   for (attempt in seq_len(tries)) {
-    d <- pbp_fetch_json(params)
+    p <- params
+    if (attempt > 1) p$CacheBust <- sprintf("%d%d", as.integer(Sys.time()), attempt)
+    d <- pbp_fetch_json(p)
     out <- tryCatch(parse_fn(d), error = function(e) e)
     if (!inherits(out, "error")) return(out)
     err <- out
-    message(sprintf("  columns missing (attempt %d/%d), refetching", attempt, tries))
+    message(sprintf("  columns missing (attempt %d/%d), refetching%s", attempt, tries,
+                    if (attempt < tries) " with cache-buster" else ""))
     Sys.sleep(6 * attempt)
   }
   stop(conditionMessage(err))
