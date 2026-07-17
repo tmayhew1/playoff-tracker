@@ -141,11 +141,34 @@ MIN_MINUTES <- 25
 
 num_of <- function(v) suppressWarnings(as.numeric(v %||% NA))
 
+# pbpstats' API returns a VARYING column subset per request (load-balanced
+# backends answer with different cached column sets — bake run #3's log shows
+# the same endpoint including OpponentPoints on one call and omitting it on
+# the next). So a missing required column is transient, not a schema break:
+# refetch and reparse a few times before giving up. The final error still
+# carries the row-key dump for a genuine schema change.
+fetch_parsed <- function(params, parse_fn, tries = 4) {
+  err <- NULL
+  for (attempt in seq_len(tries)) {
+    d <- pbp_fetch_json(params)
+    out <- tryCatch(parse_fn(d), error = function(e) e)
+    if (!inherits(out, "error")) return(out)
+    err <- out
+    message(sprintf("  columns missing (attempt %d/%d), refetching", attempt, tries))
+    Sys.sleep(6 * attempt)
+  }
+  stop(conditionMessage(err))
+}
+
 # Players: slug -> on-court DRTG (1 decimal). pbpstats splits traded players
 # into one row per team, so opponent points and defensive possessions are
 # accumulated per normalized name first and the rating taken from the sums.
 fetch_players <- function(season, season_type, slugmap) {
-  d <- pbp_fetch_json(list(Season = season, SeasonType = season_type, Type = "Player"))
+  fetch_parsed(list(Season = season, SeasonType = season_type, Type = "Player"),
+               function(d) parse_players(d, slugmap))
+}
+
+parse_players <- function(d, slugmap) {
   acc <- new.env(parent = emptyenv())  # norm name -> c(opp, poss, min)
   for (row in rows_of(d)) {
     nm <- norm_name(pick(row, c("Name", "EntityName", "PlayerName")) %||% "")
@@ -172,7 +195,10 @@ fetch_players <- function(season, season_type, slugmap) {
 
 # Teams: abbr -> on-court DRTG. Team rows carry their own abbreviation.
 fetch_teams <- function(season, season_type) {
-  d <- pbp_fetch_json(list(Season = season, SeasonType = season_type, Type = "Team"))
+  fetch_parsed(list(Season = season, SeasonType = season_type, Type = "Team"), parse_teams)
+}
+
+parse_teams <- function(d) {
   out <- list()
   for (row in rows_of(d)) {
     abbr <- pick(row, c("TeamAbbreviation", "Abbreviation", "Name"), required = TRUE)
