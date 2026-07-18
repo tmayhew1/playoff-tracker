@@ -401,25 +401,52 @@ function fetchJsonCached(url) {
 // shares also average 1-in-5 across a roster) and the contribution is
 // continuous at edge = 0. Multi-team rows (2TM) and seasons without team
 // maps fall back to the plain vs-league form (w=1 on the whole net). DRtg
-// is basketball-reference's individual Defensive Rating; the league line
-// is laPTSperPoss×100; laPOSSperM (pace/48) converts per-possession into
-// per-minute. Null (→ hidden in the UI) when the player-season has no
-// rating.
+// is a Bayesian posterior: basketball-reference's box-score-estimated
+// Defensive Rating is the prior (worth DEF_PBP_PRIOR_POSS possessions of
+// evidence), updated by the actual on-court play-by-play rating (points
+// allowed per 100 possessions while on the floor, 2000-01+) in proportion
+// to the possessions the player really logged — see defRtgEntryFor and the
+// pbpW weight below. Pre-2000 (and unbaked/unjoined) seasons are simply
+// all-prior. The league line is laPTSperPoss×100; laPOSSperM (pace/48)
+// converts per-possession into per-minute. Null (→ hidden in the UI) when
+// the player-season has no rating from either source.
 const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
 const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
+// Bayesian prior weight for the on-court rating, in defensive possessions:
+// the box-score estimate acts as an informed prior worth ~1,500 possessions
+// (~730 minutes) of evidence, and the play-by-play data overtakes it as real
+// possessions accrue. A full-time starter (~4,500-5,000 poss) is ~75-77% PBP;
+// a 300-minute injury season stays ~70% estimate — which is what keeps a
+// 20-pts/100 small-sample on-court fluke from lapping the leaderboard.
+const DEF_PBP_PRIOR_POSS = 1500;
 function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
-  const drtg = defRtgFor(defs, season, row?.slug, pref);
-  if (drtg == null || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
+  const ent = defRtgEntryFor(defs, season, row?.slug, pref);
+  if (!ent || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
   const la = lgaX.laPTSperPoss * 100;
   const e = defs?.[season];
   const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
   const t = tmap?.[row?.team];
+  // Posterior weight on the PBP rating: poss / (poss + prior). Pure est when
+  // no PBP sample exists (pre-2000, unbaked seasons, unjoined names); pure
+  // PBP in the rare case the estimate is missing.
+  const poss = row?.mp > 0 ? row.mp * lgaX.laPOSSperM : 0;
+  const pbpW =
+    ent.pbp != null && ent.est != null ? poss / (poss + DEF_PBP_PRIOR_POSS)
+    : ent.pbp != null ? 1
+    : 0;
+  const drtg = pbpW * (ent.pbp ?? 0) + (1 - pbpW) * (ent.est ?? 0);
+  // The team baseline blends with the SAME weights so IND subtracts like
+  // from like at both extremes (counted vs estimated possessions sit ~1
+  // pt/100 apart). Stock rates still come from the BR team map (plain box
+  // stats, identical either way).
+  const pbpTmap = pref === "po" ? (e?.teamPoPbp || e?.teamPbp) : (e?.teamPbp || e?.teamPoPbp);
+  const pbpTeamDrtg = pbpW > 0 ? pbpTmap?.[row?.team] : null;
   // Blocks weigh what VA says they're worth: laDRBrate of a steal.
   const bw = lgaX.laDRBrate > 0 ? lgaX.laDRBrate : 1;
   const teamStockRate = t ? (t.stlpm || 0) + bw * (t.blkpm || 0) : 0;
   let net, w = null, teamDrtg = null;
   if (t && t.drtg > 0 && teamStockRate > 0 && row.mp > 0) {
-    teamDrtg = t.drtg;
+    teamDrtg = pbpTeamDrtg > 0 ? pbpW * pbpTeamDrtg + (1 - pbpW) * t.drtg : t.drtg;
     const edge = la - teamDrtg;
     const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
     const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;
@@ -429,18 +456,24 @@ function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   } else {
     net = la - drtg;
   }
-  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la };
+  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la, pbpW };
 }
 
-// DRtg lookup for a player-season. `pref` picks the sample: "po" for playoff
-// views, "rs" otherwise; the other side is the fallback so a player with only
-// one sample still gets a rating.
-function defRtgFor(defs, season, slug, pref = "rs") {
+// DRtg sources for a player-season, kept separate so defVAInfo can do the
+// Bayesian blend: `pbp` is the on-court play-by-play rating (rsPbp/poPbp —
+// actual points allowed per 100 possessions while on the floor, baked from
+// api.pbpstats.com for 2000-01+), `est` is basketball-reference's box-score
+// estimate. Within each source, `pref` picks the sample ("po" for playoff
+// views, "rs" otherwise) and the other side backstops it so a player with
+// only one sample still gets a rating. Null when neither source has one.
+function defRtgEntryFor(defs, season, slug, pref = "rs") {
   if (!defs || !season || !slug) return null;
   const e = defs[season];
   if (!e) return null;
   const other = pref === "po" ? "rs" : "po";
-  return e[pref]?.[slug] ?? e[other]?.[slug] ?? null;
+  const pbp = e[pref + "Pbp"]?.[slug] ?? e[other + "Pbp"]?.[slug] ?? null;
+  const est = e[pref]?.[slug] ?? e[other]?.[slug] ?? null;
+  return pbp != null || est != null ? { pbp, est } : null;
 }
 
 // One shared fetch of the baked ratings; components render without them
@@ -505,7 +538,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs" }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -602,7 +635,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // game shows that game's share. No drill-in: DRtg is one season-level
   // number, not a stat with per-game splits. VA+ = VA + dVA.
   const seasonKey = season || pSeries.season || null;
-  const dInfo = defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope);
+  // showDRating=false (the leaderboard's VA view) drops the whole D-Rating
+  // layer — row, Defense fold-in, VA+ banner — so the card sums to plain VA.
+  const dInfo = showDRating ? defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope) : null;
   const drtg = dInfo?.drtg ?? null;
   const dVA = dInfo?.dva ?? null;
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
@@ -616,8 +651,8 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
     { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
     { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
-    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
-    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
   // D Rating rides at the very end, after Steals — the last Defense member.
   if (dVA != null) categories.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
@@ -2737,12 +2772,13 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 context={contextFor(p)}
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
+                showDRating={metric === "vaPlus"}
               />
             ) : (
               // No per-game logs outside the playoffs — show the season-total
               // per-category breakdown instead, with the same category
               // context drill-ins as the playoff view.
-              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" context={contextFor(p)} />
+              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" context={contextFor(p)} showDRating={metric === "vaPlus"} />
             ))}
           </div>
         );
@@ -4538,7 +4574,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   );
 }
 
-function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }) {
+function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
   // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
@@ -4568,10 +4604,12 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   // stock-rate share of the team's edge vs league (see defVAInfo). Folded
   // in under Defense; VA+ = VA + dVA. Regular-season rating; no drill-in
   // (one season number, no per-game splits).
-  const dInfo = defVAInfo(
+  // showDRating=false (the leaderboard's VA view) drops the whole D-Rating
+  // layer — row, Defense fold-in, VA+ banner — so the card sums to plain VA.
+  const dInfo = showDRating ? defVAInfo(
     { ...p, slug: p.slug || context?.self?.slug },
     mp, lga, defs, p.season || context?.season, "rs"
-  );
+  ) : null;
   const drtg = dInfo?.drtg ?? null;
   const dVA = dInfo?.dva ?? null;
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
@@ -4585,8 +4623,8 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
     { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
     { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
-    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
-    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
   // D Rating rides at the very end, after Steals — the last Defense member.
   if (dVA != null) cats.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
@@ -4909,6 +4947,7 @@ function DRatingView() {
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
+          DRTG = box-score estimate (prior, ≈1500 poss) updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
           IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
           both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
         </div>

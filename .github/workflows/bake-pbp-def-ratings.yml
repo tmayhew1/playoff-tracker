@@ -1,0 +1,70 @@
+name: Bake on-court (PBP) defensive ratings (R)
+
+# One-shot/backfill bake of actual on-court defensive ratings (points
+# allowed per 100 possessions while on the floor, from api.pbpstats.com's
+# play-by-play totals) into app/data/def-ratings.json as
+# the rsPbp/poPbp/teamPbp/teamPoPbp keys the app prefers over the
+# basketball-reference box-score estimates for 2000-01+. Runs on whatever
+# ref it is dispatched from and commits the JSON back to that branch.
+# Day-to-day freshness of the current season is handled by the daily
+# backfill workflow.
+on:
+  # Push trigger: scoped to the feature branch + pipeline files so the full
+  # bake starts on push without needing a manual dispatch (the automation
+  # token can't dispatch workflows). Re-runs are cheap no-ops once the data
+  # is present, and the bot's own data commit is [skip ci].
+  push:
+    branches: ["claude/playoff-tracker-shooting-splits-u3tqxl"]
+    paths:
+      - "scripts/R/fetch_pbp_def_ratings.R"
+      - ".github/workflows/bake-pbp-def-ratings.yml"
+  workflow_dispatch:
+    inputs:
+      start_season:
+        description: "First season to bake (YYYY-YY; clamped to 2000-01)"
+        required: false
+        default: "2000-01"
+      end_season:
+        description: "Last season to bake (YYYY-YY)"
+        required: false
+        default: "2025-26"
+      force:
+        description: "Refetch seasons already present"
+        required: false
+        default: "false"
+
+concurrency:
+  group: bake-pbp-def-ratings-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    # 30 seasons x 4 requests + politeness delays ≈ minutes; the timeout
+    # mostly guards against stats.nba.com hanging connections.
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+
+      - name: Fetch on-court defensive ratings
+        run: >
+          Rscript scripts/R/fetch_pbp_def_ratings.R
+          "${{ inputs.start_season || '2000-01' }}"
+          "${{ inputs.end_season || '2025-26' }}"
+          ${{ (inputs.force == 'true') && '--force' || '' }}
+
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake on-court (PBP) defensive ratings (R) [skip ci]"
+          file_pattern: "app/data/def-ratings.json"

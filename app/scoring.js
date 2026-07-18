@@ -45,10 +45,9 @@ export const VA_CATEGORY_KEYS = [
   "D Rebounds", "O Rebounds",
 ];
 
-// Per-category VA from a single stat line. Matches the formulas VABreakdown
-// already renders (which differ from `valueAddParts` only in the rebound
-// 1.25 weighting — we keep the on-screen version as the canonical reference
-// so ticks line up with bars).
+// Per-category VA from a single stat line. Matches `valueAddParts` exactly —
+// including the rebound 1.25 weighting, which is part of the VA formula — so
+// the ten categories always sum to the same VA the leaderboard shows.
 export function valueAddByCategory(p, lga = LGA) {
   const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
   if (!mp || mp <= 0) {
@@ -67,8 +66,8 @@ export function valueAddByCategory(p, lga = LGA) {
     "Steals": ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss,
     "Blocks": ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate,
     "Turnovers": -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss,
-    "D Rebounds": ((drb / mp) - lga.laDRBperM) * mp * lga.laPTSperPoss * lga.laORBrate,
-    "O Rebounds": ((orb / mp) - lga.laORBperM) * mp * lga.laPTSperPoss * lga.laDRBrate,
+    "D Rebounds": ((drb / mp) - lga.laDRBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laORBrate,
+    "O Rebounds": ((orb / mp) - lga.laORBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laDRBrate,
   };
 }
 
