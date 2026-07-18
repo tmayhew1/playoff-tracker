@@ -1807,10 +1807,12 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [rsLookup, setRsLookup] = useState(null);
-  // Tap a G value to filter to players with ≥ that many GP and re-sort
-  // by VA/G; lets you compare efficiency at comparable volume within a
-  // series. Same mechanic as the playoff leaderboard.
+  // Tap the G header to arm, then a G value, to filter to players with
+  // ≥ that many GP and re-sort by VA/G; lets you compare efficiency at
+  // comparable volume within a series. Same two-step mechanic as the
+  // playoff leaderboard, so a stray row tap can't filter by accident.
   const [minGames, setMinGames] = useState(null);
+  const [gArmed, setGArmed] = useState(false);
   const [pendingScrollName, setPendingScrollName] = useState(null);
 
   useEffect(() => {
@@ -1973,7 +1975,15 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-10">Team</span>
                 <span className="flex-1">Player</span>
-                <span className="hidden sm:block w-6 text-right">G</span>
+                <button
+                  type="button"
+                  onClick={() => setGArmed((v) => !v)}
+                  className={`hidden sm:block w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+                  title="Tap, then tap a player's G to filter to at least that many games"
+                  aria-pressed={gArmed}
+                >
+                  G
+                </button>
                 <span className="w-8 text-right">PPG</span>
                 <span className="hidden sm:block w-9 text-right">EFF</span>
                 <span className="w-8 text-right">RPG</span>
@@ -2032,12 +2042,14 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (!gArmed && minGames !== p.gp) return; // must arm via the G header first
                           const next = minGames === p.gp ? null : p.gp;
                           setMinGames(next);
+                          setGArmed(false);
                           if (next != null) setPendingScrollName(p.name);
                         }}
-                        className={`hidden sm:block w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === p.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
-                        aria-label={`Filter to players with at least ${p.gp} games`}
+                        className={`hidden sm:block w-6 text-right tabular-nums ${gArmed || minGames === p.gp ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                        aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
                       >{p.gp}</button>
                       <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
                       <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.effpg < 0 ? "text-red-600" : "text-stone-700"}`}>{p.effpg.toFixed(1)}</span>
@@ -2363,8 +2375,10 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   const [sortMode, setSortMode] = useState("composite");
   // When set, leaderboard re-sorts by VA/G and trims to players with at
   // least `minGames` GP — the "show me efficiency at comparable volume"
-  // filter, tap a G value to set it.
+  // filter — armed by tapping the G header, then a row's G value, so
+  // brushing a row's G can't filter by accident.
   const [minGames, setMinGames] = useState(null);
+  const [gArmed, setGArmed] = useState(false);
   // Name of the player whose G cell was just tapped, so we can scroll
   // their row into view after the list re-sorts/filters.
   const [pendingScrollName, setPendingScrollName] = useState(null);
@@ -2381,6 +2395,7 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     setTeamFilter(null);
     setSortMode("composite");
     setMinGames(null);
+    setGArmed(false);
     setPendingScrollName(null);
     setExpanded(null);
     setRsData(null);
@@ -2625,24 +2640,37 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         <span className="w-6 text-right">#</span>
         <span className="w-10">Team</span>
         <span className="flex-1">Player</span>
-        <span className="w-6 text-right">G</span>
+        {/* Arming step for the min-games filter: tap G here first, then a
+            row's G value — a bare row tap should never filter by accident. */}
+        <button
+          type="button"
+          onClick={() => setGArmed((v) => !v)}
+          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          title="Tap, then tap a player's G to filter to at least that many games"
+          aria-pressed={gArmed}
+        >
+          G
+        </button>
         <span className="hidden sm:block w-8 text-right">PPG</span>
         <span className="hidden sm:block w-9 text-right">EFF</span>
         <span className="hidden sm:block w-8 text-right">RPG</span>
         <span className="hidden sm:block w-8 text-right">APG</span>
         <span className="hidden sm:block w-8 text-right">SPG</span>
         <span className="hidden sm:block w-8 text-right">BPG</span>
+        {/* w-14/w-11 (mirrored in the row cells below): "TOT VA+ ▾" needs the
+            extra room so the sort caret stays on one line instead of
+            stacking under the label in VA+ mode. */}
         <button
           type="button"
           onClick={() => {
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-12 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
           aria-label="Sort by total VA"
           aria-pressed={effectiveSort === "totalVA"}
         >
-          {metric === "vaPlus" ? "TOT VA+" : "TOT VA"}{effectiveSort === "totalVA" ? " ▼" : ""}
+          {metric === "vaPlus" ? "TOT VA+" : "TOT VA"}{effectiveSort === "totalVA" ? " ▾" : ""}
         </button>
         <button
           type="button"
@@ -2650,11 +2678,11 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-10 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
           aria-label="Sort by VA per game"
           aria-pressed={effectiveSort === "vaPerG"}
         >
-          {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▼" : ""}
+          {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▾" : ""}
         </button>
       </div>
       {(() => {
@@ -2734,12 +2762,14 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!gArmed && minGames !== p.gp) return; // must arm via the G header first
                   const next = minGames === p.gp ? null : p.gp;
                   setMinGames(next);
+                  setGArmed(false);
                   if (next != null) setPendingScrollName(p.name);
                 }}
-                className={`w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === p.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
-                aria-label={`Filter to players with at least ${p.gp} games`}
+                className={`w-6 text-right tabular-nums ${gArmed || minGames === p.gp ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
               >{p.gp}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
               <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.eff / p.gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.eff / p.gp).toFixed(1)}</span>
@@ -2747,8 +2777,8 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.ast / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.stl / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.blk / p.gp).toFixed(1)}</span>
-              <span className={`w-12 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
-              <span className={`w-10 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
+              <span className={`w-14 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
+              <span className={`w-11 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
               </div>
             </div>
             {isOpen && (scope === "playoffs" ? (
@@ -4882,6 +4912,10 @@ function DRatingView() {
   const [scope, setScope] = useState("rs"); // "rs" | "po"
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState(null);
+  // Column sort: every numeric column is tappable; first tap uses the
+  // column's natural direction (DRTG/TEAM ascending — lower is better —
+  // everything else descending), second tap flips it.
+  const [sort, setSort] = useState({ key: "perG", dir: -1 });
   const sel = season || seasons[0] || null;
 
   useEffect(() => {
@@ -4915,9 +4949,25 @@ function DRatingView() {
         perG: gp > 0 ? info.dva / gp : 0,
       });
     }
-    out.sort((a, b) => b.perG - a.perG);
+    const val = (x) => (
+      sort.key === "name" ? (x.r.name || "")
+      : sort.key === "drtg" ? x.info.drtg
+      : sort.key === "team" ? x.info.teamDrtg
+      : sort.key === "w" ? x.info.w
+      : sort.key === "ind" ? x.within
+      : sort.key === "tmp" ? x.tmShare
+      : x.perG
+    );
+    out.sort((a, b) => {
+      const av = val(a), bv = val(b);
+      if (av == null && bv == null) return b.perG - a.perG;
+      if (av == null) return 1; // traded/no-context rows sink regardless of direction
+      if (bv == null) return -1;
+      const c = typeof av === "string" ? av.localeCompare(bv) : av - bv;
+      return c !== 0 ? sort.dir * c : b.perG - a.perG;
+    });
     return out;
-  }, [rows, defs, sel, lga, query, scope]);
+  }, [rows, defs, sel, lga, query, scope, sort]);
 
   const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
   const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.2rem_2.2rem_2rem_2.3rem_2.3rem_2.6rem] gap-x-1 items-center";
@@ -4952,12 +5002,27 @@ function DRatingView() {
           both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
         </div>
       )}
-      <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-        <span>#</span><span>Player</span>
-        <span className="text-right">DRTG</span><span className="text-right">Team</span>
-        <span className="text-right">W</span><span className="text-right">IND</span>
-        <span className="text-right">TM+</span><span className="text-right">D/G</span>
-      </div>
+      {(() => {
+        const NATURAL = { name: 1, drtg: 1, team: 1, w: -1, ind: -1, tmp: -1, perG: -1 };
+        const H = ({ k, label, right = true }) => (
+          <button
+            type="button"
+            onClick={() => setSort((p) => ({ key: k, dir: p.key === k ? -p.dir : NATURAL[k] }))}
+            className={`${right ? "text-right" : "text-left"} uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
+            aria-pressed={sort.key === k}
+          >
+            {label}{sort.key === k ? (sort.dir < 0 ? "▾" : "▴") : ""}
+          </button>
+        );
+        return (
+          <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+            <span>#</span><H k="name" label="Player" right={false} />
+            <H k="drtg" label="DRTG" /><H k="team" label="Team" />
+            <H k="w" label="W" /><H k="ind" label="IND" />
+            <H k="tmp" label="TM+" /><H k="perG" label="D/G" />
+          </div>
+        );
+      })()}
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
       {list && list.map(({ r, info, within, tmShare, perG }, i) => (
@@ -4976,7 +5041,7 @@ function DRatingView() {
       ))}
       {list && list.length > 0 && (
         <div className="mt-2 text-center text-[9px] italic text-stone-400">
-          {query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}sorted by defensive VA per game
+          {query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}tap a column to sort
         </div>
       )}
     </div>
@@ -5023,6 +5088,9 @@ function ShotZonesView() {
   const [season, setSeason] = useState(null);
   const [scope, setScope] = useState("rs"); // "rs" | "po" | "combined"
   const [query, setQuery] = useState("");
+  // Column sort: zone/total value columns are tappable; first tap sorts
+  // descending by that column's value, second tap flips it.
+  const [sort, setSort] = useState({ key: "total", dir: -1 });
   const [data, setData] = useState(null);
   const sel = season || seasons[0] || null;
 
@@ -5068,9 +5136,18 @@ function ShotZonesView() {
       const total = zones.reduce((s, x) => s + x.val, 0);
       out.push({ r, zones, total });
     }
-    out.sort((a, b) => b.total - a.total);
+    const val = (x) => (
+      sort.key === "name" ? (x.r.name || "")
+      : sort.key === "total" ? x.total
+      : x.zones.find((z) => z.z.key === sort.key)?.val ?? 0
+    );
+    out.sort((a, b) => {
+      const av = val(a), bv = val(b);
+      const c = typeof av === "string" ? av.localeCompare(bv) : av - bv;
+      return c !== 0 ? sort.dir * c : b.total - a.total;
+    });
     return out;
-  }, [data, scope, lga, query]);
+  }, [data, scope, lga, query, sort]);
 
   const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
   const cols = "grid grid-cols-[1.4rem_minmax(0,1fr)_2.6rem_2.6rem_2.6rem_2.6rem_2.8rem] gap-x-1 items-center";
@@ -5108,11 +5185,25 @@ function ShotZonesView() {
           <div className="text-[9px] text-stone-400 mb-1.5">
             Each zone shows M/A (FG%) and that zone's points of value vs. {sel}'s league FG% at that distance (regular-season baseline, same as the rest of VA) · Total sums the 4 zones
           </div>
-          <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-            <span>#</span><span>Player</span>
-            {ZONES.map((z) => <span key={z.key} className="text-right">{z.label}</span>)}
-            <span className="text-right">Total</span>
-          </div>
+          {(() => {
+            const H = ({ k, label, right = true, natural = -1 }) => (
+              <button
+                type="button"
+                onClick={() => setSort((p) => ({ key: k, dir: p.key === k ? -p.dir : natural }))}
+                className={`${right ? "text-right" : "text-left"} uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
+                aria-pressed={sort.key === k}
+              >
+                {label}{sort.key === k ? (sort.dir < 0 ? "▾" : "▴") : ""}
+              </button>
+            );
+            return (
+              <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+                <span>#</span><H k="name" label="Player" right={false} natural={1} />
+                {ZONES.map((z) => <H key={z.key} k={z.key} label={z.label} />)}
+                <H k="total" label="Total" />
+              </div>
+            );
+          })()}
           {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
           {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
           {list && list.map(({ r, zones, total }, i) => (
@@ -5132,7 +5223,7 @@ function ShotZonesView() {
           ))}
           {list && list.length > 0 && (
             <div className="mt-2 text-center text-[9px] italic text-stone-400">
-              {query.trim() === "" ? `Min ${scope === "po" ? 20 : 50} 2-point attempts · search to include everyone · ` : ""}sorted by total shot-zone value
+              {query.trim() === "" ? `Min ${scope === "po" ? 20 : 50} 2-point attempts · search to include everyone · ` : ""}tap a column to sort by its zone value
             </div>
           )}
         </>
