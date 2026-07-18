@@ -538,7 +538,7 @@ function aggregateSnapshots(base, snapshots) {
   return out;
 }
 
-function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs" }) {
+function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -635,7 +635,9 @@ function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameN
   // game shows that game's share. No drill-in: DRtg is one season-level
   // number, not a stat with per-game splits. VA+ = VA + dVA.
   const seasonKey = season || pSeries.season || null;
-  const dInfo = defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope);
+  // showDRating=false (the leaderboard's VA view) drops the whole D-Rating
+  // layer — row, Defense fold-in, VA+ banner — so the card sums to plain VA.
+  const dInfo = showDRating ? defVAInfo(pSeries, mp, lga, defs, seasonKey, defScope) : null;
   const drtg = dInfo?.drtg ?? null;
   const dVA = dInfo?.dva ?? null;
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
@@ -2770,12 +2772,13 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 context={contextFor(p)}
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
+                showDRating={metric === "vaPlus"}
               />
             ) : (
               // No per-game logs outside the playoffs — show the season-total
               // per-category breakdown instead, with the same category
               // context drill-ins as the playoff view.
-              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" context={contextFor(p)} />
+              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" context={contextFor(p)} showDRating={metric === "vaPlus"} />
             ))}
           </div>
         );
@@ -4571,7 +4574,7 @@ function CategoryContext({ p, catKey, lga, rateMode, context }) {
   );
 }
 
-function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }) {
+function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
   // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
@@ -4601,10 +4604,12 @@ function VACategoryBreakdown({ player: p, lga, context = null, baseline = null }
   // stock-rate share of the team's edge vs league (see defVAInfo). Folded
   // in under Defense; VA+ = VA + dVA. Regular-season rating; no drill-in
   // (one season number, no per-game splits).
-  const dInfo = defVAInfo(
+  // showDRating=false (the leaderboard's VA view) drops the whole D-Rating
+  // layer — row, Defense fold-in, VA+ banner — so the card sums to plain VA.
+  const dInfo = showDRating ? defVAInfo(
     { ...p, slug: p.slug || context?.self?.slug },
     mp, lga, defs, p.season || context?.season, "rs"
-  );
+  ) : null;
   const drtg = dInfo?.drtg ?? null;
   const dVA = dInfo?.dva ?? null;
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
