@@ -413,12 +413,12 @@ function fetchJsonCached(url) {
 const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
 const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
 // Bayesian prior weight for the on-court rating, in defensive possessions:
-// the box-score estimate acts as an informed prior worth ~1,250 possessions
-// (~600 minutes) of evidence, and the play-by-play data overtakes it as real
-// possessions accrue. A full-time starter (~4,500-5,000 poss) is ~78-80% PBP;
-// a 300-minute injury season stays ~2/3 estimate — which is what keeps a
+// the box-score estimate acts as an informed prior worth ~1,500 possessions
+// (~730 minutes) of evidence, and the play-by-play data overtakes it as real
+// possessions accrue. A full-time starter (~4,500-5,000 poss) is ~75-77% PBP;
+// a 300-minute injury season stays ~70% estimate — which is what keeps a
 // 20-pts/100 small-sample on-court fluke from lapping the leaderboard.
-const DEF_PBP_PRIOR_POSS = 1250;
+const DEF_PBP_PRIOR_POSS = 1500;
 function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   const ent = defRtgEntryFor(defs, season, row?.slug, pref);
   if (!ent || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
@@ -4942,7 +4942,7 @@ function DRatingView() {
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
-          DRTG = box-score estimate (prior, ≈1250 poss) updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
+          DRTG = box-score estimate (prior, ≈1500 poss) updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
           IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
           both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
         </div>
