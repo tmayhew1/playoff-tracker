@@ -3608,8 +3608,9 @@ function timeAgo(iso) {
   return `${d} day${d === 1 ? "" : "s"} ago`;
 }
 
-// Informational page: data freshness, how the pipeline loads data, and the
-// Value Added formula (mirrored from app/scoring.js).
+// Informational page: data freshness up top, then the app's story told in
+// build order — one chapter per layer of features, each explaining what it
+// is and how to use it. Formulas mirror app/scoring.js and defVAInfo.
 function InfoView() {
   const [status, setStatus] = useState(null);
   useEffect(() => {
@@ -3653,6 +3654,19 @@ function InfoView() {
     </div>
   );
 
+  // One era of the build-out. `when` rides the right edge of the header.
+  const Chapter = ({ n, title, when, children }) => (
+    <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900">
+          <span className="text-stone-400 font-normal mr-1.5">{n}</span>{title}
+        </h2>
+        <span className="text-[9px] uppercase tracking-widest text-stone-400 whitespace-nowrap">{when}</span>
+      </div>
+      {children}
+    </section>
+  );
+
   return (
     <div className="space-y-5">
       <section className="p-3 bg-white border border-stone-300">
@@ -3674,24 +3688,148 @@ function InfoView() {
         )}
       </section>
 
-      <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">How the data loads</h2>
-        <p className="mb-2"><span className="font-semibold">Historical playoffs</span> are scraped from <span className="font-semibold">basketball-reference.com</span> by an R pipeline and stored permanently as JSON in the repo. A scheduled job runs <span className="font-semibold">every morning</span>, refreshing the current season and filling in older seasons.</p>
-        <p className="mb-2"><span className="font-semibold">Live games</span> — while a series is in progress — come straight from the NBA feed. When that feed is unavailable, the app falls back to the stored results.</p>
-        <p>Box scores, leaderboards, and the Value Added numbers below are all computed from this same stored data, so what you see is reproducible and consistent across seasons.</p>
-      </section>
+      <p className="text-xs text-stone-500 leading-relaxed px-1">
+        The app has grown a lot since it started. This page walks through everything it does,
+        in the order it was built — from a two-owner playoff scorecard to a Value Added
+        database covering every NBA playoff since 1980-81.
+      </p>
 
-      <section className="p-3 bg-white border border-stone-300">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-1">Value Added (VA)</h2>
-        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — the typical NBA player, given the same workload. Every skill follows one shape:</p>
+      <Chapter n="01" title="The Playoff Draft" when="Where it started">
+        <p className="mb-2">
+          It began as a scorecard for the annual playoff draft: <span className="font-semibold">Spencer</span> and{" "}
+          <span className="font-semibold">Trey</span> split the 16 playoff teams, and every series win banks points —
+          a round base of <span className="font-semibold tabular-nums">1 / 2 / 4 / 8</span> (First Round → Finals)
+          plus an upset bonus equal to the seed difference whenever a team knocks out a better seed.
+        </p>
+        <p>
+          The <span className="font-semibold">season tabs</span> preserve each year&apos;s draft: who owned which
+          team, the bracket round by round, and every playoff game. Tap a series for its averages and a per-game
+          VA chart; tap a game for the full box score.
+        </p>
+      </Chapter>
+
+      <Chapter n="02" title="Value Added (VA)" when="The one number">
+        <p className="text-stone-600 mb-3">
+          Every box score needed a single number: points a player creates above — or below — the typical NBA
+          player, given the same workload. Every skill follows one shape:
+        </p>
         <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
         </div>
         <Group title="Scoring" items={SCORING} />
         <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
         <Group title="Rebounding" items={REB} />
-        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
-      </section>
+        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">
+          VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted
+          median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars
+          can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per
+          made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate, so older eras are measured
+          against their own league — not today&apos;s.
+        </p>
+      </Chapter>
+
+      <Chapter n="03" title="The History Bake" when="The data layer">
+        <p className="mb-2">
+          Early versions scraped live feeds on every page load. Now an <span className="font-semibold">R pipeline</span>{" "}
+          scrapes <span className="font-semibold">basketball-reference.com</span> and bakes everything into JSON stored
+          permanently in the repo: every playoff from <span className="font-semibold">1980-81</span> to today with full
+          box scores, regular-season totals for every player, and league baselines back to 1970-71 so VA stays
+          season-accurate. A scheduled job runs <span className="font-semibold">every morning</span>, refreshing the
+          newest season and filling gaps in older ones.
+        </p>
+        <p>
+          While a series is in progress, live games come straight from the NBA feed, with the baked data as fallback.
+          Everything else on this page — leaderboards, breakdowns, comps — is computed from the same stored data, so
+          the numbers are reproducible and consistent across seasons.
+        </p>
+      </Chapter>
+
+      <Chapter n="04" title="Explore" when="The leaderboards">
+        <p className="mb-2">
+          The Explore tab has two modes. <span className="font-semibold">By Season</span> ranks any playoff (or
+          regular season) since 1980-81; <span className="font-semibold">By Player</span> searches anyone who ever
+          played and lists their career season by season. The{" "}
+          <span className="font-semibold">Regular Season / Playoffs / Combined</span> selector applies to both.
+        </p>
+        <p className="mb-2">
+          Leaderboards sort by a composite of total VA and VA per game by default — tap the{" "}
+          <span className="font-semibold">TOT VA</span> or <span className="font-semibold">VA/G</span> headers to sort
+          by either alone, tap <span className="font-semibold">G</span> to require a minimum games played, or filter to
+          a single team.
+        </p>
+        <p>
+          Tap any player to open their <span className="font-semibold">breakdown</span>: diverging bars showing each
+          of the ten categories above or below league average, with Basic / By Category grouping and Per 36 / Per G
+          labels. Tap a category for its <span className="font-semibold">league context</span> — percentile strip,
+          all-time rank, and a season-by-season trend.
+        </p>
+      </Chapter>
+
+      <Chapter n="05" title="College" when="Same math, D-I">
+        <p>
+          The same VA formula pointed at men&apos;s Division I: the College tab ranks the season&apos;s top players
+          against D-I baselines, with player search, tap-a-team roster filtering, and the same NBA-style category
+          breakdowns.
+        </p>
+      </Chapter>
+
+      <Chapter n="06" title="Compare &amp; Closest Comps" when="Head to head">
+        <p className="mb-2">
+          The gold <span className="font-semibold text-amber-600">Compare</span> button on any breakdown pits two
+          player-seasons head to head: shared stat tiles, category rows that expand to both players&apos; raw numbers,
+          career bars, all-time (GOAT) percentiles, and a game-by-game chart of each playoff run.
+        </p>
+        <p>
+          Before you search, the picker suggests <span className="font-semibold">closest comps</span> — the nearest
+          player-seasons in the whole database, ranked within each decade and held to a similar minutes role (±7 MPG).
+          A toggle picks the yardstick: <span className="font-semibold">Imp</span> (how close the overall VA level is),{" "}
+          <span className="font-semibold">Sim</span> (how similar the shape of the 10-category profile is),{" "}
+          <span className="font-semibold">Imp×Sim</span> (both at once), or <span className="font-semibold">Shoot</span>{" "}
+          (shooting profile — see Shot Zones below).
+        </p>
+      </Chapter>
+
+      <Chapter n="07" title="VA+ &amp; D Rating" when="Defense, properly">
+        <p className="mb-2">
+          Box scores only see steals and blocks on defense, so <span className="font-semibold" style={{ color: MIDNIGHT_PURPLE }}>VA+</span>{" "}
+          adds an eleventh category: <span className="font-semibold">D Rating</span> — points saved above league across
+          the possessions a player was actually on the floor. A player&apos;s Defensive Rating blends two sources:
+          basketball-reference&apos;s box-score estimate acts as a prior worth ~1,500 possessions, and the real
+          on-court play-by-play rating (2000-01 onward) overtakes it as possessions accrue — so a small-sample fluke
+          can&apos;t lap the leaderboard.
+        </p>
+        <p>
+          The category credits each player&apos;s net vs their own team, plus a share of the team&apos;s edge vs
+          league weighted by their stock rate (steals + blocks). The purple <span className="font-semibold">VA / VA+</span>{" "}
+          toggle on the Explore leaderboard switches between the two, and the{" "}
+          <span className="font-semibold">D Rating</span> tab lays out the full decomposition — individual rating, team
+          rating, and share — sortable for any season.
+        </p>
+      </Chapter>
+
+      <Chapter n="08" title="Shot Zones" when="Where the 2s come from">
+        <p className="mb-2">
+          basketball-reference&apos;s shot-location data (1996-97 onward) splits every 2-point attempt into four
+          distance zones — <span className="font-semibold tabular-nums">0-3, 3-10, 10-16, and 16 ft-3PT</span>. Each
+          zone is valued with the same VA shape: makes above that zone&apos;s league FG%, times two.
+        </p>
+        <p className="mb-2">
+          It shows up in three places: the <span className="font-semibold">Shot Zones</span> tab (a sortable per-zone
+          leaderboard with the same Regular Season / Playoffs / Combined scopes), a zone-by-zone comparison under the
+          2-Pointers compare card that circles each player&apos;s better zone by per-game value, and the{" "}
+          <span className="font-semibold">Shoot</span> comp metric — which matches full shooting profiles (four zones
+          plus 3-Pointers and Free Throws) and only offers comps with a similar 3-point diet.
+        </p>
+        <p className="text-[10px] text-stone-400 leading-relaxed">
+          Zone data is informational only — it never changes VA or VA+, since seasons before 1996-97 have no
+          shot-location data and would be left with holes.
+        </p>
+      </Chapter>
+
+      <p className="text-[10px] text-stone-400 italic leading-relaxed px-1">
+        The live 2025-26 scoreboard retired after the Finals; everything above now runs on the baked history,
+        refreshed every morning.
+      </p>
     </div>
   );
 }
