@@ -2041,14 +2041,17 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                       <button
                         type="button"
                         onClick={(e) => {
+                          // Unarmed tap on an inactive G is treated as a mis-tap: fall
+                          // through (no stopPropagation) so it bubbles to the row and
+                          // opens the breakdown, instead of doing nothing.
+                          if (!gArmed && minGames !== p.gp) return;
                           e.stopPropagation();
-                          if (!gArmed && minGames !== p.gp) return; // must arm via the G header first
                           const next = minGames === p.gp ? null : p.gp;
                           setMinGames(next);
                           setGArmed(false);
                           if (next != null) setPendingScrollName(p.name);
                         }}
-                        className={`hidden sm:block w-6 text-right tabular-nums ${gArmed || minGames === p.gp ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                        className={`hidden sm:block w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
                         aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
                       >{p.gp}</button>
                       <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
@@ -2761,14 +2764,17 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
               <button
                 type="button"
                 onClick={(e) => {
+                  // Unarmed tap on an inactive G is treated as a mis-tap: fall
+                  // through (no stopPropagation) so it bubbles to the row and
+                  // opens the breakdown, instead of doing nothing.
+                  if (!gArmed && minGames !== p.gp) return;
                   e.stopPropagation();
-                  if (!gArmed && minGames !== p.gp) return; // must arm via the G header first
                   const next = minGames === p.gp ? null : p.gp;
                   setMinGames(next);
                   setGArmed(false);
                   if (next != null) setPendingScrollName(p.name);
                 }}
-                className={`w-6 text-right tabular-nums ${gArmed || minGames === p.gp ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                className={`w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
                 aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
               >{p.gp}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
@@ -3058,7 +3064,11 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
+  // Min-games filter is a two-step tap (arm on the G header, then a row's G)
+  // so a stray tap on a G value opens the row instead of filtering. Matches
+  // the By Season leaderboard.
   const [minGames, setMinGames] = useState(null);
+  const [gArmed, setGArmed] = useState(false);
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
@@ -3132,7 +3142,15 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
         <span className="w-6 text-right">#</span>
         <span className="w-10">Team</span>
         <span className="flex-1">Season</span>
-        <span className="w-6 text-right">G</span>
+        <button
+          type="button"
+          onClick={() => setGArmed((v) => !v)}
+          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          title="Tap, then tap a season's G to filter to at least that many games"
+          aria-pressed={gArmed}
+        >
+          G
+        </button>
         <span className="hidden sm:block w-8 text-right">PPG</span>
         <span className="hidden sm:block w-9 text-right">EFF</span>
         <span className="hidden sm:block w-8 text-right">RPG</span>
@@ -3211,11 +3229,16 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
                 <button
                   type="button"
                   onClick={(e) => {
+                    // Unarmed tap on an inactive G is a mis-tap: fall through
+                    // (no stopPropagation) so it bubbles to the row and opens
+                    // the breakdown, instead of doing nothing.
+                    if (!gArmed && minGames !== s.gp) return;
                     e.stopPropagation();
                     setMinGames(minGames === s.gp ? null : s.gp);
+                    setGArmed(false);
                   }}
-                  className={`w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === s.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
-                  aria-label={`Filter to seasons with at least ${s.gp} games`}
+                  className={`w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === s.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === s.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                  aria-label={gArmed ? `Filter to seasons with at least ${s.gp} games` : `${s.gp} games (tap the G header to enable filtering)`}
                 >{s.gp}</button>
                 <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(s.pts / gp).toFixed(1)}</span>
                 <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${eff / gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(eff / gp).toFixed(1)}</span>
@@ -3653,6 +3676,16 @@ function InfoView() {
     </div>
   );
 
+  // The story of the app, told in the order it was built.
+  const Step = ({ n, title, children }) => (
+    <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
+      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">
+        <span className="text-stone-400 tabular-nums mr-1.5">{n}</span>{title}
+      </h2>
+      {children}
+    </section>
+  );
+
   return (
     <div className="space-y-5">
       <section className="p-3 bg-white border border-stone-300">
@@ -3674,23 +3707,59 @@ function InfoView() {
         )}
       </section>
 
-      <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">How the data loads</h2>
-        <p className="mb-2"><span className="font-semibold">Historical playoffs</span> are scraped from <span className="font-semibold">basketball-reference.com</span> by an R pipeline and stored permanently as JSON in the repo. A scheduled job runs <span className="font-semibold">every morning</span>, refreshing the current season and filling in older seasons.</p>
-        <p className="mb-2"><span className="font-semibold">Live games</span> — while a series is in progress — come straight from the NBA feed. When that feed is unavailable, the app falls back to the stored results.</p>
-        <p>Box scores, leaderboards, and the Value Added numbers below are all computed from this same stored data, so what you see is reproducible and consistent across seasons.</p>
-      </section>
+      <Step n="1" title="The draft">
+        <p className="mb-2">This app began as a scorekeeper. Before the 2025-26 playoffs, <span className="font-semibold">Trey and Spencer drafted all 16 playoff teams</span>, eight apiece. Every series win banks its round&apos;s base points — <span className="tabular-nums font-semibold">1</span> for the first round, <span className="tabular-nums font-semibold">2</span> for the conference semis, <span className="tabular-nums font-semibold">4</span> for the conference finals, <span className="tabular-nums font-semibold">8</span> for the Finals — plus, on an upset, the seed difference as a bonus.</p>
+        <p>While a playoff run is live, the bracket and scoreboard follow the NBA feed game by game. The season tabs keep each year&apos;s final scorecard, rosters, bracket, and every box score.</p>
+      </Step>
 
-      <section className="p-3 bg-white border border-stone-300">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-1">Value Added (VA)</h2>
-        <p className="text-sm text-stone-600 mb-3">Points a player creates above — or below — the typical NBA player, given the same workload. Every skill follows one shape:</p>
+      <Step n="2" title="Value Added (VA)">
+        <p className="mb-3">Team points settle the draft; <span className="font-semibold">Value Added</span> settles the player arguments. VA is the points a player creates above — or below — the typical NBA player, given the same workload. Every skill follows one shape:</p>
         <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
         </div>
         <Group title="Scoring" items={SCORING} />
         <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
         <Group title="Rebounding" items={REB} />
-        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate, so older eras are measured against their own league — not today&apos;s.</p>
+        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>
+      </Step>
+
+      <Step n="3" title="The data pipeline">
+        <p className="mb-2">To take VA beyond one spring, an <span className="font-semibold">R pipeline</span> scrapes basketball-reference and stores every season from <span className="font-semibold">1979-80</span> onward as JSON in the repo: playoff and regular-season totals, per-game playoff logs, and each season&apos;s league baselines.</p>
+        <p>A scheduled job runs every morning — re-baking the current season, filling any gaps, and recomputing derived numbers so nothing can drift from the raw data. Everything the app shows is computed from this one store, reproducible across seasons.</p>
+      </Step>
+
+      <Step n="4" title="Explore">
+        <p className="mb-2"><span className="font-semibold">By Season</span> ranks every player in a season&apos;s playoffs, regular season, or both combined. The default order blends total VA with VA per game; tap <span className="font-semibold">TOT VA</span> or <span className="font-semibold">VA/G</span> to sort by one axis, a team badge to filter to a roster, and <span className="font-semibold">G</span> (header first, then a player&apos;s G) to keep only comparable-volume players.</p>
+        <p><span className="font-semibold">By Player</span> searches everyone ever indexed and lays a career out season by season. Tap a season for its per-category breakdown, and a category for league context — rank, percentile, and where the season sits in the all-time distribution.</p>
+      </Step>
+
+      <Step n="5" title="Compare &amp; closest comps">
+        <p className="mb-2"><span className="font-semibold">Compare</span> pits any two player-seasons head-to-head — absolute values or all-time percentiles, category by category, with raw-stat drill-ins and a career-year overlay chart.</p>
+        <p>The picker also suggests <span className="font-semibold">closest comps</span>, by decade, among players in a similar minutes role: <span className="font-semibold">Imp</span> matches overall per-game VA level, <span className="font-semibold">Sim</span> matches the shape of the ten-category profile, <span className="font-semibold">Imp×Sim</span> demands both. (A fourth lens, Shoot, arrived with the shot zones below.)</p>
+      </Step>
+
+      <Step n="6" title="College">
+        <p>The same framework pointed at men&apos;s Division I: top college players ranked by VA against <span className="font-semibold">college</span> baselines, with the same per-category breakdowns and sortable board.</p>
+      </Step>
+
+      <Step n="7" title="D Rating &amp; VA+">
+        <p className="mb-2">Steals and blocks miss most of defense, so each player-season gets a <span className="font-semibold">DRtg</span> — points allowed per 100 possessions. It&apos;s a <span className="font-semibold">Bayesian blend</span>: basketball-reference&apos;s box-score estimate serves as the prior (worth ≈1,500 possessions of evidence), updated by the points opponents <span className="font-semibold">actually scored with him on the floor</span> (play-by-play data, 2000-01 onward). The more real possessions a player logs, the more the data outweighs the estimate — a full-time starter is ~75% play-by-play, a 300-minute season stays mostly prior.</p>
+        <p className="mb-2">Defensive value then comes from two terms: <span className="font-semibold">IND</span>, the player&apos;s edge over his own team&apos;s defense, and <span className="font-semibold">TM+</span>, a share of the team&apos;s edge over the league — earned by steal-and-block rate when the team is good, shrinking with activity when it&apos;s bad.</p>
+        <p><span className="font-semibold">VA+ = VA + defensive value.</span> The leaderboard&apos;s VA view keeps the pure box-score stat; toggle VA+ to re-score everything with the defensive layer. The <span className="font-semibold">D Rating</span> tab ranks every player-season by it, sortable by any column.</p>
+      </Step>
+
+      <Step n="8" title="Shot Zones &amp; Shoot comps">
+        <p className="mb-2">2-point shooting, split by distance: <span className="font-semibold">0-3, 3-10, 10-16, and 16 ft to the arc</span> (shot-location data exists from 1996-97 on). Each zone is valued with the same VA shape — 2 × (zone FG% − the league&apos;s FG% at that distance) × attempts — so a rim finisher and a mid-range surgeon get credit for different skills instead of one blended 2P%.</p>
+        <p>Zone rows sit under the 2-Pointers card in any comparison (per-game, like the rest of the panel), the <span className="font-semibold">Shot Zones</span> tab ranks seasons by zone value, and the <span className="font-semibold">Shoot</span> comp lens matches whole shooting profiles — the four zones plus 3-point and free-throw value — among players who take a similar share of their shots from three.</p>
+      </Step>
+
+      <Step n="9" title="2025-26, in the books">
+        <p>The playoffs the app was built for ended with the <span className="font-semibold">Knicks over the Spurs</span> — and <span className="font-semibold">Spencer over Trey, 36-9</span>. That season now lives in its own tab like any other finished year, and the app keeps growing between drafts.</p>
+      </Step>
+
+      <section className="p-3 bg-white border border-stone-300 text-[10px] text-stone-400 leading-relaxed">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Fine print</h2>
+        <p>Coverage follows the sources: box-score VA reaches 1979-80; shot zones start 1996-97; on-court defensive data starts 2000-01 (a handful of seasons in between lack it upstream and fall back to the estimate — they fill in automatically if the source ever adds them). Historical data comes from basketball-reference.com, live games from the NBA feed, on-court defense from pbpstats.com, college stats from sports-reference.com. Players are matched across sources by ID where possible, by normalized name otherwise.</p>
       </section>
     </div>
   );
