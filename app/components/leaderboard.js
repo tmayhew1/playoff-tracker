@@ -241,9 +241,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
 
   return (
     <div className="mb-4 border border-stone-300 bg-white">
-      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex items-center justify-between gap-2">
+      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span>{title}</span>
-        <div className="flex items-center gap-1.5">
+        {/* Chip group stays glued together and right-aligned (ml-auto); when
+            the title + all three chips can't share one line it wraps to its
+            own line as a unit instead of the chips compressing (which used to
+            break "≥N games" onto two lines when a team filter was also on). */}
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {/* VA vs VA+ (adds defensive net rating). Midnight purple when on. */}
           <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
             <button
@@ -264,7 +268,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
-              className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+              className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
               aria-label="Clear min-games filter"
             >
               ≥{minGames} games <span className="text-stone-400">×</span>
@@ -275,7 +279,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
             return (
               <button
                 onClick={() => setTeamFilter(null)}
-                className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
+                className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap"
                 style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
                 aria-label={`Clear ${teamFilter} filter`}
               >
