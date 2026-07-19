@@ -2041,14 +2041,17 @@ function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, s
                       <button
                         type="button"
                         onClick={(e) => {
+                          // Unarmed tap on an inactive G is treated as a mis-tap: fall
+                          // through (no stopPropagation) so it bubbles to the row and
+                          // opens the breakdown, instead of doing nothing.
+                          if (!gArmed && minGames !== p.gp) return;
                           e.stopPropagation();
-                          if (!gArmed && minGames !== p.gp) return; // must arm via the G header first
                           const next = minGames === p.gp ? null : p.gp;
                           setMinGames(next);
                           setGArmed(false);
                           if (next != null) setPendingScrollName(p.name);
                         }}
-                        className={`hidden sm:block w-6 text-right tabular-nums ${gArmed || minGames === p.gp ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                        className={`hidden sm:block w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
                         aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
                       >{p.gp}</button>
                       <span className="w-8 text-right tabular-nums font-bold text-stone-900">{p.ppg.toFixed(1)}</span>
@@ -2761,14 +2764,17 @@ function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
               <button
                 type="button"
                 onClick={(e) => {
+                  // Unarmed tap on an inactive G is treated as a mis-tap: fall
+                  // through (no stopPropagation) so it bubbles to the row and
+                  // opens the breakdown, instead of doing nothing.
+                  if (!gArmed && minGames !== p.gp) return;
                   e.stopPropagation();
-                  if (!gArmed && minGames !== p.gp) return; // must arm via the G header first
                   const next = minGames === p.gp ? null : p.gp;
                   setMinGames(next);
                   setGArmed(false);
                   if (next != null) setPendingScrollName(p.name);
                 }}
-                className={`w-6 text-right tabular-nums ${gArmed || minGames === p.gp ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                className={`w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
                 aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
               >{p.gp}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
@@ -3058,7 +3064,11 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
+  // Min-games filter is a two-step tap (arm on the G header, then a row's G)
+  // so a stray tap on a G value opens the row instead of filtering. Matches
+  // the By Season leaderboard.
   const [minGames, setMinGames] = useState(null);
+  const [gArmed, setGArmed] = useState(false);
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
@@ -3132,7 +3142,15 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
         <span className="w-6 text-right">#</span>
         <span className="w-10">Team</span>
         <span className="flex-1">Season</span>
-        <span className="w-6 text-right">G</span>
+        <button
+          type="button"
+          onClick={() => setGArmed((v) => !v)}
+          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          title="Tap, then tap a season's G to filter to at least that many games"
+          aria-pressed={gArmed}
+        >
+          G
+        </button>
         <span className="hidden sm:block w-8 text-right">PPG</span>
         <span className="hidden sm:block w-9 text-right">EFF</span>
         <span className="hidden sm:block w-8 text-right">RPG</span>
@@ -3211,11 +3229,16 @@ function PlayerDetail({ player, scope, contextData, onBack }) {
                 <button
                   type="button"
                   onClick={(e) => {
+                    // Unarmed tap on an inactive G is a mis-tap: fall through
+                    // (no stopPropagation) so it bubbles to the row and opens
+                    // the breakdown, instead of doing nothing.
+                    if (!gArmed && minGames !== s.gp) return;
                     e.stopPropagation();
                     setMinGames(minGames === s.gp ? null : s.gp);
+                    setGArmed(false);
                   }}
-                  className={`w-6 text-right tabular-nums cursor-pointer hover:text-stone-900 hover:underline ${minGames === s.gp ? "font-semibold text-stone-900" : "text-stone-500"}`}
-                  aria-label={`Filter to seasons with at least ${s.gp} games`}
+                  className={`w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === s.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === s.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                  aria-label={gArmed ? `Filter to seasons with at least ${s.gp} games` : `${s.gp} games (tap the G header to enable filtering)`}
                 >{s.gp}</button>
                 <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(s.pts / gp).toFixed(1)}</span>
                 <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${eff / gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(eff / gp).toFixed(1)}</span>
