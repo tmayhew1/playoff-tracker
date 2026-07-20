@@ -340,18 +340,24 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         </button>
       </div>
       {(() => {
-        // VA bar scale — proportional to abs(VA) over the visible list.
-        // Computed once per render so all rows share the same denominator.
-        const maxAbsVa = Math.max(...shown.map((p) => Math.abs(vaOf(p))), 0.5);
-        // Defensive strip (VA view only): a thin gold underline whose length
-        // is the player's dVA — the defensive value VA+ would add — scaled
-        // against the visible list, so defensive standouts read at a glance
-        // without leaving the VA view. VA+ view skips it: its main bar
-        // already contains dVA.
+        // Defensive strip (VA view only): a thin underline segment spanning
+        // the gap between a player's VA and his VA+, plotted on the SAME
+        // scale as the team-color bar — gold extending past the bar's end
+        // when defense adds value, red backing into it when it subtracts.
+        // VA+ view skips it: its main bar already contains dVA.
         const dvaOf = (p) => defVAInfo(p, p.mp, lga, defs, season, defScope)?.dva ?? null;
-        const maxAbsDva = metric === "va"
-          ? Math.max(...shown.map((p) => Math.abs(dvaOf(p) ?? 0)), 0)
-          : 0;
+        // Bar scale — proportional to abs(VA) over the visible list. In VA
+        // view the denominator also covers each player's VA+ so the strips'
+        // endpoints fit on-scale (the biggest VA+ reaches full width, and
+        // the VA bars shrink a notch to make room).
+        const maxAbsVa = Math.max(
+          ...shown.map((p) => Math.abs(vaOf(p))),
+          ...(metric === "va" ? shown.map((p) => {
+            const d = dvaOf(p);
+            return d == null ? 0 : Math.abs((p.va || 0) + d);
+          }) : []),
+          0.5,
+        );
         return shown.map((p, i) => {
         // Keep the overall rank (1, 7, 13…) even when filters trim the
         // visible list. With the min-games filter on, "overall" means
@@ -394,17 +400,22 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 style={{ width: `${barPct}%`, backgroundColor: barColor }}
                 aria-hidden
               />
-              {/* Defensive strip — light gold for positive dVA, faint red
-                  for negative, per the app's sign convention. */}
-              {(() => {
-                if (maxAbsDva <= 0) return null;
+              {/* Defensive strip — the VA→VA+ gap on the bar's own scale:
+                  light gold past the bar's end when defense adds, faint red
+                  inside its end when it subtracts. */}
+              {metric === "va" && (() => {
                 const dva = dvaOf(p);
                 if (dva == null || dva === 0) return null;
+                const vaMag = Math.abs(rowVa);
+                const vaPlusMag = Math.abs(rowVa + dva);
+                const startPct = (Math.min(vaMag, vaPlusMag) / maxAbsVa) * 100;
+                const widthPct = (Math.abs(vaPlusMag - vaMag) / maxAbsVa) * 100;
                 return (
                   <div
-                    className="absolute bottom-0 left-0 h-[3px] pointer-events-none"
+                    className="absolute bottom-0 h-[3px] pointer-events-none"
                     style={{
-                      width: `${(Math.abs(dva) / maxAbsDva) * 100}%`,
+                      left: `${startPct}%`,
+                      width: `${widthPct}%`,
                       backgroundColor: dva > 0 ? withAlpha(GOLD, 0.5) : withAlpha("#dc2626", 0.3),
                     }}
                     aria-hidden
