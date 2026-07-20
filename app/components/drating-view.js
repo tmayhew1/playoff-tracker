@@ -24,12 +24,20 @@ export function DRatingView() {
   // column's natural direction (DRTG/TEAM ascending — lower is better —
   // everything else descending), second tap flips it.
   const [sort, setSort] = useState({ key: "perG", dir: -1 });
+  // Min-minutes filter, same two-step arming as the leaderboards' G filter:
+  // tap the MP header to arm, then a row's MP to keep only players with at
+  // least that many minutes (replacing the default rotation floor). Tap the
+  // active value again — or the chip — to clear.
+  const [minMpFilter, setMinMpFilter] = useState(null);
+  const [mpArmed, setMpArmed] = useState(false);
   const sel = season || seasons[0] || null;
 
   useEffect(() => {
     if (!sel) return;
     let cancelled = false;
     setRows(null);
+    setMinMpFilter(null);
+    setMpArmed(false);
     fetchJsonCached(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
       .then((d) => { if (!cancelled) setRows(d.players || []); })
       .catch(() => { if (!cancelled) setRows([]); });
@@ -42,11 +50,14 @@ export function DRatingView() {
     const q = normalizeName(query.trim());
     // Without a search, keep to rotation-sized samples so noise doesn't
     // crowd the top; a search shows anyone.
-    const minMp = scope === "po" ? 40 : 100;
+    // A user-set min-MP filter replaces the default rotation floor and
+    // applies even during a search.
+    const minMp = minMpFilter ?? (scope === "po" ? 40 : 100);
     const out = [];
     for (const r of rows) {
       if (!(r.mp > 0)) continue;
-      if (q ? !normalizeName(r.name || "").includes(q) : r.mp < minMp) continue;
+      if (q && !normalizeName(r.name || "").includes(q)) continue;
+      if (minMpFilter != null ? r.mp < minMpFilter : (!q && r.mp < minMp)) continue;
       const info = defVAInfo(r, r.mp, lga, defs, sel, scope);
       if (!info) continue;
       const gp = r.gp ?? r.g ?? 0;
@@ -75,10 +86,10 @@ export function DRatingView() {
       return c !== 0 ? sort.dir * c : b.perG - a.perG;
     });
     return out;
-  }, [rows, defs, sel, lga, query, scope, sort]);
+  }, [rows, defs, sel, lga, query, scope, sort, minMpFilter]);
 
   const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
-  const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.2rem_2.2rem_2rem_2.3rem_2.3rem_2.6rem] gap-x-1 items-center";
+  const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.4rem_2.2rem_2.2rem_2rem_2.3rem_2.3rem_2.6rem] gap-x-1 items-center";
 
   return (
     <div className="text-[10px]">
@@ -94,6 +105,15 @@ export function DRatingView() {
           <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
           <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
         </div>
+        {minMpFilter != null && (
+          <button
+            onClick={() => setMinMpFilter(null)}
+            className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
+            aria-label="Clear min-minutes filter"
+          >
+            ≥{minMpFilter} min <span className="text-stone-400">×</span>
+          </button>
+        )}
         <input
           type="text"
           value={query}
@@ -125,6 +145,18 @@ export function DRatingView() {
         return (
           <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
             <span>#</span><H k="name" label="Player" right={false} />
+            {/* MP header arms the min-minutes filter (two-step, like the
+                leaderboards' G column) instead of sorting; a second tap
+                disarms. */}
+            <button
+              type="button"
+              onClick={() => setMpArmed((v) => !v)}
+              className={`text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${mpArmed ? "text-stone-900 font-bold underline" : ""}`}
+              title="Tap, then tap a player's MP to filter to at least that many minutes"
+              aria-pressed={mpArmed}
+            >
+              MP
+            </button>
             <H k="drtg" label="DRTG" /><H k="team" label="Team" />
             <H k="w" label="W" /><H k="ind" label="IND" />
             <H k="tmp" label="TM+" /><H k="perG" label="D/G" />
@@ -139,6 +171,24 @@ export function DRatingView() {
           <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
             {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
           </span>
+          {(() => {
+            const mpVal = Math.round(r.mp);
+            const isActive = minMpFilter === mpVal;
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  // Unarmed tap on an inactive MP is a mis-tap: do nothing
+                  // (rows here have no drill-in to fall through to).
+                  if (!mpArmed && !isActive) return;
+                  setMinMpFilter(isActive ? null : mpVal);
+                  setMpArmed(false);
+                }}
+                className={`text-right tabular-nums ${mpArmed || isActive ? "cursor-pointer hover:text-stone-900 hover:underline" : "cursor-default"} ${isActive ? "font-semibold text-stone-900" : mpArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                aria-label={mpArmed ? `Filter to players with at least ${mpVal} minutes` : `${mpVal} minutes (tap the MP header to enable filtering)`}
+              >{mpVal}</button>
+            );
+          })()}
           <span className="text-right tabular-nums text-stone-700">{Math.round(info.drtg)}</span>
           <span className="text-right tabular-nums text-stone-500">{info.teamDrtg != null ? info.teamDrtg.toFixed(1) : "–"}</span>
           <span className="text-right tabular-nums text-stone-500">{info.w != null ? `${Math.round(info.w * 100)}%` : "LG"}</span>
@@ -149,7 +199,10 @@ export function DRatingView() {
       ))}
       {list && list.length > 0 && (
         <div className="mt-2 text-center text-[9px] italic text-stone-400">
-          {query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}tap a column to sort
+          {minMpFilter != null
+            ? `Min ${minMpFilter} minutes · `
+            : query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}
+          tap a column to sort · tap MP, then a player&rsquo;s MP, to filter by minutes
         </div>
       )}
     </div>
