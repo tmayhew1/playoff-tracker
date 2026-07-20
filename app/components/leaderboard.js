@@ -400,22 +400,19 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 style={{ width: `${barPct}%`, backgroundColor: barColor }}
                 aria-hidden
               />
-              {/* Defensive strip — the VA→VA+ gap on the bar's own scale:
-                  light gold past the bar's end when defense adds, faint red
-                  inside its end when it subtracts. */}
+              {/* Defensive strip — a full-length VA+ underline on the bar's
+                  own scale: it runs from zero to the player's VA+, so its
+                  right edge marks VA+ against the bar's end — reaching past
+                  it (gold) when defense adds, stopping short (red) when it
+                  subtracts. */}
               {metric === "va" && (() => {
                 const dva = dvaOf(p);
                 if (dva == null || dva === 0) return null;
-                const vaMag = Math.abs(rowVa);
-                const vaPlusMag = Math.abs(rowVa + dva);
-                const startPct = (Math.min(vaMag, vaPlusMag) / maxAbsVa) * 100;
-                const widthPct = (Math.abs(vaPlusMag - vaMag) / maxAbsVa) * 100;
                 return (
                   <div
-                    className="absolute bottom-0 h-[3px] pointer-events-none"
+                    className="absolute bottom-0 left-0 h-[3px] pointer-events-none"
                     style={{
-                      left: `${startPct}%`,
-                      width: `${widthPct}%`,
+                      width: `${(Math.abs(rowVa + dva) / maxAbsVa) * 100}%`,
                       backgroundColor: dva > 0 ? withAlpha(GOLD, 0.5) : withAlpha("#dc2626", 0.3),
                     }}
                     aria-hidden
