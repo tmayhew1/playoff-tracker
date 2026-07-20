@@ -61,10 +61,15 @@ export function DRatingView() {
       const info = defVAInfo(r, r.mp, lga, defs, sel, scope);
       if (!info) continue;
       const gp = r.gp ?? r.g ?? 0;
+      // IND and TM+ are the two halves of the defensive net, natively per
+      // 100 possessions. `factor` rescales a per-100 rate into points per
+      // game (the possessions the player logged, ÷ games), so the two
+      // columns land in D/G's units and literally sum to it.
+      const factor = gp > 0 ? (lga.laPOSSperM * r.mp) / (100 * gp) : 0;
       out.push({
         r, gp, info,
-        within: info.teamDrtg != null ? info.teamDrtg - info.drtg : null,
-        tmShare: info.teamDrtg != null ? info.w * (info.laDRtg - info.teamDrtg) : null,
+        indG: info.teamDrtg != null ? (info.teamDrtg - info.drtg) * factor : null,
+        tmpG: info.teamDrtg != null ? info.w * (info.laDRtg - info.teamDrtg) * factor : null,
         perG: gp > 0 ? info.dva / gp : 0,
       });
     }
@@ -72,9 +77,8 @@ export function DRatingView() {
       sort.key === "name" ? (x.r.name || "")
       : sort.key === "drtg" ? x.info.drtg
       : sort.key === "team" ? x.info.teamDrtg
-      : sort.key === "w" ? x.info.w
-      : sort.key === "ind" ? x.within
-      : sort.key === "tmp" ? x.tmShare
+      : sort.key === "ind" ? x.indG
+      : sort.key === "tmp" ? x.tmpG
       : x.perG
     );
     out.sort((a, b) => {
@@ -88,8 +92,8 @@ export function DRatingView() {
     return out;
   }, [rows, defs, sel, lga, query, scope, sort, minMpFilter]);
 
-  const sgn1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
-  const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.4rem_2.2rem_2.2rem_2rem_2.3rem_2.3rem_2.6rem] gap-x-1 items-center";
+  const sgn2 = (v) => (v > 0 ? "+" : "") + v.toFixed(2);
+  const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.4rem_2.2rem_2.2rem_2.6rem_2.6rem_2.6rem] gap-x-1 items-center";
 
   return (
     <div className="text-[10px]">
@@ -126,12 +130,12 @@ export function DRatingView() {
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
           DRTG = box-score estimate (prior, ≈1500 poss) updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
-          IND = player vs own team's D · TM+ = W% × team's edge vs league (plus edges earned by stock rate; minus edges shrink with activity, W = 40% − earned) ·
-          both per 100 poss · D/G = (IND+TM+) over possessions per game · LG = no single-team context (traded)
+          IND = player's edge over his own team's D · TM+ = his stock-rate share of the team's edge vs the league line ·
+          both as points/game, so IND + TM+ = D/G · “–” = no single-team context (traded)
         </div>
       )}
       {(() => {
-        const NATURAL = { name: 1, drtg: 1, team: 1, w: -1, ind: -1, tmp: -1, perG: -1 };
+        const NATURAL = { name: 1, drtg: 1, team: 1, ind: -1, tmp: -1, perG: -1 };
         const H = ({ k, label, right = true }) => (
           <button
             type="button"
@@ -158,14 +162,14 @@ export function DRatingView() {
               MP
             </button>
             <H k="drtg" label="DRTG" /><H k="team" label="Team" />
-            <H k="w" label="W" /><H k="ind" label="IND" />
-            <H k="tmp" label="TM+" /><H k="perG" label="D/G" />
+            <H k="ind" label="IND" /><H k="tmp" label="TM+" />
+            <H k="perG" label="D/G" />
           </div>
         );
       })()}
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
-      {list && list.map(({ r, info, within, tmShare, perG }, i) => (
+      {list && list.map(({ r, info, indG, tmpG, perG }, i) => (
         <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
           <span className="text-stone-400 tabular-nums">{i + 1}</span>
           <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
@@ -191,10 +195,9 @@ export function DRatingView() {
           })()}
           <span className="text-right tabular-nums text-stone-700">{Math.round(info.drtg)}</span>
           <span className="text-right tabular-nums text-stone-500">{info.teamDrtg != null ? info.teamDrtg.toFixed(1) : "–"}</span>
-          <span className="text-right tabular-nums text-stone-500">{info.w != null ? `${Math.round(info.w * 100)}%` : "LG"}</span>
-          <span className={`text-right tabular-nums ${within != null && within < 0 ? "text-red-600" : "text-stone-700"}`}>{within != null ? sgn1(within) : "–"}</span>
-          <span className={`text-right tabular-nums ${tmShare != null && tmShare < 0 ? "text-red-600" : "text-stone-700"}`}>{tmShare != null ? sgn1(tmShare) : "–"}</span>
-          <span className={`text-right tabular-nums font-semibold ${perG < 0 ? "text-red-600" : "text-stone-900"}`}>{(perG > 0 ? "+" : "") + perG.toFixed(2)}</span>
+          <span className={`text-right tabular-nums ${indG != null && indG < 0 ? "text-red-600" : "text-stone-700"}`}>{indG != null ? sgn2(indG) : "–"}</span>
+          <span className={`text-right tabular-nums ${tmpG != null && tmpG < 0 ? "text-red-600" : "text-stone-700"}`}>{tmpG != null ? sgn2(tmpG) : "–"}</span>
+          <span className={`text-right tabular-nums font-semibold ${perG < 0 ? "text-red-600" : "text-stone-900"}`}>{sgn2(perG)}</span>
         </div>
       ))}
       {list && list.length > 0 && (
