@@ -6,7 +6,7 @@ import { valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { MIDNIGHT_PURPLE, normalizeName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, normalizeName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 
 
@@ -343,6 +343,15 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         // VA bar scale — proportional to abs(VA) over the visible list.
         // Computed once per render so all rows share the same denominator.
         const maxAbsVa = Math.max(...shown.map((p) => Math.abs(vaOf(p))), 0.5);
+        // Defensive strip (VA view only): a thin gold underline whose length
+        // is the player's dVA — the defensive value VA+ would add — scaled
+        // against the visible list, so defensive standouts read at a glance
+        // without leaving the VA view. VA+ view skips it: its main bar
+        // already contains dVA.
+        const dvaOf = (p) => defVAInfo(p, p.mp, lga, defs, season, defScope)?.dva ?? null;
+        const maxAbsDva = metric === "va"
+          ? Math.max(...shown.map((p) => Math.abs(dvaOf(p) ?? 0)), 0)
+          : 0;
         return shown.map((p, i) => {
         // Keep the overall rank (1, 7, 13…) even when filters trim the
         // visible list. With the min-games filter on, "overall" means
@@ -385,6 +394,23 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
                 style={{ width: `${barPct}%`, backgroundColor: barColor }}
                 aria-hidden
               />
+              {/* Defensive strip — light gold for positive dVA, faint red
+                  for negative, per the app's sign convention. */}
+              {(() => {
+                if (maxAbsDva <= 0) return null;
+                const dva = dvaOf(p);
+                if (dva == null || dva === 0) return null;
+                return (
+                  <div
+                    className="absolute bottom-0 left-0 h-[3px] pointer-events-none"
+                    style={{
+                      width: `${(Math.abs(dva) / maxAbsDva) * 100}%`,
+                      backgroundColor: dva > 0 ? withAlpha(GOLD, 0.5) : withAlpha("#dc2626", 0.3),
+                    }}
+                    aria-hidden
+                  />
+                );
+              })()}
               <div
                 role="button"
                 tabIndex={0}
