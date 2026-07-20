@@ -261,9 +261,23 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
               type="button"
               onClick={() => setMetric("vaPlus")}
               className="px-1.5 py-0.5 border-l"
-              style={metric === "vaPlus" ? { backgroundColor: MIDNIGHT_PURPLE, color: "#fff", borderColor: MIDNIGHT_PURPLE } : { backgroundColor: "#fff", color: "#78716c", borderColor: "#d6d3d1" }}
+              style={metric === "vaPlus" ? { backgroundColor: MIDNIGHT_PURPLE, borderColor: MIDNIGHT_PURPLE } : { backgroundColor: "#fff", borderColor: "#d6d3d1" }}
               aria-pressed={metric === "vaPlus"}
-            >VA+</button>
+            >
+              {/* VA+ wears the defensive strip's palette — gold (defense
+                  adds) bleeding into red (defense subtracts) — in both
+                  states, so the metric is recognizable at a glance. The
+                  purple fill, not the text color, marks which side is on. */}
+              <span
+                style={{
+                  backgroundImage: `linear-gradient(100deg, ${GOLD} 20%, #dc2626 90%)`,
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >VA+</span>
+            </button>
           </div>
           {minGames != null && (
             <button
