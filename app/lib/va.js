@@ -54,7 +54,7 @@ export const GROUP_STAT = {
   "Scoring": [(r) => r.pts || 0, "PTS"],
   "Passing": [(r) => r.ast || 0, "AST"],
   "Rebounds": [(r) => (r.drb || 0) + (r.orb || 0), "REB"],
-  "Defense": [(r) => (r.stl || 0) + (r.blk || 0), "STL+BLK"],
+  "Defense": [(r) => (r.stl || 0) + (r.blk || 0), "STK"],
 };
 
 // Rate label for one player-season in one category or group, respecting the toggle.
