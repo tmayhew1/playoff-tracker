@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
@@ -39,6 +39,22 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   // VA vs VA+ (VA + defensive net rating). VA+ re-scores the whole board:
   // sort, the TOT/VA-G columns, and the bar widths all switch.
   const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
+  // The sticky header only gets its lift/shadow once it's actually pinned to
+  // the top — at rest it sits flush inside the card. A zero-height sentinel
+  // at the card's top drives it: when the sentinel scrolls out of view the
+  // header is stuck. (Pure-CSS sticky can't tell "pinned" from "at rest".)
+  const [stuck, setStuck] = useState(false);
+  // Callback ref so the observer attaches whenever the sentinel actually
+  // mounts — the card renders only after data loads, so a mount-time effect
+  // would run before the sentinel exists and never wire up.
+  const stickyIO = useRef(null);
+  const stickySentinel = useCallback((node) => {
+    if (stickyIO.current) { stickyIO.current.disconnect(); stickyIO.current = null; }
+    if (node && typeof IntersectionObserver !== "undefined") {
+      stickyIO.current = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting), { threshold: 0 });
+      stickyIO.current.observe(node);
+    }
+  }, []);
   const defs = useDefRatings();
   const defScope = scope === "playoffs" ? "po" : "rs";
   useEffect(() => {
@@ -241,11 +257,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
 
   return (
     <div className="mb-4 border border-stone-300 bg-white">
+      {/* Sentinel: sits at the very top of the card and flips `stuck` when it
+          scrolls out of view, i.e. exactly when the header below pins. 1px
+          tall (pulled back with -mb-px so it adds no height) — a zero-height
+          target isn't reliably reported by IntersectionObserver. */}
+      <div ref={stickySentinel} className="h-px -mb-px" aria-hidden />
       {/* Title + column-header block pinned to the top of the viewport while
           the player rows scroll beneath it — sticky within this card, so it
           releases once the whole leaderboard is scrolled past. bg-white + a
-          modest z keep it opaque above the scrolling rows. */}
-      <div className="sticky top-0 z-20 bg-white">
+          modest z keep it opaque above the scrolling rows; the shadow only
+          shows once pinned so at rest it sits flush inside the card. */}
+      <div className={`sticky top-0 z-20 bg-white transition-shadow ${stuck ? "shadow-md" : ""}`}>
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span>{title}</span>
         {/* Chip group stays glued together and right-aligned (ml-auto); when
