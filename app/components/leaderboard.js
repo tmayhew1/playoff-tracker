@@ -241,6 +241,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
 
   return (
     <div className="mb-4 border border-stone-300 bg-white">
+      {/* Title + column-header block pinned to the top of the viewport while
+          the player rows scroll beneath it — sticky within this card, so it
+          releases once the whole leaderboard is scrolled past. bg-white + a
+          modest z keep it opaque above the scrolling rows. */}
+      <div className="sticky top-0 z-20 bg-white">
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span>{title}</span>
         {/* Chip group stays glued together and right-aligned (ml-auto); when
@@ -356,6 +361,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         >
           {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▾" : ""}
         </button>
+      </div>
       </div>
       {(() => {
         // Defensive strip (VA view only): a thin underline segment spanning
