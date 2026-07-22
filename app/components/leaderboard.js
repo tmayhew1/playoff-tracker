@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
@@ -39,6 +39,45 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   // VA vs VA+ (VA + defensive net rating). VA+ re-scores the whole board:
   // sort, the TOT/VA-G columns, and the bar widths all switch.
   const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
+  // Scroll-driven pinned header. Rather than position:sticky (which leaves a
+  // ghost white bar on iOS Safari after un-sticking), we render the header a
+  // second time in a position:fixed overlay, but ONLY while the card straddles
+  // the top of the viewport — mounted on demand and fully unmounted otherwise,
+  // so nothing can linger. `fixedBar` holds the overlay's horizontal geometry
+  // (matched to the card) or null when it shouldn't show.
+  const [fixedBar, setFixedBar] = useState(null);
+  const cardElRef = useRef(null);
+  const headerFlowRef = useRef(null);
+  const [cardMounted, setCardMounted] = useState(false);
+  const setCardEl = useCallback((node) => { cardElRef.current = node; setCardMounted(!!node); }, []);
+  useEffect(() => {
+    if (!cardMounted) return;
+    const measure = () => {
+      const card = cardElRef.current;
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      const h = headerFlowRef.current?.offsetHeight || 56;
+      // Show once the card's top has scrolled above the viewport, and hide
+      // again once its bottom rises past one header's height (so the overlay
+      // releases as the leaderboard scrolls off, like a sticky would).
+      const show = r.top < 0 && r.bottom > h;
+      setFixedBar((prev) => {
+        if (!show) return prev === null ? prev : null;
+        const next = { left: Math.round(r.left), width: Math.round(r.width) };
+        return prev && prev.left === next.left && prev.width === next.width ? prev : next;
+      });
+    };
+    let raf = 0;
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; measure(); }); };
+    measure();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [cardMounted]);
   const defs = useDefRatings();
   const defScope = scope === "playoffs" ? "po" : "rs";
   useEffect(() => {
@@ -239,8 +278,10 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     (data?.series || []).map((s) => [s.idx, s.round])
   );
 
-  return (
-    <div className="mb-4 border border-stone-300 bg-white">
+  // The header (title + toggle + filter chips + column labels), rendered both
+  // in flow inside the card and again in the fixed overlay while pinned.
+  const headerBlock = (
+    <>
       <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span>{title}</span>
         {/* Chip group stays glued together and right-aligned (ml-auto); when
@@ -357,6 +398,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
           {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▾" : ""}
         </button>
       </div>
+    </>
+  );
+
+  return (
+    <>
+    <div ref={setCardEl} className="mb-4 border border-stone-300 bg-white">
+      <div ref={headerFlowRef}>{headerBlock}</div>
       {(() => {
         // Defensive strip (VA view only): a thin underline segment spanning
         // the gap between a player's VA and his VA+, plotted on the SAME
@@ -532,5 +580,16 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
         </button>
       )}
     </div>
+    {/* Pinned header overlay — position:fixed (not sticky) and only in the DOM
+        while scrolled into the leaderboard, aligned to the card's width. */}
+    {fixedBar && (
+      <div
+        className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm"
+        style={{ left: fixedBar.left, width: fixedBar.width }}
+      >
+        {headerBlock}
+      </div>
+    )}
+    </>
   );
 }
