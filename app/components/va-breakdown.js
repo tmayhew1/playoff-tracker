@@ -9,7 +9,7 @@ import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD_BG, normalizeName, seasonTag, shortName, teamColor } from "../lib/format";
 import { aggregateSnapshots } from "../lib/players";
-import { CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, samePlayer } from "../lib/va";
+import { CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
 
 export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true }) {
@@ -625,23 +625,28 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
   // season) — the caller passes it on the context instead.
   const seasonKey = p.season || context.season;
   const selfRow = { ...p, name: self.name, slug: self.slug || null };
+  // "/G" toggle. Off: every rank/percentile/trend/value in this card is TOTAL
+  // category VA (a full season outranks a half one at the same rate). On: the
+  // whole card re-sorts and re-labels on PER-GAME category VA instead.
+  const [perGame, setPerGame] = useState(false);
+  // The metric the entire card ranks and displays on, respecting the toggle.
+  const metric = (r, lgaX) => (perGame ? catVAperGame(r, lgaX, catKey) : catVATotal(r, lgaX, catKey));
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
     : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
 
   const d = useMemo(() => {
-    // Every rank/percentile/trend in this card is TOTAL category VA (not
-    // per-game), matching the leaderboard's own ordering — so a full season
-    // outranks a half one at the same rate.
-    // Season pool (views 1 & 2): qualified = played >= 1/3 of this player's GP.
+    // Ranking metric — total category VA, or per-game when the /G toggle is on
+    // (see `metric`). Season pool (views 1 & 2): qualified = played >= 1/3 of
+    // this player's GP.
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || [])
       .filter((r) => (r.gp || 0) >= floor && r.mp > 0)
-      .map((r) => ({ r, m: catVATotal(r, lga, catKey) }))
+      .map((r) => ({ r, m: metric(r, lga) }))
       .sort((a, b) => b.m - a.m);
     const N = pool.length;
     const selfIdx = pool.findIndex((x) => samePlayer(x.r, selfRow));
-    const selfM = selfIdx >= 0 ? pool[selfIdx].m : catVATotal(selfRow, lga, catKey);
+    const selfM = selfIdx >= 0 ? pool[selfIdx].m : metric(selfRow, lga);
     // "Better than X% of the N qualified" — strictly-below count over the full
     // pool, so the top player reads ~99%, not a self-inclusive 100%.
     const below = pool.filter((x) => x.m < selfM).length;
@@ -655,7 +660,7 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
     const floorA = Math.min(5, p.gp || 1);
     const all = allRows
       .filter((r) => (r.gp || 0) >= floorA && r.mp > 0)
-      .map((r) => ({ r, m: catVATotal(r, lgaForSeason(r.season), catKey) }))
+      .map((r) => ({ r, m: metric(r, lgaForSeason(r.season)) }))
       .sort((a, b) => b.m - a.m);
     const allN = all.length;
     const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
@@ -665,16 +670,17 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
     // Trend (view 6): this player's own seasons over time.
     const mine = [...(self.seasons || [])]
       .filter((s) => s.mp > 0)
-      .map((s) => ({ season: s.season, m: catVATotal(s, lgaForSeason(s.season), catKey) }))
+      .map((s) => ({ season: s.season, m: metric(s, lgaForSeason(s.season)) }))
       .sort((a, b) => a.season.localeCompare(b.season));
 
     return { floor, N, rank: selfIdx + 1, selfM, pctile, min, max, med, win,
              floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
-  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow]);
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow, perGame]);
 
   const short = CAT_SHORT[catKey] || catKey;
-  // Total VA is a whole-season figure, so one decimal (matches the leaderboard).
-  const sgn = (v, dp = 1) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  // Total VA is a whole-season figure, so one decimal (matches the leaderboard);
+  // per-game figures are an order of magnitude smaller, so show two.
+  const sgn = (v, dp = perGame ? 2 : 1) => (v > 0 ? "+" : "") + v.toFixed(dp);
   const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
   const posOf = (v) => (d.max > d.min ? ((v - d.min) / (d.max - d.min)) * 100 : 50);
 
@@ -700,6 +706,19 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
 
   return (
     <div className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3">
+      {/* /G toggle — flips the whole card between total and per-game category
+          VA (sorts, ranks, percentile, all-time, trend, and shown values). */}
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setPerGame((v) => !v)}
+          aria-pressed={perGame}
+          title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
+          className={`tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+        >
+          /G {perGame ? "ON" : "OFF"}
+        </button>
+      </div>
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
@@ -712,7 +731,7 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Ranked by total {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Ranked by {perGame ? "per-game" : "total"} {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
       </div>
 
       {/* View 2 — percentile + distribution strip. The percentile reads as a
