@@ -704,8 +704,7 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
     </div>
   );
 
-  // Compact per-game toggle shown in the by-season header. Bound to the same
-  // perGame state as the full-width bar higher up, so either flips the whole
+  // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
   // all-time, trend, and shown values).
   const gToggle = (
@@ -736,18 +735,6 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
         ))}
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Ranked by {perGame ? "per-game" : "total"} {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
       </div>
-
-      {/* Full-width per-game toggle between the leaderboard and the percentile
-          strip. Bound to the same state as the compact one by the season bars,
-          so either flips the whole card. */}
-      <button
-        type="button"
-        onClick={() => setPerGame((v) => !v)}
-        aria-pressed={perGame}
-        className={`w-full text-center tabular-nums text-[10px] font-semibold tracking-wide px-2 py-1 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
-      >
-        Per Game {perGame ? "On" : "Off"} - Push to Toggle
-      </button>
 
       {/* View 2 — percentile + distribution strip. The percentile reads as a
           single number floating right above the player's dot on the strip. */}
