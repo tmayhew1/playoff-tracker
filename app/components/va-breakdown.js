@@ -625,10 +625,10 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
   // season) — the caller passes it on the context instead.
   const seasonKey = p.season || context.season;
   const selfRow = { ...p, name: self.name, slug: self.slug || null };
-  // "/G" toggle. Off: every rank/percentile/trend/value in this card is TOTAL
-  // category VA (a full season outranks a half one at the same rate). On: the
-  // whole card re-sorts and re-labels on PER-GAME category VA instead.
-  const [perGame, setPerGame] = useState(false);
+  // "/G" toggle. On (default): every rank/percentile/trend/value in this card
+  // is PER-GAME category VA. Off: the whole card re-sorts and re-labels on
+  // TOTAL category VA instead (a full season outranks a half one at the rate).
+  const [perGame, setPerGame] = useState(true);
   // The metric the entire card ranks and displays on, respecting the toggle.
   const metric = (r, lgaX) => (perGame ? catVAperGame(r, lgaX, catKey) : catVATotal(r, lgaX, catKey));
   // Pools follow the Explore scope selector; say so in the fine print.
@@ -733,7 +733,9 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Ranked by {perGame ? "per-game" : "total"} {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
+        {/* Fixed two-line height so toggling total↔per-game (which reflows
+            "total"/"per-game" across the line break) never shifts the page. */}
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
       </div>
 
       {/* View 2 — percentile + distribution strip. The percentile reads as a
