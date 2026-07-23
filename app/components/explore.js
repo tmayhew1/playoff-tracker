@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { lgaForSeason } from "../scoring";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
@@ -124,6 +124,21 @@ export function ExploreView() {
   // Which games count: regular season, playoffs, or both summed. Applies to
   // both By Season and By Player.
   const [scope, setScope] = useState("playoffs"); // "regular" | "playoffs" | "combined"
+  // A pending "open this player" request coming up from a compare panel's
+  // compared-player chip while in By Season. It carries the target
+  // player-season { season, team, name, slug }; the leaderboard applies it
+  // (team filter + expand the row) once that season's rows have loaded.
+  const [seasonNav, setSeasonNav] = useState(null);
+  // Called by a By Season compare panel (via context.onNavigateToPlayer) when
+  // the user taps the compared player's chip: switch the leaderboard to that
+  // player's season and hand the target down for the leaderboard to open.
+  const navigateSeasonToPlayer = useCallback((target) => {
+    if (!target) return;
+    setMode("season");
+    setSeason(target.season);
+    setSeasonNav(target);
+  }, []);
+  const clearSeasonNav = useCallback(() => setSeasonNav(null), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,14 +221,14 @@ export function ExploreView() {
           </div>
 
           {scope !== "playoffs" ? (
-            <PlayoffLeaderboard season={season} lga={lga} scope={scope} />
+            <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} />
           ) : (
             <>
               {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
               {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
               {!loading && !error && data && (
                 <>
-                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} />
+                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} />
                   {(["r1", "r2", "r3", "r4"]).map((rk) => (
                     <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
                   ))}

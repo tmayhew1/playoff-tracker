@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
@@ -369,6 +369,43 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   // player-season or season row resets everything).
   const [openGroups, setOpenGroups] = useState(() => new Set());
   const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
+  // Confirmation step for the compared-player chip: the first tap arms a
+  // "Go →" button in the chip's place; only that button navigates. A
+  // pointer-down anywhere outside it disarms. The listener attaches in an
+  // effect (after the arming tap has already fired) and uses the capture
+  // phase, so the very tap that armed it never immediately disarms it.
+  const [armed, setArmed] = useState(false);
+  const goRef = useRef(null);
+  // When the chip was armed. On touch devices the single tap that arms the
+  // button can synthesize a second, delayed "ghost" click at the same screen
+  // position — which now belongs to "Go →" — and would jump immediately. The
+  // confirm ignores any click within this cooldown of arming, so only a
+  // deliberate second tap (later than the window) navigates.
+  const armedAtRef = useRef(0);
+  const GO_COOLDOWN_MS = 350;
+  const arm = () => { armedAtRef.current = Date.now(); setArmed(true); };
+  const confirmGo = () => {
+    if (Date.now() - armedAtRef.current < GO_COOLDOWN_MS) return; // echo of the arming tap
+    setArmed(false);
+    context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null });
+  };
+  useEffect(() => {
+    if (!armed) return;
+    // While armed, a tap anywhere outside "Go →" only resets the button — it
+    // must NOT also trigger whatever it landed on (opening another player's
+    // card, filtering a team, etc.). Intercept the click in the capture phase
+    // at the document level, above React's root listener, and swallow it so no
+    // underlying handler runs; only then disarm.
+    const onClickCapture = (e) => {
+      if (goRef.current && goRef.current.contains(e.target)) return; // let "Go →" through
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setArmed(false);
+    };
+    document.addEventListener("click", onClickCapture, true);
+    return () => document.removeEventListener("click", onClickCapture, true);
+  }, [armed]);
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -483,7 +520,39 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {seasonTag(a.season)}</span>
         <span className="text-stone-400 shrink-0">vs</span>
-        <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+        {/* The compared player's chip links to that player's own card: in By
+            Season it opens the Leaderboard for their season filtered to their
+            team; in By Player it opens their default career view. Tapping the
+            chip first arms a "Go →" confirmation in its place (see `armed`);
+            only "Go →" navigates. The parent supplies onNavigateToPlayer via
+            context (present whenever comparing); without it the chip stays a
+            plain label. */}
+        {context?.onNavigateToPlayer ? (
+          armed ? (
+            <button
+              ref={goRef}
+              type="button"
+              onClick={confirmGo}
+              className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95 touch-manipulation"
+              style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+              title={`Open ${b.name} ${seasonTag(b.season)}`}
+            >
+              Go <span aria-hidden>→</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={arm}
+              className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer touch-manipulation"
+              style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+              title={`Open ${b.name} ${seasonTag(b.season)}`}
+            >
+              {b.name} {seasonTag(b.season)}<Swatch color={cb} outline />
+            </button>
+          )
+        ) : (
+          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+        )}
       </div>
       <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
         {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>

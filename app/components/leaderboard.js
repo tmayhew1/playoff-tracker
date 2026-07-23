@@ -10,7 +10,7 @@ import { GOLD, MIDNIGHT_PURPLE, normalizeName, teamColor, withAlpha } from "../l
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 
 
-export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
+export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +19,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
   // Full regular-season rows; feeds the rs/combined scopes AND the per-36
   // reference tick in the playoff drill-in.
   const [rsData, setRsData] = useState(null);
+  // Which season the currently-loaded data / rsData belong to. Lets the
+  // pendingNav effect below tell fresh rows from the previous season's rows
+  // still in state during a season switch (the fetch .then hasn't run yet).
+  const [dataSeason, setDataSeason] = useState(null);
+  const [rsSeason, setRsSeason] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [teamFilter, setTeamFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -93,17 +98,19 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     setExpanded(null);
     setRsData(null);
     setRsError(null);
+    setDataSeason(null);
+    setRsSeason(null);
     setLoading(true);
     setRsLoading(true);
     fetchJsonCached(`/api/leaderboard?season=${season}`)
-      .then((d) => { if (!cancelled) setData(d); })
+      .then((d) => { if (!cancelled) { setData(d); setDataSeason(season); } })
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     // Regular-season totals load independently so a slow BR fetch doesn't
     // block the playoff leaderboard; in playoff scope they only feed the
     // reference tick, in the other scopes they're the data itself.
     fetchJsonCached(`/api/regular-season?season=${season}`)
-      .then((d) => { if (!cancelled && Array.isArray(d.players)) setRsData(d); })
+      .then((d) => { if (!cancelled && Array.isArray(d.players)) { setRsData(d); setRsSeason(season); } })
       .catch((e) => !cancelled && setRsError(e.message || "Load failed"))
       .finally(() => !cancelled && setRsLoading(false));
     return () => { cancelled = true; };
@@ -194,7 +201,10 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     if (!ctxPools) return null;
     const self = findIndexPlayer(ctxPlayers, p);
     if (!self) return null;
-    return { ...ctxPools, self, scope, season };
+    // onNavigateToPlayer lets a compare panel's compared-player chip jump the
+    // leaderboard to that player's season, filtered to their team with their
+    // row open (see the pendingNav effect below).
+    return { ...ctxPools, self, scope, season, onNavigateToPlayer };
   };
 
   useEffect(() => {
@@ -204,6 +214,35 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs" }) {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     setPendingScrollName(null);
   }, [pendingScrollName]);
+
+  // Apply an incoming "open this player" navigation (from a compare panel's
+  // compared-player chip). The season prop has already been switched to the
+  // target's season by the parent; wait until this scope's rows for that
+  // season have loaded, then filter to the player's team, expand their row,
+  // and scroll it into view. Matching prefers slug (stable across data
+  // sources), falling back to a normalized-name compare. The [season] reset
+  // effect above clears teamFilter/expanded first when the season actually
+  // changed, so this always wins the race and its result sticks.
+  useEffect(() => {
+    if (!pendingNav || pendingNav.season !== season) return;
+    // Only act on rows that actually belong to the target season. During a
+    // season switch the previous season's data/rsData linger in state (the
+    // fetch .then hasn't replaced them yet), and matching against those could
+    // both open the wrong row and clear pendingNav before the real rows load —
+    // the dataSeason/rsSeason tags gate against that stale window.
+    const source = scope === "regular" ? (rsSeason === season ? rsPlayers : null)
+      : scope === "combined" ? (dataSeason === season ? combinedPlayers : null)
+      : (dataSeason === season ? data?.players : null);
+    if (!source || !source.length) return; // rows for this season not ready yet
+    const n = normalizeName(pendingNav.name || "");
+    const match = source.find((p) => (pendingNav.slug && p.slug === pendingNav.slug) || normalizeName(p.name) === n);
+    if (match) {
+      setTeamFilter(match.team);
+      setExpanded(`${match.team}:${match.name}`);
+      setPendingScrollName(match.name);
+    }
+    onNavHandled?.();
+  }, [pendingNav, season, scope, data, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
 
   const title = scope === "regular" ? "Regular Season Leaderboard"
     : scope === "combined" ? "Combined Leaderboard"
