@@ -391,11 +391,20 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   };
   useEffect(() => {
     if (!armed) return;
-    const onDown = (e) => {
-      if (!goRef.current || !goRef.current.contains(e.target)) setArmed(false);
+    // While armed, a tap anywhere outside "Go →" only resets the button — it
+    // must NOT also trigger whatever it landed on (opening another player's
+    // card, filtering a team, etc.). Intercept the click in the capture phase
+    // at the document level, above React's root listener, and swallow it so no
+    // underlying handler runs; only then disarm.
+    const onClickCapture = (e) => {
+      if (goRef.current && goRef.current.contains(e.target)) return; // let "Go →" through
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setArmed(false);
     };
-    document.addEventListener("pointerdown", onDown, true);
-    return () => document.removeEventListener("pointerdown", onDown, true);
+    document.addEventListener("click", onClickCapture, true);
+    return () => document.removeEventListener("click", onClickCapture, true);
   }, [armed]);
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
@@ -525,7 +534,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
               type="button"
               onClick={confirmGo}
               className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95 touch-manipulation"
-              style={{ backgroundColor: GOLD, color: "#1c1917", border: `1px solid ${GOLD}` }}
+              style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
               title={`Open ${b.name} ${seasonTag(b.season)}`}
             >
               Go <span aria-hidden>→</span>
