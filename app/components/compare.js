@@ -376,6 +376,19 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   // phase, so the very tap that armed it never immediately disarms it.
   const [armed, setArmed] = useState(false);
   const goRef = useRef(null);
+  // When the chip was armed. On touch devices the single tap that arms the
+  // button can synthesize a second, delayed "ghost" click at the same screen
+  // position — which now belongs to "Go →" — and would jump immediately. The
+  // confirm ignores any click within this cooldown of arming, so only a
+  // deliberate second tap (later than the window) navigates.
+  const armedAtRef = useRef(0);
+  const GO_COOLDOWN_MS = 350;
+  const arm = () => { armedAtRef.current = Date.now(); setArmed(true); };
+  const confirmGo = () => {
+    if (Date.now() - armedAtRef.current < GO_COOLDOWN_MS) return; // echo of the arming tap
+    setArmed(false);
+    context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null });
+  };
   useEffect(() => {
     if (!armed) return;
     const onDown = (e) => {
@@ -510,8 +523,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
             <button
               ref={goRef}
               type="button"
-              onClick={() => { setArmed(false); context.onNavigateToPlayer({ season: b.season, team: b.team, name: b.name, slug: b.slug || null }); }}
-              className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95"
+              onClick={confirmGo}
+              className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95 touch-manipulation"
               style={{ backgroundColor: GOLD, color: "#1c1917", border: `1px solid ${GOLD}` }}
               title={`Open ${b.name} ${seasonTag(b.season)}`}
             >
@@ -520,8 +533,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
           ) : (
             <button
               type="button"
-              onClick={() => setArmed(true)}
-              className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer"
+              onClick={arm}
+              className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer touch-manipulation"
               style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
               title={`Open ${b.name} ${seasonTag(b.season)}`}
             >
