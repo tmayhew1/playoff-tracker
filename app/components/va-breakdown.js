@@ -704,21 +704,24 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
     </div>
   );
 
+  // /G toggle — flips the whole card between total and per-game category VA
+  // (sorts, ranks, percentile, all-time, trend, and shown values). Rendered
+  // twice, both bound to the same state so either one flips both: once between
+  // the leaderboard and the percentile strip, once by the by-season bars.
+  const gToggle = (
+    <button
+      type="button"
+      onClick={() => setPerGame((v) => !v)}
+      aria-pressed={perGame}
+      title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
+      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+    >
+      /G {perGame ? "ON" : "OFF"}
+    </button>
+  );
+
   return (
     <div className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3">
-      {/* /G toggle — flips the whole card between total and per-game category
-          VA (sorts, ranks, percentile, all-time, trend, and shown values). */}
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={() => setPerGame((v) => !v)}
-          aria-pressed={perGame}
-          title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
-          className={`tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
-        >
-          /G {perGame ? "ON" : "OFF"}
-        </button>
-      </div>
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
@@ -733,6 +736,9 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
         ))}
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Ranked by {perGame ? "per-game" : "total"} {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
       </div>
+
+      {/* /G toggle sits between the leaderboard and the percentile strip. */}
+      <div className="flex items-center justify-end">{gToggle}</div>
 
       {/* View 2 — percentile + distribution strip. The percentile reads as a
           single number floating right above the player's dot on the strip. */}
@@ -780,7 +786,12 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
 
       {/* View 6 — trend across this player's seasons, one labeled bar each */}
       <div className="border-t border-stone-100 pt-2">
-        <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{short} VA by season</div>
+        {/* Second /G toggle, in sync with the first, so it's clear the
+            by-season bars respond to it too. */}
+        <div className="flex items-center justify-between mb-1">
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">{short} VA by season</span>
+          {gToggle}
+        </div>
         {d.mine.length === 0 ? (
           <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
         ) : (
