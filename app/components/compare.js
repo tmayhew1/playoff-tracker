@@ -483,7 +483,24 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {seasonTag(a.season)}</span>
         <span className="text-stone-400 shrink-0">vs</span>
-        <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+        {/* The compared player's chip links to that player's own card: in By
+            Season it opens the Leaderboard for their season filtered to their
+            team; in By Player it opens their default career view. The parent
+            supplies onNavigateToPlayer via context (present whenever comparing);
+            without it the chip stays a plain label. */}
+        {context?.onNavigateToPlayer ? (
+          <button
+            type="button"
+            onClick={() => context.onNavigateToPlayer({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })}
+            className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer"
+            style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+            title={`Open ${b.name} ${seasonTag(b.season)}`}
+          >
+            {b.name} {seasonTag(b.season)}<Swatch color={cb} outline />
+          </button>
+        ) : (
+          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+        )}
       </div>
       <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
         {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>

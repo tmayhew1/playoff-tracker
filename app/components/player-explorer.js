@@ -34,6 +34,20 @@ export function PlayerExplorer({ scope = "playoffs" }) {
 
   const keyOf = (p) => p.slug || p.name;
 
+  // Jump to another player's default career view — invoked from a compare
+  // panel's compared-player chip (via context.onNavigateToPlayer). Resolve the
+  // target against the loaded index (slug first, then normalized name) and
+  // select it; PlayerDetail is keyed by player+scope, so it remounts fresh
+  // (no season drilled in — the "default career view").
+  const navigateToPlayer = (target) => {
+    if (!index || !target) return;
+    const nm = normalizeName(target.name || "");
+    const found = index.find((p) => (target.slug && p.slug === target.slug) || normalizeName(p.name) === nm);
+    if (!found) return;
+    setSelectedKey(keyOf(found));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const matches = useMemo(() => {
     if (!index) return [];
     const q = normalizeName(query.trim());
@@ -66,6 +80,7 @@ export function PlayerExplorer({ scope = "playoffs" }) {
         scope={scope}
         contextData={contextData}
         onBack={() => selectPlayer(null)}
+        onNavigateToPlayer={navigateToPlayer}
       />
     );
   }
@@ -117,7 +132,7 @@ export function PlayerExplorer({ scope = "playoffs" }) {
 // tappable TOT VA / VA/G column headers, team-color badges that filter, a
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
-export function PlayerDetail({ player, scope, contextData, onBack }) {
+export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -148,7 +163,7 @@ export function PlayerDetail({ player, scope, contextData, onBack }) {
   const maxAbsVa = Math.max(...shown.map((x) => Math.abs(x.va || 0)), 0.5);
 
   const contextFor = (s) =>
-    contextData ? { ...contextData, self: player, scope, season: s.season } : null;
+    contextData ? { ...contextData, self: player, scope, season: s.season, onNavigateToPlayer } : null;
   const navFor = (i) => ({
     onPrev: i > 0 ? () => setOpenSeason(shown[i - 1].season) : undefined,
     onNext: i < shown.length - 1 ? () => setOpenSeason(shown[i + 1].season) : undefined,
