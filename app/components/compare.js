@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
@@ -369,6 +369,21 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   // player-season or season row resets everything).
   const [openGroups, setOpenGroups] = useState(() => new Set());
   const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
+  // Confirmation step for the compared-player chip: the first tap arms a
+  // "Go →" button in the chip's place; only that button navigates. A
+  // pointer-down anywhere outside it disarms. The listener attaches in an
+  // effect (after the arming tap has already fired) and uses the capture
+  // phase, so the very tap that armed it never immediately disarms it.
+  const [armed, setArmed] = useState(false);
+  const goRef = useRef(null);
+  useEffect(() => {
+    if (!armed) return;
+    const onDown = (e) => {
+      if (!goRef.current || !goRef.current.contains(e.target)) setArmed(false);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [armed]);
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -485,19 +500,34 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
         <span className="text-stone-400 shrink-0">vs</span>
         {/* The compared player's chip links to that player's own card: in By
             Season it opens the Leaderboard for their season filtered to their
-            team; in By Player it opens their default career view. The parent
-            supplies onNavigateToPlayer via context (present whenever comparing);
-            without it the chip stays a plain label. */}
+            team; in By Player it opens their default career view. Tapping the
+            chip first arms a "Go →" confirmation in its place (see `armed`);
+            only "Go →" navigates. The parent supplies onNavigateToPlayer via
+            context (present whenever comparing); without it the chip stays a
+            plain label. */}
         {context?.onNavigateToPlayer ? (
-          <button
-            type="button"
-            onClick={() => context.onNavigateToPlayer({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })}
-            className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer"
-            style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
-            title={`Open ${b.name} ${seasonTag(b.season)}`}
-          >
-            {b.name} {seasonTag(b.season)}<Swatch color={cb} outline />
-          </button>
+          armed ? (
+            <button
+              ref={goRef}
+              type="button"
+              onClick={() => { setArmed(false); context.onNavigateToPlayer({ season: b.season, team: b.team, name: b.name, slug: b.slug || null }); }}
+              className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95"
+              style={{ backgroundColor: GOLD, color: "#1c1917", border: `1px solid ${GOLD}` }}
+              title={`Open ${b.name} ${seasonTag(b.season)}`}
+            >
+              Go <span aria-hidden>→</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setArmed(true)}
+              className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer"
+              style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+              title={`Open ${b.name} ${seasonTag(b.season)}`}
+            >
+              {b.name} {seasonTag(b.season)}<Swatch color={cb} outline />
+            </button>
+          )
         ) : (
           <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
         )}
