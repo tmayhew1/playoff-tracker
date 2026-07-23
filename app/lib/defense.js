@@ -52,7 +52,16 @@ export const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
 // possessions accrue. A full-time starter (~4,500-5,000 poss) is ~75-77% PBP;
 // a 300-minute injury season stays ~70% estimate — which is what keeps a
 // 20-pts/100 small-sample on-court fluke from lapping the leaderboard.
+//
+// The playoffs get a lighter prior (~1/3, 500 poss). Two reasons pull the
+// same way: playoff samples are inherently small — a first-round exit is
+// ~350 possessions, which against the 1,500 RS prior is only ~19% PBP, so
+// the "playoff" rating is really just the box-score estimate — and the
+// estimate itself is noisier off a handful of games, so it earns less
+// deference. At 500 that same short series is ~41% PBP and a full run
+// (~1,500 poss) lands ~75%, matching where a RS starter sits.
 export const DEF_PBP_PRIOR_POSS = 1500;
+export const DEF_PBP_PRIOR_POSS_PO = 500;
 
 export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   const ent = defRtgEntryFor(defs, season, row?.slug, pref);
@@ -65,8 +74,9 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   // no PBP sample exists (pre-2000, unbaked seasons, unjoined names); pure
   // PBP in the rare case the estimate is missing.
   const poss = row?.mp > 0 ? row.mp * lgaX.laPOSSperM : 0;
+  const priorPoss = pref === "po" ? DEF_PBP_PRIOR_POSS_PO : DEF_PBP_PRIOR_POSS;
   const pbpW =
-    ent.pbp != null && ent.est != null ? poss / (poss + DEF_PBP_PRIOR_POSS)
+    ent.pbp != null && ent.est != null ? poss / (poss + priorPoss)
     : ent.pbp != null ? 1
     : 0;
   const drtg = pbpW * (ent.pbp ?? 0) + (1 - pbpW) * (ent.est ?? 0);
