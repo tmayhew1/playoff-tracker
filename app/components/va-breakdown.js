@@ -718,7 +718,12 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
   const ms = d.mine.map((x) => x.m);
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
   const tSpan = (tHi - tLo) || 1;
-  const zeroPct = (tHi / tSpan) * 100; // baseline's offset from the top
+  // Reserve a top band so a rank badge floats ABOVE its bar instead of being
+  // clamped down onto it: the plot is squeezed into the lower (100 − HEAD_PCT)%
+  // and the tallest bar tops out at HEAD_PCT, leaving room for the "#N" chip.
+  const HEAD_PCT = 16;
+  const plotScale = (100 - HEAD_PCT) / 100;
+  const zeroPct = HEAD_PCT + (tHi / tSpan) * 100 * plotScale; // baseline offset from the top
   const curIdx = d.mine.findIndex((x) => x.season === seasonKey);
   // "2000-01" -> ’01 (season's end year)
   const yearTag = (season) => `’${season.slice(5)}`;
@@ -830,7 +835,7 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
                 bars; a full career still packs tightly under the cap. */}
             <div className="flex items-stretch justify-start gap-[2px] h-20 px-1">
               {d.mine.map((x, i) => {
-                const hPct = (Math.abs(x.m) / tSpan) * 100;
+                const hPct = (Math.abs(x.m) / tSpan) * 100 * plotScale;
                 const topPct = x.m >= 0 ? zeroPct - hPct : zeroPct;
                 // Top-9-in-the-league season: flag its rank just above the bar.
                 const topRank = x.poolN > 0 && x.rank <= 9 ? x.rank : null;
@@ -842,8 +847,11 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
                       style={{ top: `${topPct}%`, height: `${Math.max(hPct, 1)}%`, backgroundColor: i === curIdx ? "#1c1917" : "#a8a29e" }}
                     />
                     {topRank && (
+                      // Auto-width chip centered over the bar, floating in the
+                      // reserved headroom just above the bar's top — no full-
+                      // width background to poke past the bar as a ghost bar.
                       <span
-                        className="absolute inset-x-0 text-center text-[7px] font-bold text-stone-900 tabular-nums leading-none rounded-sm bg-white/70"
+                        className="absolute left-1/2 -translate-x-1/2 text-[7px] font-bold text-stone-900 tabular-nums leading-none whitespace-nowrap"
                         style={{ top: `max(0px, calc(${topPct}% - 9px))` }}
                       >
                         #{topRank}
