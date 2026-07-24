@@ -451,17 +451,23 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         // when defense adds value, red backing into it when it subtracts.
         // VA+ view skips it: its main bar already contains dVA.
         const dvaOf = (p) => defVAInfo(p, p.mp, lga, defs, season, defScope)?.dva ?? null;
-        // Bar scale — proportional to abs(VA) over the visible list. In VA
+        // Bars follow the active sort: when the list is ordered by VA/G the
+        // bar lengths switch to the VA/G scale (each value divided by the
+        // player's games), so the widths track the same metric the rows are
+        // ranked on; otherwise they stay on the total-VA scale.
+        const perG = effectiveSort === "vaPerG";
+        const scaleVal = (v, p) => (perG ? v / Math.max(1, p.gp) : v);
+        // Bar scale — proportional to abs(value) over the visible list. In VA
         // view the denominator also covers each player's VA+ so the strips'
         // endpoints fit on-scale (the biggest VA+ reaches full width, and
         // the VA bars shrink a notch to make room).
         const maxAbsVa = Math.max(
-          ...shown.map((p) => Math.abs(vaOf(p))),
+          ...shown.map((p) => Math.abs(scaleVal(vaOf(p), p))),
           ...(metric === "va" ? shown.map((p) => {
             const d = dvaOf(p);
-            return d == null ? 0 : Math.abs((p.va || 0) + d);
+            return d == null ? 0 : Math.abs(scaleVal((p.va || 0) + d, p));
           }) : []),
-          0.5,
+          perG ? 0.05 : 0.5,
         );
         return shown.map((p, i) => {
         // Keep the overall rank (1, 7, 13…) even when filters trim the
@@ -476,7 +482,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         const barColor = rowVa >= 0
           ? withAlpha(tc, 0.16)
           : withAlpha("#dc2626", 0.10);
-        const barPct = (Math.abs(rowVa) / maxAbsVa) * 100;
+        const barPct = (Math.abs(scaleVal(rowVa, p)) / maxAbsVa) * 100;
         // Player's playoff games already chronological from server, with
         // null-va slots for games they sat out inside a series they played
         // (kept so the chart shows a gap and the title uses the true series
@@ -517,7 +523,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   <div
                     className="absolute bottom-0 left-0 h-[3px] pointer-events-none"
                     style={{
-                      width: `${(Math.abs(rowVa + dva) / maxAbsVa) * 100}%`,
+                      width: `${(Math.abs(scaleVal(rowVa + dva, p)) / maxAbsVa) * 100}%`,
                       backgroundColor: dva > 0 ? withAlpha(GOLD, 0.5) : withAlpha("#dc2626", 0.3),
                     }}
                     aria-hidden

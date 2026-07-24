@@ -160,7 +160,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                                   [...seasons].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
   const teamFiltered = teamFilter ? sortedAll.filter((x) => x.team === teamFilter) : sortedAll;
   const shown = minGames != null ? teamFiltered.filter((x) => x.gp >= minGames) : teamFiltered;
-  const maxAbsVa = Math.max(...shown.map((x) => Math.abs(x.va || 0)), 0.5);
+  // Bars follow the active sort: ranked by VA/G, the bar lengths switch to the
+  // VA/G scale so their widths track the same metric the rows are ordered on.
+  const perG = effectiveSort === "vaPerG";
+  const barValOf = (x) => (perG ? vaPerG(x) : (x.va || 0));
+  const maxAbsVa = Math.max(...shown.map((x) => Math.abs(barValOf(x))), perG ? 0.05 : 0.5);
 
   const contextFor = (s) =>
     contextData ? { ...contextData, self: player, scope, season: s.season, onNavigateToPlayer } : null;
@@ -260,7 +264,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const tc = teamColor(s.team);
         const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
         const barColor = s.va >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
-        const barPct = (Math.abs(s.va || 0) / maxAbsVa) * 100;
+        const barPct = (Math.abs(barValOf(s)) / maxAbsVa) * 100;
         const gp = s.gp || 1;
         const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
         return (
