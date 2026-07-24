@@ -582,7 +582,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                 <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
               {context && atSeasonLevel && isCatSel && (
-                <CategoryContext p={pSeries} catKey={c.key} lga={lga} rateMode={rateMode} context={context} />
+                <CategoryContext p={pSeries} catKey={c.key} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
               {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
             </React.Fragment>
@@ -619,7 +619,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
 //   self           the player object   (name, slug, seasons[]) for identity/trend
 // The ranking metric is per-game category VA so longevity doesn't dominate a
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
-export function CategoryContext({ p, catKey, lga, rateMode, context }) {
+export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs" }) {
   const { poolsBySeason, allRows, self } = context;
   // Leaderboard rows don't carry a season field (the whole board is one
   // season) — the caller passes it on the context instead.
@@ -629,8 +629,22 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
   // is PER-GAME category VA. Off: the whole card re-sorts and re-labels on
   // TOTAL category VA instead (a full season outranks a half one at the rate).
   const [perGame, setPerGame] = useState(true);
-  // The metric the entire card ranks and displays on, respecting the toggle.
-  const metric = (r, lgaX) => (perGame ? catVAperGame(r, lgaX, catKey) : catVATotal(r, lgaX, catKey));
+  // When VA+ is the active metric, the Defense drill-in folds D Rating into
+  // every ranking/percentile/all-time/trend figure — so the context matches
+  // the Defense group's VA+ total (Blocks + Steals + D Rating), not just the
+  // two box-score stocks. Only the Defense group carries it; individual
+  // Blocks/Steals drill-ins stay pure box-score VA.
+  const withDef = defActive && catKey === "Defense" && !!defs;
+  // The metric the entire card ranks and displays on, respecting the toggle
+  // (and folding in each row's D Rating when withDef).
+  const metric = (r, lgaX, seasonOf = seasonKey) => {
+    let v = perGame ? catVAperGame(r, lgaX, catKey) : catVATotal(r, lgaX, catKey);
+    if (withDef && r.mp > 0) {
+      const dva = defVAInfo(r, r.mp, lgaX, defs, seasonOf, defScope)?.dva ?? 0;
+      v += perGame ? dva / (r.gp || 1) : dva;
+    }
+    return v;
+  };
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
     : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
@@ -642,11 +656,11 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || [])
       .filter((r) => (r.gp || 0) >= floor && r.mp > 0)
-      .map((r) => ({ r, m: metric(r, lga) }))
+      .map((r) => ({ r, m: metric(r, lga, seasonKey) }))
       .sort((a, b) => b.m - a.m);
     const N = pool.length;
     const selfIdx = pool.findIndex((x) => samePlayer(x.r, selfRow));
-    const selfM = selfIdx >= 0 ? pool[selfIdx].m : metric(selfRow, lga);
+    const selfM = selfIdx >= 0 ? pool[selfIdx].m : metric(selfRow, lga, seasonKey);
     // "Better than X% of the N qualified" — strictly-below count over the full
     // pool, so the top player reads ~99%, not a self-inclusive 100%.
     const below = pool.filter((x) => x.m < selfM).length;
@@ -660,22 +674,38 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
     const floorA = Math.min(5, p.gp || 1);
     const all = allRows
       .filter((r) => (r.gp || 0) >= floorA && r.mp > 0)
-      .map((r) => ({ r, m: metric(r, lgaForSeason(r.season)) }))
+      .map((r) => ({ r, m: metric(r, lgaForSeason(r.season), r.season) }))
       .sort((a, b) => b.m - a.m);
     const allN = all.length;
     const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
     const top = all.slice(0, 3).map((x, i) => ({ ...x, rank: i + 1 }));
     const selfAll = allIdx >= 0 ? { ...all[allIdx], rank: allIdx + 1 } : null;
 
-    // Trend (view 6): this player's own seasons over time.
+    // Trend (view 6): this player's own seasons over time. Each season also
+    // carries the player's league rank that year on the same metric, so a
+    // top-of-league campaign can flag itself above its bar.
     const mine = [...(self.seasons || [])]
       .filter((s) => s.mp > 0)
-      .map((s) => ({ season: s.season, m: metric(s, lgaForSeason(s.season)) }))
-      .sort((a, b) => a.season.localeCompare(b.season));
+      .sort((a, b) => a.season.localeCompare(b.season))
+      .map((s) => {
+        const lgaS = lgaForSeason(s.season);
+        // Carry the player's slug onto the season row so metric() can fold in
+        // D Rating (defVAInfo keys off slug) — self.seasons rows don't have it.
+        const sRow = { ...s, name: self.name, slug: self.slug || null };
+        const m = metric(sRow, lgaS, s.season);
+        // Rank among that season's qualified field (same ≥1/3-GP floor as the
+        // season leaderboard above), by strictly-greater count.
+        const floorS = Math.max(1, Math.ceil((s.gp || 1) / 3));
+        const seasonPool = (poolsBySeason.get(s.season) || [])
+          .filter((r) => (r.gp || 0) >= floorS && r.mp > 0);
+        let rank = 1;
+        for (const r of seasonPool) if (metric(r, lgaS, s.season) > m) rank += 1;
+        return { season: s.season, m, rank, poolN: seasonPool.length };
+      });
 
     return { floor, N, rank: selfIdx + 1, selfM, pctile, min, max, med, win,
              floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
-  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow, perGame]);
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow, perGame, withDef, defScope]);
 
   const short = CAT_SHORT[catKey] || catKey;
   // Total VA is a whole-season figure, so one decimal (matches the leaderboard);
@@ -688,7 +718,12 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
   const ms = d.mine.map((x) => x.m);
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
   const tSpan = (tHi - tLo) || 1;
-  const zeroPct = (tHi / tSpan) * 100; // baseline's offset from the top
+  // Reserve a top band so a rank badge floats ABOVE its bar instead of being
+  // clamped down onto it: the plot is squeezed into the lower (100 − HEAD_PCT)%
+  // and the tallest bar tops out at HEAD_PCT, leaving room for the "#N" chip.
+  const HEAD_PCT = 16;
+  const plotScale = (100 - HEAD_PCT) / 100;
+  const zeroPct = HEAD_PCT + (tHi / tSpan) * 100 * plotScale; // baseline offset from the top
   const curIdx = d.mine.findIndex((x) => x.season === seasonKey);
   // "2000-01" -> ’01 (season's end year)
   const yearTag = (season) => `’${season.slice(5)}`;
@@ -795,25 +830,42 @@ export function CategoryContext({ p, catKey, lga, rateMode, context }) {
           <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
         ) : (
           <>
-            <div className="flex items-stretch gap-[2px] h-20 px-1">
+            {/* justify-start + a 10%-of-graph cap on each column keeps a
+                one-to-three-season career from ballooning into a few enormous
+                bars; a full career still packs tightly under the cap. */}
+            <div className="flex items-stretch justify-start gap-[2px] h-20 px-1">
               {d.mine.map((x, i) => {
-                const hPct = (Math.abs(x.m) / tSpan) * 100;
+                const hPct = (Math.abs(x.m) / tSpan) * 100 * plotScale;
                 const topPct = x.m >= 0 ? zeroPct - hPct : zeroPct;
+                // Top-9-in-the-league season: flag its rank just above the bar.
+                const topRank = x.poolN > 0 && x.rank <= 9 ? x.rank : null;
                 return (
-                  <div key={x.season} className="flex-1 relative min-w-0" title={`${x.season}: ${sgn(x.m)}`}>
+                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${sgn(x.m)}${topRank ? ` · #${topRank} in league` : ""}`}>
                     <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${zeroPct}%` }} />
                     <div
                       className="absolute inset-x-[12%]"
                       style={{ top: `${topPct}%`, height: `${Math.max(hPct, 1)}%`, backgroundColor: i === curIdx ? "#1c1917" : "#a8a29e" }}
                     />
+                    {topRank && (
+                      // Auto-width chip centered over the bar, floating in the
+                      // reserved headroom just above the bar's top — no full-
+                      // width background to poke past the bar as a ghost bar.
+                      <span
+                        className="absolute left-1/2 -translate-x-1/2 text-[7px] font-bold text-stone-900 tabular-nums leading-none whitespace-nowrap"
+                        style={{ top: `max(0px, calc(${topPct}% - 9px))` }}
+                      >
+                        #{topRank}
+                      </span>
+                    )}
                   </div>
                 );
               })}
             </div>
-            <div className="flex gap-[2px] px-1 mt-0.5">
+            <div className="flex justify-start gap-[2px] px-1 mt-0.5">
               {d.mine.map((x, i) => (
                 <span
                   key={x.season}
+                  style={{ maxWidth: "10%" }}
                   className={`flex-1 min-w-0 text-center text-[7px] tabular-nums leading-tight ${i === curIdx ? "text-stone-900 font-bold" : "text-stone-400"}`}
                 >
                   {yearTag(x.season)}
@@ -986,7 +1038,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
               <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(perG, 2)}</span>
               <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
             </div>
-            {catOpen && <CategoryContext p={p} catKey={c.key} lga={lga} rateMode={rateMode} context={context} />}
+            {catOpen && <CategoryContext p={p} catKey={c.key} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope="rs" />}
             {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
           </React.Fragment>
         );
