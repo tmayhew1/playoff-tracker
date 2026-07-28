@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
-import { LGA, valueAddByCategory, lgaForSeason } from "../scoring";
+import { LGA, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
@@ -707,6 +707,42 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
              floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow, perGame, withDef, defScope]);
 
+  // Shot-distance percentile breakdown. The two scoring cards — the Basic
+  // "Scoring" group and the "2-Pointers" category — swap the single percentile
+  // strip for six vertical value-added percentile bars: free throws, the four
+  // 2-point zones (rim / floater / mid-range / deep mid-range), and threes.
+  // Each is "points of value vs. that shot's league-average FG%" — the same
+  // shape as the twoAdd/tpAdd/ftAdd terms and zoneShotValue — so the six sum to
+  // the same scoring value the rolled-up card already shows, just split by
+  // WHERE it comes from. Kept out of the core VA vectors on purpose (no shot-
+  // location data before 1996-97), so this is gated on the season carrying a
+  // zoneFG baseline and the player carrying any zone attempts.
+  const showShots = (catKey === "Scoring" || catKey === "2-Pointers") && !!lga?.zoneFG && hasZoneData(p);
+  const SHOT_SEGMENTS = useMemo(() => [
+    { key: "ft",    sub: "FT",    val: (r) => ((r.ftm / (r.fta || 1)) - lga.laFT) * (r.fta || 0) },
+    { key: "z03",   sub: "Rim",   val: (r) => zoneShotValue(r.z03m || 0, r.z03a || 0, lga.zoneFG?.z03) },
+    { key: "z310",  sub: "Float", val: (r) => zoneShotValue(r.z310m || 0, r.z310a || 0, lga.zoneFG?.z310) },
+    { key: "z1016", sub: "Mid",   val: (r) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lga.zoneFG?.z1016) },
+    { key: "z16xp", sub: "Deep",  val: (r) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lga.zoneFG?.z16xp) },
+    { key: "tp",    sub: "3PT",   val: (r) => 3 * ((r.tpm / (r.tpa || 1)) - lga.la3P) * (r.tpa || 0) },
+  ], [lga]);
+  const zoneData = useMemo(() => {
+    if (!showShots) return null;
+    // Same season field and ≥1/3-GP floor as the main percentile pool above.
+    const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
+    const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
+    const N = pool.length;
+    return SHOT_SEGMENTS.map((seg) => {
+      const per = (r) => { const v = seg.val(r); return perGame ? v / (r.gp || 1) : v; };
+      const vals = pool.map(per).sort((a, b) => a - b);
+      const selfV = per(selfRow);
+      const below = vals.filter((v) => v < selfV).length;
+      const pctile = N > 0 ? (below / N) * 100 : 0;
+      const min = N ? vals[0] : 0, max = N ? vals[N - 1] : 0, med = N ? vals[Math.floor(N / 2)] : 0;
+      return { ...seg, selfV, pctile, min, max, med };
+    });
+  }, [showShots, SHOT_SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame]);
+
   const short = CAT_SHORT[catKey] || catKey;
   // Total VA is a whole-season figure, so one decimal (matches the leaderboard);
   // per-game figures are an order of magnitude smaller, so show two.
@@ -773,8 +809,50 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {short} VA among {scopeNoun} players with ≥{d.floor} G ({short} = {rateMode === "perG" ? "per-game" : "per-36"} rate).</div>
       </div>
 
-      {/* View 2 — percentile + distribution strip. The percentile reads as a
-          single number floating right above the player's dot on the strip. */}
+      {/* View 2 — percentile. For the two scoring cards (the Basic "Scoring"
+          group and the "2-Pointers" category) this fans out into six vertical
+          value-added percentile bars by shot distance — free throws, the four
+          2-point zones, and threes, one next to the other — so the reader sees
+          WHERE the scoring value comes from. Every other category (and any
+          season with no shot-location bake) keeps the single horizontal strip. */}
+      {zoneData ? (
+        <div className="border-t border-stone-100 pt-2">
+          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">Percentile · by shot distance</div>
+          {/* Section headers spanning their bars: FT · 2-Pointers (×4) · 3PT. */}
+          <div className="grid grid-cols-6 gap-1 text-[7px] uppercase tracking-wider text-stone-400">
+            <div className="col-span-1 text-center">FT</div>
+            <div className="col-span-4 text-center border-x border-stone-200">2-Pointers</div>
+            <div className="col-span-1 text-center">3PT</div>
+          </div>
+          {/* pt-4 reserves headroom for the percentile number floating above
+              each bar's top; items-start keeps every column baseline-aligned. */}
+          <div className="grid grid-cols-6 gap-1 items-start pt-4 mt-1">
+            {zoneData.map((seg) => {
+              const span = seg.max - seg.min;
+              const clamp = (v) => Math.max(0, Math.min(100, span > 0 ? ((v - seg.min) / span) * 100 : 50));
+              const selfPos = clamp(seg.selfV);
+              const medPos = clamp(seg.med);
+              // Collapse a value that rounds to zero to a clean +0.00 so a
+              // sliver-negative zone doesn't read as a red "-0.00".
+              const selfShown = Math.abs(seg.selfV) < 0.005 ? 0 : seg.selfV;
+              return (
+                <div key={seg.key} className="flex flex-col items-center min-w-0">
+                  {/* Vertical strip: low (bottom, light) → high (top, dark),
+                      dot = player, tick = field median, number = percentile. */}
+                  <div className="relative w-2 h-16 rounded-full bg-gradient-to-t from-stone-200 to-stone-400 mx-auto">
+                    <span className="absolute left-1/2 -translate-x-1/2 -top-4 text-[10px] font-bold text-stone-800 tabular-nums leading-none">{seg.pctile.toFixed(0)}</span>
+                    <div className="absolute inset-x-0 h-px bg-stone-500/60" style={{ bottom: `${medPos}%` }} title="median" />
+                    <div className="absolute left-1/2 w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-white -translate-x-1/2 translate-y-1/2" style={{ bottom: `${selfPos}%` }} />
+                  </div>
+                  <span className={`mt-1 text-[8px] tabular-nums font-semibold leading-none ${selfShown < 0 ? "text-red-600" : "text-stone-600"}`}>{sgn(selfShown)}</span>
+                  <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-none text-center">{seg.sub}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">Percentile of {perGame ? "per-game" : "total"} value added vs. league FG% at each distance, among the {scopeNoun} field · bar low→high, dot = player, tick = median.</div>
+        </div>
+      ) : (
       <div className="border-t border-stone-100 pt-2">
         <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-5">Percentile</div>
         <div className="relative h-2 bg-gradient-to-r from-stone-200 via-stone-300 to-stone-400 rounded-full mx-1">
@@ -790,6 +868,7 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
           <span className="absolute right-1">high {sgn(d.max)}</span>
         </div>
       </div>
+      )}
 
       {/* View 4 — all-time rank */}
       <div className="border-t border-stone-100 pt-2">
