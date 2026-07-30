@@ -9,7 +9,7 @@ import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSnapshots } from "../lib/players";
-import { CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
+import { CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
 
 export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true }) {
@@ -698,12 +698,18 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // The four 2-point distance zones only exist from 1996-97 on; FT and 3PT are
   // defined every season, so only 2-point zones gate the all-time/trend pools.
   const segEra = (season) => !selSeg || selSeg.group !== "2p" || !!lgaForSeason(season)?.zoneFG;
+  // Made/attempted (FG%) label honoring the card's /G toggle: per-game to one
+  // decimal when on (matching the per-game VA values), whole-season totals when
+  // off. The FG% is scale-invariant, so it's unchanged either way.
+  const maLabel = (made, att, gp) => {
+    const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
+    return perGame
+      ? `${(made / (gp || 1)).toFixed(1)}/${(att / (gp || 1)).toFixed(1)} (${pct}%)`
+      : `${made}/${att} (${pct}%)`;
+  };
   // Made/attempted (FG%) headline for a leaderboard row at the selected
   // distance — replaces the rolled-up category's rate label while filtered.
-  const zoneRateLabel = (r) => {
-    const made = selSeg.m(r), att = selSeg.a(r);
-    return `${made}/${att} (${att > 0 ? ((made / att) * 100).toFixed(1) : "0.0"}%)`;
-  };
+  const zoneRateLabel = (r) => maLabel(selSeg.m(r), selSeg.a(r), r.gp);
 
   // The metric the entire card ranks and displays on, respecting the toggle
   // (and folding in each row's D Rating when withDef). When a shot distance is
@@ -845,7 +851,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="text-right text-[9px]">{r.gp}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? zoneRateLabel(r) : catRateLabel(r, catKey, rateMode)}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? zoneRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r.gp) : catRateLabel(r, catKey, rateMode)}</span>
       </>
     );
     // The player the card is currently about is marked, not a link to itself.
