@@ -533,6 +533,8 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               <div
                 role="button"
                 tabIndex={0}
+                aria-expanded={isOpen}
+                aria-label={`${p.name}, ${p.team} — ${isOpen ? "hide" : "show"} value added breakdown`}
                 onClick={() => setExpanded(isOpen ? null : rowKey)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -554,7 +556,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 aria-label={`Filter by ${p.team}`}
               >{p.team}</button>
               <span className="flex-1 truncate text-stone-800">
-                <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
+                <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
                 {p.name}
               </span>
               <button

@@ -7,7 +7,7 @@ import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD_BG, normalizeName, seasonTag, shortName, teamColor } from "../lib/format";
+import { GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSnapshots } from "../lib/players";
 import { CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
@@ -619,8 +619,31 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
 //   self           the player object   (name, slug, seasons[]) for identity/trend
 // The ranking metric is per-game category VA so longevity doesn't dominate a
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
-export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs" }) {
-  const { poolsBySeason, allRows, self } = context;
+export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs" }) {
+  const { poolsBySeason, allRows, self: ownerSelf } = context;
+  // The card owner — the player whose breakdown row opened this drill-in.
+  const ownerSeasonKey = pProp.season || context.season;
+
+  // Tapping another player's row in the season-rank leaderboard (View 1) below
+  // re-points the WHOLE card at them — every view (rank, percentile, all-time,
+  // trend) recomputes for that player — without leaving the drill-in. `null`
+  // means the card is still showing its owner. Reset whenever the owner or
+  // category changes so a reused instance never carries a stale focus.
+  const [focusRow, setFocusRow] = useState(null);
+  useEffect(() => { setFocusRow(null); }, [ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
+  const focused = !!focusRow;
+
+  // The player every view is about: the owner, or the tapped player. Their
+  // identity entry is the owner's index entry by default, or one rebuilt from
+  // the all-time pool (name/slug + every matching season) so the trend view
+  // still has their whole career to plot.
+  const p = focusRow || pProp;
+  const self = useMemo(() => {
+    if (!focusRow) return ownerSelf;
+    const seasons = allRows.filter((r) => samePlayer(r, focusRow));
+    return { name: focusRow.name, slug: focusRow.slug || null, seasons };
+  }, [focusRow, ownerSelf, allRows]);
+
   // Leaderboard rows don't carry a season field (the whole board is one
   // season) — the caller passes it on the context instead.
   const seasonKey = p.season || context.season;
@@ -811,16 +834,38 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
   // "2000-01" -> ’01 (season's end year)
   const yearTag = (season) => `’${season.slice(5)}`;
 
-  const Row = ({ rank, r, m, isSelf }) => (
-    <div className={`grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 items-center px-1 py-[2px] tabular-nums ${isSelf ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
-      <span className="text-right text-[9px] opacity-70">{rank}</span>
-      <span className="truncate text-[10px] font-medium">{r.name}</span>
-      <span className="text-right text-[9px]">{r.gp}</span>
-      <span className="text-right text-[9px]">{mpg(r)}</span>
-      <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-      <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? zoneRateLabel(r) : catRateLabel(r, catKey, rateMode)}</span>
-    </div>
-  );
+  // Card owner identity, for the "tapped the owner's own row → go back" check.
+  const ownerRow = { name: ownerSelf?.name, slug: ownerSelf?.slug || null };
+  const rowGrid = "grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 items-center px-1 py-[2px] tabular-nums";
+  const Row = ({ rank, r, m, isSelf }) => {
+    const cells = (
+      <>
+        <span className="text-right text-[9px] opacity-70">{rank}</span>
+        <span className="truncate text-[10px] font-medium">{r.name}</span>
+        <span className="text-right text-[9px]">{r.gp}</span>
+        <span className="text-right text-[9px]">{mpg(r)}</span>
+        <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? zoneRateLabel(r) : catRateLabel(r, catKey, rateMode)}</span>
+      </>
+    );
+    // The player the card is currently about is marked, not a link to itself.
+    if (isSelf) {
+      return <div className={`${rowGrid} bg-stone-800 text-white rounded-sm`} aria-current="true">{cells}</div>;
+    }
+    // Every other row re-points the card at that player; tapping the owner's
+    // own row (visible when focused on someone ranked near them) goes back.
+    const isOwner = samePlayer(r, ownerRow);
+    return (
+      <button
+        type="button"
+        onClick={() => setFocusRow(isOwner ? null : r)}
+        aria-label={`Show ${r.name}, ranked #${rank}, ${metricLabel} value added ${sgn(m)}`}
+        className={`${rowGrid} w-full text-left text-stone-600 rounded-sm cursor-pointer hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
+      >
+        {cells}
+      </button>
+    );
+  };
 
   // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
@@ -838,7 +883,38 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
   );
 
   return (
-    <div className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3">
+    <div
+      className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3"
+      role="group"
+      aria-label={`${self.name}, ${seasonKey} — ${metricLabel} value added context`}
+    >
+      {/* Whose card this is. Pinned at the top so it stays unambiguous even
+          after tapping another player's row in the season leaderboard below
+          re-points every view at them; the ← control returns to the owner. */}
+      <div className="flex items-center gap-1.5">
+        {p.team && (() => {
+          const tc = teamColor(p.team);
+          return (
+            <span
+              className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded-sm border"
+              style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
+            >{p.team}</span>
+          );
+        })()}
+        <span className="font-bold text-stone-900 text-[11px] truncate">{self.name}</span>
+        <span className="shrink-0 text-stone-400 text-[9px] tabular-nums">{seasonKey}</span>
+        {focused && (
+          <button
+            type="button"
+            onClick={() => setFocusRow(null)}
+            aria-label={`Back to ${ownerSelf.name}`}
+            className="ml-auto shrink-0 inline-flex items-center gap-0.5 normal-case tracking-normal text-[9px] font-semibold text-stone-500 hover:text-stone-900 border border-stone-300 rounded-sm px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+          >
+            <span aria-hidden>←</span> {shortName(ownerSelf.name)}
+          </button>
+        )}
+      </div>
+
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
@@ -853,7 +929,7 @@ export function CategoryContext({ p, catKey, lga, rateMode, context, defs = null
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {scopeNoun} players with ≥{d.floor} G ({selSeg ? `${metricLabel} = FG% at that distance` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}).</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {scopeNoun} players with ≥{d.floor} G ({selSeg ? `${metricLabel} = FG% at that distance` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
       </div>
 
       {/* View 2 — percentile. For the two scoring cards this fans out into a
