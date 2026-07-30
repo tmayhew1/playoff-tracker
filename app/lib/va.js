@@ -18,7 +18,8 @@ export const VA_PARTITIONS_AFTER = new Set(["Free Throws", "Turnovers", "O Rebou
 
 // --- Category context (By-Player search only) -------------------------------
 // Maps a breakdown category to the raw stat(s) needed to show its rate. Counting
-// cats render per-36 or per-game (toggle); shooting cats render made/att (pct).
+// cats render per-36 or per-game (toggle); shooting cats render made/att (pct),
+// with the made/att also following the per-36 / per-game toggle.
 export const CAT_COUNTING = {
   "Points": ["pts", "PTS"], "Assists": ["ast", "AST"], "Steals": ["stl", "STL"],
   "Blocks": ["blk", "BLK"], "Turnovers": ["tov", "TOV"],
@@ -61,7 +62,11 @@ export const GROUP_STAT = {
 export function catRateLabel(r, key, rateMode) {
   if (CAT_SHOOTING[key]) {
     const [m, a] = CAT_SHOOTING[key](r);
-    return `${m}/${a} (${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%)`;
+    // Makes/attempts follow the same per-game / per-36 toggle as counting
+    // stats: divide by games (perG) or minutes/36 (per36). The percentage is
+    // scale-invariant, so it's unchanged.
+    const div = rateMode === "perG" ? (r.gp || 1) : ((r.mp || 1) / 36);
+    return `${(m / div).toFixed(1)}/${(a / div).toFixed(1)} (${a > 0 ? ((m / a) * 100).toFixed(1) : "0.0"}%)`;
   }
   const [statOf, tag] = GROUP_STAT[key] || [];
   const v = statOf ? statOf(r) : (r[CAT_COUNTING[key][0]] || 0);
