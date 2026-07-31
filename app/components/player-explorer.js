@@ -155,9 +155,21 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 
   const effectiveSort = minGames != null ? "vaPerG" : sortMode;
   const sortedAll =
-    effectiveSort === "totalVA" ? [...seasons].sort((a, b) => b.va - a.va) :
-    effectiveSort === "vaPerG"  ? [...seasons].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
-                                  [...seasons].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
+    effectiveSort === "totalVA"    ? [...seasons].sort((a, b) => b.va - a.va) :
+    effectiveSort === "vaPerG"     ? [...seasons].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
+    effectiveSort === "seasonDesc" ? [...seasons].sort((a, b) => b.season.localeCompare(a.season)) :
+    effectiveSort === "seasonAsc"  ? [...seasons].sort((a, b) => a.season.localeCompare(b.season)) :
+                                     [...seasons].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
+  // Season header cycles newest-first → oldest-first → off (back to composite).
+  const cycleSeasonSort = () => {
+    setMinGames(null);
+    setSortMode(
+      effectiveSort === "seasonDesc" ? "seasonAsc" :
+      effectiveSort === "seasonAsc"  ? "composite" :
+                                       "seasonDesc"
+    );
+  };
+  const seasonSorted = effectiveSort === "seasonDesc" || effectiveSort === "seasonAsc";
   const teamFiltered = teamFilter ? sortedAll.filter((x) => x.team === teamFilter) : sortedAll;
   const shown = minGames != null ? teamFiltered.filter((x) => x.gp >= minGames) : teamFiltered;
   // Bars follow the active sort: ranked by VA/G, the bar lengths switch to the
@@ -217,7 +229,16 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
         <span className="w-10">Team</span>
-        <span className="flex-1">Season</span>
+        <button
+          type="button"
+          onClick={cycleSeasonSort}
+          className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${seasonSorted ? "text-stone-900 font-semibold" : ""}`}
+          title="Sort by season — newest first, then oldest first, then back to the default order"
+          aria-label="Sort by season"
+          aria-pressed={seasonSorted}
+        >
+          Season{effectiveSort === "seasonDesc" ? " ▼" : effectiveSort === "seasonAsc" ? " ▲" : ""}
+        </button>
         <button
           type="button"
           onClick={() => setGArmed((v) => !v)}
