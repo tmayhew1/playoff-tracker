@@ -733,6 +733,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
     : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
+  // Same selector, spelled the way the scope buttons at the top of the page do,
+  // for the ranking header (the card already names the player and season above,
+  // so the header says WHICH pool the rank is against instead of repeating them).
+  const scopeTitle = context.scope === "regular" ? "Regular Season"
+    : context.scope === "combined" ? "Regular Season & Playoffs" : "Playoffs";
 
   const d = useMemo(() => {
     // Ranking metric — total category VA, or per-game when the /G toggle is on
@@ -942,9 +947,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
       {/* View 1 — rank + mini leaderboard */}
       <div>
-        <div className="flex items-baseline justify-between mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{metricLabel} VA rank · {seasonKey}</span>
-          <span className="text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
+        <div className="flex items-baseline justify-between gap-2 mb-1">
+          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0">{metricLabel} Rankings ({scopeTitle})</span>
+          <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
           <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA</span><span className="text-right">{metricLabel}</span>
