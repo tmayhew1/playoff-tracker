@@ -815,6 +815,25 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     });
   }, [showShots, SHOT_SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
 
+  // Two headline totals for the six-bar Scoring card, shown inline with the
+  // section heading. Efficiency is the scoring-efficiency component of VA —
+  // 3P + 2P + FT value added, exactly what the three shooting rows sum to.
+  // Relative impact is the six distance bars below, summed. The two differ on
+  // purpose: the bars re-split 2-point value by shot location, and a season's
+  // zone attempts don't always reconcile with its total 2PA. Only the Scoring
+  // card gets them — the 2-Pointers card has no FT/3PT bars to sum.
+  const zoneTotals = useMemo(() => {
+    if (!zoneData || catKey === "2-Pointers") return null;
+    const by = valueAddByCategory(selfRow, lga);
+    const eff = (by["3-Pointers"] || 0) + (by["2-Pointers"] || 0) + (by["Free Throws"] || 0);
+    const impact = zoneData.reduce((s, seg) => s + seg.selfV, 0);
+    const scale = perGame ? (selfRow.gp || 1) : 1;
+    // Collapse a value that rounds to zero so a sliver-negative total doesn't
+    // read as a red "-0.00" (same treatment the bars get).
+    const zeroed = (v) => (Math.abs(v) < 0.005 ? 0 : v);
+    return { efficiency: zeroed(eff / scale), impact: zeroed(impact) };
+  }, [zoneData, catKey, selfRow, lga, perGame]);
+
   const short = CAT_SHORT[catKey] || catKey;
   // While a shot distance is selected, every heading/column reads as that
   // distance (e.g. "RIM") instead of the rolled-up scoring category.
@@ -948,19 +967,37 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           keeps the single horizontal percentile strip. */}
       {zoneData ? (
         <div className="border-t border-stone-100 pt-2">
-          <div className="flex items-baseline justify-between mb-1">
-            <span className="uppercase tracking-wider text-[9px] text-stone-400">
+          <div className="flex items-baseline justify-between gap-2 mb-1">
+            <span className="uppercase tracking-wider text-[9px] text-stone-400 truncate">
               {catKey === "2-Pointers" ? "2-Pointers · by distance" : "Scoring · by shot distance"}
             </span>
-            {selSeg && (
-              <button
-                type="button"
-                onClick={() => setSelectedZone(null)}
-                className="normal-case tracking-normal text-[9px] text-stone-400 hover:text-stone-700"
-              >
-                {metricLabel} ✕
-              </button>
-            )}
+            <div className="shrink-0 flex items-baseline gap-2">
+              {zoneTotals && (
+                <>
+                  <span
+                    className="uppercase tracking-wider text-[8px] text-stone-400 whitespace-nowrap"
+                    title={`Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value)`}
+                  >
+                    Eff <span className={`text-[9px] font-bold tabular-nums ${zoneTotals.efficiency > 0.05 ? "text-green-600" : zoneTotals.efficiency < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(zoneTotals.efficiency)}</span>
+                  </span>
+                  <span
+                    className="uppercase tracking-wider text-[8px] text-stone-400 whitespace-nowrap"
+                    title={`Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}`}
+                  >
+                    Impact <span className={`text-[9px] font-bold tabular-nums ${zoneTotals.impact > 0.05 ? "text-green-600" : zoneTotals.impact < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(zoneTotals.impact)}</span>
+                  </span>
+                </>
+              )}
+              {selSeg && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedZone(null)}
+                  className="normal-case tracking-normal text-[9px] text-stone-400 hover:text-stone-700"
+                >
+                  {metricLabel} ✕
+                </button>
+              )}
+            </div>
           </div>
           {/* Section headers spanning their bars: FT · 2-Pointers (×4) · 3PT.
               Only the six-bar Scoring card needs them — the 2-Pointers card is
@@ -1012,7 +1049,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               );
             })}
           </div>
-          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">Top = FG% · bar = {perGame ? "per-game" : "total"} value added vs. league FG% at each distance among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a distance to filter the card.</div>
+          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">Top = FG% · bar = {perGame ? "per-game" : "total"} value added vs. league FG% at each distance among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a distance to filter the card.{zoneTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</div>
         </div>
       ) : (
       <div className="border-t border-stone-100 pt-2">
