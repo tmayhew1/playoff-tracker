@@ -27,12 +27,10 @@ export function buildComparePlayers(allRows) {
 }
 
 
-// The four ways to rank/label closest comps. Order matches the toggle.
+// The two ways to rank/label closest comps. Order matches the toggle.
 export const COMP_METRIC_OPTS = [
-  { key: "imp", label: "Imp", word: "impact", title: "Impact — how close their overall per-game VA level is to this player's" },
-  { key: "sim", label: "Sim", word: "similarity", title: "Similarity — cosine match of the two VA-by-category profiles" },
-  { key: "impsim", label: "Imp×Sim", word: "imp×sim", title: "Impact × Similarity — the two combined into one closeness score" },
-  { key: "shoot", label: "Shoot", word: "shooting profile", title: "Shoot — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+)" },
+  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), combined into one closeness score" },
+  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+)" },
 ];
 
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
@@ -62,13 +60,13 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // is unchanged; keeping 12 per decade instead of 1 costs nothing extra.
   const COMPS_PER_DECADE = 12;
   // Which quantity the comps are ranked/shown by (see COMP_METRIC_OPTS):
-  //   sim    — cosine similarity (archetype match)
-  //   imp    — magnitude similarity (how close their overall VA level is)
-  //   impsim — the two multiplied (holistic closeness)
+  //   impsim — "Box Score VA": cosine similarity (archetype match) × magnitude
+  //            similarity (how close the overall VA level is)
+  //   shoot  — "Shooting": the same product over the shooting-profile vector
   const [compMetric, setCompMetric] = useState("impsim");
 
   // The expensive O(pool) similarity pass. Each surviving candidate carries
-  // all four ranking values so the metric toggle can re-sort without
+  // both ranking values so the metric toggle can re-sort without
   // recomputing any dot products. Keyed only on [self, context], so toggling
   // is cheap. shootCos/shootMag/shootScore are the same cosine × magnitude
   // shape as cos/mag/score, just over the 6-dim shooting-profile vector (the
@@ -138,14 +136,11 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
 
   // Value of the currently selected metric for a candidate.
   const metricVal = (o) => (
-    compMetric === "imp" ? o.mag
-    : compMetric === "impsim" ? o.score
-    : compMetric === "shoot" ? (o.shootScore ?? -Infinity)
-    : o.cos
+    compMetric === "shoot" ? (o.shootScore ?? -Infinity) : o.score
   );
 
   // Re-rank each decade by the selected metric (no dot products — just a
-  // sort). "Shoot" additionally drops candidates with no zone-VA overlap
+  // sort). "Shooting" additionally drops candidates with no zone-VA overlap
   // rather than showing them at the bottom with a meaningless score.
   const comps = useMemo(() => {
     return rawComps.map(([dec, arr]) => ({
@@ -210,7 +205,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                 <span className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0">Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
                   {COMP_METRIC_OPTS.map((o) => {
-                    // "Shoot" needs self to have zone-shot data for its
+                    // "Shooting" needs self to have zone-shot data for its
                     // season (1996-97+, and the shooting-splits bake has to
                     // have reached it) — hide the option rather than show a
                     // toggle that can never produce a match.

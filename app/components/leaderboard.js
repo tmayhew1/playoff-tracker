@@ -163,7 +163,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       // Includes the shot-distance zone m/a keys (z03m/z03a/...) alongside
       // the box-score fields, so this combined row still carries zone data
       // for the compare card's 2-Pointers zone rows and the closest-comps
-      // Shoot metric — both were silently disabled here before, since this
+      // Shooting metric — both were silently disabled here before, since this
       // list predates the zones feature and summed the box score fields
       // only.
       for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta",
