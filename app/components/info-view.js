@@ -108,7 +108,7 @@ export function InfoView() {
 
       <Step n="5" title="Compare &amp; closest comps">
         <p className="mb-2"><span className="font-semibold">Compare</span> pits any two player-seasons head-to-head — absolute values or all-time percentiles, category by category, with raw-stat drill-ins and a career-year overlay chart.</p>
-        <p>The picker also suggests <span className="font-semibold">closest comps</span>, by decade, among players in a similar minutes role: <span className="font-semibold">Imp</span> matches overall per-game VA level, <span className="font-semibold">Sim</span> matches the shape of the ten-category profile, <span className="font-semibold">Imp×Sim</span> demands both. (A fourth lens, Shoot, arrived with the shot zones below.)</p>
+        <p>The picker also suggests <span className="font-semibold">closest comps</span>, by decade, among players in a similar minutes role. <span className="font-semibold">Box Score VA</span> demands both a matching overall per-game VA level and a matching shape across the ten-category profile. (A second lens, Shooting, arrived with the shot zones below.)</p>
       </Step>
 
       <Step n="6" title="College">
@@ -121,9 +121,9 @@ export function InfoView() {
         <p><span className="font-semibold">VA+ = VA + defensive value.</span> The leaderboard&apos;s VA view keeps the pure box-score stat; toggle VA+ to re-score everything with the defensive layer. The <span className="font-semibold">D Rating</span> tab ranks every player-season by it, sortable by any column.</p>
       </Step>
 
-      <Step n="8" title="Shot Zones &amp; Shoot comps">
+      <Step n="8" title="Shot Zones &amp; Shooting comps">
         <p className="mb-2">2-point shooting, split by distance: <span className="font-semibold">0-3, 3-10, 10-16, and 16 ft to the arc</span> (shot-location data exists from 1996-97 on). Each zone is valued with the same VA shape — 2 × (zone FG% − the league&apos;s FG% at that distance) × attempts — so a rim finisher and a mid-range surgeon get credit for different skills instead of one blended 2P%.</p>
-        <p>Zone rows sit under the 2-Pointers card in any comparison (per-game, like the rest of the panel), the <span className="font-semibold">Shot Zones</span> tab ranks seasons by zone value, and the <span className="font-semibold">Shoot</span> comp lens matches whole shooting profiles — the four zones plus 3-point and free-throw value — among players who take a similar share of their shots from three.</p>
+        <p>Zone rows sit under the 2-Pointers card in any comparison (per-game, like the rest of the panel), the <span className="font-semibold">Shot Zones</span> tab ranks seasons by zone value, and the <span className="font-semibold">Shooting</span> comp lens matches whole shooting profiles — the four zones plus 3-point and free-throw value — among players who take a similar share of their shots from three.</p>
       </Step>
 
       <Step n="9" title="2025-26, in the books">

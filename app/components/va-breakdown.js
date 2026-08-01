@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
-import { LGA, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
+import { LGA, ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
@@ -612,6 +612,12 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
 }
 
 
+// Shot-distance range per zone key ("z03" -> "0-3 ft"), so the shot-distance
+// bars can print the actual range under their nickname ("Rim", "Float", …)
+// without restating the boundaries ZONES already owns.
+const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
+
+
 // League context for one category of one player-season (By-Player search only).
 // Everything is computed from the /api/players index passed in via `context`:
 //   poolsBySeason  Map<season, row[]>  every player-season, grouped by season
@@ -681,12 +687,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const SHOT_SEGMENTS = useMemo(() => {
     // group: "ft" | "2p" | "3p" — drives the section headers and the
     // 2-Pointers-only filter. m/a pull the made/attempted for the FG% headline.
+    // dist is the shot-distance range printed under the nickname (2-point zones
+    // only — "FT" and "3PT" are distances in themselves).
     const all = [
       { key: "ft",    sub: "FT",       group: "ft", m: (r) => r.ftm || 0,    a: (r) => r.fta || 0,    val: (r, lx = lga) => ((r.ftm / (r.fta || 1)) - lx.laFT) * (r.fta || 0) },
-      { key: "z03",   sub: "Rim",      group: "2p", m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) },
-      { key: "z310",  sub: "Float",    group: "2p", m: (r) => r.z310m || 0,  a: (r) => r.z310a || 0,  val: (r, lx = lga) => zoneShotValue(r.z310m || 0, r.z310a || 0, lx.zoneFG?.z310) },
-      { key: "z1016", sub: "Mid",      group: "2p", m: (r) => r.z1016m || 0, a: (r) => r.z1016a || 0, val: (r, lx = lga) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lx.zoneFG?.z1016) },
-      { key: "z16xp", sub: "Deep Mid", group: "2p", m: (r) => r.z16xpm || 0, a: (r) => r.z16xpa || 0, val: (r, lx = lga) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lx.zoneFG?.z16xp) },
+      { key: "z03",   sub: "Rim",      group: "2p", dist: ZONE_DIST.z03,   m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) },
+      { key: "z310",  sub: "Float",    group: "2p", dist: ZONE_DIST.z310,  m: (r) => r.z310m || 0,  a: (r) => r.z310a || 0,  val: (r, lx = lga) => zoneShotValue(r.z310m || 0, r.z310a || 0, lx.zoneFG?.z310) },
+      { key: "z1016", sub: "Mid",      group: "2p", dist: ZONE_DIST.z1016, m: (r) => r.z1016m || 0, a: (r) => r.z1016a || 0, val: (r, lx = lga) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lx.zoneFG?.z1016) },
+      { key: "z16xp", sub: "Deep Mid", group: "2p", dist: ZONE_DIST.z16xp, m: (r) => r.z16xpm || 0, a: (r) => r.z16xpa || 0, val: (r, lx = lga) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lx.zoneFG?.z16xp) },
       { key: "tp",    sub: "3PT",      group: "3p", m: (r) => r.tpm || 0,    a: (r) => r.tpa || 0,    val: (r, lx = lga) => 3 * ((r.tpm / (r.tpa || 1)) - lx.la3P) * (r.tpa || 0) },
     ];
     return catKey === "2-Pointers" ? all.filter((s) => s.group === "2p") : all;
@@ -1036,7 +1044,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedZone(isSel ? null : seg.key); } }}
                   aria-pressed={isSel}
-                  title={`${seg.sub} — filter the card to this distance`}
+                  title={`${seg.sub}${seg.dist ? ` (${seg.dist})` : ""} — filter the card to this distance`}
                   className={`flex flex-col items-center min-w-0 cursor-pointer rounded py-1 -my-1 transition-colors ${isSel ? "bg-stone-200 ring-1 ring-stone-800" : "hover:bg-stone-100"}`}
                 >
                   {/* FG% headline for the player at this distance. */}
@@ -1050,6 +1058,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                   </div>
                   <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
                   <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}</span>
+                  {/* The distance the nickname stands for, so "Float" doesn't
+                      have to be decoded. Sized down and untracked so the
+                      longest range ("16 ft-3PT") clears a sixth of the row. */}
+                  {seg.dist && (
+                    <span className="text-[6px] uppercase text-stone-400 leading-tight text-center tabular-nums">{seg.dist}</span>
+                  )}
                 </div>
               );
             })}
