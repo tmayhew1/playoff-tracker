@@ -7,7 +7,8 @@ import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
 import { CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
@@ -639,6 +640,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   useEffect(() => { setFocusRow(null); }, [ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
   const focused = !!focusRow;
 
+  // Tapping a bar in the by-season trend (View 6) arms a "Go →" popup for that
+  // season. Unlike the mini leaderboard above — which re-points the card in
+  // place — this navigates the page itself to that player-season (the By
+  // Season leaderboard switches season/team and opens the row; By Player opens
+  // the season). That's a big enough jump to gate behind the same two-step
+  // confirmation the compare panel's compared-player chip uses; useGatedGo
+  // owns the shared mechanics.
+  const seasonGo = useGatedGo();
+
   // The player every view is about: the owner, or the tapped player. Their
   // identity entry is the owner's index entry by default, or one rebuilt from
   // the all-time pool (name/slug + every matching season) so the trend view
@@ -800,7 +810,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           .filter((r) => (r.gp || 0) >= floorS && r.mp > 0);
         let rank = 1;
         for (const r of seasonPool) if (metric(r, lgaS, s.season) > m) rank += 1;
-        return { season: s.season, m, rank, poolN: seasonPool.length };
+        // team rides along so a tapped bar can hand the navigation target a
+        // complete player-season (season + team + identity).
+        return { season: s.season, team: s.team || null, m, rank, poolN: seasonPool.length };
       });
 
     return { floor, N, rank: selfIdx + 1, selfM, pctile, min, max, med, win,
@@ -871,6 +883,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const curIdx = d.mine.findIndex((x) => x.season === seasonKey);
   // "2000-01" -> ’01 (season's end year)
   const yearTag = (season) => `’${season.slice(5)}`;
+
+  // Trend bars navigate only when the parent handed the card a navigation
+  // handler — the same context.onNavigateToPlayer the compare chip uses. The
+  // bar for the season you're already reading isn't a target; when the card is
+  // focused on another player, though, every one of THEIR seasons is elsewhere,
+  // current one included.
+  const canGoSeason = !!context?.onNavigateToPlayer;
+  const goToSeason = (x) => context.onNavigateToPlayer({
+    season: x.season,
+    team: x.team || (focused ? p.team : null) || null,
+    name: self.name,
+    slug: self.slug || null,
+  });
+  // Never leave a bar armed after the chart underneath it has changed.
+  useEffect(() => {
+    seasonGo.disarm();
+  }, [seasonGo.disarm, self.name, self.slug, catKey, seasonKey, perGame, selectedZone, focused]);
 
   // Card owner identity, for the "tapped the owner's own row → go back" check.
   const ownerRow = { name: ownerSelf?.name, slug: ownerSelf?.slug || null };
@@ -1136,8 +1165,18 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 const topPct = x.m >= 0 ? zeroPct - hPct : zeroPct;
                 // Top-9-in-the-league season: flag its rank just above the bar.
                 const topRank = x.poolN > 0 && x.rank <= 9 ? x.rank : null;
+                // Where you already are — marked, not a link to itself.
+                const isHere = !focused && x.season === seasonKey;
+                const navigable = canGoSeason && !isHere;
+                const isArmed = seasonGo.isArmed(x.season);
+                // Popup anchor: columns cap at 10% of the row, so a short
+                // career sits entirely on the left. Keep the popup inside the
+                // card by left-aligning it near the left edge and
+                // right-aligning it near the right, centering it in between.
+                const frac = (i + 0.5) * Math.min(1 / d.mine.length, 0.1);
+                const anchor = frac < 0.2 ? "left-0" : frac > 0.8 ? "right-0" : "left-1/2 -translate-x-1/2";
                 return (
-                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${sgn(x.m)}${topRank ? ` · #${topRank} in league` : ""}`}>
+                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${sgn(x.m)}${topRank ? ` · #${topRank} in league` : ""}${navigable ? " · tap to open" : ""}`}>
                     <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${zeroPct}%` }} />
                     <div
                       className="absolute inset-x-[12%]"
@@ -1154,6 +1193,48 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                         #{topRank}
                       </span>
                     )}
+                    {navigable && (
+                      // Full-column tap target laid over the bar (a sibling of
+                      // the popup, not its parent — the popup carries its own
+                      // button and buttons can't nest).
+                      <button
+                        type="button"
+                        onClick={() => seasonGo.arm(x.season)}
+                        aria-label={`${self.name} ${x.season}, ${metricLabel} value added ${sgn(x.m)} — tap to confirm opening it`}
+                        aria-expanded={isArmed}
+                        className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isArmed ? "bg-stone-900/10" : "hover:bg-stone-900/5"}`}
+                      />
+                    )}
+                    {isArmed && (
+                      // The gate: the armed bar raises this popup, and only its
+                      // "Go →" navigates. Anything else disarms (useGatedGo
+                      // swallows that tap, so it can't also open a row).
+                      // It hangs BELOW the bar (over the year labels, which it
+                      // restates) rather than above it — there's only the
+                      // header gap up there, and covering the section title
+                      // reads worse than covering three axis ticks.
+                      <div className={`absolute top-full mt-1 z-20 ${anchor}`}>
+                        <span
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm px-1.5 py-[2px] shadow-sm"
+                          style={{ backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+                        >
+                          <span className="text-[9px] font-semibold tabular-nums text-stone-700">{x.season}</span>
+                          {x.team && (
+                            <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(x.team) }}>{x.team}</span>
+                          )}
+                          <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(x.m)}</span>
+                          <button
+                            ref={seasonGo.goRef}
+                            type="button"
+                            onClick={() => seasonGo.confirm(() => goToSeason(x))}
+                            className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
+                            title={`Open ${self.name} ${x.season}`}
+                          >
+                            Go <span aria-hidden>→</span>
+                          </button>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1169,6 +1250,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 </span>
               ))}
             </div>
+            {canGoSeason && (
+              <div className="text-[8px] italic text-stone-400 mt-1 px-1">Tap a season, then <span className="font-semibold not-italic">Go →</span>, to open that {focused ? `${shortName(self.name)} ` : ""}season.</div>
+            )}
           </>
         )}
       </div>
