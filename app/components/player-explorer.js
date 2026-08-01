@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts, lgaForSeason } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
@@ -34,18 +34,31 @@ export function PlayerExplorer({ scope = "playoffs" }) {
 
   const keyOf = (p) => p.slug || p.name;
 
-  // Jump to another player's default career view — invoked from a compare
-  // panel's compared-player chip (via context.onNavigateToPlayer). Resolve the
-  // target against the loaded index (slug first, then normalized name) and
-  // select it; PlayerDetail is keyed by player+scope, so it remounts fresh
-  // (no season drilled in — the "default career view").
+  // A pending "open this season" request riding along with a navigation, from
+  // a source that names one — the category card's by-season trend bars. Handed
+  // down to PlayerDetail, which opens that season's row; null just lands on the
+  // career view.
+  const [navSeason, setNavSeason] = useState(null);
+  const clearNavSeason = useCallback(() => setNavSeason(null), []);
+
+  // Jump to a player — invoked from a compare panel's compared-player chip or
+  // a trend bar's "Go →" (via context.onNavigateToPlayer). Resolve the target
+  // against the loaded index (slug first, then normalized name) and select it;
+  // PlayerDetail is keyed by player+scope, so a different player remounts fresh.
+  // Without a target season that's the default career view (no season drilled
+  // in); with one, PlayerDetail opens it and scrolls it into view — which is
+  // also what makes a jump WITHIN the current player's career do something
+  // visible, since re-selecting the same player alone changes nothing.
   const navigateToPlayer = (target) => {
     if (!index || !target) return;
     const nm = normalizeName(target.name || "");
     const found = index.find((p) => (target.slug && p.slug === target.slug) || normalizeName(p.name) === nm);
     if (!found) return;
     setSelectedKey(keyOf(found));
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    setNavSeason(target.season || null);
+    // The season row scrolls itself into view; only a plain career-view jump
+    // wants the top of the page.
+    if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const matches = useMemo(() => {
@@ -81,6 +94,8 @@ export function PlayerExplorer({ scope = "playoffs" }) {
         contextData={contextData}
         onBack={() => selectPlayer(null)}
         onNavigateToPlayer={navigateToPlayer}
+        pendingSeason={navSeason}
+        onNavHandled={clearNavSeason}
       />
     );
   }
@@ -132,7 +147,7 @@ export function PlayerExplorer({ scope = "playoffs" }) {
 // tappable TOT VA / VA/G column headers, team-color badges that filter, a
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
-export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null }) {
+export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, pendingSeason = null, onNavHandled = null }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -142,8 +157,35 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const [minGames, setMinGames] = useState(null);
   const [gArmed, setGArmed] = useState(false);
 
+  // Season whose row is waiting to be scrolled into view after a navigation.
+  const [pendingScroll, setPendingScroll] = useState(null);
+
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
+
+  // Apply an incoming "open this season" navigation (a trend bar's "Go →").
+  // Clear the filters first so the target row can't be filtered out from under
+  // the request, then open it and queue the scroll. A season this player
+  // doesn't have (or that this scope dropped) just leaves the career view as
+  // it is.
+  useEffect(() => {
+    if (!pendingSeason) return;
+    if (seasons.some((s) => s.season === pendingSeason)) {
+      setTeamFilter(null);
+      setMinGames(null);
+      setGArmed(false);
+      setOpenSeason(pendingSeason);
+      setPendingScroll(pendingSeason);
+    }
+    onNavHandled?.();
+  }, [pendingSeason, seasons, onNavHandled]);
+
+  useEffect(() => {
+    if (!pendingScroll) return;
+    const el = document.querySelector(`[data-season-row="${pendingScroll}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setPendingScroll(null);
+  }, [pendingScroll]);
 
   // Same composite scoring as the By Season leaderboard: each axis as a
   // fraction of that axis's leader, summed.
@@ -289,7 +331,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const gp = s.gp || 1;
         const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
         return (
-          <div key={s.season} className="border-b border-stone-100 last:border-0">
+          <div key={s.season} data-season-row={s.season} className="border-b border-stone-100 last:border-0">
             <div className="relative overflow-hidden">
               <div
                 className="absolute inset-y-0 left-0 pointer-events-none"
