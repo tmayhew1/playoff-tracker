@@ -51,8 +51,14 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // so nothing can linger. `fixedBar` holds the overlay's horizontal geometry
   // (matched to the card) or null when it shouldn't show.
   const [fixedBar, setFixedBar] = useState(null);
+  // Same trick at the other end: while the list is expanded, the "Show top 10"
+  // button sits far below the fold, so mirror it into a fixed bar pinned to
+  // the bottom of the viewport. Only in the DOM while the real button is off
+  // screen and the card still covers the bottom edge.
+  const [fixedFooter, setFixedFooter] = useState(null);
   const cardElRef = useRef(null);
   const headerFlowRef = useRef(null);
+  const footerFlowRef = useRef(null);
   const [cardMounted, setCardMounted] = useState(false);
   const setCardEl = useCallback((node) => { cardElRef.current = node; setCardMounted(!!node); }, []);
   useEffect(() => {
@@ -66,10 +72,24 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       // again once its bottom rises past one header's height (so the overlay
       // releases as the leaderboard scrolls off, like a sticky would).
       const show = r.top < 0 && r.bottom > h;
+      const geom = { left: Math.round(r.left), width: Math.round(r.width) };
+      const sameGeom = (prev, next) => prev && prev.left === next.left && prev.width === next.width;
       setFixedBar((prev) => {
         if (!show) return prev === null ? prev : null;
-        const next = { left: Math.round(r.left), width: Math.round(r.width) };
-        return prev && prev.left === next.left && prev.width === next.width ? prev : next;
+        return sameGeom(prev, geom) ? prev : geom;
+      });
+      const footer = footerFlowRef.current;
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const fh = footer?.offsetHeight || 34;
+      // Mirror the footer only while the real one is below the fold and the
+      // card still reaches the bottom edge of the viewport — so the pinned
+      // bar hands off to the in-flow button rather than doubling up with it.
+      const showFooter = !!footer
+        && footer.getBoundingClientRect().top > vh - fh
+        && r.top < vh - fh;
+      setFixedFooter((prev) => {
+        if (!showFooter) return prev === null ? prev : null;
+        return sameGeom(prev, geom) ? prev : geom;
       });
     };
     let raf = 0;
@@ -77,9 +97,14 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     measure();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
+    // Expanding a row (or toggling show-all) resizes the card without any
+    // scroll event, which would otherwise strand both overlays stale.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onScroll) : null;
+    if (ro) ro.observe(cardElRef.current);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      if (ro) ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, [cardMounted]);
@@ -440,6 +465,19 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     </>
   );
 
+  // Collapsing from the pinned bottom bar happens while the user is somewhere
+  // deep in the list, and the page is about to lose most of its height — so
+  // put them back at the top of the (now short) leaderboard instead of letting
+  // the browser clamp their scroll position to an arbitrary spot.
+  const collapseFromPinnedBar = () => {
+    const card = cardElRef.current;
+    const top = card ? card.getBoundingClientRect().top + window.scrollY : null;
+    setShowAll(false);
+    if (top != null) {
+      requestAnimationFrame(() => window.scrollTo({ top: Math.max(0, top - 8) }));
+    }
+  };
+
   return (
     <>
     <div ref={setCardEl} className="mb-4 border border-stone-300 bg-white">
@@ -620,6 +658,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       })()}
       {!teamFilter && minGames == null && all.length > 10 && (
         <button
+          ref={footerFlowRef}
           onClick={() => setShowAll((s) => !s)}
           className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
         >
@@ -636,6 +675,24 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       >
         {headerBlock}
       </div>
+    )}
+    {/* Pinned collapse bar — the expanded list's "Show top 10" button mirrored
+        to the bottom edge of the viewport, so getting out of a 200-row board
+        never requires scrolling to the end of it. */}
+    {showAll && fixedFooter && (
+      <button
+        type="button"
+        onClick={collapseFromPinnedBar}
+        className="fixed bottom-0 z-30 bg-white border-x border-t border-stone-300 text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900"
+        style={{
+          left: fixedFooter.left,
+          width: fixedFooter.width,
+          paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))",
+          boxShadow: "0 -1px 3px rgba(0,0,0,0.08)",
+        }}
+      >
+        Show top 10
+      </button>
     )}
     </>
   );
