@@ -683,11 +683,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       <button
         type="button"
         onClick={collapseFromPinnedBar}
-        className="fixed bottom-0 z-30 bg-white border-x border-t border-stone-300 text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900"
+        className="fixed bottom-0 z-30 bg-white border-x border-t border-stone-300 text-center py-4 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900"
         style={{
           left: fixedFooter.left,
           width: fixedFooter.width,
-          paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))",
+          paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
           boxShadow: "0 -1px 3px rgba(0,0,0,0.08)",
         }}
       >
