@@ -176,6 +176,11 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
 
   const refMagnitudes = refByKey ? activeRows.map((c) => Math.abs(refByKey[c.key] || 0)) : [];
   const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), ...refMagnitudes, 0.5);
+  // First row that actually draws a reference tick — it gets the caption that
+  // names what every tick below it means. -1 when no row has one.
+  const firstRefIdx = refByKey
+    ? activeRows.findIndex((c) => refByKey[c.key] != null && Number.isFinite(refByKey[c.key]))
+    : -1;
   const owner = teams[p.team]?.owner;
   // Accent color drives the chart line/dot and the positive bars. Historical
   // and explore contexts use the player's team color; live/draft uses the
@@ -524,7 +529,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
         />
       ) : (
       <>
-      <div className="space-y-0.5">
+      {/* Extra headroom when the tick caption is showing, so "Reg. Season Avg"
+          has somewhere to sit above the first row without crowding the toggles. */}
+      <div className={`space-y-0.5 ${firstRefIdx >= 0 ? "pt-3.5" : ""}`}>
         {activeRows.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
           const isPos = c.value >= 0;
@@ -566,6 +573,16 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                       style={{ left: `calc(${refLeftPct}% - 1px)`, backgroundColor: "#1c1917" }}
                       title={`Regular season: ${ref.toFixed(2)}`}
                     />
+                  )}
+                  {/* Caption for the tick marks, printed once directly above the
+                      topmost tick so the column of marks is self-explanatory. */}
+                  {refLeftPct != null && i === firstRefIdx && (
+                    <div
+                      className="absolute bottom-full mb-0.5 -translate-x-1/2 whitespace-nowrap text-[8px] leading-none text-stone-400 pointer-events-none"
+                      style={{ left: `${refLeftPct}%` }}
+                    >
+                      Reg. Season Avg
+                    </div>
                   )}
                 </div>
                 {rate && p.gp > 1 ? (
