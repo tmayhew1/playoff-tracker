@@ -176,6 +176,11 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
 
   const refMagnitudes = refByKey ? activeRows.map((c) => Math.abs(refByKey[c.key] || 0)) : [];
   const maxAbs = Math.max(...activeRows.map((c) => Math.abs(c.value)), ...refMagnitudes, 0.5);
+  // First row that actually draws a reference tick — it gets the caption that
+  // names what every tick below it means. -1 when no row has one.
+  const firstRefIdx = refByKey
+    ? activeRows.findIndex((c) => refByKey[c.key] != null && Number.isFinite(refByKey[c.key]))
+    : -1;
   const owner = teams[p.team]?.owner;
   // Accent color drives the chart line/dot and the positive bars. Historical
   // and explore contexts use the player's team color; live/draft uses the
@@ -524,7 +529,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
         />
       ) : (
       <>
-      <div className="space-y-0.5">
+      {/* Extra headroom when the tick caption is showing, so "Reg. Season Avg"
+          has somewhere to sit above the first row without crowding the toggles. */}
+      <div className={`space-y-0.5 ${firstRefIdx >= 0 ? "pt-3.5" : ""}`}>
         {activeRows.map((c, i) => {
           const pct = (Math.abs(c.value) / maxAbs) * 45;
           const isPos = c.value >= 0;
@@ -566,6 +573,16 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                       style={{ left: `calc(${refLeftPct}% - 1px)`, backgroundColor: "#1c1917" }}
                       title={`Regular season: ${ref.toFixed(2)}`}
                     />
+                  )}
+                  {/* Caption for the tick marks, printed once directly above the
+                      topmost tick so the column of marks is self-explanatory. */}
+                  {refLeftPct != null && i === firstRefIdx && (
+                    <div
+                      className="absolute bottom-full mb-0.5 -translate-x-1/2 whitespace-nowrap text-[8px] leading-none text-stone-400 pointer-events-none"
+                      style={{ left: `${refLeftPct}%` }}
+                    >
+                      Reg. Season Avg
+                    </div>
                   )}
                 </div>
                 {rate && p.gp > 1 ? (
@@ -904,6 +921,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Card owner identity, for the "tapped the owner's own row → go back" check.
   const ownerRow = { name: ownerSelf?.name, slug: ownerSelf?.slug || null };
   const rowGrid = "grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 items-center px-1 py-[2px] tabular-nums";
+  // The all-time pool runs to five figures, and a fixed rank track lets
+  // "19040" run straight into the name beside it. Size the track to the
+  // longest rank the board actually prints — shared by every row, so the
+  // names stay flush with each other whatever the widths work out to.
+  const allRankChars = Math.max(
+    1,
+    ...(d?.top || []).map((x) => String(x.rank).length),
+    d?.selfAll ? String(d.selfAll.rank).length : 1,
+  );
+  // ~0.36rem a digit at this size plus a constant of slack, which lands on the
+  // stock 1.4rem for the three-digit ranks the season boards print and grows
+  // from there, so short ranks look exactly as they always have.
+  const allRowGrid = { gridTemplateColumns: `${Math.max(1.4, allRankChars * 0.36 + 0.3).toFixed(2)}rem 1fr 2.9rem` };
   const Row = ({ rank, r, m, isSelf }) => {
     const cells = (
       <>
@@ -1124,7 +1154,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <span className="text-stone-800 font-bold">#{d.allRank}<span className="text-stone-400 font-normal"> of {d.allN}</span></span>
         </div>
         {d.top.map((x) => (
-          <div key={"t" + x.rank} className={`grid grid-cols-[1.4rem_1fr_2.9rem] gap-x-1 items-center px-1 py-[2px] tabular-nums ${d.selfAll && x.rank === d.selfAll.rank ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
+          <div key={"t" + x.rank} style={allRowGrid} className={`grid gap-x-1 items-center px-1 py-[2px] tabular-nums ${d.selfAll && x.rank === d.selfAll.rank ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
             <span className="text-right text-[9px] opacity-70">{x.rank}</span>
             <span className="truncate text-[10px]">{x.r.name} <span className="opacity-60">{x.r.season}</span></span>
             <span className="text-right text-[10px] font-semibold">{sgn(x.m)}</span>
@@ -1133,7 +1163,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         {d.selfAll && d.allRank > 3 && (
           <>
             <div className="text-center text-stone-300 leading-none">⋯</div>
-            <div className="grid grid-cols-[1.4rem_1fr_2.9rem] gap-x-1 items-center px-1 py-[2px] tabular-nums bg-stone-800 text-white rounded-sm">
+            <div style={allRowGrid} className="grid gap-x-1 items-center px-1 py-[2px] tabular-nums bg-stone-800 text-white rounded-sm">
               <span className="text-right text-[9px] opacity-70">{d.selfAll.rank}</span>
               <span className="truncate text-[10px]">{d.selfAll.r.name} <span className="opacity-60">{d.selfAll.r.season}</span></span>
               <span className="text-right text-[10px] font-semibold">{sgn(d.selfAll.m)}</span>
