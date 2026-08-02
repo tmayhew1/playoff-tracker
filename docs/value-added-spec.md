@@ -3,6 +3,12 @@
 **Version 2 (playoff-tracker).** Supersedes the v1 definition shipped in
 `nba-projects` (R Shiny); divergences between the two are itemized in §8.
 
+> **Rendered version: [`value-added-spec.html`](./value-added-spec.html).** This
+> Markdown file uses LaTeX blocks, which only render where a viewer supports
+> KaTeX/MathJax (GitHub's web UI does; most editors and previewers do not). The
+> HTML companion renders identical notation in plain HTML + CSS — no external
+> scripts, fonts, or stylesheets — so it displays anywhere a browser opens it.
+
 Value Added answers one question in one unit:
 
 > How many **points** did this player produce, above or below what the league
@@ -88,8 +94,8 @@ $r_i = X_i / m_i$ and let $(\cdot)$ denote the ordering $r_{(1)} \le r_{(2)} \le
 Then
 
 $$
-\mu_X \;=\; r_{(k^\*)}, \qquad
-k^\* \;=\; \min\Bigl\{\, k \;:\; \sum_{j \le k} m_{(j)} \;\ge\; \tfrac{1}{2}\sum_{j=1}^{N} m_j \,\Bigr\}.
+\mu_X \;=\; r_{(k^{*})}, \qquad
+k^{*} \;=\; \min\Bigl\{\, k \;:\; \sum_{j \le k} m_{(j)} \;\ge\; \tfrac{1}{2}\sum_{j=1}^{N} m_j \,\Bigr\}.
 $$
 
 In words: **the rate of the median league minute.** Half of all NBA minutes are

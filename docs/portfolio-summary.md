@@ -209,6 +209,7 @@ ingestion; GitHub Actions)
 
 ---
 
-*Companion document: [`value-added-spec.md`](./value-added-spec.md) — the
+*Companion document: [`value-added-spec.md`](./value-added-spec.md) (rendered:
+[`value-added-spec.html`](./value-added-spec.html)) — the
 formal mathematical specification of VA, VA+, zone value, similarity, and draft
 scoring, including the v1 → v2 divergence table.*
