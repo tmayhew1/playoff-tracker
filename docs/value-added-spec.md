@@ -192,15 +192,108 @@ $$
 - **Rebound cross-weighting.** A rebound is credited a possession discounted by
   the probability the team *would not* have gotten it anyway. Defensive boards
   are the common outcome, so they are scaled by the smaller $\rho_O$; offensive
-  boards are rarer and scale by the larger $\rho_D$. $\gamma = 1.25$ is a
-  calibration constant on the rebounding pair, flagged as a judgment call
-  rather than a derivation.
+  boards are rarer and scale by the larger $\rho_D$. $\gamma = 5/4$ is not a
+  fitted constant — it is the "one of five claimants" correction derived in
+  §4.4.
 - **Volume and efficiency are separate terms, not a net.** A high-usage scorer
   at league efficiency has done something real (absorbed difficulty); a
   low-usage scorer at elite efficiency has also done something real. Netting
   them erases both. VA pays for each.
 
-### 4.3 Rate forms
+### 4.3 The rebound constant $\gamma$
+
+$\gamma$ answers a question the other nine terms never have to ask: **a rebound
+is the one box-score event that is guaranteed to be allocated and rivalrous.**
+Every miss produces exactly one rebound, and exactly one of ten players on the
+floor gets it. So "would this have happened anyway?" has a real answer, and the
+answer depends on how many *teammates* were also standing there.
+
+**The model.** Under a Luce/Bradley–Terry contest, give each of the five
+defenders a claim weight $d$ and each of the five offensive players a claim
+weight $o$. Then
+
+$$
+\mathbb{P}(\text{defense secures}) = \frac{5d}{5d + 5o} = \frac{d}{d+o} = \rho_D,
+\qquad\text{so}\qquad
+\Omega \;\equiv\; \frac{\rho_D}{\rho_O} \;=\; \frac{d}{o}
+$$
+
+is the team's securing **odds**. Remove one of the five defenders from the
+contest and the odds become
+
+$$
+\Omega' \;=\; \frac{4d}{5o} \;=\; \tfrac{4}{5}\,\Omega
+\qquad\Longrightarrow\qquad
+\frac{1/\Omega'}{1/\Omega} \;=\; \frac{5}{4}.
+$$
+
+**The odds of losing the possession are exactly $5/4$ times higher when one of
+five claimants is removed** — independent of $\rho$, of era, and of which team
+is rebounding. That $\rho$-independence is precisely why a single constant is
+available at all, and why the *same* constant applies to both boards: both
+teams field five.
+
+**The exact probability-space form.** VA multiplies a probability
+($\rho_O$ or $\rho_D$), not an odds. Converting,
+
+$$
+\gamma^{\text{exact}}_{\mathrm{DRB}} = \frac{\mathbb{P}(\text{offense secures} \mid \text{this defender does not})}{\rho_O}
+= \frac{5}{5 - \rho_D},
+\qquad
+\gamma^{\text{exact}}_{\mathrm{ORB}} = \frac{5}{5 - \rho_O}.
+$$
+
+$5/4$ is the **limit** of this expression as $\rho \to 1$, not its value at the
+operating point. At $\rho_D \approx 0.75$ the exact corrections are
+
+$$
+\gamma^{\text{exact}}_{\mathrm{DRB}} \approx 1.176, \qquad
+\gamma^{\text{exact}}_{\mathrm{ORB}} \approx 1.053,
+$$
+
+so the shipped $\gamma = 1.25$ overstates defensive-rebound credit by ~6% and
+offensive-rebound credit by ~19%, and imposes a symmetry the model does not
+imply. See §4.4 for why this is nonetheless a defensible operating choice, and
+for what the model assumes.
+
+### 4.4 What $\gamma$ assumes
+
+The derivation is sound; four assumptions are worth stating, because each is a
+place the constant could be wrong.
+
+1. **The player is exactly one fifth of his team's rebounding.** $5/4$ is
+   $1/(1-s)$ at $s = 1/5$. Measured as a player's share of his team's defensive
+   boards while on the floor (2024-25, $\ge$ 1,200 MP), $s$ has median $0.181$
+   and ranges from $0.073$ to $0.430$ — implying $\gamma_i = 1/(1-s_i)$ from
+   $1.08$ to $1.76$. A single constant is least accurate for exactly the
+   players the term matters most for.
+2. **Independence of irrelevant alternatives.** Removing a claimant
+   redistributes his share proportionally across the other nine. Real
+   rebounding is closer to matched pairs — the opposing big absorbs most of a
+   removed center's share, not the floor uniformly.
+3. **Ten live claimants.** On the offensive glass teams deliberately send fewer
+   crashers, so the offense's effective $n$ is below five and drifts by era.
+   (Probability-space damping keeps the resulting correction near $1.05$–$1.09$
+   regardless, which reinforces rather than offsets point 1 above.)
+4. **The marginal board is an average board.** $\rho_O$ is unconditional, but
+   most defensive rebounds are uncontested; the boards a strong rebounder adds
+   are drawn from the contested tail, where recovery risk is far above
+   $\rho_O$. This pushes the correct multiplier *up*, plausibly past $5/4$ —
+   a second mechanism, in the opposite direction from points 1–3.
+
+Points 1–3 argue $\gamma$ is too large; point 4 argues it is too small. Shipping
+$5/4$ is a defensible operating point between them, but it should be read as
+**the odds-space bound doing double duty as an empirical compromise**, not as
+the exact probability-space correction.
+
+One interaction is worth flagging: $\mu_{\mathrm{DRB}}$ (minutes-weighted
+median, $0.1227$) sits ~11% below the league aggregate rate ($0.1367$) because
+rebounding is right-skewed and positionally concentrated. The median baseline
+already tilts this term toward bigs, and $\gamma$ then widens the same spread by
+another 25%. Both choices are individually defensible; they compound in the same
+direction on the same category.
+
+### 4.5 Rate forms
 
 $$
 \mathrm{VA}/\mathrm{G} = \frac{\mathrm{VA}}{\mathrm{G}}, \qquad

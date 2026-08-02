@@ -138,10 +138,13 @@ ingestion; GitHub Actions)
 
 ## 5. Methods and practices worth naming
 
-- **Specification-first metric design.** Every opinionated weight — the assist
-  discount, the block/rebound asymmetry, the rebound constant — is documented as
-  a judgment call at the point of implementation, so a reader can critique the
-  choice instead of reverse-engineering it.
+- **Specification-first metric design.** Every weight is derived from a stated
+  model rather than fitted: the assist discount from the share of baskets that
+  would not have fallen anyway, the block/steal asymmetry from whether the
+  possession actually ends, the rebound constant from the odds of a five-man
+  lineup losing a board when one claimant is removed. Each derivation is
+  recorded with its assumptions at the point of implementation, so a reader can
+  critique the model instead of reverse-engineering the number.
 - **Invariants as tests.** Decomposition exactness, season-locality, and
   source-fidelity coverage gating are stated as invariants the codebase must
   preserve, and divergences are treated as defects (one such: a 25% rebound

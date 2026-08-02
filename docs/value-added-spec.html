@@ -355,11 +355,94 @@
 <ul>
   <li><strong>Assist.</strong> An assist is worth the field goal it created, <span class="m g">κ</span>, times the share of those baskets that would <em>not</em> have happened without the pass, <span class="m">(1 <span class="op">−</span> <span class="g">p</span><sub class="s">G</sub>)</span>. Deliberately opinionated: it refuses to credit the passer for the league-baseline conversion the shooter would have managed anyway.</li>
   <li><strong>Steal vs. block.</strong> A steal ends the possession outright, so it earns a full <span class="m g">π</span>. A block only ends it if the defense secures the carom — about <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span> of the time — so it earns <span class="m"><span class="g">π</span><span class="g">ρ</span><sub class="s">D</sub></span>. The same asymmetry is reused verbatim in the defensive extension (§6.3).</li>
-  <li><strong>Rebound cross-weighting.</strong> A rebound is credited a possession discounted by the probability the team <em>would not</em> have gotten it anyway. Defensive boards are the common outcome, so they scale by the smaller <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span>; offensive boards are rarer and scale by the larger <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>. <span class="m"><span class="g">γ</span> <span class="op">=</span> 1.25</span> is a calibration constant on the rebounding pair, flagged as a judgment call rather than a derivation.</li>
+  <li><strong>Rebound cross-weighting.</strong> A rebound is credited a possession discounted by the probability the team <em>would not</em> have gotten it anyway. Defensive boards are the common outcome, so they scale by the smaller <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span>; offensive boards are rarer and scale by the larger <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>. <span class="m"><span class="g">γ</span> <span class="op">=</span> 5⁄4</span> is not a fitted constant — it is the &ldquo;one of five claimants&rdquo; correction derived in §4.3.</li>
   <li><strong>Volume and efficiency are separate terms, not a net.</strong> A high-usage scorer at league efficiency has done something real (absorbed difficulty); a low-usage scorer at elite efficiency has also done something real. Netting them erases both. VA pays for each.</li>
 </ul>
 
-<h3><span class="n">4.3</span>Rate forms</h3>
+<h3><span class="n">4.3</span>The rebound constant <span class="m g">γ</span></h3>
+
+<p><span class="m g">γ</span> answers a question the other nine terms never have to ask: <strong>a rebound is the one box-score event that is guaranteed to be allocated and rivalrous.</strong> Every miss produces exactly one rebound, and exactly one of ten players on the floor gets it. So &ldquo;would this have happened anyway?&rdquo; has a real answer, and the answer depends on how many <em>teammates</em> were also standing there.</p>
+
+<p><strong>The model.</strong> Under a Luce / Bradley&ndash;Terry contest, give each of the five defenders a claim weight <span class="m g">d</span> and each of the five offensive players a claim weight <span class="m g">o</span>. Then</p>
+
+<div class="eq">
+  P(defense secures) <span class="op">=</span>
+  <span class="fr"><span class="nu">5<span class="g">d</span></span><span class="de">5<span class="g">d</span> <span class="op">+</span> 5<span class="g">o</span></span></span>
+  <span class="op">=</span>
+  <span class="fr"><span class="nu g">d</span><span class="de"><span class="g">d</span> <span class="op">+</span> <span class="g">o</span></span></span>
+  <span class="op">=</span> <span class="g">ρ</span><sub class="s">D</sub>
+  <span style="display:inline-block;width:2.4em"></span>
+  <span class="g">Ω</span> <span class="op">≡</span>
+  <span class="fr"><span class="nu"><span class="g">ρ</span><sub class="s">D</sub></span><span class="de"><span class="g">ρ</span><sub class="s">O</sub></span></span>
+  <span class="op">=</span>
+  <span class="fr"><span class="nu g">d</span><span class="de g">o</span></span>
+  <span class="lbl">the team&rsquo;s securing odds</span>
+</div>
+
+<p>Remove one of the five defenders from the contest and the odds become</p>
+
+<div class="eq box">
+  <span class="g">Ω</span>&prime; <span class="op">=</span>
+  <span class="fr"><span class="nu">4<span class="g">d</span></span><span class="de">5<span class="g">o</span></span></span>
+  <span class="op">=</span>
+  <span class="fr sm"><span class="nu">4</span><span class="de">5</span></span>
+  <span class="g">Ω</span>
+  <span style="display:inline-block;width:2em"></span>
+  <span class="op">⟹</span>
+  <span style="display:inline-block;width:1em"></span>
+  <span class="fr"><span class="nu">1 ⁄ <span class="g">Ω</span>&prime;</span><span class="de">1 ⁄ <span class="g">Ω</span></span></span>
+  <span class="op">=</span>
+  <span class="fr sm"><span class="nu">5</span><span class="de">4</span></span>
+  <span class="lbl">the odds of losing the possession, with one of five claimants removed</span>
+</div>
+
+<p>The correction is <strong>exactly 5⁄4 independent of <span class="m g">ρ</span></strong>, of era, and of which team is rebounding. That independence is precisely why a single constant is available at all, and why the <em>same</em> constant applies to both boards: both teams field five.</p>
+
+<p><strong>The exact probability-space form.</strong> VA multiplies a probability (<span class="m"><span class="g">ρ</span><sub class="s">O</sub></span> or <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>), not an odds. Converting:</p>
+
+<div class="eq">
+  <span class="g">γ</span><sup class="s">exact</sup><sub class="s">DRB</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu">P( offense secures | this defender does not )</span><span class="de"><span class="g">ρ</span><sub class="s">O</sub></span></span>
+  <span class="op">=</span>
+  <span class="fr"><span class="nu">5</span><span class="de">5 <span class="op">−</span> <span class="g">ρ</span><sub class="s">D</sub></span></span>
+  <span style="display:inline-block;width:2.2em"></span>
+  <span class="g">γ</span><sup class="s">exact</sup><sub class="s">ORB</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu">5</span><span class="de">5 <span class="op">−</span> <span class="g">ρ</span><sub class="s">O</sub></span></span>
+</div>
+
+<p>5⁄4 is the <strong>limit</strong> of this expression as <span class="m"><span class="g">ρ</span> <span class="op">→</span> 1</span>, not its value at the operating point:</p>
+
+<div class="tw">
+<table>
+  <thead><tr><th>Season</th><th><span class="m"><span class="g">ρ</span><sub class="s">D</sub></span></th><th>Shipped <span class="m g">γ</span></th><th>Exact, DRB</th><th>Exact, ORB</th></tr></thead>
+  <tbody>
+    <tr><th class="cat">1980-81</th><td class="m">0.665</td><td class="m">1.250</td><td class="m">1.154</td><td class="m">1.072</td></tr>
+    <tr><th class="cat">1995-96</th><td class="m">0.694</td><td class="m">1.250</td><td class="m">1.161</td><td class="m">1.065</td></tr>
+    <tr><th class="cat">2024-25</th><td class="m">0.748</td><td class="m">1.250</td><td class="m">1.176</td><td class="m">1.053</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>So the shipped <span class="m"><span class="g">γ</span> <span class="op">=</span> 1.25</span> overstates defensive-rebound credit by ~6% and offensive-rebound credit by ~19%, and imposes a symmetry the model does not imply.</p>
+
+<h3><span class="n">4.4</span>What <span class="m g">γ</span> assumes</h3>
+
+<p>The derivation is sound; four assumptions are worth stating, because each is a place the constant could be wrong.</p>
+
+<ol>
+  <li><strong>The player is exactly one fifth of his team&rsquo;s rebounding.</strong> 5⁄4 is <span class="m">1 ⁄ (1 <span class="op">−</span> <span class="g">s</span>)</span> at <span class="m"><span class="g">s</span> <span class="op">=</span> 1⁄5</span>. Measured as a player&rsquo;s share of his team&rsquo;s defensive boards while on the floor (2024-25, <span class="m">≥</span> 1,200 MP), <span class="m g">s</span> has median <span class="m">0.181</span> and ranges from <span class="m">0.073</span> to <span class="m">0.430</span> — implying <span class="m"><span class="g">γ</span><sub class="g">i</sub> <span class="op">=</span> 1 ⁄ (1 <span class="op">−</span> <span class="g">s</span><sub class="g">i</sub>)</span> from <span class="m">1.08</span> to <span class="m">1.76</span>. A single constant is least accurate for exactly the players the term matters most for.</li>
+  <li><strong>Independence of irrelevant alternatives.</strong> Removing a claimant redistributes his share proportionally across the other nine. Real rebounding is closer to matched pairs — the opposing big absorbs most of a removed center&rsquo;s share, not the floor uniformly.</li>
+  <li><strong>Ten live claimants.</strong> On the offensive glass teams deliberately send fewer crashers, so the offense&rsquo;s effective <span class="m g">n</span> is below five and drifts by era. (Probability-space damping keeps the resulting correction near 1.05&ndash;1.09 regardless, which reinforces rather than offsets point 1.)</li>
+  <li><strong>The marginal board is an average board.</strong> <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span> is unconditional, but most defensive rebounds are uncontested; the boards a strong rebounder adds are drawn from the contested tail, where recovery risk is far above <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span>. This pushes the correct multiplier <em>up</em>, plausibly past 5⁄4 — a second mechanism, in the opposite direction from points 1&ndash;3.</li>
+</ol>
+
+<div class="note">
+  Points 1&ndash;3 argue <span class="m g">γ</span> is too large; point 4 argues it is too small. Shipping 5⁄4 is a defensible operating point between them, but it should be read as <b>the odds-space bound doing double duty as an empirical compromise</b>, not as the exact probability-space correction.
+</div>
+
+<p>One interaction is worth flagging: <span class="m"><span class="g">μ</span><sub class="s">DRB</sub></span> (minutes-weighted median, <span class="m">0.1227</span>) sits ~11% below the league aggregate rate (<span class="m">0.1367</span>) because rebounding is right-skewed and positionally concentrated. The median baseline already tilts this term toward bigs, and <span class="m g">γ</span> then widens the same spread by another 25%. Both choices are individually defensible; they compound in the same direction on the same category.</p>
+
+<h3><span class="n">4.5</span>Rate forms</h3>
 <div class="eq">
   <span class="s">VA</span>⁄<span class="s">G</span> <span class="op">=</span>
   <span class="fr"><span class="nu s">VA</span><span class="de s">G</span></span>
