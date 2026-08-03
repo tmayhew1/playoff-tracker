@@ -81,7 +81,12 @@ $$
 \nu \;=\; \frac{5\,\Pi}{\sum \mathrm{MP}} \quad \text{(possessions per on-court minute; } = \text{pace}/48\text{)}
 $$
 
-$\nu$ is used only by the defensive extension (§6). Because $\sum \mathrm{MP}$
+$$
+\Lambda \;=\; \frac{5 \sum \mathrm{TRB}}{\sum \mathrm{MP}} \quad \text{(rebound opportunities per on-court minute, at one end)}
+$$
+
+$\Lambda$ is used only by the rebound credit (§4.3) and $\nu$ only by the
+defensive extension (§6). Because $\sum \mathrm{MP}$
 counts *player* minutes (five per team-minute), the factor of 5 converts to
 possessions per **team**-minute.
 
@@ -152,11 +157,9 @@ $r_c$, baseline $\lambda_c$, opportunity $n_c$, and price $w_c$:
 | D Rebounds | $\mathrm{DRB}/\mathrm{MP}$ | $\mu_{\mathrm{DRB}}$ | $\mathrm{MP}$ | $\gamma\,\pi\,\rho_O$ |
 | O Rebounds | $\mathrm{ORB}/\mathrm{MP}$ | $\mu_{\mathrm{ORB}}$ | $\mathrm{MP}$ | $\gamma\,\pi\,\rho_D$ |
 
-with the rebound credit constant
-
-$$
-\gamma = 1.25 .
-$$
+where the rebound credit $\gamma$ is **per-player**, not a constant — it is the
+one price that depends on the player's own rate as well as the league's. See
+§4.3.
 
 Attempt-denominators are guarded: $r_c \mathrel{:=} 0$ when $n_c = 0$, so an
 unattempted category contributes exactly zero rather than $\mathrm{NaN}$.
@@ -200,98 +203,110 @@ $$
   low-usage scorer at elite efficiency has also done something real. Netting
   them erases both. VA pays for each.
 
-### 4.3 The rebound constant $\gamma$
+### 4.3 The rebound credit $\gamma$
 
 $\gamma$ answers a question the other nine terms never have to ask: **a rebound
 is the one box-score event that is guaranteed to be allocated and rivalrous.**
 Every miss produces exactly one rebound, and exactly one of ten players on the
-floor gets it. So "would this have happened anyway?" has a real answer, and the
-answer depends on how many *teammates* were also standing there.
+floor gets it. So "would this have happened anyway?" has a real answer.
 
-**The model.** Under a Luce/Bradley–Terry contest, give each of the five
+**The contest.** Under a Luce/Bradley–Terry model, give each of the five
 defenders a claim weight $d$ and each of the five offensive players a claim
-weight $o$. Then
+weight $o$. Then $\mathbb{P}(\text{defense secures}) = 5d/(5d+5o) = \rho_D$, and
+the team's securing **odds** are $\Omega = \rho_D/\rho_O = d/o$. Remove one of
+the five defenders and $\Omega' = 4d/5o = \tfrac{4}{5}\Omega$, so the odds of
+*losing* the possession rise by exactly $5/4$ — independent of $\rho$, of era,
+and of which team is rebounding.
+
+**But VA multiplies a probability, not an odds**, and the two differ. Working in
+probability space, and generalizing off the "exactly one fifth" assumption to a
+player who claims a fraction $q$ of the boards available at his end:
 
 $$
-\mathbb{P}(\text{defense secures}) = \frac{5d}{5d + 5o} = \frac{d}{d+o} = \rho_D,
-\qquad\text{so}\qquad
-\Omega \;\equiv\; \frac{\rho_D}{\rho_O} \;=\; \frac{d}{o}
-$$
-
-is the team's securing **odds**. Remove one of the five defenders from the
-contest and the odds become
-
-$$
-\Omega' \;=\; \frac{4d}{5o} \;=\; \tfrac{4}{5}\,\Omega
-\qquad\Longrightarrow\qquad
-\frac{1/\Omega'}{1/\Omega} \;=\; \frac{5}{4}.
-$$
-
-**The odds of losing the possession are exactly $5/4$ times higher when one of
-five claimants is removed** — independent of $\rho$, of era, and of which team
-is rebounding. That $\rho$-independence is precisely why a single constant is
-available at all, and why the *same* constant applies to both boards: both
-teams field five.
-
-**The exact probability-space form.** VA multiplies a probability
-($\rho_O$ or $\rho_D$), not an odds. Converting,
-
-$$
-\gamma^{\text{exact}}_{\mathrm{DRB}} = \frac{\mathbb{P}(\text{offense secures} \mid \text{this defender does not})}{\rho_O}
-= \frac{5}{5 - \rho_D},
+\boxed{\;\gamma \;=\; \frac{1}{1-q}\;}
 \qquad
-\gamma^{\text{exact}}_{\mathrm{ORB}} = \frac{5}{5 - \rho_O}.
+q \;=\; \frac{\mathrm{REB}/\mathrm{MP}}{\Lambda}
 $$
 
-$5/4$ is the **limit** of this expression as $\rho \to 1$, not its value at the
-operating point. At $\rho_D \approx 0.75$ the exact corrections are
+where $\Lambda$ is the season's **rebound opportunity rate** — chances per
+on-court minute at one end:
 
 $$
-\gamma^{\text{exact}}_{\mathrm{DRB}} \approx 1.176, \qquad
-\gamma^{\text{exact}}_{\mathrm{ORB}} \approx 1.053,
+\Lambda \;=\; \frac{5\sum \mathrm{TRB}}{\sum \mathrm{MP}}
+\qquad (\texttt{laREBoppPerM};\ 0.9071 \text{ in } 2025\text{-}26)
 $$
 
-so the shipped $\gamma = 1.25$ overstates defensive-rebound credit by ~6% and
-offensive-rebound credit by ~19%, and imposes a symmetry the model does not
-imply. See §4.4 for why this is nonetheless a defensible operating choice, and
-for what the model assumes.
+Every miss is rebounded at one end or the other, so a player on the floor sees
+$\Lambda$ chances per minute at his own end. The construction is self-checking:
+$d/(d+o)$ recomputed from these same sums returns $\rho_D$ exactly.
+
+**$\rho$ cancels out of the correction.** Substituting $q = s\rho$ (where $s$ is
+the player's share of his *team's* boards) into $1/(1-s\rho)$ gives the same
+expression with no $\rho$ in it. $\rho$ still prices the board — $\pi\rho_O$ for
+a defensive rebound, $\pi\rho_D$ for an offensive one — but it plays no part in
+the credit. One formula covers both ends.
+
+**It needs no team data.** $\Lambda$ is a league quantity, so $q$ comes straight
+off the player's own line. This matters: every other VA term reads only the
+player's stat line and league baselines, which is what makes a 1987 season
+comparable to a 2026 one. A team-relative $\gamma$ would break that — measured
+on 2025-26, players inside a narrow DRB/min band saw 5–7% $\gamma$ swings from
+teammates alone, so identical production would have scored differently on
+different rosters. It doesn't here.
+
+**Special cases.** The league-average rebounder has $q = 0.2\rho$, giving
+
+$$
+\gamma = \frac{1}{1-0.2\rho} = \frac{5}{5-\rho}
+\;\;\Longrightarrow\;\;
+\gamma_{\mathrm{DRB}} \approx 1.174,\quad \gamma_{\mathrm{ORB}} \approx 1.053
+$$
+
+— the "one of five" constant, and the fallback for any season baked before
+$\Lambda$ existed. The **odds-space** $5/4 = 1.25$ that VA shipped through
+July 2026 is the $\rho \to 1$ limit of that expression: correct as an odds
+ratio, but used as though it were a probability, which overstated defensive
+credit ~6% and offensive credit ~19%. At the top of the distribution the
+per-player form runs the other way — a player covering a third of his end
+reaches $\gamma \approx 1.5$.
+
+**Estimation.** $q$ is unshrunk by design, matching every other VA category
+(none of which is shrunk). A season is 1,400–2,300 opportunities, putting
+binomial error on $\gamma$ under 1.5%; a single game is ~32 and swings hard,
+exactly as one night's shooting does in the efficiency terms. $q$ is clamped to
+$[0, 0.5]$ so $\gamma \le 2$ stays finite on 1-minute garbage-time lines — the
+only rows where the clamp ever binds.
 
 ### 4.4 What $\gamma$ assumes
 
-The derivation is sound; four assumptions are worth stating, because each is a
-place the constant could be wrong.
+Three assumptions remain, each a place the model could still be wrong.
 
-1. **The player is exactly one fifth of his team's rebounding.** $5/4$ is
-   $1/(1-s)$ at $s = 1/5$. Measured as a player's share of his team's defensive
-   boards while on the floor (2024-25, $\ge$ 1,200 MP), $s$ has median $0.181$
-   and ranges from $0.073$ to $0.430$ — implying $\gamma_i = 1/(1-s_i)$ from
-   $1.08$ to $1.76$. A single constant is least accurate for exactly the
-   players the term matters most for.
-2. **Independence of irrelevant alternatives.** Removing a claimant
-   redistributes his share proportionally across the other nine. Real
-   rebounding is closer to matched pairs — the opposing big absorbs most of a
-   removed center's share, not the floor uniformly.
-3. **Ten live claimants.** On the offensive glass teams deliberately send fewer
-   crashers, so the offense's effective $n$ is below five and drifts by era.
-   (Probability-space damping keeps the resulting correction near $1.05$–$1.09$
-   regardless, which reinforces rather than offsets point 1 above.)
-4. **The marginal board is an average board.** $\rho_O$ is unconditional, but
-   most defensive rebounds are uncontested; the boards a strong rebounder adds
-   are drawn from the contested tail, where recovery risk is far above
-   $\rho_O$. This pushes the correct multiplier *up*, plausibly past $5/4$ —
-   a second mechanism, in the opposite direction from points 1–3.
-
-Points 1–3 argue $\gamma$ is too large; point 4 argues it is too small. Shipping
-$5/4$ is a defensible operating point between them, but it should be read as
-**the odds-space bound doing double duty as an empirical compromise**, not as
-the exact probability-space correction.
+1. **Independence of irrelevant alternatives.** Removing a claimant
+   redistributes his share proportionally across the other nine. Real rebounding
+   is closer to matched pairs — the opposing big absorbs most of a removed
+   center's share, not the floor uniformly.
+2. **A league-uniform opportunity rate.** $\Lambda$ is a league constant, but
+   the boards available at a given player's end depend on his team's pace and
+   his opponents' shooting. Using the team's own rate instead moves $\gamma$ by
+   a median of 0.74% (p90 2.11%, $r = 0.985$) — less than the binomial noise
+   already in $q$, and it would cost the context-freedom above. Deliberately
+   traded away.
+3. **The marginal board is an average board.** $q$ counts an uncontested carom
+   the same as a won contest, and most defensive rebounds are uncontested. The
+   boards a strong rebounder adds are drawn from the contested tail, where
+   recovery risk is far above $\rho_O$ — which argues every $\gamma$ here is
+   *understated* for players who actually box out. This is the one objection no
+   version of the model addresses; closing it needs contested-rebound data the
+   box score does not carry.
 
 One interaction is worth flagging: $\mu_{\mathrm{DRB}}$ (minutes-weighted
-median, $0.1227$) sits ~11% below the league aggregate rate ($0.1367$) because
-rebounding is right-skewed and positionally concentrated. The median baseline
-already tilts this term toward bigs, and $\gamma$ then widens the same spread by
-another 25%. Both choices are individually defensible; they compound in the same
-direction on the same category.
+median) sits ~11% below the league aggregate rate because rebounding is
+right-skewed and positionally concentrated. The median baseline already tilts
+this term toward bigs, and $\gamma$ widens the same spread. Separately, the
+league earns roughly **1.8× more positive VA from offensive rebounds than
+defensive ones** — an artifact of two similarly-sized populations of
+over-performers being paid at $\rho_D/\rho_O \approx 2.85$ different rates. That
+is a baseline question, not a $\gamma$ question, and it remains open.
 
 ### 4.5 Rate forms
 
@@ -471,7 +486,7 @@ ledgers so the two are never confused.
 |---|---|---|
 | Per-minute baseline | unweighted median across players | **minutes-weighted** median (§2) |
 | Possessions | $\mathrm{2PA}+\mathrm{3PA}+\mathrm{TOV}+\mathrm{FTA}/2.1$; pre-1973 imputed by OLS on $\mu_{\mathrm{PTS}},\mu_{\mathrm{TRB}}$ | Hollinger: $\mathrm{FGA}-\mathrm{ORB}+\mathrm{TOV}+0.475\,\mathrm{FTA}$ |
-| Rebound constant | $\gamma = 1$ | $\gamma = 1.25$ |
+| Rebound credit | $\gamma = 1$ | per-player $\gamma = 1/(1-q)$ (§4.3); was a flat $5/4$ through July 2026 |
 | Coverage | 1949-50+, via three nested variants ($\mathrm{VA}_1$ full; $\mathrm{VA}_2$ drops TOV for 1974-77; $\mathrm{VA}_3$ drops TOV/STL/BLK and estimates rebound splits for 1952-73), selected by `coalesce()` | 1979-80+, single variant, complete box score |
 | Playoffs | separate tab | first-class scope, scored against that season's **regular-season** baselines |
 | Defense | box-score events only | $\mathrm{VA}^{+}$ (§6) |

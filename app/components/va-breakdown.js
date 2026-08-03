@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
-import { LGA, ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
+import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
@@ -126,8 +126,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
     { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
     { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
-    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
-    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * reboundGamma(p.drb, mp, lga, lga.laDRBrate) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * reboundGamma(p.orb, mp, lga, lga.laORBrate) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
   // D Rating rides at the very end, after Steals — the last Defense member.
   if (dVA != null) categories.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });
@@ -1340,8 +1340,8 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
     { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
     { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
-    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
-    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
+    { key: "D Rebounds", value: ((p.drb / mp) - lga.laDRBperM) * reboundGamma(p.drb, mp, lga, lga.laDRBrate) * mp * lga.laPTSperPoss * lga.laORBrate, label: cnt(p.drb, "DRB") },
+    { key: "O Rebounds", value: ((p.orb / mp) - lga.laORBperM) * reboundGamma(p.orb, mp, lga, lga.laORBrate) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.orb, "ORB") },
   ].sort((a, b) => VA_CATEGORY_ORDER.indexOf(a.key) - VA_CATEGORY_ORDER.indexOf(b.key));
   // D Rating rides at the very end, after Steals — the last Defense member.
   if (dVA != null) cats.push({ key: "D Rating", value: dVA, label: `${Math.round(drtg)} DRTG`, noDrill: true });

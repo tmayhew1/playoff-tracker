@@ -216,7 +216,13 @@
   <span class="lbl">rebound shares · possessions per on-court minute ( = pace ⁄ 48 )</span>
 </div>
 
-<p><span class="m g">ν</span> is used only by the defensive extension (§6). Because <span class="m"><span class="big">Σ</span><span class="s">MP</span></span> counts <em>player</em> minutes — five per team-minute — the factor of 5 converts to possessions per <strong>team</strong>-minute.</p>
+<div class="eq">
+  <span class="g">Λ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">5<span class="big">Σ</span><span class="s">TRB</span></span><span class="de"><span class="big">Σ</span><span class="s">MP</span></span></span>
+  <span class="lbl">rebound opportunities per on-court minute, at one end</span>
+</div>
+
+<p><span class="m g">Λ</span> is used only by the rebound credit (§4.3), <span class="m g">ν</span> only by the defensive extension (§6). Because <span class="m"><span class="big">Σ</span><span class="s">MP</span></span> counts <em>player</em> minutes — five per team-minute — the factor of 5 converts to possessions per <strong>team</strong>-minute.</p>
 
 <!-- ================= 2 ================= -->
 <h2><span class="n">2</span>The minutes-weighted median</h2>
@@ -323,9 +329,7 @@
 </table>
 </div>
 
-<p>with the rebound credit constant</p>
-
-<div class="eq plain"><span class="g">γ</span> <span class="op">=</span> 1.25</div>
+<p>where the rebound credit <span class="m g">γ</span> is <strong>per-player</strong>, not a constant — it is the one price that depends on the player&rsquo;s own rate as well as the league&rsquo;s. See §4.3.</p>
 
 <p>Attempt-denominators are guarded: <span class="m"><span class="g">r</span><sub class="g">c</sub> <span class="op">:=</span> 0</span> when <span class="m"><span class="g">n</span><sub class="g">c</sub> <span class="op">=</span> 0</span>, so an unattempted category contributes exactly zero rather than <span class="m">NaN</span>.</p>
 
@@ -359,88 +363,61 @@
   <li><strong>Volume and efficiency are separate terms, not a net.</strong> A high-usage scorer at league efficiency has done something real (absorbed difficulty); a low-usage scorer at elite efficiency has also done something real. Netting them erases both. VA pays for each.</li>
 </ul>
 
-<h3><span class="n">4.3</span>The rebound constant <span class="m g">γ</span></h3>
+<h3><span class="n">4.3</span>The rebound credit <span class="m g">γ</span></h3>
 
-<p><span class="m g">γ</span> answers a question the other nine terms never have to ask: <strong>a rebound is the one box-score event that is guaranteed to be allocated and rivalrous.</strong> Every miss produces exactly one rebound, and exactly one of ten players on the floor gets it. So &ldquo;would this have happened anyway?&rdquo; has a real answer, and the answer depends on how many <em>teammates</em> were also standing there.</p>
+<p><span class="m g">γ</span> answers a question the other nine terms never have to ask: <strong>a rebound is the one box-score event that is guaranteed to be allocated and rivalrous.</strong> Every miss produces exactly one rebound, and exactly one of ten players on the floor gets it. So &ldquo;would this have happened anyway?&rdquo; has a real answer.</p>
 
-<p><strong>The model.</strong> Under a Luce / Bradley&ndash;Terry contest, give each of the five defenders a claim weight <span class="m g">d</span> and each of the five offensive players a claim weight <span class="m g">o</span>. Then</p>
+<p><strong>The contest.</strong> Under a Luce / Bradley&ndash;Terry model, give each of the five defenders a claim weight <span class="m g">d</span> and each of the five offensive players a claim weight <span class="m g">o</span>. Then P(defense secures) <span class="m op">=</span> <span class="m">5<span class="g">d</span>/(5<span class="g">d</span>+5<span class="g">o</span>)</span> <span class="m op">=</span> <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>, and the team&rsquo;s securing <strong>odds</strong> are <span class="m"><span class="g">Ω</span> <span class="op">=</span> <span class="g">ρ</span><sub class="s">D</sub>/<span class="g">ρ</span><sub class="s">O</sub> <span class="op">=</span> <span class="g">d</span>/<span class="g">o</span></span>. Remove one of the five defenders and <span class="m"><span class="g">Ω</span>&prime; <span class="op">=</span> 4<span class="g">d</span>/5<span class="g">o</span> <span class="op">=</span> (4/5)<span class="g">Ω</span></span>, so the odds of <em>losing</em> the possession rise by exactly 5&frasl;4 — independent of <span class="m g">ρ</span>, of era, and of which team is rebounding.</p>
 
-<div class="eq">
-  P(defense secures) <span class="op">=</span>
-  <span class="fr"><span class="nu">5<span class="g">d</span></span><span class="de">5<span class="g">d</span> <span class="op">+</span> 5<span class="g">o</span></span></span>
-  <span class="op">=</span>
-  <span class="fr"><span class="nu g">d</span><span class="de"><span class="g">d</span> <span class="op">+</span> <span class="g">o</span></span></span>
-  <span class="op">=</span> <span class="g">ρ</span><sub class="s">D</sub>
-  <span style="display:inline-block;width:2.4em"></span>
-  <span class="g">Ω</span> <span class="op">≡</span>
-  <span class="fr"><span class="nu"><span class="g">ρ</span><sub class="s">D</sub></span><span class="de"><span class="g">ρ</span><sub class="s">O</sub></span></span>
-  <span class="op">=</span>
-  <span class="fr"><span class="nu g">d</span><span class="de g">o</span></span>
-  <span class="lbl">the team&rsquo;s securing odds</span>
-</div>
-
-<p>Remove one of the five defenders from the contest and the odds become</p>
+<p><strong>But VA multiplies a probability, not an odds</strong>, and the two differ. Working in probability space, and generalizing off the &ldquo;exactly one fifth&rdquo; assumption to a player who claims a fraction <span class="m g">q</span> of the boards available at his end:</p>
 
 <div class="eq box">
-  <span class="g">Ω</span>&prime; <span class="op">=</span>
-  <span class="fr"><span class="nu">4<span class="g">d</span></span><span class="de">5<span class="g">o</span></span></span>
+  <span class="g">γ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">1</span><span class="de">1 <span class="op">−</span> <span class="g">q</span></span></span>
+  <span style="display:inline-block;width:2.6em"></span>
+  <span class="g">q</span> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="s">REB</span> ⁄ <span class="s">MP</span></span><span class="de g">Λ</span></span>
+  <span class="lbl">Λ = laREBoppPerM, 0.9071 in 2025-26</span>
+</div>
+
+<p>Every miss is rebounded at one end or the other, so a player on the floor sees <span class="m g">Λ</span> chances per minute at his own end. The construction is self-checking: <span class="m"><span class="g">d</span>/(<span class="g">d</span>+<span class="g">o</span>)</span> recomputed from these same sums returns <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span> exactly.</p>
+
+<p><strong><span class="m g">ρ</span> cancels out of the correction.</strong> Substituting <span class="m"><span class="g">q</span> <span class="op">=</span> <span class="g">s</span><span class="g">ρ</span></span> (where <span class="m g">s</span> is the player&rsquo;s share of his <em>team&rsquo;s</em> boards) into <span class="m">1/(1 <span class="op">−</span> <span class="g">s</span><span class="g">ρ</span>)</span> gives the same expression with no <span class="m g">ρ</span> in it. <span class="m g">ρ</span> still prices the board — <span class="m"><span class="g">π</span><span class="g">ρ</span><sub class="s">O</sub></span> for a defensive rebound, <span class="m"><span class="g">π</span><span class="g">ρ</span><sub class="s">D</sub></span> for an offensive one — but it plays no part in the credit. One formula covers both ends.</p>
+
+<p><strong>It needs no team data.</strong> <span class="m g">Λ</span> is a league quantity, so <span class="m g">q</span> comes straight off the player&rsquo;s own line. This matters: every other VA term reads only the player&rsquo;s stat line and league baselines, which is what makes a 1987 season comparable to a 2026 one. A team-relative <span class="m g">γ</span> would break that — measured on 2025-26, players inside a narrow DRB/min band saw 5&ndash;7% <span class="m g">γ</span> swings from teammates alone, so identical production would have scored differently on different rosters. It doesn&rsquo;t here.</p>
+
+<p><strong>Special cases.</strong> The league-average rebounder has <span class="m"><span class="g">q</span> <span class="op">=</span> 0.2<span class="g">ρ</span></span>, giving</p>
+
+<div class="eq">
+  <span class="g">γ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">1</span><span class="de">1 <span class="op">−</span> 0.2<span class="g">ρ</span></span></span>
   <span class="op">=</span>
-  <span class="fr sm"><span class="nu">4</span><span class="de">5</span></span>
-  <span class="g">Ω</span>
+  <span class="fr"><span class="nu">5</span><span class="de">5 <span class="op">−</span> <span class="g">ρ</span></span></span>
   <span style="display:inline-block;width:2em"></span>
   <span class="op">⟹</span>
   <span style="display:inline-block;width:1em"></span>
-  <span class="fr"><span class="nu">1 ⁄ <span class="g">Ω</span>&prime;</span><span class="de">1 ⁄ <span class="g">Ω</span></span></span>
-  <span class="op">=</span>
-  <span class="fr sm"><span class="nu">5</span><span class="de">4</span></span>
-  <span class="lbl">the odds of losing the possession, with one of five claimants removed</span>
+  <span class="g">γ</span><sub class="s">DRB</sub> <span class="op">≈</span> 1.174
+  <span style="display:inline-block;width:1.2em"></span>
+  <span class="g">γ</span><sub class="s">ORB</sub> <span class="op">≈</span> 1.053
 </div>
 
-<p>The correction is <strong>exactly 5⁄4 independent of <span class="m g">ρ</span></strong>, of era, and of which team is rebounding. That independence is precisely why a single constant is available at all, and why the <em>same</em> constant applies to both boards: both teams field five.</p>
+<p>— the &ldquo;one of five&rdquo; constant, and the fallback for any season baked before <span class="m g">Λ</span> existed. The <strong>odds-space</strong> 5&frasl;4 = 1.25 that VA shipped through July 2026 is the <span class="m"><span class="g">ρ</span> <span class="op">→</span> 1</span> limit of that expression: correct as an odds ratio, but used as though it were a probability, which overstated defensive credit ~6% and offensive credit ~19%. At the top of the distribution the per-player form runs the other way — a player covering a third of his end reaches <span class="m"><span class="g">γ</span> <span class="op">≈</span> 1.5</span>.</p>
 
-<p><strong>The exact probability-space form.</strong> VA multiplies a probability (<span class="m"><span class="g">ρ</span><sub class="s">O</sub></span> or <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>), not an odds. Converting:</p>
-
-<div class="eq">
-  <span class="g">γ</span><sup class="s">exact</sup><sub class="s">DRB</sub> <span class="op">=</span>
-  <span class="fr"><span class="nu">P( offense secures | this defender does not )</span><span class="de"><span class="g">ρ</span><sub class="s">O</sub></span></span>
-  <span class="op">=</span>
-  <span class="fr"><span class="nu">5</span><span class="de">5 <span class="op">−</span> <span class="g">ρ</span><sub class="s">D</sub></span></span>
-  <span style="display:inline-block;width:2.2em"></span>
-  <span class="g">γ</span><sup class="s">exact</sup><sub class="s">ORB</sub> <span class="op">=</span>
-  <span class="fr"><span class="nu">5</span><span class="de">5 <span class="op">−</span> <span class="g">ρ</span><sub class="s">O</sub></span></span>
-</div>
-
-<p>5⁄4 is the <strong>limit</strong> of this expression as <span class="m"><span class="g">ρ</span> <span class="op">→</span> 1</span>, not its value at the operating point:</p>
-
-<div class="tw">
-<table>
-  <thead><tr><th>Season</th><th><span class="m"><span class="g">ρ</span><sub class="s">D</sub></span></th><th>Shipped <span class="m g">γ</span></th><th>Exact, DRB</th><th>Exact, ORB</th></tr></thead>
-  <tbody>
-    <tr><th class="cat">1980-81</th><td class="m">0.665</td><td class="m">1.250</td><td class="m">1.154</td><td class="m">1.072</td></tr>
-    <tr><th class="cat">1995-96</th><td class="m">0.694</td><td class="m">1.250</td><td class="m">1.161</td><td class="m">1.065</td></tr>
-    <tr><th class="cat">2024-25</th><td class="m">0.748</td><td class="m">1.250</td><td class="m">1.176</td><td class="m">1.053</td></tr>
-  </tbody>
-</table>
-</div>
-
-<p>So the shipped <span class="m"><span class="g">γ</span> <span class="op">=</span> 1.25</span> overstates defensive-rebound credit by ~6% and offensive-rebound credit by ~19%, and imposes a symmetry the model does not imply.</p>
+<p><strong>Estimation.</strong> <span class="m g">q</span> is unshrunk by design, matching every other VA category (none of which is shrunk). A season is 1,400&ndash;2,300 opportunities, putting binomial error on <span class="m g">γ</span> under 1.5%; a single game is ~32 and swings hard, exactly as one night&rsquo;s shooting does in the efficiency terms. <span class="m g">q</span> is clamped to <span class="m">[0, 0.5]</span> so <span class="m"><span class="g">γ</span> <span class="op">≤</span> 2</span> stays finite on 1-minute garbage-time lines — the only rows where the clamp ever binds.</p>
 
 <h3><span class="n">4.4</span>What <span class="m g">γ</span> assumes</h3>
 
-<p>The derivation is sound; four assumptions are worth stating, because each is a place the constant could be wrong.</p>
+<p>Three assumptions remain, each a place the model could still be wrong.</p>
 
 <ol>
-  <li><strong>The player is exactly one fifth of his team&rsquo;s rebounding.</strong> 5⁄4 is <span class="m">1 ⁄ (1 <span class="op">−</span> <span class="g">s</span>)</span> at <span class="m"><span class="g">s</span> <span class="op">=</span> 1⁄5</span>. Measured as a player&rsquo;s share of his team&rsquo;s defensive boards while on the floor (2024-25, <span class="m">≥</span> 1,200 MP), <span class="m g">s</span> has median <span class="m">0.181</span> and ranges from <span class="m">0.073</span> to <span class="m">0.430</span> — implying <span class="m"><span class="g">γ</span><sub class="g">i</sub> <span class="op">=</span> 1 ⁄ (1 <span class="op">−</span> <span class="g">s</span><sub class="g">i</sub>)</span> from <span class="m">1.08</span> to <span class="m">1.76</span>. A single constant is least accurate for exactly the players the term matters most for.</li>
   <li><strong>Independence of irrelevant alternatives.</strong> Removing a claimant redistributes his share proportionally across the other nine. Real rebounding is closer to matched pairs — the opposing big absorbs most of a removed center&rsquo;s share, not the floor uniformly.</li>
-  <li><strong>Ten live claimants.</strong> On the offensive glass teams deliberately send fewer crashers, so the offense&rsquo;s effective <span class="m g">n</span> is below five and drifts by era. (Probability-space damping keeps the resulting correction near 1.05&ndash;1.09 regardless, which reinforces rather than offsets point 1.)</li>
-  <li><strong>The marginal board is an average board.</strong> <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span> is unconditional, but most defensive rebounds are uncontested; the boards a strong rebounder adds are drawn from the contested tail, where recovery risk is far above <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span>. This pushes the correct multiplier <em>up</em>, plausibly past 5⁄4 — a second mechanism, in the opposite direction from points 1&ndash;3.</li>
+  <li><strong>A league-uniform opportunity rate.</strong> <span class="m g">Λ</span> is a league constant, but the boards available at a given player&rsquo;s end depend on his team&rsquo;s pace and his opponents&rsquo; shooting. Using the team&rsquo;s own rate instead moves <span class="m g">γ</span> by a median of 0.74% (p90 2.11%, <span class="m"><span class="g">r</span> <span class="op">=</span> 0.985</span>) — less than the binomial noise already in <span class="m g">q</span>, and it would cost the context-freedom above. Deliberately traded away.</li>
+  <li><strong>The marginal board is an average board.</strong> <span class="m g">q</span> counts an uncontested carom the same as a won contest, and most defensive rebounds are uncontested. The boards a strong rebounder adds are drawn from the contested tail, where recovery risk is far above <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span> — which argues every <span class="m g">γ</span> here is <em>understated</em> for players who actually box out. This is the one objection no version of the model addresses; closing it needs contested-rebound data the box score does not carry.</li>
 </ol>
 
 <div class="note">
-  Points 1&ndash;3 argue <span class="m g">γ</span> is too large; point 4 argues it is too small. Shipping 5⁄4 is a defensible operating point between them, but it should be read as <b>the odds-space bound doing double duty as an empirical compromise</b>, not as the exact probability-space correction.
+  <b>Two open items.</b> <span class="m"><span class="g">μ</span><sub class="s">DRB</sub></span> (minutes-weighted median) sits ~11% below the league aggregate rate because rebounding is right-skewed and positionally concentrated, so the median baseline already tilts this term toward bigs and <span class="m g">γ</span> widens the same spread. Separately, the league earns roughly <b>1.8&times; more positive VA from offensive rebounds than defensive ones</b> — two similarly-sized populations of over-performers paid at <span class="m"><span class="g">ρ</span><sub class="s">D</sub>/<span class="g">ρ</span><sub class="s">O</sub> <span class="op">≈</span> 2.85</span> different rates. That is a baseline question, not a <span class="m g">γ</span> question, and it remains open.
 </div>
-
-<p>One interaction is worth flagging: <span class="m"><span class="g">μ</span><sub class="s">DRB</sub></span> (minutes-weighted median, <span class="m">0.1227</span>) sits ~11% below the league aggregate rate (<span class="m">0.1367</span>) because rebounding is right-skewed and positionally concentrated. The median baseline already tilts this term toward bigs, and <span class="m g">γ</span> then widens the same spread by another 25%. Both choices are individually defensible; they compound in the same direction on the same category.</p>
 
 <h3><span class="n">4.5</span>Rate forms</h3>
 <div class="eq">
@@ -625,9 +602,9 @@
         <span style="white-space:normal;font-family:inherit;font-size:.86rem">pre-1973 imputed by OLS on <span class="m"><span class="g">μ</span><sub class="s">PTS</sub></span>, <span class="m"><span class="g">μ</span><sub class="s">TRB</sub></span></span></td>
       <td class="m"><span class="s">FGA</span> <span class="op">−</span> <span class="s">ORB</span> <span class="op">+</span> <span class="s">TOV</span> <span class="op">+</span> 0.475 <span class="s">FTA</span><br>
         <span style="white-space:normal;font-family:inherit;font-size:.86rem">Hollinger</span></td></tr>
-    <tr><th class="cat">Rebound constant</th>
+    <tr><th class="cat">Rebound credit</th>
       <td class="m"><span class="g">γ</span> <span class="op">=</span> 1</td>
-      <td class="m"><span class="g">γ</span> <span class="op">=</span> 1.25</td></tr>
+      <td>per-player <span class="m"><span class="g">γ</span> <span class="op">=</span> 1/(1 <span class="op">−</span> <span class="g">q</span>)</span> (§4.3); a flat 5&frasl;4 through July 2026</td></tr>
     <tr><th class="cat">Coverage</th>
       <td>1949-50+, via three nested variants — VA<sub>1</sub> full; VA<sub>2</sub> drops TOV for 1974-77; VA<sub>3</sub> drops TOV/STL/BLK and estimates rebound splits for 1952-73 — selected by <code>coalesce()</code></td>
       <td>1979-80+, single variant, complete box score</td></tr>

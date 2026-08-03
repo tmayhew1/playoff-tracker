@@ -78,6 +78,7 @@ performance.
 | Invention | What it is |
 |---|---|
 | **Value Added (VA)** | A ten-term linear valuation in points, each term of the form *(player rate − league rate) × opportunity × price*, with derived prices for assists ($\kappa(1-p_G)$), steals/blocks (possession value, blocks discounted by defensive-rebound rate), turnovers, and cross-weighted rebounds. |
+| **Per-player rebound credit** | Each rebound is priced by what the player's own absence would cost: γ = 1/(1 − q), where q is his share of the boards available at his end. Derived from a Luce contest rather than fitted, computed without team data so identical production always scores identically, and reducing to the "one of five" constant 5/(5−ρ) at the league-average rate. |
 | **Minutes-weighted median baselines** | A season baseline defined as the rate of the *median league minute* — the cumulative-minutes crossing point — rather than the aggregate mean or per-player median. |
 | **Exact category decomposition** | The ten category terms sum to the headline to the decimal on every surface — leaderboard, compare header, stacked bars, percentiles, similarity vectors — enforced as a product invariant with a single shared source of truth. |
 | **VA+ and the Bayesian D Rating** | A fifth, non-box-score defensive category: a possession-weighted posterior blend of box-score estimate and on-court play-by-play rating, split into an individual term (edge over own team) and an *earned-share* team term with a mirrored blame branch. |
@@ -141,8 +142,10 @@ ingestion; GitHub Actions)
 - **Specification-first metric design.** Every weight is derived from a stated
   model rather than fitted: the assist discount from the share of baskets that
   would not have fallen anyway, the block/steal asymmetry from whether the
-  possession actually ends, the rebound constant from the odds of a five-man
-  lineup losing a board when one claimant is removed. Each derivation is
+  possession actually ends, the rebound credit from the odds of a
+  lineup losing a board when a claimant who covers share *q* of the glass is
+  removed — 1/(1 − *q*), read off the player's own line against a league
+  opportunity rate, so it stays team-independent. Each derivation is
   recorded with its assumptions at the point of implementation, so a reader can
   critique the model instead of reverse-engineering the number.
 - **Invariants as tests.** Decomposition exactness, season-locality, and

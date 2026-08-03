@@ -26,6 +26,7 @@ lga_from_totals <- function(t) {
   list(
     la3P = safe(t$tpm, t$tpa), la2P = safe(twoPm, twoPa),
     laFT = safe(t$ftm, t$fta), laFG = safe(t$fgm, t$fga),
+    laREBoppPerM = safe(5 * reb, t$mp),
     laPTSperM = safe(t$pts, t$mp), laASTperM = safe(t$ast, t$mp),
     laSTLperM = safe(t$stl, t$mp), laBLKperM = safe(t$blk, t$mp),
     laTOVperM = safe(t$tov, t$mp), laDRBperM = safe(t$drb, t$mp),
