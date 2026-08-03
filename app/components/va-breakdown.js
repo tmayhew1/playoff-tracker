@@ -638,6 +638,15 @@ const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
 // Short label printed under a category's bar in the split row below a Basic
 // group's rankings ("Assists" -> AST). Box-score tags rather than CAT_SHORT's
 // prose so the bars read like a stat line.
+// Which of a two-stat group's components goes on which axis of its scatter,
+// as [x, y]. Assists is the headline stat of the pair it belongs to, so it
+// takes the vertical; the others follow the order they're listed in.
+const SCATTER_AXES = {
+  "Passing": ["Turnovers", "Assists"],
+  "Rebounds": ["D Rebounds", "O Rebounds"],
+  "Defense": ["Blocks", "Steals"],
+};
+
 const SEG_SUB = {
   "Points": "PTS", "2-Pointers": "2P", "3-Pointers": "3P", "Free Throws": "FT",
   "Assists": "AST", "Turnovers": "TOV", "D Rebounds": "DRB", "O Rebounds": "ORB",
@@ -645,47 +654,205 @@ const SEG_SUB = {
 };
 
 
-// The two-stat groups' split: a scatter of the group's first two components
-// against each other — every qualified player in the season in grey, the card's
-// player in black — over a row of tappable stat chips that filter the whole
-// card. See the `scatter` memo in CategoryContext for what the axes are and why.
-function ScatterSplit({ scatter, segData, height, selectedSeg, onSelect, sgn, name }) {
-  const { pts, me, xr, yr } = scatter;
-  // viewBox units: a fixed 100-wide box scaled uniformly by the browser, so the
-  // dots stay circular whatever the card's width works out to.
-  const px = (v) => Math.max(0, Math.min(100, ((v - xr[0]) / (xr[1] - xr[0])) * 100));
-  const py = (v) => Math.max(0, Math.min(height, height - ((v - yr[0]) / (yr[1] - yr[0])) * height));
-  const mx = px(me.x), my = py(me.y);
-  const x0 = px(0), y0 = py(0);
-  const [segX, segY] = segData;
+// Dot radius and the tap radius around a finger press, in viewBox units. The
+// tap radius is generous on purpose — the cloud is dense, and catching several
+// players at once is a menu, not a miss.
+const DOT_R = 0.85, TAP_R = 3.4;
+
+// Symmetric dot plot ("collapse onto one axis"). Values are binned along the
+// axis and each bin's dots stack outward from the centre line in alternating
+// directions — 0, +1, −1, +2, −2 … — so a column's height reads as the count at
+// that value and the whole thing is a mirrored histogram. The card's own player
+// takes the centre slot of his bin so he's never buried mid-stack. Stack
+// spacing shrinks if the tallest column would overflow the cross-axis.
+//
+// `entries` are { key, v } with v the value; `selfKey` marks the card's player.
+// Returns viewBox positions for a plot of value-axis length L and cross-axis
+// width C, both measured from the origin corner.
+function dotPlotLayout(entries, selfKey, range, L, C) {
+  const span = (range[1] - range[0]) || 1;
+  const bins = Math.max(12, Math.round(L / 1.9));
+  const along = (v) => ((v - range[0]) / span) * L;
+  const byBin = new Map();
+  for (const e of entries) {
+    const b = Math.max(0, Math.min(bins - 1, Math.floor(((e.v - range[0]) / span) * bins)));
+    if (!byBin.has(b)) byBin.set(b, []);
+    byBin.get(b).push(e);
+  }
+  // Spacing that keeps the tallest column inside the cross-axis, capped at a
+  // dot's own diameter so a sparse plot doesn't spread into a smear. The dots
+  // then size themselves to whichever gap is tighter — the space between
+  // columns or between the dots stacked within one — so a dense middle stays a
+  // column of dots instead of fusing into a solid bar.
+  const tallest = Math.max(1, ...[...byBin.values()].map((g) => g.length));
+  const spacing = Math.min(2.2, (C * 0.92) / Math.max(1, tallest));
+  const r = Math.max(0.28, Math.min(DOT_R, 0.45 * Math.min(L / bins, spacing)));
+  const out = [];
+  for (const [b, group] of byBin) {
+    // Sort so a column is built from a stable order, then float the card's own
+    // player to the front — the front of the queue is the centre slot.
+    const g = [...group].sort((m, n) => m.v - n.v);
+    const mine = g.findIndex((e) => e.key === selfKey);
+    if (mine > 0) g.unshift(g.splice(mine, 1)[0]);
+    const centre = ((b + 0.5) / bins) * L;
+    g.forEach((e, i) => {
+      // 0, +1, −1, +2, −2 … in units of `spacing`.
+      const step = Math.ceil(i / 2) * (i % 2 === 1 ? 1 : -1);
+      out.push({ ...e, along: centre, cross: C / 2 + step * spacing });
+    });
+  }
+  return { positions: out, zero: along(0), r };
+}
+
+
+// The two-stat groups' split. By default a scatter of the two stats against
+// each other — every qualified player in the season in grey, the card's player
+// in black. Selecting one stat collapses the cloud onto that stat's axis as a
+// symmetric dot plot; selecting a stat with no axis of its own (Defense's D
+// Rating) collapses horizontally. Tapping a grey dot re-points the whole card
+// at that player, and a tap that catches several raises a menu to pick from.
+// See the `scatter` memo in CategoryContext for what the axes are and why.
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name }) {
+  const { rows, me, ranges } = scatter;
+  // Which players a tap landed on, and where to hang the menu.
+  const [menu, setMenu] = useState(null);
+  const svgRef = React.useRef(null);
+  const collapsed = selIdx >= 0;
+  // A collapsed plot runs along the axis the selected stat already owns, so the
+  // cloud visibly falls onto it: the vertical stat collapses to a vertical dot
+  // plot, the horizontal one (and the axis-less D Rating chip) to a horizontal.
+  const vertical = collapsed && selIdx === yi;
+
+  // Every dot's viewBox position, plus the value-axis zero, for whichever mode
+  // is showing. Both modes produce the same shape so hit-testing, the grey
+  // cloud and the black dot are all written once.
+  const view = useMemo(() => {
+    const clamp = (v, hi) => Math.max(0, Math.min(hi, v));
+    if (collapsed) {
+      const L = vertical ? height : 100, C = vertical ? 100 : height;
+      const entries = [
+        ...rows.map((q, i) => ({ key: i, v: q.v[selIdx], all: q.v, row: q.row })),
+        { key: "self", v: me[selIdx], all: me, row: null },
+      ];
+      const { positions, zero, r } = dotPlotLayout(entries, "self", ranges[selIdx], L, C);
+      const place = (p) => vertical
+        ? { cx: clamp(p.cross, 100), cy: clamp(height - p.along, height) }
+        : { cx: clamp(p.along, 100), cy: clamp(p.cross, height) };
+      const dots = positions.map((p) => ({ ...place(p), row: p.row, v: p.all, self: p.key === "self" }));
+      return {
+        dots, r,
+        self: dots.find((dt) => dt.self),
+        guides: vertical
+          ? [{ x1: 0, y1: height - zero, x2: 100, y2: height - zero }]
+          : [{ x1: zero, y1: 0, x2: zero, y2: height }],
+      };
+    }
+    const pos = (i, v) => ((v - ranges[i][0]) / ((ranges[i][1] - ranges[i][0]) || 1));
+    const place = (v) => ({ cx: clamp(pos(xi, v[xi]) * 100, 100), cy: clamp(height - pos(yi, v[yi]) * height, height) });
+    const dots = rows.map((q) => ({ ...place(q.v), row: q.row, v: q.v, self: false }));
+    const self = { ...place(me), row: null, v: me, self: true };
+    return {
+      dots: [...dots, self],
+      self,
+      r: DOT_R,
+      guides: [
+        { x1: clamp(pos(xi, 0) * 100, 100), y1: 0, x2: clamp(pos(xi, 0) * 100, 100), y2: height },
+        { x1: 0, y1: clamp(height - pos(yi, 0) * height, height), x2: 100, y2: clamp(height - pos(yi, 0) * height, height) },
+      ],
+    };
+  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height]);
+
+  // Turn a tap into the players under it. The SVG scales uniformly from a
+  // 100-wide viewBox, so client coordinates map straight back through its box.
+  const handleTap = (e) => {
+    const box = svgRef.current?.getBoundingClientRect();
+    if (!box || !box.width) return;
+    const vx = ((e.clientX - box.left) / box.width) * 100;
+    const vy = ((e.clientY - box.top) / box.height) * height;
+    const hits = view.dots
+      .filter((dt) => !dt.self && dt.row)
+      .map((dt) => ({ dt, d: Math.hypot(dt.cx - vx, dt.cy - vy) }))
+      .filter((h) => h.d <= TAP_R)
+      .sort((a, b) => a.d - b.d);
+    if (!hits.length) { setMenu(null); return; }
+    if (hits.length === 1) { setMenu(null); onPickPlayer(hits[0].dt.row); return; }
+    // Several players under one finger — ask rather than guess. Anchored at the
+    // tap and clamped so the list stays on the card.
+    setMenu({
+      left: Math.max(4, Math.min(96, vx)),
+      top: (Math.max(0, Math.min(height, vy)) / height) * 100,
+      flip: vy > height * 0.55,
+      items: hits.slice(0, 6).map((h) => h.dt),
+    });
+  };
+
+  const [segX, segY] = [segData[xi], segData[yi]];
+  const selSeg = collapsed ? segData[selIdx] : null;
   // Value-added color band, matching the bars: green above +0.05, red below
   // −0.05, grey in the neutral middle.
   const vaColor = (v) => (v > 0.05 ? "text-green-600" : v < -0.05 ? "text-red-600" : "text-stone-400");
+  const label = collapsed
+    ? `${selSeg.sub} value added — ${name} at ${sgn(me[selIdx])} against ${scatter.n} qualified players`
+    : `${segY.sub} against ${segX.sub} value added — ${name} at ${sgn(me[xi])} ${segX.sub}, ${sgn(me[yi])} ${segY.sub}, among ${scatter.n} qualified players`;
+
   return (
     <>
       {/* No axis titles on the plot itself — a corner label lands right where
           the extremes of the other axis sit. The chips below name both axes
           and carry the arrow of the one they own. */}
-      <div className="mt-1">
+      <div className="relative mt-1">
         <svg
+          ref={svgRef}
           viewBox={`0 0 100 ${height}`}
-          className="w-full block overflow-visible"
+          className="w-full block overflow-visible touch-manipulation"
+          onClick={handleTap}
           role="img"
-          aria-label={`${segX.sub} versus ${segY.sub} value added — ${name} at ${sgn(me.x)} ${segX.sub}, ${sgn(me.y)} ${segY.sub}, against ${scatter.n} qualified players`}
+          aria-label={`${label}. Tap a grey dot to open that player; the ranking table above lists the same players as buttons.`}
         >
-          {/* League baseline, where both stats are worth exactly nothing. */}
-          <line x1={x0} y1="0" x2={x0} y2={height} stroke="#e7e5e4" strokeWidth="0.4" />
-          <line x1="0" y1={y0} x2="100" y2={y0} stroke="#e7e5e4" strokeWidth="0.4" />
-          {pts.map((q, i) => (
-            <circle key={i} cx={px(q.x)} cy={py(q.y)} r="0.85" fill="#d6d3d1" fillOpacity="0.8" />
+          {/* League baseline — where the stat is worth exactly nothing. */}
+          {view.guides.map((g, i) => (
+            <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke="#e7e5e4" strokeWidth="0.4" />
           ))}
-          {/* Guides dropping the player's point onto each axis, so the chips
+          {view.dots.filter((dt) => !dt.self).map((dt, i) => (
+            <circle key={i} cx={dt.cx} cy={dt.cy} r={view.r} fill="#d6d3d1" fillOpacity="0.8" />
+          ))}
+          {/* Guides dropping the player's point onto the axes, so the chips
               below read as the coordinates of the black dot. */}
-          <line x1={mx} y1={my} x2={mx} y2={height} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
-          <line x1={mx} y1={my} x2="0" y2={my} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
-          <circle cx={mx} cy={my} r="2.4" fill="#fff" />
-          <circle cx={mx} cy={my} r="1.5" fill="#1c1917" />
+          {!collapsed && (
+            <>
+              <line x1={view.self.cx} y1={view.self.cy} x2={view.self.cx} y2={height} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
+              <line x1={view.self.cx} y1={view.self.cy} x2="0" y2={view.self.cy} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
+            </>
+          )}
+          <circle cx={view.self.cx} cy={view.self.cy} r="2.4" fill="#fff" />
+          <circle cx={view.self.cx} cy={view.self.cy} r="1.5" fill="#1c1917" />
         </svg>
+        {menu && (
+          // Disambiguation menu: one tap landed on several players, so name
+          // them and let the next tap choose. Anything else dismisses.
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} aria-hidden />
+            <div
+              className={`absolute z-20 ${menu.flip ? "-translate-y-full -mt-2" : "mt-2"} ${menu.left > 60 ? "-translate-x-full" : ""}`}
+              style={{ left: `${menu.left}%`, top: `${menu.top}%` }}
+            >
+              <div className="min-w-[7.5rem] rounded-sm border border-stone-300 bg-white shadow-md overflow-hidden">
+                <div className="px-1.5 py-0.5 text-[7px] uppercase tracking-wider text-stone-400 border-b border-stone-100">{menu.items.length} players here</div>
+                {menu.items.map((dt, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { setMenu(null); onPickPlayer(dt.row); }}
+                    className="w-full flex items-baseline justify-between gap-2 px-1.5 py-1 text-left hover:bg-stone-100 focus-visible:outline-none focus-visible:bg-stone-100"
+                  >
+                    <span className="truncate text-[9px] font-medium text-stone-800">{dt.row.name}</span>
+                    <span className="shrink-0 text-[8px] tabular-nums text-stone-500">{collapsed ? sgn(dt.v[selIdx]) : `${sgn(dt.v[yi])} / ${sgn(dt.v[xi])}`}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
       {/* Stat chips — the selectors the bars used to be. Each carries the
           player's rate (black) and his value added, and the two axis chips are
@@ -694,17 +861,17 @@ function ScatterSplit({ scatter, segData, height, selectedSeg, onSelect, sgn, na
         {segData.map((seg, i) => {
           const isSel = selectedSeg === seg.key;
           const shown = Math.abs(seg.selfV) < 0.005 ? 0 : seg.selfV;
-          const axis = i === 0 ? "→" : i === 1 ? "↑" : null;
+          const axis = i === xi ? "→" : i === yi ? "↑" : null;
           return (
             <button
               key={seg.key}
               type="button"
               onClick={() => onSelect(seg.key)}
               aria-pressed={isSel}
-              title={`${seg.cat || seg.sub} — filter the card to this stat`}
+              title={`${seg.cat || seg.sub} — ${isSel ? "back to the scatter" : "collapse the plot onto this stat and filter the card"}`}
               className={`flex flex-col items-center gap-0.5 min-w-0 rounded px-1 py-1 border transition-colors ${isSel ? "bg-stone-200 border-stone-800 ring-1 ring-stone-800" : "bg-white border-stone-200 hover:bg-stone-100"}`}
             >
-              <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub} {axis}</span>
+              <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub}{axis && !collapsed ? ` ${axis}` : ""}</span>
               <span className="text-[11px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
               <span className={`text-[8px] font-semibold tabular-nums leading-none ${vaColor(shown)}`}>{sgn(shown)}</span>
             </button>
@@ -1012,17 +1179,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // third component under VA+ (D Rating) has no axis to sit on — it stays a
   // chip, and the caption says it's in the total but not on the plot.
   const SCATTER_H = 58; // viewBox height; width is a fixed 100 so dots stay round
+  const axisKeys = SCATTER_AXES[catKey] || null;
   const scatter = useMemo(() => {
-    if (!segData || showZones || catKey === "Scoring" || segData.length < 2) return null;
-    const [sx, sy] = segData;
+    if (!segData || !axisKeys || segData.length < 2) return null;
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
     const per = (seg, r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
-    const pts = pool
+    // A value per segment for every player, so the scatter, either collapsed
+    // dot plot, and the disambiguation menu all read off one pass.
+    const rows = pool
       .filter((r) => !samePlayer(r, selfRow))
-      .map((r) => ({ x: per(sx, r), y: per(sy, r) }));
-    const me = { x: sx.selfV, y: sy.selfV };
-    // Always include the origin so the crosshair is on-plot, and always the
+      .map((r) => ({ row: r, v: segData.map((s) => per(s, r)) }));
+    const me = segData.map((s) => s.selfV);
+    // Always include the origin so the baseline is on-plot, and always the
     // player's own point so he can't fall outside his own chart.
     const extent = (vals, mine) => {
       const lo = Math.min(0, mine, ...vals), hi = Math.max(0, mine, ...vals);
@@ -1030,11 +1199,20 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       return [lo - pad, hi + pad];
     };
     return {
-      pts, me, n: pool.length,
-      xr: extent(pts.map((q) => q.x), me.x),
-      yr: extent(pts.map((q) => q.y), me.y),
+      rows, me, n: pool.length,
+      ranges: segData.map((s, i) => extent(rows.map((q) => q.v[i]), me[i])),
     };
-  }, [segData, showZones, catKey, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+  }, [segData, axisKeys, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+  // Which segment sits on which axis, and which one the card is filtered to
+  // (−1 when the plot is showing both). Defense's D Rating chip is on neither
+  // axis, so a selection of it matches neither index and collapses horizontally.
+  const axisIdx = (k, fallback) => {
+    const i = scatter ? segData.findIndex((s) => s.key === k) : -1;
+    return i >= 0 ? i : (scatter ? fallback : -1);
+  };
+  const xi = axisIdx(axisKeys?.[0], 0);
+  const yi = axisIdx(axisKeys?.[1], 1);
+  const selIdx = scatter && selSeg ? segData.findIndex((s) => s.key === selSeg.key) : -1;
 
   // Headline total(s) for the split row, shown inline with its section heading.
   // Everywhere but the six-bar Scoring card the bars are the group's own
@@ -1066,7 +1244,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // plotted axes on a scatter, the kind of split otherwise.
   const segHeading = showZones
     ? (catKey === "2-Pointers" ? "2-Pointers · by distance" : "Scoring · by shot distance")
-    : scatter ? `${catKey} · ${segData[0].sub} vs ${segData[1].sub}`
+    : scatter ? (selIdx >= 0 ? `${catKey} · ${segData[selIdx].sub} spread` : `${catKey} · ${segData[yi].sub} vs ${segData[xi].sub}`)
     : `${catKey} · by stat`;
   // Total VA is a whole-season figure, so one decimal (matches the leaderboard);
   // per-game figures are an order of magnitude smaller, so show two.
@@ -1265,11 +1443,16 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           </div>
           {scatter ? (
             <ScatterSplit
+              key={`${catKey}:${selectedSeg || ""}:${self.slug || self.name}`}
               scatter={scatter}
               segData={segData}
               height={SCATTER_H}
+              xi={xi}
+              yi={yi}
+              selIdx={selIdx}
               selectedSeg={selectedSeg}
               onSelect={(k) => setSelectedSeg(selectedSeg === k ? null : k)}
+              onPickPlayer={(r) => setFocusRow(samePlayer(r, ownerRow) ? null : r)}
               sgn={sgn}
               name={self.name}
             />
@@ -1346,7 +1529,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
-              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black · axes = ${perGame ? "per-game" : "total"} value added, crosshair = the league baseline · tap a stat to filter the card. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
+              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
               : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</>}
           </div>
         </div>
