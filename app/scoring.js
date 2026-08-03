@@ -13,6 +13,39 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 
 export const lgaForSeason = (season) => LEAGUE_AVERAGES[season] || LGA;
 
+// --- Rebound credit (γ) -----------------------------------------------------
+// A rebound is the one box-score event that is guaranteed to be allocated and
+// rivalrous: every miss produces exactly one, and exactly one of the ten
+// players on the floor gets it. So "would the team have gotten it anyway?" has
+// a real answer, and it depends on how much of the glass this player himself
+// covers. Under a Luce contest, if he claims a fraction q of the boards
+// available at his end, removing him raises his team's chance of losing the
+// possession by exactly 1/(1 − q) — so each of his boards is worth that much
+// more than the flat possession-value discount implies.
+//
+// q needs no team data. Rebound opportunities at one end are a league quantity
+// (laREBoppPerM, ~0.91/min), so q = (REB/MP) / laREBoppPerM straight off the
+// player's own line. That keeps VA context-free: identical production always
+// scores identically, whoever the other four are.
+//
+// The league-average player has q = 0.2ρ, giving γ = 1/(1 − 0.2ρ) = 5/(5 − ρ)
+// — the "one of five" constant. That is also the fallback when a season
+// predates the opportunity-rate bake. (The previous flat γ = 1.25 is this same
+// expression in ODDS space, i.e. its ρ → 1 limit; see docs/value-added-spec.md
+// §4.3.)
+//
+// Unshrunk by design, and clamped only to keep γ finite: a season is 1,400+
+// opportunities (binomial error on γ under 1.5%), while a single game is ~32
+// and swings hard — exactly as every other VA category does on one night's
+// shooting. REB_Q_MAX bounds a short line's γ at 2.
+export const REB_Q_MAX = 0.5;
+
+export function reboundGamma(reb, mp, lga, rate) {
+  const opp = lga?.laREBoppPerM;
+  if (!(opp > 0) || !(mp > 0)) return 5 / (5 - rate);
+  return 1 / (1 - Math.min(Math.max((reb / mp) / opp, 0), REB_Q_MAX));
+}
+
 // Returns the total Value Added plus its efficiency component
 // (3·tpAdd + 2·twoAdd + ftAdd), so callers can aggregate either.
 export function valueAddParts(p, lga = LGA) {
@@ -28,8 +61,8 @@ export function valueAddParts(p, lga = LGA) {
   const stlVal = ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss;
   const blkVal = ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate;
   const tovVal = -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss;
-  const drbVal = ((drb / mp) - lga.laDRBperM) * ( 1.25 ) * mp * lga.laPTSperPoss * lga.laORBrate;
-  const orbVal = ((orb / mp) - lga.laORBperM)* ( 1.25 ) * mp * lga.laPTSperPoss * lga.laDRBrate;
+  const drbVal = ((drb / mp) - lga.laDRBperM) * reboundGamma(drb, mp, lga, lga.laDRBrate) * mp * lga.laPTSperPoss * lga.laORBrate;
+  const orbVal = ((orb / mp) - lga.laORBperM) * reboundGamma(orb, mp, lga, lga.laORBrate) * mp * lga.laPTSperPoss * lga.laDRBrate;
   return { va: volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal, efficiency };
 }
 
@@ -46,8 +79,9 @@ export const VA_CATEGORY_KEYS = [
 ];
 
 // Per-category VA from a single stat line. Matches `valueAddParts` exactly —
-// including the rebound 1.25 weighting, which is part of the VA formula — so
-// the ten categories always sum to the same VA the leaderboard shows.
+// including the per-player rebound credit γ (reboundGamma), which is part of
+// the VA formula — so the ten categories always sum to the same VA the
+// leaderboard shows.
 export function valueAddByCategory(p, lga = LGA) {
   const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
   if (!mp || mp <= 0) {
@@ -66,8 +100,8 @@ export function valueAddByCategory(p, lga = LGA) {
     "Steals": ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss,
     "Blocks": ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate,
     "Turnovers": -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss,
-    "D Rebounds": ((drb / mp) - lga.laDRBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laORBrate,
-    "O Rebounds": ((orb / mp) - lga.laORBperM) * 1.25 * mp * lga.laPTSperPoss * lga.laDRBrate,
+    "D Rebounds": ((drb / mp) - lga.laDRBperM) * reboundGamma(drb, mp, lga, lga.laDRBrate) * mp * lga.laPTSperPoss * lga.laORBrate,
+    "O Rebounds": ((orb / mp) - lga.laORBperM) * reboundGamma(orb, mp, lga, lga.laORBrate) * mp * lga.laPTSperPoss * lga.laDRBrate,
   };
 }
 

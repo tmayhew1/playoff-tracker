@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Value Added (VA) — Formal Specification</title>
+<style>
+  :root{
+    --bg:#faf9f7; --panel:#fff; --ink:#1c1917; --dim:#57534e; --faint:#a8a29e;
+    --rule:#e7e5e4; --rule2:#d6d3d1; --accent:#b45309; --mathbg:#f5f5f4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1c1917; --panel:#232020; --ink:#f5f5f4; --dim:#d6d3d1; --faint:#78716c;
+      --rule:#3a3533; --rule2:#4a4442; --accent:#fbbf24; --mathbg:#2a2624;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:2.5rem 1.25rem 5rem}
+
+  /* ---- masthead ---- */
+  header.mast{border-bottom:2px solid var(--ink);padding-bottom:1.25rem;margin-bottom:2rem}
+  .kicker{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--faint)}
+  h1{font-size:1.9rem;line-height:1.2;margin:.5rem 0 .4rem;letter-spacing:-.015em}
+  .sub{color:var(--dim);font-size:.95rem;margin:0}
+  .meta{margin-top:1rem;font-size:.8rem;color:var(--faint)}
+  .meta code{background:var(--mathbg);padding:.1em .35em;border-radius:2px}
+
+  /* ---- structure ---- */
+  h2{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+     margin:3rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule2)}
+  h2 .n{color:var(--faint);margin-right:.6em;font-variant-numeric:tabular-nums}
+  h3{font-size:.95rem;font-weight:700;margin:2rem 0 .6rem}
+  h3 .n{color:var(--faint);margin-right:.5em;font-weight:600;font-variant-numeric:tabular-nums}
+  p{margin:.85rem 0}
+  .lede{color:var(--dim)}
+  em{color:var(--ink)}
+  strong{font-weight:700}
+  ol,ul{margin:.85rem 0;padding-left:1.3rem}
+  li{margin:.45rem 0}
+  hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+
+  /* ---- math typography ---- */
+  .m,.eq{font-family:Georgia,"Times New Roman",serif}
+  .eq{
+    margin:1.4rem 0;padding:1rem .75rem;background:var(--mathbg);
+    border:1px solid var(--rule);border-radius:3px;
+    text-align:center;font-size:1.05rem;line-height:2.1;
+    overflow-x:auto;
+  }
+  .eq.plain{background:none;border:none;padding:.4rem 0}
+  .eq.box{border:2px solid var(--ink);background:var(--panel)}
+  .eq .lbl{display:block;font-family:inherit;font-size:.78rem;color:var(--faint);
+           font-style:normal;margin-top:.55rem;letter-spacing:.02em}
+  .g{font-style:italic}                       /* greek / scalar symbols */
+  .s{font-style:normal}                        /* stat names: MP, PTS, 3PA */
+  .op{padding:0 .28em}                         /* binary operators */
+  sub,sup{font-size:.7em;font-style:normal}
+  .big{font-size:1.35em;vertical-align:-.12em}  /* Σ, Π, braces */
+
+  /* stacked fraction */
+  .fr{display:inline-flex;flex-direction:column;vertical-align:middle;
+      text-align:center;margin:0 .22em;line-height:1.25}
+  .fr>.nu{border-bottom:1px solid currentColor;padding:0 .35em}
+  .fr>.de{padding:0 .35em}
+  .fr.sm{font-size:.86em}
+  /* parenthesis scaled to wrap a fraction */
+  .par{font-size:2em;vertical-align:middle;line-height:0;font-weight:300}
+  /* circumflex accent: a real hat, not a stray prime */
+  .hat{position:relative;display:inline-block;padding-top:.1em}
+  .hat::after{content:"\02C6";position:absolute;left:0;right:0;top:-.46em;
+              text-align:center;font-size:1.05em;font-style:normal;font-weight:400}
+
+  /* piecewise cases */
+  .cases{display:inline-grid;grid-template-columns:auto auto;gap:.35rem 1.2rem;
+         text-align:left;vertical-align:middle;padding-left:.7rem;
+         border-left:2px solid currentColor}
+  .cases .cond{font-size:.85em;color:var(--dim);font-style:normal}
+
+  /* ---- tables ---- */
+  .tw{overflow-x:auto;margin:1.4rem 0;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:520px}
+  th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+  thead th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+           font-weight:700;border-bottom:1px solid var(--rule2)}
+  tbody tr:last-child td{border-bottom:none}
+  td.m{font-size:.95rem;white-space:nowrap;line-height:2.2}
+  td.m .fr,th .fr{vertical-align:middle;margin:0}
+  td.m .fr>.nu,td.m .fr>.de{padding:0 .3em}
+  th.cat{font-weight:600;white-space:nowrap}
+
+  /* ---- term ledger ---- */
+  .ledger{border:1px solid var(--rule);border-radius:3px;overflow:hidden;margin:1.4rem 0}
+  .ledger .grp{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);
+               background:var(--mathbg);padding:.45rem .8rem;border-bottom:1px solid var(--rule);
+               border-top:1px solid var(--rule)}
+  .ledger .grp:first-child{border-top:none}
+  .ledger .row{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;
+               gap:.4rem 1rem;padding:.6rem .8rem;border-bottom:1px solid var(--rule);background:var(--panel)}
+  .ledger .row:last-child{border-bottom:none}
+  .ledger .name{font-size:.82rem;font-weight:700}
+  .ledger .term{font-family:Georgia,"Times New Roman",serif;font-size:.98rem;white-space:nowrap}
+
+  /* ---- callouts ---- */
+  .note{border-left:3px solid var(--accent);background:var(--panel);
+        padding:.75rem 1rem;margin:1.4rem 0;font-size:.9rem;color:var(--dim)}
+  .note b{color:var(--ink)}
+  footer{margin-top:4rem;padding-top:1.25rem;border-top:1px solid var(--rule);
+         font-size:.8rem;color:var(--faint)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="kicker">Specification · playoff-tracker</div>
+  <h1>Value Added (VA)</h1>
+  <p class="sub">A points-equivalent valuation of every box-score contribution, stated in standard mathematical notation.</p>
+  <div class="meta">
+    <strong>Version 2</strong> (playoff-tracker) — supersedes the v1 definition shipped in <code>nba-projects</code>; divergences itemized in §8.
+    Authoritative implementations: <code>app/scoring.js</code> (client) and <code>scripts/R/scrape_common.R</code> (bake), which agree to the decimal.
+  </div>
+</header>
+
+<p class="lede">Value Added answers one question in one unit: <strong>how many points did this player produce, above or below what the league would have produced in the same workload?</strong></p>
+
+<!-- ================= 1 ================= -->
+<h2><span class="n">1</span>Notation</h2>
+
+<h3><span class="n">1.1</span>Player observation</h3>
+<p>A stat line — a game, a playoff run, or a season — is the vector</p>
+
+<div class="eq">
+  <span class="g">x</span> <span class="op">=</span> (
+  <span class="s">MP</span>, <span class="s">G</span>, <span class="s">PTS</span>, <span class="s">AST</span>,
+  <span class="s">STL</span>, <span class="s">BLK</span>, <span class="s">TOV</span>, <span class="s">DRB</span>,
+  <span class="s">ORB</span>, <span class="s">FGM</span>, <span class="s">FGA</span>, <span class="s">3PM</span>,
+  <span class="s">3PA</span>, <span class="s">FTM</span>, <span class="s">FTA</span> )
+</div>
+
+<p>with two-point shooting derived rather than sourced:</p>
+
+<div class="eq">
+  <span class="s">2PM</span> <span class="op">=</span> <span class="s">FGM</span> <span class="op">−</span> <span class="s">3PM</span>
+  <span style="display:inline-block;width:2.5em"></span>
+  <span class="s">2PA</span> <span class="op">=</span> <span class="s">FGA</span> <span class="op">−</span> <span class="s">3PA</span>
+</div>
+
+<p><span class="m">VA(<span class="g">x</span>) <span class="op">≡</span> 0</span> when <span class="m"><span class="s">MP</span> <span class="op">≤</span> 0</span>.</p>
+
+<h3><span class="n">1.2</span>League baselines</h3>
+<p>For each season <span class="m g">y</span>, a baseline vector <span class="m"><span class="g">λ</span>(<span class="g">y</span>)</span> is computed once from that season&rsquo;s <em>player</em> season-totals table and stored in <code>app/data/league-averages.json</code>. Two families of quantity, computed two different ways on purpose (§3).</p>
+
+<p><strong>Per-minute rate baselines</strong> — minutes-weighted medians (§2):</p>
+
+<div class="eq">
+  <span class="g">μ</span><sub class="s">PTS</sub>,
+  <span class="g">μ</span><sub class="s">AST</sub>,
+  <span class="g">μ</span><sub class="s">STL</sub>,
+  <span class="g">μ</span><sub class="s">BLK</sub>,
+  <span class="g">μ</span><sub class="s">TOV</sub>,
+  <span class="g">μ</span><sub class="s">DRB</sub>,
+  <span class="g">μ</span><sub class="s">ORB</sub>
+</div>
+
+<p><strong>Conversion constants</strong> — league aggregate ratios over all players in season <span class="m g">y</span>:</p>
+
+<div class="eq">
+  <span class="g">p</span><sub>3</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">3PM</span></span><span class="de"><span class="big">Σ</span><span class="s">3PA</span></span></span>
+  <span style="display:inline-block;width:1.6em"></span>
+  <span class="g">p</span><sub>2</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">2PM</span></span><span class="de"><span class="big">Σ</span><span class="s">2PA</span></span></span>
+  <span style="display:inline-block;width:1.6em"></span>
+  <span class="g">p</span><sub class="s">F</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">FTM</span></span><span class="de"><span class="big">Σ</span><span class="s">FTA</span></span></span>
+  <span style="display:inline-block;width:1.6em"></span>
+  <span class="g">p</span><sub class="s">G</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">FGM</span></span><span class="de"><span class="big">Σ</span><span class="s">FGA</span></span></span>
+</div>
+
+<div class="eq">
+  <span class="g big">Π</span> <span class="op">=</span>
+  <span class="big">Σ</span><span class="s">FGA</span> <span class="op">−</span>
+  <span class="big">Σ</span><span class="s">ORB</span> <span class="op">+</span>
+  <span class="big">Σ</span><span class="s">TOV</span> <span class="op">+</span>
+  0.475 <span class="big">Σ</span><span class="s">FTA</span>
+  <span class="lbl">possessions — Hollinger estimator</span>
+</div>
+
+<div class="eq">
+  <span class="g">π</span> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">PTS</span></span><span class="de"><span class="g big">Π</span></span></span>
+  <span style="display:inline-block;width:2.2em"></span>
+  <span class="g">κ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">PTS</span></span><span class="de"><span class="big">Σ</span><span class="s">FGM</span></span></span>
+  <span class="lbl">points per possession · points per made field goal</span>
+</div>
+
+<div class="eq">
+  <span class="g">ρ</span><sub class="s">D</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">DRB</span></span><span class="de"><span class="big">Σ</span><span class="s">TRB</span></span></span>
+  <span style="display:inline-block;width:1.8em"></span>
+  <span class="g">ρ</span><sub class="s">O</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="big">Σ</span><span class="s">ORB</span></span><span class="de"><span class="big">Σ</span><span class="s">TRB</span></span></span>
+  <span class="op">=</span> 1 <span class="op">−</span> <span class="g">ρ</span><sub class="s">D</sub>
+  <span style="display:inline-block;width:1.8em"></span>
+  <span class="g">ν</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">5<span class="g big">Π</span></span><span class="de"><span class="big">Σ</span><span class="s">MP</span></span></span>
+  <span class="lbl">rebound shares · possessions per on-court minute ( = pace ⁄ 48 )</span>
+</div>
+
+<div class="eq">
+  <span class="g">Λ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">5<span class="big">Σ</span><span class="s">TRB</span></span><span class="de"><span class="big">Σ</span><span class="s">MP</span></span></span>
+  <span class="lbl">rebound opportunities per on-court minute, at one end</span>
+</div>
+
+<p><span class="m g">Λ</span> is used only by the rebound credit (§4.3), <span class="m g">ν</span> only by the defensive extension (§6). Because <span class="m"><span class="big">Σ</span><span class="s">MP</span></span> counts <em>player</em> minutes — five per team-minute — the factor of 5 converts to possessions per <strong>team</strong>-minute.</p>
+
+<!-- ================= 2 ================= -->
+<h2><span class="n">2</span>The minutes-weighted median</h2>
+
+<p>For <span class="m g">N</span> players in season <span class="m g">y</span> with stat totals <span class="m"><span class="g">X</span><sub class="g">i</sub></span> and minutes <span class="m"><span class="g">m</span><sub class="g">i</sub> <span class="op">&gt;</span> 0</span>, let <span class="m"><span class="g">r</span><sub class="g">i</sub> <span class="op">=</span> <span class="g">X</span><sub class="g">i</sub> ⁄ <span class="g">m</span><sub class="g">i</sub></span> and let <span class="m">(<span class="g">·</span>)</span> denote the ordering <span class="m"><span class="g">r</span><sub>(1)</sub> <span class="op">≤</span> <span class="g">r</span><sub>(2)</sub> <span class="op">≤</span> … <span class="op">≤</span> <span class="g">r</span><sub>(<span class="g">N</span>)</sub></span>. Then</p>
+
+<div class="eq">
+  <span class="g">μ</span><sub class="g">X</sub> <span class="op">=</span> <span class="g">r</span><sub>(<span class="g">k</span>*)</sub>
+  <span style="display:inline-block;width:2.4em"></span>
+  <span class="g">k</span>* <span class="op">=</span> min
+  <span class="big">{</span>&thinsp;<span class="g">k</span> <span class="op">:</span>
+  <span class="big">Σ</span><sub class="g">j ≤ k</sub> <span class="g">m</span><sub>(<span class="g">j</span>)</sub>
+  <span class="op">≥</span>
+  <span class="fr sm"><span class="nu">1</span><span class="de">2</span></span>
+  <span class="big">Σ</span><sub class="g">j</sub> <span class="g">m</span><sub class="g">j</sub>&thinsp;<span class="big">}</span>
+</div>
+
+<p>In words: <strong>the rate of the median league minute.</strong> Half of all NBA minutes are played above <span class="m"><span class="g">μ</span><sub class="g">X</sub></span>, half below.</p>
+
+<div class="note">
+  <b>Why not the two obvious alternatives.</b> The minutes-weighted <em>mean</em> (the league aggregate rate) is pulled upward by a handful of high-usage stars, so &ldquo;average&rdquo; ends up describing nobody. The unweighted <em>per-player median</em> lets a 40-minute call-up outvote a 2,800-minute starter. Weighting the median by minutes fixes both: the baseline is the typical <em>minute of basketball</em>, which is exactly the thing VA charges a player for consuming.
+</div>
+
+<!-- ================= 3 ================= -->
+<h2><span class="n">3</span>Why baselines are computed two ways</h2>
+
+<p>The per-minute baselines define <strong>&ldquo;typical&rdquo;</strong> — the counterfactual a player is measured against — so they must be robust to skew, hence the weighted median.</p>
+
+<p>The conversion constants (<span class="m g">π</span>, <span class="m g">κ</span>, <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>, <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span>, <span class="m"><span class="g">p</span><sub>3</sub></span>, <span class="m"><span class="g">p</span><sub>2</sub></span>, <span class="m"><span class="g">p</span><sub class="s">F</sub></span>, <span class="m"><span class="g">p</span><sub class="s">G</sub></span>) do not define &ldquo;typical&rdquo;; they <strong>translate an event into points</strong>. A possession is worth the league&rsquo;s actual points-per-possession, not the median player&rsquo;s. These stay aggregate ratios.</p>
+
+<!-- ================= 4 ================= -->
+<h2><span class="n">4</span>The master equation</h2>
+
+<p>Every one of the ten categories has the same shape:</p>
+
+<div class="eq box">
+  <span class="s">VA</span>(<span class="g">x</span>, <span class="g">λ</span>) <span class="op">=</span>
+  <span class="big">Σ</span><sub class="g">c ∈ C</sub>
+  <span class="g">w</span><sub class="g">c</sub>
+  <span class="op"></span>(<span class="g">r</span><sub class="g">c</sub> <span class="op">−</span> <span class="g">λ</span><sub class="g">c</sub>)
+  <span class="g">n</span><sub class="g">c</sub>
+  <span class="lbl">( player rate − league rate ) × opportunity × price in points</span>
+</div>
+
+<p>where <span class="m g">C</span> is the ten categories and each term supplies its own rate <span class="m"><span class="g">r</span><sub class="g">c</sub></span>, baseline <span class="m"><span class="g">λ</span><sub class="g">c</sub></span>, opportunity <span class="m"><span class="g">n</span><sub class="g">c</sub></span>, and price <span class="m"><span class="g">w</span><sub class="g">c</sub></span>:</p>
+
+<div class="tw">
+<table>
+  <thead>
+    <tr>
+      <th>Category <span class="m g">c</span></th>
+      <th>Rate <span class="m"><span class="g">r</span><sub class="g">c</sub></span></th>
+      <th>Baseline <span class="m"><span class="g">λ</span><sub class="g">c</sub></span></th>
+      <th>Opportunity <span class="m"><span class="g">n</span><sub class="g">c</sub></span></th>
+      <th>Price <span class="m"><span class="g">w</span><sub class="g">c</sub></span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th class="cat">Points (volume)</th>
+      <td class="m"><span class="fr sm"><span class="nu s">PTS</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">PTS</sub></td>
+      <td class="m s">MP</td><td class="m">1</td></tr>
+    <tr><th class="cat">3-Pointers</th>
+      <td class="m"><span class="fr sm"><span class="nu s">3PM</span><span class="de s">3PA</span></span></td>
+      <td class="m"><span class="g">p</span><sub>3</sub></td>
+      <td class="m s">3PA</td><td class="m">3</td></tr>
+    <tr><th class="cat">2-Pointers</th>
+      <td class="m"><span class="fr sm"><span class="nu s">2PM</span><span class="de s">2PA</span></span></td>
+      <td class="m"><span class="g">p</span><sub>2</sub></td>
+      <td class="m s">2PA</td><td class="m">2</td></tr>
+    <tr><th class="cat">Free Throws</th>
+      <td class="m"><span class="fr sm"><span class="nu s">FTM</span><span class="de s">FTA</span></span></td>
+      <td class="m"><span class="g">p</span><sub class="s">F</sub></td>
+      <td class="m s">FTA</td><td class="m">1</td></tr>
+    <tr><th class="cat">Assists</th>
+      <td class="m"><span class="fr sm"><span class="nu s">AST</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">AST</sub></td>
+      <td class="m s">MP</td>
+      <td class="m"><span class="g">κ</span> (1 <span class="op">−</span> <span class="g">p</span><sub class="s">G</sub>)</td></tr>
+    <tr><th class="cat">Steals</th>
+      <td class="m"><span class="fr sm"><span class="nu s">STL</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">STL</sub></td>
+      <td class="m s">MP</td><td class="m"><span class="g">π</span></td></tr>
+    <tr><th class="cat">Blocks</th>
+      <td class="m"><span class="fr sm"><span class="nu s">BLK</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">BLK</sub></td>
+      <td class="m s">MP</td>
+      <td class="m"><span class="g">π</span> <span class="g">ρ</span><sub class="s">D</sub></td></tr>
+    <tr><th class="cat">Turnovers</th>
+      <td class="m"><span class="fr sm"><span class="nu s">TOV</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">TOV</sub></td>
+      <td class="m s">MP</td><td class="m"><span class="op">−</span><span class="g">π</span></td></tr>
+    <tr><th class="cat">D Rebounds</th>
+      <td class="m"><span class="fr sm"><span class="nu s">DRB</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">DRB</sub></td>
+      <td class="m s">MP</td>
+      <td class="m"><span class="g">γ</span> <span class="g">π</span> <span class="g">ρ</span><sub class="s">O</sub></td></tr>
+    <tr><th class="cat">O Rebounds</th>
+      <td class="m"><span class="fr sm"><span class="nu s">ORB</span><span class="de s">MP</span></span></td>
+      <td class="m"><span class="g">μ</span><sub class="s">ORB</sub></td>
+      <td class="m s">MP</td>
+      <td class="m"><span class="g">γ</span> <span class="g">π</span> <span class="g">ρ</span><sub class="s">D</sub></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>where the rebound credit <span class="m g">γ</span> is <strong>per-player</strong>, not a constant — it is the one price that depends on the player&rsquo;s own rate as well as the league&rsquo;s. See §4.3.</p>
+
+<p>Attempt-denominators are guarded: <span class="m"><span class="g">r</span><sub class="g">c</sub> <span class="op">:=</span> 0</span> when <span class="m"><span class="g">n</span><sub class="g">c</sub> <span class="op">=</span> 0</span>, so an unattempted category contributes exactly zero rather than <span class="m">NaN</span>.</p>
+
+<h3><span class="n">4.1</span>Expanded form — the ten terms</h3>
+
+<div class="ledger">
+  <div class="grp">Scoring</div>
+  <div class="row"><span class="name">Volume</span><span class="term">( <span class="fr sm"><span class="nu s">PTS</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">PTS</sub> ) <span class="op">×</span> <span class="s">MP</span></span></div>
+  <div class="row"><span class="name">3-point shooting</span><span class="term">3 <span class="op">×</span> ( <span class="fr sm"><span class="nu s">3PM</span><span class="de s">3PA</span></span> <span class="op">−</span> <span class="g">p</span><sub>3</sub> ) <span class="op">×</span> <span class="s">3PA</span></span></div>
+  <div class="row"><span class="name">2-point shooting</span><span class="term">2 <span class="op">×</span> ( <span class="fr sm"><span class="nu s">2PM</span><span class="de s">2PA</span></span> <span class="op">−</span> <span class="g">p</span><sub>2</sub> ) <span class="op">×</span> <span class="s">2PA</span></span></div>
+  <div class="row"><span class="name">Free throws</span><span class="term">( <span class="fr sm"><span class="nu s">FTM</span><span class="de s">FTA</span></span> <span class="op">−</span> <span class="g">p</span><sub class="s">F</sub> ) <span class="op">×</span> <span class="s">FTA</span></span></div>
+
+  <div class="grp">Playmaking &amp; ball security</div>
+  <div class="row"><span class="name">Assists</span><span class="term">( <span class="fr sm"><span class="nu s">AST</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">AST</sub> ) <span class="op">×</span> <span class="s">MP</span> <span class="op">×</span> <span class="g">κ</span> <span class="op">×</span> (1 <span class="op">−</span> <span class="g">p</span><sub class="s">G</sub>)</span></div>
+  <div class="row"><span class="name">Turnovers</span><span class="term"><span class="op">−</span>( <span class="fr sm"><span class="nu s">TOV</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">TOV</sub> ) <span class="op">×</span> <span class="s">MP</span> <span class="op">×</span> <span class="g">π</span></span></div>
+
+  <div class="grp">Defensive events</div>
+  <div class="row"><span class="name">Steals</span><span class="term">( <span class="fr sm"><span class="nu s">STL</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">STL</sub> ) <span class="op">×</span> <span class="s">MP</span> <span class="op">×</span> <span class="g">π</span></span></div>
+  <div class="row"><span class="name">Blocks</span><span class="term">( <span class="fr sm"><span class="nu s">BLK</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">BLK</sub> ) <span class="op">×</span> <span class="s">MP</span> <span class="op">×</span> <span class="g">π</span> <span class="op">×</span> <span class="g">ρ</span><sub class="s">D</sub></span></div>
+
+  <div class="grp">Rebounding</div>
+  <div class="row"><span class="name">Defensive rebounds</span><span class="term"><span class="g">γ</span> <span class="op">×</span> ( <span class="fr sm"><span class="nu s">DRB</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">DRB</sub> ) <span class="op">×</span> <span class="s">MP</span> <span class="op">×</span> <span class="g">π</span> <span class="op">×</span> <span class="g">ρ</span><sub class="s">O</sub></span></div>
+  <div class="row"><span class="name">Offensive rebounds</span><span class="term"><span class="g">γ</span> <span class="op">×</span> ( <span class="fr sm"><span class="nu s">ORB</span><span class="de s">MP</span></span> <span class="op">−</span> <span class="g">μ</span><sub class="s">ORB</sub> ) <span class="op">×</span> <span class="s">MP</span> <span class="op">×</span> <span class="g">π</span> <span class="op">×</span> <span class="g">ρ</span><sub class="s">D</sub></span></div>
+</div>
+
+<h3><span class="n">4.2</span>Reading the weights</h3>
+<ul>
+  <li><strong>Assist.</strong> An assist is worth the field goal it created, <span class="m g">κ</span>, times the share of those baskets that would <em>not</em> have happened without the pass, <span class="m">(1 <span class="op">−</span> <span class="g">p</span><sub class="s">G</sub>)</span>. Deliberately opinionated: it refuses to credit the passer for the league-baseline conversion the shooter would have managed anyway.</li>
+  <li><strong>Steal vs. block.</strong> A steal ends the possession outright, so it earns a full <span class="m g">π</span>. A block only ends it if the defense secures the carom — about <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span> of the time — so it earns <span class="m"><span class="g">π</span><span class="g">ρ</span><sub class="s">D</sub></span>. The same asymmetry is reused verbatim in the defensive extension (§6.3).</li>
+  <li><strong>Rebound cross-weighting.</strong> A rebound is credited a possession discounted by the probability the team <em>would not</em> have gotten it anyway. Defensive boards are the common outcome, so they scale by the smaller <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span>; offensive boards are rarer and scale by the larger <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>. <span class="m"><span class="g">γ</span> <span class="op">=</span> 5⁄4</span> is not a fitted constant — it is the &ldquo;one of five claimants&rdquo; correction derived in §4.3.</li>
+  <li><strong>Volume and efficiency are separate terms, not a net.</strong> A high-usage scorer at league efficiency has done something real (absorbed difficulty); a low-usage scorer at elite efficiency has also done something real. Netting them erases both. VA pays for each.</li>
+</ul>
+
+<h3><span class="n">4.3</span>The rebound credit <span class="m g">γ</span></h3>
+
+<p><span class="m g">γ</span> answers a question the other nine terms never have to ask: <strong>a rebound is the one box-score event that is guaranteed to be allocated and rivalrous.</strong> Every miss produces exactly one rebound, and exactly one of ten players on the floor gets it. So &ldquo;would this have happened anyway?&rdquo; has a real answer.</p>
+
+<p><strong>The contest.</strong> Under a Luce / Bradley&ndash;Terry model, give each of the five defenders a claim weight <span class="m g">d</span> and each of the five offensive players a claim weight <span class="m g">o</span>. Then P(defense secures) <span class="m op">=</span> <span class="m">5<span class="g">d</span>/(5<span class="g">d</span>+5<span class="g">o</span>)</span> <span class="m op">=</span> <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span>, and the team&rsquo;s securing <strong>odds</strong> are <span class="m"><span class="g">Ω</span> <span class="op">=</span> <span class="g">ρ</span><sub class="s">D</sub>/<span class="g">ρ</span><sub class="s">O</sub> <span class="op">=</span> <span class="g">d</span>/<span class="g">o</span></span>. Remove one of the five defenders and <span class="m"><span class="g">Ω</span>&prime; <span class="op">=</span> 4<span class="g">d</span>/5<span class="g">o</span> <span class="op">=</span> (4/5)<span class="g">Ω</span></span>, so the odds of <em>losing</em> the possession rise by exactly 5&frasl;4 — independent of <span class="m g">ρ</span>, of era, and of which team is rebounding.</p>
+
+<p><strong>But VA multiplies a probability, not an odds</strong>, and the two differ. Working in probability space, and generalizing off the &ldquo;exactly one fifth&rdquo; assumption to a player who claims a fraction <span class="m g">q</span> of the boards available at his end:</p>
+
+<div class="eq box">
+  <span class="g">γ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">1</span><span class="de">1 <span class="op">−</span> <span class="g">q</span></span></span>
+  <span style="display:inline-block;width:2.6em"></span>
+  <span class="g">q</span> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="s">REB</span> ⁄ <span class="s">MP</span></span><span class="de g">Λ</span></span>
+  <span class="lbl">Λ = laREBoppPerM, 0.9071 in 2025-26</span>
+</div>
+
+<p>Every miss is rebounded at one end or the other, so a player on the floor sees <span class="m g">Λ</span> chances per minute at his own end. The construction is self-checking: <span class="m"><span class="g">d</span>/(<span class="g">d</span>+<span class="g">o</span>)</span> recomputed from these same sums returns <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span> exactly.</p>
+
+<p><strong><span class="m g">ρ</span> cancels out of the correction.</strong> Substituting <span class="m"><span class="g">q</span> <span class="op">=</span> <span class="g">s</span><span class="g">ρ</span></span> (where <span class="m g">s</span> is the player&rsquo;s share of his <em>team&rsquo;s</em> boards) into <span class="m">1/(1 <span class="op">−</span> <span class="g">s</span><span class="g">ρ</span>)</span> gives the same expression with no <span class="m g">ρ</span> in it. <span class="m g">ρ</span> still prices the board — <span class="m"><span class="g">π</span><span class="g">ρ</span><sub class="s">O</sub></span> for a defensive rebound, <span class="m"><span class="g">π</span><span class="g">ρ</span><sub class="s">D</sub></span> for an offensive one — but it plays no part in the credit. One formula covers both ends.</p>
+
+<p><strong>It needs no team data.</strong> <span class="m g">Λ</span> is a league quantity, so <span class="m g">q</span> comes straight off the player&rsquo;s own line. This matters: every other VA term reads only the player&rsquo;s stat line and league baselines, which is what makes a 1987 season comparable to a 2026 one. A team-relative <span class="m g">γ</span> would break that — measured on 2025-26, players inside a narrow DRB/min band saw 5&ndash;7% <span class="m g">γ</span> swings from teammates alone, so identical production would have scored differently on different rosters. It doesn&rsquo;t here.</p>
+
+<p><strong>Special cases.</strong> The league-average rebounder has <span class="m"><span class="g">q</span> <span class="op">=</span> 0.2<span class="g">ρ</span></span>, giving</p>
+
+<div class="eq">
+  <span class="g">γ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu">1</span><span class="de">1 <span class="op">−</span> 0.2<span class="g">ρ</span></span></span>
+  <span class="op">=</span>
+  <span class="fr"><span class="nu">5</span><span class="de">5 <span class="op">−</span> <span class="g">ρ</span></span></span>
+  <span style="display:inline-block;width:2em"></span>
+  <span class="op">⟹</span>
+  <span style="display:inline-block;width:1em"></span>
+  <span class="g">γ</span><sub class="s">DRB</sub> <span class="op">≈</span> 1.174
+  <span style="display:inline-block;width:1.2em"></span>
+  <span class="g">γ</span><sub class="s">ORB</sub> <span class="op">≈</span> 1.053
+</div>
+
+<p>— the &ldquo;one of five&rdquo; constant, and the fallback for any season baked before <span class="m g">Λ</span> existed. The <strong>odds-space</strong> 5&frasl;4 = 1.25 that VA shipped through July 2026 is the <span class="m"><span class="g">ρ</span> <span class="op">→</span> 1</span> limit of that expression: correct as an odds ratio, but used as though it were a probability, which overstated defensive credit ~6% and offensive credit ~19%. At the top of the distribution the per-player form runs the other way — a player covering a third of his end reaches <span class="m"><span class="g">γ</span> <span class="op">≈</span> 1.5</span>.</p>
+
+<p><strong>Estimation.</strong> <span class="m g">q</span> is unshrunk by design, matching every other VA category (none of which is shrunk). A season is 1,400&ndash;2,300 opportunities, putting binomial error on <span class="m g">γ</span> under 1.5%; a single game is ~32 and swings hard, exactly as one night&rsquo;s shooting does in the efficiency terms. <span class="m g">q</span> is clamped to <span class="m">[0, 0.5]</span> so <span class="m"><span class="g">γ</span> <span class="op">≤</span> 2</span> stays finite on 1-minute garbage-time lines — the only rows where the clamp ever binds.</p>
+
+<h3><span class="n">4.4</span>What <span class="m g">γ</span> assumes</h3>
+
+<p>Three assumptions remain, each a place the model could still be wrong.</p>
+
+<ol>
+  <li><strong>Independence of irrelevant alternatives.</strong> Removing a claimant redistributes his share proportionally across the other nine. Real rebounding is closer to matched pairs — the opposing big absorbs most of a removed center&rsquo;s share, not the floor uniformly.</li>
+  <li><strong>A league-uniform opportunity rate.</strong> <span class="m g">Λ</span> is a league constant, but the boards available at a given player&rsquo;s end depend on his team&rsquo;s pace and his opponents&rsquo; shooting. Using the team&rsquo;s own rate instead moves <span class="m g">γ</span> by a median of 0.74% (p90 2.11%, <span class="m"><span class="g">r</span> <span class="op">=</span> 0.985</span>) — less than the binomial noise already in <span class="m g">q</span>, and it would cost the context-freedom above. Deliberately traded away.</li>
+  <li><strong>The marginal board is an average board.</strong> <span class="m g">q</span> counts an uncontested carom the same as a won contest, and most defensive rebounds are uncontested. The boards a strong rebounder adds are drawn from the contested tail, where recovery risk is far above <span class="m"><span class="g">ρ</span><sub class="s">O</sub></span> — which argues every <span class="m g">γ</span> here is <em>understated</em> for players who actually box out. This is the one objection no version of the model addresses; closing it needs contested-rebound data the box score does not carry.</li>
+</ol>
+
+<div class="note">
+  <b>Two open items.</b> <span class="m"><span class="g">μ</span><sub class="s">DRB</sub></span> (minutes-weighted median) sits ~11% below the league aggregate rate because rebounding is right-skewed and positionally concentrated, so the median baseline already tilts this term toward bigs and <span class="m g">γ</span> widens the same spread. Separately, the league earns roughly <b>1.8&times; more positive VA from offensive rebounds than defensive ones</b> — two similarly-sized populations of over-performers paid at <span class="m"><span class="g">ρ</span><sub class="s">D</sub>/<span class="g">ρ</span><sub class="s">O</sub> <span class="op">≈</span> 2.85</span> different rates. That is a baseline question, not a <span class="m g">γ</span> question, and it remains open.
+</div>
+
+<h3><span class="n">4.5</span>Rate forms</h3>
+<div class="eq">
+  <span class="s">VA</span>⁄<span class="s">G</span> <span class="op">=</span>
+  <span class="fr"><span class="nu s">VA</span><span class="de s">G</span></span>
+  <span style="display:inline-block;width:2.6em"></span>
+  <span class="s">VA</span>⁄36 <span class="op">=</span> 36
+  <span class="fr"><span class="nu s">VA</span><span class="de s">MP</span></span>
+</div>
+
+<!-- ================= 5 ================= -->
+<h2><span class="n">5</span>Exact decomposition</h2>
+
+<p>The category vector is the summand of the master equation:</p>
+
+<div class="eq">
+  <span class="s">VA</span><sub class="g">c</sub>(<span class="g">x</span>, <span class="g">λ</span>) <span class="op">=</span>
+  <span class="g">w</span><sub class="g">c</sub> (<span class="g">r</span><sub class="g">c</sub> <span class="op">−</span> <span class="g">λ</span><sub class="g">c</sub>) <span class="g">n</span><sub class="g">c</sub>
+  <span style="display:inline-block;width:2.6em"></span>
+  <span class="big">Σ</span><sub class="g">c ∈ C</sub> <span class="s">VA</span><sub class="g">c</sub> <span class="op">=</span> <span class="s">VA</span>
+</div>
+
+<p>This identity is a <strong>product requirement</strong>, not a happy accident: every UI surface — leaderboard total, compare-panel header, stacked category bars, percentile context, comp-shape vectors — is computed from the same ten terms, so the parts always reconcile to the headline to the decimal.</p>
+
+<p>The per-game category vector used downstream (§7) is</p>
+
+<div class="eq">
+  <span class="g">v</span>(<span class="g">x</span>) <span class="op">=</span>
+  <span class="par">(</span>
+  <span class="fr"><span class="nu"><span class="s">VA</span><sub class="g">c</sub>(<span class="g">x</span>, <span class="g">λ</span>)</span><span class="de s">G</span></span>
+  <span class="par">)</span><sub class="g">c ∈ C</sub>
+  <span class="op">∈</span> ℝ<sup>10</sup>
+</div>
+
+<!-- ================= 6 ================= -->
+<h2><span class="n">6</span>VA<sup>+</sup> — the defensive extension</h2>
+
+<p>Box-score defense is two events wide. VA<sup>+</sup> adds a fifth category built from <em>points actually allowed</em>.</p>
+
+<h3><span class="n">6.1</span>Bayesian rating</h3>
+<p>Each player-season carries two defensive ratings: <span class="m"><span class="g">D</span><sub class="s">est</sub></span>, the box-score estimate, and <span class="m"><span class="g">D</span><sub class="s">pbp</sub></span>, points allowed per 100 possessions while on the floor (play-by-play, 2000-01+). With defended possessions <span class="m"><span class="g big">Π</span><sub class="g">p</sub> <span class="op">=</span> <span class="s">MP</span> <span class="op">·</span> <span class="g">ν</span></span> and prior strength <span class="m"><span class="g big">Π</span><sub>0</sub></span>,</p>
+
+<div class="eq">
+  <span class="g">θ</span> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="g big">Π</span><sub class="g">p</sub></span><span class="de"><span class="g big">Π</span><sub class="g">p</sub> <span class="op">+</span> <span class="g big">Π</span><sub>0</sub></span></span>
+  <span style="display:inline-block;width:2em"></span>
+  <span class="g hat">D</span> <span class="op">=</span>
+  <span class="g">θ</span> <span class="g">D</span><sub class="s">pbp</sub>
+  <span class="op">+</span> (1 <span class="op">−</span> <span class="g">θ</span>) <span class="g">D</span><sub class="s">est</sub>
+  <span style="display:inline-block;width:2em"></span>
+  <span class="g big">Π</span><sub>0</sub> <span class="op">=</span>
+  <span class="cases">
+    <span>1500</span><span class="cond">regular season</span>
+    <span>500</span><span class="cond">playoffs</span>
+  </span>
+</div>
+
+<p>The estimate is an <em>informed prior worth <span class="m"><span class="g big">Π</span><sub>0</sub></span> possessions of evidence</em>; real possessions overtake it as they accrue. A full-time starter lands ~75% on play-by-play; a 300-minute season stays mostly prior — which is what stops a small-sample on-court fluke from topping the leaderboard. The lighter playoff prior reflects both the smaller samples available and the noisier estimate behind them. Seasons with no play-by-play source are simply all-prior (<span class="m"><span class="g">θ</span> <span class="op">=</span> 0</span>).</p>
+
+<p>The team baseline <span class="m"><span class="g hat">T</span></span> blends with the <strong>same</strong> <span class="m g">θ</span>, so the individual term below subtracts like from like.</p>
+
+<h3><span class="n">6.2</span>Net rating</h3>
+<p>With league line <span class="m"><span class="g">L</span> <span class="op">=</span> 100<span class="g">π</span></span> and team edge <span class="m"><span class="g">E</span> <span class="op">=</span> <span class="g">L</span> <span class="op">−</span> <span class="g hat">T</span></span>:</p>
+
+<div class="eq">
+  <span class="s">net</span> <span class="op">=</span>
+  ( <span class="g hat">T</span> <span class="op">−</span> <span class="g hat">D</span> )
+  <span class="op">+</span>
+  <span class="g">w</span> <span class="g">E</span>
+  <span class="lbl">IND: edge over his own team&nbsp;&nbsp;+&nbsp;&nbsp;TM⁺: share of the team&rsquo;s edge vs. league</span>
+</div>
+
+<h3><span class="n">6.3</span>The earned share</h3>
+<p>Splitting team defense five ways equally credits a passenger like an anchor. The share is instead <em>earned</em>, with stocks priced exactly as VA prices them — a block is worth <span class="m"><span class="g">ρ</span><sub class="s">D</sub></span> of a steal:</p>
+
+<div class="eq">
+  <span class="g">s</span> <span class="op">=</span>
+  <span class="fr"><span class="nu"><span class="s">STL</span> <span class="op">+</span> <span class="g">ρ</span><sub class="s">D</sub> <span class="s">BLK</span></span><span class="de s">MP</span></span>
+  <span style="display:inline-block;width:2.4em"></span>
+  <span class="g">w</span><sub class="g">e</sub> <span class="op">=</span>
+  clamp <span class="par">(</span> 0.2
+  <span class="fr sm"><span class="nu g">s</span><span class="de"><span class="g">s</span><sub class="s">team</sub></span></span>
+  , 0.05 , 1 <span class="par">)</span>
+</div>
+
+<div class="eq">
+  <span class="g">w</span> <span class="op">=</span>
+  <span class="cases">
+    <span><span class="g">w</span><sub class="g">e</sub></span>
+    <span class="cond"><span class="g">E</span> ≥ 0 &mdash; credit is <b>earned</b></span>
+    <span>clamp ( 0.4 <span class="op">−</span> <span class="g">w</span><sub class="g">e</sub> , 0.05 , 1 )</span>
+    <span class="cond"><span class="g">E</span> &lt; 0 &mdash; blame <b>shrinks</b> with activity</span>
+  </span>
+</div>
+
+<p>The bad-defense branch is the earned share mirrored around the 1-in-5 split: contesting shields you from a collective failure, passivity draws more of it. Both branches conserve the team pot up to the clamps and are continuous at <span class="m"><span class="g">E</span> <span class="op">=</span> 0</span>. Multi-team rows fall back to the plain vs-league form (<span class="m"><span class="g">w</span> <span class="op">=</span> 1</span>).</p>
+
+<h3><span class="n">6.4</span>Defensive value</h3>
+
+<div class="eq box">
+  <span class="s">dVA</span> <span class="op">=</span>
+  <span class="fr"><span class="nu s">net</span><span class="de">100</span></span>
+  <span class="op">·</span> <span class="g">ν</span> <span class="op">·</span> <span class="s">MP</span>
+  <span style="display:inline-block;width:2.6em"></span>
+  <span class="s">VA</span><sup>+</sup> <span class="op">=</span> <span class="s">VA</span> <span class="op">+</span> <span class="s">dVA</span>
+</div>
+
+<p><span class="m"><span class="s">VA</span><sup>+</sup></span> is undefined — and hidden — when neither rating source exists.</p>
+
+<!-- ================= 7 ================= -->
+<h2><span class="n">7</span>Derived instruments</h2>
+
+<h3><span class="n">7.1</span>Shot-zone value (1996-97+)</h3>
+<p>For zone <span class="m g">z</span> ∈ { 0-3 ft, 3-10 ft, 10-16 ft, 16 ft-3PT } with league zone accuracy <span class="m"><span class="g">p</span><sub class="g">z</sub></span> — the 2-point term of §4, parameterized by distance:</p>
+
+<div class="eq">
+  <span class="s">VA</span><sub class="g">z</sub> <span class="op">=</span> 2
+  <span class="par">(</span>
+  <span class="fr sm"><span class="nu"><span class="g">M</span><sub class="g">z</sub></span><span class="de"><span class="g">A</span><sub class="g">z</sub></span></span>
+  <span class="op">−</span> <span class="g">p</span><sub class="g">z</sub>
+  <span class="par">)</span>
+  <span class="g">A</span><sub class="g">z</sub>
+</div>
+
+<p>Held deliberately <strong>outside</strong> <span class="m g">C</span>: shot-location data begins in 1996-97, and folding it into the core vector would punch holes in every earlier season&rsquo;s decomposition and career totals.</p>
+
+<h3><span class="n">7.2</span>Closest comps</h3>
+<p>For player-seasons <span class="m g">a</span>, <span class="m g">b</span> with vectors <span class="m"><span class="g">v</span>(<span class="g">a</span>)</span>, <span class="m"><span class="g">v</span>(<span class="g">b</span>)</span> (§5):</p>
+
+<div class="eq">
+  cos(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
+  <span class="fr"><span class="nu">&#10216; <span class="g">v</span>(<span class="g">a</span>) , <span class="g">v</span>(<span class="g">b</span>) &#10217;</span><span class="de">‖<span class="g">v</span>(<span class="g">a</span>)‖ ‖<span class="g">v</span>(<span class="g">b</span>)‖</span></span>
+  <span style="display:inline-block;width:2em"></span>
+  mag(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
+  <span class="fr"><span class="nu">min ( ‖<span class="g">v</span>(<span class="g">a</span>)‖ , ‖<span class="g">v</span>(<span class="g">b</span>)‖ )</span><span class="de">max ( ‖<span class="g">v</span>(<span class="g">a</span>)‖ , ‖<span class="g">v</span>(<span class="g">b</span>)‖ )</span></span>
+</div>
+
+<div class="eq box">
+  <span class="g">S</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
+  cos(<span class="g">a</span>,<span class="g">b</span>) <span class="op">×</span> mag(<span class="g">a</span>,<span class="g">b</span>)
+  <span class="lbl">archetype match × level match</span>
+</div>
+
+<p>Admissible only under <span class="m">| <span class="s">MPG</span><sub class="g">a</sub> <span class="op">−</span> <span class="s">MPG</span><sub class="g">b</sub> | <span class="op">≤</span> 7</span> (same minutes role), <span class="m"><span class="s">G</span> <span class="op">≥</span> 8</span>, and <span class="m">cos <span class="op">≥</span> 0.3</span> — a clearly different archetype is never a comp.</p>
+
+<p>The <strong>Shooting</strong> lens applies the identical <span class="m">cos <span class="op">×</span> mag</span> form to the 6-dimensional shooting profile (4 zones + 3-Pointers + Free Throws), additionally gated on shot diet: writing <span class="m"><span class="g">δ</span>(<span class="g">x</span>) <span class="op">=</span> <span class="s">3PA</span> ⁄ <span class="s">FGA</span></span> for the share of a player&rsquo;s field-goal attempts taken from three, a comp is admissible only when <span class="m">| <span class="g">δ</span>(<span class="g">a</span>) <span class="op">−</span> <span class="g">δ</span>(<span class="g">b</span>) | <span class="op">≤</span> 0.15</span>. Without that gate, two players with identical (zero) 3-point <em>impact</em> read as shooting twins even when one lives at the rim and the other is a high-volume league-average bomber.</p>
+
+<h3><span class="n">7.3</span>Draft scoring — the app&rsquo;s origin</h3>
+<p>Sixteen playoff teams are drafted eight apiece. For a won series in round <span class="m g">r</span> with base <span class="m"><span class="g">B</span> <span class="op">=</span> (1, 2, 4, 8)</span> for rounds 1–4, and seeds <span class="m g">σ</span>:</p>
+
+<div class="eq">
+  <span class="g">P</span><sub class="s">series</sub> <span class="op">=</span>
+  <span class="g">B</span><sub class="g">r</sub> <span class="op">+</span>
+  max ( 0 , <span class="g">σ</span><sub class="s">winner</sub> <span class="op">−</span> <span class="g">σ</span><sub class="s">loser</sub> )
+  <span class="lbl">the seed differential pays only on an upset</span>
+</div>
+
+<p>and a live series projects linearly in games won:</p>
+
+<div class="eq">
+  <span class="g hat">P</span><sub class="s">series</sub> <span class="op">=</span>
+  <span class="g">P</span><sub class="s">series</sub> <span class="op">·</span>
+  <span class="fr"><span class="nu s">games won</span><span class="de">4</span></span>
+</div>
+
+<p>with real results and user &ldquo;what-if&rdquo; speculation accumulated in separate ledgers so the two are never confused.</p>
+
+<!-- ================= 8 ================= -->
+<h2><span class="n">8</span>v1 &rarr; v2 divergences</h2>
+
+<p><code>nba-projects</code> (R Shiny, 2024) established the framework; <code>playoff-tracker</code> (2026) revised it. Numbers from the two apps are <strong>not</strong> interchangeable.</p>
+
+<div class="tw">
+<table>
+  <thead><tr><th></th><th>v1 — nba-projects</th><th>v2 — playoff-tracker</th></tr></thead>
+  <tbody>
+    <tr><th class="cat">Per-minute baseline</th>
+      <td>unweighted median across players</td>
+      <td><strong>minutes-weighted</strong> median (§2)</td></tr>
+    <tr><th class="cat">Possessions</th>
+      <td class="m"><span class="s">2PA</span> <span class="op">+</span> <span class="s">3PA</span> <span class="op">+</span> <span class="s">TOV</span> <span class="op">+</span> <span class="fr sm"><span class="nu s">FTA</span><span class="de">2.1</span></span><br>
+        <span style="white-space:normal;font-family:inherit;font-size:.86rem">pre-1973 imputed by OLS on <span class="m"><span class="g">μ</span><sub class="s">PTS</sub></span>, <span class="m"><span class="g">μ</span><sub class="s">TRB</sub></span></span></td>
+      <td class="m"><span class="s">FGA</span> <span class="op">−</span> <span class="s">ORB</span> <span class="op">+</span> <span class="s">TOV</span> <span class="op">+</span> 0.475 <span class="s">FTA</span><br>
+        <span style="white-space:normal;font-family:inherit;font-size:.86rem">Hollinger</span></td></tr>
+    <tr><th class="cat">Rebound credit</th>
+      <td class="m"><span class="g">γ</span> <span class="op">=</span> 1</td>
+      <td>per-player <span class="m"><span class="g">γ</span> <span class="op">=</span> 1/(1 <span class="op">−</span> <span class="g">q</span>)</span> (§4.3); a flat 5&frasl;4 through July 2026</td></tr>
+    <tr><th class="cat">Coverage</th>
+      <td>1949-50+, via three nested variants — VA<sub>1</sub> full; VA<sub>2</sub> drops TOV for 1974-77; VA<sub>3</sub> drops TOV/STL/BLK and estimates rebound splits for 1952-73 — selected by <code>coalesce()</code></td>
+      <td>1979-80+, single variant, complete box score</td></tr>
+    <tr><th class="cat">Playoffs</th>
+      <td>separate tab</td>
+      <td>first-class scope, scored against that season&rsquo;s <strong>regular-season</strong> baselines</td></tr>
+    <tr><th class="cat">Defense</th>
+      <td>box-score events only</td>
+      <td>VA<sup>+</sup> (§6)</td></tr>
+    <tr><th class="cat">Shot location</th>
+      <td>Four Factors visuals</td>
+      <td>zone VA + Shooting comps (§7.1–7.2)</td></tr>
+    <tr><th class="cat">Non-NBA</th>
+      <td>—</td>
+      <td>NCAA D-I on college-derived baselines</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ================= 9 ================= -->
+<h2><span class="n">9</span>Invariants the implementation must preserve</h2>
+
+<ol>
+  <li><span class="m"><span class="big">Σ</span><sub class="g">c</sub> <span class="s">VA</span><sub class="g">c</sub> <span class="op">=</span> <span class="s">VA</span></span>, to the decimal, on every surface.</li>
+  <li>Baselines are <strong>season-local</strong>: a 1987 season is scored against 1987, never against today. Playoff runs use their own season&rsquo;s regular-season baselines, so October and June are the same currency.</li>
+  <li>Non-NBA populations get <strong>their own</strong> <span class="m g">λ</span>; the formula is portable, the baselines are not.</li>
+  <li>A season is scored by one <span class="m"><span class="g">λ</span>(<span class="g">y</span>)</span> from one source table; a plausibility gate (<span class="m">0.33 <span class="op">&lt;</span> <span class="g">μ</span><sub class="s">PTS</sub> <span class="op">&lt;</span> 0.52</span>) refuses to write a baseline derived from a mis-parsed page.</li>
+  <li>Any category the source does not carry is <strong>absent</strong>, never zero-filled — a missing measurement must not read as below-average performance.</li>
+</ol>
+
+<footer>
+  Companion document: <strong>portfolio-summary.md</strong> — the executive summary of the framework, its theses, and the systems built on it.<br>
+  Self-contained: this page loads no external fonts, scripts, or stylesheets. All notation is rendered in HTML and CSS.
+</footer>
+
+</div>
+</body>
+</html>

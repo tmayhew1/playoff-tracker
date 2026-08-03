@@ -163,6 +163,21 @@ to_nba <- function(tri) {
   ifelse(is.na(out), tri, unname(out))
 }
 
+# Rebound credit: the multiplier on a board's possession value. If a player
+# claims a fraction q of the rebounds available at his end, removing him raises
+# his team's chance of losing the possession by exactly 1/(1 - q). q comes off
+# his own line against a league opportunity rate (laREBoppPerM), so VA stays
+# context-free. The league-average player has q = 0.2 * rho, giving
+# 1/(1 - 0.2*rho) = 5/(5 - rho) -- also the fallback for seasons baked before
+# laREBoppPerM existed. Mirrors app/scoring.js::reboundGamma exactly.
+REB_Q_MAX <- 0.5
+
+rebound_gamma <- function(reb, mp, lga, rate) {
+  opp <- lga$laREBoppPerM %||% 0
+  if (is.null(opp) || is.na(opp) || opp <= 0 || is.na(mp) || mp <= 0) return(5 / (5 - rate))
+  1 / (1 - min(max(((reb %||% 0) / mp) / opp, 0), REB_Q_MAX))
+}
+
 # --- Value Added -----------------------------------------------------------
 # Translated 1:1 from app/scoring.js valueAddParts (and the matching copy in
 # app/api/leaderboard/route.js). KEEP IN SYNC with those JS definitions.
@@ -182,8 +197,8 @@ value_add_parts <- function(p, lga) {
   stlVal <- ((p$stl / mp) - lga$laSTLperM) * mp * lga$laPTSperPoss
   blkVal <- ((p$blk / mp) - lga$laBLKperM) * mp * lga$laPTSperPoss * lga$laDRBrate
   tovVal <- -((p$tov / mp) - lga$laTOVperM) * mp * lga$laPTSperPoss
-  drbVal <- ((p$drb / mp) - lga$laDRBperM) * 1.25 * mp * lga$laPTSperPoss * lga$laORBrate
-  orbVal <- ((p$orb / mp) - lga$laORBperM) * 1.25 * mp * lga$laPTSperPoss * lga$laDRBrate
+  drbVal <- ((p$drb / mp) - lga$laDRBperM) * rebound_gamma(p$drb, mp, lga, lga$laDRBrate) * mp * lga$laPTSperPoss * lga$laORBrate
+  orbVal <- ((p$orb / mp) - lga$laORBperM) * rebound_gamma(p$orb, mp, lga, lga$laORBrate) * mp * lga$laPTSperPoss * lga$laDRBrate
   list(va = volume + efficiency + astVal + stlVal + blkVal + tovVal + drbVal + orbVal,
        efficiency = efficiency)
 }
@@ -204,6 +219,12 @@ lga_from_totals <- function(t) {
     # scales a player's minutes into possessions defended — the normalizer
     # for the D-Rating category behind VA+.
     laPOSSperM = safe(5 * poss, t$mp),
+    # Rebound opportunities per on-court minute at ONE end: every rebound in
+    # the game happens at one end or the other, so a player on the floor sees
+    # (TRB per team-minute) chances at his own end. Denominator for the
+    # per-player rebound credit (rebound_gamma). Identity check:
+    # laDRBrate = d/(d+o) recovers exactly from these sums.
+    laREBoppPerM = safe(5 * reb, t$mp),
     la3P = safe(t$tpm, t$tpa),
     la2P = safe(twoPm, twoPa),
     laFT = safe(t$ftm, t$fta),

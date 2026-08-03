@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { LGA } from "../scoring";
 import { timeAgo } from "../lib/format";
 
 
@@ -19,22 +20,24 @@ export function InfoView() {
 
   const refreshed = status?.lastRefresh ? new Date(status.lastRefresh) : null;
 
-  // Constants are 2025-26 league baselines (per-minute / per-attempt rates).
+  // Constants are read from the current season's baselines rather than typed
+  // in, so a rebake can never leave the printed formula behind the code.
+  const fmt = (v, d = 3) => (v ?? 0).toFixed(d);
   const SCORING = [
-    { label: "Scoring volume", f: "( PTS/min − 0.409 ) × min" },
-    { label: "3-pt shooting", f: "3 × ( 3PM/3PA − 0.360 ) × 3PA" },
-    { label: "2-pt shooting", f: "2 × ( 2PM/2PA − 0.548 ) × 2PA" },
-    { label: "Free throws", f: "( FTM/FTA − 0.789 ) × FTA" },
+    { label: "Scoring volume", f: `( PTS/min − ${fmt(LGA.laPTSperM)} ) × min` },
+    { label: "3-pt shooting", f: `3 × ( 3PM/3PA − ${fmt(LGA.la3P)} ) × 3PA` },
+    { label: "2-pt shooting", f: `2 × ( 2PM/2PA − ${fmt(LGA.la2P)} ) × 2PA` },
+    { label: "Free throws", f: `( FTM/FTA − ${fmt(LGA.laFT)} ) × FTA` },
   ];
   const PLAYDEF = [
-    { label: "Assists", f: "( AST/min − 0.083 ) × min × 2.316 × (1 − 0.470)" },
-    { label: "Steals", f: "( STL/min − 0.032 ) × min × 1.014" },
-    { label: "Blocks", f: "( BLK/min − 0.014 ) × min × 1.014 × 0.738" },
-    { label: "Turnovers", f: "−( TOV/min − 0.052 ) × min × 1.014" },
+    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ${fmt(LGA.laPTSperMake)} × (1 − ${fmt(LGA.laFG)})` },
+    { label: "Steals", f: `( STL/min − ${fmt(LGA.laSTLperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
+    { label: "Blocks", f: `( BLK/min − ${fmt(LGA.laBLKperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
+    { label: "Turnovers", f: `−( TOV/min − ${fmt(LGA.laTOVperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
   ];
   const REB = [
-    { label: "Def. rebounds", f: "1.25 × ( DRB/min − 0.122 ) × min × 1.014 × 0.262" },
-    { label: "Off. rebounds", f: "1.25 × ( ORB/min − 0.038 ) × min × 1.014 × 0.738" },
+    { label: "Def. rebounds", f: `γ × ( DRB/min − ${fmt(LGA.laDRBperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laORBrate)}` },
+    { label: "Off. rebounds", f: `γ × ( ORB/min − ${fmt(LGA.laORBperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
   ];
 
   const Group = ({ title, items }) => (
@@ -93,6 +96,18 @@ export function InfoView() {
         <Group title="Scoring" items={SCORING} />
         <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
         <Group title="Rebounding" items={REB} />
+        <p className="text-[10px] text-stone-500 mt-1 mb-2 leading-relaxed">
+          <span className="font-semibold">γ</span> is the rebound credit. A rebound is the one box-score event that&apos;s
+          guaranteed to be won by <span className="italic">someone</span> — every miss produces exactly one, and one of
+          the ten players on the floor gets it — so &ldquo;would his team have gotten it anyway?&rdquo; has a real answer.
+          If a player claims a share <span className="font-semibold">q</span> of the boards available at his end
+          (his REB/min over the league&apos;s <span className="tabular-nums">{fmt(LGA.laREBoppPerM)}</span> chances per
+          minute), removing him raises his team&apos;s chance of losing the possession by
+          <span className="font-semibold"> 1 ⁄ (1 − q)</span> — so that is what each of his boards is worth.
+          A league-average rebounder lands at <span className="tabular-nums">1.17</span> on the defensive glass and
+          <span className="tabular-nums"> 1.05</span> on the offensive; a player who covers a third of his end reaches
+          <span className="tabular-nums"> 1.5</span>. It reads only his own line, never his teammates&apos;.
+        </p>
         <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>
       </Step>
 
