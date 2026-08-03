@@ -645,6 +645,77 @@ const SEG_SUB = {
 };
 
 
+// The two-stat groups' split: a scatter of the group's first two components
+// against each other — every qualified player in the season in grey, the card's
+// player in black — over a row of tappable stat chips that filter the whole
+// card. See the `scatter` memo in CategoryContext for what the axes are and why.
+function ScatterSplit({ scatter, segData, height, selectedSeg, onSelect, sgn, name }) {
+  const { pts, me, xr, yr } = scatter;
+  // viewBox units: a fixed 100-wide box scaled uniformly by the browser, so the
+  // dots stay circular whatever the card's width works out to.
+  const px = (v) => Math.max(0, Math.min(100, ((v - xr[0]) / (xr[1] - xr[0])) * 100));
+  const py = (v) => Math.max(0, Math.min(height, height - ((v - yr[0]) / (yr[1] - yr[0])) * height));
+  const mx = px(me.x), my = py(me.y);
+  const x0 = px(0), y0 = py(0);
+  const [segX, segY] = segData;
+  // Value-added color band, matching the bars: green above +0.05, red below
+  // −0.05, grey in the neutral middle.
+  const vaColor = (v) => (v > 0.05 ? "text-green-600" : v < -0.05 ? "text-red-600" : "text-stone-400");
+  return (
+    <>
+      {/* No axis titles on the plot itself — a corner label lands right where
+          the extremes of the other axis sit. The chips below name both axes
+          and carry the arrow of the one they own. */}
+      <div className="mt-1">
+        <svg
+          viewBox={`0 0 100 ${height}`}
+          className="w-full block overflow-visible"
+          role="img"
+          aria-label={`${segX.sub} versus ${segY.sub} value added — ${name} at ${sgn(me.x)} ${segX.sub}, ${sgn(me.y)} ${segY.sub}, against ${scatter.n} qualified players`}
+        >
+          {/* League baseline, where both stats are worth exactly nothing. */}
+          <line x1={x0} y1="0" x2={x0} y2={height} stroke="#e7e5e4" strokeWidth="0.4" />
+          <line x1="0" y1={y0} x2="100" y2={y0} stroke="#e7e5e4" strokeWidth="0.4" />
+          {pts.map((q, i) => (
+            <circle key={i} cx={px(q.x)} cy={py(q.y)} r="0.85" fill="#d6d3d1" fillOpacity="0.8" />
+          ))}
+          {/* Guides dropping the player's point onto each axis, so the chips
+              below read as the coordinates of the black dot. */}
+          <line x1={mx} y1={my} x2={mx} y2={height} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
+          <line x1={mx} y1={my} x2="0" y2={my} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
+          <circle cx={mx} cy={my} r="2.4" fill="#fff" />
+          <circle cx={mx} cy={my} r="1.5" fill="#1c1917" />
+        </svg>
+      </div>
+      {/* Stat chips — the selectors the bars used to be. Each carries the
+          player's rate (black) and his value added, and the two axis chips are
+          flagged with the arrow of the axis they own. */}
+      <div className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))` }}>
+        {segData.map((seg, i) => {
+          const isSel = selectedSeg === seg.key;
+          const shown = Math.abs(seg.selfV) < 0.005 ? 0 : seg.selfV;
+          const axis = i === 0 ? "→" : i === 1 ? "↑" : null;
+          return (
+            <button
+              key={seg.key}
+              type="button"
+              onClick={() => onSelect(seg.key)}
+              aria-pressed={isSel}
+              title={`${seg.cat || seg.sub} — filter the card to this stat`}
+              className={`flex flex-col items-center gap-0.5 min-w-0 rounded px-1 py-1 border transition-colors ${isSel ? "bg-stone-200 border-stone-800 ring-1 ring-stone-800" : "bg-white border-stone-200 hover:bg-stone-100"}`}
+            >
+              <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub} {axis}</span>
+              <span className="text-[11px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
+              <span className={`text-[8px] font-semibold tabular-nums leading-none ${vaColor(shown)}`}>{sgn(shown)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+
 // League context for one category of one player-season (By-Player search only).
 // Everything is computed from the /api/players index passed in via `context`:
 //   poolsBySeason  Map<season, row[]>  every player-season, grouped by season
@@ -925,6 +996,46 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     });
   }, [SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
 
+  // Scatter plot — the split row's form for the three two-stat groups. A
+  // Passing card's two bars are really one relationship (the creator's
+  // trade-off: more assists, more turnovers), and a bar apiece can't show it.
+  // So Passing / Rebounds / Defense plot their first two components against
+  // each other instead: every qualified player in the season in grey, the
+  // card's player in black, crosshair at the league baseline. Scoring is left
+  // on bars — six shot distances (or four scoring categories pre-1996-97)
+  // aren't two axes — and so is the 2-Pointers card.
+  //
+  // Axes are value added, on the card's /G toggle, exactly like everything else
+  // here: that puts the league baseline at the origin and makes up-and-right
+  // unambiguously better on both axes (fewer turnovers = positive TOV value).
+  // The chips below carry the underlying rates, so nothing is lost. Defense's
+  // third component under VA+ (D Rating) has no axis to sit on — it stays a
+  // chip, and the caption says it's in the total but not on the plot.
+  const SCATTER_H = 58; // viewBox height; width is a fixed 100 so dots stay round
+  const scatter = useMemo(() => {
+    if (!segData || showZones || catKey === "Scoring" || segData.length < 2) return null;
+    const [sx, sy] = segData;
+    const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
+    const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
+    const per = (seg, r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+    const pts = pool
+      .filter((r) => !samePlayer(r, selfRow))
+      .map((r) => ({ x: per(sx, r), y: per(sy, r) }));
+    const me = { x: sx.selfV, y: sy.selfV };
+    // Always include the origin so the crosshair is on-plot, and always the
+    // player's own point so he can't fall outside his own chart.
+    const extent = (vals, mine) => {
+      const lo = Math.min(0, mine, ...vals), hi = Math.max(0, mine, ...vals);
+      const pad = (hi - lo) * 0.08 || 1;
+      return [lo - pad, hi + pad];
+    };
+    return {
+      pts, me, n: pool.length,
+      xr: extent(pts.map((q) => q.x), me.x),
+      yr: extent(pts.map((q) => q.y), me.y),
+    };
+  }, [segData, showZones, catKey, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+
   // Headline total(s) for the split row, shown inline with its section heading.
   // Everywhere but the six-bar Scoring card the bars are the group's own
   // categories, so they sum to exactly the row that opened the card: one
@@ -951,9 +1062,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // While a bar in the split row is selected, every heading/column reads as
   // that component ("RIM", "AST") instead of the rolled-up category.
   const metricLabel = selSeg ? selSeg.sub.toUpperCase() : short;
-  // Heading for the split row, naming what the bars divide the card by.
+  // Heading for the split row, naming what the card is divided by — the two
+  // plotted axes on a scatter, the kind of split otherwise.
   const segHeading = showZones
     ? (catKey === "2-Pointers" ? "2-Pointers · by distance" : "Scoring · by shot distance")
+    : scatter ? `${catKey} · ${segData[0].sub} vs ${segData[1].sub}`
     : `${catKey} · by stat`;
   // Total VA is a whole-season figure, so one decimal (matches the leaderboard);
   // per-game figures are an order of magnitude smaller, so show two.
@@ -1150,6 +1263,18 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               )}
             </div>
           </div>
+          {scatter ? (
+            <ScatterSplit
+              scatter={scatter}
+              segData={segData}
+              height={SCATTER_H}
+              selectedSeg={selectedSeg}
+              onSelect={(k) => setSelectedSeg(selectedSeg === k ? null : k)}
+              sgn={sgn}
+              name={self.name}
+            />
+          ) : (
+          <>
           {/* Section headers spanning their bars: FT · 2-Pointers (×4) · 3PT.
               Only the six-bar Scoring card needs them — every other split is
               all one section, so its per-bar sub-labels are enough. */}
@@ -1217,7 +1342,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               );
             })}
           </div>
-          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</div>
+          </>
+          )}
+          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+            {scatter
+              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black · axes = ${perGame ? "per-game" : "total"} value added, crosshair = the league baseline · tap a stat to filter the card. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
+              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</>}
+          </div>
         </div>
       )}
 
