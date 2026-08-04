@@ -11,7 +11,7 @@ import { buildScopePools } from "../lib/players";
 
 // "By Player" mode: search the cross-season index from /api/players and show a
 // single player's playoff seasons ranked by Value Added.
-export function PlayerExplorer({ scope = "playoffs" }) {
+export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null }) {
   // One index per scope, cached so flipping the selector doesn't refetch.
   // fetchJsonCached also shares the payload with the By Season context fetch.
   const [cache, setCache] = useState({});
@@ -94,6 +94,7 @@ export function PlayerExplorer({ scope = "playoffs" }) {
         contextData={contextData}
         onBack={() => selectPlayer(null)}
         onNavigateToPlayer={navigateToPlayer}
+        onOpenTeamSeason={onOpenTeamSeason}
         pendingSeason={navSeason}
         onNavHandled={clearNavSeason}
       />
@@ -147,7 +148,7 @@ export function PlayerExplorer({ scope = "playoffs" }) {
 // tappable TOT VA / VA/G column headers, team-color badges that filter, a
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
-export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, pendingSeason = null, onNavHandled = null }) {
+export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -156,6 +157,16 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // the By Season leaderboard.
   const [minGames, setMinGames] = useState(null);
   const [gArmed, setGArmed] = useState(false);
+  // Same arming shape on the Team header, for a bigger move: while armed, a
+  // team card leaves By Player entirely and opens that team's filter in the
+  // By Season leaderboard for that card's season. Unarmed, the cards keep
+  // their in-place team filter — navigating away is never one stray tap.
+  const [teamArmed, setTeamArmed] = useState(false);
+  const canOpenTeam = typeof onOpenTeamSeason === "function";
+  // Only one column armed at a time; two dotted-underline hints at once reads
+  // as ambiguous about what the next tap does.
+  const armTeam = () => { setGArmed(false); setTeamArmed((v) => !v); };
+  const armG = () => { setTeamArmed(false); setGArmed((v) => !v); };
 
   // Season whose row is waiting to be scrolled into view after a navigation.
   const [pendingScroll, setPendingScroll] = useState(null);
@@ -270,7 +281,19 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       </div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
-        <span className="w-10">Team</span>
+        {canOpenTeam ? (
+          <button
+            type="button"
+            onClick={armTeam}
+            className={`w-10 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${teamArmed ? "text-stone-900 font-bold underline" : ""}`}
+            title="Tap, then tap a team card to open that team in the By Season leaderboard"
+            aria-pressed={teamArmed}
+          >
+            Team
+          </button>
+        ) : (
+          <span className="w-10">Team</span>
+        )}
         <button
           type="button"
           onClick={cycleSeasonSort}
@@ -283,7 +306,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         </button>
         <button
           type="button"
-          onClick={() => setGArmed((v) => !v)}
+          onClick={armG}
           className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a season's G to filter to at least that many games"
           aria-pressed={gArmed}
@@ -325,7 +348,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const rank = sortedAll.indexOf(s) + 1;
         const sOpen = openSeason === s.season;
         const tc = teamColor(s.team);
-        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+        // Armed cards wear the team color at full strength — solid border, a
+        // deeper fill, a soft ring around it, and a chevron — so it's obvious
+        // which cells the next tap acts on and that the tap goes somewhere.
+        const badgeStyle = teamArmed
+          ? { backgroundColor: withAlpha(tc, 0.26), color: tc, borderColor: tc, boxShadow: `0 0 0 2px ${withAlpha(tc, 0.22)}` }
+          : { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
         const barColor = s.va >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
         const barPct = (Math.abs(barValOf(s)) / maxAbsVa) * 100;
         const gp = s.gp || 1;
@@ -355,12 +383,24 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (teamArmed && canOpenTeam) {
+                      setTeamArmed(false);
+                      onOpenTeamSeason({ season: s.season, team: s.team });
+                      return;
+                    }
                     setTeamFilter(teamFilter === s.team ? null : s.team);
                   }}
                   style={badgeStyle}
-                  className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
-                  aria-label={`Filter by ${s.team}`}
-                >{s.team}</button>
+                  className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border hover:brightness-95"
+                  aria-label={teamArmed && canOpenTeam
+                    ? `Open ${s.team} in the ${s.season} By Season leaderboard`
+                    : `Filter by ${s.team}`}
+                >
+                  <span className="flex items-center justify-center gap-px leading-none">
+                    {s.team}
+                    {teamArmed && canOpenTeam && <span className="text-[8px]" aria-hidden>›</span>}
+                  </span>
+                </button>
                 <span className="flex-1 truncate text-stone-800 font-semibold tabular-nums">
                   <span className="text-stone-400 mr-1 font-normal">{sOpen ? "▾" : "▸"}</span>
                   {s.season}

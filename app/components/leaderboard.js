@@ -41,6 +41,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // Name of the player whose G cell was just tapped, so we can scroll
   // their row into view after the list re-sorts/filters.
   const [pendingScrollName, setPendingScrollName] = useState(null);
+  // Set when a team-only navigation lands (a By Player team card): there's no
+  // row to scroll to, so bring the whole card into view instead.
+  const [pendingScrollCard, setPendingScrollCard] = useState(false);
   // VA vs VA+ (VA + defensive net rating). VA+ re-scores the whole board:
   // sort, the TOT/VA-G columns, and the bar widths all switch.
   const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
@@ -240,6 +243,12 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     setPendingScrollName(null);
   }, [pendingScrollName]);
 
+  useEffect(() => {
+    if (!pendingScrollCard) return;
+    cardElRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setPendingScrollCard(false);
+  }, [pendingScrollCard]);
+
   // Apply an incoming "open this player" navigation (from a compare panel's
   // compared-player chip). The season prop has already been switched to the
   // target's season by the parent; wait until this scope's rows for that
@@ -259,6 +268,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       : scope === "combined" ? (dataSeason === season ? combinedPlayers : null)
       : (dataSeason === season ? data?.players : null);
     if (!source || !source.length) return; // rows for this season not ready yet
+    // Team-only target (a By Player team card): no player to open — just
+    // filter the board to that team and bring it into view.
+    if (!pendingNav.name && !pendingNav.slug) {
+      if (pendingNav.team) {
+        setTeamFilter(pendingNav.team);
+        setExpanded(null);
+        setPendingScrollCard(true);
+      }
+      onNavHandled?.();
+      return;
+    }
     const n = normalizeName(pendingNav.name || "");
     const match = source.find((p) => (pendingNav.slug && p.slug === pendingNav.slug) || normalizeName(p.name) === n);
     if (match) {
@@ -656,6 +676,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         );
       });
       })()}
+      {shown.length === 0 && (
+        <div className="px-3 py-3 text-[10px] text-stone-400 italic text-center">
+          No {teamFilter ? `${teamFilter} ` : ""}players in the {season} {title.replace(" Leaderboard", "").toLowerCase()} board{minGames != null ? ` with ${minGames}+ games` : ""}.
+        </div>
+      )}
       {!teamFilter && minGames == null && all.length > 10 && (
         <button
           ref={footerFlowRef}
