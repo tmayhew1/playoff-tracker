@@ -34,14 +34,17 @@ import { fetchJsonCached } from "./fetch-cache";
 // continuous at edge = 0. Multi-team rows (2TM) and seasons without team
 // maps fall back to the plain vs-league form (w=1 on the whole net). DRtg
 // is a Bayesian posterior: basketball-reference's box-score-estimated
-// Defensive Rating is the prior (worth DEF_PBP_PRIOR_POSS possessions of
-// evidence), updated by the actual on-court play-by-play rating (points
+// Defensive Rating, CALIBRATED onto the play-by-play scale (DEF_EST_CAL —
+// the raw estimate separates teammates about five times as hard as real
+// on-court play does), is the prior (worth DEF_PBP_PRIOR_POSS possessions
+// of evidence), updated by the actual on-court play-by-play rating (points
 // allowed per 100 possessions while on the floor, 2000-01+) in proportion
 // to the possessions the player really logged — see defRtgEntryFor and the
 // pbpW weight below. Pre-2000 (and unbaked/unjoined) seasons are simply
-// all-prior. The league line is laPTSperPoss×100; laPOSSperM (pace/48)
-// converts per-possession into per-minute. Null (→ hidden in the UI) when
-// the player-season has no rating from either source.
+// all-prior, which is exactly why the prior has to be on the right scale.
+// The league line is laPTSperPoss×100; laPOSSperM (pace/48) converts
+// per-possession into per-minute. Null (→ hidden in the UI) when the
+// player-season has no rating from either source.
 export const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
 
 export const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
@@ -63,6 +66,57 @@ export const DEF_TEAM_SHARE_MIN = 0.05, DEF_TEAM_SHARE_MAX = 1;
 export const DEF_PBP_PRIOR_POSS = 1500;
 export const DEF_PBP_PRIOR_POSS_PO = 500;
 
+// --- Calibrating the estimate onto the play-by-play scale --------------------
+// The blend above only means something if its two inputs measure the same
+// thing at the same scale. They don't. Regressing the on-court rating on the
+// box-score estimate across the 20 baked PBP seasons (RS, MP≥500, minute-
+// weighted) splits cleanly in two:
+//
+//   team component     (teamEst−L → teamPbp−L):  slope 0.96, r = 0.99
+//   individual part    (est−teamEst → pbp−teamPbp): slope 0.14–0.21, r ≈ 0.25
+//
+// A team's estimated rating is already a measured quantity and needs nothing.
+// But only about a fifth of a player's *estimated* separation from his own
+// teammates survives as real separation — and the slope gets SMALLER (0.144)
+// above 2000 MP, where the play-by-play side is least noisy, so this is
+// miscalibration and not measurement error. Over half the variance in that
+// deviation is just the player's stock rate (r = 0.75 vs (STL+ρ_D·BLK)/MP),
+// which VA already pays out in its own Steals and Blocks categories.
+//
+// Left uncorrected the mismatch is an era effect, since θ is what mixes the
+// two: pre-2000 seasons are all-estimate and modern ones ~75% play-by-play,
+// so the same defender scored ~1.5× higher in the older era (p99 of dVA/G:
+// 3.77 pre-2000 vs 2.49 since). So the estimate's within-team deviation is
+// scaled onto the measured scale before it is used as the prior:
+//
+//   est* = teamEst + DEF_EST_CAL × (est − teamEst)
+//
+// DEF_EST_CAL is set by era parity rather than by the raw slope: at 0.50 the
+// estimate-only era and the play-by-play era produce the same distribution of
+// extremes (p99 ratio 1.03, max 1.29), which is the property that makes an
+// all-time leaderboard comparable. The raw within-team slope (~0.19) treats
+// the raw on-court rating as ground truth for individual defense; it isn't —
+// teammates overlap, so on/off understates a lone anchor — and at that value
+// pre-2000 defense collapses to noise and the tail inverts.
+//
+// Multi-team (2TM) rows and seasons with no team map have no team baseline to
+// separate the two components, so they fall back to shrinking the deviation
+// from the league line by DEF_EST_CAL_LG — the pooled slope measured on that
+// same regression (0.646), which is just the two components above mixed in
+// their observed variance shares (0.58 × 0.96 + 0.42 × 0.19 ≈ 0.65).
+export const DEF_EST_CAL = 0.5;
+export const DEF_EST_CAL_LG = 0.646;
+
+// The box-score estimate rescaled onto the play-by-play scale, shrunk toward
+// the player's own team line when there is one and the league line otherwise.
+// Passes null through: a missing estimate stays missing.
+export function calibratedEst(est, teamDrtg, laDRtg) {
+  if (est == null) return null;
+  return teamDrtg > 0
+    ? teamDrtg + DEF_EST_CAL * (est - teamDrtg)
+    : laDRtg + DEF_EST_CAL_LG * (est - laDRtg);
+}
+
 export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   const ent = defRtgEntryFor(defs, season, row?.slug, pref);
   if (!ent || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
@@ -70,16 +124,21 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   const e = defs?.[season];
   const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
   const t = tmap?.[row?.team];
+  // The prior is the CALIBRATED estimate, not the raw one, so the two sides of
+  // the blend are on one scale (see DEF_EST_CAL). The team line it shrinks
+  // toward is the same box-score team rating the IND term subtracts, and is
+  // itself left alone — team ratings are already measured, slope 0.96.
+  const est = calibratedEst(ent.est, t?.drtg, la);
   // Posterior weight on the PBP rating: poss / (poss + prior). Pure est when
   // no PBP sample exists (pre-2000, unbaked seasons, unjoined names); pure
   // PBP in the rare case the estimate is missing.
   const poss = row?.mp > 0 ? row.mp * lgaX.laPOSSperM : 0;
   const priorPoss = pref === "po" ? DEF_PBP_PRIOR_POSS_PO : DEF_PBP_PRIOR_POSS;
   const pbpW =
-    ent.pbp != null && ent.est != null ? poss / (poss + priorPoss)
+    ent.pbp != null && est != null ? poss / (poss + priorPoss)
     : ent.pbp != null ? 1
     : 0;
-  const drtg = pbpW * (ent.pbp ?? 0) + (1 - pbpW) * (ent.est ?? 0);
+  const drtg = pbpW * (ent.pbp ?? 0) + (1 - pbpW) * (est ?? 0);
   // The team baseline blends with the SAME weights so IND subtracts like
   // from like at both extremes (counted vs estimated possessions sit ~1
   // pt/100 apart). Stock rates still come from the BR team map (plain box
