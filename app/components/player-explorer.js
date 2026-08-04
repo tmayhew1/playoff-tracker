@@ -172,9 +172,6 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const [pendingScroll, setPendingScroll] = useState(null);
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
-  // Which By Season board an armed team card lands on — the scope selector is
-  // shared by both modes, so it carries over untouched.
-  const boardNoun = scope === "playoffs" ? "playoff" : scope === "regular" ? "regular-season" : "combined";
   const seasons = player.seasons;
 
   // Apply an incoming "open this season" navigation (a trend bar's "Go →").
@@ -347,19 +344,6 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           VA/G{effectiveSort === "vaPerG" ? " ▼" : ""}
         </button>
       </div>
-      {teamArmed && canOpenTeam && (
-        <div className="px-2 py-1.5 text-[9px] italic text-stone-500 border-b border-stone-200 bg-stone-50 flex items-center justify-between gap-2">
-          <span>Tap a team to open that season’s {boardNoun} leaderboard, filtered to that team.</span>
-          <button
-            type="button"
-            onClick={() => setTeamArmed(false)}
-            className="not-italic uppercase tracking-wider text-stone-400 hover:text-stone-900 shrink-0"
-            aria-label="Cancel team navigation"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
       {shown.map((s, i) => {
         const rank = sortedAll.indexOf(s) + 1;
         const sOpen = openSeason === s.season;
