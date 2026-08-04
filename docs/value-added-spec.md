@@ -354,7 +354,7 @@ $\;\Pi_p = \mathrm{MP}\cdot\nu\;$ and prior strength $\Pi_0$,
 
 $$
 \theta \;=\; \frac{\Pi_p}{\Pi_p + \Pi_0}, \qquad
-\hat{D} \;=\; \theta\,D_{\text{pbp}} \;+\; (1-\theta)\,D_{\text{est}},
+\hat{D} \;=\; \theta\,D_{\text{pbp}} \;+\; (1-\theta)\,D^{*}_{\text{est}},
 \qquad
 \Pi_0 = \begin{cases} 1500 & \text{regular season} \\ 500 & \text{playoffs} \end{cases}
 $$
@@ -366,6 +366,50 @@ small-sample on-court fluke from topping the leaderboard. The lighter playoff
 prior reflects both the smaller samples available and the noisier estimate
 behind them. Seasons with no play-by-play source are simply all-prior
 ($\theta = 0$).
+
+### 6.1a Calibrating the prior
+
+A blend is only meaningful if its inputs share a scale. Regressing $D_{\text{pbp}}$
+on $D_{\text{est}}$ across the 20 play-by-play seasons (RS, $\mathrm{MP}\ge500$,
+minute-weighted) separates into a calibrated team component and a badly
+inflated individual one:
+
+| component | regression | slope | $r$ |
+|---|---|---|---|
+| team | $T_{\text{est}} - L \;\to\; T_{\text{pbp}} - L$ | 0.963 | 0.986 |
+| individual | $D_{\text{est}} - T_{\text{est}} \;\to\; D_{\text{pbp}} - T_{\text{pbp}}$ | 0.14 – 0.21 | ≈ 0.25 |
+
+Only about a fifth of a player's *estimated* separation from his own teammates
+survives as real separation, and the slope **falls** to 0.144 above 2000 MP —
+where the play-by-play side is least noisy — so this is miscalibration, not
+measurement error. More than half the variance of that deviation is the
+player's stock rate ($r = 0.75$ against $(\mathrm{STL} + \rho_D\mathrm{BLK})/\mathrm{MP}$),
+which §4 already pays out as its own categories.
+
+Because $\theta$ is what mixes the two, the inflation lands entirely on the
+seasons with no play-by-play to correct it: the same defender scored ~1.5×
+higher pre-2000 (99th percentile of $\mathrm{dVA}/\mathrm{G}$: 3.77 before
+2000-01, 2.49 after). The estimate's within-team deviation is therefore
+rescaled before use, leaving the team rating — already measured — alone:
+
+$$
+D^{*}_{\text{est}} \;=\;
+\begin{cases}
+T_{\text{est}} + \kappa\,\bigl(D_{\text{est}} - T_{\text{est}}\bigr), & \kappa = 0.5 \\[4pt]
+L + \kappa_L\,\bigl(D_{\text{est}} - L\bigr), & \kappa_L = 0.646 \quad \text{(no team baseline)}
+\end{cases}
+$$
+
+$\kappa$ is fixed by **era parity** rather than by the raw slope: at $0.5$ the
+estimate-only era and the play-by-play era produce the same distribution of
+extremes (99th-percentile ratio 1.03, max ratio 1.29), which is the property an
+all-time leaderboard needs. The raw within-team slope ($\approx0.19$) would
+treat raw on-court rating as ground truth for individual defense — it is not,
+since teammate overlap makes on/off understate a lone anchor — and at that
+value pre-2000 defense collapses into noise and the tail inverts. The fallback
+$\kappa_L$ (multi-team rows, ~11% of seasons) is the pooled slope of the same
+regression, which is just the two components above mixed in their observed
+variance shares: $0.58(0.96) + 0.42(0.19) \approx 0.65$.
 
 The team baseline $\hat{T}$ blends with the **same** $\theta$, so the individual
 term below subtracts like from like.

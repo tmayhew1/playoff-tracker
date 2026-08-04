@@ -129,7 +129,7 @@ export function DRatingView() {
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
-          DRTG = box-score estimate (prior, ≈1500 poss) updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
+          DRTG = box-score estimate, calibrated onto the play-by-play scale (within-team spread ×0.5), as the prior (≈1500 poss) — updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
           IND = player's edge over his own team's D · TM+ = his stock-rate share of the team's edge vs the league line ·
           both as points/game, so IND + TM+ = D/G · “–” = no single-team context (traded)
         </div>
