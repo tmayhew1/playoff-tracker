@@ -181,8 +181,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const [gArmed, setGArmed] = useState(false);
   // Same arming shape on the Team header, for a bigger move: while armed, a
   // team card leaves By Player entirely and opens that team's filter in the
-  // By Season leaderboard for that card's season. Unarmed, the cards keep
-  // their in-place team filter — navigating away is never one stray tap.
+  // By Season leaderboard for that card's season, with this player's row
+  // already expanded there. Unarmed, the cards keep their in-place team
+  // filter — navigating away is never one stray tap.
   const [teamArmed, setTeamArmed] = useState(false);
   const canOpenTeam = typeof onOpenTeamSeason === "function";
   // Only one column armed at a time; two dotted-underline hints at once reads
@@ -308,7 +309,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             type="button"
             onClick={armTeam}
             className={`w-10 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${teamArmed ? "text-stone-900 font-bold underline" : ""}`}
-            title="Tap, then tap a team card to open that team in the By Season leaderboard"
+            title="Tap, then tap a team card to open that team’s By Season leaderboard with this player’s row open"
             aria-pressed={teamArmed}
           >
             Team
@@ -407,7 +408,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                     e.stopPropagation();
                     if (teamArmed && canOpenTeam) {
                       setTeamArmed(false);
-                      onOpenTeamSeason({ season: s.season, team: s.team });
+                      // Carry the player's identity across, not just the
+                      // team-season: the crossing is "show me this season
+                      // around them", so the leaderboard opens their row
+                      // inside the team filter. Slug first (stable across
+                      // data sources), name as the fallback join.
+                      onOpenTeamSeason({ season: s.season, team: s.team, name: player.name, slug: player.slug || null });
                       return;
                     }
                     setTeamFilter(teamFilter === s.team ? null : s.team);
@@ -415,7 +421,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                   style={badgeStyle}
                   className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border hover:brightness-95"
                   aria-label={teamArmed && canOpenTeam
-                    ? `Open ${s.team} in the ${s.season} By Season leaderboard`
+                    ? `Open ${s.team} in the ${s.season} By Season leaderboard with ${player.name}’s row expanded`
                     : `Filter by ${s.team}`}
                 >
                   <span className="flex items-center justify-center gap-px leading-none">

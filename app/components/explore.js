@@ -127,9 +127,10 @@ export function ExploreView() {
   // A pending navigation into By Season, applied by the leaderboard once that
   // season's rows have loaded. Two shapes:
   //   { season, team, name, slug } — a player-season, from a compare panel's
-  //     compared-player chip: filter to their team and expand their row.
-  //   { season, team }             — a team-season, from a By Player team card
-  //     with the Team header armed: just filter the board to that team.
+  //     compared-player chip or a By Player team card: filter to their team
+  //     and expand their row.
+  //   { season, team }             — a team-season with no player attached:
+  //     just filter the board to that team.
   const [seasonNav, setSeasonNav] = useState(null);
   // Called by a By Season compare panel (via context.onNavigateToPlayer) when
   // the user taps the compared player's chip: switch the leaderboard to that
@@ -142,14 +143,17 @@ export function ExploreView() {
   }, []);
   // Called from By Player when the user arms the Team header and taps a team
   // card: cross over to By Season for that card's season, filtered to that
-  // team. The scope (regular / playoffs / combined) is whatever By Player was
-  // already showing — it's the same selector for both modes, so it just rides
-  // along untouched.
+  // team, with the player whose career we were reading opened in place. The
+  // scope (regular / playoffs / combined) is whatever By Player was already
+  // showing — it's the same selector for both modes, so it just rides along
+  // untouched. The player rides along the same way the compare-chip
+  // navigation carries one, so the leaderboard has a single nav shape to
+  // apply; a target without one still just filters to the team.
   const navigateSeasonToTeam = useCallback((target) => {
     if (!target?.season || !target?.team) return;
     setMode("season");
     setSeason(target.season);
-    setSeasonNav({ season: target.season, team: target.team });
+    setSeasonNav({ season: target.season, team: target.team, name: target.name || null, slug: target.slug || null });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const clearSeasonNav = useCallback(() => setSeasonNav(null), []);
