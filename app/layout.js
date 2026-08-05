@@ -1,4 +1,5 @@
 import "./globals.css";
+import { BuildWatch } from "./components/build-watch";
 
 export const metadata = {
   title: "NBA Box Score Value Added Tracker",
@@ -18,7 +19,12 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* Renders nothing; reloads the page when a stale phone tab is still
+            running a previous deployment. */}
+        <BuildWatch />
+        {children}
+      </body>
     </html>
   );
 }
