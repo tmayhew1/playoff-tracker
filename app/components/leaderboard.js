@@ -10,7 +10,7 @@ import { GOLD, MIDNIGHT_PURPLE, normalizeName, teamColor, withAlpha } from "../l
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 
 
-export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null }) {
+export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -38,6 +38,16 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // brushing a row's G can't filter by accident.
   const [minGames, setMinGames] = useState(null);
   const [gArmed, setGArmed] = useState(false);
+  // Same arming shape on the Player header, for a bigger move: while armed, a
+  // player's name leaves By Season entirely and opens that player's career in
+  // By Player with this season's row already drilled in. Unarmed, a name tap
+  // keeps expanding the row in place — crossing views is never one stray tap.
+  const [nameArmed, setNameArmed] = useState(false);
+  const canOpenPlayer = typeof onOpenPlayerSeason === "function";
+  // Only one column armed at a time; two dotted-underline hints at once reads
+  // as ambiguous about what the next tap does.
+  const armName = () => { setGArmed(false); setNameArmed((v) => !v); };
+  const armG = () => { setNameArmed(false); setGArmed((v) => !v); };
   // Name of the player whose G cell was just tapped, so we can scroll
   // their row into view after the list re-sorts/filters.
   const [pendingScrollName, setPendingScrollName] = useState(null);
@@ -122,6 +132,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     setSortMode("composite");
     setMinGames(null);
     setGArmed(false);
+    setNameArmed(false);
     setPendingScrollName(null);
     setExpanded(null);
     setRsData(null);
@@ -436,12 +447,27 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
         <span className="w-6 text-right">#</span>
         <span className="w-10">Team</span>
-        <span className="flex-1">Player</span>
+        {/* Arming step for the cross-over into By Player: tap Player here
+            first, then a player's name — a bare row tap should never leave
+            the leaderboard by accident. */}
+        {canOpenPlayer ? (
+          <button
+            type="button"
+            onClick={armName}
+            className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
+            title="Tap, then tap a player to open this season in their By Player career"
+            aria-pressed={nameArmed}
+          >
+            Player
+          </button>
+        ) : (
+          <span className="flex-1">Player</span>
+        )}
         {/* Arming step for the min-games filter: tap G here first, then a
             row's G value — a bare row tap should never filter by accident. */}
         <button
           type="button"
-          onClick={() => setGArmed((v) => !v)}
+          onClick={armG}
           className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
@@ -613,10 +639,30 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
                 aria-label={`Filter by ${p.team}`}
               >{p.team}</button>
-              <span className="flex-1 truncate text-stone-800">
-                <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                {p.name}
-              </span>
+              {/* Armed, the name crosses over to By Player with this season
+                  drilled in; unarmed it falls through (no stopPropagation) so
+                  the tap bubbles to the row and expands the breakdown, exactly
+                  as a plain name cell always has. */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  if (!nameArmed || !canOpenPlayer) return;
+                  e.stopPropagation();
+                  setNameArmed(false);
+                  onOpenPlayerSeason({ season, name: p.name, slug: p.slug || null });
+                }}
+                className={`flex-1 min-w-0 flex items-center text-left cursor-pointer ${nameArmed && canOpenPlayer ? "text-stone-900 font-semibold" : "text-stone-800"}`}
+                aria-label={nameArmed && canOpenPlayer
+                  ? `Open ${p.name}’s ${season} season in By Player`
+                  : undefined}
+              >
+                <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+                {/* The name is the only part that truncates — the armed
+                    chevron sits outside it so a long name can't eat the one
+                    mark that says the tap goes somewhere. */}
+                <span className={`truncate ${nameArmed && canOpenPlayer ? "underline decoration-dotted" : ""}`}>{p.name}</span>
+                {nameArmed && canOpenPlayer && <span className="text-[8px] ml-0.5 shrink-0" aria-hidden>›</span>}
+              </button>
               <button
                 type="button"
                 onClick={(e) => {

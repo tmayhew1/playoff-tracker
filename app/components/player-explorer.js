@@ -11,7 +11,7 @@ import { buildScopePools } from "../lib/players";
 
 // "By Player" mode: search the cross-season index from /api/players and show a
 // single player's playoff seasons ranked by Value Added.
-export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null }) {
+export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pendingPlayer = null, onPlayerNavHandled = null }) {
   // One index per scope, cached so flipping the selector doesn't refetch.
   // fetchJsonCached also shares the payload with the By Season context fetch.
   const [cache, setCache] = useState({});
@@ -60,6 +60,28 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null }) 
     // wants the top of the page.
     if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Apply an incoming "open this player" navigation from the By Season
+  // leaderboard (Player header armed, then a name tapped). This mode only
+  // mounts on the switch into By Player, so the index is usually still in
+  // flight — hold the request until it lands, then resolve the target the same
+  // way navigateToPlayer does and drill straight into the season the
+  // leaderboard was showing. The search box is seeded with the name either way,
+  // so "‹ Back to search" lands somewhere useful and an unresolvable target
+  // (a player the scope's index doesn't carry) still says so on screen.
+  useEffect(() => {
+    if (!pendingPlayer || !index) return;
+    const nm = normalizeName(pendingPlayer.name || "");
+    const found = index.find((p) => (pendingPlayer.slug && p.slug === pendingPlayer.slug) || (nm && normalizeName(p.name) === nm));
+    setQuery(pendingPlayer.name || "");
+    if (found) {
+      setSelectedKey(keyOf(found));
+      // Only ask for a season the player actually has in this scope; anything
+      // else would leave PlayerDetail's pending request permanently unmet.
+      setNavSeason(found.seasons.some((s) => s.season === pendingPlayer.season) ? pendingPlayer.season : null);
+    }
+    onPlayerNavHandled?.();
+  }, [pendingPlayer, index, onPlayerNavHandled]);
 
   const matches = useMemo(() => {
     if (!index) return [];
