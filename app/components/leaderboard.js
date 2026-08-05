@@ -260,14 +260,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     setPendingScrollCard(false);
   }, [pendingScrollCard]);
 
-  // Apply an incoming "open this player" navigation (from a compare panel's
-  // compared-player chip). The season prop has already been switched to the
-  // target's season by the parent; wait until this scope's rows for that
-  // season have loaded, then filter to the player's team, expand their row,
-  // and scroll it into view. Matching prefers slug (stable across data
-  // sources), falling back to a normalized-name compare. The [season] reset
-  // effect above clears teamFilter/expanded first when the season actually
-  // changed, so this always wins the race and its result sticks.
+  // Apply an incoming navigation into this board — from a compare panel's
+  // compared-player chip, or from a By Player team card with the Team header
+  // armed. Both name a player; the team card also names the team. The season
+  // prop has already been switched to the target's season by the parent; wait
+  // until this scope's rows for that season have loaded, then filter to the
+  // player's team, expand their row, and scroll it into view. Matching prefers
+  // slug (stable across data sources), falling back to a normalized-name
+  // compare, and a target that resolves to no row at all still lands on its
+  // team filter rather than on an unchanged board. The [season] reset effect
+  // above clears teamFilter/expanded first when the season actually changed,
+  // so this always wins the race and its result sticks.
   useEffect(() => {
     if (!pendingNav || pendingNav.season !== season) return;
     // Only act on rows that actually belong to the target season. During a
@@ -279,23 +282,28 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       : scope === "combined" ? (dataSeason === season ? combinedPlayers : null)
       : (dataSeason === season ? data?.players : null);
     if (!source || !source.length) return; // rows for this season not ready yet
-    // Team-only target (a By Player team card): no player to open — just
-    // filter the board to that team and bring it into view.
-    if (!pendingNav.name && !pendingNav.slug) {
-      if (pendingNav.team) {
-        setTeamFilter(pendingNav.team);
-        setExpanded(null);
-        setPendingScrollCard(true);
-      }
-      onNavHandled?.();
-      return;
-    }
     const n = normalizeName(pendingNav.name || "");
-    const match = source.find((p) => (pendingNav.slug && p.slug === pendingNav.slug) || normalizeName(p.name) === n);
+    const match = (pendingNav.slug || n)
+      ? source.find((p) => (pendingNav.slug && p.slug === pendingNav.slug) || (n && normalizeName(p.name) === n))
+      : null;
+    // Whatever the target, a leftover min-games filter could trim the very
+    // row (or team) the navigation is asking for, so it never survives one.
+    setMinGames(null);
+    setGArmed(false);
     if (match) {
+      // Filter to the matched row's own team rather than the requested one:
+      // where the two disagree (a mid-season move recorded differently on
+      // either side of the crossing) the requested filter would hide the row
+      // we're about to expand.
       setTeamFilter(match.team);
       setExpanded(`${match.team}:${match.name}`);
       setPendingScrollName(match.name);
+    } else if (pendingNav.team) {
+      // Team-only target, or a player these rows don't carry: no row to open,
+      // so filter to the team and bring the whole card into view instead.
+      setTeamFilter(pendingNav.team);
+      setExpanded(null);
+      setPendingScrollCard(true);
     }
     onNavHandled?.();
   }, [pendingNav, season, scope, data, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
