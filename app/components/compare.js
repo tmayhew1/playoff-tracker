@@ -613,20 +613,38 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     const ia = defVAInfo(a, a.mp, lgaA, defs, a.season, defScope);
     const ib = defVAInfo(b, b.mp, lgaB, defs, b.season, defScope);
     const rows = [];
-    const push = (label, av, bv, disp, lowerBetter = false) => {
+    // Each side is [value the row is won on, what to print]. A side with
+    // nothing to show sits out and the row goes unflagged.
+    const push = (label, [acmp, adisp], [bcmp, bdisp], lowerBetter = false) => {
       let win = null;
-      if (av != null && bv != null && av !== bv) win = (lowerBetter ? av < bv : av > bv) ? "a" : "b";
-      rows.push({ label, a: av == null ? "–" : disp(av), b: bv == null ? "–" : disp(bv), win });
+      if (acmp != null && bcmp != null && acmp !== bcmp) win = (lowerBetter ? acmp < bcmp : acmp > bcmp) ? "a" : "b";
+      rows.push({ label, a: adisp, b: bdisp, win });
     };
+    const none = [null, "–"];
     const r0 = (v) => String(Math.round(v));
     const sg1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
     const sg2 = (v) => (v > 0 ? "+" : "") + v.toFixed(2);
-    push("DRTG", ia?.drtg ?? null, ib?.drtg ?? null, r0, true);
-    // Points per 100 better than that season's league line — the era-fair read
-    // of a rating, since the league line itself moves.
-    push("VS LG", ia ? ia.laDRtg - ia.drtg : null, ib ? ib.laDRtg - ib.drtg : null, sg1);
-    push("D VA/G", ia ? ia.dva / (a.gp || 1) : null, ib ? ib.dva / (b.gp || 1) : null, sg2);
-    push("TOT D VA", ia?.dva ?? null, ib?.dva ?? null, sg1);
+    const val = (v, disp) => (v == null ? none : [v, disp(v)]);
+    // The player's own team defense: its rating, and how far that sits under
+    // (green) or over (red) the season's league line. This is the pot the
+    // second half of a D Rating is drawn from — a player earns a share of his
+    // team's edge — so it's the context the rating above is read against.
+    // Absent for multi-team (2TM) rows and seasons with no team map, where the
+    // rating falls back to the plain vs-league form.
+    const team = (i) => {
+      if (!i || i.teamDrtg == null) return none;
+      const edge = i.laDRtg - i.teamDrtg;
+      return [edge, (
+        <>
+          {r0(i.teamDrtg)}{" "}
+          <span className={edge >= 0 ? "text-emerald-600" : "text-red-600"}>{sg1(edge)}</span>
+        </>
+      )];
+    };
+    push("DRTG", val(ia?.drtg ?? null, r0), val(ib?.drtg ?? null, r0), true);
+    push("TM VS LG", team(ia), team(ib));
+    push("D VA/G", val(ia ? ia.dva / (a.gp || 1) : null, sg2), val(ib ? ib.dva / (b.gp || 1) : null, sg2));
+    push("TOT D VA", val(ia?.dva ?? null, sg1), val(ib?.dva ?? null, sg1));
     return rows;
   };
 
