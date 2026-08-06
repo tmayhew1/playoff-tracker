@@ -550,6 +550,12 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     .sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
+  // Slots split the row evenly, so a one- or two-year chart would blow its bars
+  // up into slabs the width of the card. Cap a slot at the width it would have
+  // in a four-year career and centre what's left: a short career then reads as
+  // a small chart rather than a distorted one, and two rookies get the same
+  // bar width they'd have as sophomores.
+  const SLOT_MAX = "25%";
   // Deepest selection wins: an open member category, else the open group.
   // The career overlay follows the deepest interaction: an open raw-stats card
   // wins; otherwise the most-recently-opened group (Set insertion order).
@@ -605,6 +611,26 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   useEffect(() => {
     careerGo.disarm();
   }, [careerGo.disarm, a.season, b.season, activeKey, perGame]);
+
+  // Where a slot's tap goes, if anywhere. A year is a COMPARISON target only
+  // when both players have a season in it, and the pair already on screen is
+  // where you are, not somewhere to go. A year only one of them reached is a
+  // SEASON target instead: its lone bar opens that player's own card. Player
+  // A's current season is the page you're already on, so it stays a plain bar.
+  const navFor = (i) => {
+    const as = aSeasons[i], bs = bAll[i];
+    if (!canCompareYear) return null;
+    const isHere = as && bs && as.season === a.season && bs.season === b.season;
+    if (as && bs) return isHere ? null : { pair: true };
+    const side = as ? "a" : bs ? "b" : null;
+    const season = side === "a" ? as : side === "b" ? bs : null;
+    if (!season || (side === "a" && season.season === a.season)) return null;
+    return { side, season };
+  };
+  // Two one-season careers put a single pair on the chart — the comparison
+  // already on screen — so nothing in it is tappable and the footnote must not
+  // promise otherwise.
+  const anyNav = Array.from({ length: slots }, (_, i) => navFor(i)).some(Boolean);
 
   // Rate shown for a row in its tooltip. D Rating has no box-score rate of its
   // own — its "rate" is the rating itself — and catRateLabel only knows the ten
@@ -717,16 +743,17 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
         )}
       </div>
-      {/* Tally. The /G switch lives on the career chart below; when the two
-          careers are one season apiece there's no chart to hang it on, so it
-          falls back to this row's right edge rather than going missing. The
-          tally stays optically centered either way (the button is out of
+      {/* Tally. The /G switch lives on the career chart below, which renders for
+          any career the index carries — a single season included. Only a pair
+          the index has no seasons for at all leaves no chart to hang it on, and
+          then it falls back to this row's right edge rather than going missing.
+          The tally stays optically centered either way (the button is out of
           flow). */}
       <div className="relative flex items-center justify-center mb-1.5 min-h-[1.1rem]">
-        <span className={`text-center text-[9px] font-semibold ${slots > 1 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
+        <span className={`text-center text-[9px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
           {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
         </span>
-        {slots <= 1 && <div className="absolute right-0 top-0">{gToggle}</div>}
+        {slots < 1 && <div className="absolute right-0 top-0">{gToggle}</div>}
       </div>
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
           opens (or closes) every group and every raw-stats card at once. */}
@@ -859,7 +886,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
       </div>
 
       {/* Career-year overlay */}
-      {slots > 1 && (
+      {slots > 0 && (
         <div className="mt-2 pt-2 border-t border-stone-100">
           {/* Extra bottom margin keeps a constant gap under the button, so a
               full-height bar never crowds it. */}
@@ -867,7 +894,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
             <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
             {gToggle}
           </div>
-          <div className="flex items-stretch gap-[2px] h-16 px-1">
+          <div className="flex items-stretch justify-center gap-[2px] h-16 px-1">
             {Array.from({ length: slots }, (_, i) => {
               const as = aSeasons[i], bs = bAll[i];
               const bar = (s, color, side) => {
@@ -887,18 +914,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                   />
                 );
               };
-              // A year is a COMPARISON target only when both players have a
-              // season in it, and the pair already on screen is where you are,
-              // not somewhere to go. A year only one of them reached is a
-              // SEASON target instead: its lone bar opens that player's own
-              // card. Player A's current season is the page you're already on,
-              // so it stays a plain bar.
-              const isHere = as && bs && as.season === a.season && bs.season === b.season;
-              const pairNav = canCompareYear && !!as && !!bs && !isHere;
-              const loneSide = canCompareYear && !!as !== !!bs ? (as ? "a" : "b") : null;
-              const loneSeason = loneSide === "a" ? as : loneSide === "b" ? bs : null;
-              const loneNav = !!loneSeason && !(loneSide === "a" && loneSeason.season === a.season);
-              const navigable = pairNav || loneNav;
+              const nav = navFor(i);
+              const pairNav = nav?.pair === true;
+              const loneSide = nav?.side ?? null;
+              const loneSeason = nav?.season ?? null;
+              const navigable = !!nav;
               const isArmed = careerGo.isArmed(i);
               // Popup anchor: keep it inside the card by left-aligning near the
               // left edge and right-aligning near the right, centering between.
@@ -908,7 +928,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                 <div
                   key={i}
                   className="flex-1 relative min-w-0"
-                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pairNav ? " · tap to compare this year" : loneNav ? " · tap to open that season" : ""}`}
+                  style={{ maxWidth: SLOT_MAX }}
+                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pairNav ? " · tap to compare this year" : loneSeason ? " · tap to open that season" : ""}`}
                 >
                   <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
                   {bar(as, ca, "a")}
@@ -978,13 +999,13 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
               );
             })}
           </div>
-          <div className="flex gap-[2px] px-1 mt-0.5">
+          <div className="flex justify-center gap-[2px] px-1 mt-0.5">
             {Array.from({ length: slots }, (_, i) => (
-              <span key={i} className="flex-1 min-w-0 text-center text-[7px] tabular-nums text-stone-400">{i + 1}</span>
+              <span key={i} className="flex-1 min-w-0 text-center text-[7px] tabular-nums text-stone-400" style={{ maxWidth: SLOT_MAX }}>{i + 1}</span>
             ))}
           </div>
           <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
-            Seasons aligned by career year · compared seasons at full strength{canCompareYear ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
+            Seasons aligned by career year · compared seasons at full strength{anyNav ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
           </div>
         </div>
       )}
