@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
+import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
@@ -25,6 +26,30 @@ export function buildComparePlayers(allRows) {
     e.bestVa = Math.max(...e.seasons.map((s) => s.va || 0));
   }
   return out;
+}
+
+
+// Rebuild a compare selection ({ name, slug, seasons, row }) from a bare
+// { season, name, slug } target — the shape a navigation carries across the
+// page. Used when a jump asks for the comparison to survive the landing: the
+// card that mounts on the other side resolves the target against its own
+// context pool and opens already comparing. Returns null when the scope's
+// index doesn't carry that player-season (a different scope, an unbaked year),
+// so the landing is just an ordinary card rather than a broken comparison.
+export function resolveCompareTarget(context, target) {
+  if (!context?.allRows || !target || !target.season) return null;
+  const nm = normalizeName(target.name || "");
+  const seasons = context.allRows.filter((r) =>
+    target.slug ? r.slug === target.slug : (nm && normalizeName(r.name) === nm)
+  );
+  const row = seasons.find((r) => r.season === target.season);
+  if (!row) return null;
+  return {
+    name: row.name || target.name,
+    slug: row.slug || target.slug || null,
+    seasons: [...seasons].sort((x, y) => y.season.localeCompare(x.season)),
+    row,
+  };
 }
 
 
@@ -353,7 +378,7 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
-export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
+export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs" }) {
   // The compare view is Basic-first: the four groups are the top level, a tap
   // on a group drops down its member categories, and a tap on a member opens
   // the raw-stats table. (The Basic/By Category and Per 36/Per G toggles are
@@ -365,6 +390,12 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   // player-season or season row resets everything).
   const [openGroups, setOpenGroups] = useState(() => new Set());
   const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
+  // Per-game vs. season-total value added — the same /G ON·OFF switch the
+  // individual view's category card carries, and it governs this panel the
+  // same way: ON (the default) reads every bar, number, percentile and career
+  // bar as per-game VA; OFF re-reads the whole comparison on season totals, so
+  // a full season stops being measured against a half one at the same rate.
+  const [perGame, setPerGame] = useState(true);
   // Confirmation step for the compared-player chip: the first tap arms a
   // "Go →" button in the chip's place; only that button navigates, and a tap
   // anywhere else disarms without doing whatever it landed on. The mechanics
@@ -409,10 +440,47 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   const cbFill = withAlpha(cb, 0.25);
   const cbEdge = `1px solid ${GOLD}`;
 
+  // D Rating — the fifth defensive stat, the one VA+ adds to VA. Whenever the
+  // page is reading VA+ (defActive), the comparison carries it too: it rides at
+  // the end of the Defense group as its own row, and Defense itself sums to the
+  // VA+ defensive total rather than the two box-score stocks alone — so the
+  // four groups still add up to the headline the card above them shows. On
+  // plain VA the whole layer is absent, exactly as in the individual card.
+  const withDef = defActive && !!defs;
+  const DEF_KEY = "D Rating";
+  // One player-season's defensive value added, measured in its own season and
+  // on the view's scope. A season with no rating (pre-bake, unjoined name)
+  // contributes nothing rather than dropping out of the pool.
+  const dvaOf = (r, lgaX, season) => (
+    withDef && r?.mp > 0 ? (defVAInfo(r, r.mp, lgaX, defs, season, defScope)?.dva ?? 0) : 0
+  );
+  // Leaving VA+ takes the D Rating row away with it, so an open one can't stay
+  // selected — it would leave the career chart plotting a row that no longer
+  // exists (and reads as a career of zeros).
+  useEffect(() => {
+    if (withDef) return;
+    setOpenKeys((prev) => (prev.has(DEF_KEY) ? new Set([...prev].filter((k) => k !== DEF_KEY)) : prev));
+  }, [withDef]);
+
   const GROUP_KEYS = VA_GROUPS.map((g) => g.key);
-  const ALL_KEYS = [...GROUP_KEYS, ...VA_CATEGORY_ORDER];
+  // The Defense group's members gain D Rating under VA+; every other group is
+  // its plain category list.
+  const catsOf = (g) => (withDef && g.key === "Defense" ? [...g.cats, DEF_KEY] : g.cats);
+  const MEMBER_KEYS = withDef ? [...VA_CATEGORY_ORDER, DEF_KEY] : VA_CATEGORY_ORDER;
+  const ALL_KEYS = [...GROUP_KEYS, ...MEMBER_KEYS];
 
   const d = useMemo(() => {
+    // Every figure in the panel — bars, numbers and the percentile pool alike
+    // — is read on whichever side of the /G switch is showing, so a rank never
+    // means one thing in the strip and another in the number beside it. `dva`
+    // is the row's defensive value added, computed once per row and folded into
+    // both the rows it belongs to (its own, and Defense's total).
+    const valOf = (r, lgaX, key, dva) => {
+      const v = key === DEF_KEY
+        ? dva
+        : catVATotal(r, lgaX, key) + (key === "Defense" ? dva : 0);
+      return perGame ? v / (r.gp || 1) : v;
+    };
     // Percentiles rank against EVERY indexed player-season (all-time pool),
     // each row measured era-fair against its own season's baselines. One pass
     // over the pool computes every group + category at once; the >=5 G floor
@@ -422,9 +490,10 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
     const maxByKey = {};
     const poolVals = pool.map((r) => {
       const lgaX = lgaForSeason(r.season);
+      const dva = dvaOf(r, lgaX, r.season);
       const out = {};
       for (const key of ALL_KEYS) {
-        out[key] = catVAperGame(r, lgaX, key);
+        out[key] = valOf(r, lgaX, key, dva);
         if (maxByKey[key] == null || out[key] > maxByKey[key]) maxByKey[key] = out[key];
       }
       return out;
@@ -436,9 +505,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
       return (below / poolVals.length) * 100;
     };
     const rows = {};
+    const adva = dvaOf(a, lgaA, a.season);
+    const bdva = dvaOf(b, lgaB, b.season);
     for (const key of ALL_KEYS) {
-      const av = catVAperGame(a, lgaA, key);
-      const bv = catVAperGame(b, lgaB, key);
+      const av = valOf(a, lgaA, key, adva);
+      const bv = valOf(b, lgaB, key, bdva);
       rows[key] = {
         key, av, bv,
         apct: pctFor(av, key), bpct: pctFor(bv, key),
@@ -451,36 +522,158 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
     }
     const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
     return { rows, diff };
-  }, [a, b, lgaA, lgaB, context]);
+  }, [a, b, lgaA, lgaB, context, perGame, withDef, defs, defScope]);
 
-  const sgn = (v, dp = 2) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  // Per-game figures are an order of magnitude smaller than season totals, so
+  // they carry a second decimal; totals match the leaderboard's one.
+  const sgn = (v, dp = perGame ? 2 : 1) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  // The tally sums the four groups, so with D Rating folded into Defense it is
+  // a VA+ margin and says so.
+  const vaUnit = `${withDef ? "VA+" : "VA"}${perGame ? "/G" : ""}`;
+  // Season totals run to four figures for a career scoring leader, where the
+  // per-game column's width would run the two players' numbers together.
+  const valW = perGame ? "w-10" : "w-14";
   const leader = d.diff >= 0 ? a : b;
   // Bars scale per level: groups against groups, members against their group.
-  const scaleFor = (ks) => Math.max(...ks.flatMap((k) => [Math.abs(d.rows[k].av), Math.abs(d.rows[k].bv)]), 0.1);
+  const scaleFor = (ks) => Math.max(...ks.flatMap((k) => [Math.abs(d.rows[k].av), Math.abs(d.rows[k].bv)]), perGame ? 0.1 : 1);
 
-  // Career overlay: both players' seasons aligned by career year, showing
-  // TOTAL VA per season. With a category selected it shows that category's
-  // total VA per season (era-fair: each season vs its own baselines).
+  // Career overlay: both players' seasons aligned by career year, showing VA
+  // per season on the card's /G switch. With a category selected it shows that
+  // category's VA per season (era-fair: each season vs its own baselines).
   // Diverging from a shared zero baseline, since category VA (Turnovers!)
   // can be negative season after season.
-  const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
+  // The index entry's own season rows carry no identity of their own, and
+  // defVAInfo keys off the slug — tag them so the career bars can carry the
+  // D-Rating layer too.
+  const aSeasons = (context.self?.seasons || [])
+    .map((s) => ({ ...s, name: a.name, slug: a.slug || null }))
+    .sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
   // Deepest selection wins: an open member category, else the open group.
   // The career overlay follows the deepest interaction: an open raw-stats card
   // wins; otherwise the most-recently-opened group (Set insertion order).
   const activeKey = ([...openKeys].at(-1) ?? null) || ([...openGroups].at(-1) ?? null);
-  const careerVal = (s) => (activeKey ? catVATotal(s, lgaForSeason(s.season), activeKey) : (s.va || 0));
+  const careerVal = (s) => {
+    const lgaS = lgaForSeason(s.season);
+    const dva = (!activeKey || activeKey === "Defense" || activeKey === DEF_KEY) ? dvaOf(s, lgaS, s.season) : 0;
+    // No category selected the bars are the season's whole value — VA+ when
+    // the D-Rating layer is on, so they match the rows above.
+    const v = activeKey === DEF_KEY ? dva
+      : activeKey ? catVATotal(s, lgaS, activeKey) + (activeKey === "Defense" ? dva : 0)
+      : (s.va || 0) + dva;
+    return perGame ? v / (s.gp || 1) : v;
+  };
   const cvals = [...aSeasons, ...bAll].map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
   const cSpan = (cHi - cLo) || 1;
   const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
-  const careerLabel = activeKey ? `${CAT_SHORT[activeKey] || activeKey} total VA by career year` : "Total VA by career year";
+  // An unfiltered career bar carries the whole season, defense included, so it
+  // is a VA+ bar under the D-Rating layer; a selected category is always plain
+  // category VA.
+  const careerUnit = `${!activeKey && withDef ? "VA+" : "VA"}`;
+  const careerLabel = `${activeKey ? `${CAT_SHORT[activeKey] || activeKey} ` : ""}${perGame ? `${careerUnit}/G` : `Total ${careerUnit}`} by career year`;
+
+  // Tapping a PAIR of career-year bars re-points the whole page at that year:
+  // the comparison becomes each player's season at that career year, and the
+  // page behind it follows to player A's side of it — the leaderboard switches
+  // season/team and opens their row in By Season, their career view opens that
+  // season in By Player. That's the same size of jump as the compared-player
+  // chip above, so it's gated the same way: the first tap arms a "Compare Year
+  // X?" popup and only its "Go →" travels (see useGatedGo).
+  const careerGo = useGatedGo();
+  const canCompareYear = !!context?.onNavigateToPlayer;
+  const goCompareYear = (as, bs) => context.onNavigateToPlayer({
+    season: as.season,
+    team: as.team || a.team || null,
+    name: a.name,
+    slug: a.slug || null,
+    // The other half of the jump: whoever lands on the far side re-opens this
+    // comparison against player B's season at the same career year.
+    compare: { season: bs.season, name: b.name, slug: b.slug || null },
+  });
+  // A career year only one of them reached has no comparison in it, so tapping
+  // that lone bar opens that player's own season card instead — the same jump
+  // the compared-player chip makes, with no comparison riding along.
+  const goSeason = (s, side) => context.onNavigateToPlayer({
+    season: s.season,
+    team: s.team || (side === "a" ? a.team : b.team) || null,
+    name: side === "a" ? a.name : b.name,
+    slug: (side === "a" ? a.slug : b.slug) || null,
+  });
+  // Never leave a pair armed after the chart underneath it has changed.
+  useEffect(() => {
+    careerGo.disarm();
+  }, [careerGo.disarm, a.season, b.season, activeKey, perGame]);
+
+  // Rate shown for a row in its tooltip. D Rating has no box-score rate of its
+  // own — its "rate" is the rating itself — and catRateLabel only knows the ten
+  // box categories, so it's answered here.
+  const rateLabelFor = (r, key, lgaX) => {
+    if (key !== DEF_KEY) return catRateLabel(r, key, rateMode);
+    const drtg = defVAInfo(r, r.mp, lgaX, defs, r.season, defScope)?.drtg;
+    return drtg == null ? "–" : `${Math.round(drtg)} DRTG`;
+  };
+
+  // Raw-stats rows for the D Rating card, in the shape compareStatRows returns
+  // (metric rows, one cell per player, the better one flagged). The rating
+  // itself is lower-is-better; everything derived from it reads the normal way.
+  const defStatRows = () => {
+    const ia = defVAInfo(a, a.mp, lgaA, defs, a.season, defScope);
+    const ib = defVAInfo(b, b.mp, lgaB, defs, b.season, defScope);
+    const rows = [];
+    // Each side is [value the row is won on, what to print]. A side with
+    // nothing to show sits out and the row goes unflagged.
+    const push = (label, [acmp, adisp], [bcmp, bdisp], lowerBetter = false) => {
+      let win = null;
+      if (acmp != null && bcmp != null && acmp !== bcmp) win = (lowerBetter ? acmp < bcmp : acmp > bcmp) ? "a" : "b";
+      rows.push({ label, a: adisp, b: bdisp, win });
+    };
+    const none = [null, "–"];
+    const r0 = (v) => String(Math.round(v));
+    const sg1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+    const sg2 = (v) => (v > 0 ? "+" : "") + v.toFixed(2);
+    const val = (v, disp) => (v == null ? none : [v, disp(v)]);
+    // The player's own team defense: its rating, and how far that sits under
+    // (green) or over (red) the season's league line. This is the pot the
+    // second half of a D Rating is drawn from — a player earns a share of his
+    // team's edge — so it's the context the rating above is read against.
+    // Absent for multi-team (2TM) rows and seasons with no team map, where the
+    // rating falls back to the plain vs-league form.
+    const team = (i) => {
+      if (!i || i.teamDrtg == null) return none;
+      const edge = i.laDRtg - i.teamDrtg;
+      return [edge, (
+        <>
+          {r0(i.teamDrtg)}{" "}
+          <span className={edge >= 0 ? "text-emerald-600" : "text-red-600"}>{sg1(edge)}</span>
+        </>
+      )];
+    };
+    push("DRTG", val(ia?.drtg ?? null, r0), val(ib?.drtg ?? null, r0), true);
+    push("TM VS LG", team(ia), team(ib));
+    push("D VA/G", val(ia ? ia.dva / (a.gp || 1) : null, sg2), val(ib ? ib.dva / (b.gp || 1) : null, sg2));
+    push("TOT D VA", val(ia?.dva ?? null, sg1), val(ib?.dva ?? null, sg1));
+    return rows;
+  };
 
   const Swatch = ({ color, outline }) => (
     <span
       className="inline-block w-2 h-2 rounded-sm align-middle mx-1"
       style={outline ? { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${GOLD}` } : { backgroundColor: color }}
+    />
+  );
+
+  // The /G switch rides in the career chart's header — the same place the
+  // individual card's category view parks it, above the bars that most visibly
+  // answer to it. It still governs the whole panel.
+  const gToggle = (
+    <PerGameToggle
+      perGame={perGame}
+      onToggle={() => setPerGame((v) => !v)}
+      title={perGame
+        ? "Comparison shown per game — tap for season totals"
+        : "Comparison shown on season totals — tap for per-game"}
     />
   );
 
@@ -524,21 +717,29 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
           <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
         )}
       </div>
-      <div className="text-center text-[9px] mb-1.5 font-semibold" style={{ color: d.diff >= 0 ? ca : cb }}>
-        {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} VA/G</span>
+      {/* Tally. The /G switch lives on the career chart below; when the two
+          careers are one season apiece there's no chart to hang it on, so it
+          falls back to this row's right edge rather than going missing. The
+          tally stays optically centered either way (the button is out of
+          flow). */}
+      <div className="relative flex items-center justify-center mb-1.5 min-h-[1.1rem]">
+        <span className={`text-center text-[9px] font-semibold ${slots > 1 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
+          {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
+        </span>
+        {slots <= 1 && <div className="absolute right-0 top-0">{gToggle}</div>}
       </div>
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
           opens (or closes) every group and every raw-stats card at once. */}
       <div className="flex items-stretch gap-1">
       {(() => {
-        const allOpen = openGroups.size >= VA_GROUPS.length && openKeys.size >= VA_CATEGORY_ORDER.length;
+        const allOpen = openGroups.size >= VA_GROUPS.length && openKeys.size >= MEMBER_KEYS.length;
         const toggleAll = () => {
           if (allOpen) {
             setOpenGroups(new Set());
             setOpenKeys(new Set());
           } else {
             setOpenGroups(new Set(GROUP_KEYS));
-            setOpenKeys(new Set(VA_CATEGORY_ORDER));
+            setOpenKeys(new Set(MEMBER_KEYS));
           }
         };
         return (
@@ -561,7 +762,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
           const isOpen = member ? openKeys.has(key) : groupOpen;
           const toggle = member
             ? () => toggleKey(key)
-            : () => toggleGroup(g.key, g.cats);
+            : () => toggleGroup(g.key, catsOf(g));
           return (
             <React.Fragment key={key}>
               <div
@@ -577,13 +778,13 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
                 </span>
                 {mode === "values" ? (
                   <>
-                    <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, key, rateMode)} · ${b.name}: ${catRateLabel(b, key, rateMode)}`}>
+                    <div className="flex-1 relative h-5" title={`${a.name}: ${rateLabelFor(a, key, lgaA)} · ${b.name}: ${rateLabelFor(b, key, lgaB)}`}>
                       <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
                       <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / scale) * 45}%`, width: `${(Math.abs(r.av) / scale) * 45}%` }} />
                       <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / scale) * 45}%`, width: `${(Math.abs(r.bv) / scale) * 45}%` }} />
                     </div>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{sgn(r.av)}</span>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
+                    <span className={`${valW} shrink-0 tabular-nums text-right font-semibold`} style={{ color: ca }}>{sgn(r.av)}</span>
+                    <span className={`${valW} shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5`} style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
                   </>
                 ) : (
                   <>
@@ -601,7 +802,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
                 // Flipped raw-stats card: player columns, metric rows, the
                 // leader of each row circled (per the mock). B column keeps the
                 // gold identity tint.
-                const rows = compareStatRows(a, b, key, lgaA, lgaB);
+                const rows = key === DEF_KEY ? defStatRows() : compareStatRows(a, b, key, lgaA, lgaB);
                 const head = (row, color, gold) => (
                   <div className={`min-w-0 px-1 py-0.5 rounded-sm ${gold ? "" : ""}`} style={gold ? { backgroundColor: GOLD_BG } : undefined}>
                     <div className="flex items-center gap-0.5 justify-end">
@@ -641,7 +842,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
             {rowFor(g.key, scaleFor(GROUP_KEYS), false)}
             {groupOpen && (
               <div className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
-                {g.cats.map((ck) => rowFor(ck, scaleFor(g.cats), true))}
+                {catsOf(g).map((ck) => rowFor(ck, scaleFor(catsOf(g)), true))}
               </div>
             )}
           </React.Fragment>
@@ -651,14 +852,21 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
       </div>
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
-          ? "Per-game VA, each vs their own season’s league baseline"
-          : "Percentile across every indexed player-season, ≥5 G, each vs their own era") + " · tap a group for its categories, a category for raw stats"}
+          ? `${perGame ? "Per-game" : "Season-total"} VA, each vs their own season’s league baseline`
+          : `Percentile of ${perGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`)
+          + (withDef ? " · Defense carries D Rating, so the four groups sum to VA+" : "")
+          + " · tap a group for its categories, a category for raw stats"}
       </div>
 
       {/* Career-year overlay */}
       {slots > 1 && (
         <div className="mt-2 pt-2 border-t border-stone-100">
-          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{careerLabel}</div>
+          {/* Extra bottom margin keeps a constant gap under the button, so a
+              full-height bar never crowds it. */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
+            {gToggle}
+          </div>
           <div className="flex items-stretch gap-[2px] h-16 px-1">
             {Array.from({ length: slots }, (_, i) => {
               const as = aSeasons[i], bs = bAll[i];
@@ -675,15 +883,97 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
                     style={{ top: `${topPct}%`, height: `${Math.max(h, 1.5)}%`, ...fill, opacity: isSel ? 1 : 0.4 }}
-                    title={`${s.season}: ${v.toFixed(1)}${activeKey ? ` ${CAT_SHORT[activeKey] || activeKey}` : ""} VA`}
+                    title={`${s.season}: ${sgn(v)}${activeKey ? ` ${CAT_SHORT[activeKey] || activeKey}` : ""} ${vaUnit}`}
                   />
                 );
               };
+              // A year is a COMPARISON target only when both players have a
+              // season in it, and the pair already on screen is where you are,
+              // not somewhere to go. A year only one of them reached is a
+              // SEASON target instead: its lone bar opens that player's own
+              // card. Player A's current season is the page you're already on,
+              // so it stays a plain bar.
+              const isHere = as && bs && as.season === a.season && bs.season === b.season;
+              const pairNav = canCompareYear && !!as && !!bs && !isHere;
+              const loneSide = canCompareYear && !!as !== !!bs ? (as ? "a" : "b") : null;
+              const loneSeason = loneSide === "a" ? as : loneSide === "b" ? bs : null;
+              const loneNav = !!loneSeason && !(loneSide === "a" && loneSeason.season === a.season);
+              const navigable = pairNav || loneNav;
+              const isArmed = careerGo.isArmed(i);
+              // Popup anchor: keep it inside the card by left-aligning near the
+              // left edge and right-aligning near the right, centering between.
+              const frac = (i + 0.5) / slots;
+              const anchor = frac < 0.25 ? "left-0" : frac > 0.75 ? "right-0" : "left-1/2 -translate-x-1/2";
               return (
-                <div key={i} className="flex-1 relative min-w-0">
+                <div
+                  key={i}
+                  className="flex-1 relative min-w-0"
+                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pairNav ? " · tap to compare this year" : loneNav ? " · tap to open that season" : ""}`}
+                >
                   <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
                   {bar(as, ca, "a")}
                   {bar(bs, cb, "b")}
+                  {navigable && (
+                    // Full-column tap target over the slot (a sibling of the
+                    // popup, not its parent — the popup carries its own button
+                    // and buttons can't nest).
+                    <button
+                      type="button"
+                      onClick={() => careerGo.arm(i)}
+                      aria-label={pairNav
+                        ? `Career year ${i + 1} — ${a.name} ${as.season} against ${b.name} ${bs.season}; tap to confirm comparing it`
+                        : `Career year ${i + 1} — ${loneSide === "a" ? a.name : b.name} ${loneSeason.season}; tap to confirm opening it`}
+                      aria-expanded={isArmed}
+                      className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isArmed ? "bg-stone-900/10" : "hover:bg-stone-900/5"}`}
+                    />
+                  )}
+                  {isArmed && (
+                    // The gate: the armed slot raises this popup, and only its
+                    // "Go →" travels. Anything else disarms (useGatedGo swallows
+                    // that tap, so it can't also open a row). It hangs BELOW the
+                    // bars, over the career-year ticks it restates.
+                    <div className={`absolute top-full mt-1 z-20 ${anchor}`}>
+                      <span
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm px-1.5 py-[2px] shadow-sm"
+                        style={{ backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+                      >
+                        {pairNav ? (
+                          <>
+                            <span className="text-[9px] font-semibold text-stone-700">Compare Year {i + 1}?</span>
+                            <span className="text-[9px] font-semibold tabular-nums" style={{ color: ca }}>{seasonTag(as.season)}</span>
+                            <span className="text-[8px] text-stone-400">vs</span>
+                            <span className="text-[9px] font-semibold tabular-nums" style={{ color: cb }}>{seasonTag(bs.season)}</span>
+                          </>
+                        ) : (
+                          // Lone bar: the same gate, asking to open one season
+                          // rather than to compare a year.
+                          <>
+                            <span className="text-[9px] font-semibold text-stone-700">
+                              Open {shortName(loneSide === "a" ? a.name : b.name)} {seasonTag(loneSeason.season)}?
+                            </span>
+                            {loneSeason.team && (
+                              <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(loneSeason.team) }}>{loneSeason.team}</span>
+                            )}
+                            <span
+                              className="text-[9px] font-semibold tabular-nums"
+                              style={{ color: careerVal(loneSeason) < 0 ? "#dc2626" : (loneSide === "a" ? ca : cb) }}
+                            >{sgn(careerVal(loneSeason))}</span>
+                          </>
+                        )}
+                        <button
+                          ref={careerGo.goRef}
+                          type="button"
+                          onClick={() => careerGo.confirm(() => (pairNav ? goCompareYear(as, bs) : goSeason(loneSeason, loneSide)))}
+                          className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
+                          title={pairNav
+                            ? `Open ${a.name} ${seasonTag(as.season)} compared with ${b.name} ${seasonTag(bs.season)}`
+                            : `Open ${loneSide === "a" ? a.name : b.name} ${seasonTag(loneSeason.season)}`}
+                        >
+                          Go <span aria-hidden>→</span>
+                        </button>
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -693,10 +983,34 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
               <span key={i} className="flex-1 min-w-0 text-center text-[7px] tabular-nums text-stone-400">{i + 1}</span>
             ))}
           </div>
-          <div className="text-center text-[8px] italic text-stone-400 mt-0.5">Seasons aligned by career year · compared seasons at full strength</div>
+          <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
+            Seasons aligned by career year · compared seasons at full strength{canCompareYear ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+
+// The "/G ON · OFF" switch, shared by the individual view's category card and
+// the compare panel so one control means the same thing in both places: ON
+// (the default) reads every value, rank and bar as PER-GAME value added; OFF
+// re-reads the whole card on season TOTALS, where a full season outweighs a
+// half one at the same rate.
+export function PerGameToggle({ perGame, onToggle, title }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={perGame}
+      title={title || (perGame
+        ? "Values shown per game — tap for season totals"
+        : "Show values per game instead of season totals")}
+      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+    >
+      /G {perGame ? "ON" : "OFF"}
+    </button>
   );
 }
 

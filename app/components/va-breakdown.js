@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
 import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
-import { CompareButton, ComparePanel, ComparePicker } from "./compare";
+import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
@@ -13,7 +13,7 @@ import { aggregateSnapshots } from "../lib/players";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true }) {
+export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -32,6 +32,17 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // A comparison handed in by the navigation that opened this card — the
+  // compare panel's career-year gate asks for the page to move to one player's
+  // season and land already comparing against the other's. Resolved against
+  // this card's own context pool; a target the scope doesn't carry is simply
+  // dropped rather than opening a half-built comparison.
+  useEffect(() => {
+    if (!pendingCompare || !context) return;
+    const sel = resolveCompareTarget(context, pendingCompare);
+    if (sel) { setCompare(sel); setPicking(false); }
+    onCompareHandled?.();
+  }, [pendingCompare, context, onCompareHandled]);
   // The compared player's own playoff game log (per-game VA), overlaid onto
   // the VA-by-Game chart above (aligned at game 1) while comparing.
   const [compareRun, setCompareRun] = useState(null);
@@ -526,6 +537,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           rateMode={rateMode}
           mode={compareMode}
           setMode={setCompareMode}
+          defs={defs}
+          defActive={dVA != null}
+          defScope={defScope}
         />
       ) : (
       <>
@@ -701,7 +715,9 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
       out.push({ ...e, along: centre, cross: C / 2 + step * spacing });
     });
   }
-  return { positions: out, zero: along(0), r };
+  // `along` rides along so a caller can place a reference of its own on the
+  // value axis (the team-rating line on the D Rating plot).
+  return { positions: out, zero: along(0), r, along };
 }
 
 
@@ -712,7 +728,7 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // Rating) collapses horizontally. Tapping a grey dot re-points the whole card
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name }) {
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -734,17 +750,26 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
         ...rows.map((q, i) => ({ key: i, v: q.v[selIdx], all: q.v, row: q.row })),
         { key: "self", v: me[selIdx], all: me, row: null },
       ];
-      const { positions, zero, r } = dotPlotLayout(entries, "self", ranges[selIdx], L, C);
+      const { positions, zero, r, along } = dotPlotLayout(entries, "self", ranges[selIdx], L, C);
       const place = (p) => vertical
         ? { cx: clamp(p.cross, 100), cy: clamp(height - p.along, height) }
         : { cx: clamp(p.along, 100), cy: clamp(p.cross, height) };
       const dots = positions.map((p) => ({ ...place(p), row: p.row, v: p.all, self: p.key === "self" }));
+      // A second line the caller can put anywhere on the value axis, with a
+      // label hung off the plot's edge beside it (see refLine).
+      const refAt = refLine ? clamp(along(refLine.v), L) : null;
       return {
         dots, r,
         self: dots.find((dt) => dt.self),
         guides: vertical
           ? [{ x1: 0, y1: height - zero, x2: 100, y2: height - zero }]
           : [{ x1: zero, y1: 0, x2: zero, y2: height }],
+        // The label is centred on the line, so its own anchor is kept a little
+        // off each edge — the line can sit at the extremes, the text can't
+        // hang off the card.
+        ref: refAt == null ? null : (vertical
+          ? { line: { x1: 0, y1: height - refAt, x2: 100, y2: height - refAt }, left: 0, top: ((height - refAt) / height) * 100, vertical: true }
+          : { line: { x1: refAt, y1: 0, x2: refAt, y2: height }, left: Math.max(8, Math.min(92, refAt)), top: 0, vertical: false }),
       };
     }
     const pos = (i, v) => ((v - ranges[i][0]) / ((ranges[i][1] - ranges[i][0]) || 1));
@@ -755,12 +780,15 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
       dots: [...dots, self],
       self,
       r: DOT_R,
+      // The reference is a point on ONE stat's axis, so it only means something
+      // once the plot has collapsed onto that stat.
+      ref: null,
       guides: [
         { x1: clamp(pos(xi, 0) * 100, 100), y1: 0, x2: clamp(pos(xi, 0) * 100, 100), y2: height },
         { x1: 0, y1: clamp(height - pos(yi, 0) * height, height), x2: 100, y2: clamp(height - pos(yi, 0) * height, height) },
       ],
     };
-  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height]);
+  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine]);
 
   // Turn a tap into the players under it. The SVG scales uniformly from a
   // 100-wide viewBox, so client coordinates map straight back through its box.
@@ -800,7 +828,18 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
       {/* No axis titles on the plot itself — a corner label lands right where
           the extremes of the other axis sit. The chips below name both axes
           and carry the arrow of the one they own. */}
-      <div className="relative mt-1">
+      {/* Headroom for the reference line's label, so it sits clear of the plot
+          rather than on top of the dots. */}
+      <div className={`relative mt-1 ${view.ref ? "pt-3" : ""}`}>
+        {view.ref && refLine.label && (
+          <div
+            className={`absolute text-[7px] leading-none font-semibold text-stone-500 whitespace-nowrap pointer-events-none ${view.ref.vertical ? "-translate-y-full" : "-translate-x-1/2"}`}
+            style={{ left: `${view.ref.left}%`, top: view.ref.vertical ? `${view.ref.top}%` : 0 }}
+            title={refLine.title || undefined}
+          >
+            {refLine.label}
+          </div>
+        )}
         <svg
           ref={svgRef}
           viewBox={`0 0 100 ${height}`}
@@ -816,6 +855,13 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           {view.dots.filter((dt) => !dt.self).map((dt, i) => (
             <circle key={i} cx={dt.cx} cy={dt.cy} r={view.r} fill="#d6d3d1" fillOpacity="0.8" />
           ))}
+          {/* Reference line, drawn over the cloud so it reads against it. */}
+          {view.ref && (
+            <line
+              x1={view.ref.line.x1} y1={view.ref.line.y1} x2={view.ref.line.x2} y2={view.ref.line.y2}
+              stroke="#57534e" strokeWidth="0.4" strokeDasharray="2 1.5" strokeOpacity="0.8"
+            />
+          )}
           {/* Guides dropping the player's point onto the axes, so the chips
               below read as the coordinates of the black dot. */}
           {!collapsed && (
@@ -1203,6 +1249,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       ranges: segData.map((s, i) => extent(rows.map((q) => q.v[i]), me[i])),
     };
   }, [segData, axisKeys, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+  // Where the player's own team defense falls on the collapsed D Rating plot.
+  // That plot's axis is value ADDED, not rating, so the team enters it as the
+  // value this player would post if he rated exactly as his team does: his edge
+  // over the team is zero and all that's left is his share of the team's edge
+  // vs league (see defVAInfo). It's the line that separates "better than his
+  // own team's defense" from "worse" — right of it, he out-defends his team.
+  // Absent for multi-team (2TM) rows and seasons with no team map, where the
+  // rating carries no team term to draw.
+  const teamRefLine = useMemo(() => {
+    if (!selSeg || selSeg.key !== "D Rating") return null;
+    const info = defVAInfo(selfRow, selfRow.mp, lga, defs, seasonKey, defScope);
+    if (!info || info.w == null || info.teamDrtg == null || !(lga?.laPOSSperM > 0)) return null;
+    const v = ((info.w * (info.laDRtg - info.teamDrtg)) / 100) * lga.laPOSSperM * selfRow.mp;
+    const drtg = Math.round(info.teamDrtg);
+    return {
+      v: perGame ? v / (selfRow.gp || 1) : v,
+      drtg,
+      team: selfRow.team || null,
+      label: `${selfRow.team || "TEAM"} ${drtg}`,
+      title: `${selfRow.team || "The team"}’s own defensive rating (${drtg} DRTG vs ${info.laDRtg.toFixed(1)} league) — ${self.name} lands right of this line when he defends better than his team does`,
+    };
+  }, [selSeg, selfRow, lga, defs, seasonKey, defScope, perGame, self.name]);
+
   // Which segment sits on which axis, and which one the card is filtered to
   // (−1 when the plot is showing both). Defense's D Rating chip is on neither
   // axis, so a selection of it matches neither index and collapses horizontally.
@@ -1330,17 +1399,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
   // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
-  // all-time, trend, and shown values).
+  // all-time, trend, and shown values). The same control the compare panel
+  // carries — see PerGameToggle.
   const gToggle = (
-    <button
-      type="button"
-      onClick={() => setPerGame((v) => !v)}
-      aria-pressed={perGame}
+    <PerGameToggle
+      perGame={perGame}
+      onToggle={() => setPerGame((v) => !v)}
       title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
-      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
-    >
-      /G {perGame ? "ON" : "OFF"}
-    </button>
+    />
   );
 
   return (
@@ -1455,6 +1521,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               onPickPlayer={(r) => setFocusRow(samePlayer(r, ownerRow) ? null : r)}
               sgn={sgn}
               name={self.name}
+              refLine={teamRefLine}
             />
           ) : (
           <>
@@ -1529,7 +1596,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
-              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
+              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = ${teamRefLine.team || "his team"} itself at ${teamRefLine.drtg} DRTG (right of it he out-defends his own team)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
               : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</>}
           </div>
         </div>
@@ -1679,7 +1746,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 }
 
 
-export function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true }) {
+export function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
   // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
@@ -1691,6 +1758,15 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   // Baked defensive ratings (D-Rating category / VA+); college rows simply
   // never match and VA+ stays hidden there.
   const defs = useDefRatings();
+  // A comparison handed in by the navigation that opened this card — see the
+  // matching effect in VABreakdown. Must sit above the early return below;
+  // hooks are unconditional.
+  useEffect(() => {
+    if (!pendingCompare || !context) return;
+    const sel = resolveCompareTarget(context, pendingCompare);
+    if (sel) { setCompare(sel); setPicking(false); }
+    onCompareHandled?.();
+  }, [pendingCompare, context, onCompareHandled]);
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
@@ -1796,7 +1872,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         />
       )}
       {compare && context ? (
-        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
+        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} defs={defs} defActive={dVA != null} defScope="rs" />
       ) : (
       <>
       {vaPlus != null && (

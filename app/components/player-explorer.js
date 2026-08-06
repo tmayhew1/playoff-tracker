@@ -40,6 +40,12 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   // career view.
   const [navSeason, setNavSeason] = useState(null);
   const clearNavSeason = useCallback(() => setNavSeason(null), []);
+  // A comparison riding along with that navigation — the compare panel's
+  // career-year gate opens one player's season for a career year and wants the
+  // card there to already be comparing against the other player's season for
+  // the same year. Travels with navSeason and is applied to the same row.
+  const [navCompare, setNavCompare] = useState(null);
+  const clearNavCompare = useCallback(() => setNavCompare(null), []);
 
   // Jump to a player — invoked from a compare panel's compared-player chip or
   // a trend bar's "Go →" (via context.onNavigateToPlayer). Resolve the target
@@ -56,6 +62,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     if (!found) return;
     setSelectedKey(keyOf(found));
     setNavSeason(target.season || null);
+    setNavCompare(target.season ? target.compare || null : null);
     // The season row scrolls itself into view; only a plain career-view jump
     // wants the top of the page.
     if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -119,6 +126,8 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
         onOpenTeamSeason={onOpenTeamSeason}
         pendingSeason={navSeason}
         onNavHandled={clearNavSeason}
+        pendingCompare={navCompare}
+        onCompareHandled={clearNavCompare}
       />
     );
   }
@@ -170,7 +179,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
 // tappable TOT VA / VA/G column headers, team-color badges that filter, a
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
-export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null }) {
+export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null, pendingCompare = null, onCompareHandled = null }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -193,6 +202,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 
   // Season whose row is waiting to be scrolled into view after a navigation.
   const [pendingScroll, setPendingScroll] = useState(null);
+  // A comparison the incoming navigation asked the opened season to land in,
+  // held as { season, compare } so only that row's breakdown picks it up.
+  const [rowCompare, setRowCompare] = useState(null);
+  const clearRowCompare = useCallback(() => setRowCompare(null), []);
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
@@ -210,9 +223,15 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       setGArmed(false);
       setOpenSeason(pendingSeason);
       setPendingScroll(pendingSeason);
+      // A comparison riding along with the request lands on the same row —
+      // including when that row is already the open one (the career-year gate
+      // can point at the season you're reading), where nothing remounts and
+      // the prop change alone has to carry it.
+      setRowCompare(pendingCompare ? { season: pendingSeason, compare: pendingCompare } : null);
     }
     onNavHandled?.();
-  }, [pendingSeason, seasons, onNavHandled]);
+    onCompareHandled?.();
+  }, [pendingSeason, pendingCompare, seasons, onNavHandled, onCompareHandled]);
 
   useEffect(() => {
     if (!pendingScroll) return;
@@ -458,9 +477,23 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
               </div>
             </div>
             {sOpen && (scope === "playoffs" ? (
-              <PlayerSeasonDrill s={s} indexPlayer={player} context={contextFor(s)} {...navFor(i)} />
+              <PlayerSeasonDrill
+                s={s}
+                indexPlayer={player}
+                context={contextFor(s)}
+                pendingCompare={rowCompare?.season === s.season ? rowCompare.compare : null}
+                onCompareHandled={clearRowCompare}
+                {...navFor(i)}
+              />
             ) : (
-              <VACategoryBreakdown player={s} lga={lgaForSeason(s.season)} baseline="NBA" context={contextFor(s)} />
+              <VACategoryBreakdown
+                player={s}
+                lga={lgaForSeason(s.season)}
+                baseline="NBA"
+                context={contextFor(s)}
+                pendingCompare={rowCompare?.season === s.season ? rowCompare.compare : null}
+                onCompareHandled={clearRowCompare}
+              />
             ))}
           </div>
         );
@@ -475,7 +508,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 // carries the per-game logs and series list) plus the rs totals, then render
 // the exact game-chart VABreakdown the By Season leaderboard uses. Falls back
 // to the season-totals category breakdown when no game log exists.
-export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
+export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext, pendingCompare = null, onCompareHandled = null }) {
   const season = s.season;
   const lgaS = lgaForSeason(season);
   const [lb, setLb] = useState(null);
@@ -505,7 +538,16 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
   }, [lb, indexPlayer]);
 
   if (failed || (lb && (!row || !row.games?.length))) {
-    return <VACategoryBreakdown player={s} lga={lgaS} baseline="NBA playoff" context={context} />;
+    return (
+      <VACategoryBreakdown
+        player={s}
+        lga={lgaS}
+        baseline="NBA playoff"
+        context={context}
+        pendingCompare={pendingCompare}
+        onCompareHandled={onCompareHandled}
+      />
+    );
   }
   if (!lb) {
     return <div className="px-2 py-3 text-[10px] text-stone-500 italic text-center border-t border-stone-200">Loading game log…</div>;
@@ -550,6 +592,8 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext }) {
       playerConf={TEAM_CONF[row.team] || TEAMS[row.team]?.conf || null}
       regularSeasonTotals={rsTotals}
       context={context}
+      pendingCompare={pendingCompare}
+      onCompareHandled={onCompareHandled}
       onPrev={onPrev}
       onNext={onNext}
     />

@@ -54,6 +54,14 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // Set when a team-only navigation lands (a By Player team card): there's no
   // row to scroll to, so bring the whole card into view instead.
   const [pendingScrollCard, setPendingScrollCard] = useState(false);
+  // A comparison riding along with an incoming navigation — the compare
+  // panel's career-year gate moves the board to one player's season and wants
+  // the card that opens there to already be comparing against the other
+  // player's season for the same career year. Held as { rowKey, compare } so
+  // only the row the navigation opened picks it up, and cleared once that
+  // row's breakdown has taken it.
+  const [navCompare, setNavCompare] = useState(null);
+  const clearNavCompare = useCallback(() => setNavCompare(null), []);
   // VA vs VA+ (VA + defensive net rating). VA+ re-scores the whole board:
   // sort, the TOT/VA-G columns, and the bar widths all switch.
   const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
@@ -134,6 +142,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     setGArmed(false);
     setNameArmed(false);
     setPendingScrollName(null);
+    setNavCompare(null);
     setExpanded(null);
     setRsData(null);
     setRsError(null);
@@ -295,15 +304,19 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       // where the two disagree (a mid-season move recorded differently on
       // either side of the crossing) the requested filter would hide the row
       // we're about to expand.
+      const rowKey = `${match.team}:${match.name}`;
       setTeamFilter(match.team);
-      setExpanded(`${match.team}:${match.name}`);
+      setExpanded(rowKey);
       setPendingScrollName(match.name);
+      // Hand a comparison the navigation asked for to the row it just opened.
+      setNavCompare(pendingNav.compare ? { rowKey, compare: pendingNav.compare } : null);
     } else if (pendingNav.team) {
       // Team-only target, or a player these rows don't carry: no row to open,
       // so filter to the team and bring the whole card into view instead.
       setTeamFilter(pendingNav.team);
       setExpanded(null);
       setPendingScrollCard(true);
+      setNavCompare(null);
     }
     onNavHandled?.();
   }, [pendingNav, season, scope, data, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
@@ -719,12 +732,22 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 onPrev={i > 0 ? () => setExpanded(`${shown[i - 1].team}:${shown[i - 1].name}`) : undefined}
                 onNext={i < shown.length - 1 ? () => setExpanded(`${shown[i + 1].team}:${shown[i + 1].name}`) : undefined}
                 showDRating={metric === "vaPlus"}
+                pendingCompare={navCompare?.rowKey === rowKey ? navCompare.compare : null}
+                onCompareHandled={clearNavCompare}
               />
             ) : (
               // No per-game logs outside the playoffs — show the season-total
               // per-category breakdown instead, with the same category
               // context drill-ins as the playoff view.
-              <VACategoryBreakdown player={p} lga={lga} baseline="NBA" context={contextFor(p)} showDRating={metric === "vaPlus"} />
+              <VACategoryBreakdown
+                player={p}
+                lga={lga}
+                baseline="NBA"
+                context={contextFor(p)}
+                showDRating={metric === "vaPlus"}
+                pendingCompare={navCompare?.rowKey === rowKey ? navCompare.compare : null}
+                onCompareHandled={clearNavCompare}
+              />
             ))}
           </div>
         );
