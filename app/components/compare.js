@@ -637,6 +637,19 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     />
   );
 
+  // The /G switch rides in the career chart's header — the same place the
+  // individual card's category view parks it, above the bars that most visibly
+  // answer to it. It still governs the whole panel.
+  const gToggle = (
+    <PerGameToggle
+      perGame={perGame}
+      onToggle={() => setPerGame((v) => !v)}
+      title={perGame
+        ? "Comparison shown per game — tap for season totals"
+        : "Comparison shown on season totals — tap for per-game"}
+    />
+  );
+
   return (
     <div className="text-[10px]">
       {/* Legend + tally (the head-to-head scorecard header) */}
@@ -677,22 +690,16 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
         )}
       </div>
-      {/* Tally, with the /G switch parked at its right edge. The tally stays
-          optically centered (the button is taken out of flow) so the headline
-          reads the same whichever side of the switch is showing. */}
+      {/* Tally. The /G switch lives on the career chart below; when the two
+          careers are one season apiece there's no chart to hang it on, so it
+          falls back to this row's right edge rather than going missing. The
+          tally stays optically centered either way (the button is out of
+          flow). */}
       <div className="relative flex items-center justify-center mb-1.5 min-h-[1.1rem]">
-        <span className="text-center text-[9px] font-semibold px-14" style={{ color: d.diff >= 0 ? ca : cb }}>
+        <span className={`text-center text-[9px] font-semibold ${slots > 1 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
           {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
         </span>
-        <div className="absolute right-0 top-0">
-          <PerGameToggle
-            perGame={perGame}
-            onToggle={() => setPerGame((v) => !v)}
-            title={perGame
-              ? "Comparison shown per game — tap for season totals"
-              : "Comparison shown on season totals — tap for per-game"}
-          />
-        </div>
+        {slots <= 1 && <div className="absolute right-0 top-0">{gToggle}</div>}
       </div>
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
           opens (or closes) every group and every raw-stats card at once. */}
@@ -827,7 +834,12 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
       {/* Career-year overlay */}
       {slots > 1 && (
         <div className="mt-2 pt-2 border-t border-stone-100">
-          <div className="uppercase tracking-wider text-[9px] text-stone-400 mb-1">{careerLabel}</div>
+          {/* Extra bottom margin keeps a constant gap under the button, so a
+              full-height bar never crowds it. */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
+            {gToggle}
+          </div>
           <div className="flex items-stretch gap-[2px] h-16 px-1">
             {Array.from({ length: slots }, (_, i) => {
               const as = aSeasons[i], bs = bAll[i];
