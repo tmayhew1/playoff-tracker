@@ -592,6 +592,15 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     // comparison against player B's season at the same career year.
     compare: { season: bs.season, name: b.name, slug: b.slug || null },
   });
+  // A career year only one of them reached has no comparison in it, so tapping
+  // that lone bar opens that player's own season card instead — the same jump
+  // the compared-player chip makes, with no comparison riding along.
+  const goSeason = (s, side) => context.onNavigateToPlayer({
+    season: s.season,
+    team: s.team || (side === "a" ? a.team : b.team) || null,
+    name: side === "a" ? a.name : b.name,
+    slug: (side === "a" ? a.slug : b.slug) || null,
+  });
   // Never leave a pair armed after the chart underneath it has changed.
   useEffect(() => {
     careerGo.disarm();
@@ -878,11 +887,18 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                   />
                 );
               };
-              // A year is a comparison target only when BOTH players have a
-              // season in it — a lone bar has nothing to compare against — and
-              // the pair already on screen is where you are, not somewhere to go.
+              // A year is a COMPARISON target only when both players have a
+              // season in it, and the pair already on screen is where you are,
+              // not somewhere to go. A year only one of them reached is a
+              // SEASON target instead: its lone bar opens that player's own
+              // card. Player A's current season is the page you're already on,
+              // so it stays a plain bar.
               const isHere = as && bs && as.season === a.season && bs.season === b.season;
               const pairNav = canCompareYear && !!as && !!bs && !isHere;
+              const loneSide = canCompareYear && !!as !== !!bs ? (as ? "a" : "b") : null;
+              const loneSeason = loneSide === "a" ? as : loneSide === "b" ? bs : null;
+              const loneNav = !!loneSeason && !(loneSide === "a" && loneSeason.season === a.season);
+              const navigable = pairNav || loneNav;
               const isArmed = careerGo.isArmed(i);
               // Popup anchor: keep it inside the card by left-aligning near the
               // left edge and right-aligning near the right, centering between.
@@ -892,25 +908,27 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                 <div
                   key={i}
                   className="flex-1 relative min-w-0"
-                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pairNav ? " · tap to compare this year" : ""}`}
+                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pairNav ? " · tap to compare this year" : loneNav ? " · tap to open that season" : ""}`}
                 >
                   <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
                   {bar(as, ca, "a")}
                   {bar(bs, cb, "b")}
-                  {pairNav && (
-                    // Full-column tap target over the pair (a sibling of the
+                  {navigable && (
+                    // Full-column tap target over the slot (a sibling of the
                     // popup, not its parent — the popup carries its own button
                     // and buttons can't nest).
                     <button
                       type="button"
                       onClick={() => careerGo.arm(i)}
-                      aria-label={`Career year ${i + 1} — ${a.name} ${as.season} against ${b.name} ${bs.season}; tap to confirm comparing it`}
+                      aria-label={pairNav
+                        ? `Career year ${i + 1} — ${a.name} ${as.season} against ${b.name} ${bs.season}; tap to confirm comparing it`
+                        : `Career year ${i + 1} — ${loneSide === "a" ? a.name : b.name} ${loneSeason.season}; tap to confirm opening it`}
                       aria-expanded={isArmed}
                       className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isArmed ? "bg-stone-900/10" : "hover:bg-stone-900/5"}`}
                     />
                   )}
                   {isArmed && (
-                    // The gate: the armed pair raises this popup, and only its
+                    // The gate: the armed slot raises this popup, and only its
                     // "Go →" travels. Anything else disarms (useGatedGo swallows
                     // that tap, so it can't also open a row). It hangs BELOW the
                     // bars, over the career-year ticks it restates.
@@ -919,16 +937,37 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                         className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm px-1.5 py-[2px] shadow-sm"
                         style={{ backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
                       >
-                        <span className="text-[9px] font-semibold text-stone-700">Compare Year {i + 1}?</span>
-                        <span className="text-[9px] font-semibold tabular-nums" style={{ color: ca }}>{seasonTag(as.season)}</span>
-                        <span className="text-[8px] text-stone-400">vs</span>
-                        <span className="text-[9px] font-semibold tabular-nums" style={{ color: cb }}>{seasonTag(bs.season)}</span>
+                        {pairNav ? (
+                          <>
+                            <span className="text-[9px] font-semibold text-stone-700">Compare Year {i + 1}?</span>
+                            <span className="text-[9px] font-semibold tabular-nums" style={{ color: ca }}>{seasonTag(as.season)}</span>
+                            <span className="text-[8px] text-stone-400">vs</span>
+                            <span className="text-[9px] font-semibold tabular-nums" style={{ color: cb }}>{seasonTag(bs.season)}</span>
+                          </>
+                        ) : (
+                          // Lone bar: the same gate, asking to open one season
+                          // rather than to compare a year.
+                          <>
+                            <span className="text-[9px] font-semibold text-stone-700">
+                              Open {shortName(loneSide === "a" ? a.name : b.name)} {seasonTag(loneSeason.season)}?
+                            </span>
+                            {loneSeason.team && (
+                              <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(loneSeason.team) }}>{loneSeason.team}</span>
+                            )}
+                            <span
+                              className="text-[9px] font-semibold tabular-nums"
+                              style={{ color: careerVal(loneSeason) < 0 ? "#dc2626" : (loneSide === "a" ? ca : cb) }}
+                            >{sgn(careerVal(loneSeason))}</span>
+                          </>
+                        )}
                         <button
                           ref={careerGo.goRef}
                           type="button"
-                          onClick={() => careerGo.confirm(() => goCompareYear(as, bs))}
+                          onClick={() => careerGo.confirm(() => (pairNav ? goCompareYear(as, bs) : goSeason(loneSeason, loneSide)))}
                           className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
-                          title={`Open ${a.name} ${seasonTag(as.season)} compared with ${b.name} ${seasonTag(bs.season)}`}
+                          title={pairNav
+                            ? `Open ${a.name} ${seasonTag(as.season)} compared with ${b.name} ${seasonTag(bs.season)}`
+                            : `Open ${loneSide === "a" ? a.name : b.name} ${seasonTag(loneSeason.season)}`}
                         >
                           Go <span aria-hidden>→</span>
                         </button>
@@ -945,7 +984,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
             ))}
           </div>
           <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
-            Seasons aligned by career year · compared seasons at full strength{canCompareYear ? <> · tap a pair, then <span className="font-semibold not-italic">Go →</span>, to move the page to that year</> : null}
+            Seasons aligned by career year · compared seasons at full strength{canCompareYear ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
           </div>
         </div>
       )}
