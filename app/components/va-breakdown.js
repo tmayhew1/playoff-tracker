@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
 import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
-import { CompareButton, ComparePanel, ComparePicker } from "./compare";
+import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
@@ -13,7 +13,7 @@ import { aggregateSnapshots } from "../lib/players";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true }) {
+export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -32,6 +32,17 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // A comparison handed in by the navigation that opened this card — the
+  // compare panel's career-year gate asks for the page to move to one player's
+  // season and land already comparing against the other's. Resolved against
+  // this card's own context pool; a target the scope doesn't carry is simply
+  // dropped rather than opening a half-built comparison.
+  useEffect(() => {
+    if (!pendingCompare || !context) return;
+    const sel = resolveCompareTarget(context, pendingCompare);
+    if (sel) { setCompare(sel); setPicking(false); }
+    onCompareHandled?.();
+  }, [pendingCompare, context, onCompareHandled]);
   // The compared player's own playoff game log (per-game VA), overlaid onto
   // the VA-by-Game chart above (aligned at game 1) while comparing.
   const [compareRun, setCompareRun] = useState(null);
@@ -1330,17 +1341,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
   // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
-  // all-time, trend, and shown values).
+  // all-time, trend, and shown values). The same control the compare panel
+  // carries — see PerGameToggle.
   const gToggle = (
-    <button
-      type="button"
-      onClick={() => setPerGame((v) => !v)}
-      aria-pressed={perGame}
+    <PerGameToggle
+      perGame={perGame}
+      onToggle={() => setPerGame((v) => !v)}
       title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
-      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
-    >
-      /G {perGame ? "ON" : "OFF"}
-    </button>
+    />
   );
 
   return (
@@ -1679,7 +1687,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 }
 
 
-export function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true }) {
+export function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
   // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
@@ -1691,6 +1699,15 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   // Baked defensive ratings (D-Rating category / VA+); college rows simply
   // never match and VA+ stays hidden there.
   const defs = useDefRatings();
+  // A comparison handed in by the navigation that opened this card — see the
+  // matching effect in VABreakdown. Must sit above the early return below;
+  // hooks are unconditional.
+  useEffect(() => {
+    if (!pendingCompare || !context) return;
+    const sel = resolveCompareTarget(context, pendingCompare);
+    if (sel) { setCompare(sel); setPicking(false); }
+    onCompareHandled?.();
+  }, [pendingCompare, context, onCompareHandled]);
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
     return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;

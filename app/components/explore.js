@@ -131,6 +131,9 @@ export function ExploreView() {
   //     and expand their row.
   //   { season, team }             — a team-season with no player attached:
   //     just filter the board to that team.
+  // A player-season target may also carry `compare: { season, name, slug }` —
+  // the compare panel's career-year gate asking the row it opens to land
+  // already comparing against that player-season.
   const [seasonNav, setSeasonNav] = useState(null);
   // Called by a By Season compare panel (via context.onNavigateToPlayer) when
   // the user taps the compared player's chip: switch the leaderboard to that
