@@ -715,7 +715,9 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
       out.push({ ...e, along: centre, cross: C / 2 + step * spacing });
     });
   }
-  return { positions: out, zero: along(0), r };
+  // `along` rides along so a caller can place a reference of its own on the
+  // value axis (the team-rating line on the D Rating plot).
+  return { positions: out, zero: along(0), r, along };
 }
 
 
@@ -726,7 +728,7 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // Rating) collapses horizontally. Tapping a grey dot re-points the whole card
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name }) {
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -748,17 +750,26 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
         ...rows.map((q, i) => ({ key: i, v: q.v[selIdx], all: q.v, row: q.row })),
         { key: "self", v: me[selIdx], all: me, row: null },
       ];
-      const { positions, zero, r } = dotPlotLayout(entries, "self", ranges[selIdx], L, C);
+      const { positions, zero, r, along } = dotPlotLayout(entries, "self", ranges[selIdx], L, C);
       const place = (p) => vertical
         ? { cx: clamp(p.cross, 100), cy: clamp(height - p.along, height) }
         : { cx: clamp(p.along, 100), cy: clamp(p.cross, height) };
       const dots = positions.map((p) => ({ ...place(p), row: p.row, v: p.all, self: p.key === "self" }));
+      // A second line the caller can put anywhere on the value axis, with a
+      // label hung off the plot's edge beside it (see refLine).
+      const refAt = refLine ? clamp(along(refLine.v), L) : null;
       return {
         dots, r,
         self: dots.find((dt) => dt.self),
         guides: vertical
           ? [{ x1: 0, y1: height - zero, x2: 100, y2: height - zero }]
           : [{ x1: zero, y1: 0, x2: zero, y2: height }],
+        // The label is centred on the line, so its own anchor is kept a little
+        // off each edge — the line can sit at the extremes, the text can't
+        // hang off the card.
+        ref: refAt == null ? null : (vertical
+          ? { line: { x1: 0, y1: height - refAt, x2: 100, y2: height - refAt }, left: 0, top: ((height - refAt) / height) * 100, vertical: true }
+          : { line: { x1: refAt, y1: 0, x2: refAt, y2: height }, left: Math.max(8, Math.min(92, refAt)), top: 0, vertical: false }),
       };
     }
     const pos = (i, v) => ((v - ranges[i][0]) / ((ranges[i][1] - ranges[i][0]) || 1));
@@ -769,12 +780,15 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
       dots: [...dots, self],
       self,
       r: DOT_R,
+      // The reference is a point on ONE stat's axis, so it only means something
+      // once the plot has collapsed onto that stat.
+      ref: null,
       guides: [
         { x1: clamp(pos(xi, 0) * 100, 100), y1: 0, x2: clamp(pos(xi, 0) * 100, 100), y2: height },
         { x1: 0, y1: clamp(height - pos(yi, 0) * height, height), x2: 100, y2: clamp(height - pos(yi, 0) * height, height) },
       ],
     };
-  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height]);
+  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine]);
 
   // Turn a tap into the players under it. The SVG scales uniformly from a
   // 100-wide viewBox, so client coordinates map straight back through its box.
@@ -814,7 +828,18 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
       {/* No axis titles on the plot itself — a corner label lands right where
           the extremes of the other axis sit. The chips below name both axes
           and carry the arrow of the one they own. */}
-      <div className="relative mt-1">
+      {/* Headroom for the reference line's label, so it sits clear of the plot
+          rather than on top of the dots. */}
+      <div className={`relative mt-1 ${view.ref ? "pt-3" : ""}`}>
+        {view.ref && refLine.label && (
+          <div
+            className={`absolute text-[7px] leading-none font-semibold text-stone-500 whitespace-nowrap pointer-events-none ${view.ref.vertical ? "-translate-y-full" : "-translate-x-1/2"}`}
+            style={{ left: `${view.ref.left}%`, top: view.ref.vertical ? `${view.ref.top}%` : 0 }}
+            title={refLine.title || undefined}
+          >
+            {refLine.label}
+          </div>
+        )}
         <svg
           ref={svgRef}
           viewBox={`0 0 100 ${height}`}
@@ -830,6 +855,13 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           {view.dots.filter((dt) => !dt.self).map((dt, i) => (
             <circle key={i} cx={dt.cx} cy={dt.cy} r={view.r} fill="#d6d3d1" fillOpacity="0.8" />
           ))}
+          {/* Reference line, drawn over the cloud so it reads against it. */}
+          {view.ref && (
+            <line
+              x1={view.ref.line.x1} y1={view.ref.line.y1} x2={view.ref.line.x2} y2={view.ref.line.y2}
+              stroke="#57534e" strokeWidth="0.4" strokeDasharray="2 1.5" strokeOpacity="0.8"
+            />
+          )}
           {/* Guides dropping the player's point onto the axes, so the chips
               below read as the coordinates of the black dot. */}
           {!collapsed && (
@@ -1217,6 +1249,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       ranges: segData.map((s, i) => extent(rows.map((q) => q.v[i]), me[i])),
     };
   }, [segData, axisKeys, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+  // Where the player's own team defense falls on the collapsed D Rating plot.
+  // That plot's axis is value ADDED, not rating, so the team enters it as the
+  // value this player would post if he rated exactly as his team does: his edge
+  // over the team is zero and all that's left is his share of the team's edge
+  // vs league (see defVAInfo). It's the line that separates "better than his
+  // own team's defense" from "worse" — right of it, he out-defends his team.
+  // Absent for multi-team (2TM) rows and seasons with no team map, where the
+  // rating carries no team term to draw.
+  const teamRefLine = useMemo(() => {
+    if (!selSeg || selSeg.key !== "D Rating") return null;
+    const info = defVAInfo(selfRow, selfRow.mp, lga, defs, seasonKey, defScope);
+    if (!info || info.w == null || info.teamDrtg == null || !(lga?.laPOSSperM > 0)) return null;
+    const v = ((info.w * (info.laDRtg - info.teamDrtg)) / 100) * lga.laPOSSperM * selfRow.mp;
+    const drtg = Math.round(info.teamDrtg);
+    return {
+      v: perGame ? v / (selfRow.gp || 1) : v,
+      drtg,
+      team: selfRow.team || null,
+      label: `${selfRow.team || "TEAM"} ${drtg}`,
+      title: `${selfRow.team || "The team"}’s own defensive rating (${drtg} DRTG vs ${info.laDRtg.toFixed(1)} league) — ${self.name} lands right of this line when he defends better than his team does`,
+    };
+  }, [selSeg, selfRow, lga, defs, seasonKey, defScope, perGame, self.name]);
+
   // Which segment sits on which axis, and which one the card is filtered to
   // (−1 when the plot is showing both). Defense's D Rating chip is on neither
   // axis, so a selection of it matches neither index and collapses horizontally.
@@ -1466,6 +1521,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               onPickPlayer={(r) => setFocusRow(samePlayer(r, ownerRow) ? null : r)}
               sgn={sgn}
               name={self.name}
+              refLine={teamRefLine}
             />
           ) : (
           <>
@@ -1540,7 +1596,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
-              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
+              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = ${teamRefLine.team || "his team"} itself at ${teamRefLine.drtg} DRTG (right of it he out-defends his own team)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
               : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</>}
           </div>
         </div>
