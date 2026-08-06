@@ -537,6 +537,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           rateMode={rateMode}
           mode={compareMode}
           setMode={setCompareMode}
+          defs={defs}
+          defActive={dVA != null}
+          defScope={defScope}
         />
       ) : (
       <>
@@ -1813,7 +1816,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         />
       )}
       {compare && context ? (
-        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} />
+        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} defs={defs} defActive={dVA != null} defScope="rs" />
       ) : (
       <>
       {vaPlus != null && (

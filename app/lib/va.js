@@ -37,6 +37,9 @@ export const CAT_SHORT = {
   "Points": "Pts", "2-Pointers": "2P", "3-Pointers": "3P", "Free Throws": "FT",
   "Assists": "Ast", "Turnovers": "TO", "D Rebounds": "DReb", "O Rebounds": "OReb",
   "Blocks": "Blk", "Steals": "Stl",
+  // Not one of the ten box categories — the VA+ defensive stat, which the
+  // compare panel folds into Defense and heads its own charts with.
+  "D Rating": "D Rtg",
 };
 
 // "Basic" grouping: the ten categories folded into the four buckets the

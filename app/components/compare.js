@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
+import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
@@ -377,7 +378,7 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
-export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode }) {
+export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs" }) {
   // The compare view is Basic-first: the four groups are the top level, a tap
   // on a group drops down its member categories, and a tap on a member opens
   // the raw-stats table. (The Basic/By Category and Per 36/Per G toggles are
@@ -439,14 +440,47 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   const cbFill = withAlpha(cb, 0.25);
   const cbEdge = `1px solid ${GOLD}`;
 
+  // D Rating — the fifth defensive stat, the one VA+ adds to VA. Whenever the
+  // page is reading VA+ (defActive), the comparison carries it too: it rides at
+  // the end of the Defense group as its own row, and Defense itself sums to the
+  // VA+ defensive total rather than the two box-score stocks alone — so the
+  // four groups still add up to the headline the card above them shows. On
+  // plain VA the whole layer is absent, exactly as in the individual card.
+  const withDef = defActive && !!defs;
+  const DEF_KEY = "D Rating";
+  // One player-season's defensive value added, measured in its own season and
+  // on the view's scope. A season with no rating (pre-bake, unjoined name)
+  // contributes nothing rather than dropping out of the pool.
+  const dvaOf = (r, lgaX, season) => (
+    withDef && r?.mp > 0 ? (defVAInfo(r, r.mp, lgaX, defs, season, defScope)?.dva ?? 0) : 0
+  );
+  // Leaving VA+ takes the D Rating row away with it, so an open one can't stay
+  // selected — it would leave the career chart plotting a row that no longer
+  // exists (and reads as a career of zeros).
+  useEffect(() => {
+    if (withDef) return;
+    setOpenKeys((prev) => (prev.has(DEF_KEY) ? new Set([...prev].filter((k) => k !== DEF_KEY)) : prev));
+  }, [withDef]);
+
   const GROUP_KEYS = VA_GROUPS.map((g) => g.key);
-  const ALL_KEYS = [...GROUP_KEYS, ...VA_CATEGORY_ORDER];
+  // The Defense group's members gain D Rating under VA+; every other group is
+  // its plain category list.
+  const catsOf = (g) => (withDef && g.key === "Defense" ? [...g.cats, DEF_KEY] : g.cats);
+  const MEMBER_KEYS = withDef ? [...VA_CATEGORY_ORDER, DEF_KEY] : VA_CATEGORY_ORDER;
+  const ALL_KEYS = [...GROUP_KEYS, ...MEMBER_KEYS];
 
   const d = useMemo(() => {
     // Every figure in the panel — bars, numbers and the percentile pool alike
     // — is read on whichever side of the /G switch is showing, so a rank never
-    // means one thing in the strip and another in the number beside it.
-    const valOf = (r, lgaX, key) => (perGame ? catVAperGame(r, lgaX, key) : catVATotal(r, lgaX, key));
+    // means one thing in the strip and another in the number beside it. `dva`
+    // is the row's defensive value added, computed once per row and folded into
+    // both the rows it belongs to (its own, and Defense's total).
+    const valOf = (r, lgaX, key, dva) => {
+      const v = key === DEF_KEY
+        ? dva
+        : catVATotal(r, lgaX, key) + (key === "Defense" ? dva : 0);
+      return perGame ? v / (r.gp || 1) : v;
+    };
     // Percentiles rank against EVERY indexed player-season (all-time pool),
     // each row measured era-fair against its own season's baselines. One pass
     // over the pool computes every group + category at once; the >=5 G floor
@@ -456,9 +490,10 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
     const maxByKey = {};
     const poolVals = pool.map((r) => {
       const lgaX = lgaForSeason(r.season);
+      const dva = dvaOf(r, lgaX, r.season);
       const out = {};
       for (const key of ALL_KEYS) {
-        out[key] = valOf(r, lgaX, key);
+        out[key] = valOf(r, lgaX, key, dva);
         if (maxByKey[key] == null || out[key] > maxByKey[key]) maxByKey[key] = out[key];
       }
       return out;
@@ -470,9 +505,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
       return (below / poolVals.length) * 100;
     };
     const rows = {};
+    const adva = dvaOf(a, lgaA, a.season);
+    const bdva = dvaOf(b, lgaB, b.season);
     for (const key of ALL_KEYS) {
-      const av = valOf(a, lgaA, key);
-      const bv = valOf(b, lgaB, key);
+      const av = valOf(a, lgaA, key, adva);
+      const bv = valOf(b, lgaB, key, bdva);
       rows[key] = {
         key, av, bv,
         apct: pctFor(av, key), bpct: pctFor(bv, key),
@@ -485,12 +522,14 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
     }
     const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
     return { rows, diff };
-  }, [a, b, lgaA, lgaB, context, perGame]);
+  }, [a, b, lgaA, lgaB, context, perGame, withDef, defs, defScope]);
 
   // Per-game figures are an order of magnitude smaller than season totals, so
   // they carry a second decimal; totals match the leaderboard's one.
   const sgn = (v, dp = perGame ? 2 : 1) => (v > 0 ? "+" : "") + v.toFixed(dp);
-  const vaUnit = perGame ? "VA/G" : "VA";
+  // The tally sums the four groups, so with D Rating folded into Defense it is
+  // a VA+ margin and says so.
+  const vaUnit = `${withDef ? "VA+" : "VA"}${perGame ? "/G" : ""}`;
   // Season totals run to four figures for a career scoring leader, where the
   // per-game column's width would run the two players' numbers together.
   const valW = perGame ? "w-10" : "w-14";
@@ -503,7 +542,12 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   // category's VA per season (era-fair: each season vs its own baselines).
   // Diverging from a shared zero baseline, since category VA (Turnovers!)
   // can be negative season after season.
-  const aSeasons = [...(context.self?.seasons || [])].sort((x, y) => x.season.localeCompare(y.season));
+  // The index entry's own season rows carry no identity of their own, and
+  // defVAInfo keys off the slug — tag them so the career bars can carry the
+  // D-Rating layer too.
+  const aSeasons = (context.self?.seasons || [])
+    .map((s) => ({ ...s, name: a.name, slug: a.slug || null }))
+    .sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
   const slots = Math.max(aSeasons.length, bAll.length);
   // Deepest selection wins: an open member category, else the open group.
@@ -511,14 +555,24 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   // wins; otherwise the most-recently-opened group (Set insertion order).
   const activeKey = ([...openKeys].at(-1) ?? null) || ([...openGroups].at(-1) ?? null);
   const careerVal = (s) => {
-    const v = activeKey ? catVATotal(s, lgaForSeason(s.season), activeKey) : (s.va || 0);
+    const lgaS = lgaForSeason(s.season);
+    const dva = (!activeKey || activeKey === "Defense" || activeKey === DEF_KEY) ? dvaOf(s, lgaS, s.season) : 0;
+    // No category selected the bars are the season's whole value — VA+ when
+    // the D-Rating layer is on, so they match the rows above.
+    const v = activeKey === DEF_KEY ? dva
+      : activeKey ? catVATotal(s, lgaS, activeKey) + (activeKey === "Defense" ? dva : 0)
+      : (s.va || 0) + dva;
     return perGame ? v / (s.gp || 1) : v;
   };
   const cvals = [...aSeasons, ...bAll].map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
   const cSpan = (cHi - cLo) || 1;
   const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
-  const careerLabel = `${activeKey ? `${CAT_SHORT[activeKey] || activeKey} ` : ""}${perGame ? "VA/G" : "Total VA"} by career year`;
+  // An unfiltered career bar carries the whole season, defense included, so it
+  // is a VA+ bar under the D-Rating layer; a selected category is always plain
+  // category VA.
+  const careerUnit = `${!activeKey && withDef ? "VA+" : "VA"}`;
+  const careerLabel = `${activeKey ? `${CAT_SHORT[activeKey] || activeKey} ` : ""}${perGame ? `${careerUnit}/G` : `Total ${careerUnit}`} by career year`;
 
   // Tapping a PAIR of career-year bars re-points the whole page at that year:
   // the comparison becomes each player's season at that career year, and the
@@ -542,6 +596,39 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
   useEffect(() => {
     careerGo.disarm();
   }, [careerGo.disarm, a.season, b.season, activeKey, perGame]);
+
+  // Rate shown for a row in its tooltip. D Rating has no box-score rate of its
+  // own — its "rate" is the rating itself — and catRateLabel only knows the ten
+  // box categories, so it's answered here.
+  const rateLabelFor = (r, key, lgaX) => {
+    if (key !== DEF_KEY) return catRateLabel(r, key, rateMode);
+    const drtg = defVAInfo(r, r.mp, lgaX, defs, r.season, defScope)?.drtg;
+    return drtg == null ? "–" : `${Math.round(drtg)} DRTG`;
+  };
+
+  // Raw-stats rows for the D Rating card, in the shape compareStatRows returns
+  // (metric rows, one cell per player, the better one flagged). The rating
+  // itself is lower-is-better; everything derived from it reads the normal way.
+  const defStatRows = () => {
+    const ia = defVAInfo(a, a.mp, lgaA, defs, a.season, defScope);
+    const ib = defVAInfo(b, b.mp, lgaB, defs, b.season, defScope);
+    const rows = [];
+    const push = (label, av, bv, disp, lowerBetter = false) => {
+      let win = null;
+      if (av != null && bv != null && av !== bv) win = (lowerBetter ? av < bv : av > bv) ? "a" : "b";
+      rows.push({ label, a: av == null ? "–" : disp(av), b: bv == null ? "–" : disp(bv), win });
+    };
+    const r0 = (v) => String(Math.round(v));
+    const sg1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+    const sg2 = (v) => (v > 0 ? "+" : "") + v.toFixed(2);
+    push("DRTG", ia?.drtg ?? null, ib?.drtg ?? null, r0, true);
+    // Points per 100 better than that season's league line — the era-fair read
+    // of a rating, since the league line itself moves.
+    push("VS LG", ia ? ia.laDRtg - ia.drtg : null, ib ? ib.laDRtg - ib.drtg : null, sg1);
+    push("D VA/G", ia ? ia.dva / (a.gp || 1) : null, ib ? ib.dva / (b.gp || 1) : null, sg2);
+    push("TOT D VA", ia?.dva ?? null, ib?.dva ?? null, sg1);
+    return rows;
+  };
 
   const Swatch = ({ color, outline }) => (
     <span
@@ -611,14 +698,14 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
           opens (or closes) every group and every raw-stats card at once. */}
       <div className="flex items-stretch gap-1">
       {(() => {
-        const allOpen = openGroups.size >= VA_GROUPS.length && openKeys.size >= VA_CATEGORY_ORDER.length;
+        const allOpen = openGroups.size >= VA_GROUPS.length && openKeys.size >= MEMBER_KEYS.length;
         const toggleAll = () => {
           if (allOpen) {
             setOpenGroups(new Set());
             setOpenKeys(new Set());
           } else {
             setOpenGroups(new Set(GROUP_KEYS));
-            setOpenKeys(new Set(VA_CATEGORY_ORDER));
+            setOpenKeys(new Set(MEMBER_KEYS));
           }
         };
         return (
@@ -641,7 +728,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
           const isOpen = member ? openKeys.has(key) : groupOpen;
           const toggle = member
             ? () => toggleKey(key)
-            : () => toggleGroup(g.key, g.cats);
+            : () => toggleGroup(g.key, catsOf(g));
           return (
             <React.Fragment key={key}>
               <div
@@ -657,7 +744,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
                 </span>
                 {mode === "values" ? (
                   <>
-                    <div className="flex-1 relative h-5" title={`${a.name}: ${catRateLabel(a, key, rateMode)} · ${b.name}: ${catRateLabel(b, key, rateMode)}`}>
+                    <div className="flex-1 relative h-5" title={`${a.name}: ${rateLabelFor(a, key, lgaA)} · ${b.name}: ${rateLabelFor(b, key, lgaB)}`}>
                       <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
                       <div className="absolute h-[7px] top-[3px]" style={{ backgroundColor: ca, left: r.av >= 0 ? "50%" : `${50 - (Math.abs(r.av) / scale) * 45}%`, width: `${(Math.abs(r.av) / scale) * 45}%` }} />
                       <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / scale) * 45}%`, width: `${(Math.abs(r.bv) / scale) * 45}%` }} />
@@ -681,7 +768,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
                 // Flipped raw-stats card: player columns, metric rows, the
                 // leader of each row circled (per the mock). B column keeps the
                 // gold identity tint.
-                const rows = compareStatRows(a, b, key, lgaA, lgaB);
+                const rows = key === DEF_KEY ? defStatRows() : compareStatRows(a, b, key, lgaA, lgaB);
                 const head = (row, color, gold) => (
                   <div className={`min-w-0 px-1 py-0.5 rounded-sm ${gold ? "" : ""}`} style={gold ? { backgroundColor: GOLD_BG } : undefined}>
                     <div className="flex items-center gap-0.5 justify-end">
@@ -721,7 +808,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
             {rowFor(g.key, scaleFor(GROUP_KEYS), false)}
             {groupOpen && (
               <div className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
-                {g.cats.map((ck) => rowFor(ck, scaleFor(g.cats), true))}
+                {catsOf(g).map((ck) => rowFor(ck, scaleFor(catsOf(g)), true))}
               </div>
             )}
           </React.Fragment>
@@ -732,7 +819,9 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode 
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
           ? `${perGame ? "Per-game" : "Season-total"} VA, each vs their own season’s league baseline`
-          : `Percentile of ${perGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`) + " · tap a group for its categories, a category for raw stats"}
+          : `Percentile of ${perGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`)
+          + (withDef ? " · Defense carries D Rating, so the four groups sum to VA+" : "")
+          + " · tap a group for its categories, a category for raw stats"}
       </div>
 
       {/* Career-year overlay */}
