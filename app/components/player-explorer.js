@@ -4,8 +4,11 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts, lgaForSeason } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
+import { ComparePanel, MultiComparePicker } from "./compare";
+import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { normalizeName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
+import { aggregateSeasons } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 
 
@@ -195,10 +198,50 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // filter — navigating away is never one stray tap.
   const [teamArmed, setTeamArmed] = useState(false);
   const canOpenTeam = typeof onOpenTeamSeason === "function";
+  // The # header's own two-step, and the biggest of the three: the first tap
+  // turns the rank column into check boxes and the seasons become selectable;
+  // once any are ticked, tapping # again opens the picker for the OTHER
+  // player's run to compare against. Tapping it with nothing ticked just
+  // leaves selection mode, so the header is always its own way back out.
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState(() => new Set());
+  const [picking, setPicking] = useState(false);
+  // The compared run: { name, slug, seasons, row } where row is the other
+  // player's aggregate. Held here rather than inside a season row, because a
+  // multi-season comparison belongs to the whole table, not to one line of it.
+  const [multiCompare, setMultiCompare] = useState(null);
+  const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  const defs = useDefRatings();
+
   // Only one column armed at a time; two dotted-underline hints at once reads
   // as ambiguous about what the next tap does.
-  const armTeam = () => { setGArmed(false); setTeamArmed((v) => !v); };
-  const armG = () => { setTeamArmed(false); setGArmed((v) => !v); };
+  const armTeam = () => { setGArmed(false); setSelecting(false); setTeamArmed((v) => !v); };
+  const armG = () => { setTeamArmed(false); setSelecting(false); setGArmed((v) => !v); };
+
+  const togglePick = (season) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(season)) next.delete(season); else next.add(season);
+      return next;
+    });
+  };
+  const exitSelect = () => {
+    setSelecting(false);
+    setPicked(new Set());
+    setPicking(false);
+    setMultiCompare(null);
+  };
+  const tapHash = () => {
+    if (!selecting) {
+      setTeamArmed(false);
+      setGArmed(false);
+      setSelecting(true);
+      return;
+    }
+    // Armed with nothing ticked — the header is the way back out.
+    if (picked.size === 0) { exitSelect(); return; }
+    setPicking((v) => !v);
+  };
 
   // Season whose row is waiting to be scrolled into view after a navigation.
   const [pendingScroll, setPendingScroll] = useState(null);
@@ -273,6 +316,36 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const barValOf = (x) => (perG ? vaPerG(x) : (x.va || 0));
   const maxAbsVa = Math.max(...shown.map((x) => Math.abs(barValOf(x))), perG ? 0.05 : 0.5);
 
+  // The A side of a multi-season comparison: the ticked seasons pooled into
+  // one row against one volume-weighted baseline (see lib/multi-season.js).
+  // Deliberately read off `seasons`, not the filtered `shown` — a team or
+  // min-games filter changes what the table DISPLAYS, not what you picked, so
+  // narrowing the view can't silently drop a season out of the comparison.
+  const selectedSeasons = useMemo(
+    () => seasons.filter((x) => picked.has(x.season)),
+    [seasons, picked]
+  );
+  const aggA = useMemo(
+    () => (selectedSeasons.length
+      ? aggregateSeasons(selectedSeasons, { name: player.name, slug: player.slug || null })
+      : null),
+    [selectedSeasons, player.name, player.slug]
+  );
+  // Playoff runs are rated on the playoff sample; the other two scopes on the
+  // regular-season one, matching the drill-ins below.
+  const defScope = scope === "playoffs" ? "po" : "rs";
+  // Only light the D-Rating layer when a selected season actually has a
+  // rating — otherwise the row would read a flat +0.00 and look like a
+  // measurement rather than missing data.
+  const multiDefActive = useMemo(() => {
+    if (!defs || !aggA) return false;
+    return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, lgaForSeason(x.season), defs, x.season, defScope) != null);
+  }, [defs, aggA, defScope]);
+  const multiContext = useMemo(
+    () => (contextData ? { ...contextData, self: player, scope, season: null, onNavigateToPlayer } : null),
+    [contextData, player, scope, onNavigateToPlayer]
+  );
+
   const contextFor = (s) =>
     contextData ? { ...contextData, self: player, scope, season: s.season, onNavigateToPlayer } : null;
   const navFor = (i) => ({
@@ -297,6 +370,19 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           </div>
         </div>
         <div className="flex items-center gap-1.5 pt-1">
+          {selecting && (
+            <button
+              onClick={exitSelect}
+              className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 text-amber-900"
+              style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+              aria-label="Clear season selection"
+            >
+              {picked.size === 0
+                ? "Pick seasons"
+                : `${picked.size} season${picked.size === 1 ? "" : "s"}`}
+              <span className="opacity-60">✕</span>
+            </button>
+          )}
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
@@ -322,7 +408,19 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         </div>
       </div>
       <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
-        <span className="w-6 text-right">#</span>
+        <button
+          type="button"
+          onClick={tapHash}
+          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${selecting ? "text-stone-900 font-bold underline" : ""}`}
+          title={!selecting
+            ? "Tap to pick multiple seasons, then tap # again to compare them against another player’s run"
+            : picked.size === 0
+            ? "Tick some seasons — or tap # again to leave selection mode"
+            : `Compare these ${picked.size} seasons against another player’s run`}
+          aria-pressed={selecting}
+        >
+          {selecting && picked.size > 0 ? "▸#" : "#"}
+        </button>
         {canOpenTeam ? (
           <button
             type="button"
@@ -389,6 +487,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       {shown.map((s, i) => {
         const rank = sortedAll.indexOf(s) + 1;
         const sOpen = openSeason === s.season;
+        const isPicked = picked.has(s.season);
         const tc = teamColor(s.team);
         // Armed cards wear the team color at full strength — solid border, a
         // deeper fill, a soft ring around it, and a chevron — so it's obvious
@@ -401,7 +500,14 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const gp = s.gp || 1;
         const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
         return (
-          <div key={s.season} data-season-row={s.season} className="border-b border-stone-100 last:border-0">
+          <div
+            key={s.season}
+            data-season-row={s.season}
+            className="border-b border-stone-100 last:border-0"
+            // Picked rows carry a gold left edge so the selection stays legible
+            // once the comparison below has pushed the table up the screen.
+            style={isPicked ? { boxShadow: `inset 3px 0 0 0 ${GOLD}` } : undefined}
+          >
             <div className="relative overflow-hidden">
               <div
                 className="absolute inset-y-0 left-0 pointer-events-none"
@@ -420,7 +526,29 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 }}
                 className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""}`}
               >
-                <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
+                {selecting ? (
+                  // The rank column becomes the check box while selecting. It
+                  // stops propagation so ticking a season never also opens its
+                  // breakdown — the rest of the row still does.
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={isPicked}
+                    aria-label={`${isPicked ? "Remove" : "Add"} ${s.season} ${isPicked ? "from" : "to"} the compared run`}
+                    onClick={(e) => { e.stopPropagation(); togglePick(s.season); }}
+                    className="w-6 flex items-center justify-end pr-0.5"
+                  >
+                    <span
+                      aria-hidden
+                      className="inline-block w-3 h-3 border rounded-[1px]"
+                      style={isPicked
+                        ? { backgroundColor: tc, borderColor: tc, boxShadow: `0 0 0 2px ${withAlpha(tc, 0.22)}` }
+                        : { backgroundColor: "#ffffff", borderColor: "#a8a29e" }}
+                    />
+                  </button>
+                ) : (
+                  <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
+                )}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -498,7 +626,61 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           </div>
         );
       })}
-      <div className="text-[10px] text-stone-400 italic mt-2 px-2">Tap a season for the per-stat breakdown, then a category for its league context.</div>
+      {picking && multiContext && aggA && (
+        <MultiComparePicker
+          context={multiContext}
+          self={player}
+          suggestCount={selectedSeasons.length}
+          onPick={(sel) => { setMultiCompare(sel); setPicking(false); }}
+          onCancel={() => setPicking(false)}
+        />
+      )}
+      {aggA && multiCompare && multiContext && (
+        // The comparison lives under the table, not in place of it: the ticked
+        // rows stay on screen above, so a season can be added or dropped and
+        // every number here moves with it.
+        <div className="mt-3 px-2 py-2 bg-stone-50 border border-stone-200 rounded">
+          <div className="flex justify-between items-center gap-1 mb-1.5">
+            <button
+              onClick={() => setMultiCompare(null)}
+              className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+              style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+              aria-label="Clear comparison"
+            >
+              vs {shortName(multiCompare.name)} {multiCompare.row.spanLabel} <span className="opacity-60">✕</span>
+            </button>
+            <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+              <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
+              <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
+            </div>
+          </div>
+          <ComparePanel
+            // Keyed on both selections so changing either side resets the
+            // accordions rather than leaving a category open on stale rows.
+            key={`${aggA.spanLabel}:${multiCompare.slug || multiCompare.name}:${multiCompare.row.spanLabel}`}
+            a={aggA}
+            b={multiCompare.row}
+            aSeasons={player.seasons}
+            bSeasons={multiCompare.seasons}
+            context={multiContext}
+            rateMode="perG"
+            mode={compareMode}
+            setMode={setCompareMode}
+            defs={defs}
+            defActive={multiDefActive}
+            defScope={defScope}
+          />
+        </div>
+      )}
+      <div className="text-[10px] text-stone-400 italic mt-2 px-2">
+        {selecting
+          ? picked.size === 0
+            ? "Tick the seasons to pool, then tap # again to compare them against another player’s run."
+            : multiCompare
+            ? `Pooling ${picked.size} season${picked.size === 1 ? "" : "s"} · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tick another season to fold it in, or tap # to change who it’s measured against.`
+            : `${picked.size} season${picked.size === 1 ? "" : "s"} ticked — tap # again to pick the run to compare against.`
+          : "Tap a season for the per-stat breakdown, then a category for its league context."}
+      </div>
     </div>
   );
 }
