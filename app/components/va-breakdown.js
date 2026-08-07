@@ -667,6 +667,15 @@ const SEG_SUB = {
   "Blocks": "BLK", "Steals": "STL", "D Rating": "D Rtg",
 };
 
+// Bar order for a group's split row, where it differs from the group's member
+// list. Scoring's zone form runs FT · rim · float · mid · deep mid · 3PT — free
+// throws first, then out to the arc. Its pre-1996-97 fallback (no shot-location
+// data to split 2P by) keeps that same shape, PTS · FT · 2P · 3P, so the card
+// doesn't reshuffle as the reader walks a career back across 1996-97.
+const SEG_ORDER = {
+  "Scoring": ["Points", "Free Throws", "2-Pointers", "3-Pointers"],
+};
+
 
 // Dot radius and the tap radius around a finger press, in viewBox units. The
 // tap radius is generous on purpose — the cloud is dense, and catching several
@@ -1057,7 +1066,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // bars sum to exactly the group row that opened this card. The headline is
     // the player's rate at that stat, on the card's /G toggle — FG% for the
     // shooting categories, the counting rate otherwise.
-    const segs = grp.cats.map((cat) => ({
+    const segs = (SEG_ORDER[catKey] || grp.cats).map((cat) => ({
       key: cat, sub: SEG_SUB[cat] || cat, cat,
       note: CAT_SHOOTING[cat] ? "FG%" : `${rateMode === "perG" ? "per-game" : "per-36"} rate`,
       head: (r) => {
