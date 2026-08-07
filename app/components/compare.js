@@ -63,6 +63,14 @@ export const COMP_METRIC_OPTS = [
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
 
 
+// Team-color alpha inside the comparison side's bars in the career-year chart.
+// Deliberately heavier than the 0.25 the category rows use: those bars are ~7px
+// tall against a paired solid bar right beside them, where a faint tint still
+// reads, while a career bar stands alone at full height and needs to hold its
+// own color. See the fill in the chart below.
+export const CAREER_B_FILL = 0.6;
+
+
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
 export function ComparePicker({ context, self = null, onPick, onCancel }) {
@@ -1156,9 +1164,17 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                 const h = (Math.abs(v) / cSpan) * 100;
                 const topPct = v >= 0 ? cZeroPct - h : cZeroPct;
                 const isSel = (side === "a" ? aSel : bSel).has(s.season);
+                // The comparison side reads as a gold-edged bar with the team
+                // color inside. At the row strip's 0.25 tint that inside was
+                // washing out to near-white at bar width — legible as an
+                // outline, but not as a COLOR next to A's solid fill, which
+                // made the two sides look like different kinds of thing rather
+                // than two players. CAREER_B_FILL halves the lightening (0.25
+                // → 0.6 alpha, i.e. 75% → 40% toward white) so the bar carries
+                // its team color while the gold edge still identifies it.
                 const fill = side === "a"
                   ? { backgroundColor: color }
-                  : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${GOLD}` };
+                  : { backgroundColor: withAlpha(color, CAREER_B_FILL), border: `1px solid ${GOLD}` };
                 return (
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
