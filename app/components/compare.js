@@ -919,14 +919,14 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // The /G switch rides in the career chart's header — the same place the
   // individual card's category view parks it, above the bars that most visibly
   // answer to it. It still governs the whole panel.
-  const gToggle = (
+  // Absent entirely while a multi-season run is on screen: per-game is the
+  // only reading available there, so a switch that can't move is just a
+  // control that doesn't work.
+  const gToggle = isMulti ? null : (
     <PerGameToggle
       perGame={perGame}
-      locked={isMulti}
       onToggle={() => setPerGame((v) => !v)}
-      title={isMulti
-        ? "Multi-season runs are always compared per game — season totals can’t be ranked against single seasons"
-        : perGame
+      title={perGame
         ? "Comparison shown per game — tap for season totals"
         : "Comparison shown on season totals — tap for per-game"}
     />
@@ -994,7 +994,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
         <span className={`text-center text-[9px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
           {rowSeasonLabel(leader)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
         </span>
-        {slots < 1 && <div className="absolute right-0 top-0">{gToggle}</div>}
+        {slots < 1 && gToggle && <div className="absolute right-0 top-0">{gToggle}</div>}
       </div>
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
           opens (or closes) every group and every raw-stats card at once. */}
@@ -1144,6 +1144,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
             {gToggle}
+            {/* The tally row's fallback only fires with no chart at all, so
+                nothing else needs to hold the toggle's place here. */}
           </div>
           <div className="flex items-stretch justify-center gap-[2px] h-16 px-1">
             {Array.from({ length: slots }, (_, i) => {
@@ -1270,21 +1272,18 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
 // (the default) reads every value, rank and bar as PER-GAME value added; OFF
 // re-reads the whole card on season TOTALS, where a full season outweighs a
 // half one at the same rate.
-// `locked` pins the switch ON and takes the tap away — the multi-season
-// comparison, where a pooled season total has nothing to rank against.
-export function PerGameToggle({ perGame, onToggle, title, locked = false }) {
+export function PerGameToggle({ perGame, onToggle, title }) {
   return (
     <button
       type="button"
-      onClick={locked ? undefined : onToggle}
-      disabled={locked}
+      onClick={onToggle}
       aria-pressed={perGame}
       title={title || (perGame
         ? "Values shown per game — tap for season totals"
         : "Show values per game instead of season totals")}
-      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${locked ? "bg-stone-800 text-stone-100 border-stone-800 opacity-70 cursor-default" : perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
     >
-      /G {perGame ? "ON" : "OFF"}{locked && <span className="ml-0.5 opacity-70" aria-hidden>🔒</span>}
+      /G {perGame ? "ON" : "OFF"}
     </button>
   );
 }

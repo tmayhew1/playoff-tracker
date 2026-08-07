@@ -231,17 +231,6 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     setPicking(false);
     setMultiCompare(null);
   };
-  const tapHash = () => {
-    if (!selecting) {
-      setTeamArmed(false);
-      setGArmed(false);
-      setSelecting(true);
-      return;
-    }
-    // Armed with nothing ticked — the header is the way back out.
-    if (picked.size === 0) { exitSelect(); return; }
-    setPicking((v) => !v);
-  };
 
   // Season whose row is waiting to be scrolled into view after a navigation.
   const [pendingScroll, setPendingScroll] = useState(null);
@@ -316,6 +305,29 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const barValOf = (x) => (perG ? vaPerG(x) : (x.va || 0));
   const maxAbsVa = Math.max(...shown.map((x) => Math.abs(barValOf(x))), perG ? 0.05 : 0.5);
 
+  // The # header's three steps. Defined here, below `shown`, because the
+  // middle one reaches for it.
+  //   1. arm — the rank column becomes check boxes
+  //   2. armed, nothing ticked — take every season CURRENTLY SHOWN, which is
+  //      what makes the team badges compose with this: filter to HOU, tap #
+  //      twice, and you have his whole Houston run without ticking nine rows
+  //      by hand. A min-games filter narrows it the same way.
+  //   3. armed, something ticked — open the picker for the run to compare against
+  // The ✕ chip beside the player's name is the way out at every step.
+  const tapHash = () => {
+    if (!selecting) {
+      setTeamArmed(false);
+      setGArmed(false);
+      setSelecting(true);
+      return;
+    }
+    if (picked.size === 0) {
+      if (shown.length) setPicked(new Set(shown.map((x) => x.season)));
+      return;
+    }
+    setPicking((v) => !v);
+  };
+
   // The A side of a multi-season comparison: the ticked seasons pooled into
   // one row against one volume-weighted baseline (see lib/multi-season.js).
   // Deliberately read off `seasons`, not the filtered `shown` — a team or
@@ -362,27 +374,34 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         ‹ Back to search
       </button>
       <div className="mb-3 flex items-start justify-between gap-2">
-        <div>
-          <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
+        <div className="min-w-0">
+          {/* The selection chip rides on the NAME's line rather than in the
+              filter stack at the right: the subtitle under it already wraps to
+              two lines for a well-travelled career, and a chip squeezed into
+              the narrow right-hand column wrapped its own label with it. Here
+              it sits beside a short string with the whole row to grow into. */}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
+            {selecting && (
+              <button
+                onClick={exitSelect}
+                className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 text-amber-900 whitespace-nowrap shrink-0 self-center"
+                style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+                aria-label="Clear season selection"
+              >
+                {picked.size === 0
+                  ? "Pick seasons"
+                  : `${picked.size} season${picked.size === 1 ? "" : "s"}`}
+                <span className="opacity-60">✕</span>
+              </button>
+            )}
+          </div>
           <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
             {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
             <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 pt-1">
-          {selecting && (
-            <button
-              onClick={exitSelect}
-              className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 text-amber-900"
-              style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-              aria-label="Clear season selection"
-            >
-              {picked.size === 0
-                ? "Pick seasons"
-                : `${picked.size} season${picked.size === 1 ? "" : "s"}`}
-              <span className="opacity-60">✕</span>
-            </button>
-          )}
+        <div className="flex items-center gap-1.5 pt-1 shrink-0">
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
@@ -415,7 +434,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           title={!selecting
             ? "Tap to pick multiple seasons, then tap # again to compare them against another player’s run"
             : picked.size === 0
-            ? "Tick some seasons — or tap # again to leave selection mode"
+            ? `Tick seasons — or tap # again to take all ${shown.length} shown${teamFilter || minGames != null ? " under the current filter" : ""}`
             : `Compare these ${picked.size} seasons against another player’s run`}
           aria-pressed={selecting}
         >
@@ -675,7 +694,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       <div className="text-[10px] text-stone-400 italic mt-2 px-2">
         {selecting
           ? picked.size === 0
-            ? "Tick the seasons to pool, then tap # again to compare them against another player’s run."
+            ? `Tick the seasons to pool — or tap # again to take all ${shown.length} shown${teamFilter ? ` for ${teamFilter}` : ""}${minGames != null ? ` with ≥${minGames} games` : ""}.`
             : multiCompare
             ? `Pooling ${picked.size} season${picked.size === 1 ? "" : "s"} · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tick another season to fold it in, or tap # to change who it’s measured against.`
             : `${picked.size} season${picked.size === 1 ? "" : "s"} ticked — tap # again to pick the run to compare against.`
