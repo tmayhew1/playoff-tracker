@@ -8,7 +8,7 @@ import { ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
-import { aggregateSeasons } from "../lib/multi-season";
+import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 
 
@@ -678,6 +678,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           context={multiContext}
           self={player}
           suggestCount={selectedSeasons.length}
+          // Career years the selection occupies, for the picker's BEST/YEAR
+          // switch. Read off the player's WHOLE career, not the filtered view:
+          // career year means position in his own chronology, which a team
+          // filter on the table doesn't change.
+          selfYears={careerYearsOf(seasons, picked)}
+          selfCareerLen={seasons.length}
           onPick={(sel) => { setMultiCompare(sel); setPicking(false); }}
           onCancel={() => setPicking(false)}
         />

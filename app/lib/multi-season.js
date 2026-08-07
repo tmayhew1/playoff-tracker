@@ -226,6 +226,71 @@ export function aggregateSeasons(seasonRows, identity = {}) {
 }
 
 
+// --- Matching a run by career year ------------------------------------------
+// The compare picker's BEST/YEAR switch. BEST pre-ticks the other player's top
+// seasons by VA; YEAR pre-ticks the same CAREER YEARS the selection occupies —
+// a player's 3rd through 6th seasons against another's 3rd through 6th, rather
+// than his peak against the other's peak.
+//
+// `selfYears` are 1-based indices into the selecting player's own career
+// (season 1 = rookie year), `selfLen` is how many seasons that career runs to,
+// and `otherLen` is the compared player's. Returns 1-based indices into the
+// compared player's career, one per requested year, in the order asked for.
+//
+// Two rules, in order:
+//
+//  1. Same career year, when the other player's career reaches it. Picking
+//     someone's first three years should land on the other's first three,
+//     whether he played 4 more or 20.
+//
+//  2. When it does NOT reach — the run sits past the end of a shorter career —
+//     the two careers line up by their FINAL season instead, shifting every
+//     index back by (selfLen − otherLen). So against a 15-season career,
+//     LeBron's years 22-23 become that player's last two, and his 21-22 become
+//     the 3rd- and 2nd-to-last. The alternative (shifting back only far enough
+//     to fit) would have made both of those the last two, collapsing the
+//     distinction between "his final years" and "his second-to-last stretch".
+//
+// Whatever the shift leaves is then pulled to the CLOSEST career year still
+// unused, which is what keeps the two runs the same length when a shift lands
+// outside the career entirely — and what stops two requested years from
+// collapsing onto one season. A career shorter than the selection simply
+// returns as many seasons as it has.
+export function matchCareerYears(selfYears, selfLen, otherLen) {
+  const want = [...selfYears].sort((a, b) => a - b);
+  if (!want.length || !(otherLen > 0)) return [];
+  const shift = Math.max(...want) <= otherLen ? 0 : selfLen - otherLen;
+  const used = new Set();
+  const out = [];
+  for (const y of want) {
+    const target = y - shift;
+    let best = null, bestDist = Infinity;
+    for (let i = 1; i <= otherLen; i++) {
+      if (used.has(i)) continue;
+      const dist = Math.abs(i - target);
+      // Ties break low — the earlier season — so a target falling between two
+      // free years resolves the same way every time.
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    }
+    if (best == null) break; // career exhausted: fewer seasons than asked for
+    used.add(best);
+    out.push(best);
+  }
+  return out.sort((a, b) => a - b);
+}
+
+
+// 1-based career-year indices of the selected seasons within a full career.
+// Career year is position in the player's own chronology, so both sides are
+// read off their seasons sorted oldest-first.
+export function careerYearsOf(allSeasons, pickedSeasonKeys) {
+  const asc = [...allSeasons].sort((a, b) => a.season.localeCompare(b.season));
+  const out = [];
+  asc.forEach((s, i) => { if (pickedSeasonKeys.has(s.season)) out.push(i + 1); });
+  return out;
+}
+
+
 // The baseline a row is measured against: an aggregate carries its own blended
 // one, an ordinary season row looks its season up.
 export function lgaForRow(row) {

@@ -5,7 +5,7 @@ import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { aggregateSeasons, lgaForRow, rowSeasonLabel } from "../lib/multi-season";
+import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
 
 
@@ -333,10 +333,15 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
 // seasons) and have no meaning against a three-year run. This one leads with
 // the player's best seasons pre-ticked instead, which is the useful default —
 // "his peak N years" is what most comparisons of a run are reaching for.
-export function MultiComparePicker({ context, self = null, onPick, onCancel, suggestCount = 3 }) {
+export function MultiComparePicker({ context, self = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0 }) {
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);       // the chosen player
   const [picked, setPicked] = useState(null); // Set of season strings
+  // How the other player's seasons are pre-ticked — see matchCareerYears.
+  //   best — his highest-VA seasons, the same number as the selection
+  //   year — the same career years the selection occupies
+  const [matchMode, setMatchMode] = useState("best");
+  const canMatchYear = !!selfYears?.length && selfCareerLen > 0;
   const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
   const matches = useMemo(() => {
     const q = normalizeName(query.trim());
@@ -351,16 +356,31 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
       .slice(0, 12);
   }, [players, query, self]);
 
-  // Opening a player pre-ticks their best `suggestCount` seasons by VA — the
-  // same number the other side selected, so the two runs start out the same
-  // length and the first thing shown is a like-for-like comparison.
-  const choosePlayer = (pl) => {
-    const best = [...pl.seasons]
+  // The seasons a player opens with, under either matching mode. Both return
+  // the same COUNT as the selection wherever the career allows it, so the two
+  // runs start out like-for-like and the first thing shown is a fair
+  // comparison rather than one the reader has to even up by hand.
+  const suggestFor = (pl, mode) => {
+    if (mode === "year" && canMatchYear) {
+      const asc = [...pl.seasons].sort((x, y) => x.season.localeCompare(y.season));
+      return matchCareerYears(selfYears, selfCareerLen, asc.length).map((i) => asc[i - 1].season);
+    }
+    return [...pl.seasons]
       .sort((x, y) => (y.va || 0) - (x.va || 0))
       .slice(0, Math.max(1, suggestCount))
       .map((s) => s.season);
+  };
+  const choosePlayer = (pl) => {
     setSel(pl);
-    setPicked(new Set(best));
+    setPicked(new Set(suggestFor(pl, matchMode)));
+  };
+  // Flipping the switch re-picks from scratch. It's a "choose them for me"
+  // control, so it has to be able to undo hand-ticking — otherwise tapping it
+  // after a manual edit would produce some hybrid of the two.
+  const switchMatch = () => {
+    const next = matchMode === "best" ? "year" : "best";
+    setMatchMode(next);
+    if (sel) setPicked(new Set(suggestFor(sel, next)));
   };
   const toggle = (season) => {
     setPicked((prev) => {
@@ -371,6 +391,30 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
   };
 
   const chosen = sel && picked ? sel.seasons.filter((s) => picked.has(s.season)) : [];
+
+  // What YEAR mode resolved to, said plainly. The interesting case is the one
+  // where it could NOT give you the same years — a run that reaches past the
+  // end of a shorter career — because then the switch has quietly done
+  // something other than what its label promises, and the panel that follows
+  // would otherwise look like a straight career-year match.
+  const yearMatchNote = useMemo(() => {
+    if (!canMatchYear || !sel) return "";
+    const len = sel.seasons.length;
+    const got = matchCareerYears(selfYears, selfCareerLen, len);
+    const want = [...selfYears].sort((a, b) => a - b);
+    const list = (a) => (
+      a.length === 0 ? "–"
+      : a.length === 1 ? `${a[0]}`
+      : a.every((v, i) => i === 0 || v === a[i - 1] + 1) ? `${a[0]}–${a[a.length - 1]}`
+      : a.join(", ")
+    );
+    const plural = (a) => (a.length === 1 ? "" : "s");
+    if (got.length === want.length && got.every((v, i) => v === want[i])) {
+      return `Career year${plural(want)} ${list(want)} — the same the selection covers`;
+    }
+    return `Selection is career year${plural(want)} ${list(want)}; ${shortName(sel.name)} played ${len} season${len === 1 ? "" : "s"}, so this is his year${plural(got)} ${list(got)}`;
+  }, [canMatchYear, sel, selfYears, selfCareerLen]);
+
   const confirm = () => {
     if (!chosen.length) return;
     onPick({
@@ -451,20 +495,41 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
               );
             })}
           </div>
-          <div className="flex items-center justify-between gap-2 border-t border-stone-100 pt-1.5">
-            <span className="text-[9px] text-stone-500 tabular-nums">
+          <div className="flex items-center justify-between gap-1.5 border-t border-stone-100 pt-1.5">
+            <span className="text-[9px] text-stone-500 tabular-nums min-w-0 truncate">
               {chosen.length === 0
                 ? "Pick at least one season"
                 : <>{chosen.length} season{chosen.length === 1 ? "" : "s"} · {chosen.reduce((n, s) => n + (s.gp || 0), 0)} G · <span className="font-semibold">{chosen.reduce((n, s) => n + (s.va || 0), 0).toFixed(1)}</span> VA</>}
             </span>
+            {canMatchYear && (
+              // Wears the /G switch's shape — same size, same on/off weighting
+              // — because it does the same kind of job: one tap, two readings
+              // of the same panel.
+              <button
+                type="button"
+                onClick={switchMatch}
+                aria-pressed={matchMode === "year"}
+                title={matchMode === "year"
+                  ? `Matched to the same career years as the selection (${yearMatchNote}) — tap for his best seasons instead`
+                  : "Showing his best seasons by VA — tap to match the selection’s career years instead"}
+                className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${matchMode === "year" ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+              >
+                {matchMode === "year" ? "Year" : "Best"}
+              </button>
+            )}
             <button
               onClick={confirm}
               disabled={!chosen.length}
-              className={`text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${chosen.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
+              className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${chosen.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
             >
               Compare →
             </button>
           </div>
+          {matchMode === "year" && (
+            <div className="mt-1 text-center text-[8px] italic text-stone-400">
+              {yearMatchNote}
+            </div>
+          )}
         </>
       )}
     </div>
