@@ -684,6 +684,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           // filter on the table doesn't change.
           selfYears={careerYearsOf(seasons, picked)}
           selfCareerLen={seasons.length}
+          // The calendar seasons themselves, for the switch's Same Season
+          // mode — which asks whether the two were in the league together,
+          // not where in either career the run fell.
+          selfSeasons={selectedSeasons.map((x) => x.season)}
           onPick={(sel) => { setMultiCompare(sel); setPicking(false); }}
           onCancel={() => setPicking(false)}
         />

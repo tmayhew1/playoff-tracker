@@ -333,13 +333,14 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
 // seasons) and have no meaning against a three-year run. This one leads with
 // the player's best seasons pre-ticked instead, which is the useful default —
 // "his peak N years" is what most comparisons of a run are reaching for.
-export function MultiComparePicker({ context, self = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0 }) {
+export function MultiComparePicker({ context, self = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null }) {
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);       // the chosen player
   const [picked, setPicked] = useState(null); // Set of season strings
-  // How the other player's seasons are pre-ticked — see matchCareerYears.
+  // How the other player's seasons are pre-ticked. One switch, cycling:
   //   best — his highest-VA seasons, the same number as the selection
-  //   year — the same career years the selection occupies
+  //   year — the same CAREER years the selection occupies (matchCareerYears)
+  //   same — the same CALENDAR seasons, whatever career year those fell in
   const [matchMode, setMatchMode] = useState("best");
   const canMatchYear = !!selfYears?.length && selfCareerLen > 0;
   const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
@@ -356,11 +357,32 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
       .slice(0, 12);
   }, [players, query, self]);
 
-  // The seasons a player opens with, under either matching mode. Both return
-  // the same COUNT as the selection wherever the career allows it, so the two
-  // runs start out like-for-like and the first thing shown is a fair
-  // comparison rather than one the reader has to even up by hand.
+  // SAME SEASON: the calendar seasons the selection covers that this player
+  // also played. Deliberately an INTERSECTION and not a same-length match —
+  // the two ran alongside each other or they didn't, and a year one of them
+  // missed is a fact about the comparison rather than a gap to paper over.
+  // So the selection keeps every season it had and this side carries what it
+  // has: SGA's 2024-25 + 2025-26 against a Haliburton who missed 2025-26 is
+  // two seasons against one, stated plainly in the note below.
+  const sameSeasonsFor = (pl) => {
+    const have = new Set(pl.seasons.map((s) => s.season));
+    return (selfSeasons || []).filter((s) => have.has(s)).sort();
+  };
+  // With NO overlap at all there is nothing for the mode to mean, so it drops
+  // out of the cycle rather than resolving to an empty pick — pick only SGA's
+  // 2025-26 against that same Haliburton and the option isn't offered.
+  const modeOk = (pl, m) => (
+    m === "best" ? true
+    : m === "year" ? canMatchYear
+    : !!pl && sameSeasonsFor(pl).length > 0
+  );
+
+  // The seasons a player opens with, under whichever mode is active. BEST and
+  // CAREER YEAR return the selection's own COUNT wherever the career allows,
+  // so the two runs start out like-for-like; SAME SEASON returns the overlap,
+  // which is the honest answer even when it's shorter.
   const suggestFor = (pl, mode) => {
+    if (mode === "same") return sameSeasonsFor(pl);
     if (mode === "year" && canMatchYear) {
       const asc = [...pl.seasons].sort((x, y) => x.season.localeCompare(y.season));
       return matchCareerYears(selfYears, selfCareerLen, asc.length).map((i) => asc[i - 1].season);
@@ -371,14 +393,28 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
       .map((s) => s.season);
   };
   const choosePlayer = (pl) => {
+    // A mode the incoming player can't support falls back rather than
+    // carrying over as an empty selection — switching from someone who
+    // overlapped the run to someone who never did shouldn't tick nothing.
+    const m = modeOk(pl, matchMode) ? matchMode : "best";
+    setMatchMode(m);
     setSel(pl);
-    setPicked(new Set(suggestFor(pl, matchMode)));
+    setPicked(new Set(suggestFor(pl, m)));
   };
   // Flipping the switch re-picks from scratch. It's a "choose them for me"
   // control, so it has to be able to undo hand-ticking — otherwise tapping it
-  // after a manual edit would produce some hybrid of the two.
+  // after a manual edit would produce some hybrid of the two. Modes this
+  // player can't support are skipped, so the cycle only ever lands somewhere
+  // that means something.
+  const MATCH_ORDER = ["best", "year", "same"];
+  const MATCH_LABEL = { best: "Best", year: "Career Year", same: "Same Season" };
   const switchMatch = () => {
-    const next = matchMode === "best" ? "year" : "best";
+    let i = MATCH_ORDER.indexOf(matchMode);
+    for (let n = 0; n < MATCH_ORDER.length; n++) {
+      i = (i + 1) % MATCH_ORDER.length;
+      if (modeOk(sel, MATCH_ORDER[i])) break;
+    }
+    const next = MATCH_ORDER[i];
     setMatchMode(next);
     if (sel) setPicked(new Set(suggestFor(sel, next)));
   };
@@ -392,13 +428,21 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
 
   const chosen = sel && picked ? sel.seasons.filter((s) => picked.has(s.season)) : [];
 
-  // What YEAR mode resolved to, said plainly. The interesting case is the one
-  // where it could NOT give you the same years — a run that reaches past the
-  // end of a shorter career — because then the switch has quietly done
-  // something other than what its label promises, and the panel that follows
-  // would otherwise look like a straight career-year match.
-  const yearMatchNote = useMemo(() => {
-    if (!canMatchYear || !sel) return "";
+  // What the active mode resolved to, said plainly. The cases that earn a note
+  // are the ones where the switch could NOT deliver what its label promises —
+  // a run reaching past the end of a shorter career, or a season the other
+  // player missed — because the panel that follows would otherwise read as a
+  // clean match when it quietly isn't.
+  const matchNote = useMemo(() => {
+    if (!sel) return "";
+    const plural = (n) => (n === 1 ? "" : "s");
+    if (matchMode === "same") {
+      const got = sameSeasonsFor(sel);
+      const missing = (selfSeasons || []).filter((s) => !got.includes(s)).sort();
+      if (!missing.length) return `Same season${plural(got.length)} — ${got.join(", ")}`;
+      return `${got.join(", ")} — ${shortName(sel.name)} has no ${missing.join(", ")} season${plural(missing.length)}, so this is ${got.length} season${plural(got.length)} against your ${(selfSeasons || []).length}`;
+    }
+    if (matchMode !== "year" || !canMatchYear) return "";
     const len = sel.seasons.length;
     const got = matchCareerYears(selfYears, selfCareerLen, len);
     const want = [...selfYears].sort((a, b) => a - b);
@@ -408,12 +452,11 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
       : a.every((v, i) => i === 0 || v === a[i - 1] + 1) ? `${a[0]}–${a[a.length - 1]}`
       : a.join(", ")
     );
-    const plural = (a) => (a.length === 1 ? "" : "s");
     if (got.length === want.length && got.every((v, i) => v === want[i])) {
-      return `Career year${plural(want)} ${list(want)} — the same the selection covers`;
+      return `Career year${plural(want.length)} ${list(want)} — the same the selection covers`;
     }
-    return `Selection is career year${plural(want)} ${list(want)}; ${shortName(sel.name)} played ${len} season${len === 1 ? "" : "s"}, so this is his year${plural(got)} ${list(got)}`;
-  }, [canMatchYear, sel, selfYears, selfCareerLen]);
+    return `Selection is career year${plural(want.length)} ${list(want)}; ${shortName(sel.name)} played ${len} season${plural(len)}, so this is his year${plural(got.length)} ${list(got)}`;
+  }, [matchMode, canMatchYear, sel, selfYears, selfCareerLen, selfSeasons]);
 
   const confirm = () => {
     if (!chosen.length) return;
@@ -501,20 +544,22 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
                 ? "Pick at least one season"
                 : <>{chosen.length} season{chosen.length === 1 ? "" : "s"} · {chosen.reduce((n, s) => n + (s.gp || 0), 0)} G · <span className="font-semibold">{chosen.reduce((n, s) => n + (s.va || 0), 0).toFixed(1)}</span> VA</>}
             </span>
-            {canMatchYear && (
-              // Wears the /G switch's shape — same size, same on/off weighting
-              // — because it does the same kind of job: one tap, two readings
-              // of the same panel.
+            {(modeOk(sel, "year") || modeOk(sel, "same")) && (
+              // Wears the /G switch's shape — same size, same weighting — since
+              // it does the same kind of job: one tap, another reading of the
+              // same panel. BEST is the default and sits light; the two
+              // matched modes are doing something specific and sit dark.
               <button
                 type="button"
                 onClick={switchMatch}
-                aria-pressed={matchMode === "year"}
-                title={matchMode === "year"
-                  ? `Matched to the same career years as the selection (${yearMatchNote}) — tap for his best seasons instead`
-                  : "Showing his best seasons by VA — tap to match the selection’s career years instead"}
-                className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${matchMode === "year" ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+                aria-pressed={matchMode !== "best"}
+                aria-label={`Season matching: ${MATCH_LABEL[matchMode]} — tap to change`}
+                title={matchNote
+                  ? `${MATCH_LABEL[matchMode]} — ${matchNote}. Tap to change.`
+                  : "Showing his best seasons by VA — tap to match the selection’s career years, or the same calendar seasons"}
+                className={`shrink-0 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${matchMode !== "best" ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
               >
-                {matchMode === "year" ? "Year" : "Best"}
+                {MATCH_LABEL[matchMode]}
               </button>
             )}
             <button
@@ -525,9 +570,9 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
               Compare →
             </button>
           </div>
-          {matchMode === "year" && (
+          {matchNote && (
             <div className="mt-1 text-center text-[8px] italic text-stone-400">
-              {yearMatchNote}
+              {matchNote}
             </div>
           )}
         </>
