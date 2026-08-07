@@ -340,7 +340,7 @@ const runKey = (run) => `${run.player.slug || run.player.name}:${run.seasons[0].
 // N being however many seasons the selection pools (see similarRuns) — and
 // once a player is chosen by hand, pre-ticks his best N seasons, which is
 // what "compare this run against him" usually means.
-export function MultiComparePicker({ context, self = null, selfRow = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null }) {
+export function MultiComparePicker({ context, self = null, selfRow = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null, unasked = false }) {
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);       // the chosen player
   const [picked, setPicked] = useState(null); // Set of season strings
@@ -508,22 +508,28 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   };
 
   const panelRef = useRef(null);
-  // This panel opens on its own as soon as a run is ticked, so it must not
-  // take the page with it. Come to it only when it appeared off screen; when
-  // it's already in view — the common case on a short career, or when the
-  // reader is down at the bottom of a long one — the scroll position is
-  // theirs to keep. `nearest` then moves the shortest distance that puts it
-  // on screen rather than throwing it to the top of the viewport.
+  // Coming to the panel is for the case where it turned up UNASKED — ticking
+  // a second season brings it out on its own, and off screen it would arrive
+  // unnoticed. Asked for by name (the # tap), the page stays where it is:
+  // that header sits at the top of the table, so on a long career the panel
+  // is off screen by definition at the moment you tap it, and "scroll when
+  // off screen" would read as "always throw me to the bottom" — losing the
+  // reader's place in the very table they were working through.
+  //
+  // Even unasked it only moves when it has to: already in view — a short
+  // career, or a reader down near the foot of a long one — and the scroll
+  // position is theirs to keep. `nearest` then travels the shortest distance
+  // that puts the panel on screen instead of hauling it to the top.
   useEffect(() => {
     const el = panelRef.current;
-    if (!el || typeof window === "undefined") return;
+    if (!unasked || !el || typeof window === "undefined") return;
     const r = el.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight || 0;
     // Taller than the viewport counts as on screen once its top is: there is
     // no scroll position that shows all of it, and the top is where it reads.
     if (r.top >= 0 && (r.bottom <= vh || r.height >= vh)) return;
     el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, []);
+  }, [unasked]);
   // The mobile keyboard covers the lower half of the viewport, which would
   // bury the results below the search box, so tapping the field DOES pin the
   // panel to the top — an explicit tap, unlike the panel's own arrival.

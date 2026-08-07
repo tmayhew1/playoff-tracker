@@ -225,6 +225,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // the exact selection it was pressed for, so changing what's ticked is a
   // new question and hands the panel back to the rule above.
   const pickKey = useMemo(() => [...picked].sort().join("|"), [picked]);
+  const pickAsked = pickOverride?.key === pickKey && pickOverride.open;
   const picking = pickOverride?.key === pickKey
     ? pickOverride.open
     : (picked.size >= 2 && !multiCompare);
@@ -713,6 +714,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           // mode — which asks whether the two were in the league together,
           // not where in either career the run fell.
           selfSeasons={selectedSeasons.map((x) => x.season)}
+          // Whether the panel let itself in. Only then does it come to the
+          // reader; a # tap asked for it by name and leaves the page put.
+          unasked={!pickAsked}
           // Picking a run leaves the override cleared rather than forced
           // shut: the comparison itself is what keeps the picker away, so
           // clearing the comparison brings it back to choose again.
