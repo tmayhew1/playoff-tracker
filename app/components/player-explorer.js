@@ -213,10 +213,15 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
   const defs = useDefRatings();
 
-  // Only one column armed at a time; two dotted-underline hints at once reads
-  // as ambiguous about what the next tap does.
-  const armTeam = () => { setGArmed(false); setSelecting(false); setTeamArmed((v) => !v); };
-  const armG = () => { setTeamArmed(false); setSelecting(false); setGArmed((v) => !v); };
+  // Team and G stay mutually exclusive with each other — two dotted-underline
+  // hints at once reads as ambiguous about what the next tap does. Selection
+  // mode is NOT part of that exclusion: it isn't a one-shot arm but a visible
+  // mode with its own affordance in its own column, and it has to compose with
+  // both filters. Arming G specifically is the ONLY way to set a min-games
+  // threshold, so taking selection down with it would have made "filter by G,
+  // then pare the picks to what's left" impossible.
+  const armTeam = () => { setGArmed(false); setTeamArmed((v) => !v); };
+  const armG = () => { setTeamArmed(false); setGArmed((v) => !v); };
 
   const togglePick = (season) => {
     setPicked((prev) => {
@@ -297,8 +302,14 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     );
   };
   const seasonSorted = effectiveSort === "seasonDesc" || effectiveSort === "seasonAsc";
-  const teamFiltered = teamFilter ? sortedAll.filter((x) => x.team === teamFilter) : sortedAll;
-  const shown = minGames != null ? teamFiltered.filter((x) => x.gp >= minGames) : teamFiltered;
+  // One predicate for "is this row on screen", shared by the rendered list and
+  // by the selection pruning below so the two can never disagree about what
+  // "shown" means.
+  const isVisible = useCallback(
+    (x) => (!teamFilter || x.team === teamFilter) && (minGames == null || x.gp >= minGames),
+    [teamFilter, minGames]
+  );
+  const shown = sortedAll.filter(isVisible);
   // Bars follow the active sort: ranked by VA/G, the bar lengths switch to the
   // VA/G scale so their widths track the same metric the rows are ordered on.
   const perG = effectiveSort === "vaPerG";
@@ -328,11 +339,28 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     setPicking((v) => !v);
   };
 
+  // Narrowing the table drops any pick it hides. A selection you can't see is
+  // one you can't correct: filtered to OKC, the chip would read "4 seasons"
+  // over three visible ticks, with a LAC year still silently in the pool. So
+  // the rule is that the selection never outruns what's on screen — filtering
+  // to a team, or to a games threshold, is also a way to pare it down.
+  //
+  // Widening does NOT tick anything back on. Restoring a hidden pick would
+  // undo a removal the filter just made on your behalf, and re-ticking rows is
+  // the one direction that's easy to do by hand (or with a second # tap).
+  useEffect(() => {
+    setPicked((prev) => {
+      if (prev.size === 0) return prev;
+      const visible = new Set(seasons.filter(isVisible).map((x) => x.season));
+      const next = new Set();
+      for (const s of prev) if (visible.has(s)) next.add(s);
+      // Same set — hand back the identical object so this can't loop.
+      return next.size === prev.size ? prev : next;
+    });
+  }, [seasons, isVisible]);
+
   // The A side of a multi-season comparison: the ticked seasons pooled into
   // one row against one volume-weighted baseline (see lib/multi-season.js).
-  // Deliberately read off `seasons`, not the filtered `shown` — a team or
-  // min-games filter changes what the table DISPLAYS, not what you picked, so
-  // narrowing the view can't silently drop a season out of the comparison.
   const selectedSeasons = useMemo(
     () => seasons.filter((x) => picked.has(x.season)),
     [seasons, picked]
