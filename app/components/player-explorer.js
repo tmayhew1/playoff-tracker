@@ -677,6 +677,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <MultiComparePicker
           context={multiContext}
           self={player}
+          // The pooled selection itself, for the picker's opening suggestions
+          // — the closest runs of the same length have to be measured against
+          // the run, not against the player.
+          selfRow={aggA}
           suggestCount={selectedSeasons.length}
           // Career years the selection occupies, for the picker's BEST/YEAR
           // switch. Read off the player's WHOLE career, not the filtered view:

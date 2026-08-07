@@ -1,7 +1,8 @@
 "use client";
 
 import { LEAGUE_AVERAGES, ZONES, hasZoneData, lgaForSeason, valueAddByCategory } from "../scoring";
-import { seasonTag } from "./format";
+import { normalizeName, seasonTag } from "./format";
+import { VA_CATEGORY_ORDER, perGameVAVec } from "./va";
 
 
 // --- Multi-season aggregates -------------------------------------------------
@@ -302,4 +303,120 @@ export function lgaForRow(row) {
 // season tag otherwise.
 export function rowSeasonLabel(row) {
   return row?.multi ? row.spanLabel : seasonTag(row?.season);
+}
+
+
+// --- Similar runs ------------------------------------------------------------
+// What the multi-season compare picker opens on: other players' N-season runs
+// closest to the selection, N being however many seasons the selection pools.
+// The single-season picker leads with closest comps for exactly this reason —
+// "who does this look like" is the question you have before you have a name —
+// and a run deserves the same answer, just measured over the whole run.
+//
+// Closeness is the same score the season comps use: cosine of the two per-game
+// VA-by-category vectors (does the value come from the same places) × the
+// ratio of their magnitudes (is it the same amount of value). Both sides are
+// summed from seasons measured against their OWN season's baselines, so the
+// comparison is era-fair the way an aggregate row's `catVA` is — a 3-year run
+// in 1988 and one in 2024 are each scored against the league they played in.
+//
+// A "run" here is N seasons adjacent in the player's own career list, after
+// seasons too short to say anything (RUN_MIN_GP) are dropped. Career
+// adjacency, not calendar adjacency: Jordan's 1992-93 and 1994-95 sit next to
+// each other in his career with a retirement in between, and the span label
+// prints the gap rather than hiding it. The selection on the other side is
+// free to skip a year the same way — the By Player table lets you tick any
+// seasons you like.
+//
+// One run per player: the best-scoring window. Overlapping windows of one
+// career (’11–’13, ’12–’14, ’13–’15) are near-copies of each other and would
+// crowd every other player out of the list.
+export const RUN_MIN_GP = 8;    // a season shorter than this can't carry a run
+export const RUN_MPG_BAND = 7;  // same minutes-role gate the season comps use
+export const RUN_MIN_COS = 0.3; // below this it's a different archetype, not a comp
+
+export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8 } = {}) {
+  const n = Math.max(1, Math.round(runLen));
+  if (!players?.length || !selfRow || !(selfRow.gp > 0) || !(selfRow.mp > 0)) return [];
+  const qVec = perGameVAVec(selfRow, lgaForRow(selfRow));
+  const qNorm = Math.hypot(...qVec);
+  if (!qNorm) return [];
+  const qMPG = selfRow.mp / selfRow.gp;
+  const dim = VA_CATEGORY_ORDER.length;
+
+  const byDecade = new Map(); // decade -> best run per player, unsorted
+  for (const pl of players) {
+    if (selfKey && (pl.slug || normalizeName(pl.name)) === selfKey) continue;
+    const career = pl.seasons
+      .filter((s) => (s.gp || 0) >= RUN_MIN_GP && s.mp > 0)
+      .sort((a, b) => a.season.localeCompare(b.season));
+    if (career.length < n) continue;
+    // Per-season category VA once per season, then a rolling window over it:
+    // the expensive part is the same O(pool) valueAddByCategory pass the
+    // season comps already do, and the windows themselves are adds and
+    // subtracts on a 10-slot accumulator.
+    const cats = career.map((s) => {
+      const by = valueAddByCategory(s, lgaForSeason(s.season));
+      return VA_CATEGORY_ORDER.map((k) => by[k] || 0);
+    });
+    const sum = new Array(dim).fill(0);
+    let gp = 0, mp = 0;
+    let best = null;
+    for (let i = 0; i < career.length; i++) {
+      for (let c = 0; c < dim; c++) sum[c] += cats[i][c];
+      gp += career[i].gp || 0;
+      mp += career[i].mp || 0;
+      if (i >= n) {
+        const out = i - n;
+        for (let c = 0; c < dim; c++) sum[c] -= cats[out][c];
+        gp -= career[out].gp || 0;
+        mp -= career[out].mp || 0;
+      }
+      if (i < n - 1 || !(gp > 0)) continue;
+      // A 35-MPG peak shouldn't comp to a 15-MPG bench run even when the
+      // per-minute shape matches, so gate on the run's own minutes role.
+      if (Math.abs(mp / gp - qMPG) > RUN_MPG_BAND) continue;
+      let dot = 0, sq = 0;
+      for (let c = 0; c < dim; c++) {
+        const v = sum[c] / gp;
+        dot += qVec[c] * v;
+        sq += v * v;
+      }
+      const norm = Math.sqrt(sq);
+      if (!norm) continue;
+      const cos = dot / (qNorm * norm);
+      if (cos < RUN_MIN_COS) continue;
+      const mag = Math.min(qNorm, norm) / Math.max(qNorm, norm);
+      const score = cos * mag;
+      if (best && !(score > best.score)) continue;
+      const seasons = career.slice(i - n + 1, i + 1);
+      best = {
+        player: pl,
+        seasons,
+        team: dominantTeam(seasons),
+        span: seasonSpanLabel(seasons),
+        gp,
+        va: seasons.reduce((t, s) => t + (s.va || 0), 0),
+        cos,
+        mag,
+        score,
+      };
+    }
+    if (!best) continue;
+    // Filed under the decade the MIDDLE season falls in, so a run straddling
+    // a boundary lands where its weight is rather than always with its first
+    // season.
+    const mid = best.seasons[(n - 1) >> 1].season;
+    const dec = Math.floor(parseInt(mid.slice(0, 4), 10) / 10) * 10;
+    let arr = byDecade.get(dec);
+    if (!arr) byDecade.set(dec, (arr = []));
+    arr.push(best);
+  }
+
+  return [...byDecade.entries()]
+    .sort((x, y) => y[0] - x[0]) // most recent decade first
+    .map(([dec, arr]) => ({
+      dec,
+      list: arr.sort((x, y) => (y.score - x.score) || (y.cos - x.cos)).slice(0, perDecade),
+    }));
 }

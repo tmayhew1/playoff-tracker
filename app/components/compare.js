@@ -5,7 +5,7 @@ import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel } from "../lib/multi-season";
+import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
 
 
@@ -322,18 +322,25 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
 }
 
 
+// Identity of a suggested run. similarRuns keeps one run per player, so the
+// player alone would do; the first season is in there so the key still moves
+// if the selection's length changes the window under the same name.
+const runKey = (run) => `${run.player.slug || run.player.name}:${run.seasons[0].season}`;
+
+
 // The multi-season half of the Compare picker: search a player from the same
 // scope index, then tick as many of their seasons as you want with the same
 // ⬜/◼ boxes the By Player table uses. Confirming hands back an aggregate row
 // built by aggregateSeasons, which the panel then treats as one line.
 //
 // Deliberately a separate component from ComparePicker rather than a mode
-// inside it: the single-season picker leads with closest comps, which are a
-// season-to-season idea (a 10-dim per-game VA shape against a pool of
-// seasons) and have no meaning against a three-year run. This one leads with
-// the player's best seasons pre-ticked instead, which is the useful default —
-// "his peak N years" is what most comparisons of a run are reaching for.
-export function MultiComparePicker({ context, self = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null }) {
+// inside it: the single-season picker's closest comps rank one season against
+// a pool of seasons, which is not the question a three-year run asks. So this
+// one opens on its own suggestions — the closest N-season RUNS in the pool,
+// N being however many seasons the selection pools (see similarRuns) — and
+// once a player is chosen by hand, pre-ticks his best N seasons, which is
+// what "compare this run against him" usually means.
+export function MultiComparePicker({ context, self = null, selfRow = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null }) {
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);       // the chosen player
   const [picked, setPicked] = useState(null); // Set of season strings
@@ -344,10 +351,42 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
   const [matchMode, setMatchMode] = useState("best");
   const canMatchYear = !!selfYears?.length && selfCareerLen > 0;
   const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  const selfKey = self ? (self.slug || normalizeName(self.name || "")) : null;
+
+  // The suggestions this picker opens on: the closest runs of the same length
+  // as the selection, best match first within each decade (see similarRuns).
+  // Tapping one goes straight to the comparison with those exact seasons
+  // pooled — the same one-tap shortcut the season picker's comps give.
+  const RUNS_PER_DECADE = 8;
+  const runLen = Math.max(1, suggestCount);
+  const runComps = useMemo(
+    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE }),
+    [players, selfRow, runLen, selfKey]
+  );
+  // Gold-lit across every decade row, so the single strongest run stands out
+  // wherever it landed.
+  const bestRunKey = useMemo(() => {
+    let key = null, best = -Infinity;
+    for (const { list } of runComps) {
+      for (const run of list) {
+        if (run.score > best) { best = run.score; key = runKey(run); }
+      }
+    }
+    return key;
+  }, [runComps]);
+  const pickRun = (run) => {
+    const pl = run.player;
+    onPick({
+      name: pl.name,
+      slug: pl.slug || null,
+      seasons: pl.seasons,
+      row: aggregateSeasons(run.seasons, { name: pl.name, slug: pl.slug || null }),
+    });
+  };
+
   const matches = useMemo(() => {
     const q = normalizeName(query.trim());
     if (q.length < 2) return [];
-    const selfKey = self ? (self.slug || normalizeName(self.name || "")) : null;
     return players
       .filter((pl) => normalizeName(pl.name).includes(q))
       // Comparing a run against the same player's own run would just be the
@@ -355,7 +394,7 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
       .filter((pl) => !selfKey || (pl.slug || normalizeName(pl.name)) !== selfKey)
       .sort((a, b) => b.bestVa - a.bestVa)
       .slice(0, 12);
-  }, [players, query, self]);
+  }, [players, query, selfKey]);
 
   // SAME SEASON: the calendar seasons the selection covers that this player
   // also played. Deliberately an INTERSECTION and not a same-length match —
@@ -493,9 +532,49 @@ export function MultiComparePicker({ context, self = null, onPick, onCancel, sug
             className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
           />
           {query.trim().length < 2 ? (
-            <div className="text-[9px] text-stone-400 italic py-2 text-center">
-              Type a name, then tick the seasons of theirs to pool.
-            </div>
+            <>
+              {runComps.length > 0 && (
+                <div className="mb-1">
+                  <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">
+                    {runLen === 1 ? "Closest seasons" : `Closest ${runLen}-year runs`} · by decade
+                  </div>
+                  {runComps.map(({ dec, list }) => (
+                    <div key={dec} className="flex items-center gap-1.5 py-0.5 border-b border-stone-100 last:border-0">
+                      <span className="shrink-0 w-7 text-[8px] uppercase tracking-wider text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
+                      <div className="flex gap-1 overflow-x-auto no-scrollbar min-w-0 pb-0.5">
+                        {list.map((run) => {
+                          const pct = Math.min(99, Math.round(run.score * 100));
+                          const isBest = runKey(run) === bestRunKey;
+                          return (
+                            <button
+                              key={runKey(run)}
+                              onClick={() => pickRun(run)}
+                              className={`shrink-0 px-1.5 py-0.5 border rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap ${isBest ? "border-amber-500" : "border-stone-200"}`}
+                              style={isBest ? { backgroundColor: GOLD_BG, borderColor: GOLD } : undefined}
+                              title={[
+                                `${run.player.name} ${run.span}`, run.team,
+                                `${run.gp} G`, `${run.va.toFixed(1)} VA`,
+                                `${pct}% ${COMP_METRIC_WORD.impsim}`,
+                                isBest ? "best match" : null,
+                              ].filter(Boolean).join(" · ")}
+                            >
+                              <span className="font-semibold" style={{ color: teamColor(run.team) }}>{compName(run.player.name)}</span>
+                              <span className="text-stone-400"> {run.span}</span>
+                              <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-[9px] text-stone-400 italic py-2 text-center">
+                {runComps.length > 0
+                  ? "Or type a name, then tick the seasons of theirs to pool."
+                  : "Type a name, then tick the seasons of theirs to pool."}
+              </div>
+            </>
           ) : matches.length === 0 ? (
             <div className="text-[9px] text-stone-400 italic py-2 text-center">No players match “{query.trim()}”.</div>
           ) : (
