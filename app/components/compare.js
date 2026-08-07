@@ -5,6 +5,7 @@ import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
+import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
 
 
@@ -60,6 +61,14 @@ export const COMP_METRIC_OPTS = [
 ];
 
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
+
+
+// Team-color alpha inside the comparison side's bars in the career-year chart.
+// Deliberately heavier than the 0.25 the category rows use: those bars are ~7px
+// tall against a paired solid bar right beside them, where a faint tint still
+// reads, while a career bar stands alone at full height and needs to hold its
+// own color. See the fill in the chart below.
+export const CAREER_B_FILL = 0.6;
 
 
 // Inline picker: search a player from the scope index, then tap one of their
@@ -313,6 +322,266 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
 }
 
 
+// The multi-season half of the Compare picker: search a player from the same
+// scope index, then tick as many of their seasons as you want with the same
+// ⬜/◼ boxes the By Player table uses. Confirming hands back an aggregate row
+// built by aggregateSeasons, which the panel then treats as one line.
+//
+// Deliberately a separate component from ComparePicker rather than a mode
+// inside it: the single-season picker leads with closest comps, which are a
+// season-to-season idea (a 10-dim per-game VA shape against a pool of
+// seasons) and have no meaning against a three-year run. This one leads with
+// the player's best seasons pre-ticked instead, which is the useful default —
+// "his peak N years" is what most comparisons of a run are reaching for.
+export function MultiComparePicker({ context, self = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null }) {
+  const [query, setQuery] = useState("");
+  const [sel, setSel] = useState(null);       // the chosen player
+  const [picked, setPicked] = useState(null); // Set of season strings
+  // How the other player's seasons are pre-ticked. One switch, cycling:
+  //   best — his highest-VA seasons, the same number as the selection
+  //   year — the same CAREER years the selection occupies (matchCareerYears)
+  //   same — the same CALENDAR seasons, whatever career year those fell in
+  const [matchMode, setMatchMode] = useState("best");
+  const canMatchYear = !!selfYears?.length && selfCareerLen > 0;
+  const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  const matches = useMemo(() => {
+    const q = normalizeName(query.trim());
+    if (q.length < 2) return [];
+    const selfKey = self ? (self.slug || normalizeName(self.name || "")) : null;
+    return players
+      .filter((pl) => normalizeName(pl.name).includes(q))
+      // Comparing a run against the same player's own run would just be the
+      // selection twice; the By Player table is where you change it.
+      .filter((pl) => !selfKey || (pl.slug || normalizeName(pl.name)) !== selfKey)
+      .sort((a, b) => b.bestVa - a.bestVa)
+      .slice(0, 12);
+  }, [players, query, self]);
+
+  // SAME SEASON: the calendar seasons the selection covers that this player
+  // also played. Deliberately an INTERSECTION and not a same-length match —
+  // the two ran alongside each other or they didn't, and a year one of them
+  // missed is a fact about the comparison rather than a gap to paper over.
+  // So the selection keeps every season it had and this side carries what it
+  // has: SGA's 2024-25 + 2025-26 against a Haliburton who missed 2025-26 is
+  // two seasons against one, stated plainly in the note below.
+  const sameSeasonsFor = (pl) => {
+    const have = new Set(pl.seasons.map((s) => s.season));
+    return (selfSeasons || []).filter((s) => have.has(s)).sort();
+  };
+  // With NO overlap at all there is nothing for the mode to mean, so it drops
+  // out of the cycle rather than resolving to an empty pick — pick only SGA's
+  // 2025-26 against that same Haliburton and the option isn't offered.
+  const modeOk = (pl, m) => (
+    m === "best" ? true
+    : m === "year" ? canMatchYear
+    : !!pl && sameSeasonsFor(pl).length > 0
+  );
+
+  // The seasons a player opens with, under whichever mode is active. BEST and
+  // CAREER YEAR return the selection's own COUNT wherever the career allows,
+  // so the two runs start out like-for-like; SAME SEASON returns the overlap,
+  // which is the honest answer even when it's shorter.
+  const suggestFor = (pl, mode) => {
+    if (mode === "same") return sameSeasonsFor(pl);
+    if (mode === "year" && canMatchYear) {
+      const asc = [...pl.seasons].sort((x, y) => x.season.localeCompare(y.season));
+      return matchCareerYears(selfYears, selfCareerLen, asc.length).map((i) => asc[i - 1].season);
+    }
+    return [...pl.seasons]
+      .sort((x, y) => (y.va || 0) - (x.va || 0))
+      .slice(0, Math.max(1, suggestCount))
+      .map((s) => s.season);
+  };
+  const choosePlayer = (pl) => {
+    // A mode the incoming player can't support falls back rather than
+    // carrying over as an empty selection — switching from someone who
+    // overlapped the run to someone who never did shouldn't tick nothing.
+    const m = modeOk(pl, matchMode) ? matchMode : "best";
+    setMatchMode(m);
+    setSel(pl);
+    setPicked(new Set(suggestFor(pl, m)));
+  };
+  // Flipping the switch re-picks from scratch. It's a "choose them for me"
+  // control, so it has to be able to undo hand-ticking — otherwise tapping it
+  // after a manual edit would produce some hybrid of the two. Modes this
+  // player can't support are skipped, so the cycle only ever lands somewhere
+  // that means something.
+  const MATCH_ORDER = ["best", "year", "same"];
+  const MATCH_LABEL = { best: "Best", year: "Career Year", same: "Same Season" };
+  const switchMatch = () => {
+    let i = MATCH_ORDER.indexOf(matchMode);
+    for (let n = 0; n < MATCH_ORDER.length; n++) {
+      i = (i + 1) % MATCH_ORDER.length;
+      if (modeOk(sel, MATCH_ORDER[i])) break;
+    }
+    const next = MATCH_ORDER[i];
+    setMatchMode(next);
+    if (sel) setPicked(new Set(suggestFor(sel, next)));
+  };
+  const toggle = (season) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(season)) next.delete(season); else next.add(season);
+      return next;
+    });
+  };
+
+  const chosen = sel && picked ? sel.seasons.filter((s) => picked.has(s.season)) : [];
+
+  // What the active mode resolved to, said plainly. The cases that earn a note
+  // are the ones where the switch could NOT deliver what its label promises —
+  // a run reaching past the end of a shorter career, or a season the other
+  // player missed — because the panel that follows would otherwise read as a
+  // clean match when it quietly isn't.
+  const matchNote = useMemo(() => {
+    if (!sel) return "";
+    const plural = (n) => (n === 1 ? "" : "s");
+    if (matchMode === "same") {
+      const got = sameSeasonsFor(sel);
+      const missing = (selfSeasons || []).filter((s) => !got.includes(s)).sort();
+      if (!missing.length) return `Same season${plural(got.length)} — ${got.join(", ")}`;
+      return `${got.join(", ")} — ${shortName(sel.name)} has no ${missing.join(", ")} season${plural(missing.length)}, so this is ${got.length} season${plural(got.length)} against your ${(selfSeasons || []).length}`;
+    }
+    if (matchMode !== "year" || !canMatchYear) return "";
+    const len = sel.seasons.length;
+    const got = matchCareerYears(selfYears, selfCareerLen, len);
+    const want = [...selfYears].sort((a, b) => a - b);
+    const list = (a) => (
+      a.length === 0 ? "–"
+      : a.length === 1 ? `${a[0]}`
+      : a.every((v, i) => i === 0 || v === a[i - 1] + 1) ? `${a[0]}–${a[a.length - 1]}`
+      : a.join(", ")
+    );
+    if (got.length === want.length && got.every((v, i) => v === want[i])) {
+      return `Career year${plural(want.length)} ${list(want)} — the same the selection covers`;
+    }
+    return `Selection is career year${plural(want.length)} ${list(want)}; ${shortName(sel.name)} played ${len} season${plural(len)}, so this is his year${plural(got.length)} ${list(got)}`;
+  }, [matchMode, canMatchYear, sel, selfYears, selfCareerLen, selfSeasons]);
+
+  const confirm = () => {
+    if (!chosen.length) return;
+    onPick({
+      name: sel.name,
+      slug: sel.slug || null,
+      seasons: sel.seasons,
+      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }),
+    });
+  };
+
+  const panelRef = useRef(null);
+  const onSearchFocus = () => {
+    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+  };
+
+  return (
+    <div ref={panelRef} className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px] scroll-mt-2">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="uppercase tracking-wider text-[9px] text-stone-500">
+          {sel ? `Pick ${sel.name}’s seasons…` : "Compare this run against…"}
+        </span>
+        <button onClick={onCancel} className="text-stone-400 hover:text-stone-700 px-1" aria-label="Cancel compare">✕</button>
+      </div>
+      {!sel ? (
+        <>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={onSearchFocus}
+            placeholder="Search a player…"
+            autoFocus
+            className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
+          />
+          {query.trim().length < 2 ? (
+            <div className="text-[9px] text-stone-400 italic py-2 text-center">
+              Type a name, then tick the seasons of theirs to pool.
+            </div>
+          ) : matches.length === 0 ? (
+            <div className="text-[9px] text-stone-400 italic py-2 text-center">No players match “{query.trim()}”.</div>
+          ) : (
+            matches.map((pl) => (
+              <button
+                key={pl.slug || pl.name}
+                onClick={() => choosePlayer(pl)}
+                className="w-full flex items-baseline justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-stone-50"
+              >
+                <span className="font-semibold text-stone-800">{pl.name}</span>
+                <span className="text-[9px] text-stone-400">{pl.seasons.length} seasons · best <span className="tabular-nums text-stone-600">{pl.bestVa.toFixed(1)}</span></span>
+              </button>
+            ))
+          )}
+        </>
+      ) : (
+        <>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="font-semibold text-stone-800">{sel.name}</span>
+            <button onClick={() => { setSel(null); setPicked(null); }} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+          </div>
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {[...sel.seasons].sort((x, y) => y.season.localeCompare(x.season)).map((s) => {
+              const on = picked.has(s.season);
+              const tc = teamColor(s.team);
+              return (
+                <button
+                  key={s.season}
+                  onClick={() => toggle(s.season)}
+                  role="checkbox"
+                  aria-checked={on}
+                  className="px-1.5 py-0.5 border tabular-nums inline-flex items-center gap-1 hover:border-amber-500"
+                  style={on
+                    ? { backgroundColor: GOLD_BG, borderColor: GOLD, color: tc }
+                    : { backgroundColor: "#fff", borderColor: "#d6d3d1", color: "#a8a29e" }}
+                >
+                  <span aria-hidden className="text-[9px] leading-none">{on ? "◼" : "⬜"}</span>
+                  {seasonTag(s.season)} {s.team} <span className={on ? "text-stone-500" : "text-stone-300"}>{(s.vaPerG ?? 0).toFixed(1)}/G</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between gap-1.5 border-t border-stone-100 pt-1.5">
+            <span className="text-[9px] text-stone-500 tabular-nums min-w-0 truncate">
+              {chosen.length === 0
+                ? "Pick at least one season"
+                : <>{chosen.length} season{chosen.length === 1 ? "" : "s"} · {chosen.reduce((n, s) => n + (s.gp || 0), 0)} G · <span className="font-semibold">{chosen.reduce((n, s) => n + (s.va || 0), 0).toFixed(1)}</span> VA</>}
+            </span>
+            {(modeOk(sel, "year") || modeOk(sel, "same")) && (
+              // Wears the /G switch's shape — same size, same weighting — since
+              // it does the same kind of job: one tap, another reading of the
+              // same panel. BEST is the default and sits light; the two
+              // matched modes are doing something specific and sit dark.
+              <button
+                type="button"
+                onClick={switchMatch}
+                aria-pressed={matchMode !== "best"}
+                aria-label={`Season matching: ${MATCH_LABEL[matchMode]} — tap to change`}
+                title={matchNote
+                  ? `${MATCH_LABEL[matchMode]} — ${matchNote}. Tap to change.`
+                  : "Showing his best seasons by VA — tap to match the selection’s career years, or the same calendar seasons"}
+                className={`shrink-0 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${matchMode !== "best" ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+              >
+                {MATCH_LABEL[matchMode]}
+              </button>
+            )}
+            <button
+              onClick={confirm}
+              disabled={!chosen.length}
+              className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${chosen.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
+            >
+              Compare →
+            </button>
+          </div>
+          {matchNote && (
+            <div className="mt-1 text-center text-[8px] italic text-stone-400">
+              {matchNote}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+
 // Head-to-head comparison of two player-seasons, each measured against their
 // OWN season's league baselines (era-fair). Three pieces: a category-win
 // tally, per-category paired team-color bars (or per-season-percentile dots),
@@ -378,7 +647,17 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
-export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs" }) {
+export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null }) {
+  // Either side may be a multi-season AGGREGATE (lib/multi-season.js) rather
+  // than a single player-season: the same rows, the same categories, but one
+  // synthetic line measured against one volume-weighted baseline. Almost
+  // everything below is indifferent to which it is — the aggregate is shaped
+  // like a season row — so the flag only gates the handful of places where a
+  // multi-season line genuinely can't mean the same thing: season TOTALS
+  // (a 203-game total can't rank against 82-game seasons), and the
+  // navigations, which have no way to carry a selection across the page.
+  const aMulti = !!a.multi, bMulti = !!b.multi;
+  const isMulti = aMulti || bMulti;
   // The compare view is Basic-first: the four groups are the top level, a tap
   // on a group drops down its member categories, and a tap on a member opens
   // the raw-stats table. (The Basic/By Category and Per 36/Per G toggles are
@@ -395,7 +674,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // same way: ON (the default) reads every bar, number, percentile and career
   // bar as per-game VA; OFF re-reads the whole comparison on season totals, so
   // a full season stops being measured against a half one at the same rate.
-  const [perGame, setPerGame] = useState(true);
+  // Locked ON while either side is a multi-season aggregate: the percentile
+  // pool is single player-seasons, and a three-season total has no meaningful
+  // rank against them. Per-game VA is scale-free, so it does.
+  const [perGameRaw, setPerGame] = useState(true);
+  const perGame = isMulti ? true : perGameRaw;
   // Confirmation step for the compared-player chip: the first tap arms a
   // "Go →" button in the chip's place; only that button navigates, and a tap
   // anywhere else disarms without doing whatever it landed on. The mechanics
@@ -407,6 +690,10 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   const confirmGo = () => go.confirm(() =>
     context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })
   );
+  // The chip travels to ONE player-season. A multi-season B has no single
+  // season to land on, so it stays a plain label rather than a jump that
+  // silently picks one.
+  const chipNavigates = !!context?.onNavigateToPlayer && !bMulti;
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -431,8 +718,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
       return next;
     });
   };
-  const lgaA = lgaForSeason(a.season);
-  const lgaB = lgaForSeason(b.season);
+  // An aggregate carries its own volume-weighted baseline; a season row looks
+  // its season up. Everything downstream reads these two and stays unaware of
+  // which kind it got.
+  const lgaA = lgaForRow(a);
+  const lgaB = lgaForRow(b);
   const ca = teamColor(a.team);
   const cb = teamColor(b.team);
   // The comparison side is "wrapped in gold" (the Compare-chip amber) with a
@@ -451,9 +741,50 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // One player-season's defensive value added, measured in its own season and
   // on the view's scope. A season with no rating (pre-bake, unjoined name)
   // contributes nothing rather than dropping out of the pool.
-  const dvaOf = (r, lgaX, season) => (
-    withDef && r?.mp > 0 ? (defVAInfo(r, r.mp, lgaX, defs, season, defScope)?.dva ?? 0) : 0
-  );
+  //
+  // A D Rating is a season-level quantity — it keys off that season's team map
+  // and league line — so an aggregate's defensive value is the SUM of its
+  // seasons' own, never one rating recomputed off pooled minutes. That also
+  // keeps it consistent with the box categories, which sum the same way.
+  const dvaOf = (r, lgaX, season) => {
+    if (!withDef) return 0;
+    if (r?.multi) {
+      return r.seasons.reduce((sum, s) => (
+        sum + (s.mp > 0 ? (defVAInfo(s, s.mp, lgaForSeason(s.season), defs, s.season, defScope)?.dva ?? 0) : 0)
+      ), 0);
+    }
+    return r?.mp > 0 ? (defVAInfo(r, r.mp, lgaX, defs, season, defScope)?.dva ?? 0) : 0;
+  };
+  // The full D-Rating detail for one side, in defVAInfo's shape. For an
+  // aggregate the ratings themselves (DRTG, team DRTG, the league line) are
+  // minute-weighted averages across the selected seasons — the natural way to
+  // state "what rating did this run play at" — while dva stays the exact sum
+  // above. Null when no selected season has a rating at all.
+  const defInfoFor = (r, lgaX) => {
+    if (!withDef) return null;
+    if (!r?.multi) return r?.mp > 0 ? defVAInfo(r, r.mp, lgaX, defs, r.season, defScope) : null;
+    let mp = 0, drtg = 0, teamDrtg = 0, teamMp = 0, laD = 0, dva = 0, any = false;
+    for (const s of r.seasons) {
+      const info = s.mp > 0 ? defVAInfo(s, s.mp, lgaForSeason(s.season), defs, s.season, defScope) : null;
+      if (!info) continue;
+      any = true;
+      mp += s.mp;
+      drtg += info.drtg * s.mp;
+      laD += info.laDRtg * s.mp;
+      dva += info.dva;
+      // Multi-team rows have no team line of their own; they sit out the team
+      // average rather than pulling it toward zero.
+      if (info.teamDrtg != null) { teamDrtg += info.teamDrtg * s.mp; teamMp += s.mp; }
+    }
+    if (!any || !(mp > 0)) return null;
+    return {
+      dva,
+      drtg: drtg / mp,
+      laDRtg: laD / mp,
+      teamDrtg: teamMp > 0 ? teamDrtg / teamMp : null,
+      w: null,
+    };
+  };
   // Leaving VA+ takes the D Rating row away with it, so an open one can't stay
   // selected — it would leave the career chart plotting a row that no longer
   // exists (and reads as a career of zeros).
@@ -545,10 +876,17 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // The index entry's own season rows carry no identity of their own, and
   // defVAInfo keys off the slug — tag them so the career bars can carry the
   // D-Rating layer too.
-  const aSeasons = (context.self?.seasons || [])
+  // The chart always plots each player's WHOLE career, not just the selection
+  // — that's the point of it. When a side is an aggregate, the seasons inside
+  // the selection are drawn at full strength and the rest dimmed, so the run
+  // being compared is visible in the shape of the career around it.
+  const aSeasons = (aSeasonsProp || context.self?.seasons || [])
     .map((s) => ({ ...s, name: a.name, slug: a.slug || null }))
     .sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
+  // Which seasons on each side count as "the compared one" for full opacity.
+  const aSel = aMulti ? a.seasonKeys : new Set([a.season]);
+  const bSel = bMulti ? b.seasonKeys : new Set([b.season]);
   const slots = Math.max(aSeasons.length, bAll.length);
   // Slots split the row evenly, so a one- or two-year chart would blow its bars
   // up into slabs the width of the card. Cap a slot at the width it would have
@@ -619,7 +957,10 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // A's current season is the page you're already on, so it stays a plain bar.
   const navFor = (i) => {
     const as = aSeasons[i], bs = bAll[i];
-    if (!canCompareYear) return null;
+    // A career-year jump re-points the page at ONE season on each side. A
+    // multi-season selection can't ride along in that shape, so the chart
+    // stays a read-only picture of the two careers while one is active.
+    if (!canCompareYear || isMulti) return null;
     const isHere = as && bs && as.season === a.season && bs.season === b.season;
     if (as && bs) return isHere ? null : { pair: true };
     const side = as ? "a" : bs ? "b" : null;
@@ -636,8 +977,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // own — its "rate" is the rating itself — and catRateLabel only knows the ten
   // box categories, so it's answered here.
   const rateLabelFor = (r, key, lgaX) => {
+    // An aggregate has no per-36 sample of its own to speak of beyond its
+    // pooled minutes, which catRateLabel already handles; only the rating
+    // needs the aggregate-aware lookup.
     if (key !== DEF_KEY) return catRateLabel(r, key, rateMode);
-    const drtg = defVAInfo(r, r.mp, lgaX, defs, r.season, defScope)?.drtg;
+    const drtg = defInfoFor(r, lgaX)?.drtg;
     return drtg == null ? "–" : `${Math.round(drtg)} DRTG`;
   };
 
@@ -645,8 +989,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // (metric rows, one cell per player, the better one flagged). The rating
   // itself is lower-is-better; everything derived from it reads the normal way.
   const defStatRows = () => {
-    const ia = defVAInfo(a, a.mp, lgaA, defs, a.season, defScope);
-    const ib = defVAInfo(b, b.mp, lgaB, defs, b.season, defScope);
+    const ia = defInfoFor(a, lgaA);
+    const ib = defInfoFor(b, lgaB);
     const rows = [];
     // Each side is [value the row is won on, what to print]. A side with
     // nothing to show sits out and the row goes unflagged.
@@ -693,7 +1037,10 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // The /G switch rides in the career chart's header — the same place the
   // individual card's category view parks it, above the bars that most visibly
   // answer to it. It still governs the whole panel.
-  const gToggle = (
+  // Absent entirely while a multi-season run is on screen: per-game is the
+  // only reading available there, so a switch that can't move is just a
+  // control that doesn't work.
+  const gToggle = isMulti ? null : (
     <PerGameToggle
       perGame={perGame}
       onToggle={() => setPerGame((v) => !v)}
@@ -703,11 +1050,23 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     />
   );
 
+  // What the two sides are, spelled out under the rows: a multi-season run
+  // says how many seasons and games it pools and that its baseline is the
+  // volume-weighted blend of those seasons' leagues.
+  const sideSummary = (r, color) => (
+    <span style={{ color }}>
+      <span className="font-semibold">{shortName(r.name)}</span>{" "}
+      {r.multi
+        ? `${r.seasons.length} seasons · ${r.gp} G`
+        : `${seasonTag(r.season)} · ${r.gp || 0} G`}
+    </span>
+  );
+
   return (
     <div className="text-[10px]">
       {/* Legend + tally (the head-to-head scorecard header) */}
       <div className="flex items-center justify-between gap-2 mb-0.5">
-        <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {seasonTag(a.season)}</span>
+        <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {rowSeasonLabel(a)}</span>
         <span className="text-stone-400 shrink-0">vs</span>
         {/* The compared player's chip links to that player's own card: in By
             Season it opens the Leaderboard for their season filtered to their
@@ -716,7 +1075,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
             only "Go →" navigates. The parent supplies onNavigateToPlayer via
             context (present whenever comparing); without it the chip stays a
             plain label. */}
-        {context?.onNavigateToPlayer ? (
+        {chipNavigates ? (
           armed ? (
             <button
               ref={go.goRef}
@@ -740,7 +1099,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
             </button>
           )
         ) : (
-          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {seasonTag(b.season)}<Swatch color={cb} outline /></span>
+          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {rowSeasonLabel(b)}<Swatch color={cb} outline /></span>
         )}
       </div>
       {/* Tally. The /G switch lives on the career chart below, which renders for
@@ -751,9 +1110,9 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           flow). */}
       <div className="relative flex items-center justify-center mb-1.5 min-h-[1.1rem]">
         <span className={`text-center text-[9px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
-          {seasonTag(leader.season)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
+          {rowSeasonLabel(leader)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
         </span>
-        {slots < 1 && <div className="absolute right-0 top-0">{gToggle}</div>}
+        {slots < 1 && gToggle && <div className="absolute right-0 top-0">{gToggle}</div>}
       </div>
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
           opens (or closes) every group and every raw-stats card at once. */}
@@ -836,7 +1195,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                       <Swatch color={color} outline={gold} />
                       <span className="truncate font-semibold text-[10px] leading-tight" style={{ color }}>{row.name}</span>
                     </div>
-                    <div className="text-[8px] text-stone-400 text-right leading-tight">{seasonTag(row.season)} · {row.gp || 0} G</div>
+                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
                   </div>
                 );
                 const cell = (disp, win, gold) => (
@@ -879,11 +1238,21 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
       </div>
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
-          ? `${perGame ? "Per-game" : "Season-total"} VA, each vs their own season’s league baseline`
+          ? `${perGame ? "Per-game" : "Season-total"} VA, each vs their own ${isMulti ? "run’s blended league baseline" : "season’s league baseline"}`
           : `Percentile of ${perGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`)
           + (withDef ? " · Defense carries D Rating, so the four groups sum to VA+" : "")
           + " · tap a group for its categories, a category for raw stats"}
       </div>
+      {isMulti && (
+        // A multi-season run's baseline is the seasons' own league averages
+        // weighted by the player's volume in each — so its 3P% line is
+        // Σ(league 3P% × his 3PA) / Σ his 3PA, and the VA above it is exactly
+        // what his individual seasons already added up to.
+        <div className="mt-0.5 text-center text-[8px] italic text-stone-400">
+          {sideSummary(a, ca)} <span className="text-stone-300">·</span> {sideSummary(b, cb)}
+          {" — each run vs its own seasons’ league averages, weighted by the volume he played in them"}
+        </div>
+      )}
 
       {/* Career-year overlay */}
       {slots > 0 && (
@@ -893,6 +1262,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
             {gToggle}
+            {/* The tally row's fallback only fires with no chart at all, so
+                nothing else needs to hold the toggle's place here. */}
           </div>
           <div className="flex items-stretch justify-center gap-[2px] h-16 px-1">
             {Array.from({ length: slots }, (_, i) => {
@@ -902,10 +1273,18 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                 const v = careerVal(s);
                 const h = (Math.abs(v) / cSpan) * 100;
                 const topPct = v >= 0 ? cZeroPct - h : cZeroPct;
-                const isSel = s.season === (side === "a" ? a.season : b.season);
+                const isSel = (side === "a" ? aSel : bSel).has(s.season);
+                // The comparison side reads as a gold-edged bar with the team
+                // color inside. At the row strip's 0.25 tint that inside was
+                // washing out to near-white at bar width — legible as an
+                // outline, but not as a COLOR next to A's solid fill, which
+                // made the two sides look like different kinds of thing rather
+                // than two players. CAREER_B_FILL halves the lightening (0.25
+                // → 0.6 alpha, i.e. 75% → 40% toward white) so the bar carries
+                // its team color while the gold edge still identifies it.
                 const fill = side === "a"
                   ? { backgroundColor: color }
-                  : { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${GOLD}` };
+                  : { backgroundColor: withAlpha(color, CAREER_B_FILL), border: `1px solid ${GOLD}` };
                 return (
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
@@ -1005,7 +1384,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
             ))}
           </div>
           <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
-            Seasons aligned by career year · compared seasons at full strength{anyNav ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
+            Seasons aligned by career year · {isMulti ? "selected seasons at full strength" : "compared seasons at full strength"}{anyNav ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
           </div>
         </div>
       )}
@@ -1048,7 +1427,7 @@ export function CompareButton({ compare, picking, onOpen, onClear }) {
         style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         aria-label="Clear comparison"
       >
-        vs {shortName(compare.name)} {seasonTag(compare.row.season)} <span className="opacity-60">✕</span>
+        vs {shortName(compare.name)} {rowSeasonLabel(compare.row)} <span className="opacity-60">✕</span>
       </button>
     );
   }

@@ -80,8 +80,14 @@ export function catRateLabel(r, key, rateMode) {
 }
 
 // Total category (or group) VA for one stat line.
+// A multi-season aggregate (lib/multi-season.js) carries `catVA` — the per-
+// category totals summed from its own seasons, each measured against its own
+// season's baselines. Preferring it keeps a selection's categories adding up
+// to exactly the VA the career table showed, which recomputing from the
+// aggregate row and a blended baseline would miss by a fraction of a percent
+// (the rebound and multiplier terms aren't linear in season volume).
 export function catVATotal(r, lgaX, key) {
-  const by = valueAddByCategory(r, lgaX);
+  const by = r?.catVA || valueAddByCategory(r, lgaX);
   const g = VA_GROUP_BY_KEY[key];
   return g ? g.cats.reduce((s, c) => s + (by[c] || 0), 0) : (by[key] || 0);
 }
@@ -95,7 +101,7 @@ export function catVAperGame(r, lgaX, key) {
 // valueAddByCategory call. This is the "shape" of a player-season used for the
 // closest-comps similarity in the compare picker.
 export function perGameVAVec(r, lgaX) {
-  const by = valueAddByCategory(r, lgaX);
+  const by = r?.catVA || valueAddByCategory(r, lgaX);
   const gp = r.gp || 1;
   return VA_CATEGORY_ORDER.map((k) => (by[k] || 0) / gp);
 }
