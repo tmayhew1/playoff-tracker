@@ -99,6 +99,13 @@ export const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
 
 export const MIDNIGHT_PURPLE = "#2e1065";          // violet-950 — the VA+ accent
 
+// Team-color alpha inside the comparison side's larger marks — the career-year
+// chart's bars, the league plot's B point. Deliberately heavier than the 0.25
+// the category rows use: those bars are ~7px tall against a paired solid bar
+// right beside them, where a faint tint still reads, while a career bar (or a
+// lone dot in a cloud) stands on its own and needs to hold its own color.
+export const CAREER_B_FILL = 0.6;
+
 
 // Percentile display honoring significant digits at the top end: integers up
 // to 99, then 99.5–99.9, then 99.95–99.99. A flat 100 is reserved for the #1

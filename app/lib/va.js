@@ -53,6 +53,17 @@ export const VA_GROUPS = [
 
 export const VA_GROUP_BY_KEY = Object.fromEntries(VA_GROUPS.map((g) => [g.key, g]));
 
+// Which of a two-stat group's components goes on which axis of its league
+// scatter, as [x, y]. Assists is the headline stat of the pair it belongs to,
+// so it takes the vertical; the others follow the order they're listed in.
+// Groups absent here have no pair to plot — Scoring's four members aren't two
+// axes — and fall back to a single value-added axis wherever a plot is drawn.
+export const SCATTER_AXES = {
+  "Passing": ["Turnovers", "Assists"],
+  "Rebounds": ["D Rebounds", "O Rebounds"],
+  "Defense": ["Blocks", "Steals"],
+};
+
 // Representative counting stat shown next to a group's summed VA.
 export const GROUP_STAT = {
   "Scoring": [(r) => r.pts || 0, "PTS"],

@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
-import { defVAInfo } from "../lib/defense";
-import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec, valueAddByCategory } from "../scoring";
+import { defRtgEntryFor, defVAInfo } from "../lib/defense";
+import { CAREER_B_FILL, GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, similarRuns } from "../lib/multi-season";
-import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
+import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, SCATTER_AXES, VA_CATEGORY_ORDER, VA_GROUPS, VA_GROUP_BY_KEY, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
+import { CompareLeaguePlot } from "./league-plot";
 
 
 // --- Compare (both breakdowns) ----------------------------------------------
@@ -61,14 +62,6 @@ export const COMP_METRIC_OPTS = [
 ];
 
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
-
-
-// Team-color alpha inside the comparison side's bars in the career-year chart.
-// Deliberately heavier than the 0.25 the category rows use: those bars are ~7px
-// tall against a paired solid bar right beside them, where a faint tint still
-// reads, while a career bar stands alone at full height and needs to hold its
-// own color. See the fill in the chart below.
-export const CAREER_B_FILL = 0.6;
 
 
 // Inline picker: search a player from the scope index, then tap one of their
@@ -752,6 +745,12 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
+// Games floor for the panel's all-time pool — the same ≥5 G the context card's
+// all-time rank uses, so a percentile here and a league plot below it describe
+// one and the same field.
+const POOL_MIN_GP = 5;
+
+
 export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null }) {
   // Either side may be a multi-season AGGREGATE (lib/multi-season.js) rather
   // than a single player-season: the same rows, the same categories, but one
@@ -773,7 +772,19 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // panel is keyed by the comparison at its call sites, so picking a different
   // player-season or season row resets everything).
   const [openGroups, setOpenGroups] = useState(() => new Set());
-  const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
+  const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories drilled into
+  // A drilled-in category opens on its league plot; these are the ones flipped
+  // over to the raw stat lines instead. Per category, so one card can show the
+  // numbers while its neighbour shows the field.
+  const [rawKeys, setRawKeys] = useState(() => new Set());
+  const setRawKey = (key, raw) => {
+    setRawKeys((prev) => {
+      if (prev.has(key) === raw) return prev;
+      const next = new Set(prev);
+      if (raw) next.add(key); else next.delete(key);
+      return next;
+    });
+  };
   // Per-game vs. season-total value added — the same /G ON·OFF switch the
   // individual view's category card carries, and it governs this panel the
   // same way: ON (the default) reads every bar, number, percentile and career
@@ -905,35 +916,60 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   const MEMBER_KEYS = withDef ? [...VA_CATEGORY_ORDER, DEF_KEY] : VA_CATEGORY_ORDER;
   const ALL_KEYS = [...GROUP_KEYS, ...MEMBER_KEYS];
 
-  const d = useMemo(() => {
-    // Every figure in the panel — bars, numbers and the percentile pool alike
-    // — is read on whichever side of the /G switch is showing, so a rank never
-    // means one thing in the strip and another in the number beside it. `dva`
-    // is the row's defensive value added, computed once per row and folded into
-    // both the rows it belongs to (its own, and Defense's total).
-    const valOf = (r, lgaX, key, dva) => {
-      const v = key === DEF_KEY
-        ? dva
-        : catVATotal(r, lgaX, key) + (key === "Defense" ? dva : 0);
-      return perGame ? v / (r.gp || 1) : v;
-    };
-    // Percentiles rank against EVERY indexed player-season (all-time pool),
-    // each row measured era-fair against its own season's baselines. One pass
-    // over the pool computes every group + category at once; the >=5 G floor
-    // matches the all-time rank in the context card. The pool max per key
-    // marks the #1 season, the only one allowed to display a flat 100.
-    const pool = context.allRows.filter((r) => (r.gp || 0) >= 5 && r.mp > 0);
+  // Every figure in the panel — bars, numbers and the percentile pool alike —
+  // is read on whichever side of the /G switch is showing, so a rank never
+  // means one thing in the strip and another in the number beside it. `dva` is
+  // the row's defensive value added, computed once per row and folded into both
+  // the rows it belongs to (its own, and Defense's total).
+  //
+  // One valueAddByCategory per row, not one per key: every group is a sum over
+  // the same ten categories, so the whole key set comes off a single pass. (An
+  // aggregate carries its own exact per-category totals — see catVATotal — and
+  // those are preferred here the same way.)
+  const valFrom = (by, r, key, dva) => {
+    const g = VA_GROUP_BY_KEY[key];
+    const v = key === DEF_KEY ? dva
+      : g ? g.cats.reduce((s, c) => s + (by[c] || 0), 0) + (key === "Defense" ? dva : 0)
+      : (by[key] || 0);
+    return perGame ? v / (r.gp || 1) : v;
+  };
+
+  // The pool pass, kept apart from the two compared rows on purpose. It ranges
+  // over EVERY indexed player-season (all-time pool), each measured era-fair
+  // against its own season's baselines, and it is the expensive thing in this
+  // panel; the rows above it change with every accordion tap, and the pool does
+  // not. The ≥5 G floor matches the all-time rank in the context card, and the
+  // per-key max marks the #1 season, the only one allowed to display a flat 100.
+  //
+  // This same pass is what the league-context plots draw — their cloud IS this
+  // pool — so opening one costs a sort and a bin rather than another sweep of
+  // twenty thousand seasons.
+  const poolPass = useMemo(() => {
+    const pool = context.allRows.filter((r) => (r.gp || 0) >= POOL_MIN_GP && r.mp > 0);
     const maxByKey = {};
-    const poolVals = pool.map((r) => {
+    // Which pool rows carry a defensive rating at all. dvaOf answers 0 for a
+    // season with none, which is right for a total but would pile thousands of
+    // false zeros onto the D Rating plot's baseline — so that plot drops them.
+    const poolDef = withDef ? new Uint8Array(pool.length) : null;
+    const poolVals = pool.map((r, i) => {
       const lgaX = lgaForSeason(r.season);
       const dva = dvaOf(r, lgaX, r.season);
+      if (poolDef && defRtgEntryFor(defs, r.season, r.slug, defScope)) poolDef[i] = 1;
+      const by = r.catVA || valueAddByCategory(r, lgaX);
       const out = {};
       for (const key of ALL_KEYS) {
-        out[key] = valOf(r, lgaX, key, dva);
+        out[key] = valFrom(by, r, key, dva);
         if (maxByKey[key] == null || out[key] > maxByKey[key]) maxByKey[key] = out[key];
       }
       return out;
     });
+    return { pool, poolVals, poolDef, maxByKey };
+    // context.allRows rather than context: the callers rebuild that wrapper
+    // object on every render, and the rows inside it are what this reads.
+  }, [context.allRows, perGame, withDef, defs, defScope]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const d = useMemo(() => {
+    const { pool, poolVals, poolDef, maxByKey } = poolPass;
     const pctFor = (v, key) => {
       if (!poolVals.length) return null;
       let below = 0;
@@ -943,9 +979,11 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     const rows = {};
     const adva = dvaOf(a, lgaA, a.season);
     const bdva = dvaOf(b, lgaB, b.season);
+    const aBy = a.catVA || valueAddByCategory(a, lgaA);
+    const bBy = b.catVA || valueAddByCategory(b, lgaB);
     for (const key of ALL_KEYS) {
-      const av = valOf(a, lgaA, key, adva);
-      const bv = valOf(b, lgaB, key, bdva);
+      const av = valFrom(aBy, a, key, adva);
+      const bv = valFrom(bBy, b, key, bdva);
       rows[key] = {
         key, av, bv,
         apct: pctFor(av, key), bpct: pctFor(bv, key),
@@ -957,8 +995,8 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
       };
     }
     const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
-    return { rows, diff };
-  }, [a, b, lgaA, lgaB, context, perGame, withDef, defs, defScope]);
+    return { rows, diff, pool, poolVals, poolDef };
+  }, [poolPass, a, b, lgaA, lgaB, perGame, withDef, defs, defScope]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Per-game figures are an order of magnitude smaller than season totals, so
   // they carry a second decimal; totals match the leaderboard's one.
@@ -1139,6 +1177,84 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
     />
   );
 
+  // Flipped raw-stats table: player columns, metric rows, the leader of each
+  // row circled (per the mock). B's column keeps the gold identity tint. Now
+  // the card's second face — its first is the league plot below.
+  const rawStats = (key) => {
+    const rows = key === DEF_KEY ? defStatRows() : compareStatRows(a, b, key, lgaA, lgaB);
+    const head = (row, color, gold) => (
+      <div className="min-w-0 px-1 py-0.5 rounded-sm" style={gold ? { backgroundColor: GOLD_BG } : undefined}>
+        <div className="flex items-center gap-0.5 justify-end">
+          <Swatch color={color} outline={gold} />
+          <span className="truncate font-semibold text-[10px] leading-tight" style={{ color }}>{row.name}</span>
+        </div>
+        <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
+      </div>
+    );
+    const cell = (disp, win, gold) => (
+      <div className="px-1 py-[1px] rounded-sm text-right" style={gold ? { backgroundColor: GOLD_BG } : undefined}>
+        <span className={`inline-block tabular-nums text-[10px] leading-tight ${win ? "font-bold text-stone-900 ring-1 ring-stone-500 rounded-full px-1.5 py-[1px]" : "text-stone-600 px-1.5 py-[1px]"}`}>{disp}</span>
+      </div>
+    );
+    return (
+      <>
+        <div className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
+          <span></span>
+          {head(a, ca, false)}
+          {head(b, cb, true)}
+        </div>
+        {rows.map((r) => (
+          <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
+            <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right">{r.label}</span>
+            {cell(r.a, r.win === "a", false)}
+            {cell(r.b, r.win === "b", true)}
+          </div>
+        ))}
+      </>
+    );
+  };
+
+  // --- League context ---------------------------------------------------
+  // Which stat(s) a row's plot puts on its axes. The three groups the
+  // individual card already scatters keep exactly those axes; nothing else
+  // gains a second one it doesn't already have there — Scoring's four members
+  // aren't two axes, and a lone category is one number — so everything else
+  // draws the collapsed form of the same plot, the field poured onto that
+  // stat's own value-added axis.
+  const axesFor = (key) => SCATTER_AXES[key] || [key];
+  const subsFor = (key) => axesFor(key).map((k) => CAT_SHORT[k] || k);
+  // The row's name is already printed beside this, so a collapsed plot doesn't
+  // restate the stat — it's the spread of the row you tapped.
+  const plotHeading = (key) => {
+    const keys = axesFor(key);
+    const subs = subsFor(key);
+    return keys.length > 1 ? `${subs[1]} vs ${subs[0]} · league` : "league spread";
+  };
+  // Pools follow the Explore scope selector; say so in the fine print, the same
+  // words the individual card's context card uses.
+  const scopeNoun = context.scope === "regular" ? "regular-season"
+    : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
+  const leaguePlot = (key) => {
+    const keys = axesFor(key);
+    return (
+      <CompareLeaguePlot
+        keys={keys}
+        subs={subsFor(key)}
+        pool={d.pool}
+        poolVals={d.poolVals}
+        // The D Rating axis only means anything for seasons that HAVE a
+        // rating; every other stat is defined for every indexed season.
+        poolMask={keys.includes(DEF_KEY) ? d.poolDef : null}
+        a={{ name: a.name, color: ca, vals: keys.map((k) => d.rows[k].av) }}
+        b={{ name: b.name, color: cb, vals: keys.map((k) => d.rows[k].bv) }}
+        sgn={sgn}
+        caption={(n) =>
+          `${n.toLocaleString()} ${scopeNoun} player-seasons (≥${POOL_MIN_GP} G), every indexed year, each vs its own season’s baseline · ${perGame ? "per-game" : "season-total"} value added`
+          + (key === "Defense" && withDef ? " · D Rating is in the Defense total but has no axis of its own" : "")}
+      />
+    );
+  };
+
   // The /G switch rides in the career chart's header — the same place the
   // individual card's category view parks it, above the bars that most visibly
   // answer to it. It still governs the whole panel.
@@ -1228,9 +1344,15 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           if (allOpen) {
             setOpenGroups(new Set());
             setOpenKeys(new Set());
+            setRawKeys(new Set());
           } else {
             setOpenGroups(new Set(GROUP_KEYS));
             setOpenKeys(new Set(MEMBER_KEYS));
+            // Everything at once is the "show me all the numbers" reading, and
+            // fourteen category clouds on one screen is neither that nor
+            // something a phone should be asked to draw. The four group plots
+            // still come along; any card's own League switch brings it back.
+            setRawKeys(new Set(MEMBER_KEYS));
           }
         };
         return (
@@ -1289,42 +1411,37 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                   </>
                 )}
               </div>
-              {member && isOpen && (() => {
-                // Flipped raw-stats card: player columns, metric rows, the
-                // leader of each row circled (per the mock). B column keeps the
-                // gold identity tint.
-                const rows = key === DEF_KEY ? defStatRows() : compareStatRows(a, b, key, lgaA, lgaB);
-                const head = (row, color, gold) => (
-                  <div className={`min-w-0 px-1 py-0.5 rounded-sm ${gold ? "" : ""}`} style={gold ? { backgroundColor: GOLD_BG } : undefined}>
-                    <div className="flex items-center gap-0.5 justify-end">
-                      <Swatch color={color} outline={gold} />
-                      <span className="truncate font-semibold text-[10px] leading-tight" style={{ color }}>{row.name}</span>
+              {member && isOpen && (
+                // The drill-in card. It opens on the league plot — where these
+                // two land inside the whole field — and the switch in its
+                // header trades that for the raw stat lines behind the row.
+                <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <span className="uppercase tracking-wider text-[9px] text-stone-400 truncate">
+                      {key} · {rawKeys.has(key) ? "raw stats" : plotHeading(key)}
+                    </span>
+                    <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[8px]">
+                      <button
+                        type="button"
+                        onClick={() => setRawKey(key, false)}
+                        aria-pressed={!rawKeys.has(key)}
+                        className={`whitespace-nowrap px-1.5 py-0.5 ${rawKeys.has(key) ? "bg-white text-stone-500 hover:text-stone-700" : "bg-stone-700 text-white"}`}
+                      >
+                        League
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRawKey(key, true)}
+                        aria-pressed={rawKeys.has(key)}
+                        className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${rawKeys.has(key) ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
+                      >
+                        Stats
+                      </button>
                     </div>
-                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
                   </div>
-                );
-                const cell = (disp, win, gold) => (
-                  <div className="px-1 py-[1px] rounded-sm text-right" style={gold ? { backgroundColor: GOLD_BG } : undefined}>
-                    <span className={`inline-block tabular-nums text-[10px] leading-tight ${win ? "font-bold text-stone-900 ring-1 ring-stone-500 rounded-full px-1.5 py-[1px]" : "text-stone-600 px-1.5 py-[1px]"}`}>{disp}</span>
-                  </div>
-                );
-                return (
-                  <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
-                    <div className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
-                      <span></span>
-                      {head(a, ca, false)}
-                      {head(b, cb, true)}
-                    </div>
-                    {rows.map((r) => (
-                      <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
-                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right">{r.label}</span>
-                        {cell(r.a, r.win === "a", false)}
-                        {cell(r.b, r.win === "b", true)}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+                  {rawKeys.has(key) ? rawStats(key) : leaguePlot(key)}
+                </div>
+              )}
             </React.Fragment>
           );
         };
@@ -1332,9 +1449,20 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           <React.Fragment key={g.key}>
             {rowFor(g.key, scaleFor(GROUP_KEYS), false)}
             {groupOpen && (
-              <div className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
-                {catsOf(g).map((ck) => rowFor(ck, scaleFor(catsOf(g)), true))}
-              </div>
+              <>
+                {/* The group's own league plot, above its members: the two
+                    stats it scatters, or the group's value added collapsed
+                    onto one axis where there's no pair to plot. */}
+                <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
+                  <div className="uppercase tracking-wider text-[9px] text-stone-400 truncate mb-1">
+                    {g.key} · {plotHeading(g.key)}
+                  </div>
+                  {leaguePlot(g.key)}
+                </div>
+                <div className="ml-3 pl-1 border-l-2 border-stone-200 my-0.5">
+                  {catsOf(g).map((ck) => rowFor(ck, scaleFor(catsOf(g)), true))}
+                </div>
+              </>
             )}
           </React.Fragment>
         );
@@ -1346,7 +1474,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
           ? `${perGame ? "Per-game" : "Season-total"} VA, each vs their own ${isMulti ? "run’s blended league baseline" : "season’s league baseline"}`
           : `Percentile of ${perGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`)
           + (withDef ? " · Defense carries D Rating, so the four groups sum to VA+" : "")
-          + " · tap a group for its categories, a category for raw stats"}
+          + " · tap a group or a category for its league context, and a category’s card for the raw stats behind it"}
       </div>
       {isMulti && (
         // A multi-season run's baseline is the seasons' own league averages

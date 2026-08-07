@@ -10,7 +10,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
-import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
+import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, SCATTER_AXES, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
 
 
 export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
@@ -652,15 +652,6 @@ const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
 // Short label printed under a category's bar in the split row below a Basic
 // group's rankings ("Assists" -> AST). Box-score tags rather than CAT_SHORT's
 // prose so the bars read like a stat line.
-// Which of a two-stat group's components goes on which axis of its scatter,
-// as [x, y]. Assists is the headline stat of the pair it belongs to, so it
-// takes the vertical; the others follow the order they're listed in.
-const SCATTER_AXES = {
-  "Passing": ["Turnovers", "Assists"],
-  "Rebounds": ["D Rebounds", "O Rebounds"],
-  "Defense": ["Blocks", "Steals"],
-};
-
 const SEG_SUB = {
   "Points": "PTS", "2-Pointers": "2P", "3-Pointers": "3P", "Free Throws": "FT",
   "Assists": "AST", "Turnovers": "TOV", "D Rebounds": "DRB", "O Rebounds": "ORB",
