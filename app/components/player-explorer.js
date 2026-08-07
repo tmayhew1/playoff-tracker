@@ -216,8 +216,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // Whether the picker is on screen. It opens ON ITS OWN once a run — two or
   // more seasons — is ticked: at that point choosing who to compare against
   // is the only thing left to do, so asking for it was a tap with no other
-  // answer. It appears quietly, in place under the table, and comes to the
-  // reader only if it opened off screen (see MultiComparePicker).
+  // answer. It appears quietly, in place under the table, and never moves
+  // the page to announce itself — only a # tap that asks for it scrolls the
+  // reader down to it (see MultiComparePicker).
   //
   // An override still wins, because both ways out of the automatic behavior
   // have to work: tapping # dismisses a picker you didn't want, and tapping
@@ -714,9 +715,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           // mode — which asks whether the two were in the league together,
           // not where in either career the run fell.
           selfSeasons={selectedSeasons.map((x) => x.season)}
-          // Whether the panel let itself in. Only then does it come to the
-          // reader; a # tap asked for it by name and leaves the page put.
-          unasked={!pickAsked}
+          // Whether the # tap asked for the panel. Only then does it come to
+          // the reader; letting itself in on a second tick never moves the
+          // page, however long the career.
+          asked={pickAsked}
           // Picking a run leaves the override cleared rather than forced
           // shut: the comparison itself is what keeps the picker away, so
           // clearing the comparison brings it back to choose again.
