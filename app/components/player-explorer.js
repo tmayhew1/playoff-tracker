@@ -200,16 +200,36 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const canOpenTeam = typeof onOpenTeamSeason === "function";
   // The # header's own two-step, and the biggest of the three: the first tap
   // turns the rank column into check boxes and the seasons become selectable;
-  // once any are ticked, tapping # again opens the picker for the OTHER
-  // player's run to compare against. Tapping it with nothing ticked just
-  // leaves selection mode, so the header is always its own way back out.
+  // ticking a run then brings up the picker for the OTHER player's run by
+  // itself (see `picking`), and tapping # once more puts it away. The ✕ chip
+  // beside the player's name is the way out of the whole mode.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState(() => new Set());
-  const [picking, setPicking] = useState(false);
+  // An explicit open/close of the compare picker — the # tap or the picker's
+  // own ✕ — remembered against the selection it was pressed for (see
+  // `picking` below).
+  const [pickOverride, setPickOverride] = useState(null); // { key, open } | null
   // The compared run: { name, slug, seasons, row } where row is the other
   // player's aggregate. Held here rather than inside a season row, because a
   // multi-season comparison belongs to the whole table, not to one line of it.
   const [multiCompare, setMultiCompare] = useState(null);
+  // Whether the picker is on screen. It opens ON ITS OWN once a run — two or
+  // more seasons — is ticked: at that point choosing who to compare against
+  // is the only thing left to do, so asking for it was a tap with no other
+  // answer. It appears quietly, in place under the table, and never moves
+  // the page to announce itself — only a # tap that asks for it scrolls the
+  // reader down to it (see MultiComparePicker).
+  //
+  // An override still wins, because both ways out of the automatic behavior
+  // have to work: tapping # dismisses a picker you didn't want, and tapping
+  // it on a single ticked season opens one early. The override is keyed to
+  // the exact selection it was pressed for, so changing what's ticked is a
+  // new question and hands the panel back to the rule above.
+  const pickKey = useMemo(() => [...picked].sort().join("|"), [picked]);
+  const pickAsked = pickOverride?.key === pickKey && pickOverride.open;
+  const picking = pickOverride?.key === pickKey
+    ? pickOverride.open
+    : (picked.size >= 2 && !multiCompare);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
   const defs = useDefRatings();
 
@@ -233,7 +253,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const exitSelect = () => {
     setSelecting(false);
     setPicked(new Set());
-    setPicking(false);
+    setPickOverride(null);
     setMultiCompare(null);
   };
 
@@ -323,7 +343,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   //      what makes the team badges compose with this: filter to HOU, tap #
   //      twice, and you have his whole Houston run without ticking nine rows
   //      by hand. A min-games filter narrows it the same way.
-  //   3. armed, something ticked — open the picker for the run to compare against
+  //   3. armed, something ticked — show or hide the picker for the run to
+  //      compare against. A run of two or more seasons already opens it on
+  //      its own, so there the tap reads as "put that away"; on a single
+  //      ticked season it's how you ask for it.
   // The ✕ chip beside the player's name is the way out at every step.
   const tapHash = () => {
     if (!selecting) {
@@ -336,7 +359,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       if (shown.length) setPicked(new Set(shown.map((x) => x.season)));
       return;
     }
-    setPicking((v) => !v);
+    setPickOverride({ key: pickKey, open: !picking });
   };
 
   // Narrowing the table drops any pick it hides. A selection you can't see is
@@ -677,6 +700,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <MultiComparePicker
           context={multiContext}
           self={player}
+          // The pooled selection itself, for the picker's opening suggestions
+          // — the closest runs of the same length have to be measured against
+          // the run, not against the player.
+          selfRow={aggA}
           suggestCount={selectedSeasons.length}
           // Career years the selection occupies, for the picker's BEST/YEAR
           // switch. Read off the player's WHOLE career, not the filtered view:
@@ -688,8 +715,15 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           // mode — which asks whether the two were in the league together,
           // not where in either career the run fell.
           selfSeasons={selectedSeasons.map((x) => x.season)}
-          onPick={(sel) => { setMultiCompare(sel); setPicking(false); }}
-          onCancel={() => setPicking(false)}
+          // Whether the # tap asked for the panel. Only then does it come to
+          // the reader; letting itself in on a second tick never moves the
+          // page, however long the career.
+          asked={pickAsked}
+          // Picking a run leaves the override cleared rather than forced
+          // shut: the comparison itself is what keeps the picker away, so
+          // clearing the comparison brings it back to choose again.
+          onPick={(sel) => { setMultiCompare(sel); setPickOverride(null); }}
+          onCancel={() => setPickOverride({ key: pickKey, open: false })}
         />
       )}
       {aggA && multiCompare && multiContext && (
@@ -735,7 +769,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             ? `Tick the seasons to pool — or tap # again to take all ${shown.length} shown${teamFilter ? ` for ${teamFilter}` : ""}${minGames != null ? ` with ≥${minGames} games` : ""}.`
             : multiCompare
             ? `Pooling ${picked.size} season${picked.size === 1 ? "" : "s"} · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tick another season to fold it in, or tap # to change who it’s measured against.`
-            : `${picked.size} season${picked.size === 1 ? "" : "s"} ticked — tap # again to pick the run to compare against.`
+            : picked.size === 1
+            ? "1 season ticked — tick another to pool a run, or tap # to compare this one."
+            : picking
+            ? `${picked.size} seasons ticked · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — take a run below to compare against, or tick another season to fold it in.`
+            : `${picked.size} seasons ticked · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tap # to pick the run to compare against.`
           : "Tap a season for the per-stat breakdown, then a category for its league context."}
       </div>
     </div>
