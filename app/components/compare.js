@@ -508,6 +508,26 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   };
 
   const panelRef = useRef(null);
+  // This panel opens on its own as soon as a run is ticked, so it must not
+  // take the page with it. Come to it only when it appeared off screen; when
+  // it's already in view — the common case on a short career, or when the
+  // reader is down at the bottom of a long one — the scroll position is
+  // theirs to keep. `nearest` then moves the shortest distance that puts it
+  // on screen rather than throwing it to the top of the viewport.
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el || typeof window === "undefined") return;
+    const r = el.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    // Taller than the viewport counts as on screen once its top is: there is
+    // no scroll position that shows all of it, and the top is where it reads.
+    if (r.top >= 0 && (r.bottom <= vh || r.height >= vh)) return;
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, []);
+  // The mobile keyboard covers the lower half of the viewport, which would
+  // bury the results below the search box, so tapping the field DOES pin the
+  // panel to the top — an explicit tap, unlike the panel's own arrival.
+  // Deferred so the scroll runs after the keyboard has begun opening.
   const onSearchFocus = () => {
     setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
   };
@@ -528,7 +548,9 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
             onChange={(e) => setQuery(e.target.value)}
             onFocus={onSearchFocus}
             placeholder="Search a player…"
-            autoFocus
+            // No autoFocus, deliberately: the panel arrives on its own, and
+            // focusing the field would scroll the page to it and open the
+            // keyboard over the very suggestions it leads with.
             className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
           />
           {query.trim().length < 2 ? (
