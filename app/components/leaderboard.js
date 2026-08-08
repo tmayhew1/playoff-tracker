@@ -10,7 +10,7 @@ import { GOLD, MIDNIGHT_PURPLE, normalizeName, teamColor, withAlpha } from "../l
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 
 
-export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null }) {
+export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -252,7 +252,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     // onNavigateToPlayer lets a compare panel's compared-player chip jump the
     // leaderboard to that player's season, filtered to their team with their
     // row open (see the pendingNav effect below).
-    return { ...ctxPools, self, scope, season, onNavigateToPlayer };
+    // onNavigateToRun is the same chip pointing at a POOLED side (a compared
+    // run, or a career-year selection made in the panel's own chart). A run has
+    // no season for this board to switch to, so that one crosses over to By
+    // Player with those seasons ticked — the only place a run has a home.
+    return { ...ctxPools, self, scope, season, onNavigateToPlayer, onNavigateToRun: onOpenPlayerRun };
   };
 
   useEffect(() => {

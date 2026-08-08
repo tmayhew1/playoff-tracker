@@ -818,13 +818,20 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const go = useGatedGo();
   const armed = go.isArmed();
   const arm = () => go.arm();
-  const confirmGo = () => go.confirm(() =>
-    context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })
-  );
-  // The chip travels to ONE player-season. A multi-season B has no single
-  // season to land on, so it stays a plain label rather than a jump that
-  // silently picks one.
-  const chipNavigates = !!context?.onNavigateToPlayer && !bMulti;
+  // Where the chip goes depends on what B is. A single season opens that
+  // player-season's own card. A RUN has no single season to land on, so it
+  // travels as a run instead: By Player for that player with exactly these
+  // seasons ticked, which is where a run lives — the same selection you'd have
+  // made by hand in his career table. From By Season that means crossing over
+  // to By Player, which is the only place the selection has a home.
+  const confirmGo = () => go.confirm(() => (bMulti
+    ? context?.onNavigateToRun?.({ name: b.name, slug: b.slug || null, seasons: [...b.seasonKeys].sort() })
+    : context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })
+  ));
+  const chipNavigates = !!(bMulti ? context?.onNavigateToRun : context?.onNavigateToPlayer);
+  const chipTitle = bMulti
+    ? `Open ${b.name}’s ${b.spanLabel} run in By Player, with those seasons ticked`
+    : `Open ${b.name} ${seasonTag(b.season)}`;
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -1203,7 +1210,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               onClick={confirmGo}
               className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95 touch-manipulation"
               style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
-              title={`Open ${b.name} ${seasonTag(b.season)}`}
+              title={chipTitle}
             >
               Go <span aria-hidden>→</span>
             </button>
@@ -1213,9 +1220,9 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               onClick={arm}
               className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer touch-manipulation"
               style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
-              title={`Open ${b.name} ${seasonTag(b.season)}`}
+              title={chipTitle}
             >
-              {b.name} {seasonTag(b.season)}<Swatch color={cb} outline />
+              {b.name} {rowSeasonLabel(b)}<Swatch color={cb} outline />
             </button>
           )
         ) : (

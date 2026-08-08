@@ -174,6 +174,18 @@ export function ExploreView() {
     setPlayerNav(target);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+  // The same crossing for a RUN — a By Season compare panel's chip pointing at
+  // a side that pools several seasons (a compared run, or a selection made in
+  // the panel's career chart). There is no single season for the leaderboard to
+  // land on, and a run's home is the By Player table with those seasons ticked,
+  // so this always crosses over. `seasons` rides along in the same pending
+  // target the season crossing uses.
+  const navigatePlayerToRun = useCallback((target) => {
+    if (!target?.seasons?.length || (!target.name && !target.slug)) return;
+    setMode("player");
+    setPlayerNav({ name: target.name || null, slug: target.slug || null, season: null, seasons: target.seasons });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
 
   useEffect(() => {
@@ -262,14 +274,14 @@ export function ExploreView() {
           </div>
 
           {scope !== "playoffs" ? (
-            <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} />
+            <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
           ) : (
             <>
               {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
               {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
               {!loading && !error && data && (
                 <>
-                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} />
+                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
                   {(["r1", "r2", "r3", "r4"]).map((rk) => (
                     <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
                   ))}
