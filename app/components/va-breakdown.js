@@ -32,6 +32,10 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // A career-year selection made inside the compare panel's chart, reported up
+  // so the vs-chip above can name it instead of the seasons the comparison
+  // opened on. ComparePanel owns it; this only mirrors it for the chip.
+  const [careerPick, setCareerPick] = useState(null);
   // A comparison handed in by the navigation that opened this card — the
   // compare panel's career-year gate asks for the page to move to one player's
   // season and land already comparing against the other's. Resolved against
@@ -447,6 +451,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           <CompareButton
             compare={compare}
             picking={picking}
+            careerPick={careerPick}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
@@ -540,6 +545,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           defs={defs}
           defActive={dVA != null}
           defScope={defScope}
+          onPickChange={setCareerPick}
         />
       ) : (
       <>
@@ -1764,6 +1770,9 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   const [compare, setCompare] = useState(null);
   const [picking, setPicking] = useState(false);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // Mirrors the compare panel's career-year selection so the vs-chip can name
+  // it in place of the comparison's own seasons (see ComparePanel).
+  const [careerPick, setCareerPick] = useState(null);
   // Baked defensive ratings (D-Rating category / VA+); college rows simply
   // never match and VA+ stays hidden there.
   const defs = useDefRatings();
@@ -1844,6 +1853,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
           <CompareButton
             compare={compare}
             picking={picking}
+            careerPick={careerPick}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
@@ -1881,7 +1891,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         />
       )}
       {compare && context ? (
-        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} defs={defs} defActive={dVA != null} defScope="rs" />
+        <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} defs={defs} defActive={dVA != null} defScope="rs" onPickChange={setCareerPick} />
       ) : (
       <>
       {vaPlus != null && (

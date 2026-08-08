@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
 import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
@@ -767,7 +767,7 @@ function careerYearLabel(idxs) {
 }
 
 
-export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null }) {
+export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null, onPickChange = null }) {
   // A selection made in the career chart at the foot of this panel: the career
   // years ticked there, resolved into one row per side — the season itself when
   // a single year is ticked, an aggregate of them when several are. It REPLACES
@@ -779,6 +779,23 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const [pick, setPick] = useState(null);
   const a = pick?.a || aProp;
   const b = pick?.b || bProp;
+  // A caller that renders the comparison's own chip above this panel (the gold
+  // "vs MITCHELL ’18·’21·’24") takes the career-year chip over, because those
+  // two chips can't both be right at once: once a career-year selection has
+  // replaced the compared rows, the seasons named up there are no longer what
+  // any number on the card is measuring. So the selection is reported up, the
+  // caller shows it in that chip's place, and this panel drops its own copy —
+  // one chip, naming the thing actually being read. Without the callback the
+  // chip stays here, so a call site that renders no chip of its own still has
+  // a way to clear the selection.
+  const clearPick = useCallback(() => setPick(null), []);
+  const chipIsUpstairs = typeof onPickChange === "function";
+  useEffect(() => {
+    onPickChange?.(pick ? { label: careerYearLabel(pick.years), clear: clearPick } : null);
+  }, [pick, onPickChange, clearPick]);
+  // Leaving the card behind (the comparison cleared, the row collapsed) takes
+  // the caller's chip label with it.
+  useEffect(() => () => onPickChange?.(null), [onPickChange]);
   // Either side may be a multi-season AGGREGATE (lib/multi-season.js) rather
   // than a single player-season: the same rows, the same categories, but one
   // synthetic line measured against one volume-weighted baseline. Almost
@@ -1189,11 +1206,19 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     </span>
   );
 
+  // The legend names. Normally each carries its own span, because that span is
+  // what tells you which run of a career you're reading. Under a career-year
+  // selection it comes off: the chip now names the years, the tally line under
+  // these two spells out the leader's span, and a third printing of it here —
+  // on a line whose whole job is "who vs who" — was the year that read as the
+  // comparison's, next to a chip that said something else.
+  const sideLabel = (x) => (pick ? x.name : `${x.name} ${rowSeasonLabel(x)}`);
+
   return (
     <div className="text-[10px]">
       {/* Legend + tally (the head-to-head scorecard header) */}
       <div className="flex items-center justify-between gap-2 mb-0.5">
-        <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{a.name} {rowSeasonLabel(a)}</span>
+        <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{sideLabel(a)}</span>
         <span className="text-stone-400 shrink-0">vs</span>
         {/* The compared player's chip links to that player's own card: in By
             Season it opens the Leaderboard for their season filtered to their
@@ -1222,11 +1247,11 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
               title={chipTitle}
             >
-              {b.name} {rowSeasonLabel(b)}<Swatch color={cb} outline />
+              {sideLabel(b)}<Swatch color={cb} outline />
             </button>
           )
         ) : (
-          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{b.name} {rowSeasonLabel(b)}<Swatch color={cb} outline /></span>
+          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{sideLabel(b)}<Swatch color={cb} outline /></span>
         )}
       </div>
       {/* Tally. The /G switch lives on the career chart below, which renders for
@@ -1390,8 +1415,9 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
             <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
             {/* What the panel above is currently reading, when that came from a
                 selection made in this chart rather than from the caller. Clears
-                back to the comparison the card opened on. */}
-            {pick && (
+                back to the comparison the card opened on. Hidden when the
+                caller took the chip over (see `chipIsUpstairs`). */}
+            {pick && !chipIsUpstairs && (
               <button
                 type="button"
                 onClick={() => setPick(null)}
@@ -1575,17 +1601,28 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 
 // Gold Compare chip for the breakdown toggle rows: opens the picker, then
 // shows the active comparison with a clear ✕.
-export function CompareButton({ compare, picking, onOpen, onClear }) {
+//
+// `careerPick` is a career-year selection made down in the panel's chart
+// ({ label, clear }, reported by ComparePanel's onPickChange). While one is
+// set it takes this chip over, because the seasons in "vs MITCHELL ’18·’21·’24"
+// are no longer what the card is measuring — the ✕ then steps back to that
+// comparison rather than clearing the whole thing, which is the one step the
+// reader wants first and the only order that keeps the chip honest at each
+// stage.
+export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null }) {
   if (compare) {
     // Active chip wears the same LIGHT gold as the compared player's wrappers.
     return (
       <button
-        onClick={onClear}
+        onClick={careerPick ? careerPick.clear : onClear}
         className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
         style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-        aria-label="Clear comparison"
+        title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : undefined}
+        aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
       >
-        vs {shortName(compare.name)} {rowSeasonLabel(compare.row)} <span className="opacity-60">✕</span>
+        {careerPick
+          ? careerPick.label
+          : `vs ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}`} <span className="opacity-60">✕</span>
       </button>
     );
   }

@@ -273,6 +273,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     ? pickOverride.open
     : (picked.size >= 2 && !multiCompare);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // A career-year selection made in the compare panel's chart, mirrored up here
+  // so the card's vs-chip can name it instead of the run it opened on.
+  const [careerPick, setCareerPick] = useState(null);
   const defs = useDefRatings();
 
   // Team and G stay mutually exclusive with each other — two dotted-underline
@@ -825,13 +828,23 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         // every number here moves with it.
         <div className="mt-3 px-2 py-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex justify-between items-center gap-1 mb-1.5">
+            {/* The comparison's chip — and, while the panel's chart has a
+                career-year selection under it, that selection's chip instead:
+                the seasons named here stop being what the card measures the
+                moment those years replace the two rows, and two chips
+                disagreeing about the same comparison is worse than one that
+                moves. ✕ then steps back to this comparison rather than
+                dropping it. */}
             <button
-              onClick={() => setMultiCompare(null)}
+              onClick={() => (careerPick ? careerPick.clear() : setMultiCompare(null))}
               className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
               style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-              aria-label="Clear comparison"
+              title={careerPick ? `Back to ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}` : undefined}
+              aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
             >
-              vs {shortName(multiCompare.name)} {multiCompare.row.spanLabel} <span className="opacity-60">✕</span>
+              {careerPick
+                ? careerPick.label
+                : `vs ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}`} <span className="opacity-60">✕</span>
             </button>
             <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
               <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
@@ -853,6 +866,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             defs={defs}
             defActive={multiDefActive}
             defScope={defScope}
+            onPickChange={setCareerPick}
           />
         </div>
       )}
