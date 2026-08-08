@@ -235,10 +235,16 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const [teamArmed, setTeamArmed] = useState(false);
   const canOpenTeam = typeof onOpenTeamSeason === "function";
   // The # header's own two-step, and the biggest of the three: the first tap
-  // turns the rank column into check boxes and the seasons become selectable;
-  // ticking a run then brings up the picker for the OTHER player's run by
-  // itself (see `picking`), and tapping # once more puts it away. The ✕ chip
+  // turns the rank column into check boxes and the whole row becomes the tick
+  // target; ticking a run then brings up the picker for the OTHER player's run
+  // by itself (see `picking`), and tapping # once more puts it away. The ✕ chip
   // beside the player's name is the way out of the whole mode.
+  //
+  // While it's armed the rows do ONE thing. A 3mm check box inside a row that
+  // otherwise opened a breakdown meant every mis-tap while pooling a run threw
+  // a chart between the seasons being ticked; now the tap lands wherever it
+  // falls on the row. The breakdown isn't gone, it's behind the disarm — the
+  // one deliberate tap that says you're done picking.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState(() => new Set());
   // An explicit open/close of the compare picker — the # tap or the picker's
@@ -267,6 +273,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     ? pickOverride.open
     : (picked.size >= 2 && !multiCompare);
   const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // A career-year selection made in the compare panel's chart, mirrored up here
+  // so the card's vs-chip can name it instead of the run it opened on.
+  const [careerPick, setCareerPick] = useState(null);
   const defs = useDefRatings();
 
   // Team and G stay mutually exclusive with each other — two dotted-underline
@@ -411,6 +420,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     if (!selecting) {
       setTeamArmed(false);
       setGArmed(false);
+      // Close whatever was open on the way in. The row tap is the tick now, so
+      // a breakdown left standing would have no way to shut short of leaving
+      // the mode — and the same close happens when a navigation arms selection
+      // for us (see the pendingRun effect).
+      setOpenSeason(null);
       setSelecting(true);
       return;
     }
@@ -497,7 +511,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 onClick={exitSelect}
                 className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 text-amber-900 whitespace-nowrap shrink-0 self-center"
                 style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-                aria-label="Clear season selection"
+                // The only way out of the mode, and so also the way back to the
+                // breakdowns — say both, since the rows no longer open them.
+                title="Stop picking seasons — rows go back to opening their breakdown"
+                aria-label="Stop picking seasons and clear the selection"
               >
                 {picked.size === 0
                   ? "Pick seasons"
@@ -544,7 +561,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           title={!selecting
             ? "Tap to pick multiple seasons, then tap # again to compare them against another player’s run"
             : picked.size === 0
-            ? `Tick seasons — or tap # again to take all ${shown.length} shown${teamFilter || minGames != null ? " under the current filter" : ""}`
+            ? `Tap seasons to tick them — or tap # again to take all ${shown.length} shown${teamFilter || minGames != null ? " under the current filter" : ""}`
             : `Compare these ${picked.size} seasons against another player’s run`}
           aria-pressed={selecting}
         >
@@ -628,14 +645,33 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const barPct = (Math.abs(barValOf(s)) / maxAbsVa) * 100;
         const gp = s.gp || 1;
         const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
+        // What a tap on the row body does. Armed, the row IS the check box;
+        // unarmed it's the disclosure it has always been.
+        const activate = () => {
+          if (selecting) { togglePick(s.season); return; }
+          setOpenSeason(sOpen ? null : s.season);
+        };
         return (
           <div
             key={s.season}
             data-season-row={s.season}
             className="border-b border-stone-100 last:border-0"
-            // Picked rows carry a gold left edge so the selection stays legible
-            // once the comparison below has pushed the table up the screen.
-            style={isPicked ? { boxShadow: `inset 3px 0 0 0 ${GOLD}` } : undefined}
+            // Picked rows carry a gold left edge AND a gold wash so the
+            // selection stays legible once the comparison below has pushed the
+            // table up the screen. The wash is state, not feedback: it says
+            // "this one is in the pool" and nothing about what was touched
+            // last. A hover tint said the second thing, and on a touch screen
+            // :hover sticks to the last row tapped — so a row you had just
+            // UNTICKED kept the highlight as you scrolled away, which is the
+            // one thing the color must never claim.
+            //
+            // It sits on the wrapper, under the team-colored VA bar rather
+            // than over it: the bar is the row's measurement and outranks the
+            // selection for that space. Lighter than the chip's GOLD_BG too —
+            // a whole row of it at chip strength buries the numbers.
+            style={isPicked
+              ? { boxShadow: `inset 3px 0 0 0 ${GOLD}`, backgroundColor: withAlpha("#fbbf24", 0.16) }
+              : undefined}
           >
             <div className="relative overflow-hidden">
               <div
@@ -644,37 +680,34 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 aria-hidden
               />
               <div
-                role="button"
+                role={selecting ? "checkbox" : "button"}
+                aria-checked={selecting ? isPicked : undefined}
+                aria-label={selecting
+                  ? `${isPicked ? "Remove" : "Add"} ${s.season} ${isPicked ? "from" : "to"} the compared run — leave season picking to open the breakdown`
+                  : `Open the ${s.season} breakdown`}
                 tabIndex={0}
-                onClick={() => setOpenSeason(sOpen ? null : s.season)}
+                onClick={activate}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setOpenSeason(sOpen ? null : s.season);
+                    activate();
                   }
                 }}
                 className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""}`}
               >
                 {selecting ? (
-                  // The rank column becomes the check box while selecting. It
-                  // stops propagation so ticking a season never also opens its
-                  // breakdown — the rest of the row still does.
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={isPicked}
-                    aria-label={`${isPicked ? "Remove" : "Add"} ${s.season} ${isPicked ? "from" : "to"} the compared run`}
-                    onClick={(e) => { e.stopPropagation(); togglePick(s.season); }}
-                    className="w-6 flex items-center justify-end pr-0.5"
-                  >
+                  // The rank column becomes the check box while selecting —
+                  // painted, not pressed. The row around it carries the tap, so
+                  // a control here would only be a second, smaller way to do
+                  // the same thing, and a nested one at that.
+                  <span className="w-6 flex items-center justify-end pr-0.5" aria-hidden>
                     <span
-                      aria-hidden
                       className="inline-block w-3 h-3 border rounded-[1px]"
                       style={isPicked
                         ? { backgroundColor: tc, borderColor: tc, boxShadow: `0 0 0 2px ${withAlpha(tc, 0.22)}` }
                         : { backgroundColor: "#ffffff", borderColor: "#a8a29e" }}
                     />
-                  </button>
+                  </span>
                 ) : (
                   <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
                 )}
@@ -706,15 +739,19 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                   </span>
                 </button>
                 <span className="flex-1 truncate text-stone-800 font-semibold tabular-nums">
-                  <span className="text-stone-400 mr-1 font-normal">{sOpen ? "▾" : "▸"}</span>
+                  {/* The disclosure mark goes away while picking. It promises a
+                      panel this tap no longer opens, and the check box at the
+                      head of the row is the state worth showing there. */}
+                  {!selecting && <span className="text-stone-400 mr-1 font-normal">{sOpen ? "▾" : "▸"}</span>}
                   {s.season}
                 </span>
                 <button
                   type="button"
                   onClick={(e) => {
                     // Unarmed tap on an inactive G is a mis-tap: fall through
-                    // (no stopPropagation) so it bubbles to the row and opens
-                    // the breakdown, instead of doing nothing.
+                    // (no stopPropagation) so it bubbles to the row and does
+                    // whatever the row does — tick it while picking, open the
+                    // breakdown otherwise — instead of doing nothing.
                     if (!gArmed && minGames !== s.gp) return;
                     e.stopPropagation();
                     setMinGames(minGames === s.gp ? null : s.gp);
@@ -791,13 +828,23 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         // every number here moves with it.
         <div className="mt-3 px-2 py-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex justify-between items-center gap-1 mb-1.5">
+            {/* The comparison's chip — and, while the panel's chart has a
+                career-year selection under it, that selection's chip instead:
+                the seasons named here stop being what the card measures the
+                moment those years replace the two rows, and two chips
+                disagreeing about the same comparison is worse than one that
+                moves. ✕ then steps back to this comparison rather than
+                dropping it. */}
             <button
-              onClick={() => setMultiCompare(null)}
+              onClick={() => (careerPick ? careerPick.clear() : setMultiCompare(null))}
               className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
               style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-              aria-label="Clear comparison"
+              title={careerPick ? `Back to ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}` : undefined}
+              aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
             >
-              vs {shortName(multiCompare.name)} {multiCompare.row.spanLabel} <span className="opacity-60">✕</span>
+              {careerPick
+                ? careerPick.label
+                : `vs ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}`} <span className="opacity-60">✕</span>
             </button>
             <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
               <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
@@ -819,19 +866,22 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             defs={defs}
             defActive={multiDefActive}
             defScope={defScope}
+            onPickChange={setCareerPick}
           />
         </div>
       )}
       <div className="text-[10px] text-stone-400 italic mt-2 px-2">
         {selecting
           ? picked.size === 0
-            ? `Tick the seasons to pool — or tap # again to take all ${shown.length} shown${teamFilter ? ` for ${teamFilter}` : ""}${minGames != null ? ` with ≥${minGames} games` : ""}.`
+            // Said once, at the moment the mode is armed and nothing is ticked
+            // yet: the rows tick now, and the ✕ is what hands them back.
+            ? `Tap any season to tick it — or tap # again to take all ${shown.length} shown${teamFilter ? ` for ${teamFilter}` : ""}${minGames != null ? ` with ≥${minGames} games` : ""}. ✕ to go back to breakdowns.`
             : multiCompare
-            ? `Pooling ${picked.size} season${picked.size === 1 ? "" : "s"} · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tick another season to fold it in, or tap # to change who it’s measured against.`
+            ? `Pooling ${picked.size} season${picked.size === 1 ? "" : "s"} · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tap another season to fold it in, or tap # to change who it’s measured against.`
             : picked.size === 1
-            ? "1 season ticked — tick another to pool a run, or tap # to compare this one."
+            ? "1 season ticked — tap another to pool a run, or tap # to compare this one."
             : picking
-            ? `${picked.size} seasons ticked · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — take a run below to compare against, or tick another season to fold it in.`
+            ? `${picked.size} seasons ticked · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — take a run below to compare against, or tap another season to fold it in.`
             : `${picked.size} seasons ticked · ${selectedSeasons.reduce((n, x) => n + (x.gp || 0), 0)} G — tap # to pick the run to compare against.`
           : "Tap a season for the per-stat breakdown, then a category for its league context."}
       </div>
