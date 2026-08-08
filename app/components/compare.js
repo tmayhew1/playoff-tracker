@@ -5,7 +5,7 @@ import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, similarRuns } from "../lib/multi-season";
+import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
 
 
@@ -752,7 +752,33 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
-export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null }) {
+// The chip label for a selection made in the career chart: "Career year 4",
+// "Career years 3–6" for a run, "Career years 3·5·8" for one with gaps (capped,
+// so a twelve-year pick stays chip-sized). Slot indices in, 1-based years out —
+// the same shape seasonSpanLabel gives a set of seasons.
+function careerYearLabel(idxs) {
+  const ys = [...idxs].map((i) => i + 1).sort((m, n) => m - n);
+  if (ys.length === 0) return "";
+  if (ys.length === 1) return `Career year ${ys[0]}`;
+  const contiguous = ys.every((y, i) => i === 0 || y === ys[i - 1] + 1);
+  if (contiguous) return `Career years ${ys[0]}–${ys[ys.length - 1]}`;
+  if (ys.length <= 3) return `Career years ${ys.join("·")}`;
+  return `Career years ${ys[0]}–${ys[ys.length - 1]} (${ys.length})`;
+}
+
+
+export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null }) {
+  // A selection made in the career chart at the foot of this panel: the career
+  // years ticked there, resolved into one row per side — the season itself when
+  // a single year is ticked, an aggregate of them when several are. It REPLACES
+  // the two rows the caller handed in for as long as it's set, so every number
+  // above (bars, percentiles, raw stats, the tally) re-reads as that selection
+  // and the chart underneath keeps showing both whole careers around it.
+  // Clearing it restores the caller's comparison; see the chip in the chart's
+  // header. { a, b, years } — years are 0-based slot indices.
+  const [pick, setPick] = useState(null);
+  const a = pick?.a || aProp;
+  const b = pick?.b || bProp;
   // Either side may be a multi-season AGGREGATE (lib/multi-season.js) rather
   // than a single player-season: the same rows, the same categories, but one
   // synthetic line measured against one volume-weighted baseline. Almost
@@ -792,13 +818,20 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   const go = useGatedGo();
   const armed = go.isArmed();
   const arm = () => go.arm();
-  const confirmGo = () => go.confirm(() =>
-    context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })
-  );
-  // The chip travels to ONE player-season. A multi-season B has no single
-  // season to land on, so it stays a plain label rather than a jump that
-  // silently picks one.
-  const chipNavigates = !!context?.onNavigateToPlayer && !bMulti;
+  // Where the chip goes depends on what B is. A single season opens that
+  // player-season's own card. A RUN has no single season to land on, so it
+  // travels as a run instead: By Player for that player with exactly these
+  // seasons ticked, which is where a run lives — the same selection you'd have
+  // made by hand in his career table. From By Season that means crossing over
+  // to By Player, which is the only place the selection has a home.
+  const confirmGo = () => go.confirm(() => (bMulti
+    ? context?.onNavigateToRun?.({ name: b.name, slug: b.slug || null, seasons: [...b.seasonKeys].sort() })
+    : context?.onNavigateToPlayer?.({ season: b.season, team: b.team, name: b.name, slug: b.slug || null })
+  ));
+  const chipNavigates = !!(bMulti ? context?.onNavigateToRun : context?.onNavigateToPlayer);
+  const chipTitle = bMulti
+    ? `Open ${b.name}’s ${b.spanLabel} run in By Player, with those seasons ticked`
+    : `Open ${b.name} ${seasonTag(b.season)}`;
   const toggleGroup = (gk, cats) => {
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -985,10 +1018,14 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   // — that's the point of it. When a side is an aggregate, the seasons inside
   // the selection are drawn at full strength and the rest dimmed, so the run
   // being compared is visible in the shape of the career around it.
+  // Identity comes off the CALLER's rows, not the effective ones: a selection
+  // made in this chart changes which seasons are compared, never whose they are.
   const aSeasons = (aSeasonsProp || context.self?.seasons || [])
-    .map((s) => ({ ...s, name: a.name, slug: a.slug || null }))
+    .map((s) => ({ ...s, name: aProp.name, slug: aProp.slug || null }))
     .sort((x, y) => x.season.localeCompare(y.season));
-  const bAll = [...bSeasons].sort((x, y) => x.season.localeCompare(y.season));
+  const bAll = [...bSeasons]
+    .map((s) => ({ ...s, name: bProp.name, slug: bProp.slug || null }))
+    .sort((x, y) => x.season.localeCompare(y.season));
   // Which seasons on each side count as "the compared one" for full opacity.
   const aSel = aMulti ? a.seasonKeys : new Set([a.season]);
   const bSel = bMulti ? b.seasonKeys : new Set([b.season]);
@@ -1023,60 +1060,45 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
   const careerUnit = `${!activeKey && withDef ? "VA+" : "VA"}`;
   const careerLabel = `${activeKey ? `${CAT_SHORT[activeKey] || activeKey} ` : ""}${perGame ? `${careerUnit}/G` : `Total ${careerUnit}`} by career year`;
 
-  // Tapping a PAIR of career-year bars re-points the whole page at that year:
-  // the comparison becomes each player's season at that career year, and the
-  // page behind it follows to player A's side of it — the leaderboard switches
-  // season/team and opens their row in By Season, their career view opens that
-  // season in By Player. That's the same size of jump as the compared-player
-  // chip above, so it's gated the same way: the first tap arms a "Compare Year
-  // X?" popup and only its "Go →" travels (see useGatedGo).
-  const careerGo = useGatedGo();
-  const canCompareYear = !!context?.onNavigateToPlayer;
-  const goCompareYear = (as, bs) => context.onNavigateToPlayer({
-    season: as.season,
-    team: as.team || a.team || null,
-    name: a.name,
-    slug: a.slug || null,
-    // The other half of the jump: whoever lands on the far side re-opens this
-    // comparison against player B's season at the same career year.
-    compare: { season: bs.season, name: b.name, slug: b.slug || null },
-  });
-  // A career year only one of them reached has no comparison in it, so tapping
-  // that lone bar opens that player's own season card instead — the same jump
-  // the compared-player chip makes, with no comparison riding along.
-  const goSeason = (s, side) => context.onNavigateToPlayer({
-    season: s.season,
-    team: s.team || (side === "a" ? a.team : b.team) || null,
-    name: side === "a" ? a.name : b.name,
-    slug: (side === "a" ? a.slug : b.slug) || null,
-  });
-  // Never leave a pair armed after the chart underneath it has changed.
-  useEffect(() => {
-    careerGo.disarm();
-  }, [careerGo.disarm, a.season, b.season, activeKey, perGame]);
-
-  // Where a slot's tap goes, if anywhere. A year is a COMPARISON target only
-  // when both players have a season in it, and the pair already on screen is
-  // where you are, not somewhere to go. A year only one of them reached is a
-  // SEASON target instead: its lone bar opens that player's own card. Player
-  // A's current season is the page you're already on, so it stays a plain bar.
-  const navFor = (i) => {
-    const as = aSeasons[i], bs = bAll[i];
-    // A career-year jump re-points the page at ONE season on each side. A
-    // multi-season selection can't ride along in that shape, so the chart
-    // stays a read-only picture of the two careers while one is active.
-    if (!canCompareYear || isMulti) return null;
-    const isHere = as && bs && as.season === a.season && bs.season === b.season;
-    if (as && bs) return isHere ? null : { pair: true };
-    const side = as ? "a" : bs ? "b" : null;
-    const season = side === "a" ? as : side === "b" ? bs : null;
-    if (!season || (side === "a" && season.season === a.season)) return null;
-    return { side, season };
+  // Tapping a PAIR of career-year bars starts a selection: a checkbox drops in
+  // under every pair, ticking more folds them together, and "Compare →" makes
+  // whatever is ticked the comparison — one year each becomes a season-vs-season
+  // card, several becomes run-vs-run, both read right here in place. The chart
+  // itself never narrows: it goes on showing both whole careers with the
+  // selection at full strength, so the next selection is always one tap away.
+  //
+  // Only PAIRS are tickable. A career year one of them never reached has no
+  // second side to compare, and folding it into one run alone would quietly
+  // make the two selections different lengths.
+  const [picked, setPicked] = useState(null); // Set of slot indices, or null when not picking
+  const picking = !!picked;
+  const isPair = (i) => !!(aSeasons[i] && bAll[i]);
+  const anyPair = Array.from({ length: slots }, (_, i) => isPair(i)).some(Boolean);
+  const toggleSlot = (i) => {
+    if (!isPair(i)) return;
+    setPicked((prev) => {
+      const next = new Set(prev || []);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
   };
-  // Two one-season careers put a single pair on the chart — the comparison
-  // already on screen — so nothing in it is tappable and the footnote must not
-  // promise otherwise.
-  const anyNav = Array.from({ length: slots }, (_, i) => navFor(i)).some(Boolean);
+  const pickedIdxs = picked ? [...picked].sort((x, y) => x - y) : [];
+  const pickedRows = (arr) => pickedIdxs.map((i) => arr[i]);
+  // One row per side from the ticked years: the season itself when there's one,
+  // an aggregate measured against its own seasons' blended baseline when there
+  // are several (the same row shape the By Player run picker hands over).
+  const confirmPick = () => {
+    if (!pickedIdxs.length) return;
+    const side = (rows, src) => (rows.length === 1
+      ? { ...rows[0], name: src.name, slug: src.slug || null }
+      : aggregateSeasons(rows, { name: src.name, slug: src.slug || null }));
+    setPick({
+      a: side(pickedRows(aSeasons), aProp),
+      b: side(pickedRows(bAll), bProp),
+      years: pickedIdxs,
+    });
+    setPicked(null);
+  };
 
   // Rate shown for a row in its tooltip. D Rating has no box-score rate of its
   // own — its "rate" is the rating itself — and catRateLabel only knows the ten
@@ -1188,7 +1210,7 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
               onClick={confirmGo}
               className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95 touch-manipulation"
               style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
-              title={`Open ${b.name} ${seasonTag(b.season)}`}
+              title={chipTitle}
             >
               Go <span aria-hidden>→</span>
             </button>
@@ -1198,9 +1220,9 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
               onClick={arm}
               className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer touch-manipulation"
               style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
-              title={`Open ${b.name} ${seasonTag(b.season)}`}
+              title={chipTitle}
             >
-              {b.name} {seasonTag(b.season)}<Swatch color={cb} outline />
+              {b.name} {rowSeasonLabel(b)}<Swatch color={cb} outline />
             </button>
           )
         ) : (
@@ -1366,6 +1388,21 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
               full-height bar never crowds it. */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
+            {/* What the panel above is currently reading, when that came from a
+                selection made in this chart rather than from the caller. Clears
+                back to the comparison the card opened on. */}
+            {pick && (
+              <button
+                type="button"
+                onClick={() => setPick(null)}
+                className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+                style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+                title={`Back to ${aProp.name} ${rowSeasonLabel(aProp)} vs ${bProp.name} ${rowSeasonLabel(bProp)}`}
+                aria-label="Clear the career-year selection"
+              >
+                {careerYearLabel(pick.years)} <span className="opacity-60">✕</span>
+              </button>
+            )}
             {gToggle}
             {/* The tally row's fallback only fires with no chart at all, so
                 nothing else needs to hold the toggle's place here. */}
@@ -1398,99 +1435,115 @@ export function ComparePanel({ a, b, bSeasons, context, rateMode, mode, setMode,
                   />
                 );
               };
-              const nav = navFor(i);
-              const pairNav = nav?.pair === true;
-              const loneSide = nav?.side ?? null;
-              const loneSeason = nav?.season ?? null;
-              const navigable = !!nav;
-              const isArmed = careerGo.isArmed(i);
-              // Popup anchor: keep it inside the card by left-aligning near the
-              // left edge and right-aligning near the right, centering between.
-              const frac = (i + 0.5) / slots;
-              const anchor = frac < 0.25 ? "left-0" : frac > 0.75 ? "right-0" : "left-1/2 -translate-x-1/2";
+              const pair = isPair(i);
+              const ticked = !!picked?.has(i);
               return (
                 <div
                   key={i}
                   className="flex-1 relative min-w-0"
                   style={{ maxWidth: SLOT_MAX }}
-                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pairNav ? " · tap to compare this year" : loneSeason ? " · tap to open that season" : ""}`}
+                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pair ? ` · tap to ${ticked ? "untick" : "tick"} this year` : " · only one of them played this year"}`}
                 >
                   <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
                   {bar(as, ca, "a")}
                   {bar(bs, cb, "b")}
-                  {navigable && (
-                    // Full-column tap target over the slot (a sibling of the
-                    // popup, not its parent — the popup carries its own button
-                    // and buttons can't nest).
+                  {pair && (
+                    // Full-column tap target over the slot, ticking the year
+                    // under it. A ticked column stays lit so the selection reads
+                    // off the bars themselves, not only off the boxes below.
                     <button
                       type="button"
-                      onClick={() => careerGo.arm(i)}
-                      aria-label={pairNav
-                        ? `Career year ${i + 1} — ${a.name} ${as.season} against ${b.name} ${bs.season}; tap to confirm comparing it`
-                        : `Career year ${i + 1} — ${loneSide === "a" ? a.name : b.name} ${loneSeason.season}; tap to confirm opening it`}
-                      aria-expanded={isArmed}
-                      className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isArmed ? "bg-stone-900/10" : "hover:bg-stone-900/5"}`}
+                      onClick={() => toggleSlot(i)}
+                      role="checkbox"
+                      aria-checked={ticked}
+                      aria-label={`Career year ${i + 1} — ${aProp.name} ${as.season} and ${bProp.name} ${bs.season}`}
+                      className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${ticked ? "" : "hover:bg-stone-900/5"}`}
+                      style={ticked ? { backgroundColor: GOLD_BG } : undefined}
                     />
-                  )}
-                  {isArmed && (
-                    // The gate: the armed slot raises this popup, and only its
-                    // "Go →" travels. Anything else disarms (useGatedGo swallows
-                    // that tap, so it can't also open a row). It hangs BELOW the
-                    // bars, over the career-year ticks it restates.
-                    <div className={`absolute top-full mt-1 z-20 ${anchor}`}>
-                      <span
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm px-1.5 py-[2px] shadow-sm"
-                        style={{ backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
-                      >
-                        {pairNav ? (
-                          <>
-                            <span className="text-[9px] font-semibold text-stone-700">Compare Year {i + 1}?</span>
-                            <span className="text-[9px] font-semibold tabular-nums" style={{ color: ca }}>{seasonTag(as.season)}</span>
-                            <span className="text-[8px] text-stone-400">vs</span>
-                            <span className="text-[9px] font-semibold tabular-nums" style={{ color: cb }}>{seasonTag(bs.season)}</span>
-                          </>
-                        ) : (
-                          // Lone bar: the same gate, asking to open one season
-                          // rather than to compare a year.
-                          <>
-                            <span className="text-[9px] font-semibold text-stone-700">
-                              Open {shortName(loneSide === "a" ? a.name : b.name)} {seasonTag(loneSeason.season)}?
-                            </span>
-                            {loneSeason.team && (
-                              <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(loneSeason.team) }}>{loneSeason.team}</span>
-                            )}
-                            <span
-                              className="text-[9px] font-semibold tabular-nums"
-                              style={{ color: careerVal(loneSeason) < 0 ? "#dc2626" : (loneSide === "a" ? ca : cb) }}
-                            >{sgn(careerVal(loneSeason))}</span>
-                          </>
-                        )}
-                        <button
-                          ref={careerGo.goRef}
-                          type="button"
-                          onClick={() => careerGo.confirm(() => (pairNav ? goCompareYear(as, bs) : goSeason(loneSeason, loneSide)))}
-                          className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
-                          title={pairNav
-                            ? `Open ${a.name} ${seasonTag(as.season)} compared with ${b.name} ${seasonTag(bs.season)}`
-                            : `Open ${loneSide === "a" ? a.name : b.name} ${seasonTag(loneSeason.season)}`}
-                        >
-                          Go <span aria-hidden>→</span>
-                        </button>
-                      </span>
-                    </div>
                   )}
                 </div>
               );
             })}
           </div>
+          {picking && (
+            // The boxes, one under each pair. A year only one of them reached
+            // has no box — there is no second season in it to compare against —
+            // and holds its column so the row stays aligned with the bars.
+            <div className="flex justify-center gap-[2px] px-1 mt-1">
+              {Array.from({ length: slots }, (_, i) => (
+                <span key={i} className="flex-1 min-w-0 flex justify-center" style={{ maxWidth: SLOT_MAX }}>
+                  {isPair(i) ? (
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={picked.has(i)}
+                      aria-label={`${picked.has(i) ? "Remove" : "Add"} career year ${i + 1}`}
+                      onClick={() => toggleSlot(i)}
+                      className="p-[3px] -m-[3px]"
+                    >
+                      <span
+                        aria-hidden
+                        className="block w-3 h-3 border rounded-[1px]"
+                        style={picked.has(i)
+                          ? { backgroundColor: GOLD, borderColor: GOLD }
+                          : { backgroundColor: "#ffffff", borderColor: "#a8a29e" }}
+                      />
+                    </button>
+                  ) : (
+                    <span aria-hidden className="block w-3 h-3" />
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex justify-center gap-[2px] px-1 mt-0.5">
             {Array.from({ length: slots }, (_, i) => (
-              <span key={i} className="flex-1 min-w-0 text-center text-[7px] tabular-nums text-stone-400" style={{ maxWidth: SLOT_MAX }}>{i + 1}</span>
+              <span
+                key={i}
+                className={`flex-1 min-w-0 text-center text-[7px] tabular-nums ${picked?.has(i) ? "text-stone-900 font-bold" : "text-stone-400"}`}
+                style={{ maxWidth: SLOT_MAX }}
+              >{i + 1}</span>
             ))}
           </div>
-          <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
-            Seasons aligned by career year · {isMulti ? "selected seasons at full strength" : "compared seasons at full strength"}{anyNav ? <> · tap a pair to compare that year, a lone bar to open that season, then <span className="font-semibold not-italic">Go →</span></> : null}
-          </div>
+          {picking ? (
+            // The selection's own footer, shaped like the run picker's: what is
+            // ticked on the left, the way out and the way on on the right.
+            <div className="mt-1.5 flex items-center justify-between gap-1.5 border-t border-stone-100 pt-1.5">
+              <span className="text-[9px] text-stone-500 tabular-nums min-w-0 truncate">
+                {pickedIdxs.length === 0
+                  ? "Tick career years to compare"
+                  : <>
+                      {pickedIdxs.length} year{pickedIdxs.length === 1 ? "" : "s"} ·{" "}
+                      <span className="font-semibold" style={{ color: ca }}>{seasonSpanLabel(pickedRows(aSeasons))}</span>
+                      {" vs "}
+                      <span className="font-semibold" style={{ color: cb }}>{seasonSpanLabel(pickedRows(bAll))}</span>
+                    </>}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPicked(null)}
+                className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-stone-300 bg-white text-stone-500 hover:text-stone-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmPick}
+                disabled={!pickedIdxs.length}
+                title={pickedIdxs.length > 1
+                  ? "Pool the ticked years on each side and read the comparison as those two runs"
+                  : "Read the comparison as those two seasons"}
+                className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${pickedIdxs.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
+              >
+                Compare →
+              </button>
+            </div>
+          ) : (
+            <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
+              Seasons aligned by career year · {isMulti ? "selected seasons at full strength" : "compared seasons at full strength"}
+              {anyPair ? <> · tap a pair to tick that year, then <span className="font-semibold not-italic">Compare →</span> to read the ticked years as the comparison</> : null}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -49,6 +49,12 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   // the same year. Travels with navSeason and is applied to the same row.
   const [navCompare, setNavCompare] = useState(null);
   const clearNavCompare = useCallback(() => setNavCompare(null), []);
+  // A pending "tick this run" request: the seasons a compare panel's chip asked
+  // for when the player it points at is a multi-season RUN rather than one
+  // season. There is no single row to open, so the landing is the career table
+  // with exactly those seasons ticked — the selection you'd have made by hand.
+  const [navRun, setNavRun] = useState(null);
+  const clearNavRun = useCallback(() => setNavRun(null), []);
 
   // Jump to a player — invoked from a compare panel's compared-player chip or
   // a trend bar's "Go →" (via context.onNavigateToPlayer). Resolve the target
@@ -66,9 +72,30 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     setSelectedKey(keyOf(found));
     setNavSeason(target.season || null);
     setNavCompare(target.season ? target.compare || null : null);
+    setNavRun(null);
     // The season row scrolls itself into view; only a plain career-view jump
     // wants the top of the page.
     if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // The same jump for a RUN — a compared side that pools several seasons. It
+  // lands on the player's career table with those seasons ticked rather than on
+  // any one row, so ask only for the seasons this scope's index actually has
+  // for him; a request that survives none of them is dropped rather than
+  // leaving the table in selection mode with nothing in it.
+  const navigateToRun = (target) => {
+    if (!index || !target?.seasons?.length) return;
+    const nm = normalizeName(target.name || "");
+    const found = index.find((p) => (target.slug && p.slug === target.slug) || normalizeName(p.name) === nm);
+    if (!found) return;
+    const have = new Set(found.seasons.map((s) => s.season));
+    const seasons = target.seasons.filter((s) => have.has(s));
+    if (!seasons.length) return;
+    setSelectedKey(keyOf(found));
+    setNavSeason(null);
+    setNavCompare(null);
+    setNavRun(seasons);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Apply an incoming "open this player" navigation from the By Season
@@ -89,6 +116,12 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
       // Only ask for a season the player actually has in this scope; anything
       // else would leave PlayerDetail's pending request permanently unmet.
       setNavSeason(found.seasons.some((s) => s.season === pendingPlayer.season) ? pendingPlayer.season : null);
+      // A crossing that names a RUN (a By Season compare panel's chip pointing
+      // at a pooled side) ticks those seasons instead of opening a row — same
+      // rule, applied to the whole set.
+      const have = new Set(found.seasons.map((s) => s.season));
+      const run = (pendingPlayer.seasons || []).filter((s) => have.has(s));
+      setNavRun(run.length ? run : null);
     }
     onPlayerNavHandled?.();
   }, [pendingPlayer, index, onPlayerNavHandled]);
@@ -126,11 +159,14 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
         contextData={contextData}
         onBack={() => selectPlayer(null)}
         onNavigateToPlayer={navigateToPlayer}
+        onNavigateToRun={navigateToRun}
         onOpenTeamSeason={onOpenTeamSeason}
         pendingSeason={navSeason}
         onNavHandled={clearNavSeason}
         pendingCompare={navCompare}
         onCompareHandled={clearNavCompare}
+        pendingRun={navRun}
+        onRunHandled={clearNavRun}
       />
     );
   }
@@ -182,7 +218,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
 // tappable TOT VA / VA/G column headers, team-color badges that filter, a
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
-export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null, pendingCompare = null, onCompareHandled = null }) {
+export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onNavigateToRun = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null, pendingCompare = null, onCompareHandled = null, pendingRun = null, onRunHandled = null }) {
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -289,6 +325,29 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     onNavHandled?.();
     onCompareHandled?.();
   }, [pendingSeason, pendingCompare, seasons, onNavHandled, onCompareHandled]);
+
+  // Apply an incoming "tick this run" navigation (a compare panel's chip
+  // pointing at a pooled side). Same shape as the season jump one level up —
+  // clear the filters so no ticked season is hidden, then put the table in
+  // selection mode with exactly those seasons ticked, which is the state
+  // ticking them by hand would have produced: the run's aggregate below the
+  // table, and the picker offering to choose who to measure it against.
+  useEffect(() => {
+    if (!pendingRun?.length) return;
+    const want = new Set(pendingRun.filter((s) => seasons.some((x) => x.season === s)));
+    if (want.size) {
+      setTeamFilter(null);
+      setMinGames(null);
+      setGArmed(false);
+      setTeamArmed(false);
+      setOpenSeason(null);
+      setSelecting(true);
+      setPicked(want);
+      setPickOverride(null);
+      setMultiCompare(null);
+    }
+    onRunHandled?.();
+  }, [pendingRun, seasons, onRunHandled]);
 
   useEffect(() => {
     if (!pendingScroll) return;
@@ -405,12 +464,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, lgaForSeason(x.season), defs, x.season, defScope) != null);
   }, [defs, aggA, defScope]);
   const multiContext = useMemo(
-    () => (contextData ? { ...contextData, self: player, scope, season: null, onNavigateToPlayer } : null),
-    [contextData, player, scope, onNavigateToPlayer]
+    () => (contextData ? { ...contextData, self: player, scope, season: null, onNavigateToPlayer, onNavigateToRun } : null),
+    [contextData, player, scope, onNavigateToPlayer, onNavigateToRun]
   );
 
   const contextFor = (s) =>
-    contextData ? { ...contextData, self: player, scope, season: s.season, onNavigateToPlayer } : null;
+    contextData ? { ...contextData, self: player, scope, season: s.season, onNavigateToPlayer, onNavigateToRun } : null;
   const navFor = (i) => ({
     onPrev: i > 0 ? () => setOpenSeason(shown[i - 1].season) : undefined,
     onNext: i < shown.length - 1 ? () => setOpenSeason(shown[i + 1].season) : undefined,
