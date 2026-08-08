@@ -1091,10 +1091,21 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const picking = !!picked;
   const isPair = (i) => !!(aSeasons[i] && bAll[i]);
   const anyPair = Array.from({ length: slots }, (_, i) => isPair(i)).some(Boolean);
+  // Where a selection STARTS when the first tick opens the picker. Normally
+  // nothing — but with a career-year selection already being read (`pick`), the
+  // years behind it come back ticked, so tapping year 10 next to a 2–9 run
+  // extends it instead of throwing it away. The alternative asks anyone
+  // adjusting a run to re-tick every year they already had; the chart holds the
+  // selection's shape on screen, so the taps should start from that shape.
+  // Slot indices are stable across a pick — the chart is built from the
+  // CALLER's rows, which a selection never changes — so the saved years still
+  // point at the same pairs. (Untick them and the picker empties back out; the
+  // way to drop the whole selection is still the chip's ✕.)
+  const seedPicked = () => (pick ? pick.years.filter(isPair) : []);
   const toggleSlot = (i) => {
     if (!isPair(i)) return;
     setPicked((prev) => {
-      const next = new Set(prev || []);
+      const next = new Set(prev || seedPicked());
       if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
@@ -1463,12 +1474,17 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               };
               const pair = isPair(i);
               const ticked = !!picked?.has(i);
+              // What a tap here would do. While picking that's just the tick
+              // state; before the picker opens it's the carried-over selection
+              // (see seedPicked), so a year already inside the current one
+              // offers to come OUT rather than promising to go in.
+              const wouldUntick = picked ? ticked : !!pick?.years.includes(i);
               return (
                 <div
                   key={i}
                   className="flex-1 relative min-w-0"
                   style={{ maxWidth: SLOT_MAX }}
-                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pair ? ` · tap to ${ticked ? "untick" : "tick"} this year` : " · only one of them played this year"}`}
+                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pair ? ` · tap to ${wouldUntick ? "untick" : "tick"} this year` : " · only one of them played this year"}`}
                 >
                   <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
                   {bar(as, ca, "a")}
@@ -1567,7 +1583,9 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
           ) : (
             <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
               Seasons aligned by career year · {isMulti ? "selected seasons at full strength" : "compared seasons at full strength"}
-              {anyPair ? <> · tap a pair to tick that year, then <span className="font-semibold not-italic">Compare →</span> to read the ticked years as the comparison</> : null}
+              {anyPair ? (pick
+                ? <> · tap a pair to add it to the selected years or drop it, then <span className="font-semibold not-italic">Compare →</span> to re-read the comparison</>
+                : <> · tap a pair to tick that year, then <span className="font-semibold not-italic">Compare →</span> to read the ticked years as the comparison</>) : null}
             </div>
           )}
         </div>
