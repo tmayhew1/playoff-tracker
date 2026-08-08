@@ -653,9 +653,22 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             key={s.season}
             data-season-row={s.season}
             className="border-b border-stone-100 last:border-0"
-            // Picked rows carry a gold left edge so the selection stays legible
-            // once the comparison below has pushed the table up the screen.
-            style={isPicked ? { boxShadow: `inset 3px 0 0 0 ${GOLD}` } : undefined}
+            // Picked rows carry a gold left edge AND a gold wash so the
+            // selection stays legible once the comparison below has pushed the
+            // table up the screen. The wash is state, not feedback: it says
+            // "this one is in the pool" and nothing about what was touched
+            // last. A hover tint said the second thing, and on a touch screen
+            // :hover sticks to the last row tapped — so a row you had just
+            // UNTICKED kept the highlight as you scrolled away, which is the
+            // one thing the color must never claim.
+            //
+            // It sits on the wrapper, under the team-colored VA bar rather
+            // than over it: the bar is the row's measurement and outranks the
+            // selection for that space. Lighter than the chip's GOLD_BG too —
+            // a whole row of it at chip strength buries the numbers.
+            style={isPicked
+              ? { boxShadow: `inset 3px 0 0 0 ${GOLD}`, backgroundColor: withAlpha("#fbbf24", 0.16) }
+              : undefined}
           >
             <div className="relative overflow-hidden">
               <div
@@ -677,7 +690,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                     activate();
                   }
                 }}
-                className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""} ${selecting ? "hover:bg-amber-50" : ""}`}
+                className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""}`}
               >
                 {selecting ? (
                   // The rank column becomes the check box while selecting —
