@@ -37,6 +37,8 @@
   h2 .n{color:var(--faint);margin-right:.6em;font-variant-numeric:tabular-nums}
   h3{font-size:.95rem;font-weight:700;margin:2rem 0 .6rem}
   h3 .n{color:var(--faint);margin-right:.5em;font-weight:600;font-variant-numeric:tabular-nums}
+  h4{font-size:.85rem;font-weight:700;color:var(--dim);margin:1.6rem 0 .5rem;
+     font-variant-numeric:tabular-nums}
   p{margin:.85rem 0}
   .lede{color:var(--dim)}
   em{color:var(--ink)}
@@ -585,6 +587,131 @@
 
 <p>with real results and user &ldquo;what-if&rdquo; speculation accumulated in separate ledgers so the two are never confused.</p>
 
+<h3><span class="n">7.4</span>Championship leverage and Legacy</h3>
+
+<p>&sect;4 deliberately prices a possession the same in October and June. That is what makes a season comparable to a season. It is also what makes career VA the wrong instrument for an all-time ranking, which has to answer two questions VA declines to: whether a game mattered, and whether a career was tall or long.</p>
+
+<p>Legacy answers both <strong>outside</strong> <span class="m g">C</span>, exactly as &sect;7.1 does. It reweights an existing per-game VA decomposition and never re-scores anything, so &sect;9.1 holds unchanged on every existing surface and no bake is affected. Implementations: <code>app/lib/leverage.js</code> and <code>app/lib/legacy.js</code>.</p>
+
+<h4>7.4.1 &nbsp; Game leverage</h4>
+
+<p>For a series in state <span class="m"><span class="g">a</span>&ndash;<span class="g">b</span></span> (the score <strong>before</strong> the game) under a best-of-<span class="m g">n</span> format, let <span class="m"><span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span>)</span> be the probability of winning the series with every game an independent coin:</p>
+
+<div class="eq">
+  <span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
+  <span class="fr"><span class="nu">1</span><span class="de">2</span></span>
+  <span class="g">W</span>(<span class="g">a</span><span class="op">+</span>1,<span class="g">b</span>) <span class="op">+</span>
+  <span class="fr"><span class="nu">1</span><span class="de">2</span></span>
+  <span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span><span class="op">+</span>1)
+  <span class="lbl"><span class="g">W</span>(<span class="g">k</span>,&middot;) = 1, <span class="g">W</span>(&middot;,<span class="g">k</span>) = 0, <span class="g">k</span> = &lfloor;<span class="g">n</span>/2&rfloor; + 1</span>
+</div>
+
+<p>The game&rsquo;s <strong>series swing</strong> and its <strong>championship leverage</strong> are</p>
+
+<div class="eq">
+  <span class="g">&sigma;</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
+  <span class="g">W</span>(<span class="g">a</span><span class="op">+</span>1,<span class="g">b</span>) <span class="op">&minus;</span>
+  <span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span><span class="op">+</span>1)
+  <span class="op">,</span> &nbsp;&nbsp;
+  cLI <span class="op">=</span> <span class="g">&sigma;</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">&middot;</span> 2<sup><span class="op">&minus;</span><span class="g">&rho;</span></sup>
+  <span class="lbl"><span class="g">&rho;</span> = rounds still to be won after this one</span>
+</div>
+
+<p>In a best-of-7, <span class="m g">&sigma;</span> is 0.3125 at 0-0, 0.375 at 1-1 and 2-1, 0.25 at 2-0, 0.5 at 2-2 and 3-2, 0.125 at 3-0, and exactly 1 at 3-3 &mdash; a Game 7 swings the whole series by construction, which is the identity the rest rests on.</p>
+
+<p>Neutrality (<span class="m"><span class="g">p</span> = &frac12;</span>) is deliberate, and is the same commitment &sect;4 makes: a player is not paid more for having been on a favourite, and the quantity needs no seed, venue or roster data, so it is portable to any era.</p>
+
+<p>The ordering this produces is not the obvious one:</p>
+
+<div class="tw">
+<table>
+  <thead><tr><th>game</th><th><span class="m g">&sigma;</span></th><th><span class="m g">&rho;</span></th><th>cLI</th><th>weight at <span class="m"><span class="g">&alpha;</span> = &frac12;</span></th></tr></thead>
+  <tbody>
+    <tr><th class="cat">R1 G1</th><td>0.3125</td><td>3</td><td>0.0391</td><td>1.000</td></tr>
+    <tr><th class="cat">R1 G5 at 2-2</th><td>0.5</td><td>3</td><td>0.0625</td><td>1.265</td></tr>
+    <tr><th class="cat">R2 G1</th><td>0.3125</td><td>2</td><td>0.0781</td><td>1.414</td></tr>
+    <tr><th class="cat">R1 G7</th><td>1.0</td><td>3</td><td>0.1250</td><td>1.789</td></tr>
+    <tr><th class="cat">R2 G7</th><td>1.0</td><td>2</td><td>0.2500</td><td>2.530</td></tr>
+    <tr><th class="cat">Finals G1</th><td>0.3125</td><td>0</td><td>0.3125</td><td>2.828</td></tr>
+    <tr><th class="cat">Finals G7</th><td>1.0</td><td>0</td><td>1.0000</td><td>5.060</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>A Round-2 opener outranks a tied Round-1 Game 5, but only by 1.25&times;; a Round-1 Game 7 outranks both. Nothing here is asserted &mdash; it falls out of <span class="m"><span class="g">&sigma;</span> &middot; 2<sup>&minus;<span class="g">&rho;</span></sup></span>.</p>
+
+<h4>7.4.2 &nbsp; The unit, and the regular season</h4>
+
+<p>Weights are expressed against <strong>that season&rsquo;s own opening playoff game</strong>, for a bracket of depth <span class="m g">d</span>:</p>
+
+<div class="eq">
+  cLI<sub class="s">ref</sub> <span class="op">=</span>
+  <span class="g">&sigma;</span>(0,0) <span class="op">&middot;</span> 2<sup><span class="op">&minus;</span>(<span class="g">d</span><span class="op">&minus;</span>1)</sup>
+  <span class="op">,</span> &nbsp;&nbsp;
+  <span class="g">w</span> <span class="op">=</span>
+  ( <span class="fr"><span class="nu s">cLI</span><span class="de s">cLI<sub>ref</sub></span></span> )<sup class="g">&alpha;</sup>
+</div>
+
+<p>Anchoring per season rather than globally is what keeps eras honest: a 1960 title required two series won, not four, so a global anchor would pay the eight-team league roughly 4&times; for clearing a shallower field. For 1980-2026 every bracket is four rounds deep and cLI<sub class="s">ref</sub> = 0.0390625 throughout, so the correction is a no-op on the current corpus and matters only under backfill.</p>
+
+<p>The regular season is priced in the same currency rather than by a separate dial. Across a full season a team travels from undetermined to holding a berth, and a berth is worth <span class="m">2<sup>&minus;<span class="g">d</span></sup></span> of a title:</p>
+
+<div class="eq">
+  cLI<sub class="s">RS</sub> <span class="op">=</span>
+  <span class="fr"><span class="nu">2<sup>&minus;<span class="g">d</span></sup></span><span class="de s"><span class="g">G</span><sub>season</sub></span></span>
+  <span class="op">=</span>
+  <span class="fr"><span class="nu">0.0625</span><span class="de">82</span></span>
+  <span class="op">=</span> 0.000762
+  <span class="lbl">&rArr; <span class="g">w</span><sub class="s">RS</sub> = 0.13969 at <span class="g">&alpha;</span> = &frac12;</span>
+</div>
+
+<p>About 1/51 of a playoff opener raw, about 1/7 after compression. <span class="m g">G</span> is tabulated, not measured: <code>max(g)</code> over a season&rsquo;s totals overshoots, because a traded player&rsquo;s TOT row sums his games across teams (1999-00 and 2003-04 both report 85).</p>
+
+<p><span class="m g">&alpha;</span> is <strong>the one free parameter in the construction, and it is a taste parameter, not a derivation.</strong> <span class="m"><span class="g">&alpha;</span> = 1</span> is raw championship leverage, under which a Finals Game 7 is worth 25.6 openers and the regular season all but disappears; <span class="m"><span class="g">&alpha;</span> = 0</span> is flat and reproduces context-free VA exactly. The default &frac12; says importance counts at diminishing returns.</p>
+
+<div class="eq">
+  LVA(season) <span class="op">=</span>
+  <span class="big">Σ</span><sub class="s">g ∈ playoffs</sub>
+  <span class="g">w</span>(<span class="g">g</span>) <span class="op">&middot;</span> VA(<span class="g">g</span>)
+  <span class="op">+</span>
+  <span class="g">w</span><sub class="s">RS</sub> <span class="op">&middot;</span> VA<sub class="s">RS</sub>
+</div>
+
+<h4>7.4.3 &nbsp; Peak and longevity</h4>
+
+<p>Order a player&rsquo;s seasons by LVA descending and fold with geometric decay:</p>
+
+<div class="eq">
+  Legacy <span class="op">=</span>
+  <span class="big">Σ</span><sub class="s">k ≥ 1</sub>
+  <span class="g">D</span><sup><span class="g">k</span><span class="op">&minus;</span>1</sup>
+  <span class="op">&middot;</span> LVA<sub class="s">(k)</sub>
+</div>
+
+<p><span class="m"><span class="g">D</span> = 1</span> is a plain career sum (pure longevity); <span class="m"><span class="g">D</span> &rarr; 0</span> keeps only the best season (pure peak). Every term is positive when the season was, so extra seasons only ever add &mdash; but they add geometrically less, so a long tail of replacement-level years is neither rewarded nor punished much.</p>
+
+<p><span class="m g">D</span> is pinned rather than chosen, by stating what share of a career the peak should carry. &ldquo;The best <span class="m g">K</span> of <span class="m g">N</span> seasons carry half the weight&rdquo; is</p>
+
+<div class="eq">
+  <span class="fr"><span class="nu">1 <span class="op">&minus;</span> <span class="g">D</span><sup><span class="g">K</span></sup></span><span class="de">1 <span class="op">&minus;</span> <span class="g">D</span><sup><span class="g">N</span></sup></span></span>
+  <span class="op">=</span> &frac12;
+  <span class="lbl">&rArr; <span class="g">D</span> = 0.938068 at (<span class="g">K</span>,<span class="g">N</span>) = (7,20)</span>
+</div>
+
+<p>hence the default <span class="m"><span class="g">D</span> = 0.94</span>.</p>
+
+<p>The second axis is the <strong>rate</strong>: LVA per weighted game across the best <span class="m g">K</span> seasons. Weighted, not raw &mdash; if leverage prices the total it must price the rate, or the two halves of the metric disagree about what a game is worth. The two axes are reported side by side rather than blended, because any blend needs both normalized against the pool leader, which would make a career number move when an unrelated rookie debuts.</p>
+
+<h4>7.4.4 &nbsp; What this does to the Jordan/LeBron question</h4>
+
+<p>Over their best seven seasons Jordan leads on raw per-game VA, 23.19 to 21.75. He does not lead once the games are priced by what was at stake: the two cross at <span class="m"><span class="g">&alpha;</span> &asymp; 0.27</span>, and at the default <span class="m"><span class="g">&alpha;</span> = &frac12;</span> LeBron leads 21.84 to 21.26. The crossing sits in the same place on best-8 (0.279) and best-10 (0.257), so it is not an artifact of <span class="m g">K</span>.</p>
+
+<p>On the volume axis there is <strong>no</strong> crossing at all: LeBron leads at every <span class="m g">D</span> from 0.5 to 1, because his best leveraged seasons are also better, and the margin widens with <span class="m g">D</span>. The dials move the board substantially further down &mdash; Harden falls from 3rd to 23rd as <span class="m g">&alpha;</span> runs 0 to 1, Magic climbs 13th to 4th, Duncan 16th to 7th &mdash; which is the metric separating profiles, and is worth reading as the result rather than tuning away.</p>
+
+<h4>7.4.5 &nbsp; A known inexactness</h4>
+
+<p>Legacy sums the <strong>per-game</strong> VA decomposition. That is not identical to the baked season-total VA: <span class="m g">&gamma;</span> (&sect;4.3) is non-linear in REB/MP, so evaluating it once on season totals differs from evaluating it per game and summing &mdash; a mean gap of 1.8% on meaningful seasons, systematically upward for rebounding bigs, up to +11.9 (1980-81 Moses Malone). Legacy takes the per-game aggregation, on the grounds that <span class="m g">&gamma;</span> is defined on a stat line and a game <em>is</em> a stat line. So <span class="m"><span class="g">&alpha;</span> = 0</span> reproduces a career&rsquo;s <em>summed per-game</em> VA exactly, and its summed <em>season-total</em> VA only to about 1.8%.</p>
+
 <!-- ================= 8 ================= -->
 <h2><span class="n">8</span>v1 &rarr; v2 divergences</h2>
 
@@ -620,6 +747,9 @@
     <tr><th class="cat">Non-NBA</th>
       <td>—</td>
       <td>NCAA D-I on college-derived baselines</td></tr>
+    <tr><th class="cat">All-time ranking</th>
+      <td>career VA, summed</td>
+      <td><strong>Legacy</strong>: championship-leverage weighted, peak/longevity dialled (&sect;7.4)</td></tr>
   </tbody>
 </table>
 </div>

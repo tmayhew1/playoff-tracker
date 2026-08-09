@@ -166,9 +166,10 @@ fetch_regular_season_totals <- function(end_year) {
   unname(by_key[order_keys])
 }
 
-# Round bucketing by chronological series index (0-based), 8/4/2/1.
-round_key_for_idx <- function(i) if (i < 8) "r1" else if (i < 12) "r2" else if (i < 14) "r3" else "r4"
-round_num_for_idx <- function(i) if (i < 8) 1L else if (i < 12) 2L else if (i < 14) 3L else 4L
+# Round and series length come from derive_rounds() in scrape_common.R, which
+# walks each series winner forward through the bracket. The positional rule
+# that used to live here (8/4/2/1 by chronological index) was wrong for every
+# 12-team season -- see the comment on derive_rounds.
 
 main <- function(season) {
   if (!grepl("^[0-9]{4}-[0-9]{2}$", season)) stop("Usage: fetch_historical.R <YYYY-YY>")
@@ -224,6 +225,9 @@ main <- function(season) {
   game_idx_by_id <- list()
   for (i in seq_along(all_flat)) game_idx_by_id[[all_flat[[i]]$gameId]] <- i - 1L
 
+  # --- bracket shape (rounds + series lengths), derived from the games ---
+  shape <- derive_rounds(series_list)
+
   # --- history shape ---
   history_series <- lapply(seq_along(series_list), function(i) {
     s <- series_list[[i]]
@@ -235,7 +239,7 @@ main <- function(season) {
     winner <- NA_character_; bestN <- 0
     for (tname in names(wins)) if (wins[[tname]] > bestN) { winner <- tname; bestN <- wins[[tname]] }
     list(
-      round = round_key_for_idx(i - 1L),
+      round = paste0("r", shape$round[i]),
       teams = c(s$games[[1]]$home$tri, s$games[[1]]$away$tri),
       winner = winner,
       games = lapply(s$games, function(g) list(
@@ -321,7 +325,7 @@ main <- function(season) {
     season = season,
     series = lapply(seq_along(series_list), function(i) list(
       idx = as.integer(i - 1L),
-      round = round_num_for_idx(i - 1L),
+      round = shape$round[i],
       teams = c(series_list[[i]]$games[[1]]$home$tri, series_list[[i]]$games[[1]]$away$tri)
     )),
     players = players,

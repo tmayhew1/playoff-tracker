@@ -163,6 +163,77 @@ to_nba <- function(tri) {
   ifelse(is.na(out), tri, unname(out))
 }
 
+# --- Bracket shape ---------------------------------------------------------
+# Round and series length, derived from the games rather than from the series'
+# position in the list. The positional rule this replaces (i < 8 -> r1,
+# i < 12 -> r2, ...) assumed an 8-4-2-1 bracket and mislabelled every 12-team
+# season: 1980-81 through 1982-83 ran 4-4-2-1, so their Conference Finals and
+# Finals were all tagged as earlier rounds.
+#
+#   bestOf      = 2 * (games won by the series winner) - 1. A series stops the
+#                 moment its winner clinches, so his win total IS the clinching
+#                 number. Recovers {3, 5, 7} and every era rule for free.
+#   roundsAfter = follow each winner forward to his next series. Only the
+#                 champion has none, so a finished bracket has one terminal.
+#                 Byes need no special case: a 1981 team idle through the
+#                 opening round simply enters with roundsAfter = 2.
+#   round       = depth - roundsAfter, depth = max(roundsAfter) + 1
+#
+# Mirrors app/lib/leverage.js::bracketShape. `series_list` elements need
+# $games, each with $date, $home$tri, $home$score, $away$tri, $away$score.
+derive_rounds <- function(series_list) {
+  n <- length(series_list)
+  if (n == 0) return(list(round = integer(0), bestOf = integer(0), depth = 0L))
+
+  game_winner <- function(g) if (g$home$score > g$away$score) g$home$tri else g$away$tri
+  wins_of <- function(s) {
+    w <- list()
+    for (g in s$games) { t <- game_winner(g); w[[t]] <- (w[[t]] %||% 0) + 1 }
+    w
+  }
+
+  winner <- character(n); best_of <- integer(n)
+  starts <- character(n); ends <- character(n)
+  teams_of <- vector("list", n)
+  for (i in seq_len(n)) {
+    s <- series_list[[i]]
+    w <- wins_of(s)
+    top <- 0; who <- NA_character_
+    for (t in names(w)) if (w[[t]] > top) { top <- w[[t]]; who <- t }
+    winner[i] <- who
+    best_of[i] <- if (top > 0) as.integer(2 * top - 1) else 7L
+    d <- vapply(s$games, function(g) as.character(g$date), character(1))
+    starts[i] <- min(d); ends[i] <- max(d)
+    teams_of[[i]] <- c(s$games[[1]]$home$tri, s$games[[1]]$away$tri)
+  }
+
+  nxt <- integer(n)
+  for (i in seq_len(n)) {
+    nxt[i] <- -1L
+    if (is.na(winner[i])) next
+    for (j in seq_len(n)) {
+      if (j == i) next
+      if (!(winner[i] %in% teams_of[[j]])) next
+      if (starts[j] < ends[i]) next
+      if (nxt[i] == -1L || starts[j] < starts[nxt[i]]) nxt[i] <- j
+    }
+  }
+
+  rounds_after <- rep(NA_integer_, n)
+  walk <- function(i, seen) {
+    if (!is.na(rounds_after[i])) return(rounds_after[i])
+    if (i %in% seen) return(0L)
+    j <- nxt[i]
+    v <- if (j == -1L) 0L else walk(j, c(seen, i)) + 1L
+    rounds_after[i] <<- v
+    v
+  }
+  for (i in seq_len(n)) walk(i, integer(0))
+
+  depth <- max(rounds_after) + 1L
+  list(round = as.integer(depth - rounds_after), bestOf = best_of, depth = depth)
+}
+
 # Rebound credit: the multiplier on a board's possession value. If a player
 # claims a fraction q of the rebounds available at his end, removing him raises
 # his team's chance of losing the possession by exactly 1/(1 - q). q comes off

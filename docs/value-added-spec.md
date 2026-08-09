@@ -519,6 +519,164 @@ $$
 with real results and user "what-if" speculation accumulated in separate
 ledgers so the two are never confused.
 
+### 7.4 Championship leverage and Legacy
+
+§4 deliberately prices a possession the same in October and June. That is what
+makes a season comparable to a season. It is also what makes career VA the
+wrong instrument for an all-time ranking, which has to answer two questions VA
+declines to: whether a game mattered, and whether a career was tall or long.
+
+Legacy answers both **outside** $\mathcal{C}$, exactly as §7.1 does. It
+reweights an existing per-game VA decomposition and never re-scores anything,
+so §9.1 holds unchanged on every existing surface and no bake is affected.
+Implementations: `app/lib/leverage.js` and `app/lib/legacy.js`.
+
+#### 7.4.1 Game leverage
+
+For a series in state $a\text{–}b$ (the score **before** the game) under a
+best-of-$n$ format, let $W(a,b)$ be the probability of winning the series with
+every game an independent coin:
+
+$$
+W(a,b) = \tfrac12 W(a+1,b) + \tfrac12 W(a,b+1), \qquad
+W(k,\cdot) = 1,\;\; W(\cdot,k) = 0, \quad k = \left\lfloor n/2 \right\rfloor + 1 .
+$$
+
+The game's **series swing** and its **championship leverage** are
+
+$$
+\sigma(a,b) \;=\; W(a+1,b) - W(a,b+1),
+\qquad
+\boxed{\;\mathrm{cLI} \;=\; \sigma(a,b)\,2^{-\rho}\;}
+$$
+
+where $\rho$ is the number of rounds still to be won *after* this one. In a
+best-of-7, $\sigma$ is $0.3125$ at 0-0, $0.375$ at 1-1 and 2-1, $0.25$ at 2-0,
+$0.5$ at 2-2 and 3-2, $0.125$ at 3-0, and exactly $1$ at 3-3 — a Game 7 swings
+the whole series by construction, which is the identity the rest rests on.
+
+Neutrality ($p = \tfrac12$) is deliberate, and is the same commitment §4 makes:
+a player is not paid more for having been on a favourite, and the quantity
+needs no seed, venue or roster data, so it is portable to any era.
+
+The ordering this produces is not the obvious one. Writing $\mathrm{R}k$ for
+round $k$ of a four-round bracket:
+
+| game | $\sigma$ | $\rho$ | cLI | weight at $\alpha = \tfrac12$ |
+|---|---|---|---|---|
+| R1 G1 | 0.3125 | 3 | 0.0391 | 1.000 |
+| R1 G5 at 2-2 | 0.5 | 3 | 0.0625 | 1.265 |
+| R2 G1 | 0.3125 | 2 | 0.0781 | 1.414 |
+| R1 G7 | 1.0 | 3 | 0.1250 | 1.789 |
+| R2 G7 | 1.0 | 2 | 0.2500 | 2.530 |
+| Finals G1 | 0.3125 | 0 | 0.3125 | 2.828 |
+| Finals G7 | 1.0 | 0 | 1.0000 | 5.060 |
+
+A Round-2 opener outranks a tied Round-1 Game 5, but only by $1.25\times$; a
+Round-1 Game 7 outranks both. Nothing here is asserted — it falls out of
+$\sigma \cdot 2^{-\rho}$.
+
+#### 7.4.2 The unit, and the regular season
+
+Weights are expressed against **that season's own opening playoff game**:
+
+$$
+\mathrm{cLI}_{\mathrm{ref}} = \sigma(0,0)\,2^{-(d-1)},
+\qquad
+w \;=\; \left(\frac{\mathrm{cLI}}{\mathrm{cLI}_{\mathrm{ref}}}\right)^{\alpha}
+$$
+
+for a bracket of depth $d$. Anchoring per season rather than globally is what
+keeps eras honest: a 1960 title required two series won, not four, so a global
+anchor would pay the eight-team league roughly $4\times$ for clearing a
+shallower field. For 1980-2026 every bracket is four rounds deep and
+$\mathrm{cLI}_{\mathrm{ref}} = 0.0390625$ throughout, so the correction is a
+no-op on the current corpus and matters only under backfill.
+
+The regular season is priced in the same currency rather than by a separate
+dial. Across a full season a team travels from undetermined to holding a
+berth, and a berth is worth $2^{-d}$ of a title:
+
+$$
+\mathrm{cLI}_{\mathrm{RS}} \;=\; \frac{2^{-d}}{G_{\text{season}}}
+\;=\; \frac{0.0625}{82} \;=\; 0.000762
+\quad\Longrightarrow\quad
+w_{\mathrm{RS}} = 0.13969 \;\text{ at } \alpha = \tfrac12 .
+$$
+
+About $1/51$ of a playoff opener raw, about $1/7$ after compression. $G$ is
+tabulated, not measured: `max(g)` over a season's totals overshoots, because a
+traded player's TOT row sums his games across teams (1999-00 and 2003-04 both
+report 85).
+
+$\alpha$ is **the one free parameter in the construction, and it is a taste
+parameter, not a derivation.** $\alpha = 1$ is raw championship leverage, under
+which a Finals Game 7 is worth 25.6 openers and the regular season all but
+disappears; $\alpha = 0$ is flat and reproduces context-free VA exactly. The
+default $\tfrac12$ says importance counts at diminishing returns.
+
+$$
+\mathrm{LVA}(\text{season}) \;=\; \sum_{g \in \text{playoffs}} w(g)\,\mathrm{VA}(g)
+\;+\; w_{\mathrm{RS}}\,\mathrm{VA}_{\mathrm{RS}}
+$$
+
+#### 7.4.3 Peak and longevity
+
+Order a player's seasons by LVA descending and fold with geometric decay:
+
+$$
+\mathrm{Legacy} \;=\; \sum_{k \ge 1} D^{\,k-1}\, \mathrm{LVA}_{(k)} .
+$$
+
+$D = 1$ is a plain career sum (pure longevity); $D \to 0$ keeps only the best
+season (pure peak). Every term is positive when the season was, so extra
+seasons only ever add — but they add geometrically less, so a long tail of
+replacement-level years is neither rewarded nor punished much.
+
+$D$ is pinned rather than chosen, by stating what share of a career the peak
+should carry. "The best $K$ of $N$ seasons carry half the weight" is
+
+$$
+\frac{1 - D^{K}}{1 - D^{N}} = \tfrac12
+\quad\Longrightarrow\quad
+D = 0.938068 \;\;\text{at}\;\; (K,N) = (7,20),
+$$
+
+hence the default $D = 0.94$.
+
+The second axis is the **rate**: LVA per weighted game across the best $K$
+seasons. Weighted, not raw — if leverage prices the total it must price the
+rate, or the two halves of the metric disagree about what a game is worth. The
+two axes are reported side by side rather than blended, because any blend needs
+both normalized against the pool leader, which would make a career number move
+when an unrelated rookie debuts.
+
+#### 7.4.4 What this does to the Jordan/LeBron question
+
+Over their best seven seasons Jordan leads on raw per-game VA, $23.19$ to
+$21.75$. He does not lead once the games are priced by what was at stake: the
+two cross at $\alpha \approx 0.27$, and at the default $\alpha = \tfrac12$
+LeBron leads $21.84$ to $21.26$. The crossing sits in the same place on best-8
+($0.279$) and best-10 ($0.257$), so it is not an artifact of $K$.
+
+On the volume axis there is **no** crossing at all: LeBron leads at every $D$
+from $0.5$ to $1$, because his best leveraged seasons are also better, and the
+margin widens with $D$. The dials move the board substantially further down —
+Harden falls from 3rd to 23rd as $\alpha$ runs 0 to 1, Magic climbs 13th to
+4th, Duncan 16th to 7th — which is the metric separating profiles, and is worth
+reading as the result rather than tuning away.
+
+#### 7.4.5 A known inexactness
+
+Legacy sums the **per-game** VA decomposition. That is not identical to the
+baked season-total VA: $\gamma$ (§4.3) is non-linear in $\mathrm{REB}/\mathrm{MP}$,
+so evaluating it once on season totals differs from evaluating it per game and
+summing — a mean gap of 1.8% on meaningful seasons, systematically upward for
+rebounding bigs, up to $+11.9$ (1980-81 Moses Malone). Legacy takes the
+per-game aggregation, on the grounds that $\gamma$ is defined on a stat line
+and a game *is* a stat line. So $\alpha = 0$ reproduces a career's *summed
+per-game* VA exactly, and its summed *season-total* VA only to about 1.8%.
+
 ---
 
 ## 8. v1 → v2 divergences
@@ -536,6 +694,7 @@ ledgers so the two are never confused.
 | Defense | box-score events only | $\mathrm{VA}^{+}$ (§6) |
 | Shot location | Four Factors visuals | zone VA + Shooting comps (§7.1–7.2) |
 | Non-NBA | — | NCAA D-I on college-derived baselines |
+| All-time ranking | career VA, summed | Legacy: championship-leverage weighted, peak/longevity dialled (§7.4) |
 
 ---
 
