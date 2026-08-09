@@ -68,8 +68,16 @@ export async function GET(request) {
   const opts = { alpha, decay, includeRS, peakSeasons, minSeasons, minGames };
   const board = rankLegacy(built.players, opts);
 
-  // Season-by-season folds are the bulky part of a career and nothing on the
-  // board renders them yet, so they are dropped here.
+  // Season folds ride along with the board rather than behind a per-player
+  // fetch: they are what the row expands into, and a career is only ~20 rows,
+  // so the whole top-50 costs less than one round trip per tap would.
+  //
+  // Rounded on the way out for exactly that reason — full float precision here
+  // is ~18 characters per number to render one decimal, and it triples the
+  // payload for digits nothing displays.
+  const r1 = (n) => Math.round(n * 10) / 10;
+  const r4 = (n) => Math.round(n * 1e4) / 1e4;
+
   const players = board.slice(0, top).map((p, i) => ({
     rank: i + 1,
     slug: p.slug,
@@ -77,10 +85,27 @@ export async function GET(request) {
     total: p.total,
     peak: p.peak,
     peakRaw: p.peakRaw,
+    careerLVA: p.careerLVA,
+    teams: p.teams,
     careerGames: p.careerGames,
     seasonCount: p.seasonCount,
     span: p.span,
     truncated: p.truncated,
+    // Already ordered best season first — the order the fold spends its decay
+    // in, which is the order the expansion has to show them in.
+    seasons: p.seasons.map((s) => ({
+      season: s.season,
+      team: s.team,
+      rank: s.rank,
+      lva: r1(s.lva),
+      weight: r4(s.weight),
+      contribution: r1(s.contribution),
+      games: s.games,
+      poLVA: r1(s.poLVA),
+      poGames: s.poGames,
+      rsLVA: r1(s.rsLVA),
+      rsGames: s.rsGames,
+    })),
   }));
 
   return Response.json({

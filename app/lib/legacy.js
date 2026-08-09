@@ -79,27 +79,35 @@ export function peakShareAt(decay, k = PEAK_SEASONS_DEFAULT, n = 20) {
 // freezes it, and a sweep over ALPHA then returns the same board every step.
 export function seasonLVA(season, { alpha = ALPHA_DEFAULT, includeRS = true } = {}) {
   const anchor = season.anchor;
-  let lva = 0, weightedGames = 0, flatVA = 0, games = 0;
+  // The two halves are accumulated apart and summed at the end so a season can
+  // be READ as the two things it is — a regular season priced at a playoff
+  // berth, and a run priced by the title — rather than as one number that
+  // silently mixes them. Nothing downstream changes: lva is still the sum.
+  let poLVA = 0, poGames = 0, weightedGames = 0, flatVA = 0;
+  let rsLVA = 0, rsGames = 0;
 
   for (const g of season.games || []) {
     if (g.va == null) continue;
     const w = gameWeight(g.cli, alpha, anchor);
     if (!(w > 0)) continue;
-    lva += w * g.va;
+    poLVA += w * g.va;
     weightedGames += w;
     flatVA += g.va;
-    games += 1;
+    poGames += 1;
   }
 
   if (includeRS && season.rsVA != null && season.rsCLI > 0) {
     const w = gameWeight(season.rsCLI, alpha, anchor);
-    lva += w * season.rsVA;
+    rsLVA += w * season.rsVA;
     weightedGames += w * (season.rsGames || 0);
     flatVA += season.rsVA;
-    games += season.rsGames || 0;
+    rsGames += season.rsGames || 0;
   }
 
-  return { lva, weightedGames, flatVA, games };
+  return {
+    lva: poLVA + rsLVA, weightedGames, flatVA, games: poGames + rsGames,
+    poLVA, poGames, rsLVA, rsGames,
+  };
 }
 
 
