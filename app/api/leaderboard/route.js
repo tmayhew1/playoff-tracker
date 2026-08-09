@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { lgaForSeason, valueAddParts } from "../../scoring";
 import { loadZoneSide, attachZoneFields } from "../_lib/zones";
+import { bracketShape } from "../../lib/leverage";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -213,10 +214,17 @@ export async function GET(req) {
     const seriesList = [...byPair.values()]
       .map((gs) => ({ games: gs, start: gs[0].date }))
       .sort((p, q) => p.start.localeCompare(q.start));
-    const roundFor = (i) => (i < 8 ? 1 : i < 12 ? 2 : i < 14 ? 3 : 4);
+    // Round comes from the bracket itself — follow each series winner forward
+    // to his next series — not from the series index. The old positional rule
+    // (i < 8 ? 1 : i < 12 ? 2 : ...) assumed an 8-4-2-1 bracket and mislabelled
+    // every 12-team season. See app/lib/leverage.js.
+    const shape = bracketShape(seriesList.map((s) => ({
+      teams: [s.games[0].home.tri, s.games[0].away.tri],
+      games: s.games,
+    })));
     const seriesMeta = seriesList.map((s, i) => ({
       idx: i,
-      round: roundFor(i),
+      round: shape.round[i],
       teams: [s.games[0].home.tri, s.games[0].away.tri],
     }));
 

@@ -172,7 +172,7 @@
       ]
     },
     {
-      "round": "r1",
+      "round": "r2",
       "teams": [
         "BOS",
         "CHI"
@@ -234,7 +234,7 @@
       ]
     },
     {
-      "round": "r1",
+      "round": "r2",
       "teams": [
         "PHI",
         "MIL"
@@ -335,7 +335,7 @@
       ]
     },
     {
-      "round": "r1",
+      "round": "r2",
       "teams": [
         "PHX",
         "KCK"
@@ -436,7 +436,7 @@
       ]
     },
     {
-      "round": "r1",
+      "round": "r2",
       "teams": [
         "SAS",
         "HOU"
@@ -537,7 +537,7 @@
       ]
     },
     {
-      "round": "r2",
+      "round": "r3",
       "teams": [
         "BOS",
         "PHI"
@@ -638,7 +638,7 @@
       ]
     },
     {
-      "round": "r2",
+      "round": "r3",
       "teams": [
         "KCK",
         "HOU"
@@ -713,7 +713,7 @@
       ]
     },
     {
-      "round": "r2",
+      "round": "r4",
       "teams": [
         "BOS",
         "HOU"

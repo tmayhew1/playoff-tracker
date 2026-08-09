@@ -165,6 +165,67 @@ rebuild_def_teams <- function() {
   message(sprintf("def-ratings.json: team context rebuilt for %d season(s)", touched))
 }
 
+# --- 4. Round labels in history/leaderboard ---------------------------------
+# A round label is DERIVED data -- it was being computed from a series' index
+# under an 8-4-2-1 assumption, which is wrong for the 12-team brackets of
+# 1980-81 through 1982-83 (those ran 4-4-2-1, so their Conference Finals and
+# Finals were labelled r1/r2 and the app rendered those rounds empty).
+# derive_rounds() in scrape_common.R reads the bracket off the games instead.
+#
+# Re-deriving here rather than re-scraping: the raw games are already on disk
+# and correct, and a BR re-fetch would rewrite unrelated formatting.
+rebuild_rounds <- function() {
+  files <- list.files(DATA_DIR, pattern = "^history-[0-9]{4}-[0-9]{2}\\.json$")
+  touched <- 0; relabelled <- 0
+  for (f in files) {
+    season <- sub("^history-(.*)\\.json$", "\\1", f)
+    hpath <- file.path(DATA_DIR, f)
+    h <- jsonlite::fromJSON(hpath, simplifyVector = FALSE)
+    if (length(h$series) == 0) next
+
+    # derive_rounds wants $games[[k]]$date; history carries gameCode instead.
+    as_input <- lapply(h$series, function(s) list(games = lapply(s$games, function(g) list(
+      date = g$gameCode, home = g$home, away = g$away))))
+    shape <- tryCatch(derive_rounds(as_input),
+                      error = function(e) { message(sprintf("  !! %s: %s", season, conditionMessage(e))); NULL })
+    if (is.null(shape)) next
+    if (shape$depth != 4L) message(sprintf("  note %s: bracket depth %d", season, shape$depth))
+
+    changed <- 0
+    for (i in seq_along(h$series)) {
+      want <- paste0("r", shape$round[i])
+      if (!identical(h$series[[i]]$round, want)) { h$series[[i]]$round <- want; changed <- changed + 1 }
+    }
+    if (changed > 0) {
+      write_json_pretty(h, hpath)
+      touched <- touched + 1; relabelled <- relabelled + changed
+      message(sprintf("  %s: %d series relabelled", season, changed))
+    }
+
+    # The leaderboard's series[] carries the same rounds as integers.
+    lpath <- file.path(DATA_DIR, sprintf("leaderboard-%s.json", season))
+    if (!file.exists(lpath)) next
+    lb <- jsonlite::fromJSON(lpath, simplifyVector = FALSE)
+    if (length(lb$series) != length(h$series)) {
+      message(sprintf("  !! %s: leaderboard has %d series, history %d - skipping",
+                      season, length(lb$series), length(h$series)))
+      next
+    }
+    lchanged <- 0
+    for (i in seq_along(lb$series)) {
+      if (!identical(as.integer(lb$series[[i]]$round), shape$round[i])) {
+        lb$series[[i]]$round <- shape$round[i]; lchanged <- lchanged + 1
+      }
+    }
+    if (lchanged > 0) {
+      write_json_pretty(lb, lpath)
+      touched <- touched + 1
+      message(sprintf("  %s: %d leaderboard series relabelled", season, lchanged))
+    }
+  }
+  message(sprintf("rounds: %d file(s) rewritten, %d label(s) corrected", touched, relabelled))
+}
+
 main <- function() {
   message("Rebuilding league averages from regular-season bakes ...")
   lgas <- rebuild_lga()
@@ -172,6 +233,8 @@ main <- function() {
   recompute_leaderboards(lgas)
   message("Rebuilding team defensive context ...")
   rebuild_def_teams()
+  message("Re-deriving bracket rounds ...")
+  rebuild_rounds()
   message("Done.")
 }
 

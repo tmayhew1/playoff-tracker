@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { bracketShape } from "../../lib/leverage";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -152,8 +153,10 @@ export async function GET(req) {
       byPair.get(key).push(g);
     }
 
-    // Real best-of-7 series have a 4-win team; this drops Play-In games
-    // (1 game, never 4 wins) that ESPN also tags as postseason.
+    // A real series has a team that reached the clinching number; this drops
+    // Play-In games (1 game, never 2 wins) that ESPN also tags as postseason.
+    // The threshold is 2, not 4: a best-of-3 or best-of-5 series never
+    // produces a 4-win team, and this path must not silently discard them.
     const realSeries = [];
     for (const games of byPair.values()) {
       const wins = {};
@@ -162,13 +165,18 @@ export async function GET(req) {
         wins[w] = (wins[w] || 0) + 1;
       }
       const top = Object.entries(wins).sort((p, q) => q[1] - p[1])[0];
-      if (top && top[1] >= 4) realSeries.push({ games, winner: top[0], start: games[0].date });
+      if (top && top[1] >= 2) realSeries.push({ games, winner: top[0], start: games[0].date });
     }
     realSeries.sort((p, q) => p.start.localeCompare(q.start));
-    const roundForIndex = (i) => (i < 8 ? "r1" : i < 12 ? "r2" : i < 14 ? "r3" : "r4");
+    // Round from the bracket, not the series index — see app/lib/leverage.js.
+    const shape = bracketShape(realSeries.map((s) => ({
+      teams: [s.games[0].home.tri, s.games[0].away.tri],
+      winner: s.winner,
+      games: s.games,
+    })));
 
     const series = realSeries.map((s, i) => ({
-      round: roundForIndex(i),
+      round: `r${shape.round[i]}`,
       teams: [s.games[0].home.tri, s.games[0].away.tri],
       winner: s.winner,
       games: s.games.map((g) => ({
