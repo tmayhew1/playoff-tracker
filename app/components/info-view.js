@@ -142,7 +142,12 @@ export function InfoView() {
         <p>Zone rows sit under the 2-Pointers card in any comparison (per-game, like the rest of the panel), the <span className="font-semibold">Shot Zones</span> tab ranks seasons by zone value, and the <span className="font-semibold">Shooting</span> comp lens matches whole shooting profiles — the four zones plus 3-point and free-throw value — among players who take a similar share of their shots from three.</p>
       </Step>
 
-      <Step n="9" title="2025-26, in the books">
+      <Step n="9" title="Legacy">
+        <p className="mb-2">VA is context-free on purpose — the same line scores the same whoever it came against. That&apos;s right for a season and wrong for an all-time board, where a Finals Game 7 and Game 82 of a lottery year are plainly not the same event. So the <span className="font-semibold">Legacy</span> tab prices every game by <span className="font-semibold">championship leverage</span>: how much winning it rather than losing it moves the probability of a title, under a neutral coin. A Finals Game 7 lands at about five opening playoff games; a regular-season game at about a seventh of one. Each season is anchored to its <em>own</em> opener, so a shallower bracket doesn&apos;t hand an older era extra credit.</p>
+        <p>Careers get <span className="font-semibold">two numbers, not one</span>. <span className="font-semibold">Legacy</span> sorts a player&apos;s seasons best-first and discounts each one below the last, so extra years always add — just less each time, and hanging on for a few replacement-level seasons is neither rewarded nor punished. <span className="font-semibold">Peak/G</span> is the same leverage weighting as a rate over the best seven seasons. They disagree, and the disagreement is the point: tap either column to sort by it.</p>
+      </Step>
+
+      <Step n="10" title="2025-26, in the books">
         <p>The playoffs the app was built for ended with the <span className="font-semibold">Knicks over the Spurs</span> — and <span className="font-semibold">Spencer over Trey, 36-9</span>. That season now lives in its own tab like any other finished year, and the app keeps growing between drafts.</p>
       </Step>
 

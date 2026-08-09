@@ -7,6 +7,7 @@ import { DRatingView } from "./components/drating-view";
 import { ExploreView } from "./components/explore";
 import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
+import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
 
 
@@ -45,6 +46,12 @@ export default function PlayoffTracker() {
             </button>
           ))}
           <button
+            onClick={() => setTab("legacy")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "legacy" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Legacy
+          </button>
+          <button
             onClick={() => setTab("college")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
@@ -70,7 +77,7 @@ export default function PlayoffTracker() {
           </button>
         </div>
 
-        {tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+        {tab === "explore" ? <ExploreView /> : tab === "legacy" ? <LegacyView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

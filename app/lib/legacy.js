@@ -1,6 +1,9 @@
-"use client";
-
 import { ALPHA_DEFAULT, gameWeight } from "./leverage";
+
+// Isomorphic (no "use client"), for the same reason ./leverage.js is: the fold
+// runs server-side in /api/legacy, where the career corpus lives, and a client
+// directive here would hand that route a client reference instead of the
+// functions. Nothing below touches React or the DOM.
 
 
 // --- Legacy: peak and longevity on one board --------------------------------

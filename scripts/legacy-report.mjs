@@ -8,16 +8,15 @@
 //   node scripts/legacy-report.mjs --sweep decay
 //   node scripts/legacy-report.mjs --verify
 //
-// This is the deliverable's interface for now: the metric ships as
-// app/lib/leverage.js + app/lib/legacy.js with no UI, so this script is how the
-// numbers get looked at. It reads app/data/*.json directly — the same files the
-// API routes serve — and does the player-identity join the same way
-// /api/players does (basketball-reference slug, falling back to a normalized
-// name).
+// The board also ships as the Legacy tab (/api/legacy), which ranks the same
+// careers from the same join — buildCareers lives in app/api/_lib/careers.js so
+// there is only one of it. This script stays the sharper instrument: dial
+// sweeps, per-player folds, and --verify, none of which the tab exposes.
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildCareers } from "../app/api/_lib/careers.js";
 import {
   gameLeverage, bracketShape, swing, cLI, gameWeight, rsCLI, rsGamesFor, anchorCLI,
   ALPHA_DEFAULT,
@@ -26,105 +25,30 @@ import {
   rankLegacy, dialSweep, legacyFold, decayForPeakShare, peakShareAt,
   DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../app/lib/legacy.js";
-import { valueAddParts, lgaForSeason, baselineCoverage } from "../app/scoring.js";
+import { lgaForSeason, baselineCoverage } from "../app/scoring.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
-const exists = (f) => fs.existsSync(path.join(DATA, f));
 
-// Mirrors normalizeName in app/lib/format.js closely enough for the fallback
-// join; slugs cover all but a handful of rows.
+// Mirrors normalizeName in app/lib/format.js closely enough for the --player
+// lookup; slugs cover all but a handful of rows.
 const norm = (s) => (s || "")
   .normalize("NFD").replace(/[̀-ͯ]/g, "")
   .toLowerCase().replace(/[^a-z ]/g, "").trim();
 
 
 // --- Build careers ----------------------------------------------------------
+// The join itself is app/api/_lib/careers.js, shared with /api/legacy. Reading
+// from DATA rather than process.cwd() keeps the script runnable from anywhere.
 
-function buildCareers() {
-  const seasons = fs.readdirSync(DATA)
-    .filter((f) => /^leaderboard-\d{4}-\d{2}\.json$/.test(f))
-    .map((f) => f.slice(12, -5)).sort();
-
-  const bySlug = new Map();
-  const byName = new Map();
-  const keyOf = (slug, name) => {
-    if (slug && bySlug.has(slug)) return bySlug.get(slug);
-    const n = norm(name);
-    if (!slug && byName.has(n)) return byName.get(n);
-    const rec = { slug: slug || n, name, teams: new Set(), seasons: new Map() };
-    if (slug) bySlug.set(slug, rec);
-    if (!byName.has(n)) byName.set(n, rec);
-    return rec;
-  };
-
-  const depths = new Map();
-
-  const skipped = [];
-  for (const season of seasons) {
-    // Spec §9.5: never score against a baseline that zero-fills a category.
-    // Nothing on disk trips this today; it is the backfill's tripwire.
-    const cov = baselineCoverage(lgaForSeason(season));
-    if (!cov.complete) { skipped.push(`${season} (${cov.missing.join(", ")})`); continue; }
-    const hist = read(`history-${season}.json`);
-    const lev = gameLeverage(hist.series);
-    depths.set(season, lev.shape.depth);
-    const seasonCLI = rsCLI(season, lev.shape.depth);
-    const anchor = lev.shape.anchor;
-
-    // Playoffs: per-game VA is already baked, so leverage only reweights it.
-    const lb = read(`leaderboard-${season}.json`);
-    for (const p of lb.players) {
-      const rec = keyOf(p.slug, p.name);
-      rec.name = p.name;
-      rec.teams.add(p.team);
-      const row = rec.seasons.get(season)
-        || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor };
-      for (const g of p.games || []) {
-        if (g.va == null) continue;
-        const e = lev.map.get(`${g.gameId}|${p.team}`);
-        row.games.push({
-          gameId: g.gameId, va: g.va, cli: e?.cli ?? 0,
-          round: e?.round, a: e?.a, b: e?.b, bestOf: e?.bestOf,
-        });
-      }
-      rec.seasons.set(season, row);
-    }
-
-    // Regular season: totals only, so VA is computed here against that
-    // season's own baselines (spec §9.2 — the same baselines the playoff
-    // numbers already use).
-    if (!exists(`regular-season-${season}.json`)) continue;
-    const lga = lgaForSeason(season);
-    for (const p of read(`regular-season-${season}.json`).players) {
-      const rec = keyOf(p.slug, p.name);
-      rec.name = p.name;
-      if (p.team && !/^(TOT|\dTM)$/.test(p.team)) rec.teams.add(p.team);
-      const row = rec.seasons.get(season)
-        || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor };
-      row.rsVA = valueAddParts(p, lga).va;
-      row.rsGames = p.g || 0;
-      rec.seasons.set(season, row);
-    }
+function build() {
+  const built = buildCareers({ dataDir: DATA });
+  if (built.skipped.length) {
+    console.error(`  note: ${built.skipped.length} season(s) skipped — incomplete baseline: `
+      + built.skipped.map((s) => `${s.season} (${s.missing.join(", ")})`).join("; "));
   }
-
-  const earliest = seasons[0];
-  const players = [...new Set([...bySlug.values(), ...byName.values()])].map((r) => ({
-    slug: r.slug,
-    name: r.name,
-    teams: [...r.teams],
-    // A career that was already running when the corpus starts is measured
-    // short. Flagged, never silently ranked as complete.
-    truncated: r.seasons.has(earliest),
-    seasons: [...r.seasons.values()],
-  }));
-
-  if (skipped.length) {
-    console.error(`  note: ${skipped.length} season(s) skipped — incomplete baseline: `
-      + skipped.join("; "));
-  }
-  return { players, seasons: seasons.filter((x) => !skipped.some((k) => k.startsWith(x))), depths };
+  return built;
 }
 
 
@@ -372,7 +296,7 @@ function main(argv) {
   const minGames = Number(arg("min-games", 400));
   const peakSeasons = Number(arg("peak-seasons", PEAK_SEASONS_DEFAULT));
 
-  const built = buildCareers();
+  const built = build();
   const opts = { alpha, decay, includeRS, peakSeasons, minSeasons: 3, minGames };
 
   if (has("verify")) process.exit(verify(built) ? 1 : 0);
