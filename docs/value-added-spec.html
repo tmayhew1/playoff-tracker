@@ -712,6 +712,36 @@
 
 <p>Legacy sums the <strong>per-game</strong> VA decomposition. That is not identical to the baked season-total VA: <span class="m g">&gamma;</span> (&sect;4.3) is non-linear in REB/MP, so evaluating it once on season totals differs from evaluating it per game and summing &mdash; a mean gap of 1.8% on meaningful seasons, systematically upward for rebounding bigs, up to +11.9 (1980-81 Moses Malone). Legacy takes the per-game aggregation, on the grounds that <span class="m g">&gamma;</span> is defined on a stat line and a game <em>is</em> a stat line. So <span class="m"><span class="g">&alpha;</span> = 0</span> reproduces a career&rsquo;s <em>summed per-game</em> VA exactly, and its summed <em>season-total</em> VA only to about 1.8%.</p>
 
+<h4>7.4.6 &nbsp; Coverage, and what a backfill has to solve</h4>
+
+<p>Legacy currently spans <strong>1980-81 to 2025-26</strong>, the seasons with player data on disk. A career already running in 1980-81 is measured short and is flagged as such rather than ranked as complete; Magic Johnson and Larry Bird sit in the top 15 missing their rookie year, and Kareem Abdul-Jabbar appears with 848 of his games.</p>
+
+<p>Extending back is a data problem, not a formula problem. The leverage construction already generalizes: bracket depth is read per season, so a two-round 1950s postseason scores its Finals Game 7 at the same cLI = 1, and the per-season anchor of &sect;7.4.2 makes its opening game worth exactly the same as a modern one. Byes need no special case. What does not generalize is the <strong>category set</strong>:</p>
+
+<div class="tw">
+<table>
+  <thead><tr><th>era</th><th>state</th><th>what it needs</th></tr></thead>
+  <tbody>
+    <tr><th class="cat">1979-80</th>
+      <td>complete; the 3-point line arrives</td>
+      <td>the existing bake, run</td></tr>
+    <tr><th class="cat">1973-74 &ndash; 1978-79</th>
+      <td>complete box score, no 3-point line (<span class="m"><span class="g">λ</span><sub class="s">3</sub> = 0</span> against 3PA = 0, so the term is exactly zero)</td>
+      <td>the existing bake; verify TOV provenance, which BR carries per player only from 1977-78</td></tr>
+    <tr><th class="cat">1970-71 &ndash; 1972-73</th>
+      <td><strong>baselines are zero-filled and unusable</strong> &mdash; <span class="m"><span class="g">μ</span><sub class="s">DRB</sub> = <span class="g">μ</span><sub class="s">ORB</sub> = <span class="g">ρ</span><sub class="s">D</sub> = 0</span>, because rebounds were not split until 1973-74</td>
+      <td>a reduced-category variant, and rebuilt baselines</td></tr>
+    <tr><th class="cat">1949-50 &ndash; 1969-70</th>
+      <td>no baselines at all; no rebound split, no steals/blocks/turnovers, possessions need imputing</td>
+      <td>v1&rsquo;s <span class="m">VA<sub class="s">3</sub></span> and its OLS possession estimate, both dropped in v2</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The third row is a live &sect;9.5 violation sitting in <code>league-averages.json</code> already: those entries exist and are wrong, and a zero baseline is not a harmless zero &mdash; at <span class="m"><span class="g">μ</span><sub class="s">DRB</sub> = 0</span> a player is credited his entire rebounding rate as surplus, and at <span class="m"><span class="g">ρ</span><sub class="s">D</sub> = 0</span> the block term multiplies to nothing. Nothing reads them today because no player data predates 1980-81, so <code>baselineCoverage()</code> in <code>app/scoring.js</code> refuses any season whose baseline cannot price all ten categories, and Legacy skips it loudly rather than scoring it. That is the tripwire the backfill will meet first.</p>
+
+<p>The comparability caveat is the real cost, and it should not be buried: a season scored on seven of ten categories is <strong>not the same currency</strong> as one scored on ten, and &sect;9.5 forbids making up the difference. Any backfilled era that loses categories needs to carry how many it measured, and be shown as its own class rather than mixed into one column.</p>
+
 <!-- ================= 8 ================= -->
 <h2><span class="n">8</span>v1 &rarr; v2 divergences</h2>
 

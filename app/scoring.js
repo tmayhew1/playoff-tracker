@@ -105,6 +105,51 @@ export function valueAddByCategory(p, lga = LGA) {
   };
 }
 
+// --- Baseline coverage -------------------------------------------------
+// Spec §9.5: a category the source does not carry must be ABSENT, never
+// zero-filled — a missing measurement must not read as below-average
+// performance. That invariant is currently violated in the data itself:
+// league-averages.json carries entries back to 1970-71, but 1970-71 through
+// 1972-73 have laDRBperM = laORBperM = laDRBrate = 0, because the NBA did not
+// split rebounds into offensive and defensive until 1973-74.
+//
+// A zero baseline is not a harmless zero. With λ_DRB = 0 a player is credited
+// his ENTIRE defensive rebounding rate as surplus; with ρ_D = 0 the block term
+// is multiplied to nothing and the defensive-rebound price ρ_O becomes 1. The
+// season would score, and score badly wrong, in silence.
+//
+// Nothing reads those three seasons today — there is no player data on disk
+// before 1980-81 — so this is a guard for the backfill rather than a live bug.
+// Any consumer scoring an arbitrary season should check coverage first.
+
+const BASELINE_REQUIRES = {
+  "Points": ["laPTSperM"],
+  "2-Pointers": ["la2P"],
+  "Free Throws": ["laFT"],
+  "Assists": ["laASTperM", "laPTSperMake"],
+  "Steals": ["laSTLperM", "laPTSperPoss"],
+  "Blocks": ["laBLKperM", "laPTSperPoss", "laDRBrate"],
+  "Turnovers": ["laTOVperM", "laPTSperPoss"],
+  "D Rebounds": ["laDRBperM", "laDRBrate", "laPTSperPoss"],
+  "O Rebounds": ["laORBperM", "laDRBrate", "laPTSperPoss"],
+  // "3-Pointers" is deliberately absent. la3P = 0 is CORRECT for every season
+  // before 1979-80: nobody attempted one, so 3PA = 0 and the term is exactly
+  // zero however the baseline is set. A zero there is an era, not a gap.
+};
+
+// Which of the ten categories a season's baseline can actually price.
+export function baselineCoverage(lga) {
+  const measured = [], missing = [];
+  for (const [cat, keys] of Object.entries(BASELINE_REQUIRES)) {
+    (keys.every((k) => lga?.[k] > 0) ? measured : missing).push(cat);
+  }
+  if (measured.length === Object.keys(BASELINE_REQUIRES).length) measured.push("3-Pointers");
+  return { measured, missing, complete: missing.length === 0 };
+}
+
+export const seasonBaselineComplete = (season) =>
+  baselineCoverage(LEAGUE_AVERAGES[season]).complete;
+
 // --- Shot-distance zones -----------------------------------------------
 // basketball-reference's per-season Shooting page splits 2-point shots into
 // four distance zones. Baked by scripts/R/fetch_shooting_splits.R into

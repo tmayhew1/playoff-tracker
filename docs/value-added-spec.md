@@ -677,6 +677,43 @@ per-game aggregation, on the grounds that $\gamma$ is defined on a stat line
 and a game *is* a stat line. So $\alpha = 0$ reproduces a career's *summed
 per-game* VA exactly, and its summed *season-total* VA only to about 1.8%.
 
+#### 7.4.6 Coverage, and what a backfill has to solve
+
+Legacy currently spans **1980-81 to 2025-26**, the seasons with player data on
+disk. A career already running in 1980-81 is measured short and is flagged as
+such rather than ranked as complete; Magic Johnson and Larry Bird sit in the
+top 15 missing their rookie year, and Kareem Abdul-Jabbar appears with 848 of
+his games.
+
+Extending back is a data problem, not a formula problem. The leverage
+construction already generalizes: bracket depth is read per season, so a
+two-round 1950s postseason scores its Finals Game 7 at the same $\mathrm{cLI} = 1$,
+and the per-season anchor of §7.4.2 makes its opening game worth exactly the
+same as a modern one. Byes need no special case. What does not generalize is
+the **category set**:
+
+| era | state | what it needs |
+|---|---|---|
+| 1979-80 | complete; the 3-point line arrives | the existing bake, run |
+| 1973-74 – 1978-79 | complete box score, no 3-point line ($\lambda_{3} = 0$ against $\mathrm{3PA} = 0$, so the term is exactly zero) | the existing bake; verify TOV provenance, which BR carries per player only from 1977-78 |
+| 1970-71 – 1972-73 | **baselines are zero-filled and unusable** — $\mu_{\mathrm{DRB}} = \mu_{\mathrm{ORB}} = \rho_D = 0$, because rebounds were not split until 1973-74 | a reduced-category variant, and rebuilt baselines |
+| 1949-50 – 1969-70 | no baselines at all; no rebound split, no steals/blocks/turnovers, possessions need imputing | v1's $\mathrm{VA}_3$ and its OLS possession estimate, both dropped in v2 |
+
+The third row is a live §9.5 violation sitting in `league-averages.json`
+already: those entries exist and are wrong, and a zero baseline is not a
+harmless zero — at $\mu_{\mathrm{DRB}} = 0$ a player is credited his entire
+rebounding rate as surplus, and at $\rho_D = 0$ the block term multiplies to
+nothing. Nothing reads them today because no player data predates 1980-81, so
+`baselineCoverage()` in `app/scoring.js` refuses any season whose baseline
+cannot price all ten categories, and Legacy skips it loudly rather than
+scoring it. That is the tripwire the backfill will meet first.
+
+The comparability caveat is the real cost, and it should not be buried: a
+season scored on seven of ten categories is **not the same currency** as one
+scored on ten, and §9.5 forbids making up the difference. Any backfilled era
+that loses categories needs to carry how many it measured, and be shown as its
+own class rather than mixed into one column.
+
 ---
 
 ## 8. v1 → v2 divergences

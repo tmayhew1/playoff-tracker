@@ -26,7 +26,7 @@ import {
   rankLegacy, dialSweep, legacyFold, decayForPeakShare, peakShareAt,
   DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../app/lib/legacy.js";
-import { valueAddParts, lgaForSeason } from "../app/scoring.js";
+import { valueAddParts, lgaForSeason, baselineCoverage } from "../app/scoring.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
@@ -61,7 +61,12 @@ function buildCareers() {
 
   const depths = new Map();
 
+  const skipped = [];
   for (const season of seasons) {
+    // Spec §9.5: never score against a baseline that zero-fills a category.
+    // Nothing on disk trips this today; it is the backfill's tripwire.
+    const cov = baselineCoverage(lgaForSeason(season));
+    if (!cov.complete) { skipped.push(`${season} (${cov.missing.join(", ")})`); continue; }
     const hist = read(`history-${season}.json`);
     const lev = gameLeverage(hist.series);
     depths.set(season, lev.shape.depth);
@@ -115,7 +120,11 @@ function buildCareers() {
     seasons: [...r.seasons.values()],
   }));
 
-  return { players, seasons, depths };
+  if (skipped.length) {
+    console.error(`  note: ${skipped.length} season(s) skipped — incomplete baseline: `
+      + skipped.join("; "));
+  }
+  return { players, seasons: seasons.filter((x) => !skipped.some((k) => k.startsWith(x))), depths };
 }
 
 
@@ -289,13 +298,57 @@ function verify({ players, seasons }) {
     ok("playoff VA sums to 448.83", close(flatPO, 448.83, 0.01), flatPO.toFixed(2));
   }
 
-  console.log("\nTIER 7 — no season is scored on a zero-filled baseline");
+  console.log("\nTIER 5 — leverage generalizes to other bracket shapes");
   {
-    const bad = seasons.filter((s) => {
-      const l = lgaForSeason(s);
-      return !(l.laDRBrate > 0) || !(l.laDRBperM > 0) || !(l.laPTSperM > 0);
-    });
-    ok("every scored season has a live baseline", bad.length === 0, bad.join(", "));
+    // The backfill targets eras with shallower brackets and shorter series.
+    // Nothing on disk exercises those, so assert the math directly.
+    const mk = (rounds) => { // rounds: array of [teamA, teamB, winsA, winsB]
+      let day = 0;
+      return rounds.map(([a, b, wa, wb]) => ({
+        teams: [a, b],
+        games: [...Array(wa + wb)].map((_, i) => {
+          day++;
+          const aWins = i < wa;
+          return { gameCode: String(20000101 + day),
+            home: { tri: a, score: aWins ? 100 : 90 },
+            away: { tri: b, score: aWins ? 90 : 100 } };
+        }),
+      }));
+    };
+    // A two-round, best-of-7 bracket (the 1950s shape).
+    const two = bracketShape(mk([["A","B",4,1],["C","D",4,2],["A","C",4,3]]));
+    ok("2-round bracket reads depth 2", two.depth === 2 && two.exact, `depth ${two.depth}`);
+    ok("2-round rounds are 1,1,2", two.round.join(",") === "1,1,2", two.round.join(","));
+    ok("its Finals G7 is still the maximum leverage",
+      close(cLI(3, 3, 7, two.roundsAfter[2]), 1));
+    ok("its opening game anchors to 1",
+      close(gameWeight(cLI(0, 0, 7, two.roundsAfter[0]), 0.5, two.anchor), 1));
+    // A bye: A skips round 1 and enters in round 2.
+    const bye = bracketShape(mk([["B","C",3,1],["A","B",4,0],["A","D",4,2],["A","E",4,3]]));
+    ok("a bye team's first series is not round 1",
+      bye.round[1] === 2 && bye.round[0] === 1, bye.round.join(","));
+    ok("best-of-5 opening round is detected", bye.bestOf[0] === 5, `bo${bye.bestOf[0]}`);
+    // Depth changes what an opener is worth, which is why the anchor is
+    // per season: without it a 2-round era would price ~4x a 4-round one.
+    ok("a 2-round opener is worth 4x a 4-round one, before anchoring",
+      close(cLI(0, 0, 7, 1) / cLI(0, 0, 7, 3), 4));
+    ok("and exactly the same after it",
+      close(gameWeight(cLI(0, 0, 7, 1), 0.5, anchorCLI(2, 7)),
+            gameWeight(cLI(0, 0, 7, 3), 0.5, anchorCLI(4, 7))));
+  }
+
+  console.log("\nTIER 7 — baseline coverage (spec §9.5)");
+  {
+    const bad = seasons.filter((s) => !baselineCoverage(lgaForSeason(s)).complete);
+    ok("every scored season prices all ten categories", bad.length === 0, bad.join(", "));
+    // The guard must actually fire on the seasons the backfill will meet.
+    const c = baselineCoverage(lgaForSeason("1971-72"));
+    ok("1971-72 is correctly refused (no rebound split)",
+      !c.complete && c.missing.includes("D Rebounds"), c.missing.join(", "));
+    const c74 = baselineCoverage(lgaForSeason("1973-74"));
+    ok("1973-74 is accepted (rebound split begins)", c74.complete, c74.missing.join(", "));
+    const c78 = baselineCoverage(lgaForSeason("1978-79"));
+    ok("1978-79 is accepted despite no 3-point line", c78.complete, c78.missing.join(", "));
   }
 
   console.log(fail ? `\n${fail} FAILURE(S)` : "\nALL PASS");
