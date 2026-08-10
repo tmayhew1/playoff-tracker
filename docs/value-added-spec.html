@@ -115,6 +115,35 @@
   footer{margin-top:4rem;padding-top:1.25rem;border-top:1px solid var(--rule);
          font-size:.8rem;color:var(--faint)}
   a{color:var(--accent)}
+
+  /* ---- print / PDF ---- */
+  @page{size:letter;margin:16mm 14mm}
+  @media print{
+    /* print on paper, never in the reader's dark theme */
+    :root{
+      --bg:#fff; --panel:#fff; --ink:#1c1917; --dim:#57534e; --faint:#78716c;
+      --rule:#e0ddda; --rule2:#c9c5c1; --accent:#8a4708; --mathbg:#f4f3f1;
+    }
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-size:10.5pt;line-height:1.5}
+    .wrap{max-width:none;margin:0;padding:0}
+
+    /* scroll containers must not clip on paper */
+    .eq,.tw{overflow:visible}
+    table{min-width:0}
+
+    /* keep units of meaning on one page */
+    .eq,.note,.ledger .row,tr,li{break-inside:avoid;page-break-inside:avoid}
+    .cases,.fr{break-inside:avoid;page-break-inside:avoid}
+    h2,h3,h4{break-after:avoid;page-break-after:avoid}
+    h2{break-before:auto;margin-top:2.2rem}
+    header.mast{margin-bottom:1.5rem}
+    footer{margin-top:2.5rem}
+    hr{margin:1.6rem 0}
+
+    /* a URL nobody can click is noise; the link text carries the reference */
+    a{color:var(--ink);text-decoration:none}
+  }
 </style>
 </head>
 <body>

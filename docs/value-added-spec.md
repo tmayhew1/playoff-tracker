@@ -3,7 +3,9 @@
 **Version 2 (playoff-tracker).** Supersedes the v1 definition shipped in
 `nba-projects` (R Shiny); divergences between the two are itemized in §8.
 
-> **Rendered version: [`value-added-spec.html`](./value-added-spec.html).** This
+> **Rendered versions: [`value-added-spec.html`](./value-added-spec.html) and
+> [`value-added-spec.pdf`](./value-added-spec.pdf)** (16 pages, US Letter, printed
+> from the HTML — regenerate with the command in §10). This
 > Markdown file uses LaTeX blocks, which only render where a viewer supports
 > KaTeX/MathJax (GitHub's web UI does; most editors and previewers do not). The
 > HTML companion renders identical notation in plain HTML + CSS — no external
@@ -748,3 +750,21 @@ own class rather than mixed into one column.
    from a mis-parsed page.
 5. Any category the source does not carry is **absent**, never zero-filled — a
    missing measurement must not read as below-average performance.
+
+---
+
+## 10. Regenerating the rendered documents
+
+`value-added-spec.html` is hand-maintained alongside this file (same content,
+plain HTML/CSS notation instead of LaTeX). `value-added-spec.pdf` is *derived* —
+never edit it by hand. It is the HTML printed by headless Chromium, which
+applies the `@media print` block in that file (light palette, no clipped
+equations or tables, no page breaks inside an equation or a table row):
+
+```bash
+chrome --headless=new --no-pdf-header-footer \
+  --print-to-pdf=docs/value-added-spec.pdf \
+  file://"$PWD"/docs/value-added-spec.html
+```
+
+Any browser's "Print → Save as PDF" on the HTML produces the same layout.
