@@ -1,0 +1,9 @@
+{
+  "decay": 0.8084,
+  "method": "kendall-tau balance between a plain career sum (D=1) and the best season (D->0)",
+  "pool": 1133,
+  "tau": 0.8338,
+  "seasons": 46,
+  "firstSeason": "1980-81",
+  "lastSeason": "2025-26"
+}

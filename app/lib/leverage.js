@@ -88,6 +88,52 @@ export function gameWeight(cli, alpha = ALPHA_DEFAULT, anchor) {
 }
 
 
+// --- Stakes belong to the series, not the game state ------------------------
+// cLI above prices a GAME by the score it was played at. That is the right
+// answer to "how much did this game matter" and the wrong one to "how good was
+// this player", because a team removes the stakes by winning early. A sweep is
+// played entirely at 0-0, 1-0, 2-0, 3-0 — weights 1.00, 1.00, 0.89, 0.63, the
+// bottom of the round's range — while a seven-game grind averages 1.21 across
+// seven games. Winning fast therefore cost roughly 2.4x the weighted volume:
+// charged once for playing fewer games, and again for the games being cheap.
+//
+// So a series is priced ex ante and once. Under the same neutral coin, winning
+// it moves a title by 0.5^roundsAfter whatever the score becomes, and that
+// stake is spread across however many games it actually took. This is already
+// how the regular season is priced below — a berth worth 0.5^depth, divided by
+// the schedule — so the playoffs were the inconsistent half.
+
+// The stake of winning a series: rounds still to be won after it, halved each.
+export function seriesStake(roundsAfter) {
+  return Math.pow(0.5, roundsAfter);
+}
+
+// The unit: a round-1 series in a bracket this deep.
+export function seriesAnchor(depth) {
+  return Math.pow(0.5, depth - 1);
+}
+
+// Expected games in a best-of-7 under the fair coin the rest of the module
+// already assumes: 4g .125, 5g .25, 6g .3125, 7g .3125. Dividing the series
+// stake by the games played and multiplying by this holds the unit — a
+// round-1 series of expected length still prices its games at exactly 1.00,
+// the same opener the state-based weights were quoted against. A shorter
+// series concentrates that total into fewer games; a longer one dilutes it.
+export const EXPECTED_SERIES_GAMES = 5.8125;
+
+// What one game of a series is worth. `seriesGames` is the length the series
+// actually ran — the TEAM's games, not the player's, so sitting one out
+// dilutes his share rather than flattering it.
+export function seriesGameWeight(roundsAfter, depth, seriesGames, alpha = ALPHA_DEFAULT) {
+  if (!(seriesGames > 0)) return 0;
+  const anchor = seriesAnchor(depth);
+  if (!(anchor > 0)) return 0;
+  const stake = seriesStake(roundsAfter);
+  const w = alpha === 0 ? 1 : Math.pow(stake / anchor, alpha);
+  return w * (EXPECTED_SERIES_GAMES / seriesGames);
+}
+
+
 // --- The regular season -----------------------------------------------------
 // Priced in the same currency rather than by a separate taste dial. Across the
 // whole regular season a team goes from undetermined to holding a playoff

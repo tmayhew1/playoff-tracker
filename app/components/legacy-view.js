@@ -160,9 +160,11 @@ export function LegacyView() {
       </div>
 
       <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
-        Every game a career played, priced by what it was worth to a title, then
-        folded best season first so extra years always add — just less each
-        time. <span className="font-semibold">Legacy</span> is that total;{" "}
+        Every series a career played, priced by what winning it was worth to a
+        title and shared across the games it took — so closing a team out in
+        four concentrates that value instead of forfeiting it. The seasons are
+        then folded best first, so extra years always add, just less each time.{" "}
+        <span className="font-semibold">Legacy</span> is that total;{" "}
         <span className="font-semibold">Peak/G</span> is the same weighting as a
         rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
         or a player for the season-by-season fold.
@@ -213,10 +215,20 @@ export function LegacyView() {
           <>* career reaches {data.firstSeason}, the first season on record — it may extend
           earlier, in which case only part of it is measured.<br /></>
         )}
-        Dials: leverage α {data.dials.alpha}, decay {data.dials.decay} (the best{" "}
-        {data.dials.peakSeasons} seasons carry {(data.peakShare * 100).toFixed(0)}% of a
-        20-season career). Regular season {data.dials.includeRS ? "included" : "excluded"};
-        minimum {data.dials.minSeasons} seasons and {fmt0(data.dials.minGames)} games.
+        Decay {data.dials.decay}
+        {data.calibration?.isDefault && data.calibration.pool ? (
+          <> — measured, not chosen: the point where this board sits equidistant between a
+          plain career sum and a best-season ranking across all{" "}
+          {data.calibration.pool.toLocaleString()} qualifying careers. At it, the best{" "}
+          {data.dials.peakSeasons} seasons carry {(data.peakShare * 100).toFixed(0)}% of a
+          20-season career.</>
+        ) : (
+          <> (the best {data.dials.peakSeasons} seasons carry{" "}
+          {(data.peakShare * 100).toFixed(0)}% of a 20-season career).</>
+        )}{" "}
+        Leverage α {data.dials.alpha}; regular season{" "}
+        {data.dials.includeRS ? "included" : "excluded"}; minimum{" "}
+        {data.dials.minSeasons} seasons and {fmt0(data.dials.minGames)} games.
       </div>
     </div>
   );

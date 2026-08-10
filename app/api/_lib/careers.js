@@ -58,6 +58,10 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
     depths.set(season, lev.shape.depth);
     const seasonCLI = rsCLI(season, lev.shape.depth);
     const anchor = lev.shape.anchor;
+    const depth = lev.shape.depth;
+    // How long each series actually ran. Series pricing divides a stake by the
+    // games the SERIES took, so this is the team's count, not the player's.
+    const seriesGames = hist.series.map((s) => (s.games || []).length);
 
     // Playoffs: per-game VA is already baked, so leverage only reweights it.
     const lb = read(`leaderboard-${season}.json`);
@@ -66,13 +70,15 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
       rec.name = p.name;
       rec.teams.add(p.team);
       const row = rec.seasons.get(season)
-        || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor };
+        || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor, depth };
       for (const g of p.games || []) {
         if (g.va == null) continue;
         const e = lev.map.get(`${g.gameId}|${p.team}`);
         row.games.push({
           gameId: g.gameId, va: g.va, cli: e?.cli ?? 0,
           round: e?.round, a: e?.a, b: e?.b, bestOf: e?.bestOf,
+          seriesIdx: e?.seriesIdx, roundsAfter: e?.roundsAfter,
+          seriesGames: e?.seriesIdx != null ? seriesGames[e.seriesIdx] : 0,
         });
       }
       rec.seasons.set(season, row);
@@ -88,7 +94,7 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
       rec.name = p.name;
       if (p.team && !/^(TOT|\dTM)$/.test(p.team)) rec.teams.add(p.team);
       const row = rec.seasons.get(season)
-        || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor };
+        || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor, depth };
       row.rsVA = valueAddParts(p, lga).va;
       row.rsGames = p.g || 0;
       rec.seasons.set(season, row);

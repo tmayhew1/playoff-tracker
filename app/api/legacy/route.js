@@ -3,6 +3,7 @@ import {
   rankLegacy, peakShareAt, DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../../lib/legacy.js";
 import { ALPHA_DEFAULT } from "../../lib/leverage.js";
+import DIALS from "../../data/legacy-dials.json";
 
 export const runtime = "nodejs";
 export const revalidate = 86400;
@@ -115,5 +116,8 @@ export async function GET(request) {
     lastSeason: built.seasons[built.seasons.length - 1] ?? null,
     dials: { alpha, decay, includeRS, peakSeasons, minSeasons, minGames },
     peakShare: peakShareAt(decay, peakSeasons, 20),
+    // How the default decay was arrived at, so the tab can say so rather than
+    // presenting a calibrated number as a taste.
+    calibration: { ...DIALS, isDefault: decay === DECAY_DEFAULT },
   }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
 }

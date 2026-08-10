@@ -19,10 +19,10 @@ import { fileURLToPath } from "node:url";
 import { buildCareers } from "../app/api/_lib/careers.js";
 import {
   gameLeverage, bracketShape, swing, cLI, gameWeight, rsCLI, rsGamesFor, anchorCLI,
-  ALPHA_DEFAULT,
+  seriesGameWeight, EXPECTED_SERIES_GAMES, ALPHA_DEFAULT,
 } from "../app/lib/leverage.js";
 import {
-  rankLegacy, dialSweep, legacyFold, decayForPeakShare, peakShareAt,
+  rankLegacy, dialSweep, legacyFold, decayForBalance, rankTau, peakShareAt,
   DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../app/lib/legacy.js";
 import { lgaForSeason, baselineCoverage } from "../app/scoring.js";
@@ -177,12 +177,23 @@ function verify({ players, seasons }) {
 
   console.log("\nTIER 4 — dial identities");
   {
-    const lbj = players.find((p) => p.slug === "jamesle01");
-    const board = rankLegacy([lbj], { alpha: 0, decay: 1, includeRS: true });
-    const direct = lbj.seasons.reduce((s, r) =>
-      s + r.games.reduce((t, g) => t + g.va, 0) + (r.rsVA ?? 0), 0);
-    ok("alpha=0 => LVA is the unweighted sum", close(board[0].total, direct, 1e-6),
-      `${board[0].total.toFixed(6)} vs ${direct.toFixed(6)}`);
+    // Series pricing: the stake is the series', so the length it ran only
+    // decides how many games share it. These are the identities that keeps
+    // dominance from being charged for.
+    const total = (n) => seriesGameWeight(3, 4, n, 0.5) * n;
+    ok("a series carries the same total however long it ran",
+      close(total(4), total(7), 1e-12) && close(total(4), total(5), 1e-12),
+      `${total(4).toFixed(6)} = ${total(5).toFixed(6)} = ${total(7).toFixed(6)}`);
+    ok("a round-1 series of expected length prices its games at 1",
+      close(seriesGameWeight(3, 4, EXPECTED_SERIES_GAMES, 0.5), 1, 1e-12));
+    ok("closing out in 4 is worth more per game than grinding to 7",
+      seriesGameWeight(3, 4, 4, 0.5) > seriesGameWeight(3, 4, 7, 0.5),
+      `${seriesGameWeight(3, 4, 4, 0.5).toFixed(3)} > ${seriesGameWeight(3, 4, 7, 0.5).toFixed(3)}`);
+    ok("each round is sqrt(2) on the one before, as before",
+      close(seriesGameWeight(2, 4, 5, 0.5) / seriesGameWeight(3, 4, 5, 0.5), Math.SQRT2, 1e-12));
+    ok("alpha=0 flattens the rounds but keeps the concentration",
+      seriesGameWeight(0, 4, 5, 0) === seriesGameWeight(3, 4, 5, 0)
+        && seriesGameWeight(3, 4, 4, 0) > seriesGameWeight(3, 4, 7, 0));
   }
   {
     const xs = [12, 400, 3, 900, 75, 220];
@@ -197,9 +208,24 @@ function verify({ players, seasons }) {
     ok("fold strictly increasing in decay", mono);
   }
   {
-    const d = decayForPeakShare(7, 20, 0.5);
-    ok("decayForPeakShare(7,20,.5) = 0.938068", close(d, 0.938068, 5e-7), d.toFixed(6));
-    ok("peakShareAt is its inverse", close(peakShareAt(d, 7, 20), 0.5, 1e-9));
+    // The decay is now measured, not asserted: D* is where the board sits
+    // equidistant between a plain career sum and a best-season ranking. The
+    // property to check is that symmetry, not a magic number.
+    const r = decayForBalance(players, { alpha: 0.5, includeRS: true, minSeasons: 3, minGames: 400 });
+    ok("decayForBalance lands the two taus on each other",
+      close(r.tau, r.tauPeak, 5e-3), `${r.tau.toFixed(4)} vs ${r.tauPeak.toFixed(4)}`);
+    ok("D* matches the calibrated value on disk",
+      close(r.decay, DECAY_DEFAULT, 5e-4), `${r.decay.toFixed(4)} vs ${DECAY_DEFAULT}`);
+    ok("D* sits strictly inside the fold's endpoints", r.decay > 0 && r.decay < 1, r.decay.toFixed(4));
+    // The framing that produced 0.94 claimed balance and did not deliver it.
+    const ranks = (d) => new Map(rankLegacy(players, { alpha: 0.5, includeRS: true,
+      minSeasons: 3, minGames: 400, decay: d }).map((p, i) => [p.slug, i + 1]));
+    const long = ranks(1), peak = ranks(1e-9);
+    const pool = [...long.keys()].filter((s) => peak.has(s));
+    const old = ranks(0.94);
+    ok("the old 0.94 was longevity-tilted, as claimed",
+      rankTau(old, long, pool) - rankTau(old, peak, pool) > 0.1,
+      `tau long ${rankTau(old, long, pool).toFixed(3)} vs peak ${rankTau(old, peak, pool).toFixed(3)}`);
   }
 
   console.log("\nTIER 3 — LeBron 2015-16, hand-checkable");
@@ -208,16 +234,20 @@ function verify({ players, seasons }) {
     const s = lbj.seasons.find((r) => r.season === "2015-16");
     const fin = s.games.filter((g) => g.round === 4)
       .sort((x, y) => x.gameId.localeCompare(y.gameId));
-    const w = (g) => gameWeight(g.cli, 0.5, s.anchor);
-    console.log("    game  state  cLI      weight   VA      leveraged");
+    const w = (g) => seriesGameWeight(g.roundsAfter, s.depth, g.seriesGames, 0.5);
+    console.log("    game  state  seriesGames  weight   VA      leveraged");
     fin.forEach((g, i) => {
-      console.log(`    G${i + 1}    ${g.a}-${g.b}    ${g.cli.toFixed(4)}   `
+      console.log(`    G${i + 1}    ${g.a}-${g.b}    ${String(g.seriesGames).padStart(8)}   `
         + `${w(g).toFixed(4)}   ${g.va.toFixed(2)}   ${(w(g) * g.va).toFixed(1)}`);
     });
-    const g2 = fin[1], g3 = fin[2];
-    ok("Finals G3 (down 0-2) weighs less than G2 (down 0-1)", w(g3) < w(g2),
-      `${w(g3).toFixed(4)} < ${w(g2).toFixed(4)}`);
-    ok("Finals G7 weight = 5.0596", close(w(fin[6]), 5.059644256269407, 1e-9));
+    ok("every game of the series now weighs the same",
+      fin.every((g) => close(w(g), w(fin[0]), 1e-12)), w(fin[0]).toFixed(4));
+    ok("that 7-game Finals prices its games at 2sqrt(2) x 7/7… i.e. below a sweep's",
+      w(fin[0]) < seriesGameWeight(0, 4, 4, 0.5),
+      `${w(fin[0]).toFixed(3)} < ${seriesGameWeight(0, 4, 4, 0.5).toFixed(3)}`);
+    ok("the series still totals what its stake says",
+      close(w(fin[0]) * fin.length, 2 * Math.SQRT2 * EXPECTED_SERIES_GAMES, 1e-9),
+      (w(fin[0]) * fin.length).toFixed(4));
     const flatPO = s.games.reduce((t, g) => t + g.va, 0);
     ok("playoff VA sums to 448.83", close(flatPO, 448.83, 0.01), flatPO.toFixed(2));
   }
