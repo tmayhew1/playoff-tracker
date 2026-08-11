@@ -122,9 +122,11 @@ function CareerFold({ p, decay }) {
 // column maps to exactly one VA category, so the bottom line reads as the
 // decomposition it is — and the ten of them sum to the run's VA/G.
 //
-// Hidden on a portrait phone and shown from `md` up, which is where a tilted
-// handset lands. It scrolls inside its own box rather than pushing the page
-// sideways when the viewport is narrower than the eleven columns need.
+// Hidden on a portrait phone and shown the moment the handset is turned
+// sideways — see the `tilt` screen in tailwind.config.js, which keys off
+// orientation rather than width because a landscape phone can be narrower than
+// any width breakpoint. It scrolls inside its own box rather than pushing the
+// page sideways when the viewport is narrower than the eleven columns need.
 const STAT_COLS = [
   ["MPG", "mpg", null],
   ["PTS", "pts", "Points"],
@@ -142,7 +144,7 @@ const STAT_COLS = [
 function StatStrip({ stats }) {
   if (!stats) return null;
   return (
-    <div className="hidden md:block px-2 pb-2 overflow-x-auto">
+    <div className="hidden tilt:block px-2 pb-2 overflow-x-auto">
       <div className="grid grid-cols-11 gap-x-1 min-w-[34rem]">
         {STAT_COLS.map(([label, key, cat]) => {
           const v = stats[key];
