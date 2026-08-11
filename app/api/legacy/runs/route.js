@@ -140,6 +140,7 @@ export async function GET(request) {
   const limit = clamp(Math.round(num(q.get("limit"), 100)), 1, 500);
   const offset = clamp(Math.round(num(q.get("offset"), 0)), 0, 20000);
   const season = (q.get("season") || "").trim();
+  const team = (q.get("team") || "").trim().toUpperCase();
   const query = normalizeName((q.get("q") || "").trim());
 
   let all;
@@ -174,6 +175,18 @@ export async function GET(request) {
   let list = all;
   if (query) list = list.filter((r) => r.search.includes(query));
   if (season) list = list.filter((r) => r.season === season);
+  // Team narrows WITHIN a season and only there. A tricode across 46 years is
+  // a different question — franchises move, rename, and field unrelated rosters
+  // — so without a season the parameter is ignored rather than half-answered.
+  if (season && team) list = list.filter((r) => r.team === team);
+
+  // The seasons that actually have runs, and the teams that appear in the
+  // selected one. Derived from the ranked list so the controls can never offer
+  // a combination that returns nothing.
+  const seasons = [...new Set(all.map((r) => r.season))].sort().reverse();
+  const teams = season
+    ? [...new Set(all.filter((r) => r.season === season).map((r) => r.team).filter(Boolean))].sort()
+    : [];
 
   const page = list.slice(offset, offset + limit).map((r) => ({
     rank: r.rank,
@@ -200,6 +213,9 @@ export async function GET(request) {
     alpha,
     query: q.get("q") || "",
     season,
+    team: season ? team : "",
+    seasons,
+    teams,
     categories: VA_CATEGORY_KEYS,
   }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
 }

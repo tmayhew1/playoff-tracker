@@ -248,22 +248,29 @@ function RunsBoard() {
   const [error, setError] = useState(null);
   const [limit, setLimit] = useState(100);
   const [open, setOpen] = useState(null); // "<slug>-<season>"
+  const [season, setSeason] = useState("");
+  // Team only means something inside a season, so it is gated on one and
+  // cleared whenever the season changes out from under it.
+  const [team, setTeam] = useState("");
 
   // Debounced so a typed name is one request, not one per keystroke. The
   // search runs server-side because it has to reach all 8,917 runs.
   useEffect(() => {
     let cancelled = false;
     const t = setTimeout(() => {
-      const url = `/api/legacy/runs?limit=${limit}&q=${encodeURIComponent(query.trim())}`;
+      const url = `/api/legacy/runs?limit=${limit}&q=${encodeURIComponent(query.trim())}`
+        + `&season=${encodeURIComponent(season)}&team=${encodeURIComponent(season ? team : "")}`;
       fetchJsonCached(url)
         .then((d) => { if (!cancelled) { setData(d); setError(null); } })
         .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     }, query ? 220 : 0);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [query, limit]);
+  }, [query, limit, season, team]);
 
   const runs = data?.runs || [];
-  const max = Math.max(...runs.map((r) => r.lva), 0.1);
+  // Magnitude, so the scale still means something when a filtered list is all
+  // negative — a team whose bench all cost their side points, say.
+  const max = Math.max(...runs.map((r) => Math.abs(r.lva)), 0.1);
 
   return (
     <div>
@@ -275,12 +282,47 @@ function RunsBoard() {
         className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
       />
 
+      <div className="flex items-center gap-2 mb-2">
+        <select
+          value={season}
+          onChange={(e) => { setSeason(e.target.value); setTeam(""); setLimit(100); setOpen(null); }}
+          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800"
+        >
+          <option value="">All seasons</option>
+          {(data?.seasons || []).map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+
+        {/* Disabled until a season is chosen — a team without one would be
+            asking a different question than the board can answer. */}
+        <select
+          value={team}
+          disabled={!season}
+          onChange={(e) => { setTeam(e.target.value); setLimit(100); setOpen(null); }}
+          className={`text-[11px] border px-2 py-1.5 ${
+            season
+              ? "bg-white border-stone-300 text-stone-800"
+              : "bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed"}`}
+          title={season ? "Filter to one team" : "Pick a season first"}
+        >
+          <option value="">{season ? "All teams" : "Team — pick a season first"}</option>
+          {season && (data?.teams || []).map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+
+        {(season || team) && (
+          <button
+            onClick={() => { setSeason(""); setTeam(""); setLimit(100); setOpen(null); }}
+            className="ml-auto text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700"
+          >✕ Clear</button>
+        )}
+      </div>
+
       <div className="flex items-baseline gap-2 mb-1 px-2 text-[10px] text-stone-400 tabular-nums">
         {data ? (
           <>
             <span>
-              {query.trim()
+              {query.trim() || season || team
                 ? `${data.matched.toLocaleString()} of ${data.total.toLocaleString()} runs`
+                  + (season ? ` · ${season}` : "") + (team ? ` · ${team}` : "")
                 : `${data.total.toLocaleString()} postseason runs`}
             </span>
             <span className="ml-auto uppercase tracking-widest">Ranked by leveraged VA</span>
@@ -296,7 +338,8 @@ function RunsBoard() {
       {error && <div className="text-[10px] text-red-600 py-6 text-center">Couldn’t load — {error}</div>}
       {data && !runs.length && !error && (
         <div className="text-[10px] text-stone-400 italic py-6 text-center">
-          No runs match “{query.trim()}”.
+          No runs match{query.trim() ? ` “${query.trim()}”` : ""}
+          {season ? ` in ${season}` : ""}{team ? ` for ${team}` : ""}.
         </div>
       )}
 
@@ -332,8 +375,12 @@ function RunsBoard() {
                 dark one is the whole point — for most players the winter is a
                 fraction of the fortnight. */}
             <div className="px-2 pt-1 pb-1.5 flex flex-col gap-[2px]">
+              {/* A run worth less than nothing draws red at its magnitude, the
+                  same as the career fold does. Clamping it to zero width would
+                  read as missing data rather than as a negative. */}
               <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
-                <div className="h-full rounded-sm bg-stone-900" style={{ width: `${Math.max(0, (r.lva / max) * 100)}%` }} />
+                <div className={`h-full rounded-sm ${r.lva < 0 ? "bg-red-500" : "bg-stone-900"}`}
+                  style={{ width: `${Math.min(100, (Math.abs(r.lva) / max) * 100)}%` }} />
               </div>
               <div className="h-1 bg-stone-100 rounded-sm overflow-hidden" title="Regular season, same scale">
                 <div className={`h-full rounded-sm ${r.rsLVA < 0 ? "bg-red-300" : "bg-stone-400"}`}
