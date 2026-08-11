@@ -1,4 +1,4 @@
-import { buildCareers } from "../_lib/careers.js";
+import { cachedCareers, clearCareerCache } from "../_lib/careers.js";
 import {
   rankLegacy, peakShareAt, DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../../lib/legacy.js";
@@ -21,15 +21,9 @@ export const revalidate = 86400;
 // moves under a defensible range of the dials is a ranking with an argument in
 // it, so the API has to be able to answer for any setting, not just the default.
 
-// The career join is ~4s over ~65MB of JSON and the files are static between
-// bakes, so it is built once per server process and reused. Only the fold and
-// the sort re-run per request, which is what makes the dials cheap.
-let CAREERS = null;
-
-function careers() {
-  if (!CAREERS) CAREERS = buildCareers();
-  return CAREERS;
-}
+// The career join is cached in ../_lib/careers.js and shared with the runs
+// route. Only the fold and the sort re-run per request, which is what makes
+// the dials cheap.
 
 // An absent param must fall back to the default, and `Number(null)` is 0 — a
 // perfectly finite number that would silently pin every dial to the bottom of
@@ -58,11 +52,11 @@ export async function GET(request) {
 
   let built;
   try {
-    built = careers();
+    built = cachedCareers();
   } catch (e) {
     // A missing or half-written data dir is a deploy problem, not a bad
     // request — say so rather than serving an empty board that looks real.
-    CAREERS = null;
+    clearCareerCache();
     return Response.json({ error: `legacy corpus unavailable: ${e.message}` }, { status: 503 });
   }
 

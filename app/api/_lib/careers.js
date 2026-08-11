@@ -25,6 +25,20 @@ export function defaultDataDir() {
   return path.join(process.cwd(), "app", "data");
 }
 
+// The join is ~4s over ~65MB of JSON and the files are static between bakes, so
+// it is built once per server process. Shared here rather than in a route so
+// that /api/legacy and /api/legacy/runs pay for it once between them.
+let CACHE = null;
+
+export function cachedCareers() {
+  if (!CACHE) CACHE = buildCareers();
+  return CACHE;
+}
+
+export function clearCareerCache() {
+  CACHE = null;
+}
+
 export function buildCareers({ dataDir = defaultDataDir() } = {}) {
   const read = (f) => JSON.parse(fs.readFileSync(path.join(dataDir, f), "utf8"));
   const exists = (f) => fs.existsSync(path.join(dataDir, f));

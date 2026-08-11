@@ -1,6 +1,9 @@
-"use client";
-
 import TEAM_COLORS from "../data/team-colors.json";
+
+// Isomorphic (no "use client"): these are pure string and colour helpers with
+// no React or DOM in them, and /api/legacy/runs needs normalizeName on the
+// server so its search matches the client's spelling exactly. A client
+// directive here would hand that route a client reference instead.
 
 // Per-team primary color (hex). Used in Explore and anywhere we don't have
 // an owner mapping (e.g. defunct/renamed franchises in old seasons).
