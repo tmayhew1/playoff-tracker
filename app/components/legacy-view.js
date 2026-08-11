@@ -118,6 +118,125 @@ function CareerFold({ p, decay }) {
 }
 
 
+// The production behind a run, with what each part of it was worth. Every
+// column maps to exactly one VA category, so the bottom line reads as the
+// decomposition it is — and the ten of them sum to the run's VA/G.
+//
+// Hidden on a portrait phone and shown from `md` up, which is where a tilted
+// handset lands. It scrolls inside its own box rather than pushing the page
+// sideways when the viewport is narrower than the eleven columns need.
+const STAT_COLS = [
+  ["MPG", "mpg", null],
+  ["PTS", "pts", "Points"],
+  ["DRB", "drb", "D Rebounds"],
+  ["ORB", "orb", "O Rebounds"],
+  ["AST", "ast", "Assists"],
+  ["STL", "stl", "Steals"],
+  ["BLK", "blk", "Blocks"],
+  ["TOV", "tov", "Turnovers"],
+  ["2P%", "tw", "2-Pointers"],
+  ["3P%", "tp", "3-Pointers"],
+  ["FT%", "ft", "Free Throws"],
+];
+
+function StatStrip({ stats }) {
+  if (!stats) return null;
+  return (
+    <div className="hidden md:block px-2 pb-2 overflow-x-auto">
+      <div className="grid grid-cols-11 gap-x-1 min-w-[34rem]">
+        {STAT_COLS.map(([label, key, cat]) => {
+          const v = stats[key];
+          const va = cat ? stats.va?.[cat] : null;
+          return (
+            <div key={label} className="text-center">
+              <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
+              <div className="text-[11px] font-semibold text-stone-800 tabular-nums leading-tight">
+                {v == null ? "—" : v.toFixed(key.endsWith("%") || cat === "2-Pointers" || cat === "3-Pointers" || cat === "Free Throws" ? 1 : 1)}
+              </div>
+              <div className={`text-[9px] tabular-nums leading-tight ${
+                va == null ? "text-stone-300"
+                  : va < 0 ? "text-red-600" : "text-stone-500"}`}>
+                {va == null ? "·" : (va > 0 ? "+" : "") + va.toFixed(1)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[8px] text-stone-400 mt-1">
+        Per game, with the Value Added each one contributed underneath — the ten add up to VA/G.
+      </div>
+    </div>
+  );
+}
+
+
+// One run, opened: every game of it, heaviest contribution first. This is where
+// the weighting becomes checkable — a bigger night in an earlier round can sit
+// below a quieter one in the Finals, and here you can see exactly why.
+function RunGames({ slug, season }) {
+  const [d, setD] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJsonCached(`/api/legacy/runs?slug=${encodeURIComponent(slug)}&season=${encodeURIComponent(season)}`)
+      .then((r) => { if (!cancelled) setD(r); })
+      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
+    return () => { cancelled = true; };
+  }, [slug, season]);
+
+  if (error) return <div className="px-2 py-3 text-[10px] text-red-600">Couldn’t load games — {error}</div>;
+  if (!d) return <div className="px-2 py-3 text-[10px] text-stone-500 italic">Loading games…</div>;
+
+  const best = Math.max(...d.games.map((g) => Math.abs(g.contribution)), 0.1);
+  const ROUND = { 1: "R1", 2: "R2", 3: "CF", 4: "F" };
+
+  return (
+    <div className="px-2 pb-3 pt-1 bg-stone-50 border-t border-stone-200">
+      <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
+        {d.games.length} games, biggest contribution first. Every game of a series
+        carries the same weight, so the order is what he did times what the series
+        was worth — <span className="font-semibold">VA × weight</span>.
+      </p>
+
+      <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200">
+        <span>Game</span><span>Line</span>
+        <span className="text-right">VA</span>
+        <span className="text-right">×W</span>
+        <span className="text-right">Total</span>
+      </div>
+
+      {d.games.map((g) => {
+        const down = g.contribution < 0;
+        return (
+          <div key={g.gameId} className="pt-1 pb-1.5 border-b border-stone-100 last:border-0">
+            <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 items-baseline text-[11px]">
+              <span className="tabular-nums text-stone-700 font-semibold">
+                {ROUND[g.round] || `R${g.round}`} {g.opp}
+                <span className="text-stone-400 font-normal"> G{g.gameNo}</span>
+              </span>
+              <span className="text-[10px] text-stone-500 tabular-nums truncate">
+                {g.pts}p {g.reb}r {g.ast}a
+                {g.stl ? ` ${g.stl}s` : ""}{g.blk ? ` ${g.blk}b` : ""}
+                {" · "}{g.fgm}/{g.fga}{g.fta ? ` ${g.ftm}/${g.fta}ft` : ""}
+                {" · "}{Math.round(g.mp)}m
+              </span>
+              <span className={`text-right tabular-nums ${g.va < 0 ? "text-red-600" : "text-stone-600"}`}>{g.va.toFixed(1)}</span>
+              <span className="text-right tabular-nums text-stone-400">{g.weight.toFixed(2)}</span>
+              <span className={`text-right tabular-nums font-bold ${down ? "text-red-600" : "text-stone-900"}`}>{g.contribution.toFixed(0)}</span>
+            </div>
+            <div className="h-1 mt-1 bg-stone-200/60 rounded-sm overflow-hidden">
+              <div className={`h-full rounded-sm ${down ? "bg-red-500" : "bg-stone-900"}`}
+                style={{ width: `${(Math.abs(g.contribution) / best) * 100}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
 // Every postseason run on record, ranked, searchable. The career board is an
 // argument; this is the evidence behind it — the surface where a number can be
 // checked against a run you actually watched.
@@ -126,6 +245,7 @@ function RunsBoard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [limit, setLimit] = useState(100);
+  const [open, setOpen] = useState(null); // "<slug>-<season>"
 
   // Debounced so a typed name is one request, not one per keystroke. The
   // search runs server-side because it has to reach all 8,917 runs.
@@ -178,29 +298,52 @@ function RunsBoard() {
         </div>
       )}
 
-      {runs.map((r) => (
-        <div key={`${r.slug}-${r.season}`} className="border-b border-stone-100">
-          <div className="grid grid-cols-[2.2rem_1fr_2rem_3.2rem_2.6rem] gap-x-2 items-center px-2 pt-1.5 text-sm">
-            {/* The all-time rank, not the rank among matches — searching for a
-                player should tell you where his runs sit in the whole list. */}
-            <span className="text-[10px] tabular-nums text-stone-400">{r.rank.toLocaleString()}</span>
-            <span className="min-w-0">
-              <span className="font-semibold text-stone-800 block truncate">{r.name}</span>
-              <span className="text-[10px] text-stone-500 tabular-nums">
-                {r.season}{r.team ? ` · ${r.team}` : ""}
+      {runs.map((r) => {
+        const isOpen = open === `${r.slug}-${r.season}`;
+        return (
+          <div key={`${r.slug}-${r.season}`} className="border-b border-stone-100">
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => setOpen(isOpen ? null : `${r.slug}-${r.season}`)}
+              className={`w-full text-left grid grid-cols-[2.2rem_1fr_2rem_3.2rem_2.6rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
+            >
+              {/* The all-time rank, not the rank among matches — searching for a
+                  player should tell you where his runs sit in the whole list. */}
+              <span className="text-[10px] tabular-nums text-stone-400">{r.rank.toLocaleString()}</span>
+              <span className="min-w-0">
+                <span className="font-semibold text-stone-800 block truncate">
+                  <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
+                  {r.name}
+                </span>
+                <span className="text-[10px] text-stone-500 tabular-nums">
+                  {r.season}{r.team ? ` · ${r.team}` : ""}
+                </span>
               </span>
-            </span>
-            <span className="text-right tabular-nums text-stone-600">{r.games}</span>
-            <span className="text-right tabular-nums font-bold text-stone-900">{fmt0(r.lva)}</span>
-            <span className="text-right tabular-nums text-stone-500">{r.vaPerG.toFixed(1)}</span>
-          </div>
-          <div className="px-2 pt-1 pb-1.5">
-            <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
-              <div className="h-full rounded-sm bg-stone-900" style={{ width: `${Math.max(0, (r.lva / max) * 100)}%` }} />
+              <span className="text-right tabular-nums text-stone-600">{r.games}</span>
+              <span className="text-right tabular-nums font-bold text-stone-900">{fmt0(r.lva)}</span>
+              <span className="text-right tabular-nums text-stone-500">{r.vaPerG.toFixed(1)}</span>
+            </button>
+
+            {/* Two bars on one scale: the run, and the regular season that led
+                into it priced the same way. The light bar's length against the
+                dark one is the whole point — for most players the winter is a
+                fraction of the fortnight. */}
+            <div className="px-2 pt-1 pb-1.5 flex flex-col gap-[2px]">
+              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
+                <div className="h-full rounded-sm bg-stone-900" style={{ width: `${Math.max(0, (r.lva / max) * 100)}%` }} />
+              </div>
+              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden" title="Regular season, same scale">
+                <div className={`h-full rounded-sm ${r.rsLVA < 0 ? "bg-red-300" : "bg-stone-400"}`}
+                  style={{ width: `${Math.max(0, Math.min(100, (Math.abs(r.rsLVA) / max) * 100))}%` }} />
+              </div>
             </div>
+
+            <StatStrip stats={r.stats} />
+            {isOpen && <RunGames slug={r.slug} season={r.season} />}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {data && data.matched > runs.length && (
         <button
@@ -212,10 +355,12 @@ function RunsBoard() {
       )}
 
       <div className="text-[10px] text-stone-400 italic mt-2 leading-relaxed">
-        Playoff runs only — the regular season is excluded, so these are the numbers
-        the postseason half of Legacy is built from. <span className="font-semibold">LVA</span> is
+        Ranked on the playoff run alone. <span className="font-semibold">LVA</span> is
         leveraged Value Added over the run; <span className="font-semibold">VA/G</span> is the raw,
-        unweighted per-game figure it was built from, for checking one against the other.
+        unweighted per-game figure behind it. The dark bar is the run; the light bar under it
+        is that player&apos;s regular season the same year, priced the same way and drawn on the
+        same scale. Tap a run for its games; turn the phone sideways for the per-game stat line
+        and what each part of it was worth.
       </div>
     </div>
   );

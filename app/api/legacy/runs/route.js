@@ -1,7 +1,8 @@
 import { cachedCareers, clearCareerCache } from "../../_lib/careers.js";
 import { seasonLVA } from "../../../lib/legacy.js";
-import { ALPHA_DEFAULT } from "../../../lib/leverage.js";
+import { ALPHA_DEFAULT, seriesGameWeight, gameWeight } from "../../../lib/leverage.js";
 import { normalizeName } from "../../../lib/format.js";
+import { valueAddByCategory, VA_CATEGORY_KEYS, lgaForSeason } from "../../../scoring.js";
 
 export const runtime = "nodejs";
 export const revalidate = 86400;
@@ -31,6 +32,9 @@ function rankedRuns(alpha) {
     for (const s of p.seasons || []) {
       const r = seasonLVA(s, { alpha, includeRS: false });
       if (!(r.poGames > 0)) continue;
+      // The regular season of the SAME year, priced the same way, so a run can
+      // be read against the winter that preceded it.
+      const full = seasonLVA(s, { alpha, includeRS: true });
       runs.push({
         slug: p.slug,
         name: p.name,
@@ -40,6 +44,10 @@ function rankedRuns(alpha) {
         games: r.poGames,
         lva: r.poLVA,
         va: r.flatVA,
+        rsLVA: full.rsLVA,
+        rsGames: full.rsGames,
+        // Kept off the wire — the page slice reads stats off it on the way out.
+        row: s,
       });
     }
   }
@@ -50,6 +58,73 @@ function rankedRuns(alpha) {
 
   RANKED.set(key, runs);
   return runs;
+}
+
+const r2 = (n) => Math.round(n * 100) / 100;
+const pct = (made, att) => (att > 0 ? Math.round((made / att) * 1000) / 10 : null);
+
+// The production behind a run: per-game stats, and what each category of them
+// was worth. Computed only for the rows actually being returned.
+function runStats(row) {
+  const po = row.po;
+  const gp = po?.gp || 0;
+  if (!gp) return null;
+  const lga = lgaForSeason(row.season);
+
+  // Category VA is summed PER GAME so the ten categories add up to the run's
+  // own VA. Evaluating them once on the run's totals would come out slightly
+  // different — the rebound credit is non-linear in REB/MP (spec §7.4).
+  const cats = Object.fromEntries(VA_CATEGORY_KEYS.map((k) => [k, 0]));
+  for (const g of row.games || []) {
+    const c = valueAddByCategory(g.line, lga);
+    for (const k of VA_CATEGORY_KEYS) cats[k] += c[k] || 0;
+  }
+
+  // Rebounds split and two-point shooting separated from three, so every stat
+  // shown lines up with exactly one VA category underneath it.
+  return {
+    mpg: r2(po.mp / gp), pts: r2(po.pts / gp),
+    drb: r2(po.drb / gp), orb: r2(po.orb / gp),
+    ast: r2(po.ast / gp), stl: r2(po.stl / gp), blk: r2(po.blk / gp),
+    tov: r2(po.tov / gp),
+    tw: pct(po.fgm - po.tpm, po.fga - po.tpa),
+    tp: pct(po.tpm, po.tpa),
+    ft: pct(po.ftm, po.fta),
+    // Per game, to sit in the same units as the stats above them.
+    va: Object.fromEntries(VA_CATEGORY_KEYS.map((k) => [k, r2(cats[k] / gp)])),
+  };
+}
+
+// Every game of one run, heaviest contribution first.
+function runGames(row, alpha) {
+  const depth = row.depth || 4;
+  const lga = lgaForSeason(row.season);
+  return (row.games || [])
+    .filter((g) => g.va != null)
+    .map((g) => {
+      const w = g.seriesGames > 0
+        ? seriesGameWeight(g.roundsAfter, depth, g.seriesGames, alpha)
+        : gameWeight(g.cli, alpha, row.anchor);
+      const l = g.line || {};
+      return {
+        gameId: g.gameId,
+        round: g.round,
+        opp: g.opp || "",
+        gameNo: g.seriesGameNumber,
+        seriesGames: g.seriesGames,
+        state: g.a != null && g.b != null ? `${g.a}-${g.b}` : "",
+        mp: r2(l.mp || 0), pts: l.pts || 0, reb: l.reb || 0, ast: l.ast || 0,
+        stl: l.stl || 0, blk: l.blk || 0, tov: l.tov || 0,
+        fgm: l.fgm || 0, fga: l.fga || 0, tpm: l.tpm || 0, tpa: l.tpa || 0,
+        ftm: l.ftm || 0, fta: l.fta || 0,
+        va: r2(g.va),
+        weight: Math.round(w * 1000) / 1000,
+        contribution: r2(w * g.va),
+        cats: Object.fromEntries(
+          Object.entries(valueAddByCategory(l, lga)).map(([k, v]) => [k, r2(v)])),
+      };
+    })
+    .sort((a, b) => b.contribution - a.contribution);
 }
 
 const num = (v, dflt) => {
@@ -76,6 +151,26 @@ export async function GET(request) {
     return Response.json({ error: `legacy corpus unavailable: ${e.message}` }, { status: 503 });
   }
 
+  // Detail for one run: every game of it, heaviest first. Fetched on tap
+  // rather than shipped with the board — a hundred runs carry roughly two
+  // thousand games between them.
+  const slug = (q.get("slug") || "").trim();
+  if (slug && season) {
+    const one = all.find((r) => r.slug === slug && r.season === season);
+    if (!one) return Response.json({ error: "no such run" }, { status: 404 });
+    return Response.json({
+      run: {
+        rank: one.rank, slug: one.slug, name: one.name, season: one.season,
+        team: one.team, games: one.games,
+        lva: Math.round(one.lva * 10) / 10,
+        rsLVA: Math.round(one.rsLVA * 10) / 10,
+        stats: runStats(one.row),
+      },
+      games: runGames(one.row, alpha),
+      categories: VA_CATEGORY_KEYS,
+    }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
+  }
+
   let list = all;
   if (query) list = list.filter((r) => r.search.includes(query));
   if (season) list = list.filter((r) => r.season === season);
@@ -90,6 +185,10 @@ export async function GET(request) {
     lva: Math.round(r.lva * 10) / 10,
     perG: r.games > 0 ? Math.round((r.lva / r.games) * 100) / 100 : 0,
     vaPerG: r.games > 0 ? Math.round((r.va / r.games) * 100) / 100 : 0,
+    // The same season's regular season, priced the same way — the light bar.
+    rsLVA: Math.round(r.rsLVA * 10) / 10,
+    rsGames: r.rsGames,
+    stats: runStats(r.row),
   }));
 
   return Response.json({
@@ -101,5 +200,6 @@ export async function GET(request) {
     alpha,
     query: q.get("q") || "",
     season,
+    categories: VA_CATEGORY_KEYS,
   }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
 }

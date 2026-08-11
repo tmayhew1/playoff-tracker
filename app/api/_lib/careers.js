@@ -21,6 +21,19 @@ const norm = (s) => (s || "")
   .normalize("NFD").replace(/[̀-ͯ]/g, "")
   .toLowerCase().replace(/[^a-z ]/g, "").trim();
 
+// The raw stat line, carried alongside the VA so a run can be shown as the
+// production it was computed from rather than as a bare score.
+const STAT_KEYS = ["mp", "pts", "reb", "ast", "stl", "blk", "tov",
+  "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"];
+
+const emptyLine = () => Object.fromEntries([["gp", 0], ...STAT_KEYS.map((k) => [k, 0])]);
+
+function addLine(into, from) {
+  into.gp += from.gp || 0;
+  for (const k of STAT_KEYS) into[k] += from[k] || 0;
+  return into;
+}
+
 export function defaultDataDir() {
   return path.join(process.cwd(), "app", "data");
 }
@@ -85,6 +98,7 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
       rec.teams.add(p.team);
       const row = rec.seasons.get(season)
         || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor, depth };
+      row.po = addLine(row.po || emptyLine(), p);
       for (const g of p.games || []) {
         if (g.va == null) continue;
         const e = lev.map.get(`${g.gameId}|${p.team}`);
@@ -93,6 +107,9 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
           round: e?.round, a: e?.a, b: e?.b, bestOf: e?.bestOf,
           seriesIdx: e?.seriesIdx, roundsAfter: e?.roundsAfter,
           seriesGames: e?.seriesIdx != null ? seriesGames[e.seriesIdx] : 0,
+          // Enough to identify the game on screen without a second lookup.
+          opp: g.opp, seriesGameNumber: g.seriesGameNumber,
+          line: Object.fromEntries(STAT_KEYS.map((k) => [k, g[k] ?? 0])),
         });
       }
       rec.seasons.set(season, row);
