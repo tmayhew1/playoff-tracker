@@ -5,7 +5,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 
 
 // The all-time board. Legacy is deliberately TWO numbers rather than one
-// (app/lib/legacy.js): LEGACY is the rank-decayed fold over a career's seasons,
+// (app/lib/legacy.js): LEGACY is a value-weighted fold over a career's seasons,
 // which spends longevity at diminishing returns, and PEAK/G is the
 // leverage-weighted rate over the best seasons. They disagree — Jokić is ninth
 // by volume and third by peak — and blending them would hide exactly the
@@ -14,11 +14,11 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 //
 // Tapping a row opens the fold itself. A career total is otherwise a number you
 // have to take on faith; the expansion shows it as the sum it is — every
-// season, ordered the way the decay is spent, with the discount that season
-// took and the playoff/regular-season split underneath.
+// season, ordered by value, with the weight that season earned and the
+// playoff/regular-season split underneath.
 //
 // MVP scope: the board at the default dials. The route already answers for any
-// alpha/decay, so exposing them is a slider away.
+// alpha/p, so exposing them is a slider away.
 
 const fmt0 = (n) => Math.round(n).toLocaleString("en-US");
 // Big numbers don't need a decimal and can't spare the width on a phone; small
@@ -31,7 +31,7 @@ const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-bas
 
 // One career, opened up: the summary the board has no room for, then every
 // season in the order the fold consumes them.
-function CareerFold({ p, decay }) {
+function CareerFold({ p, weightAtHalf }) {
   const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
 
   return (
@@ -52,18 +52,19 @@ function CareerFold({ p, decay }) {
 
       <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
         {p.seasonCount} seasons · {fmt0(p.careerGames)} games · {p.span}
-        {p.teams?.length ? <> · {p.teams.join(", ")}</> : null}. Every season below is
-        weighted <span className="tabular-nums">{decay}</span><sup>rank−1</sup>, so the
-        best one counts whole and each next one a little less —{" "}
-        <span className="font-semibold">Discounted</span> is the column that sums to
-        Legacy.
+        {p.teams?.length ? <> · {p.teams.join(", ")}</> : null}. Each season is weighted by
+        how good it was, not by where it lands in the sort — a season worth half his best
+        carries about{" "}
+        <span className="tabular-nums font-semibold">{(weightAtHalf * 100).toFixed(0)}%</span>{" "}
+        of its weight, one worth a tenth carries half.{" "}
+        <span className="font-semibold">Weighted</span> is the column that sums to Legacy.
       </p>
 
       <div className={`${COLS} text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200`}>
         <span>#</span><span>Season</span>
         <span className="text-right">LVA</span>
-        <span className="text-right">×D</span>
-        <span className="text-right">Disc.</span>
+        <span className="text-right">×W</span>
+        <span className="text-right">Wtd.</span>
       </div>
 
       {p.seasons.map((s) => {
@@ -457,8 +458,10 @@ function CareersBoard() {
       <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
         Every series a career played, priced by what winning it was worth to a
         title and shared across the games it took — so closing a team out in
-        four concentrates that value instead of forfeiting it. The seasons are
-        then folded best first, so extra years always add, just less each time.{" "}
+        four concentrates that value instead of forfeiting it. Seasons are then
+        folded by how good they were rather than by where they rank, so a career
+        with several near-peak years keeps them all and one built on a single
+        towering season doesn&apos;t borrow credit for the rest.{" "}
         <span className="font-semibold">Legacy</span> is that total;{" "}
         <span className="font-semibold">Peak/G</span> is the same weighting as a
         rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
@@ -500,7 +503,7 @@ function CareersBoard() {
                 <div className="h-full rounded-sm bg-stone-900" style={{ width: `${Math.max(0, ((p[sortKey] ?? 0) / max) * 100)}%` }} />
               </div>
             </div>
-            {isOpen && <CareerFold p={p} decay={data.dials.decay} />}
+            {isOpen && <CareerFold p={p} weightAtHalf={data.weightAtHalf} />}
           </div>
         );
       })}
@@ -510,17 +513,13 @@ function CareersBoard() {
           <>* career reaches {data.firstSeason}, the first season on record — it may extend
           earlier, in which case only part of it is measured.<br /></>
         )}
-        Decay {data.dials.decay}
-        {data.calibration?.isDefault && data.calibration.pool ? (
-          <> — measured, not chosen: the point where this board sits equidistant between a
-          plain career sum and a best-season ranking across all{" "}
-          {data.calibration.pool.toLocaleString()} qualifying careers. At it, the best{" "}
-          {data.dials.peakSeasons} seasons carry {(data.peakShare * 100).toFixed(0)}% of a
-          20-season career.</>
-        ) : (
-          <> (the best {data.dials.peakSeasons} seasons carry{" "}
-          {(data.peakShare * 100).toFixed(0)}% of a 20-season career).</>
-        )}{" "}
+        Seasons are weighted by value, not rank: one worth a share s of a career&apos;s best
+        carries s<sup>{(data.dials.p - 1).toFixed(3)}</sup> of its weight (p = {data.dials.p}).
+        {data.calibration?.isDefault ? (
+          <> That is set by one stated rule — a season worth a tenth of your best should still
+          carry half the weight — rather than chosen, and it means the weights adapt to the
+          career instead of being imposed on it.</>
+        ) : null}{" "}
         Leverage α {data.dials.alpha}; regular season{" "}
         {data.dials.includeRS ? "included" : "excluded"}; minimum{" "}
         {data.dials.minSeasons} seasons and {fmt0(data.dials.minGames)} games.

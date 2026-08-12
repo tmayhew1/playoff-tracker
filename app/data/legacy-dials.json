@@ -1,8 +1,10 @@
 {
-  "decay": 0.8084,
-  "method": "kendall-tau balance between a plain career sum (D=1) and the best season (D->0)",
+  "p": 1.30103,
+  "method": "l_p norm over positive seasons; p set so a season worth 0.1 of the best carries 0.5 of its weight",
+  "halfWeightShare": 0.1,
+  "half": 0.5,
   "pool": 1133,
-  "tau": 0.8338,
+  "gap": 0.2792,
   "seasons": 46,
   "firstSeason": "1980-81",
   "lastSeason": "2025-26"

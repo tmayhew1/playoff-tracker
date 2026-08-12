@@ -2,10 +2,10 @@
 // Legacy rankings — the leverage-weighted all-time board.
 //
 //   node scripts/legacy-report.mjs                     # default dials
-//   node scripts/legacy-report.mjs --alpha 1 --decay 1
+//   node scripts/legacy-report.mjs --alpha 1 --p 1
 //   node scripts/legacy-report.mjs --top 40 --no-rs
 //   node scripts/legacy-report.mjs --player jamesle01 --player jordami01
-//   node scripts/legacy-report.mjs --sweep decay
+//   node scripts/legacy-report.mjs --sweep p
 //   node scripts/legacy-report.mjs --verify
 //
 // The board also ships as the Legacy tab (/api/legacy), which ranks the same
@@ -22,8 +22,8 @@ import {
   seriesGameWeight, EXPECTED_SERIES_GAMES, ALPHA_DEFAULT,
 } from "../app/lib/leverage.js";
 import {
-  rankLegacy, dialSweep, legacyFold, decayForBalance, rankTau, peakShareAt,
-  DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
+  rankLegacy, dialSweep, legacyFold, balanceOf, rankTau, weightForShare,
+  pForHalfWeightAt, P_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../app/lib/legacy.js";
 import { lgaForSeason, baselineCoverage } from "../app/scoring.js";
 
@@ -57,9 +57,9 @@ function build() {
 const fmt = (n, w = 8, d = 0) => n.toLocaleString("en-US", {
   minimumFractionDigits: d, maximumFractionDigits: d }).padStart(w);
 
-function printBoard(board, { top, alpha, decay, includeRS, firstSeason }) {
+function printBoard(board, { top, alpha, p, includeRS, firstSeason }) {
   console.log(`\n=== Legacy — top ${top} `
-    + `(alpha ${alpha}, decay ${decay}, regular season ${includeRS ? "in" : "out"}) ===\n`);
+    + `(alpha ${alpha}, p ${p}, regular season ${includeRS ? "in" : "out"}) ===\n`);
   console.log("  #  player                     legacy   peak/g  raw/g   sns  span         games");
   console.log("  " + "-".repeat(83));
   board.slice(0, top).forEach((p, i) => {
@@ -77,7 +77,7 @@ function printPlayer(p) {
   console.log(`\n--- ${p.name}  (${p.span}, ${p.seasonCount} seasons, ${p.careerGames} games) ---`);
   console.log(`    legacy ${p.total.toFixed(0)} · career LVA ${p.careerLVA.toFixed(0)}`
     + ` · peak/g ${p.peak.toFixed(2)} (raw ${p.peakRaw.toFixed(2)})`);
-  console.log("    rank  season     LVA    D^(k-1)   contribution");
+  console.log("    rank  season     LVA    weight    weighted");
   for (const s of p.seasons) {
     console.log(`    ${String(s.rank).padStart(4)}  ${s.season}  ${fmt(s.lva, 8, 1)}`
       + `   ${s.weight.toFixed(4)}   ${fmt(s.contribution, 10, 1)}`);
@@ -199,33 +199,53 @@ function verify({ players, seasons }) {
     const xs = [12, 400, 3, 900, 75, 220];
     const a = legacyFold(xs, 1).total;
     const b = legacyFold([...xs].reverse(), 1).total;
-    ok("decay=1 => fold is order-independent", close(a, b) && close(a, xs.reduce((s, v) => s + v, 0)));
-    ok("decay->0 => fold is the max season", close(legacyFold(xs, 1e-12).total, Math.max(...xs), 1e-6));
+    ok("p=1 => fold is the plain career sum", close(a, b) && close(a, xs.reduce((s, v) => s + v, 0)));
+    ok("p -> infinity => fold is the best season", close(legacyFold(xs, 400).total, Math.max(...xs), 1e-6));
     let mono = true;
-    for (let d = 0.1; d < 1; d += 0.05) {
-      if (legacyFold(xs, d + 0.05).total <= legacyFold(xs, d).total) mono = false;
+    for (let q = 1; q < 4; q += 0.25) {
+      if (legacyFold(xs, q + 0.25).total >= legacyFold(xs, q).total) mono = false;
     }
-    ok("fold strictly increasing in decay", mono);
+    ok("fold strictly decreasing in p", mono);
+    // Homogeneous of degree 1: the score is in points, so doubling every season
+    // doubles it. A raw power sum would quadruple it at p=2.
+    ok("doubling every season doubles the score",
+      close(legacyFold(xs.map((v) => 2 * v), 1.30103).total, 2 * legacyFold(xs, 1.30103).total, 1e-6));
+    // Euler's theorem, which is what lets the expansion show a career as a sum.
+    for (const q of [1.1, 1.30103, 2, 3]) {
+      const f = legacyFold([...xs, -40, -7], q);
+      ok(`contributions sum to the total at p=${q}`,
+        close(f.terms.reduce((s, t) => s + t.contribution, 0), f.total, 1e-6));
+    }
+    // A negative season is a debit at face value, never a credit — the failure
+    // that rules out a raw squared sum.
+    const withBad = legacyFold([500, 100, -300], 1.30103).total;
+    const withoutBad = legacyFold([500, 100], 1.30103).total;
+    ok("a negative season lowers the total", withBad < withoutBad,
+      `${withBad.toFixed(1)} < ${withoutBad.toFixed(1)}`);
+    ok("and lowers it by exactly its own size", close(withoutBad - withBad, 300, 1e-6));
   }
   {
-    // The decay is now measured, not asserted: D* is where the board sits
-    // equidistant between a plain career sum and a best-season ranking. The
-    // property to check is that symmetry, not a magic number.
-    const r = decayForBalance(players, { alpha: 0.5, includeRS: true, minSeasons: 3, minGames: 400 });
-    ok("decayForBalance lands the two taus on each other",
-      close(r.tau, r.tauPeak, 5e-3), `${r.tau.toFixed(4)} vs ${r.tauPeak.toFixed(4)}`);
-    ok("D* matches the calibrated value on disk",
-      close(r.decay, DECAY_DEFAULT, 5e-4), `${r.decay.toFixed(4)} vs ${DECAY_DEFAULT}`);
-    ok("D* sits strictly inside the fold's endpoints", r.decay > 0 && r.decay < 1, r.decay.toFixed(4));
-    // The framing that produced 0.94 claimed balance and did not deliver it.
-    const ranks = (d) => new Map(rankLegacy(players, { alpha: 0.5, includeRS: true,
-      minSeasons: 3, minGames: 400, decay: d }).map((p, i) => [p.slug, i + 1]));
-    const long = ranks(1), peak = ranks(1e-9);
-    const pool = [...long.keys()].filter((s) => peak.has(s));
-    const old = ranks(0.94);
-    ok("the old 0.94 was longevity-tilted, as claimed",
-      rankTau(old, long, pool) - rankTau(old, peak, pool) > 0.1,
-      `tau long ${rankTau(old, long, pool).toFixed(3)} vs peak ${rankTau(old, peak, pool).toFixed(3)}`);
+    // p is set by a stated rule rather than measured against the corpus: a
+    // season worth a tenth of your best still carries half the weight.
+    ok("p = 1 + ln(.5)/ln(.1) = 1.30103", close(pForHalfWeightAt(0.1), 1.30103, 1e-5),
+      pForHalfWeightAt(0.1).toFixed(5));
+    ok("p on disk matches that rule", close(P_DEFAULT, pForHalfWeightAt(0.1), 1e-5),
+      `${P_DEFAULT} vs ${pForHalfWeightAt(0.1).toFixed(5)}`);
+    ok("a tenth of your best carries half the weight",
+      close(weightForShare(0.1, P_DEFAULT), 0.5, 1e-6), weightForShare(0.1, P_DEFAULT).toFixed(4));
+    ok("weight rises with the season's value",
+      weightForShare(0.5, P_DEFAULT) > weightForShare(0.25, P_DEFAULT));
+    // The shape the value-weighting produces, which is the point of the change:
+    // a long plateau near the top rather than an immediate rank-decay.
+    const bal = balanceOf(players, { alpha: 0.5, includeRS: true, minSeasons: 3, minGames: 400 });
+    ok("the board is longevity-tilted, as the shape requires", bal.gap > 0,
+      `gap ${bal.gap.toFixed(3)} (sum ${bal.tau.toFixed(3)}, peak ${bal.tauPeak.toFixed(3)})`);
+    // Weighting by value, not rank: two seasons of equal worth weigh the same
+    // however far apart they sit in the sort.
+    const f = legacyFold([600, 500, 500, 40, 500], 1.30103);
+    const equal = f.terms.filter((t) => t.lva === 500).map((t) => t.weight);
+    ok("equal seasons carry equal weight regardless of rank",
+      equal.every((w) => close(w, equal[0], 1e-12)), `ranks differ, weight ${equal[0].toFixed(4)}`);
   }
 
   console.log("\nTIER 3 — LeBron 2015-16, hand-checkable");
@@ -320,14 +340,14 @@ function main(argv) {
   const has = (name) => argv.includes(`--${name}`);
 
   const alpha = Number(arg("alpha", ALPHA_DEFAULT));
-  const decay = Number(arg("decay", DECAY_DEFAULT));
+  const p = Number(arg("p", P_DEFAULT));
   const includeRS = !has("no-rs");
   const top = Number(arg("top", 25));
   const minGames = Number(arg("min-games", 400));
   const peakSeasons = Number(arg("peak-seasons", PEAK_SEASONS_DEFAULT));
 
   const built = build();
-  const opts = { alpha, decay, includeRS, peakSeasons, minSeasons: 3, minGames };
+  const opts = { alpha, p, includeRS, peakSeasons, minSeasons: 3, minGames };
 
   if (has("verify")) process.exit(verify(built) ? 1 : 0);
 
@@ -335,11 +355,11 @@ function main(argv) {
     (a === "--player" ? [...acc, argv[i + 1]] : acc), []);
 
   if (has("sweep")) {
-    const dial = arg("sweep", "decay");
+    const dial = arg("sweep", "p");
     const sw = dialSweep(built.players.filter((p) =>
       p.seasons.length >= 3), { ...opts, dial, topN: Number(arg("top", 12)) });
     console.log(`\n=== rank vs ${dial} (other dial held at `
-      + `${dial === "decay" ? `alpha ${alpha}` : `decay ${decay}`}) ===\n`);
+      + `${dial === "p" ? `alpha ${alpha}` : `p ${p}`}) ===\n`);
     const head = sw.xs.filter((_, i) => i % 5 === 0);
     console.log("  player".padEnd(26) + head.map((x) => x.toFixed(2).padStart(6)).join(""));
     for (const s of sw.series) {
@@ -369,11 +389,12 @@ function main(argv) {
     return;
   }
 
-  printBoard(board, { top, alpha, decay, includeRS, firstSeason: built.seasons[0] });
+  printBoard(board, { top, alpha, p, includeRS, firstSeason: built.seasons[0] });
   console.log(`\n  ${board.length} players qualified `
     + `(>= 3 seasons, >= ${minGames} games); peak axis = best ${peakSeasons} seasons.`);
-  console.log(`  decay ${decay} => best ${peakSeasons} seasons carry `
-    + `${(peakShareAt(decay, peakSeasons, 20) * 100).toFixed(1)}% of a 20-season career.`);
+  console.log(`  p ${p} => a season worth half a career's best carries `
+    + `${(weightForShare(0.5, p) * 100).toFixed(0)}% of its weight; a tenth carries `
+    + `${(weightForShare(0.1, p) * 100).toFixed(0)}%.`);
 }
 
 main(process.argv.slice(2));

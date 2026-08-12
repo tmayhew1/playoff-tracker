@@ -1,6 +1,6 @@
 import { cachedCareers, clearCareerCache } from "../_lib/careers.js";
 import {
-  rankLegacy, peakShareAt, DECAY_DEFAULT, PEAK_SEASONS_DEFAULT,
+  rankLegacy, weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../../lib/legacy.js";
 import { ALPHA_DEFAULT } from "../../lib/leverage.js";
 import DIALS from "../../data/legacy-dials.json";
@@ -16,7 +16,7 @@ export const revalidate = 86400;
 // whole corpus — every playoff game's VA for every player across 46 seasons,
 // tens of megabytes of it. The client gets the board, not the careers.
 //
-// The dials stay live as query params (?alpha=&decay=) instead of being baked
+// The dials stay live as query params (?alpha=&p=) instead of being baked
 // into the response: the whole argument of the metric is that a ranking which
 // moves under a defensible range of the dials is a ranking with an argument in
 // it, so the API has to be able to answer for any setting, not just the default.
@@ -39,11 +39,12 @@ const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 export async function GET(request) {
   const q = new URL(request.url).searchParams;
 
-  // Every dial is clamped to the range it is defined on: decay must stay
-  // inside (0, 1] or the fold stops being a discounted sum, and a negative
-  // alpha would invert leverage so a Game 7 counted for less than a Game 1.
+  // Every dial is clamped to the range it is defined on: p must stay at or
+  // above 1, below which the fold stops favouring the peak at all, and a
+  // negative alpha would invert leverage so a Game 7 counted for less than a
+  // Game 1.
   const alpha = clamp(num(q.get("alpha"), ALPHA_DEFAULT), 0, 3);
-  const decay = clamp(num(q.get("decay"), DECAY_DEFAULT), 0.01, 1);
+  const p = clamp(num(q.get("p"), P_DEFAULT), 1, 8);
   const peakSeasons = clamp(Math.round(num(q.get("peakSeasons"), PEAK_SEASONS_DEFAULT)), 1, 30);
   const includeRS = q.get("rs") !== "0";
   const top = clamp(Math.round(num(q.get("top"), 50)), 1, 500);
@@ -60,7 +61,7 @@ export async function GET(request) {
     return Response.json({ error: `legacy corpus unavailable: ${e.message}` }, { status: 503 });
   }
 
-  const opts = { alpha, decay, includeRS, peakSeasons, minSeasons, minGames };
+  const opts = { alpha, p, includeRS, peakSeasons, minSeasons, minGames };
   const board = rankLegacy(built.players, opts);
 
   // Season folds ride along with the board rather than behind a per-player
@@ -73,22 +74,22 @@ export async function GET(request) {
   const r1 = (n) => Math.round(n * 10) / 10;
   const r4 = (n) => Math.round(n * 1e4) / 1e4;
 
-  const players = board.slice(0, top).map((p, i) => ({
+  const players = board.slice(0, top).map((pl, i) => ({
     rank: i + 1,
-    slug: p.slug,
-    name: p.name,
-    total: p.total,
-    peak: p.peak,
-    peakRaw: p.peakRaw,
-    careerLVA: p.careerLVA,
-    teams: p.teams,
-    careerGames: p.careerGames,
-    seasonCount: p.seasonCount,
-    span: p.span,
-    truncated: p.truncated,
-    // Already ordered best season first — the order the fold spends its decay
+    slug: pl.slug,
+    name: pl.name,
+    total: pl.total,
+    peak: pl.peak,
+    peakRaw: pl.peakRaw,
+    careerLVA: pl.careerLVA,
+    teams: pl.teams,
+    careerGames: pl.careerGames,
+    seasonCount: pl.seasonCount,
+    span: pl.span,
+    truncated: pl.truncated,
+    // Already ordered best season first — the order the fold spends its weight
     // in, which is the order the expansion has to show them in.
-    seasons: p.seasons.map((s) => ({
+    seasons: pl.seasons.map((s) => ({
       season: s.season,
       team: s.team,
       rank: s.rank,
@@ -108,10 +109,13 @@ export async function GET(request) {
     qualified: board.length,
     firstSeason: built.seasons[0] ?? null,
     lastSeason: built.seasons[built.seasons.length - 1] ?? null,
-    dials: { alpha, decay, includeRS, peakSeasons, minSeasons, minGames },
-    peakShare: peakShareAt(decay, peakSeasons, 20),
-    // How the default decay was arrived at, so the tab can say so rather than
+    dials: { alpha, p, includeRS, peakSeasons, minSeasons, minGames },
+    // The dial in one sentence, for the tab to print: what a season worth a
+    // tenth / a half of your best actually carries.
+    weightAtTenth: weightForShare(0.1, p),
+    weightAtHalf: weightForShare(0.5, p),
+    // How the default p was arrived at, so the tab can say so rather than
     // presenting a calibrated number as a taste.
-    calibration: { ...DIALS, isDefault: decay === DECAY_DEFAULT },
+    calibration: { ...DIALS, isDefault: p === P_DEFAULT },
   }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
 }
