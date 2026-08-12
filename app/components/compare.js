@@ -63,12 +63,16 @@ export const COMP_METRIC_OPTS = [
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
 
 
-// Team-color alpha inside the comparison side's bars in the career-year chart.
-// Deliberately heavier than the 0.25 the category rows use: those bars are ~7px
-// tall against a paired solid bar right beside them, where a faint tint still
-// reads, while a career bar stands alone at full height and needs to hold its
-// own color. See the fill in the chart below.
-export const CAREER_B_FILL = 0.6;
+// The comparison side's bars are gold INSIDE and outlined in the team color:
+// the fill is the same Compare-chip amber every other B element wears, so the
+// compared run reads as "the thing measured against" from across the card,
+// while the outline keeps its team legible beside A's solid team-color bar.
+export const GOLD_FILL = "#fbbf24"; // bg-amber-400
+// Alpha on that gold. The category rows sit ~7px tall right beside a paired
+// solid bar, where a lighter gold still reads as gold; a career bar stands
+// alone at full height and carries the heavier fill without shouting over A.
+export const B_FILL = 0.5;
+export const CAREER_B_FILL = 0.75;
 
 
 // Inline picker: search a player from the scope index, then tap one of their
@@ -880,10 +884,10 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const lgaB = lgaForRow(b);
   const ca = teamColor(a.team);
   const cb = teamColor(b.team);
-  // The comparison side is "wrapped in gold" (the Compare-chip amber) with a
-  // light team-color fill inside — see GOLD/GOLD_BG.
-  const cbFill = withAlpha(cb, 0.25);
-  const cbEdge = `1px solid ${GOLD}`;
+  // The comparison side is filled with the Compare-chip gold and outlined in
+  // its own team color — see GOLD_FILL/B_FILL.
+  const cbFill = withAlpha(GOLD_FILL, B_FILL);
+  const cbEdge = `1px solid ${cb}`;
 
   // D Rating — the fifth defensive stat, the one VA+ adds to VA. Whenever the
   // page is reading VA+ (defActive), the comparison carries it too: it rides at
@@ -1185,7 +1189,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const Swatch = ({ color, outline }) => (
     <span
       className="inline-block w-2 h-2 rounded-sm align-middle mx-1"
-      style={outline ? { backgroundColor: withAlpha(color, 0.25), border: `1px solid ${GOLD}` } : { backgroundColor: color }}
+      style={outline ? { backgroundColor: withAlpha(GOLD_FILL, B_FILL), border: `1px solid ${color}` } : { backgroundColor: color }}
     />
   );
 
@@ -1453,17 +1457,15 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                 const h = (Math.abs(v) / cSpan) * 100;
                 const topPct = v >= 0 ? cZeroPct - h : cZeroPct;
                 const isSel = (side === "a" ? aSel : bSel).has(s.season);
-                // The comparison side reads as a gold-edged bar with the team
-                // color inside. At the row strip's 0.25 tint that inside was
-                // washing out to near-white at bar width — legible as an
-                // outline, but not as a COLOR next to A's solid fill, which
-                // made the two sides look like different kinds of thing rather
-                // than two players. CAREER_B_FILL halves the lightening (0.25
-                // → 0.6 alpha, i.e. 75% → 40% toward white) so the bar carries
-                // its team color while the gold edge still identifies it.
+                // The comparison side reads as a gold bar outlined in its team
+                // color. A career bar stands alone at full height rather than
+                // paired against A's solid fill millimeters away, so it takes
+                // the heavier gold (CAREER_B_FILL) — the lighter row-strip
+                // tint washes out to near-cream at this size, and the outline
+                // ends up doing all the work.
                 const fill = side === "a"
                   ? { backgroundColor: color }
-                  : { backgroundColor: withAlpha(color, CAREER_B_FILL), border: `1px solid ${GOLD}` };
+                  : { backgroundColor: withAlpha(GOLD_FILL, CAREER_B_FILL), border: `1px solid ${color}` };
                 return (
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
