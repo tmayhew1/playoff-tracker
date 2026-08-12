@@ -33,11 +33,31 @@ const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-bas
 const PAGE = 50;
 
 
+// Sends the reader to the season leaderboard this half of the season came
+// from — the playoff board or the regular-season one — filtered to the team
+// and opened on the player. Absent a handler (nothing to navigate to) it
+// simply doesn't render, so the panel is unchanged where the jump has no home.
+function GoToBoard({ onGo, run, scope }) {
+  if (!onGo || !run?.season) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => onGo({
+        season: run.season, team: run.team || null,
+        name: run.name || null, slug: run.slug || null, scope,
+      })}
+      className="ml-auto text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 whitespace-nowrap"
+      title={`Open the ${scope === "regular" ? "regular-season" : "playoff"} leaderboard for ${run.team || "this team"}, ${run.season}`}
+    >Go →</button>
+  );
+}
+
+
 // One season of a career, opened up: the production behind both halves of it.
 // Fetched on tap from the same endpoint the runs board uses, so the playoff
 // line here is the identical line there — and the regular season, which the
 // runs board has no reason to carry, sits beside it.
-function SeasonDetail({ slug, season }) {
+function SeasonDetail({ slug, season, onGoToLeaderboard }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
 
@@ -57,16 +77,22 @@ function SeasonDetail({ slug, season }) {
     <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
       {po && (
         <>
-          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
-            Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
+          <div className="px-2 flex items-baseline gap-2">
+            <span className="text-[9px] uppercase tracking-widest text-stone-500">
+              Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
+            </span>
+            <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" />
           </div>
           <StatStrip stats={po} always note="Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G." />
         </>
       )}
       {rs && (
         <>
-          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
-            Regular season · {rs.games} games
+          <div className="px-2 flex items-baseline gap-2">
+            <span className="text-[9px] uppercase tracking-widest text-stone-500">
+              Regular season · {rs.games} games
+            </span>
+            <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="regular" />
           </div>
           <StatStrip stats={rs} always note="Computed on season totals, the same way the regular season’s VA is." />
         </>
@@ -81,7 +107,7 @@ function SeasonDetail({ slug, season }) {
 
 // One career, opened up: the summary the board has no room for, then every
 // season in the order the fold consumes them.
-function CareerFold({ p, weightAtHalf }) {
+function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
   const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
   const [openSeason, setOpenSeason] = useState(null);
 
@@ -162,7 +188,7 @@ function CareerFold({ p, weightAtHalf }) {
                 </>
               )}
             </div>
-            {seasonOpen && <SeasonDetail slug={p.slug} season={s.season} />}
+            {seasonOpen && <SeasonDetail slug={p.slug} season={s.season} onGoToLeaderboard={onGoToLeaderboard} />}
           </div>
         );
       })}
@@ -485,7 +511,7 @@ function RunsBoard() {
 }
 
 
-function CareersBoard() {
+function CareersBoard({ onGoToLeaderboard }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState("total"); // "total" | "peak"
@@ -596,7 +622,7 @@ function CareersBoard() {
                 <div className="h-full rounded-sm bg-stone-900" style={{ width: `${Math.max(0, ((p[sortKey] ?? 0) / max) * 100)}%` }} />
               </div>
             </div>
-            {isOpen && <CareerFold p={p} weightAtHalf={data.weightAtHalf} />}
+            {isOpen && <CareerFold p={p} weightAtHalf={data.weightAtHalf} onGoToLeaderboard={onGoToLeaderboard} />}
           </div>
         );
       })}
@@ -641,7 +667,7 @@ function CareersBoard() {
 // Two readings of the same numbers. Careers is the argument the metric makes;
 // Runs is the evidence it rests on — one row per postseason run, so a score can
 // be checked against a run you remember rather than taken on trust.
-export function LegacyView() {
+export function LegacyView({ onGoToLeaderboard = null }) {
   const [mode, setMode] = useState("careers"); // "careers" | "runs"
 
   const tab = (key, label) => (
@@ -660,7 +686,7 @@ export function LegacyView() {
         <h2 className="text-base font-bold text-stone-900">Legacy</h2>
         <span className="ml-auto flex gap-1">{tab("careers", "Careers")}{tab("runs", "Runs")}</span>
       </div>
-      {mode === "careers" ? <CareersBoard /> : <RunsBoard />}
+      {mode === "careers" ? <CareersBoard onGoToLeaderboard={onGoToLeaderboard} /> : <RunsBoard />}
     </div>
   );
 }
