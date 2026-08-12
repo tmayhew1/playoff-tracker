@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { fetchJsonCached } from "../lib/fetch-cache";
+import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT } from "../lib/leverage";
+import { weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT } from "../lib/legacy";
 
 
 // The all-time board. Legacy is deliberately TWO numbers rather than one
@@ -573,16 +575,11 @@ function CareersBoard({ onGoToLeaderboard }) {
       </div>
 
       <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
-        Every series a career played, priced by what winning it was worth to a
-        title and shared across the games it took — so closing a team out in
-        four concentrates that value instead of forfeiting it. Seasons are then
-        folded by how good they were rather than by where they rank, so a career
-        with several near-peak years keeps them all and one built on a single
-        towering season doesn&apos;t borrow credit for the rest.{" "}
-        <span className="font-semibold">Legacy</span> is that total;{" "}
-        <span className="font-semibold">Peak/G</span> is the same weighting as a
-        rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
-        or a player for the season-by-season fold.
+        <span className="font-semibold">Legacy</span> is a career&apos;s value with every game
+        priced by what was at stake; <span className="font-semibold">Peak/G</span> is the same
+        weighting as a rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
+        or a player for the season-by-season fold — and the{" "}
+        <span className="font-bold">i</span> above for how the number is built.
       </p>
 
       <div className="grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
@@ -664,11 +661,126 @@ function CareersBoard({ onGoToLeaderboard }) {
 }
 
 
+
+// What the score is made of, in the order it is built. Every number below is
+// computed from the shipped functions rather than typed in, so the explanation
+// cannot drift away from the metric it describes.
+const ROUND_LABELS = [["Round 1", 3], ["Round 2", 2], ["Conf. finals", 1], ["Finals", 0]];
+const shadeFor = (w) => (w >= 2.9 ? "bg-stone-900 text-white"
+  : w >= 2.0 ? "bg-stone-700 text-white"
+  : w >= 1.4 ? "bg-stone-500 text-white"
+  : w >= 1.0 ? "bg-stone-300 text-stone-900"
+  : "bg-stone-200 text-stone-900");
+
+function LegacyInfo({ dials }) {
+  const alpha = dials?.alpha ?? ALPHA_DEFAULT;
+  const p = dials?.p ?? P_DEFAULT;
+  // A modern bracket: four rounds deep, quoted against its own opening series.
+  const rsW = gameWeight(rsCLI("2015-16", 4), alpha, anchorCLI(4, 7));
+  const shares = [1, 0.5, 0.25, 0.1];
+
+  return (
+    <div className="mb-3 p-3 bg-white border border-stone-300 text-[11px] text-stone-600 leading-relaxed">
+      <p className="mb-2">
+        Legacy answers one question with two instruments. <span className="font-semibold">Value
+        Added</span> says what a stat line was worth in points above the league&apos;s typical
+        minute. <span className="font-semibold">Championship leverage</span> says what the game
+        it happened in was worth — how much winning moves the probability of a title, under a
+        neutral coin where every game and every future series is a 50/50. Multiply, and add up.
+      </p>
+
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+        1 · What a playoff game is worth
+      </div>
+      <p className="mb-2">
+        The stake belongs to the <span className="font-semibold">series</span>, not the score
+        it reaches. Winning one moves a title by half for every round still to come, and that
+        stake is shared across however many games the series takes — so closing a team out in
+        four concentrates it rather than forfeiting it.
+      </p>
+      <div className="grid grid-cols-[3.9rem_repeat(4,1fr)] gap-[2px] mb-1">
+        <span />
+        {[4, 5, 6, 7].map((n) => (
+          <span key={n} className="text-[8px] uppercase tracking-wider text-stone-400 text-center">{n} gm</span>
+        ))}
+        {ROUND_LABELS.map(([label, ra]) => (
+          <Fragment key={label}>
+            <span className="text-[9px] text-stone-500 flex items-center">{label}</span>
+            {[4, 5, 6, 7].map((n) => {
+              const w = seriesGameWeight(ra, 4, n, alpha);
+              return (
+                <span key={n} className={`text-[10px] font-bold tabular-nums text-center py-1 ${shadeFor(w)}`}>
+                  {w.toFixed(2)}
+                </span>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+      <p className="text-[9px] text-stone-400 mb-2">
+        Each game of that series, against a round-1 series of average length = 1.00.
+      </p>
+
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+        2 · What a regular-season game is worth
+      </div>
+      <p className="mb-2">
+        Priced the same way. A whole winter plays for a playoff berth, which under the same
+        coin is <span className="font-semibold">one sixteenth of a title</span>; spread across
+        82 games that comes to <span className="font-bold tabular-nums text-stone-900">{rsW.toFixed(2)}</span> a
+        night — about a seventh of a playoff opener, and a twenty-ninth of a Finals game closed
+        out in four.
+      </p>
+
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+        3 · How the seasons add up
+      </div>
+      <p className="mb-2">
+        A career is folded by <span className="font-semibold">how good each season was</span>,
+        not by where it ranks — a rank rule would count your eighth-best season the same
+        fraction whether it was nearly your best or nearly worthless. One rule sets the curve:
+        a season worth a tenth of your best still carries half the weight.
+      </p>
+      <div className="mb-1">
+        {shares.map((sh) => {
+          const w = weightForShare(sh, p);
+          return (
+            <div key={sh} className="grid grid-cols-[4.6rem_1fr_2rem] gap-2 items-center py-[2px]">
+              <span className="text-[9px] text-stone-500 text-right tabular-nums">{sh * 100}% as good</span>
+              <span className="h-1.5 bg-stone-100 rounded-sm overflow-hidden">
+                <span className="block h-full bg-stone-900 rounded-sm" style={{ width: `${w * 100}%` }} />
+              </span>
+              <span className="text-[10px] font-bold tabular-nums text-stone-900">{w.toFixed(2)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[9px] text-stone-400 mb-2">
+        Weight relative to a career&apos;s own best season{p ? ` (p = ${p})` : ""}. The shape adapts:
+        many near-peak years all count, a lone towering season doesn&apos;t lift the rest.
+      </p>
+
+      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+        4 · Two numbers, not one
+      </div>
+      <p className="mb-0">
+        <span className="font-semibold">Legacy</span> is that folded total — how much a career
+        produced when its games are priced by what was at stake.{" "}
+        <span className="font-semibold">Peak/G</span> is the same weighting as a rate over the
+        best {dials?.peakSeasons ?? PEAK_SEASONS_DEFAULT} seasons. They disagree, and the disagreement is the
+        point: sort by either.
+      </p>
+    </div>
+  );
+}
+
+
 // Two readings of the same numbers. Careers is the argument the metric makes;
 // Runs is the evidence it rests on — one row per postseason run, so a score can
 // be checked against a run you remember rather than taken on trust.
 export function LegacyView({ onGoToLeaderboard = null }) {
   const [mode, setMode] = useState("careers"); // "careers" | "runs"
+  const [info, setInfo] = useState(false);
 
   const tab = (key, label) => (
     <button
@@ -684,8 +796,19 @@ export function LegacyView({ onGoToLeaderboard = null }) {
     <div>
       <div className="flex items-baseline gap-2 mb-3">
         <h2 className="text-base font-bold text-stone-900">Legacy</h2>
+        <button
+          onClick={() => setInfo((v) => !v)}
+          aria-expanded={info}
+          aria-label="How the Legacy score is calculated"
+          title="How the Legacy score is calculated"
+          className={`w-4 h-4 shrink-0 self-center rounded-full border text-[9px] font-bold leading-none flex items-center justify-center ${
+            info
+              ? "bg-stone-900 border-stone-900 text-white"
+              : "border-stone-400 text-stone-500 hover:border-stone-900 hover:text-stone-900"}`}
+        >i</button>
         <span className="ml-auto flex gap-1">{tab("careers", "Careers")}{tab("runs", "Runs")}</span>
       </div>
+      {info && <LegacyInfo />}
       {mode === "careers" ? <CareersBoard onGoToLeaderboard={onGoToLeaderboard} /> : <RunsBoard />}
     </div>
   );
