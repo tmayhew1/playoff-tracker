@@ -3,6 +3,7 @@ import {
   rankLegacy, weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../../lib/legacy.js";
 import { ALPHA_DEFAULT } from "../../lib/leverage.js";
+import { normalizeName } from "../../lib/format.js";
 import DIALS from "../../data/legacy-dials.json";
 
 export const runtime = "nodejs";
@@ -53,6 +54,10 @@ export async function GET(request) {
   // only ever order the rows already fetched, which reads as a whole-board sort
   // and is not one the moment there is a second page.
   const sort = q.get("sort") === "peak" ? "peak" : "total";
+  // Searched here rather than in the browser for the same reason the sort is:
+  // the client holds only the pages it has asked for, so filtering there would
+  // search a prefix of the board and look like it had searched all of it.
+  const query = normalizeName((q.get("q") || "").trim());
   const minGames = clamp(Math.round(num(q.get("minGames"), 400)), 0, 2000);
   const minSeasons = clamp(Math.round(num(q.get("minSeasons"), 3)), 1, 30);
 
@@ -83,8 +88,16 @@ export async function GET(request) {
   const r1 = (n) => Math.round(n * 10) / 10;
   const r4 = (n) => Math.round(n * 1e4) / 1e4;
 
-  const players = board.slice(offset, offset + top).map((pl, i) => ({
-    rank: offset + i + 1,
+  // Rank is fixed against the whole sorted board BEFORE any search narrows it,
+  // so a found player reports where he sits all-time rather than his position
+  // among the matches.
+  const ranked2 = board.map((pl, i) => ({ pl, rank: i + 1 }));
+  const matched = query
+    ? ranked2.filter(({ pl }) => normalizeName(pl.name || "").includes(query))
+    : ranked2;
+
+  const players = matched.slice(offset, offset + top).map(({ pl, rank }) => ({
+    rank,
     slug: pl.slug,
     name: pl.name,
     total: pl.total,
@@ -116,6 +129,8 @@ export async function GET(request) {
   return Response.json({
     players,
     qualified: board.length,
+    matched: matched.length,
+    query: q.get("q") || "",
     offset,
     limit: top,
     sort,

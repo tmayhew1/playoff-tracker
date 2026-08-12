@@ -543,27 +543,36 @@ function CareersBoard({ onGoToLeaderboard }) {
   // would re-download the expensive part of the list on every tap.
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
 
+  const url = (offset) => `/api/legacy?top=${PAGE}&offset=${offset}&sort=${sortKey}`
+    + `&q=${encodeURIComponent(query.trim())}`;
+
+  // Debounced so a typed name is one request, not one per keystroke. Any change
+  // to the sort or the search starts the list again from the first page.
   useEffect(() => {
     let cancelled = false;
-    setRows([]);
-    setData(null);
-    setOpen(null);
-    setLoading(true);
-    fetchJsonCached(`/api/legacy?top=${PAGE}&offset=0&sort=${sortKey}`)
-      .then((d) => { if (!cancelled) { setData(d); setRows(d.players || []); setError(null); } })
-      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [sortKey]);
+    const t = setTimeout(() => {
+      setLoading(true);
+      fetchJsonCached(url(0))
+        .then((d) => { if (!cancelled) { setData(d); setRows(d.players || []); setError(null); } })
+        .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    }, query ? 220 : 0);
+    return () => { cancelled = true; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortKey, query]);
+
+  useEffect(() => { setOpen(null); }, [sortKey, query]);
 
   const more = () => {
     if (loading) return;
     setLoading(true);
-    fetchJsonCached(`/api/legacy?top=${PAGE}&offset=${rows.length}&sort=${sortKey}`)
+    fetchJsonCached(url(rows.length))
       .then((d) => {
-        // Guard against a stale page landing after a sort change.
-        if (d.sort !== sortKey || d.offset !== rows.length) return;
+        // Discard a page that lands after the sort or the search moved on.
+        if (d.sort !== sortKey || d.offset !== rows.length
+          || (d.query || "") !== query.trim()) return;
         setRows((prev) => [...prev, ...(d.players || [])]);
       })
       .catch((e) => setError(e.message || "Load failed"))
@@ -574,7 +583,7 @@ function CareersBoard({ onGoToLeaderboard }) {
 
   if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Ranking careers…</div>;
-  if (!shown.length) return <div className="text-[10px] text-stone-400 italic py-6 text-center">No careers qualified.</div>;
+  const total = data.matched ?? data.qualified;
 
   // The board arrives sorted, so the leader is the scale for every bar — it
   // stays put as more pages land instead of rescaling the rows already read.
@@ -601,11 +610,31 @@ function CareersBoard({ onGoToLeaderboard }) {
         <span className="font-bold">i</span> above for how the number is built.
       </p>
 
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search a player…"
+        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
+      />
+
+      {query.trim() && (
+        <div className="text-[10px] text-stone-400 tabular-nums mb-1 px-2">
+          {total.toLocaleString()} of {data.qualified.toLocaleString()} careers
+        </div>
+      )}
+
       <div className="grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
         <span></span><span>Player</span><span className="text-right">Sns</span>
         {head("total", "Legacy")}
         {head("peak", "Peak/G")}
       </div>
+
+      {!shown.length && (
+        <div className="text-[10px] text-stone-400 italic py-6 text-center">
+          {query.trim() ? <>No careers match &ldquo;{query.trim()}&rdquo;.</> : "No careers qualified."}
+        </div>
+      )}
 
       {shown.map((p) => {
         const isOpen = open === p.slug;
@@ -643,7 +672,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         );
       })}
 
-      {shown.length < data.qualified ? (
+      {shown.length < total ? (
         <button
           onClick={more}
           disabled={loading}
@@ -651,12 +680,16 @@ function CareersBoard({ onGoToLeaderboard }) {
         >
           {loading
             ? "Loading…"
-            : `Show more · ${shown.length.toLocaleString()} of ${data.qualified.toLocaleString()}`}
+            : `Show more · ${shown.length.toLocaleString()} of ${total.toLocaleString()}`}
         </button>
       ) : (
-        <div className="text-[10px] text-stone-400 italic mt-2 text-center">
-          All {data.qualified.toLocaleString()} qualifying careers shown.
-        </div>
+        shown.length > 0 && (
+          <div className="text-[10px] text-stone-400 italic mt-2 text-center">
+            {query.trim()
+              ? `All ${total.toLocaleString()} matching careers shown.`
+              : `All ${total.toLocaleString()} qualifying careers shown.`}
+          </div>
+        )
       )}
 
       <div className="text-[10px] text-stone-400 italic mt-2 leading-relaxed">
