@@ -48,6 +48,11 @@ export async function GET(request) {
   const peakSeasons = clamp(Math.round(num(q.get("peakSeasons"), PEAK_SEASONS_DEFAULT)), 1, 30);
   const includeRS = q.get("rs") !== "0";
   const top = clamp(Math.round(num(q.get("top"), 50)), 1, 500);
+  const offset = clamp(Math.round(num(q.get("offset"), 0)), 0, 5000);
+  // Sorting server-side so it composes with paging. Sorted client-side it would
+  // only ever order the rows already fetched, which reads as a whole-board sort
+  // and is not one the moment there is a second page.
+  const sort = q.get("sort") === "peak" ? "peak" : "total";
   const minGames = clamp(Math.round(num(q.get("minGames"), 400)), 0, 2000);
   const minSeasons = clamp(Math.round(num(q.get("minSeasons"), 3)), 1, 30);
 
@@ -62,7 +67,11 @@ export async function GET(request) {
   }
 
   const opts = { alpha, p, includeRS, peakSeasons, minSeasons, minGames };
-  const board = rankLegacy(built.players, opts);
+  const ranked = rankLegacy(built.players, opts);
+  // rankLegacy already orders by total; re-sort only when asked for the other
+  // axis, and take the rank from THIS order so a row reports where it sits on
+  // the column being read.
+  const board = sort === "peak" ? [...ranked].sort((a, b) => b.peak - a.peak) : ranked;
 
   // Season folds ride along with the board rather than behind a per-player
   // fetch: they are what the row expands into, and a career is only ~20 rows,
@@ -74,8 +83,8 @@ export async function GET(request) {
   const r1 = (n) => Math.round(n * 10) / 10;
   const r4 = (n) => Math.round(n * 1e4) / 1e4;
 
-  const players = board.slice(0, top).map((pl, i) => ({
-    rank: i + 1,
+  const players = board.slice(offset, offset + top).map((pl, i) => ({
+    rank: offset + i + 1,
     slug: pl.slug,
     name: pl.name,
     total: pl.total,
@@ -107,6 +116,9 @@ export async function GET(request) {
   return Response.json({
     players,
     qualified: board.length,
+    offset,
+    limit: top,
+    sort,
     firstSeason: built.seasons[0] ?? null,
     lastSeason: built.seasons[built.seasons.length - 1] ?? null,
     dials: { alpha, p, includeRS, peakSeasons, minSeasons, minGames },

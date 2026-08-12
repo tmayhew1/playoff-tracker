@@ -28,6 +28,10 @@ const fmtN = (n) => (Math.abs(n) >= 100 ? fmt0(n) : n.toFixed(1));
 
 const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-baseline";
 
+// Careers per page. A row carries its whole season fold, so the pages are kept
+// small and asked for one at a time.
+const PAGE = 50;
+
 
 // One season of a career, opened up: the production behind both halves of it.
 // Fetched on tap from the same endpoint the runs board uses, so the playoff
@@ -487,24 +491,47 @@ function CareersBoard() {
   const [sortKey, setSortKey] = useState("total"); // "total" | "peak"
   const [open, setOpen] = useState(null);          // expanded player's slug
 
+  // Pages accumulate rather than being refetched at a bigger size: a career
+  // carries its whole season fold, so re-asking for the first fifty every time
+  // would re-download the expensive part of the list on every tap.
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
-    fetchJsonCached("/api/legacy?top=50")
-      .then((d) => { if (!cancelled) setData(d); })
-      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
+    setRows([]);
+    setData(null);
+    setOpen(null);
+    setLoading(true);
+    fetchJsonCached(`/api/legacy?top=${PAGE}&offset=0&sort=${sortKey}`)
+      .then((d) => { if (!cancelled) { setData(d); setRows(d.players || []); setError(null); } })
+      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [sortKey]);
 
-  const shown = useMemo(() => {
-    if (!data?.players) return [];
-    return [...data.players].sort((a, b) => (b[sortKey] ?? 0) - (a[sortKey] ?? 0));
-  }, [data, sortKey]);
+  const more = () => {
+    if (loading) return;
+    setLoading(true);
+    fetchJsonCached(`/api/legacy?top=${PAGE}&offset=${rows.length}&sort=${sortKey}`)
+      .then((d) => {
+        // Guard against a stale page landing after a sort change.
+        if (d.sort !== sortKey || d.offset !== rows.length) return;
+        setRows((prev) => [...prev, ...(d.players || [])]);
+      })
+      .catch((e) => setError(e.message || "Load failed"))
+      .finally(() => setLoading(false));
+  };
+
+  const shown = rows;
 
   if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Ranking careers…</div>;
   if (!shown.length) return <div className="text-[10px] text-stone-400 italic py-6 text-center">No careers qualified.</div>;
 
-  const max = Math.max(...shown.map((p) => p[sortKey] ?? 0), 0.1);
+  // The board arrives sorted, so the leader is the scale for every bar — it
+  // stays put as more pages land instead of rescaling the rows already read.
+  const max = Math.max(shown[0]?.[sortKey] ?? 0, 0.1);
   const anyTruncated = shown.some((p) => p.truncated);
   const head = (key, label) => (
     <button
@@ -538,7 +565,7 @@ function CareersBoard() {
         {head("peak", "Peak/G")}
       </div>
 
-      {shown.map((p, i) => {
+      {shown.map((p) => {
         const isOpen = open === p.slug;
         return (
           <div key={p.slug} className="border-b border-stone-100">
@@ -548,7 +575,9 @@ function CareersBoard() {
               onClick={() => setOpen(isOpen ? null : p.slug)}
               className={`w-full text-left grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
             >
-              <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+              {/* The rank the server assigned in the sorted order, not the row's
+                  position in whatever has been paged in so far. */}
+              <span className="text-[10px] tabular-nums text-stone-400">{p.rank.toLocaleString()}</span>
               <span className="min-w-0">
                 <span className="font-semibold text-stone-800 block truncate">
                   <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
@@ -571,6 +600,22 @@ function CareersBoard() {
           </div>
         );
       })}
+
+      {shown.length < data.qualified ? (
+        <button
+          onClick={more}
+          disabled={loading}
+          className="w-full mt-2 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-300 hover:bg-stone-50 disabled:text-stone-300"
+        >
+          {loading
+            ? "Loading…"
+            : `Show more · ${shown.length.toLocaleString()} of ${data.qualified.toLocaleString()}`}
+        </button>
+      ) : (
+        <div className="text-[10px] text-stone-400 italic mt-2 text-center">
+          All {data.qualified.toLocaleString()} qualifying careers shown.
+        </div>
+      )}
 
       <div className="text-[10px] text-stone-400 italic mt-2 leading-relaxed">
         {anyTruncated && (
