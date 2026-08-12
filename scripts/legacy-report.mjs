@@ -237,7 +237,7 @@ function verify({ players, seasons }) {
       weightForShare(0.5, P_DEFAULT) > weightForShare(0.25, P_DEFAULT));
     // The shape the value-weighting produces, which is the point of the change:
     // a long plateau near the top rather than an immediate rank-decay.
-    const bal = balanceOf(players, { alpha: 0.5, includeRS: true, minSeasons: 3, minGames: 400 });
+    const bal = balanceOf(players, { alpha: 0.5, includeRS: true, minSeasons: 1, minGames: 400 });
     ok("the board is longevity-tilted, as the shape requires", bal.gap > 0,
       `gap ${bal.gap.toFixed(3)} (sum ${bal.tau.toFixed(3)}, peak ${bal.tauPeak.toFixed(3)})`);
     // Weighting by value, not rank: two seasons of equal worth weigh the same
@@ -347,7 +347,7 @@ function main(argv) {
   const peakSeasons = Number(arg("peak-seasons", PEAK_SEASONS_DEFAULT));
 
   const built = build();
-  const opts = { alpha, p, includeRS, peakSeasons, minSeasons: 3, minGames };
+  const opts = { alpha, p, includeRS, peakSeasons, minSeasons: 1, minGames };
 
   if (has("verify")) process.exit(verify(built) ? 1 : 0);
 

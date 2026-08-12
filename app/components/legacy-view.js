@@ -740,7 +740,8 @@ function CareersBoard({ onGoToLeaderboard }) {
         ) : null}{" "}
         Leverage α {data.dials.alpha}; regular season{" "}
         {data.dials.includeRS ? "included" : "excluded"}; minimum{" "}
-        {data.dials.minSeasons} seasons and {fmt0(data.dials.minGames)} games.
+        {data.dials.minSeasons > 1 ? `${data.dials.minSeasons} seasons and ` : ""}
+        {fmt0(data.dials.minGames)} career games.
       </div>
     </div>
   );

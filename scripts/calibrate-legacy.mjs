@@ -43,7 +43,7 @@ const built = buildCareers({ dataDir: DATA });
 if (built.skipped.length) {
   console.error(`  note: ${built.skipped.length} season(s) skipped — incomplete baseline`);
 }
-const opts = { alpha: ALPHA_DEFAULT, includeRS: true, minSeasons: 3, minGames: 400, p };
+const opts = { alpha: ALPHA_DEFAULT, includeRS: true, minSeasons: 1, minGames: 400, p };
 
 console.log(`principle: a season worth ${HALF_WEIGHT_SHARE * 100}% of your best carries `
   + `${HALF * 100}% of its weight`);

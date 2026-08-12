@@ -59,7 +59,12 @@ export async function GET(request) {
   // search a prefix of the board and look like it had searched all of it.
   const query = normalizeName((q.get("q") || "").trim());
   const minGames = clamp(Math.round(num(q.get("minGames"), 400)), 0, 2000);
-  const minSeasons = clamp(Math.round(num(q.get("minSeasons"), 3)), 1, 30);
+  // No seasons requirement by default. It was redundant wherever it used to
+  // matter — the fewest seasons anyone with 400 games has played is five — and
+  // where it was NOT redundant it silently overrode the games control, hiding
+  // short careers the reader had just asked to see. The parameter stays for
+  // anyone who wants it back.
+  const minSeasons = clamp(Math.round(num(q.get("minSeasons"), 1)), 1, 30);
 
   let built;
   try {
