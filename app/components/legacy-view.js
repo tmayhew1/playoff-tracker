@@ -113,6 +113,14 @@ function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
   const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
   const [openSeason, setOpenSeason] = useState(null);
 
+  // Why the column starts where it does. A weight is a season measured against
+  // the career TOTAL, not against the best season — which it has to be, or the
+  // weighted column would stop summing to Legacy. So the top weight reads how
+  // concentrated a career is: recover that share by inverting the exponent.
+  const topWeight = p.seasons[0]?.lva > 0 ? p.seasons[0].weight : null;
+  const topShare = topWeight && P_DEFAULT > 1
+    ? Math.pow(topWeight, 1 / (P_DEFAULT - 1)) : null;
+
   return (
     <div className="px-2 pb-3 pt-1 bg-stone-50 border-t border-stone-200">
       <div className="grid grid-cols-4 gap-x-2 py-2 text-center">
@@ -139,6 +147,17 @@ function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
         <span className="font-semibold">Weighted</span> is the column that sums to Legacy.
         Tap any season for the stat line behind it.
       </p>
+
+      {topShare != null && (
+        <p className="text-[9px] text-stone-400 leading-relaxed mb-2">
+          The weights are against the career <em>total</em>, not against his best season, so
+          they start below 1 and start lower the deeper the career: his best is{" "}
+          <span className="tabular-nums">{(topShare * 100).toFixed(0)}%</span> of the whole,
+          which puts the column at{" "}
+          <span className="tabular-nums">{topWeight.toFixed(3)}</span>. That is what keeps
+          Weighted summing to Legacy — the ratios between his own seasons are unaffected.
+        </p>
+      )}
 
       <div className={`${COLS} text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200`}>
         <span>#</span><span>Season</span>
