@@ -128,6 +128,11 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
         || { season, team: p.team, games: [], rsVA: null, rsGames: 0, rsCLI: seasonCLI, anchor, depth };
       row.rsVA = valueAddParts(p, lga).va;
       row.rsGames = p.g || 0;
+      // The line behind that VA, so a season can be opened up the same way a
+      // playoff run can. Assigned rather than accumulated, to stay consistent
+      // with rsVA above: where a traded player has several rows, both take the
+      // last one rather than double-counting a TOT row against its parts.
+      row.rs = { gp: p.g || 0, ...Object.fromEntries(STAT_KEYS.map((k) => [k, p[k] ?? 0])) };
       rec.seasons.set(season, row);
     }
   }

@@ -29,10 +29,57 @@ const fmtN = (n) => (Math.abs(n) >= 100 ? fmt0(n) : n.toFixed(1));
 const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-baseline";
 
 
+// One season of a career, opened up: the production behind both halves of it.
+// Fetched on tap from the same endpoint the runs board uses, so the playoff
+// line here is the identical line there — and the regular season, which the
+// runs board has no reason to carry, sits beside it.
+function SeasonDetail({ slug, season }) {
+  const [d, setD] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJsonCached(`/api/legacy/runs?slug=${encodeURIComponent(slug)}&season=${encodeURIComponent(season)}`)
+      .then((r) => { if (!cancelled) setD(r); })
+      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
+    return () => { cancelled = true; };
+  }, [slug, season]);
+
+  if (error) return <div className="px-2 py-2 text-[10px] text-red-600">Couldn’t load — {error}</div>;
+  if (!d) return <div className="px-2 py-2 text-[10px] text-stone-500 italic">Loading…</div>;
+
+  const po = d.run.stats, rs = d.run.rsStats;
+  return (
+    <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
+      {po && (
+        <>
+          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+            Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
+          </div>
+          <StatStrip stats={po} always note="Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G." />
+        </>
+      )}
+      {rs && (
+        <>
+          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+            Regular season · {rs.games} games
+          </div>
+          <StatStrip stats={rs} always note="Computed on season totals, the same way the regular season’s VA is." />
+        </>
+      )}
+      {!po && !rs && (
+        <div className="px-2 py-2 text-[10px] text-stone-400 italic">No stat line on record for this season.</div>
+      )}
+    </div>
+  );
+}
+
+
 // One career, opened up: the summary the board has no room for, then every
 // season in the order the fold consumes them.
 function CareerFold({ p, weightAtHalf }) {
   const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
+  const [openSeason, setOpenSeason] = useState(null);
 
   return (
     <div className="px-2 pb-3 pt-1 bg-stone-50 border-t border-stone-200">
@@ -58,6 +105,7 @@ function CareerFold({ p, weightAtHalf }) {
         <span className="tabular-nums font-semibold">{(weightAtHalf * 100).toFixed(0)}%</span>{" "}
         of its weight, one worth a tenth carries half.{" "}
         <span className="font-semibold">Weighted</span> is the column that sums to Legacy.
+        Tap any season for the stat line behind it.
       </p>
 
       <div className={`${COLS} text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200`}>
@@ -74,11 +122,18 @@ function CareerFold({ p, weightAtHalf }) {
         const down = s.lva <= 0;
         const width = Math.min(100, (Math.abs(s.contribution) / best) * 100);
         const poShare = down ? 0 : Math.max(0, Math.min(1, s.poLVA / s.lva));
+        const seasonOpen = openSeason === s.season;
         return (
           <div key={s.season} className="pt-1 pb-1.5 border-b border-stone-100 last:border-0">
-            <div className={`${COLS} text-[11px]`}>
+            <button
+              type="button"
+              aria-expanded={seasonOpen}
+              onClick={() => setOpenSeason(seasonOpen ? null : s.season)}
+              className={`${COLS} text-[11px] w-full text-left ${seasonOpen ? "" : "hover:bg-stone-100/70"}`}
+            >
               <span className="tabular-nums text-stone-400">{s.rank}</span>
               <span className="min-w-0">
+                <span className="text-stone-400 text-[8px] mr-0.5">{seasonOpen ? "▾" : "▸"}</span>
                 <span className="font-semibold text-stone-800">{s.season}</span>
                 {/* A season with no playoff run says "82 RS", not "0 PO · 82 RS" —
                     missing the playoffs is already legible from the empty dark
@@ -92,7 +147,7 @@ function CareerFold({ p, weightAtHalf }) {
               <span className={`text-right tabular-nums ${down ? "text-red-600" : "text-stone-600"}`}>{fmtN(s.lva)}</span>
               <span className="text-right tabular-nums text-stone-400">{s.weight.toFixed(3)}</span>
               <span className={`text-right tabular-nums font-bold ${down ? "text-red-600" : "text-stone-900"}`}>{fmtN(s.contribution)}</span>
-            </div>
+            </button>
             <div className="h-1 mt-1 bg-stone-200/60 rounded-sm overflow-hidden flex">
               {down ? (
                 <div className="h-full bg-red-500" style={{ width: `${width}%` }} />
@@ -103,6 +158,7 @@ function CareerFold({ p, weightAtHalf }) {
                 </>
               )}
             </div>
+            {seasonOpen && <SeasonDetail slug={p.slug} season={s.season} />}
           </div>
         );
       })}
@@ -142,11 +198,19 @@ const STAT_COLS = [
   ["FT%", "ft", "Free Throws"],
 ];
 
-function StatStrip({ stats }) {
+// `always` drops the orientation gate: on the runs board the strip rides every
+// row, so it waits for the phone to be turned; inside a season drop-down it is
+// already behind a tap and should just be there.
+function StatStrip({ stats, always, note }) {
   if (!stats) return null;
   return (
-    <div className="hidden tilt:block px-2 pb-2 overflow-x-auto">
-      <div className="grid grid-cols-11 gap-x-1 min-w-[34rem]">
+    <div className={`${always ? "block" : "hidden tilt:block"} px-2 pb-2 overflow-x-auto`}>
+      {/* On the runs board the strip is one landscape-only line. Inside a
+          season drop-down it has to work in portrait too, so there it wraps to
+          two rows rather than scrolling off the edge of a phone. */}
+      <div className={always
+        ? "grid grid-cols-6 tilt:grid-cols-11 gap-x-1 gap-y-2"
+        : "grid grid-cols-11 gap-x-1 min-w-[34rem]"}>
         {STAT_COLS.map(([label, key, cat]) => {
           const v = stats[key];
           const va = cat ? stats.va?.[cat] : null;
@@ -166,7 +230,7 @@ function StatStrip({ stats }) {
         })}
       </div>
       <div className="text-[8px] text-stone-400 mt-1">
-        Per game, with the Value Added each one contributed underneath — the ten add up to VA/G.
+        {note || "Per game, with the Value Added each one contributed underneath — the ten add up to VA/G."}
       </div>
     </div>
   );

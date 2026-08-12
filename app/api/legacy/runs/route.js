@@ -65,12 +65,27 @@ const pct = (made, att) => (att > 0 ? Math.round((made / att) * 1000) / 10 : nul
 
 // The production behind a run: per-game stats, and what each category of them
 // was worth. Computed only for the rows actually being returned.
-function runStats(row) {
-  const po = row.po;
-  const gp = po?.gp || 0;
+// Rebounds split and two-point shooting separated from three, so every stat
+// shown lines up with exactly one VA category underneath it.
+function statsFrom(line, cats) {
+  const gp = line?.gp || 0;
   if (!gp) return null;
-  const lga = lgaForSeason(row.season);
+  return {
+    games: gp,
+    mpg: r2(line.mp / gp), pts: r2(line.pts / gp),
+    drb: r2(line.drb / gp), orb: r2(line.orb / gp),
+    ast: r2(line.ast / gp), stl: r2(line.stl / gp), blk: r2(line.blk / gp),
+    tov: r2(line.tov / gp),
+    tw: pct(line.fgm - line.tpm, line.fga - line.tpa),
+    tp: pct(line.tpm, line.tpa),
+    ft: pct(line.ftm, line.fta),
+    // Per game, to sit in the same units as the stats above them.
+    va: Object.fromEntries(VA_CATEGORY_KEYS.map((k) => [k, r2((cats[k] || 0) / gp)])),
+  };
+}
 
+function runStats(row) {
+  const lga = lgaForSeason(row.season);
   // Category VA is summed PER GAME so the ten categories add up to the run's
   // own VA. Evaluating them once on the run's totals would come out slightly
   // different — the rebound credit is non-linear in REB/MP (spec §7.4).
@@ -79,20 +94,15 @@ function runStats(row) {
     const c = valueAddByCategory(g.line, lga);
     for (const k of VA_CATEGORY_KEYS) cats[k] += c[k] || 0;
   }
+  return statsFrom(row.po, cats);
+}
 
-  // Rebounds split and two-point shooting separated from three, so every stat
-  // shown lines up with exactly one VA category underneath it.
-  return {
-    mpg: r2(po.mp / gp), pts: r2(po.pts / gp),
-    drb: r2(po.drb / gp), orb: r2(po.orb / gp),
-    ast: r2(po.ast / gp), stl: r2(po.stl / gp), blk: r2(po.blk / gp),
-    tov: r2(po.tov / gp),
-    tw: pct(po.fgm - po.tpm, po.fga - po.tpa),
-    tp: pct(po.tpm, po.tpa),
-    ft: pct(po.ftm, po.fta),
-    // Per game, to sit in the same units as the stats above them.
-    va: Object.fromEntries(VA_CATEGORY_KEYS.map((k) => [k, r2(cats[k] / gp)])),
-  };
+// The regular season has no per-game lines baked, only totals — which is also
+// how its VA is computed, so evaluating the categories on those totals is the
+// consistent choice here and they sum to exactly the rsVA the fold used.
+function rsStats(row) {
+  if (!row.rs || !(row.rs.gp > 0)) return null;
+  return statsFrom(row.rs, valueAddByCategory(row.rs, lgaForSeason(row.season)));
 }
 
 // Every game of one run, heaviest contribution first.
@@ -157,17 +167,24 @@ export async function GET(request) {
   // thousand games between them.
   const slug = (q.get("slug") || "").trim();
   if (slug && season) {
-    const one = all.find((r) => r.slug === slug && r.season === season);
-    if (!one) return Response.json({ error: "no such run" }, { status: 404 });
+    // Looked up against the whole corpus rather than against the ranked runs,
+    // so a season the player spent out of the playoffs still opens — the
+    // Careers fold shows those rows and they have a regular season to explain.
+    const pl = cachedCareers().players.find((x) => x.slug === slug);
+    const row = pl && (pl.seasons || []).find((s) => s.season === season);
+    if (!row) return Response.json({ error: "no such season" }, { status: 404 });
+    const ranked = all.find((r) => r.slug === slug && r.season === season);
     return Response.json({
       run: {
-        rank: one.rank, slug: one.slug, name: one.name, season: one.season,
-        team: one.team, games: one.games,
-        lva: Math.round(one.lva * 10) / 10,
-        rsLVA: Math.round(one.rsLVA * 10) / 10,
-        stats: runStats(one.row),
+        rank: ranked ? ranked.rank : null,
+        slug, name: pl.name, season: row.season, team: row.team,
+        games: ranked ? ranked.games : 0,
+        lva: ranked ? Math.round(ranked.lva * 10) / 10 : 0,
+        rsLVA: ranked ? Math.round(ranked.rsLVA * 10) / 10 : null,
+        stats: runStats(row),
+        rsStats: rsStats(row),
       },
-      games: runGames(one.row, alpha),
+      games: runGames(row, alpha),
       categories: VA_CATEGORY_KEYS,
     }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
   }
