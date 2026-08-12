@@ -34,6 +34,19 @@ const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-bas
 // small and asked for one at a time.
 const PAGE = 50;
 
+// The career-length gate, surfaced rather than left implicit. 400 games is
+// about five full seasons and stays the default — a board about careers should
+// not rank a rookie by accident — but a floor that high also hides everyone
+// still early in one, and a filter you can see beats a player's unexplained
+// absence.
+const GAME_FLOORS = [
+  [400, "400+ games"],
+  [300, "300+ games"],
+  [200, "200+ games"],
+  [100, "100+ games"],
+  [0, "No minimum"],
+];
+
 
 // Sends the reader to the season leaderboard this half of the season came
 // from — the playoff board or the regular-season one — filtered to the team
@@ -544,9 +557,10 @@ function CareersBoard({ onGoToLeaderboard }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const [minGames, setMinGames] = useState(400);
 
   const url = (offset) => `/api/legacy?top=${PAGE}&offset=${offset}&sort=${sortKey}`
-    + `&q=${encodeURIComponent(query.trim())}`;
+    + `&q=${encodeURIComponent(query.trim())}&minGames=${minGames}`;
 
   // Debounced so a typed name is one request, not one per keystroke. Any change
   // to the sort or the search starts the list again from the first page.
@@ -561,9 +575,9 @@ function CareersBoard({ onGoToLeaderboard }) {
     }, query ? 220 : 0);
     return () => { cancelled = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortKey, query]);
+  }, [sortKey, query, minGames]);
 
-  useEffect(() => { setOpen(null); }, [sortKey, query]);
+  useEffect(() => { setOpen(null); }, [sortKey, query, minGames]);
 
   const more = () => {
     if (loading) return;
@@ -572,7 +586,8 @@ function CareersBoard({ onGoToLeaderboard }) {
       .then((d) => {
         // Discard a page that lands after the sort or the search moved on.
         if (d.sort !== sortKey || d.offset !== rows.length
-          || (d.query || "") !== query.trim()) return;
+          || (d.query || "") !== query.trim()
+          || d.dials?.minGames !== minGames) return;
         setRows((prev) => [...prev, ...(d.players || [])]);
       })
       .catch((e) => setError(e.message || "Load failed"))
@@ -618,11 +633,30 @@ function CareersBoard({ onGoToLeaderboard }) {
         className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
       />
 
-      {query.trim() && (
-        <div className="text-[10px] text-stone-400 tabular-nums mb-1 px-2">
-          {total.toLocaleString()} of {data.qualified.toLocaleString()} careers
-        </div>
-      )}
+      <div className="flex items-center gap-2 mb-2">
+        <label className="text-[10px] uppercase tracking-widest text-stone-400">Min</label>
+        <select
+          value={minGames}
+          onChange={(e) => setMinGames(Number(e.target.value))}
+          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800"
+          title="Career games a player must have played to appear"
+        >
+          {GAME_FLOORS.map(([v, label]) => (
+            <option key={v} value={v}>{label}</option>
+          ))}
+        </select>
+        {minGames !== 400 && (
+          <button
+            onClick={() => setMinGames(400)}
+            className="text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700"
+          >✕ Reset</button>
+        )}
+        <span className="ml-auto text-[10px] text-stone-400 tabular-nums">
+          {query.trim()
+            ? `${total.toLocaleString()} of ${data.qualified.toLocaleString()}`
+            : `${data.qualified.toLocaleString()} careers`}
+        </span>
+      </div>
 
       <div className="grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
         <span></span><span>Player</span><span className="text-right">Sns</span>
