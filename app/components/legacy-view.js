@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useEffect } from "react";
 import { fetchJsonCached } from "../lib/fetch-cache";
+import { teamColor } from "../lib/format";
 import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT } from "../lib/leverage";
 import { weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT } from "../lib/legacy";
 
@@ -46,6 +47,82 @@ const GAME_FLOORS = [
   [100, "100+ games"],
   [0, "No minimum"],
 ];
+
+
+// A season row's team code is the team the row was built from: the playoff team
+// where there was a run, otherwise whatever the regular-season file carried —
+// which for a player traded mid-year is a "2TM"/"3TM" total rather than a
+// franchise. Those keep their code but take a neutral grey: the season happened,
+// it just cannot be attributed to one set of colors.
+const isMultiTeam = (t) => !t || /^(TOT|\d+TM)$/.test(t);
+const barColor = (t) => (isMultiTeam(t) ? "#a8a29e" : teamColor(t));
+
+
+// The career bar, split by who the career was played for.
+//
+// Widths are shares of whatever the bar is currently drawn on, not of some third
+// quantity: under Legacy that is the weighted contribution — the column that
+// sums to the total — and under Peak/G it is the leveraged VA of the peak
+// seasons the rate is computed over. Either way the colors partition the number
+// underneath them rather than a different one.
+//
+// Ordered by first season, so a career reads left to right the way it was
+// played. That order is taken from the WHOLE career even when only the peak
+// seasons are being measured — LeBron's peak window opens in Miami, and sorting
+// on it would put Miami ahead of Cleveland and reshuffle the colors the moment
+// the reader switched columns.
+function teamSegments(seasons, sortKey, peakSeasons) {
+  const all = seasons || [];
+  const scored = sortKey === "peak" ? all.slice(0, peakSeasons) : all;
+  const by = new Map();
+  const at = (key) => {
+    if (!by.has(key)) by.set(key, { team: key, value: 0, first: null, seasons: 0 });
+    return by.get(key);
+  };
+  for (const s of all) {
+    const t = at(s.team || "—");
+    if (t.first == null || s.season < t.first) t.first = s.season;
+  }
+  for (const s of scored) {
+    const t = at(s.team || "—");
+    t.value += sortKey === "peak" ? s.lva : s.contribution;
+    t.seasons += 1;
+  }
+
+  // A stint a player spent below replacement subtracts from the total; it cannot
+  // subtract from the bar, which has no negative length. Clamped away and the
+  // rest renormalized, so the segments still fill exactly the bar they sit in.
+  const segs = [...by.values()]
+    .filter((t) => t.value > 0)
+    .sort((a, b) => (a.first < b.first ? -1 : a.first > b.first ? 1 : 0));
+  const sum = segs.reduce((s, t) => s + t.value, 0);
+  if (!(sum > 0)) return [];
+  return segs.map((t) => ({ ...t, share: t.value / sum }));
+}
+
+
+// One bar, `pct` wide, divided among the franchises that earned it. A hairline
+// of the track shows between segments because several teams are within a shade
+// of black of each other — Spurs, Nets and Nuggets would otherwise read as one
+// unbroken run.
+function CareerBar({ segments, pct }) {
+  return (
+    <div className="h-1 bg-stone-100 rounded-sm overflow-hidden flex gap-px">
+      {segments.length ? segments.map((t) => (
+        <div
+          key={t.team}
+          className="h-full"
+          style={{ width: `${pct * t.share}%`, backgroundColor: barColor(t.team) }}
+          title={`${t.team} · ${t.seasons} season${t.seasons === 1 ? "" : "s"} · ${(t.share * 100).toFixed(0)}% of the bar`}
+        />
+      )) : (
+        // Nothing positive to split — a career that nets out at or below zero
+        // still gets its bar, just without an attribution it hasn't earned.
+        <div className="h-full rounded-sm bg-stone-900" style={{ width: `${pct}%` }} />
+      )}
+    </div>
+  );
+}
 
 
 // Sends the reader to the season leaderboard this half of the season came
@@ -122,7 +199,7 @@ function SeasonDetail({ slug, season, onGoToLeaderboard }) {
 
 // One career, opened up: the summary the board has no room for, then every
 // season in the order the fold consumes them.
-function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
+function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
   const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
   const [openSeason, setOpenSeason] = useState(null);
 
@@ -152,7 +229,16 @@ function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
 
       <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
         {p.seasonCount} seasons · {fmt0(p.careerGames)} games · {p.span}
-        {p.teams?.length ? <> · {p.teams.join(", ")}</> : null}. Each season is weighted by
+        {/* The same franchises, in the same order, as the segments of the bar
+            on the row above — so the colors up there can be read off. */}
+        {segments?.length ? (
+          <> · {segments.map((t, i) => (
+            <Fragment key={t.team}>
+              {i ? ", " : ""}
+              <span className="font-semibold" style={{ color: barColor(t.team) }}>{t.team}</span>
+            </Fragment>
+          ))}</>
+        ) : p.teams?.length ? <> · {p.teams.join(", ")}</> : null}. Each season is weighted by
         how good it was, not by where it lands in the sort — a season worth half his best
         carries about{" "}
         <span className="tabular-nums font-semibold">{(weightAtHalf * 100).toFixed(0)}%</span>{" "}
@@ -217,7 +303,14 @@ function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
                 <div className="h-full bg-red-500" style={{ width: `${width}%` }} />
               ) : (
                 <>
-                  <div className="h-full bg-stone-900" style={{ width: `${width * poShare}%` }} />
+                  {/* The playoff half takes the team's colors, so a season bar
+                      says who it was played for without reading the row. The
+                      regular season stays grey for every team: coloring both
+                      halves would cost the split the contrast it exists for. */}
+                  <div
+                    className="h-full"
+                    style={{ width: `${width * poShare}%`, backgroundColor: barColor(s.team) }}
+                  />
                   <div className="h-full bg-stone-400" style={{ width: `${width * (1 - poShare)}%` }} />
                 </>
               )}
@@ -228,9 +321,9 @@ function CareerFold({ p, weightAtHalf, onGoToLeaderboard }) {
       })}
 
       <p className="text-[9px] text-stone-400 leading-relaxed mt-2">
-        Bars are each season&apos;s discounted value against this career&apos;s best —{" "}
-        <span className="text-stone-900 font-semibold">dark</span> is the playoff run,{" "}
-        <span className="text-stone-500 font-semibold">light</span> the regular season.
+        Bars are each season&apos;s discounted value against this career&apos;s best — the
+        colored part is the playoff run, in that season&apos;s team colors;{" "}
+        <span className="text-stone-500 font-semibold">grey</span> is the regular season.
         The playoffs are a fraction of the games and usually most of the bar; that
         is leverage doing its job, not a scaling error.
       </p>
@@ -622,7 +715,8 @@ function CareersBoard({ onGoToLeaderboard }) {
         priced by what was at stake; <span className="font-semibold">Peak/G</span> is the same
         weighting as a rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
         or a player for the season-by-season fold — and the{" "}
-        <span className="font-bold">i</span> above for how the number is built.
+        <span className="font-bold">i</span> above for how the number is built. Each bar is
+        split into the franchises that built it, earliest first.
       </p>
 
       <input
@@ -672,6 +766,7 @@ function CareersBoard({ onGoToLeaderboard }) {
 
       {shown.map((p) => {
         const isOpen = open === p.slug;
+        const segments = teamSegments(p.seasons, sortKey, data.dials.peakSeasons);
         return (
           <div key={p.slug} className="border-b border-stone-100">
             <button
@@ -697,11 +792,16 @@ function CareersBoard({ onGoToLeaderboard }) {
               <span className={`text-right tabular-nums ${sortKey === "peak" ? "text-stone-900 font-bold" : "text-stone-500"}`}>{p.peak.toFixed(1)}</span>
             </button>
             <div className={`px-2 pt-1 ${isOpen ? "pb-2" : "pb-1.5"}`}>
-              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
-                <div className="h-full rounded-sm bg-stone-900" style={{ width: `${Math.max(0, ((p[sortKey] ?? 0) / max) * 100)}%` }} />
-              </div>
+              <CareerBar segments={segments} pct={Math.max(0, ((p[sortKey] ?? 0) / max) * 100)} />
             </div>
-            {isOpen && <CareerFold p={p} weightAtHalf={data.weightAtHalf} onGoToLeaderboard={onGoToLeaderboard} />}
+            {isOpen && (
+              <CareerFold
+                p={p}
+                weightAtHalf={data.weightAtHalf}
+                segments={segments}
+                onGoToLeaderboard={onGoToLeaderboard}
+              />
+            )}
           </div>
         );
       })}
