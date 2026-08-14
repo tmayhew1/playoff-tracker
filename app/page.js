@@ -1,18 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { HISTORY } from "./historical";
 import { CollegeView } from "./components/college-view";
 import { DRatingView } from "./components/drating-view";
 import { ExploreView } from "./components/explore";
 import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
+import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
 
 
 export default function PlayoffTracker() {
   const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
+
+  // A cross-tab jump: Legacy hands over a player-season and which half of it
+  // was being read, and Explore opens its leaderboard there. Held here because
+  // the two tabs are siblings — Explore unmounts while Legacy is showing, so
+  // it picks the target up on mount.
+  const [exploreJump, setExploreJump] = useState(null);
+  const goToLeaderboard = useCallback((target) => {
+    if (!target?.season) return;
+    setExploreJump(target);
+    setTab("explore");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+  const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
   return (
     <div className="min-h-screen bg-stone-100" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -45,6 +59,12 @@ export default function PlayoffTracker() {
             </button>
           ))}
           <button
+            onClick={() => setTab("legacy")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "legacy" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Legacy
+          </button>
+          <button
             onClick={() => setTab("college")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
@@ -70,7 +90,8 @@ export default function PlayoffTracker() {
           </button>
         </div>
 
-        {tab === "explore" ? <ExploreView /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} />
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

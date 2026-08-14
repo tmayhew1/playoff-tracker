@@ -109,7 +109,12 @@ export function exploreSeasonList() {
 }
 
 
-export function ExploreView() {
+// `jump` is an arrival from another tab — the Legacy season drop-down asking
+// for this board, on a given season, scoped to the half it was read from and
+// filtered to that player's team. Same shape the in-tab "Go →" navigations
+// already use, plus the scope, since a Legacy season has two halves and the
+// caller knows which one was tapped.
+export function ExploreView({ jump = null, onJumpHandled = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
@@ -160,6 +165,26 @@ export function ExploreView() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const clearSeasonNav = useCallback(() => setSeasonNav(null), []);
+
+  // Apply an arrival from another tab. The season may predate the picker's
+  // live fallback range (Legacy reaches back to 1980-81), so it is added to
+  // the list rather than left as a value with no option behind it — the
+  // /api/seasons fetch will supply it too, just not necessarily first.
+  useEffect(() => {
+    if (!jump?.season) return;
+    setMode("season");
+    setScope(jump.scope === "regular" ? "regular" : "playoffs");
+    setSeasons((prev) => (prev.includes(jump.season)
+      ? prev : [...prev, jump.season].sort((a, b) => b.localeCompare(a))));
+    setSeason(jump.season);
+    setSeasonNav({
+      season: jump.season,
+      team: jump.team || null,
+      name: jump.name || null,
+      slug: jump.slug || null,
+    });
+    onJumpHandled?.();
+  }, [jump, onJumpHandled]);
 
   // The mirror image of navigateSeasonToTeam: a pending navigation into By
   // Player — { name, slug, season } — applied by the player explorer once its
