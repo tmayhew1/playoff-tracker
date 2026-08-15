@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { gameLeverage, rsCLI } from "../../lib/leverage.js";
+import { normalizePosition, modalPosition } from "../../lib/positions.js";
 import { valueAddParts, lgaForSeason, baselineCoverage } from "../../scoring.js";
 
 // The player-identity join behind the Legacy board: every baked season folded
@@ -133,16 +134,36 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
       // with rsVA above: where a traded player has several rows, both take the
       // last one rather than double-counting a TOT row against its parts.
       row.rs = { gp: p.g || 0, ...Object.fromEntries(STAT_KEYS.map((k) => [k, p[k] ?? 0])) };
+      // Assigned for the same reason as rsVA above rather than accumulated:
+      // where a traded player has several rows, the TOT row's minutes already
+      // cover the parts, and adding them would weight that season twice in the
+      // career position below. Null until the season file has been re-baked
+      // with positions — absent, not "unlisted".
+      row.pos = normalizePosition(p.pos);
       rec.seasons.set(season, row);
     }
   }
 
   const scored = seasons.filter((s) => !skipped.some((k) => k.season === s));
   const earliest = scored[0];
+  // One position per career, weighted by the minutes behind it. Built from the
+  // regular-season rows because those are the only ones carrying a position at
+  // all — the playoff files have no such column, and a run is a few games
+  // against a career's tens of thousands of minutes either way.
+  const careerPosition = (r) => {
+    const minutes = new Map();
+    for (const s of r.seasons.values()) {
+      if (!s.pos) continue;
+      minutes.set(s.pos, (minutes.get(s.pos) || 0) + (s.rs?.mp || 0));
+    }
+    return modalPosition(minutes);
+  };
+
   const players = [...new Set([...bySlug.values(), ...byName.values()])].map((r) => ({
     slug: r.slug,
     name: r.name,
     teams: [...r.teams],
+    pos: careerPosition(r),
     // A career that was already running when the corpus starts is measured
     // short. Flagged, never silently ranked as complete.
     truncated: r.seasons.has(earliest),

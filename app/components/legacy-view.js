@@ -5,6 +5,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 import { teamColor } from "../lib/format";
 import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT } from "../lib/leverage";
 import { weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT } from "../lib/legacy";
+import { positionChips, positionParent } from "../lib/positions";
 
 
 // The all-time board. Legacy is deliberately TWO numbers rather than one
@@ -638,6 +639,47 @@ function RunsBoard() {
 }
 
 
+// The positional filter, as a drill-down rather than eight chips in a row.
+//
+// Position is a hierarchy the reader already holds — a point guard is a guard —
+// and laying all eight out flat both fills the width on a phone and makes "the
+// guards" and "the point guards" read as unrelated choices rather than one
+// inside the other. So the row starts at the three buckets and opens the one
+// that gets picked: G becomes PG/SG/F/C, and picking PG leaves SG/F/C — his
+// sibling, and the buckets to switch to. positionChips() in app/lib/positions.js
+// is the rule; this only draws it.
+//
+// The active chip leads the row and steps back OUT one level when tapped (PG to
+// all guards, G to the whole board), so the same gesture that climbed the ladder
+// walks it back down. A plain clear would strand a reader two levels in with no
+// way back to "all guards" except starting over.
+function PositionFilter({ value, onChange }) {
+  const parent = positionParent(value);
+  return (
+    // shrink-0 throughout: the row sits in an overflow-x-auto parent, and
+    // without it a narrow phone compresses the chips into unreadable slivers
+    // instead of letting the row scroll.
+    <div className="flex items-center gap-1 w-max">
+      <label className="text-[10px] uppercase tracking-widest text-stone-400 shrink-0">Pos</label>
+      {value && (
+        <button
+          onClick={() => onChange(parent)}
+          className="text-[11px] px-2 py-1.5 border border-stone-900 bg-stone-900 text-white shrink-0"
+          title={parent ? `Back to all ${parent}` : "Show every position"}
+        >{value} ✕</button>
+      )}
+      {positionChips(value).map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className="text-[11px] px-2 py-1.5 border border-stone-300 bg-white text-stone-700 hover:border-stone-500 hover:text-stone-900 shrink-0"
+          title={`Filter to ${c}`}
+        >{c}</button>
+      ))}
+    </div>
+  );
+}
+
 function CareersBoard({ onGoToLeaderboard }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -651,9 +693,10 @@ function CareersBoard({ onGoToLeaderboard }) {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [minGames, setMinGames] = useState(400);
+  const [pos, setPos] = useState("");
 
   const url = (offset) => `/api/legacy?top=${PAGE}&offset=${offset}&sort=${sortKey}`
-    + `&q=${encodeURIComponent(query.trim())}&minGames=${minGames}`;
+    + `&q=${encodeURIComponent(query.trim())}&minGames=${minGames}&pos=${pos}`;
 
   // Debounced so a typed name is one request, not one per keystroke. Any change
   // to the sort or the search starts the list again from the first page.
@@ -668,9 +711,9 @@ function CareersBoard({ onGoToLeaderboard }) {
     }, query ? 220 : 0);
     return () => { cancelled = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortKey, query, minGames]);
+  }, [sortKey, query, minGames, pos]);
 
-  useEffect(() => { setOpen(null); }, [sortKey, query, minGames]);
+  useEffect(() => { setOpen(null); }, [sortKey, query, minGames, pos]);
 
   const more = () => {
     if (loading) return;
@@ -680,6 +723,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         // Discard a page that lands after the sort or the search moved on.
         if (d.sort !== sortKey || d.offset !== rows.length
           || (d.query || "") !== query.trim()
+          || (d.pos || "") !== pos
           || d.dials?.minGames !== minGames) return;
         setRows((prev) => [...prev, ...(d.players || [])]);
       })
@@ -746,11 +790,21 @@ function CareersBoard({ onGoToLeaderboard }) {
           >✕ Reset</button>
         )}
         <span className="ml-auto text-[10px] text-stone-400 tabular-nums">
-          {query.trim()
+          {query.trim() || pos
             ? `${total.toLocaleString()} of ${data.qualified.toLocaleString()}`
             : `${data.qualified.toLocaleString()} careers`}
         </span>
       </div>
+
+      {/* Hidden until the corpus actually carries positions: the field lands
+          season by season as the backfill runs, and a filter whose every option
+          empties the board would read as a broken board rather than a pending
+          one. */}
+      {data.hasPos && (
+        <div className="mb-2 overflow-x-auto">
+          <PositionFilter value={pos} onChange={setPos} />
+        </div>
+      )}
 
       <div className="grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
         <span></span><span>Player</span><span className="text-right">Sns</span>
@@ -760,7 +814,12 @@ function CareersBoard({ onGoToLeaderboard }) {
 
       {!shown.length && (
         <div className="text-[10px] text-stone-400 italic py-6 text-center">
-          {query.trim() ? <>No careers match &ldquo;{query.trim()}&rdquo;.</> : "No careers qualified."}
+          {/* Name the filter that actually emptied the board — with a position
+              on, "no careers qualified" reads as a broken board rather than as
+              a search the reader can widen. */}
+          {query.trim()
+            ? <>No {pos ? `${pos} ` : ""}careers match &ldquo;{query.trim()}&rdquo;.</>
+            : pos ? `No ${pos} careers at this games minimum.` : "No careers qualified."}
         </div>
       )}
 
