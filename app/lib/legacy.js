@@ -200,6 +200,7 @@ export function playerLegacy(player, {
     slug: player.slug,
     name: player.name,
     teams: player.teams,
+    pos: player.pos ?? null,
     total: fold.total,
     peak, peakRaw,
     careerLVA: rows.reduce((s, r) => s + r.lva, 0),

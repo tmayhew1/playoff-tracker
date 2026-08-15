@@ -147,8 +147,14 @@ fetch_regular_season_totals <- function(end_year) {
     g  <- num(cell_text(tr, c("g", "games")))
     mp <- num(cell_text(tr, c("mp", "mp_total")))
     if (g <= 0 || mp <= 0) next
+    # BR's own listing, stored as written ("PG", or "SG-SF" for a player who
+    # split the year). Reducing it to one position is the app's call, not the
+    # scraper's -- see app/lib/positions.js -- so the file keeps what the page
+    # said and stays re-readable if that reading ever changes.
     row <- list(
-      slug = slug, name = name, team = to_nba(team), g = g, mp = mp,
+      slug = slug, name = name, team = to_nba(team),
+      pos = cell_text(tr, c("pos", "player_position")),
+      g = g, mp = mp,
       pts = num(cell_text(tr, "pts")), ast = num(cell_text(tr, "ast")),
       stl = num(cell_text(tr, "stl")), blk = num(cell_text(tr, "blk")),
       tov = num(cell_text(tr, "tov")), drb = num(cell_text(tr, "drb")),

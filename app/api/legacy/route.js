@@ -4,6 +4,7 @@ import {
 } from "../../lib/legacy.js";
 import { ALPHA_DEFAULT } from "../../lib/leverage.js";
 import { normalizeName } from "../../lib/format.js";
+import { POSITIONS, matchesPosition } from "../../lib/positions.js";
 import DIALS from "../../data/legacy-dials.json";
 
 export const runtime = "nodejs";
@@ -65,6 +66,12 @@ export async function GET(request) {
   // short careers the reader had just asked to see. The parameter stays for
   // anyone who wants it back.
   const minSeasons = clamp(Math.round(num(q.get("minSeasons"), 1)), 1, 30);
+  // Filtered here rather than in the browser for the same reason the search is:
+  // the client holds only the pages it has asked for. An unrecognized value
+  // falls back to no filter instead of erroring — a stale bookmark should show
+  // the board, not a 400.
+  const posParam = (q.get("pos") || "").toUpperCase().trim();
+  const pos = POSITIONS.includes(posParam) ? posParam : "";
 
   let built;
   try {
@@ -96,15 +103,28 @@ export async function GET(request) {
   // Rank is fixed against the whole sorted board BEFORE any search narrows it,
   // so a found player reports where he sits all-time rather than his position
   // among the matches.
+  // Rank is taken before the position filter as well as before the search, and
+  // for the same reason: a guard filtered to guards should still report the
+  // place he holds on the whole board, not third among the ones left showing.
   const ranked2 = board.map((pl, i) => ({ pl, rank: i + 1 }));
-  const matched = query
+  const searched = query
     ? ranked2.filter(({ pl }) => normalizeName(pl.name || "").includes(query))
     : ranked2;
+  const matched = pos
+    ? searched.filter(({ pl }) => matchesPosition(pl.pos, pos))
+    : searched;
+
+  // Whether the corpus knows positions at all. The field arrives only on
+  // season files baked since the totals scraper started reading it, so until
+  // that backfill runs every career answers null — and a filter whose every
+  // option empties the board is worse than no filter, so the client hides it.
+  const hasPos = board.some((pl) => pl.pos);
 
   const players = matched.slice(offset, offset + top).map(({ pl, rank }) => ({
     rank,
     slug: pl.slug,
     name: pl.name,
+    pos: pl.pos,
     total: pl.total,
     peak: pl.peak,
     peakRaw: pl.peakRaw,
@@ -136,6 +156,8 @@ export async function GET(request) {
     qualified: board.length,
     matched: matched.length,
     query: q.get("q") || "",
+    pos,
+    hasPos,
     offset,
     limit: top,
     sort,
