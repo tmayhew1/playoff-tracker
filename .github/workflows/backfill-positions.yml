@@ -1,0 +1,74 @@
+name: Backfill positions (R)
+
+# One-off: adds `pos` to regular-season files baked before the totals scraper
+# read that column. Run manually, once, after merging the positional filter.
+#
+# This is separate from daily-backfill.yml rather than folded into it because
+# it is not a daily job: a completed season is immutable in that pipeline, so
+# a NEW field on an old season never arrives on its own, and the fix is a
+# single sweep rather than a recurring one. Once every season on disk carries
+# positions, this workflow has nothing left to do -- the daily bake keeps new
+# seasons supplied, since fetch_historical.R now reads the column itself.
+#
+# The Legacy board hides its positional filter until this has run (the API
+# reports hasPos: false while no career carries a position), so nothing here
+# is load-bearing for the rest of the site.
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "Seasons to backfill, space-separated (blank = every season on disk)"
+        required: false
+        default: ""
+      force:
+        description: "Re-fetch seasons that already carry positions"
+        required: false
+        type: boolean
+        default: false
+
+# The daily bake writes the same regular-season files. Sharing its concurrency
+# group keeps the two from committing over each other.
+concurrency:
+  group: daily-backfill
+  cancel-in-progress: false
+
+jobs:
+  positions:
+    runs-on: ubuntu-latest
+    # One throttled page per season (~2.5s apart) plus parsing, so a full sweep
+    # of 46 is minutes rather than hours. The ceiling is here for BR's 60s
+    # rate-limit backoffs, which the fetcher retries through.
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+
+      # Both inputs arrive through env rather than being substituted straight
+      # into the run line: a ${{ }} expansion is pasted in as text before the
+      # shell ever sees it, so a season string containing shell syntax would
+      # execute. $SEASONS stays unquoted deliberately -- word-splitting is how
+      # several seasons become several arguments, and a variable expansion
+      # cannot inject the way the template can.
+      - name: Backfill positions
+        env:
+          POS_BACKFILL_FORCE: ${{ inputs.force }}
+          SEASONS: ${{ inputs.seasons }}
+        run: Rscript scripts/R/backfill_positions.R $SEASONS
+
+      # Only the regular-season files: the totals page is the only thing this
+      # reads, and every other baked file is left exactly as the daily job
+      # wrote it.
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Backfill player positions (R) [skip ci]"
+          file_pattern: "app/data/regular-season-*.json"
