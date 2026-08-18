@@ -7,7 +7,7 @@ import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, comparePalette, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, comparePalette, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 
@@ -276,7 +276,15 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // A career-year selection made in the compare panel's chart, mirrored up here
   // so the card's vs-chip can name it instead of the run it opened on.
   const [careerPick, setCareerPick] = useState(null);
+  // VA vs VA+ (VA + defensive net rating), the same switch the By Season
+  // leaderboard carries. VA+ re-scores the whole career table: the sort, the
+  // TOT/per-game columns, the bar widths, the career total in the subtitle,
+  // and the D-Rating layer inside every drill-in below.
+  const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
   const defs = useDefRatings();
+  // Playoff runs are rated on the playoff sample; the other two scopes on the
+  // regular-season one, matching the drill-ins below.
+  const defScope = scope === "playoffs" ? "po" : "rs";
 
   // Team and G stay mutually exclusive with each other — two dotted-underline
   // hints at once reads as ambiguous about what the next tap does. Selection
@@ -365,21 +373,47 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     setPendingScroll(null);
   }, [pendingScroll]);
 
+  // Defensive value added, per season, keyed by season string. The index rows
+  // carry no slug of their own (the player entry owns it), so the player's is
+  // lent to each row for the ratings lookup — the same join aggregateSeasons
+  // makes when it pools a run. Seasons with no rating simply stay out of the
+  // map: absent, not zero, so the bars below can tell "no defensive data" from
+  // "defense was neutral".
+  const dvaBySeason = useMemo(() => {
+    const m = new Map();
+    if (!defs) return m;
+    for (const x of seasons) {
+      if (!(x.mp > 0)) continue;
+      const info = defVAInfo({ ...x, slug: player.slug || null }, x.mp, lgaForSeason(x.season), defs, x.season, defScope);
+      if (info) m.set(x.season, info.dva);
+    }
+    return m;
+  }, [defs, seasons, player.slug, defScope]);
+  const dvaOf = (x) => (dvaBySeason.has(x.season) ? dvaBySeason.get(x.season) : null);
+  // The active total for a row — VA, or VA+ (VA + dVA) when the toggle is on.
+  // A season with no rating keeps its plain VA, so VA+ always exists.
+  const vaOf = (x) => (metric === "vaPlus" ? (x.va || 0) + (dvaOf(x) || 0) : (x.va || 0));
+  // The career line under the name. Whole career, not the filtered view — a
+  // team filter narrows the table, never what the player's career added up to.
+  const careerTotal = metric === "vaPlus"
+    ? seasons.reduce((t, x) => t + vaOf(x), 0)
+    : player.careerVa;
+
   // Same composite scoring as the By Season leaderboard: each axis as a
   // fraction of that axis's leader, summed.
-  const vaPerG = (x) => x.va / Math.max(1, x.gp);
+  const vaPerG = (x) => vaOf(x) / Math.max(1, x.gp);
   const safeRatio = (v, max) => (max > 0 ? v / max : 0);
-  const maxVA = Math.max(...seasons.map((x) => x.va));
+  const maxVA = Math.max(...seasons.map(vaOf));
   const maxVAperG = Math.max(...seasons.map(vaPerG));
-  const composite = (x) => safeRatio(x.va, maxVA) + safeRatio(vaPerG(x), maxVAperG);
+  const composite = (x) => safeRatio(vaOf(x), maxVA) + safeRatio(vaPerG(x), maxVAperG);
 
   const effectiveSort = minGames != null ? "vaPerG" : sortMode;
   const sortedAll =
-    effectiveSort === "totalVA"    ? [...seasons].sort((a, b) => b.va - a.va) :
-    effectiveSort === "vaPerG"     ? [...seasons].sort((a, b) => vaPerG(b) - vaPerG(a) || b.va - a.va) :
+    effectiveSort === "totalVA"    ? [...seasons].sort((a, b) => vaOf(b) - vaOf(a)) :
+    effectiveSort === "vaPerG"     ? [...seasons].sort((a, b) => vaPerG(b) - vaPerG(a) || vaOf(b) - vaOf(a)) :
     effectiveSort === "seasonDesc" ? [...seasons].sort((a, b) => b.season.localeCompare(a.season)) :
     effectiveSort === "seasonAsc"  ? [...seasons].sort((a, b) => a.season.localeCompare(b.season)) :
-                                     [...seasons].sort((a, b) => composite(b) - composite(a) || b.va - a.va);
+                                     [...seasons].sort((a, b) => composite(b) - composite(a) || vaOf(b) - vaOf(a));
   // Season header cycles newest-first → oldest-first → off (back to composite).
   const cycleSeasonSort = () => {
     setMinGames(null);
@@ -401,8 +435,20 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // Bars follow the active sort: ranked by VA/G, the bar lengths switch to the
   // VA/G scale so their widths track the same metric the rows are ordered on.
   const perG = effectiveSort === "vaPerG";
-  const barValOf = (x) => (perG ? vaPerG(x) : (x.va || 0));
-  const maxAbsVa = Math.max(...shown.map((x) => Math.abs(barValOf(x))), perG ? 0.05 : 0.5);
+  const scaleVal = (v, x) => (perG ? v / Math.max(1, x.gp) : v);
+  const barValOf = (x) => scaleVal(vaOf(x), x);
+  // Bar scale — proportional to abs(value) over the visible list. In VA view
+  // the denominator also covers each season's VA+, so the defensive strips
+  // below fit on-scale (the biggest VA+ reaches full width and the VA bars
+  // shrink a notch to make room), exactly as on the By Season board.
+  const maxAbsVa = Math.max(
+    ...shown.map((x) => Math.abs(barValOf(x))),
+    ...(metric === "va" ? shown.map((x) => {
+      const d = dvaOf(x);
+      return d == null ? 0 : Math.abs(scaleVal((x.va || 0) + d, x));
+    }) : []),
+    perG ? 0.05 : 0.5,
+  );
 
   // The # header's three steps. Defined here, below `shown`, because the
   // middle one reaches for it.
@@ -467,16 +513,15 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       : null),
     [selectedSeasons, player.name, player.slug]
   );
-  // Playoff runs are rated on the playoff sample; the other two scopes on the
-  // regular-season one, matching the drill-ins below.
-  const defScope = scope === "playoffs" ? "po" : "rs";
-  // Only light the D-Rating layer when a selected season actually has a
-  // rating — otherwise the row would read a flat +0.00 and look like a
-  // measurement rather than missing data.
+  // Only light the D-Rating layer while the table is reading VA+, and then
+  // only when a selected season actually has a rating — otherwise the row
+  // would read a flat +0.00 and look like a measurement rather than missing
+  // data. On plain VA the comparison drops the layer with the rest of the
+  // page, so the four groups keep summing to the number the table shows.
   const multiDefActive = useMemo(() => {
-    if (!defs || !aggA) return false;
+    if (!defs || !aggA || metric !== "vaPlus") return false;
     return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, lgaForSeason(x.season), defs, x.season, defScope) != null);
-  }, [defs, aggA, defScope]);
+  }, [defs, aggA, defScope, metric]);
   const multiContext = useMemo(
     () => (contextData ? { ...contextData, self: player, scope, season: null, onNavigateToPlayer, onNavigateToRun } : null),
     [contextData, player, scope, onNavigateToPlayer, onNavigateToRun]
@@ -524,11 +569,48 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             )}
           </div>
           <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
-            {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career VA{" "}
-            <span className="tabular-nums text-stone-700 font-semibold">{player.careerVa.toFixed(1)}</span>
+            {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career {metric === "vaPlus" ? "VA+" : "VA"}{" "}
+            {/* The career line follows the toggle too — a table reading VA+
+                under a VA career total would be two different careers. */}
+            <span className="tabular-nums text-stone-700 font-semibold">{careerTotal.toFixed(1)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 pt-1 shrink-0">
+        {/* The chip stack wraps rather than compressing: with the metric
+            toggle now standing beside a team filter and a games threshold,
+            three chips and a long name can't share one line on a phone. */}
+        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1 shrink-0">
+          {/* VA vs VA+ (adds defensive net rating). Midnight purple when on —
+              the same control, in the same palette, as the By Season board's. */}
+          <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
+            <button
+              type="button"
+              onClick={() => setMetric("va")}
+              className="px-1.5 py-0.5"
+              style={metric === "va" ? { backgroundColor: MIDNIGHT_PURPLE, color: "#fff" } : { backgroundColor: "#fff", color: "#78716c" }}
+              aria-pressed={metric === "va"}
+            >VA</button>
+            <button
+              type="button"
+              onClick={() => setMetric("vaPlus")}
+              className="px-1.5 py-0.5 border-l"
+              style={metric === "vaPlus" ? { backgroundColor: MIDNIGHT_PURPLE, borderColor: MIDNIGHT_PURPLE } : { backgroundColor: "#fff", borderColor: "#d6d3d1" }}
+              aria-pressed={metric === "vaPlus"}
+            >
+              {/* VA+ wears the defensive strip's palette — gold (defense
+                  adds) bleeding into red (defense subtracts) — in both
+                  states, so the metric is recognizable at a glance. The
+                  purple fill, not the text color, marks which side is on. */}
+              <span
+                style={{
+                  backgroundImage: `linear-gradient(100deg, ${GOLD} 20%, #dc2626 90%)`,
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >VA+</span>
+            </button>
+          </div>
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
@@ -605,17 +687,20 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <span className="hidden sm:block w-8 text-right">APG</span>
         <span className="hidden sm:block w-8 text-right">SPG</span>
         <span className="hidden sm:block w-8 text-right">BPG</span>
+        {/* w-14/w-11 (mirrored in the row cells below): "TOT VA+ ▼" needs the
+            extra room so the sort caret stays on one line instead of stacking
+            under the label in VA+ mode. */}
         <button
           type="button"
           onClick={() => {
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-12 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label="Sort by total VA"
+          className={`w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label={metric === "vaPlus" ? "Sort by total VA+" : "Sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
-          TOT VA{effectiveSort === "totalVA" ? " ▼" : ""}
+          {metric === "vaPlus" ? "TOT VA+" : "TOT VA"}{effectiveSort === "totalVA" ? " ▼" : ""}
         </button>
         <button
           type="button"
@@ -623,11 +708,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-10 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label="Sort by VA per game"
+          className={`w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label={metric === "vaPlus" ? "Sort by VA+ per game" : "Sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
-          VA/G{effectiveSort === "vaPerG" ? " ▼" : ""}
+          {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▼" : ""}
         </button>
       </div>
       {shown.map((s, i) => {
@@ -641,8 +726,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const badgeStyle = teamArmed
           ? { backgroundColor: withAlpha(tc, 0.26), color: tc, borderColor: tc, boxShadow: `0 0 0 2px ${withAlpha(tc, 0.22)}` }
           : { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
-        const barColor = s.va >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
+        const rowVa = vaOf(s);
+        const rowVaPerG = rowVa / Math.max(1, s.gp);
+        const barColor = rowVa >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
         const barPct = (Math.abs(barValOf(s)) / maxAbsVa) * 100;
+        const rowDva = dvaOf(s);
         const gp = s.gp || 1;
         const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
         // What a tap on the row body does. Armed, the row IS the check box;
@@ -679,6 +767,22 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 style={{ width: `${barPct}%`, backgroundColor: barColor }}
                 aria-hidden
               />
+              {/* Defensive strip (VA view only): a full-length VA+ underline on
+                  the bar's own scale, running from zero to the season's VA+ —
+                  so its right edge marks VA+ against the bar's end, reaching
+                  past it (gold) when defense adds and stopping short (red)
+                  when it subtracts. The VA+ view drops it: its main bar
+                  already contains dVA. */}
+              {metric === "va" && rowDva != null && rowDva !== 0 && (
+                <div
+                  className="absolute bottom-0 left-0 h-[3px] pointer-events-none"
+                  style={{
+                    width: `${(Math.abs(scaleVal((s.va || 0) + rowDva, s)) / maxAbsVa) * 100}%`,
+                    backgroundColor: rowDva > 0 ? withAlpha(GOLD, 0.5) : withAlpha("#dc2626", 0.3),
+                  }}
+                  aria-hidden
+                />
+              )}
               <div
                 role={selecting ? "checkbox" : "button"}
                 aria-checked={selecting ? isPicked : undefined}
@@ -766,8 +870,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(s.ast / gp).toFixed(1)}</span>
                 <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(s.stl / gp).toFixed(1)}</span>
                 <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(s.blk / gp).toFixed(1)}</span>
-                <span className={`w-12 text-right tabular-nums font-bold ${s.va < 0 ? "text-red-600" : "text-stone-900"}`}>{s.va.toFixed(1)}</span>
-                <span className={`w-10 text-right tabular-nums ${s.vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{s.vaPerG.toFixed(2)}</span>
+                <span className={`w-14 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
+                <span className={`w-11 text-right tabular-nums ${rowVaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{rowVaPerG.toFixed(2)}</span>
               </div>
             </div>
             {sOpen && (scope === "playoffs" ? (
@@ -775,6 +879,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 s={s}
                 indexPlayer={player}
                 context={contextFor(s)}
+                showDRating={metric === "vaPlus"}
                 pendingCompare={rowCompare?.season === s.season ? rowCompare.compare : null}
                 onCompareHandled={clearRowCompare}
                 {...navFor(i)}
@@ -785,6 +890,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 lga={lgaForSeason(s.season)}
                 baseline="NBA"
                 context={contextFor(s)}
+                showDRating={metric === "vaPlus"}
                 pendingCompare={rowCompare?.season === s.season ? rowCompare.compare : null}
                 onCompareHandled={clearRowCompare}
               />
@@ -900,7 +1006,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 // carries the per-game logs and series list) plus the rs totals, then render
 // the exact game-chart VABreakdown the By Season leaderboard uses. Falls back
 // to the season-totals category breakdown when no game log exists.
-export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext, pendingCompare = null, onCompareHandled = null }) {
+export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true, onPrev, onNext, pendingCompare = null, onCompareHandled = null }) {
   const season = s.season;
   const lgaS = lgaForSeason(season);
   const [lb, setLb] = useState(null);
@@ -936,6 +1042,7 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext, pen
         lga={lgaS}
         baseline="NBA playoff"
         context={context}
+        showDRating={showDRating}
         pendingCompare={pendingCompare}
         onCompareHandled={onCompareHandled}
       />
@@ -984,6 +1091,7 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, onPrev, onNext, pen
       playerConf={TEAM_CONF[row.team] || TEAMS[row.team]?.conf || null}
       regularSeasonTotals={rsTotals}
       context={context}
+      showDRating={showDRating}
       pendingCompare={pendingCompare}
       onCompareHandled={onCompareHandled}
       onPrev={onPrev}
