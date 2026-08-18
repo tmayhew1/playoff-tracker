@@ -3,7 +3,7 @@
 import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
 import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
-import { GOLD, GOLD_BG, compName, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
@@ -63,14 +63,18 @@ export const COMP_METRIC_OPTS = [
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
 
 
-// The comparison side's bars are gold INSIDE and outlined in the team color:
-// the fill is the same Compare-chip amber every other B element wears, so the
-// compared run reads as "the thing measured against" from across the card,
-// while the outline keeps its team legible beside A's solid team-color bar.
-export const GOLD_FILL = "#fbbf24"; // bg-amber-400
-// Alpha on that gold. The category rows sit ~7px tall right beside a paired
-// solid bar, where a lighter gold still reads as gold; a career bar stands
-// alone at full height and carries the heavier fill without shouting over A.
+// The comparison side's bars are pale INSIDE and outlined in the same color at
+// full strength, so the compared run reads as "the thing measured against" from
+// across the card while still carrying an identity beside A's solid bar. Which
+// color that is comes from comparePalette: the compared player's team color, or
+// his team's alternate when the primary lands too near A's to tell apart
+// (Gasol's Lakers purple against Stoudemire's Suns purple — the gold is what
+// separates them), or the old Compare gold when neither of his colors does.
+//
+// Alpha on that pale fill. The category rows sit ~7px tall right beside a
+// paired solid bar, where a lighter wash still reads as the color; a career bar
+// stands alone at full height and carries the heavier fill without shouting
+// over A.
 export const B_FILL = 0.5;
 export const CAREER_B_FILL = 0.75;
 
@@ -883,10 +887,14 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const lgaA = lgaForRow(a);
   const lgaB = lgaForRow(b);
   const ca = teamColor(a.team);
-  const cb = teamColor(b.team);
-  // The comparison side is filled with the Compare-chip gold and outlined in
-  // its own team color — see GOLD_FILL/B_FILL.
-  const cbFill = withAlpha(GOLD_FILL, B_FILL);
+  // The comparison side's whole palette, chosen against A's color — see
+  // comparePalette. `cb` draws (bar outlines, swatch borders), `cbInk` writes
+  // (the same color darkened until it reads), `cbBg`/`cbFill` are its washes.
+  const cbPal = useMemo(() => comparePalette(b.team, ca), [b.team, ca]);
+  const cb = cbPal.base;
+  const cbInk = cbPal.ink;
+  const cbBg = cbPal.bg;
+  const cbFill = withAlpha(cbPal.light, B_FILL);
   const cbEdge = `1px solid ${cb}`;
 
   // D Rating — the fifth defensive stat, the one VA+ adds to VA. Whenever the
@@ -1189,7 +1197,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const Swatch = ({ color, outline }) => (
     <span
       className="inline-block w-2 h-2 rounded-sm align-middle mx-1"
-      style={outline ? { backgroundColor: withAlpha(GOLD_FILL, B_FILL), border: `1px solid ${color}` } : { backgroundColor: color }}
+      style={outline ? { backgroundColor: cbFill, border: `1px solid ${color}` } : { backgroundColor: color }}
     />
   );
 
@@ -1249,7 +1257,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               type="button"
               onClick={confirmGo}
               className="shrink-0 font-semibold rounded-sm px-2 py-[1px] whitespace-nowrap inline-flex items-center gap-1 hover:brightness-95 touch-manipulation"
-              style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+              style={{ color: cbInk, backgroundColor: cbBg, border: `1px solid ${cbPal.edge}` }}
               title={chipTitle}
             >
               Go <span aria-hidden>→</span>
@@ -1259,14 +1267,14 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               type="button"
               onClick={arm}
               className="font-semibold truncate text-right rounded-sm px-1 py-[1px] hover:brightness-95 cursor-pointer touch-manipulation"
-              style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
+              style={{ color: cbInk, backgroundColor: cbBg, border: `1px solid ${cbPal.edge}` }}
               title={chipTitle}
             >
               {sideLabel(b)}<Swatch color={cb} outline />
             </button>
           )
         ) : (
-          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cb, backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}>{sideLabel(b)}<Swatch color={cb} outline /></span>
+          <span className="font-semibold truncate text-right rounded-sm px-1 py-[1px]" style={{ color: cbInk, backgroundColor: cbBg, border: `1px solid ${cbPal.edge}` }}>{sideLabel(b)}<Swatch color={cb} outline /></span>
         )}
       </div>
       {/* Tally. The /G switch lives on the career chart below, which renders for
@@ -1276,7 +1284,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
           The tally stays optically centered either way (the button is out of
           flow). */}
       <div className="relative flex items-center justify-center mb-1.5 min-h-[1.1rem]">
-        <span className={`text-center text-[9px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cb }}>
+        <span className={`text-center text-[9px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cbInk }}>
           {rowSeasonLabel(leader)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
         </span>
         {slots < 1 && gToggle && <div className="absolute right-0 top-0">{gToggle}</div>}
@@ -1337,7 +1345,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                       <div className="absolute h-[7px] bottom-[3px] box-border" style={{ backgroundColor: cbFill, border: cbEdge, left: r.bv >= 0 ? "50%" : `${50 - (Math.abs(r.bv) / scale) * 45}%`, width: `${(Math.abs(r.bv) / scale) * 45}%` }} />
                     </div>
                     <span className={`${valW} shrink-0 tabular-nums text-right font-semibold`} style={{ color: ca }}>{sgn(r.av)}</span>
-                    <span className={`${valW} shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5`} style={{ color: cb, backgroundColor: GOLD_BG }}>{sgn(r.bv)}</span>
+                    <span className={`${valW} shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5`} style={{ color: cbInk, backgroundColor: cbBg }}>{sgn(r.bv)}</span>
                   </>
                 ) : (
                   <>
@@ -1347,26 +1355,26 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                       {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
                     </div>
                     <span className="w-10 shrink-0 tabular-nums text-right font-semibold" style={{ color: ca }}>{formatPercentile(r.apct, r.atop)}</span>
-                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cb, backgroundColor: GOLD_BG }}>{formatPercentile(r.bpct, r.btop)}</span>
+                    <span className="w-10 shrink-0 tabular-nums text-right font-semibold rounded-sm pr-0.5" style={{ color: cbInk, backgroundColor: cbBg }}>{formatPercentile(r.bpct, r.btop)}</span>
                   </>
                 )}
               </div>
               {member && isOpen && (() => {
                 // Flipped raw-stats card: player columns, metric rows, the
                 // leader of each row circled (per the mock). B column keeps the
-                // gold identity tint.
+                // comparison side's identity tint.
                 const rows = key === DEF_KEY ? defStatRows() : compareStatRows(a, b, key, lgaA, lgaB);
-                const head = (row, color, gold) => (
-                  <div className={`min-w-0 px-1 py-0.5 rounded-sm ${gold ? "" : ""}`} style={gold ? { backgroundColor: GOLD_BG } : undefined}>
+                const head = (row, comp) => (
+                  <div className="min-w-0 px-1 py-0.5 rounded-sm" style={comp ? { backgroundColor: cbBg } : undefined}>
                     <div className="flex items-center gap-0.5 justify-end">
-                      <Swatch color={color} outline={gold} />
-                      <span className="truncate font-semibold text-[10px] leading-tight" style={{ color }}>{row.name}</span>
+                      <Swatch color={comp ? cb : ca} outline={comp} />
+                      <span className="truncate font-semibold text-[10px] leading-tight" style={{ color: comp ? cbInk : ca }}>{row.name}</span>
                     </div>
                     <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
                   </div>
                 );
-                const cell = (disp, win, gold) => (
-                  <div className="px-1 py-[1px] rounded-sm text-right" style={gold ? { backgroundColor: GOLD_BG } : undefined}>
+                const cell = (disp, win, comp) => (
+                  <div className="px-1 py-[1px] rounded-sm text-right" style={comp ? { backgroundColor: cbBg } : undefined}>
                     <span className={`inline-block tabular-nums text-[10px] leading-tight ${win ? "font-bold text-stone-900 ring-1 ring-stone-500 rounded-full px-1.5 py-[1px]" : "text-stone-600 px-1.5 py-[1px]"}`}>{disp}</span>
                   </div>
                 );
@@ -1374,8 +1382,8 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                   <div className="my-1 px-1.5 py-1.5 bg-white border border-stone-200 rounded">
                     <div className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-end pb-1 border-b border-stone-100">
                       <span></span>
-                      {head(a, ca, false)}
-                      {head(b, cb, true)}
+                      {head(a, false)}
+                      {head(b, true)}
                     </div>
                     {rows.map((r) => (
                       <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
@@ -1416,7 +1424,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
         // Σ(league 3P% × his 3PA) / Σ his 3PA, and the VA above it is exactly
         // what his individual seasons already added up to.
         <div className="mt-0.5 text-center text-[8px] italic text-stone-400">
-          {sideSummary(a, ca)} <span className="text-stone-300">·</span> {sideSummary(b, cb)}
+          {sideSummary(a, ca)} <span className="text-stone-300">·</span> {sideSummary(b, cbInk)}
           {" — each run vs its own seasons’ league averages, weighted by the volume he played in them"}
         </div>
       )}
@@ -1457,15 +1465,15 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                 const h = (Math.abs(v) / cSpan) * 100;
                 const topPct = v >= 0 ? cZeroPct - h : cZeroPct;
                 const isSel = (side === "a" ? aSel : bSel).has(s.season);
-                // The comparison side reads as a gold bar outlined in its team
-                // color. A career bar stands alone at full height rather than
-                // paired against A's solid fill millimeters away, so it takes
-                // the heavier gold (CAREER_B_FILL) — the lighter row-strip
-                // tint washes out to near-cream at this size, and the outline
-                // ends up doing all the work.
+                // The comparison side reads as a pale bar outlined in the same
+                // color at full strength. A career bar stands alone at full
+                // height rather than paired against A's solid fill millimeters
+                // away, so it takes the heavier fill (CAREER_B_FILL) — the
+                // lighter row-strip tint washes out at this size, and the
+                // outline ends up doing all the work.
                 const fill = side === "a"
                   ? { backgroundColor: color }
-                  : { backgroundColor: withAlpha(GOLD_FILL, CAREER_B_FILL), border: `1px solid ${color}` };
+                  : { backgroundColor: withAlpha(cbPal.light, CAREER_B_FILL), border: `1px solid ${color}` };
                 return (
                   <div
                     className={`absolute box-border ${side === "a" ? "left-[8%] w-[38%]" : "right-[8%] w-[38%]"}`}
@@ -1560,7 +1568,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                       {pickedIdxs.length} year{pickedIdxs.length === 1 ? "" : "s"} ·{" "}
                       <span className="font-semibold" style={{ color: ca }}>{seasonSpanLabel(pickedRows(aSeasons))}</span>
                       {" vs "}
-                      <span className="font-semibold" style={{ color: cb }}>{seasonSpanLabel(pickedRows(bAll))}</span>
+                      <span className="font-semibold" style={{ color: cbInk }}>{seasonSpanLabel(pickedRows(bAll))}</span>
                     </>}
               </span>
               <button
@@ -1619,8 +1627,12 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 }
 
 
-// Gold Compare chip for the breakdown toggle rows: opens the picker, then
+// The Compare chip for the breakdown toggle rows: opens the picker, then
 // shows the active comparison with a clear ✕.
+//
+// `palette` is the compared side's palette (comparePalette), so the chip wears
+// the same color the panel below draws that player in. Hosts that have no color
+// of their own to compare against leave it off and the chip keeps the old gold.
 //
 // `careerPick` is a career-year selection made down in the panel's chart
 // ({ label, clear }, reported by ComparePanel's onPickChange). While one is
@@ -1629,14 +1641,16 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 // comparison rather than clearing the whole thing, which is the one step the
 // reader wants first and the only order that keeps the chip honest at each
 // stage.
-export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null }) {
+export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null, palette = null }) {
   if (compare) {
-    // Active chip wears the same LIGHT gold as the compared player's wrappers.
+    // Active chip wears the same LIGHT wash as the compared player's wrappers.
     return (
       <button
         onClick={careerPick ? careerPick.clear : onClear}
         className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
-        style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+        style={palette
+          ? { backgroundColor: palette.bg, borderColor: palette.edge, color: palette.ink }
+          : { backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : undefined}
         aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
       >

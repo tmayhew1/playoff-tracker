@@ -7,7 +7,7 @@ import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
@@ -205,6 +205,12 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
     : owner === "Spencer" ? "#d97706"
     : owner === "Trey" ? "#0d9488"
     : "#57534e";
+  // The compared player's palette, picked against this card's own accent — his
+  // team color, or the alternate/gold when that one would read as the same
+  // color as the accent (see comparePalette). Everything the comparison wears
+  // up here — the chip, the tucked-in figures, the chart's overlay run — comes
+  // out of it, so it matches the panel below.
+  const cmpPal = compare ? comparePalette(compare.row.team, accentColor) : null;
   const keyW = effectiveRate ? "w-16" : "w-20";
   const labelW = effectiveRate ? "w-[5.25rem]" : "w-12";
 
@@ -357,7 +363,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
               <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
               {compare && atSeasonLevel && (
-                <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: teamColor(compare.row.team), backgroundColor: GOLD_BG }}>{(compare.row.va ?? 0).toFixed(1)}</span>
+                <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(compare.row.va ?? 0).toFixed(1)}</span>
               )}
             </div>
             {vaPlus != null && (
@@ -377,14 +383,14 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
                 {compare && atSeasonLevel && (
-                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: teamColor(compare.row.team), backgroundColor: GOLD_BG }}>{compare.row.gp || 0}</div>
+                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{compare.row.gp || 0}</div>
                 )}
               </div>
               <div className="flex flex-col justify-end text-center">
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN/G</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
                 {compare && atSeasonLevel && (
-                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: teamColor(compare.row.team), backgroundColor: GOLD_BG }}>{((compare.row.mp || 0) / (compare.row.gp || 1)).toFixed(1)}</div>
+                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{((compare.row.mp || 0) / (compare.row.gp || 1)).toFixed(1)}</div>
                 )}
               </div>
               {multiGame && (
@@ -392,7 +398,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                   <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
                   <div className={`tabular-nums text-base font-semibold ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.va / p.gp).toFixed(2)}</div>
                   {compare && atSeasonLevel && (
-                    <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: teamColor(compare.row.team), backgroundColor: GOLD_BG }}>{(compare.row.vaPerG ?? ((compare.row.va || 0) / (compare.row.gp || 1))).toFixed(2)}</div>
+                    <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(compare.row.vaPerG ?? ((compare.row.va || 0) / (compare.row.gp || 1))).toFixed(2)}</div>
                   )}
                 </div>
               )}
@@ -423,7 +429,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                   avgOther={avgOther}
                   avgSelected={avgSelected}
                   overlayValues={compare && atSeasonLevel ? compareRun : null}
-                  overlayColor={compare ? teamColor(compare.row.team) : undefined}
+                  overlayColor={cmpPal ? cmpPal.base : undefined}
+                  overlayFill={cmpPal ? cmpPal.light : undefined}
                 />
               </div>
               {showNav && inGameNav && (
@@ -452,6 +459,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
             compare={compare}
             picking={picking}
             careerPick={careerPick}
+            palette={cmpPal}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
@@ -498,6 +506,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           <CompareButton
             compare={compare}
             picking={picking}
+            palette={cmpPal}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />

@@ -1,9 +1,9 @@
 "use client";
 
-import { GOLD, withAlpha } from "../lib/format";
+import { lighten, withAlpha } from "../lib/format";
 
 
-export function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange, label = "VA by Game", avgOther = null, avgSelected = null, overlayValues = null, overlayColor = "#57534e" }) {
+export function GameVAChart({ values, color = "#57534e", selected, onSelect, partitions, seriesRange, label = "VA by Game", avgOther = null, avgSelected = null, overlayValues = null, overlayColor = "#57534e", overlayFill = null }) {
   const stroke = color;
   // Always show at least 4 game slots; pad with nulls so G1..G4 render even
   // for 1- or 2-game series. The comparison overlay (if any) can be longer
@@ -133,13 +133,15 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
             />
           );
         })}
-        {/* Comparison overlay run: dashed team-color line with gold-ringed
-            dots (the compared player's identity system), under the main line. */}
+        {/* Comparison overlay run: dashed line in the compared player's color
+            with dots that are pale inside and ringed in it — the same
+            light-inside/outlined-in-the-color shape his bars wear in the
+            compare panel — under the main line. */}
         {overlay && (
           <>
             <path d={dOverlay} fill="none" stroke={overlayColor} strokeWidth="1.5" strokeDasharray="5 3" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
             {overlay.map((v, i) => v == null ? null : (
-              <circle key={`odot-${i}`} cx={x(i)} cy={y(v)} r="2.6" fill={withAlpha(overlayColor, 0.25)} stroke={GOLD} strokeWidth="1.2" />
+              <circle key={`odot-${i}`} cx={x(i)} cy={y(v)} r="2.6" fill={withAlpha(overlayFill || lighten(overlayColor, 0.3), 0.5)} stroke={overlayColor} strokeWidth="1.2" />
             ))}
           </>
         )}
