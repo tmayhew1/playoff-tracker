@@ -1,4 +1,5 @@
 import TEAM_COLORS from "../data/team-colors.json";
+import TEAM_ALT_COLORS from "../data/team-colors-alt.json";
 
 // Isomorphic (no "use client"): these are pure string and colour helpers with
 // no React or DOM in them, and /api/legacy/runs needs normalizeName on the
@@ -101,6 +102,170 @@ export const GOLD = "#f59e0b";                    // border-amber-500
 export const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
 
 export const MIDNIGHT_PURPLE = "#2e1065";          // violet-950 — the VA+ accent
+
+
+// --- Color math (OKLab) ------------------------------------------------------
+// The comparison palette has to answer "do these two colors read apart?" and
+// "what is this color, but paler / but dark enough to read as text?" — both
+// perceptual questions that sRGB arithmetic answers badly (mixing a navy
+// toward white in sRGB goes through a muddy blue-gray, and RGB distance calls
+// two navies as far apart as a navy and an orange). OKLab is a perceptual
+// space where a straight line is a plausible blend and a distance is roughly
+// how different two colors look, so every helper below works in it.
+
+const hexToRgb = (hex) => {
+  const h = String(hex || "").replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6);
+  const n = parseInt(full, 16);
+  return Number.isFinite(n) && full.length === 6
+    ? [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    : [0, 0, 0];
+};
+
+const rgbToHex = (rgb) => "#" + rgb
+  .map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0"))
+  .join("");
+
+const toLinear = (c) => {
+  const s = c / 255;
+  return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+};
+
+const fromLinear = (c) => 255 * (c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055);
+
+// sRGB hex -> OKLab [L, a, b]. L is 0 (black) to 1 (white); a/b carry the hue
+// and how saturated it is (both roughly within ±0.4).
+export function toOklab(hex) {
+  const [r, g, b] = hexToRgb(hex).map(toLinear);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+  ];
+}
+
+// OKLab -> sRGB hex, clamped back into gamut (a pale or darkened team color can
+// land just outside it, and clipping the channel is the right answer there).
+export function fromOklab([L, A, B]) {
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.2914855480 * B) ** 3;
+  return rgbToHex([
+    fromLinear(+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    fromLinear(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    fromLinear(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s),
+  ]);
+}
+
+// How far apart two colors look. Lightness is halved because these colors meet
+// as small shapes side by side — a bar's outline against another bar's fill —
+// where hue is what separates them and a lighter navy still reads as "the same
+// blue as his". Two mid-blues score ~0.1; a purple and a gold, ~0.5.
+export function colorDistance(x, y) {
+  const [l1, a1, b1] = toOklab(x);
+  const [l2, a2, b2] = toOklab(y);
+  return Math.hypot((l1 - l2) * 0.5, a1 - a2, b1 - b2);
+}
+
+// The same color, paler: lightness lifted toward white with the chroma left
+// alone, so it stays recognizably that color rather than becoming a pastel of
+// it. This is the wash inside the comparison bars and behind its chips — at
+// 0.3 an amber-500 lands on the amber-400 the card used to fill them with.
+export function lighten(hex, amount) {
+  const [L, A, B] = toOklab(hex);
+  return fromOklab([L + (1 - L) * Math.max(0, Math.min(1, amount)), A, B]);
+}
+
+// Blend toward white — `amount` 0 keeps the color, 1 is white. Used to work out
+// what a translucent color actually looks like over the card's white.
+export function tint(hex, amount) {
+  const [L, A, B] = toOklab(hex);
+  const t = Math.max(0, Math.min(1, amount));
+  return fromOklab([L + (1 - L) * t, A * (1 - t), B * (1 - t)]);
+}
+
+const relLuminance = (hex) => {
+  const [r, g, b] = hexToRgb(hex).map(toLinear);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+// WCAG contrast ratio, 1 (identical) to 21 (black on white).
+export function contrastRatio(x, y) {
+  const a = relLuminance(x), b = relLuminance(y);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+// The same color, darkened just far enough to be readable as text on `bg`.
+// A team's own color is often too pale to set type in (a Lakers gold, a Suns
+// orange), and swapping in a neutral gray would throw away the identity the
+// comparison is being colored by — so we walk its lightness down instead and
+// keep the hue.
+export function readableOn(hex, bg, minRatio = 4.5) {
+  const [L, A, B] = toOklab(hex);
+  let out = hex;
+  for (let l = L; l > 0.1; l -= 0.03) {
+    out = fromOklab([l, A, B]);
+    if (contrastRatio(out, bg) >= minRatio) return out;
+  }
+  return out;
+}
+
+
+// --- Comparison side color ---------------------------------------------------
+// The compared player's side of a Compare card used to be gold everywhere, so
+// it read as "the thing measured against" rather than as a team. Instead, give
+// it a color of its own that stays legible against whoever it is sitting next
+// to: many franchises have a second identity color as far from the first as
+// anything on the floor (Lakers purple/gold, Suns purple/orange, Knicks
+// blue/orange), and when the primary collides with the other side's — Gasol's
+// Lakers purple against Stoudemire's Suns purple — the alternate is the one
+// that keeps the two runs apart.
+export const teamAltColor = (tri) => TEAM_ALT_COLORS[tri] || null;
+
+// How much further from the other side the alternate has to be before it takes
+// over. Small, but not zero: the primary is the team's color, and it should not
+// lose the side to a rounding difference.
+const ALT_GAIN = 0.04;
+
+// Below this the two sides are the same color to the eye — one navy against
+// another — and neither of the team's own colors can fix it. The card falls
+// back to its old gold there, which is nobody's team and therefore always apart.
+const MIN_SEPARATION = 0.17;
+
+// Which color the comparison side wears against `against` (the other side's
+// color). Returns the color and which of the three it came from, so a caller
+// can explain the choice.
+export function compareColor(tri, against) {
+  const primary = teamColor(tri);
+  const alt = teamAltColor(tri);
+  if (!against) return { color: primary, source: "primary" };
+  const dPrimary = colorDistance(primary, against);
+  const dAlt = alt ? colorDistance(alt, against) : -1;
+  const useAlt = alt && dAlt > dPrimary + ALT_GAIN;
+  const best = useAlt ? dAlt : dPrimary;
+  if (best < MIN_SEPARATION) return { color: GOLD, source: "gold" };
+  return { color: useAlt ? alt : primary, source: useAlt ? "alt" : "primary" };
+}
+
+// Everything the comparison side is drawn with, derived from that one color:
+//   base  — bar outlines, the swatch border, the career bars' edge
+//   light — the pale wash the bars are filled with (callers add their own alpha)
+//   bg    — chip and value-cell background (what GOLD_BG used to be)
+//   edge  — a softer base, for chip borders
+//   ink   — the text color, darkened until it reads on `bg`
+export function comparePalette(tri, against) {
+  const { color, source } = compareColor(tri, against);
+  const light = lighten(color, 0.3);
+  const bg = withAlpha(light, 0.28);
+  // `bg` is translucent, so what the ink actually sits on is that light color
+  // 28% over the card's white — the paler surface of the two, and the one the
+  // contrast walk has to clear.
+  const bgOverCard = tint(light, 0.72);
+  return { base: color, light, bg, edge: withAlpha(color, 0.5), ink: readableOn(color, bgOverCard), source };
+}
 
 
 // Percentile display honoring significant digits at the top end: integers up
