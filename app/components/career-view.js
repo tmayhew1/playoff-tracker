@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { teamColor } from "../lib/format";
 import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT } from "../lib/leverage";
@@ -19,7 +19,9 @@ import { positionChips, positionParent } from "../lib/positions";
 // Tapping a row opens the fold itself. A career total is otherwise a number you
 // have to take on faith; the expansion shows it as the sum it is — every
 // season, ordered by value, with the weight that season earned and the
-// playoff/regular-season split underneath.
+// playoff/regular-season split underneath. Tapping a season goes one further,
+// to the stat lines behind both halves of it and every game of the run — which
+// is where the weighting stops being an assertion and becomes checkable.
 //
 // MVP scope: the board at the default dials. The route already answers for any
 // alpha/p, so exposing them is a slider away.
@@ -148,15 +150,9 @@ function GoToBoard({ onGo, run, scope }) {
 
 // One career, opened up: the summary the board has no room for, then every
 // season in the order the fold consumes them.
-function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard, onGoToRun, openSeasonAt = null }) {
+function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
   const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
-  const [openSeason, setOpenSeason] = useState(openSeasonAt);
-
-  // A season handed in from the runs board arrives already open. Watched rather
-  // than only seeded, because a second jump into a career that is already
-  // expanded never remounts this component and would otherwise land on the
-  // right player at the wrong season.
-  useEffect(() => { if (openSeasonAt) setOpenSeason(openSeasonAt); }, [openSeasonAt]);
+  const [openSeason, setOpenSeason] = useState(null);
 
   // Why the column starts where it does. A weight is a season measured against
   // the career TOTAL, not against the best season — which it has to be, or the
@@ -271,13 +267,7 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard, onGoToRun, o
               )}
             </div>
             {seasonOpen && (
-              <SeasonPanel
-                slug={p.slug}
-                season={s.season}
-                name={p.name}
-                onGoToLeaderboard={onGoToLeaderboard}
-                onGoToRun={onGoToRun}
-              />
+              <SeasonPanel slug={p.slug} season={s.season} onGoToLeaderboard={onGoToLeaderboard} />
             )}
           </div>
         );
@@ -357,16 +347,13 @@ function StatStrip({ stats, always, note }) {
 }
 
 
-// One season, opened all the way up — and the same panel wherever it is opened
-// from. The careers fold used to show the two stat lines without the games
-// behind them; the runs board showed the games without the winter that led into
-// them. Both were rendering halves of one response — /api/legacy/runs with a
-// slug and a season has always carried the lot — so it is one component now,
-// and each surface gains what the other had for no extra request.
+// One season, opened all the way up: the production behind both halves of it,
+// and every game of the playoff run underneath.
 //
-// The cross-grain links ride here rather than on the row above, because a row
-// is itself a button and cannot carry another one inside it.
-function SeasonPanel({ slug, season, name, onGoToLeaderboard, onGoToRun, onGoToCareer }) {
+// All of it comes from one response — /api/legacy/runs with a slug and a season
+// carries the playoff line, the regular season beside it, and the game log —
+// so the fold asks once and shows the lot.
+function SeasonPanel({ slug, season, onGoToLeaderboard }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
 
@@ -392,38 +379,14 @@ function SeasonPanel({ slug, season, name, onGoToLeaderboard, onGoToRun, onGoToC
 
   return (
     <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
-      {onGoToCareer && (
-        <div className="px-2 pb-1.5">
-          <button
-            type="button"
-            onClick={() => onGoToCareer({ slug, season, name: d.run.name || name })}
-            className="text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900"
-            title="Open this player's whole career, with this season expanded"
-          >The whole career →</button>
-        </div>
-      )}
-
       {po && (
         <>
           <div className="px-2 flex items-baseline gap-2">
             <span className="text-[9px] uppercase tracking-widest text-stone-500">
-              Playoffs · {po.games} games
-              {/* The run's all-time rank. From the careers fold it is also the
-                  way across to the runs board — the fold makes the argument,
-                  the board is where it can be checked against the field. */}
-              {d.run.rank ? (
-                onGoToRun ? (
-                  <>
-                    {" · "}
-                    <button
-                      type="button"
-                      onClick={() => onGoToRun({ slug, season, name: d.run.name || name })}
-                      className="uppercase tracking-widest text-stone-500 underline decoration-stone-300 underline-offset-2 hover:text-stone-900"
-                      title="Find this run on the runs board"
-                    >#{d.run.rank.toLocaleString()} all time →</button>
-                  </>
-                ) : ` · #${d.run.rank.toLocaleString()} all time`
-              ) : null}
+              {/* Where the run sits among every postseason run on record —
+                  the one number here that is about the field rather than about
+                  this career. */}
+              Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
             </span>
             <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" />
           </div>
@@ -498,267 +461,6 @@ function SeasonPanel({ slug, season, name, onGoToLeaderboard, onGoToRun, onGoToC
 }
 
 
-// Runs per page. A run row carries its own stat strip, so the pages stay small
-// and accumulate rather than being refetched at a bigger size — the same way
-// the careers board pages.
-const RUNS_PAGE = 100;
-
-// The two columns a run can be ranked on, and what each one is for.
-const RUN_SORTS = [
-  ["lva", "LVA", "Total leveraged value over the run"],
-  ["vapg", "VA/G", "The raw per-game rate behind it"],
-];
-
-
-// The board at run grain: every postseason run on record, ranked. The career
-// grain makes the argument; this is the evidence behind it — the surface where
-// a number can be checked against a run you actually watched.
-//
-// Search and position come from the view above, so switching grain keeps the
-// player you were reading. Season and team are asked here, because they only
-// mean something against a single year.
-function RunsBoard({
-  query, pos, onPos, season, onSeason, team, onTeam,
-  jump, onJumpHandled, onGoToLeaderboard, onGoToCareer,
-}) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(null); // "<slug>-<season>"
-  const [sortKey, setSortKey] = useState("lva");
-
-  const url = (offset) => `/api/legacy/runs?limit=${RUNS_PAGE}&offset=${offset}`
-    + `&q=${encodeURIComponent(query.trim())}&sort=${sortKey}&pos=${pos}`
-    + `&season=${encodeURIComponent(season)}&team=${encodeURIComponent(season ? team : "")}`;
-
-  // Debounced so a typed name is one request, not one per keystroke. The search
-  // runs server-side because it has to reach every run, not the prefix the
-  // client happens to hold. Any change to a filter or the sort starts the list
-  // again from the first page.
-  useEffect(() => {
-    let cancelled = false;
-    const t = setTimeout(() => {
-      setLoading(true);
-      fetchJsonCached(url(0))
-        .then((d) => { if (!cancelled) { setData(d); setRows(d.runs || []); setError(null); } })
-        .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); })
-        .finally(() => { if (!cancelled) setLoading(false); });
-    }, query ? 220 : 0);
-    return () => { cancelled = true; clearTimeout(t); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, season, team, pos, sortKey]);
-
-  // Closing whatever was open: the row under it is a different run now.
-  useEffect(() => { setOpen(null); }, [query, season, team, pos, sortKey]);
-
-  // A run handed over from the career grain. The view has already pinned the
-  // search to the player, so the run is on this first page; opening it is all
-  // that is left. Cleared either way, so a jump that finds nothing — a season
-  // he spent out of the playoffs — does not sit waiting for a later fetch.
-  useEffect(() => {
-    if (!jump || jump.grain !== "runs" || !data) return;
-    const hit = rows.find((r) => r.slug === jump.slug && r.season === jump.season);
-    if (hit) setOpen(`${hit.slug}-${hit.season}`);
-    onJumpHandled();
-  }, [jump, data, rows, onJumpHandled]);
-
-  const more = () => {
-    if (loading) return;
-    setLoading(true);
-    fetchJsonCached(url(rows.length))
-      .then((d) => {
-        // Discard a page that lands after a filter or the sort moved on.
-        if (d.offset !== rows.length || d.sort !== sortKey
-          || (d.query || "") !== query.trim()
-          || (d.pos || "") !== pos
-          || (d.season || "") !== season
-          || (d.team || "") !== (season ? team : "")) return;
-        setRows((prev) => [...prev, ...(d.runs || [])]);
-      })
-      .catch((e) => setError(e.message || "Load failed"))
-      .finally(() => setLoading(false));
-  };
-
-  const runs = rows;
-  // Magnitude, so the scale still means something when a filtered list is all
-  // negative — a team whose bench all cost their side points, say.
-  const max = Math.max(...runs.map((r) => Math.abs(r.lva)), 0.1);
-
-  const head = (key, label, title) => (
-    <button
-      onClick={() => setSortKey(key)}
-      title={title}
-      className={`text-right uppercase tracking-wider ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
-    >{label}{sortKey === key ? " ▾" : ""}</button>
-  );
-
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <select
-          value={season}
-          onChange={(e) => onSeason(e.target.value)}
-          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800"
-        >
-          <option value="">All seasons</option>
-          {(data?.seasons || []).map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        {/* Disabled until a season is chosen — a team without one would be
-            asking a different question than the board can answer. */}
-        <select
-          value={team}
-          disabled={!season}
-          onChange={(e) => onTeam(e.target.value)}
-          className={`text-[11px] border px-2 py-1.5 ${
-            season
-              ? "bg-white border-stone-300 text-stone-800"
-              : "bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed"}`}
-          title={season ? "Filter to one team" : "Pick a season first"}
-        >
-          <option value="">{season ? "All teams" : "Team — pick a season first"}</option>
-          {season && (data?.teams || []).map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-
-        {(season || team) && (
-          <button
-            onClick={() => { onSeason(""); onTeam(""); }}
-            className="ml-auto text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700"
-          >✕ Clear</button>
-        )}
-      </div>
-
-      {/* Position is asked of a run's own season rather than of the career it
-          sits in, so a filter on the runs board means "who was playing there
-          that year". Hidden until the corpus carries positions at all, the same
-          gate the careers board uses. */}
-      {data?.hasPos && (
-        <div className="mb-2 overflow-x-auto">
-          <PositionFilter value={pos} onChange={onPos} />
-        </div>
-      )}
-
-      <div className="flex items-baseline gap-2 mb-1 px-2 text-[10px] text-stone-400 tabular-nums">
-        {data ? (
-          <>
-            <span>
-              {query.trim() || season || team || pos
-                ? `${data.matched.toLocaleString()} of ${data.total.toLocaleString()} runs`
-                  + (season ? ` · ${season}` : "") + (team ? ` · ${team}` : "")
-                  + (pos ? ` · ${pos}` : "")
-                : `${data.total.toLocaleString()} postseason runs`}
-            </span>
-            <span className="ml-auto uppercase tracking-widest">
-              {sortKey === "lva" ? "Ranked by leveraged VA" : "Ranked by VA per game"}
-            </span>
-          </>
-        ) : <span>Loading…</span>}
-      </div>
-
-      <div className="grid grid-cols-[2.2rem_1fr_2rem_3.2rem_2.6rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-        <span>#</span><span>Player</span><span className="text-right">G</span>
-        {RUN_SORTS.map(([key, label, title]) => (
-          <Fragment key={key}>{head(key, label, title)}</Fragment>
-        ))}
-      </div>
-
-      {error && <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>}
-      {data && !runs.length && !error && (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">
-          No {pos ? `${pos} ` : ""}runs match{query.trim() ? ` “${query.trim()}”` : ""}
-          {season ? ` in ${season}` : ""}{team ? ` for ${team}` : ""}.
-        </div>
-      )}
-
-      {runs.map((r) => {
-        const isOpen = open === `${r.slug}-${r.season}`;
-        return (
-          <div key={`${r.slug}-${r.season}`} className="border-b border-stone-100">
-            <button
-              type="button"
-              aria-expanded={isOpen}
-              onClick={() => setOpen(isOpen ? null : `${r.slug}-${r.season}`)}
-              className={`w-full text-left grid grid-cols-[2.2rem_1fr_2rem_3.2rem_2.6rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
-            >
-              {/* The all-time rank on the column being read, not the rank among
-                  matches — searching for a player should tell you where his runs
-                  sit in the whole list. */}
-              <span className="text-[10px] tabular-nums text-stone-400">{r.rank.toLocaleString()}</span>
-              <span className="min-w-0">
-                <span className="font-semibold text-stone-800 block truncate">
-                  <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
-                  {r.name}
-                </span>
-                <span className="text-[10px] text-stone-500 tabular-nums">
-                  {r.season}{r.team ? ` · ${r.team}` : ""}
-                </span>
-              </span>
-              <span className="text-right tabular-nums text-stone-600">{r.games}</span>
-              <span className={`text-right tabular-nums ${sortKey === "lva" ? "font-bold text-stone-900" : "text-stone-500"}`}>{fmt0(r.lva)}</span>
-              <span className={`text-right tabular-nums ${sortKey === "vapg" ? "font-bold text-stone-900" : "text-stone-500"}`}>{r.vaPerG.toFixed(1)}</span>
-            </button>
-
-            {/* Two bars on one scale: the run, and the regular season that led
-                into it priced the same way. The light bar's length against the
-                dark one is the whole point — for most players the winter is a
-                fraction of the fortnight. */}
-            <div className="px-2 pt-1 pb-1.5 flex flex-col gap-[2px]">
-              {/* A run worth less than nothing draws red at its magnitude, the
-                  same as the career fold does. Clamping it to zero width would
-                  read as missing data rather than as a negative. */}
-              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
-                <div className={`h-full rounded-sm ${r.lva < 0 ? "bg-red-500" : "bg-stone-900"}`}
-                  style={{ width: `${Math.min(100, (Math.abs(r.lva) / max) * 100)}%` }} />
-              </div>
-              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden" title="Regular season, same scale">
-                <div className={`h-full rounded-sm ${r.rsLVA < 0 ? "bg-red-300" : "bg-stone-400"}`}
-                  style={{ width: `${Math.max(0, Math.min(100, (Math.abs(r.rsLVA) / max) * 100))}%` }} />
-              </div>
-            </div>
-
-            {/* The landscape-only strip is the closed row's stat line. Open, the
-                panel below carries the same numbers in portrait too, so showing
-                both would print the run twice on a turned phone. */}
-            {!isOpen && <StatStrip stats={r.stats} />}
-            {isOpen && (
-              <SeasonPanel
-                slug={r.slug}
-                season={r.season}
-                name={r.name}
-                onGoToLeaderboard={onGoToLeaderboard}
-                onGoToCareer={onGoToCareer}
-              />
-            )}
-          </div>
-        );
-      })}
-
-      {data && data.matched > runs.length ? (
-        <button
-          onClick={more}
-          disabled={loading}
-          className="w-full mt-2 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-300 hover:bg-stone-50 disabled:text-stone-300"
-        >
-          {loading
-            ? "Loading…"
-            : `Show more · ${runs.length.toLocaleString()} of ${data.matched.toLocaleString()}`}
-        </button>
-      ) : null}
-
-      <div className="text-[10px] text-stone-400 italic mt-2 leading-relaxed">
-        Ranked on the playoff run alone. <span className="font-semibold">LVA</span> is
-        leveraged Value Added over the run; <span className="font-semibold">VA/G</span> is the raw,
-        unweighted per-game figure behind it — sort on either. The dark bar is the run; the light
-        bar under it is that player&apos;s regular season the same year, priced the same way and
-        drawn on the same scale. Tap a run for its stat lines, its games, and the way across to
-        the whole career; turn the phone sideways for the per-game stat line on every row.
-      </div>
-    </div>
-  );
-}
-
-
 // The positional filter, as a drill-down rather than eight chips in a row.
 //
 // Position is a hierarchy the reader already holds — a point guard is a guard —
@@ -800,13 +502,7 @@ function PositionFilter({ value, onChange }) {
   );
 }
 
-// The board at career grain. Search and position come from the view above, so
-// switching grain keeps the player you were reading; the games floor is asked
-// here, because it only means something against a whole career.
-function CareersBoard({
-  query, pos, onPos, minGames, onMinGames,
-  jump, onJumpHandled, onGoToLeaderboard, onGoToRun,
-}) {
+function CareersBoard({ onGoToLeaderboard }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState("total"); // "total" | "peak"
@@ -817,6 +513,9 @@ function CareersBoard({
   // would re-download the expensive part of the list on every tap.
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [minGames, setMinGames] = useState(400);
+  const [pos, setPos] = useState("");
 
   const url = (offset) => `/api/legacy?top=${PAGE}&offset=${offset}&sort=${sortKey}`
     + `&q=${encodeURIComponent(query.trim())}&minGames=${minGames}&pos=${pos}`;
@@ -837,28 +536,6 @@ function CareersBoard({
   }, [sortKey, query, minGames, pos]);
 
   useEffect(() => { setOpen(null); }, [sortKey, query, minGames, pos]);
-
-  // A career handed over from the runs board. The view has already pinned the
-  // search to the player and dropped the games floor, so the row is on this
-  // first page; opening it — at the season the run belonged to — is all that is
-  // left. Cleared either way, so a jump that finds nothing does not sit waiting
-  // on a later fetch.
-  const [jumpAt, setJumpAt] = useState(null); // { slug, season }
-  useEffect(() => {
-    if (!jump || jump.grain !== "careers" || !data) return;
-    const hit = rows.find((p) => p.slug === jump.slug);
-    if (hit) {
-      setOpen(hit.slug);
-      setJumpAt({ slug: hit.slug, season: jump.season || null });
-    }
-    onJumpHandled();
-  }, [jump, data, rows, onJumpHandled]);
-
-  // The handed-over season belongs to the crossing that carried it, and to
-  // nothing after it: opening a row by hand — this career again included —
-  // should land on the fold, not reassert a season chosen a jump ago.
-  const toggle = (slug) => { setJumpAt(null); setOpen(open === slug ? null : slug); };
-  useEffect(() => { setJumpAt(null); }, [sortKey, query, minGames, pos]);
 
   const more = () => {
     if (loading) return;
@@ -908,11 +585,19 @@ function CareersBoard({
         split into the franchises that built it, earliest first.
       </p>
 
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search a player…"
+        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
+      />
+
       <div className="flex items-center gap-2 mb-2">
         <label className="text-[10px] uppercase tracking-widest text-stone-400">Min</label>
         <select
           value={minGames}
-          onChange={(e) => onMinGames(Number(e.target.value))}
+          onChange={(e) => setMinGames(Number(e.target.value))}
           className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800"
           title="Career games a player must have played to appear"
         >
@@ -922,7 +607,7 @@ function CareersBoard({
         </select>
         {minGames !== 400 && (
           <button
-            onClick={() => onMinGames(400)}
+            onClick={() => setMinGames(400)}
             className="text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700"
           >✕ Reset</button>
         )}
@@ -939,7 +624,7 @@ function CareersBoard({
           one. */}
       {data.hasPos && (
         <div className="mb-2 overflow-x-auto">
-          <PositionFilter value={pos} onChange={onPos} />
+          <PositionFilter value={pos} onChange={setPos} />
         </div>
       )}
 
@@ -968,7 +653,7 @@ function CareersBoard({
             <button
               type="button"
               aria-expanded={isOpen}
-              onClick={() => toggle(p.slug)}
+              onClick={() => setOpen(isOpen ? null : p.slug)}
               className={`w-full text-left grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
             >
               {/* The rank the server assigned in the sorted order, not the row's
@@ -996,8 +681,6 @@ function CareersBoard({
                 weightAtHalf={data.weightAtHalf}
                 segments={segments}
                 onGoToLeaderboard={onGoToLeaderboard}
-                onGoToRun={onGoToRun}
-                openSeasonAt={jumpAt?.slug === p.slug ? jumpAt.season : null}
               />
             )}
           </div>
@@ -1160,73 +843,16 @@ function LegacyInfo({ dials }) {
 }
 
 
-// One board, two grains. Careers is the argument the metric makes; Runs is the
-// evidence it rests on — and they were two screens with a switch between them,
-// which made them read as separate boards over separate data rather than as two
-// depths of one.
-//
-// So the state that means the same thing at both grains — the player you are
-// searching for, the position you are looking at — lives here and survives the
-// switch, and the two grains are linked in both directions: a run opens the
-// career it belongs to, a season of a career opens the run on the board where
-// it can be measured against the field. The filters that only mean something at
-// one grain (a career games floor; a season and a team) stay with the board
-// that asks them.
-export function LegacyView({ onGoToLeaderboard = null }) {
-  const [grain, setGrain] = useState("careers"); // "careers" | "runs"
+// The career board. Legacy is deliberately two numbers rather than one, the
+// board makes that argument, and a career opens into the seasons it was folded
+// from — each of those into the stat lines and the games behind them.
+export function CareerView({ onGoToLeaderboard = null }) {
   const [info, setInfo] = useState(false);
-
-  // Shared across grains.
-  const [query, setQuery] = useState("");
-  const [pos, setPos] = useState("");
-  // Career grain only.
-  const [minGames, setMinGames] = useState(400);
-  // Run grain only. Team means nothing without a season, so it clears whenever
-  // the season changes out from under it.
-  const [season, setSeason] = useState("");
-  const [team, setTeam] = useState("");
-  const pickSeason = useCallback((v) => { setSeason(v); setTeam(""); }, []);
-
-  // A crossing between the grains: which row the other board should open.
-  const [jump, setJump] = useState(null);
-  const clearJump = useCallback(() => setJump(null), []);
-
-  // Crossing over is only useful if the row is actually there when you land, so
-  // the jump pins the search to the player and stands down whatever else could
-  // hide him — the position he isn't listed at, a games floor his career never
-  // reached, a season filter from a different year. Losing a filter is the
-  // lesser evil against landing on a board that looks empty.
-  const goTo = useCallback((grainTo, target) => {
-    setGrain(grainTo);
-    setQuery(target.name || "");
-    setPos("");
-    if (grainTo === "careers") setMinGames(0);
-    else { setSeason(""); setTeam(""); }
-    setJump({ grain: grainTo, slug: target.slug, season: target.season });
-  }, []);
-  const goToCareer = useCallback((t) => goTo("careers", t), [goTo]);
-  const goToRun = useCallback((t) => goTo("runs", t), [goTo]);
-
-  // Switching grain by hand is a change of view, not a crossing — any pending
-  // jump belongs to the board that is being left.
-  const pickGrain = useCallback((g) => { setGrain(g); setJump(null); }, []);
-
-  const tab = (key, label, title) => (
-    <button
-      onClick={() => pickGrain(key)}
-      title={title}
-      aria-pressed={grain === key}
-      className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border ${
-        grain === key
-          ? "bg-stone-900 text-white border-stone-900"
-          : "text-stone-500 border-stone-300 hover:text-stone-800"}`}
-    >{label}</button>
-  );
 
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-3">
-        <h2 className="text-base font-bold text-stone-900">Legacy</h2>
+        <h2 className="text-base font-bold text-stone-900">Career</h2>
         <button
           onClick={() => setInfo((v) => !v)}
           aria-expanded={info}
@@ -1237,52 +863,11 @@ export function LegacyView({ onGoToLeaderboard = null }) {
               ? "bg-stone-900 border-stone-900 text-white"
               : "border-stone-400 text-stone-500 hover:border-stone-900 hover:text-stone-900"}`}
         >i</button>
-        <span className="ml-auto flex gap-1">
-          {tab("careers", "Careers", "One row per career")}
-          {tab("runs", "Runs", "One row per postseason run")}
-        </span>
       </div>
 
       {info && <LegacyInfo />}
 
-      {/* One search box above both grains: the same name asked of careers and
-          of runs, so switching grain answers the other half of the question
-          about the player already on screen rather than starting over. */}
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search a player…"
-        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
-      />
-
-      {grain === "careers" ? (
-        <CareersBoard
-          query={query}
-          pos={pos}
-          onPos={setPos}
-          minGames={minGames}
-          onMinGames={setMinGames}
-          jump={jump}
-          onJumpHandled={clearJump}
-          onGoToLeaderboard={onGoToLeaderboard}
-          onGoToRun={goToRun}
-        />
-      ) : (
-        <RunsBoard
-          query={query}
-          pos={pos}
-          onPos={setPos}
-          season={season}
-          onSeason={pickSeason}
-          team={team}
-          onTeam={setTeam}
-          jump={jump}
-          onJumpHandled={clearJump}
-          onGoToLeaderboard={onGoToLeaderboard}
-          onGoToCareer={goToCareer}
-        />
-      )}
+      <CareersBoard onGoToLeaderboard={onGoToLeaderboard} />
     </div>
   );
 }
