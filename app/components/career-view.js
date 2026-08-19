@@ -144,6 +144,11 @@ function CareerBar({ segments, pct }) {
 // from — the playoff board or the regular-season one — filtered to the team
 // and opened on the player. Absent a handler (nothing to navigate to) it
 // simply doesn't render, so the panel is unchanged where the jump has no home.
+//
+// It rides in the stat strip's last cell rather than out on the heading, which
+// is where it used to sit: eleven stats in a six-wide grid leave a twelfth cell
+// empty after free throws, and a button parked there is both clear of the
+// heading it was crowding and closer to the numbers it is offering more of.
 function GoToBoard({ onGo, run, scope }) {
   if (!onGo || !run?.season) return null;
   return (
@@ -153,7 +158,7 @@ function GoToBoard({ onGo, run, scope }) {
         season: run.season, team: run.team || null,
         name: run.name || null, slug: run.slug || null, scope,
       })}
-      className="ml-auto text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 whitespace-nowrap"
+      className="text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 whitespace-nowrap"
       title={`Open the ${scope === "regular" ? "regular-season" : "playoff"} leaderboard for ${run.team || "this team"}, ${run.season}`}
     >Go →</button>
   );
@@ -343,11 +348,16 @@ const TREND = {
   flat: ["—", "the same as"],
 };
 
-function StatStrip({ stats, compareTo, note }) {
+function StatStrip({ stats, compareTo, action, note }) {
   if (!stats) return null;
   return (
     <div className="block px-2 pb-2 overflow-x-auto">
-      <div className="grid grid-cols-6 tilt:grid-cols-11 gap-x-1 gap-y-2">
+      {/* Eleven stats over six columns leave the twelfth cell empty, and that
+          is where `action` goes. Turned sideways the row opens to twelve so the
+          button keeps its place at the end of the line rather than dropping to
+          a row of its own; with nothing to put there it stays eleven, so the
+          strip does not carry a blank column it has no use for. */}
+      <div className={`grid grid-cols-6 ${action ? "tilt:grid-cols-12" : "tilt:grid-cols-11"} gap-x-1 gap-y-2`}>
         {STAT_COLS.map(([label, key, cat]) => {
           const v = stats[key];
           const va = cat ? stats.va?.[cat] : null;
@@ -376,6 +386,7 @@ function StatStrip({ stats, compareTo, note }) {
             </div>
           );
         })}
+        {action && <div className="text-center self-center">{action}</div>}
       </div>
       <div className="text-[8px] text-stone-400 mt-1">
         {note || "Per game, with the Value Added each one contributed underneath — the ten add up to VA/G."}
@@ -412,6 +423,9 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
 
   const po = d.run.stats, rs = d.run.rsStats;
   const games = d.games || [];
+  // Asked once here rather than inside the button: the strip has to size its
+  // grid around whether there is a button to place, before it renders one.
+  const canGo = !!(onGoToLeaderboard && d.run?.season);
   const best = Math.max(...games.map((g) => Math.abs(g.contribution)), 0.1);
   const ROUND = { 1: "R1", 2: "R2", 3: "CF", 4: "F" };
 
@@ -419,14 +433,11 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
     <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
       {po && (
         <>
-          <div className="px-2 flex items-baseline gap-2">
-            <span className="text-[9px] uppercase tracking-widest text-stone-500">
-              {/* Where the run sits among every postseason run on record —
-                  the one number here that is about the field rather than about
-                  this career. */}
-              Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
-            </span>
-            <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" />
+          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+            {/* Where the run sits among every postseason run on record — the
+                one number here that is about the field rather than about this
+                career. */}
+            Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
           </div>
           {/* Drawn against the regular season below it wherever there is one:
               each playoff VA carries an arrow saying whether that part of his
@@ -434,6 +445,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
           <StatStrip
             stats={po}
             compareTo={rs}
+            action={canGo ? <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" /> : null}
             note={rs
               ? "Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G. The arrow reads each against the same category in the regular season below; both are per game, so heavier playoff minutes lift the lot."
               : "Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G."}
@@ -443,13 +455,14 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
 
       {rs && (
         <>
-          <div className="px-2 flex items-baseline gap-2">
-            <span className="text-[9px] uppercase tracking-widest text-stone-500">
-              Regular season · {rs.games} games
-            </span>
-            <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="regular" />
+          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+            Regular season · {rs.games} games
           </div>
-          <StatStrip stats={rs} note="Computed on season totals, the same way the regular season’s VA is." />
+          <StatStrip
+            stats={rs}
+            action={canGo ? <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="regular" /> : null}
+            note="Computed on season totals, the same way the regular season’s VA is."
+          />
         </>
       )}
 
@@ -680,7 +693,7 @@ function CareersBoard({ onGoToLeaderboard }) {
       )}
 
       <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
-        <span></span><span>Player</span><span className="text-right">Sns</span>
+        <span></span><span>Player</span><span className="text-right">Yr</span>
         {head("total", "Legacy")}
         {/* "Peak", not "Peak/G": the per-game part is spelled out in the
             paragraph above the board and in the fold's own tile, and four
