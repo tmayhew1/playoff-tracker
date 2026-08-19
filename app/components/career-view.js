@@ -35,10 +35,11 @@ const fmtN = (n) => (Math.abs(n) >= 100 ? fmt0(n) : n.toFixed(1));
 const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-baseline";
 
 // The board's five columns, shared by the header and every row so the two
-// cannot drift apart. Legacy and Peak/G are given the same width: they are
-// peers — neither is "the" ranking — and the room each needs is set by its
-// label carrying the sort caret, not by the digits underneath, which are
-// narrower in both.
+// cannot drift apart. Legacy and Peak are given the same width: they are peers
+// — neither is "the" ranking — and each holds its label, its sort caret and its
+// digits with slack left over, which is the point. A header measured to fit
+// exactly is one that breaks on the first handset whose font is a shade wider,
+// which is how the caret ended up on its own line here once already.
 //
 // The gutter pays for that room rather than the name does: four gaps a step
 // tighter — the same 1.5 the season fold uses — give back exactly what the
@@ -628,8 +629,8 @@ function CareersBoard({ onGoToLeaderboard }) {
 
       <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
         <span className="font-semibold">Legacy</span> is a career&apos;s value with every game
-        priced by what was at stake; <span className="font-semibold">Peak/G</span> is the same
-        weighting as a rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
+        priced by what was at stake; <span className="font-semibold">Peak</span> is the same
+        weighting as a per-game rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
         or a player for the season-by-season fold — and the{" "}
         <span className="font-bold">i</span> above for how the number is built. Each bar is
         split into the franchises that built it, earliest first.
@@ -681,7 +682,11 @@ function CareersBoard({ onGoToLeaderboard }) {
       <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
         <span></span><span>Player</span><span className="text-right">Sns</span>
         {head("total", "Legacy")}
-        {head("peak", "Peak/G")}
+        {/* "Peak", not "Peak/G": the per-game part is spelled out in the
+            paragraph above the board and in the fold's own tile, and four
+            characters plus a sort caret fit any handset's idea of this font
+            with room to spare. */}
+        {head("peak", "Peak")}
       </div>
 
       {!shown.length && (
