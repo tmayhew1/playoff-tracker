@@ -285,15 +285,14 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
 }
 
 
-// The production behind a run, with what each part of it was worth. Every
-// column maps to exactly one VA category, so the bottom line reads as the
+// The production behind half a season, with what each part of it was worth.
+// Every column maps to exactly one VA category, so the bottom line reads as the
 // decomposition it is — and the ten of them sum to the run's VA/G.
 //
-// Hidden on a portrait phone and shown the moment the handset is turned
-// sideways — see the `tilt` screen in tailwind.config.js, which keys off
-// orientation rather than width because a landscape phone can be narrower than
-// any width breakpoint. It scrolls inside its own box rather than pushing the
-// page sideways when the viewport is narrower than the eleven columns need.
+// Eleven columns do not fit a portrait phone, so it wraps to two rows and opens
+// out to one the moment the handset is turned — see the `tilt` screen in
+// tailwind.config.js, which keys off orientation rather than width because a
+// landscape phone can be narrower than any width breakpoint.
 const STAT_COLS = [
   ["MPG", "mpg", null],
   ["PTS", "pts", "Points"],
@@ -308,19 +307,11 @@ const STAT_COLS = [
   ["FT%", "ft", "Free Throws"],
 ];
 
-// `always` drops the orientation gate: on the runs board the strip rides every
-// row, so it waits for the phone to be turned; inside a season drop-down it is
-// already behind a tap and should just be there.
-function StatStrip({ stats, always, note }) {
+function StatStrip({ stats, note }) {
   if (!stats) return null;
   return (
-    <div className={`${always ? "block" : "hidden tilt:block"} px-2 pb-2 overflow-x-auto`}>
-      {/* On the runs board the strip is one landscape-only line. Inside a
-          season drop-down it has to work in portrait too, so there it wraps to
-          two rows rather than scrolling off the edge of a phone. */}
-      <div className={always
-        ? "grid grid-cols-6 tilt:grid-cols-11 gap-x-1 gap-y-2"
-        : "grid grid-cols-11 gap-x-1 min-w-[34rem]"}>
+    <div className="block px-2 pb-2 overflow-x-auto">
+      <div className="grid grid-cols-6 tilt:grid-cols-11 gap-x-1 gap-y-2">
         {STAT_COLS.map(([label, key, cat]) => {
           const v = stats[key];
           const va = cat ? stats.va?.[cat] : null;
@@ -390,7 +381,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
             </span>
             <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" />
           </div>
-          <StatStrip stats={po} always note="Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G." />
+          <StatStrip stats={po} note="Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G." />
         </>
       )}
 
@@ -402,7 +393,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
             </span>
             <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="regular" />
           </div>
-          <StatStrip stats={rs} always note="Computed on season totals, the same way the regular season’s VA is." />
+          <StatStrip stats={rs} note="Computed on season totals, the same way the regular season’s VA is." />
         </>
       )}
 
