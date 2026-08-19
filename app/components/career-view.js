@@ -34,6 +34,17 @@ const fmtN = (n) => (Math.abs(n) >= 100 ? fmt0(n) : n.toFixed(1));
 
 const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-baseline";
 
+// The board's five columns, shared by the header and every row so the two
+// cannot drift apart. Legacy and Peak/G are given the same width: they are
+// peers — neither is "the" ranking — and the room each needs is set by its
+// label carrying the sort caret, not by the digits underneath, which are
+// narrower in both.
+//
+// The gutter pays for that room rather than the name does: four gaps a step
+// tighter — the same 1.5 the season fold uses — give back exactly what the
+// wider column costs, so a long name truncates no earlier than it did before.
+const BOARD_COLS = "grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3.5rem] gap-x-1.5 items-center";
+
 // Careers per page. A row carries its whole season fold, so the pages are kept
 // small and asked for one at a time.
 const PAGE = 50;
@@ -601,8 +612,12 @@ function CareersBoard({ onGoToLeaderboard }) {
   const head = (key, label) => (
     <button
       onClick={() => setSortKey(key)}
-      className={`text-right uppercase tracking-wider ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
-    >{label}{sortKey === key ? " ▾" : ""}</button>
+      className={`text-right uppercase tracking-wider whitespace-nowrap ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
+    >{/* A non-breaking space, and nowrap on top of it: the caret belongs to the
+         label it marks, and a column narrow enough to break between them would
+         drop it onto a second line and push the header row taller than the
+         rule under it. */}
+      {label}{sortKey === key ? "\u00A0▾" : ""}</button>
   );
 
   return (
@@ -663,7 +678,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         </div>
       )}
 
-      <div className="grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
+      <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
         <span></span><span>Player</span><span className="text-right">Sns</span>
         {head("total", "Legacy")}
         {head("peak", "Peak/G")}
@@ -689,7 +704,7 @@ function CareersBoard({ onGoToLeaderboard }) {
               type="button"
               aria-expanded={isOpen}
               onClick={() => setOpen(isOpen ? null : p.slug)}
-              className={`w-full text-left grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
+              className={`w-full text-left ${BOARD_COLS} px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
             >
               {/* The rank the server assigned in the sorted order, not the row's
                   position in whatever has been paged in so far. */}
