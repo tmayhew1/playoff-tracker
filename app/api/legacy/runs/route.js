@@ -2,6 +2,7 @@ import { cachedCareers, clearCareerCache } from "../../_lib/careers.js";
 import { seasonLVA } from "../../../lib/legacy.js";
 import { ALPHA_DEFAULT, seriesGameWeight, gameWeight } from "../../../lib/leverage.js";
 import { normalizeName } from "../../../lib/format.js";
+import { POSITIONS, matchesPosition } from "../../../lib/positions.js";
 import { valueAddByCategory, VA_CATEGORY_KEYS, lgaForSeason } from "../../../scoring.js";
 
 export const runtime = "nodejs";
@@ -17,13 +18,16 @@ export const revalidate = 86400;
 // Ranking happens server-side because all 8,917 runs is ~360KB and the search
 // has to reach every one of them, not just a prefix the client happens to hold.
 
-// Ranked once per alpha and reused; the corpus behind it is static between
-// bakes, so the only thing that can invalidate this is the dial.
+// Built once per alpha and reused; the corpus behind it is static between
+// bakes, so the only thing that can invalidate this is the dial. BASE holds the
+// unordered runs; RANKED holds one ordering per sort, because a rank only means
+// anything against the column being read.
+const BASE = new Map();
 const RANKED = new Map();
 
-function rankedRuns(alpha) {
+function baseRuns(alpha) {
   const key = String(alpha);
-  const hit = RANKED.get(key);
+  const hit = BASE.get(key);
   if (hit) return hit;
 
   const built = cachedCareers();
@@ -46,18 +50,51 @@ function rankedRuns(alpha) {
         va: r.flatVA,
         rsLVA: full.rsLVA,
         rsGames: full.rsGames,
+        // The position he was listed at THAT season, falling back to the
+        // career's modal one where the season file predates the column. A run
+        // is one year of a career, so the season's own listing is the truer
+        // answer wherever the corpus has it.
+        pos: s.pos || p.pos || null,
         // Kept off the wire — the page slice reads stats off it on the way out.
         row: s,
       });
     }
   }
-  runs.sort((a, b) => b.lva - a.lva);
-  // Rank is assigned over the WHOLE list, so a searched row still reports where
-  // it sits all-time rather than where it sits among the matches.
-  runs.forEach((r, i) => { r.rank = i + 1; });
-
-  RANKED.set(key, runs);
+  BASE.set(key, runs);
   return runs;
+}
+
+
+// The two columns a run can be read on. LVA is the run's whole leveraged value;
+// VA/G is the raw per-game rate behind it — the one that says a short run was
+// played at a higher level than a long one that outscores it in total.
+// A Map rather than an object literal, so a query string asking for
+// "constructor" gets a miss instead of Object.prototype's — an inherited key
+// would pass the check below and then be called as a comparator.
+const RUN_SORTS = new Map([
+  ["lva", (r) => r.lva],
+  ["vapg", (r) => (r.games > 0 ? r.va / r.games : 0)],
+]);
+
+// One ordering, with the rank it implies. Rank is assigned over the WHOLE list
+// before any filter narrows it, so a searched row still reports where it sits
+// all-time rather than where it sits among the matches.
+//
+// Copied rather than ranked in place: the same run objects back every sort, and
+// writing `rank` onto them would leave whichever ordering was built last
+// stamping its ranks over the other one.
+function rankedRuns(alpha, sort) {
+  const key = `${alpha}|${sort}`;
+  const hit = RANKED.get(key);
+  if (hit) return hit;
+
+  const value = RUN_SORTS.get(sort) || RUN_SORTS.get("lva");
+  const list = [...baseRuns(alpha)]
+    .sort((a, b) => value(b) - value(a))
+    .map((r, i) => ({ ...r, rank: i + 1 }));
+
+  RANKED.set(key, list);
+  return list;
 }
 
 const r2 = (n) => Math.round(n * 100) / 100;
@@ -152,12 +189,22 @@ export async function GET(request) {
   const season = (q.get("season") || "").trim();
   const team = (q.get("team") || "").trim().toUpperCase();
   const query = normalizeName((q.get("q") || "").trim());
+  // Sorted here rather than in the browser for the same reason the careers
+  // board is: the client holds only the pages it has asked for, so ordering
+  // there would sort a prefix of the board and look like it had sorted all of
+  // it. An unrecognized value falls back to LVA rather than erroring.
+  const sort = RUN_SORTS.has(q.get("sort")) ? q.get("sort") : "lva";
+  // Filtered here for the same reason. Unknown values fall back to no filter,
+  // so a stale bookmark shows the board rather than a 400.
+  const posParam = (q.get("pos") || "").toUpperCase().trim();
+  const pos = POSITIONS.includes(posParam) ? posParam : "";
 
   let all;
   try {
-    all = rankedRuns(alpha);
+    all = rankedRuns(alpha, sort);
   } catch (e) {
     clearCareerCache();
+    BASE.clear();
     RANKED.clear();
     return Response.json({ error: `legacy corpus unavailable: ${e.message}` }, { status: 503 });
   }
@@ -173,7 +220,10 @@ export async function GET(request) {
     const pl = cachedCareers().players.find((x) => x.slug === slug);
     const row = pl && (pl.seasons || []).find((s) => s.season === season);
     if (!row) return Response.json({ error: "no such season" }, { status: 404 });
-    const ranked = all.find((r) => r.slug === slug && r.season === season);
+    // The all-time rank a run detail reports is its LVA rank, not its rank in
+    // whatever the board happens to be sorted on — the panel opens from the
+    // careers fold too, which has no sort of its own to inherit.
+    const ranked = rankedRuns(alpha, "lva").find((r) => r.slug === slug && r.season === season);
     return Response.json({
       run: {
         rank: ranked ? ranked.rank : null,
@@ -196,6 +246,10 @@ export async function GET(request) {
   // a different question — franchises move, rename, and field unrelated rosters
   // — so without a season the parameter is ignored rather than half-answered.
   if (season && team) list = list.filter((r) => r.team === team);
+  // Position matches the same way it does on the careers board: a bucket keeps
+  // everything inside it, and a run whose season carried no position at all
+  // matches nothing rather than padding every bucket.
+  if (pos) list = list.filter((r) => matchesPosition(r.pos, pos));
 
   // The seasons that actually have runs, and the teams that appear in the
   // selected one. Derived from the ranked list so the controls can never offer
@@ -218,6 +272,7 @@ export async function GET(request) {
     // The same season's regular season, priced the same way — the light bar.
     rsLVA: Math.round(r.rsLVA * 10) / 10,
     rsGames: r.rsGames,
+    pos: r.pos,
     stats: runStats(r.row),
   }));
 
@@ -231,6 +286,12 @@ export async function GET(request) {
     query: q.get("q") || "",
     season,
     team: season ? team : "",
+    sort,
+    pos,
+    // Whether the corpus knows positions at all — same gate the careers board
+    // uses, and for the same reason: a filter whose every option empties the
+    // board reads as a broken board rather than a pending backfill.
+    hasPos: all.some((r) => r.pos),
     seasons,
     teams,
     categories: VA_CATEGORY_KEYS,
