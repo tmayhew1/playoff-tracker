@@ -19,7 +19,9 @@ import { positionChips, positionParent } from "../lib/positions";
 // Tapping a row opens the fold itself. A career total is otherwise a number you
 // have to take on faith; the expansion shows it as the sum it is — every
 // season, ordered by value, with the weight that season earned and the
-// playoff/regular-season split underneath.
+// playoff/regular-season split underneath. Tapping a season goes one further,
+// to the stat lines behind both halves of it and every game of the run — which
+// is where the weighting stops being an assertion and becomes checkable.
 //
 // MVP scope: the board at the default dials. The route already answers for any
 // alpha/p, so exposing them is a slider away.
@@ -31,6 +33,18 @@ const fmt0 = (n) => Math.round(n).toLocaleString("en-US");
 const fmtN = (n) => (Math.abs(n) >= 100 ? fmt0(n) : n.toFixed(1));
 
 const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-baseline";
+
+// The board's five columns, shared by the header and every row so the two
+// cannot drift apart. Legacy and Peak are given the same width: they are peers
+// — neither is "the" ranking — and each holds its label, its sort caret and its
+// digits with slack left over, which is the point. A header measured to fit
+// exactly is one that breaks on the first handset whose font is a shade wider,
+// which is how the caret ended up on its own line here once already.
+//
+// The gutter pays for that room rather than the name does: four gaps a step
+// tighter — the same 1.5 the season fold uses — give back exactly what the
+// wider column costs, so a long name truncates no earlier than it did before.
+const BOARD_COLS = "grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3.5rem] gap-x-1.5 items-center";
 
 // Careers per page. A row carries its whole season fold, so the pages are kept
 // small and asked for one at a time.
@@ -130,6 +144,11 @@ function CareerBar({ segments, pct }) {
 // from — the playoff board or the regular-season one — filtered to the team
 // and opened on the player. Absent a handler (nothing to navigate to) it
 // simply doesn't render, so the panel is unchanged where the jump has no home.
+//
+// It rides in the stat strip's last cell rather than out on the heading, which
+// is where it used to sit: eleven stats in a six-wide grid leave a twelfth cell
+// empty after free throws, and a button parked there is both clear of the
+// heading it was crowding and closer to the numbers it is offering more of.
 function GoToBoard({ onGo, run, scope }) {
   if (!onGo || !run?.season) return null;
   return (
@@ -139,61 +158,9 @@ function GoToBoard({ onGo, run, scope }) {
         season: run.season, team: run.team || null,
         name: run.name || null, slug: run.slug || null, scope,
       })}
-      className="ml-auto text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 whitespace-nowrap"
+      className="text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 whitespace-nowrap"
       title={`Open the ${scope === "regular" ? "regular-season" : "playoff"} leaderboard for ${run.team || "this team"}, ${run.season}`}
     >Go →</button>
-  );
-}
-
-
-// One season of a career, opened up: the production behind both halves of it.
-// Fetched on tap from the same endpoint the runs board uses, so the playoff
-// line here is the identical line there — and the regular season, which the
-// runs board has no reason to carry, sits beside it.
-function SeasonDetail({ slug, season, onGoToLeaderboard }) {
-  const [d, setD] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchJsonCached(`/api/legacy/runs?slug=${encodeURIComponent(slug)}&season=${encodeURIComponent(season)}`)
-      .then((r) => { if (!cancelled) setD(r); })
-      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
-    return () => { cancelled = true; };
-  }, [slug, season]);
-
-  if (error) return <div className="px-2 py-2 text-[10px] text-red-600">Couldn’t load — {error}</div>;
-  if (!d) return <div className="px-2 py-2 text-[10px] text-stone-500 italic">Loading…</div>;
-
-  const po = d.run.stats, rs = d.run.rsStats;
-  return (
-    <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
-      {po && (
-        <>
-          <div className="px-2 flex items-baseline gap-2">
-            <span className="text-[9px] uppercase tracking-widest text-stone-500">
-              Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
-            </span>
-            <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" />
-          </div>
-          <StatStrip stats={po} always note="Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G." />
-        </>
-      )}
-      {rs && (
-        <>
-          <div className="px-2 flex items-baseline gap-2">
-            <span className="text-[9px] uppercase tracking-widest text-stone-500">
-              Regular season · {rs.games} games
-            </span>
-            <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="regular" />
-          </div>
-          <StatStrip stats={rs} always note="Computed on season totals, the same way the regular season’s VA is." />
-        </>
-      )}
-      {!po && !rs && (
-        <div className="px-2 py-2 text-[10px] text-stone-400 italic">No stat line on record for this season.</div>
-      )}
-    </div>
   );
 }
 
@@ -245,7 +212,7 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
         <span className="tabular-nums font-semibold">{(weightAtHalf * 100).toFixed(0)}%</span>{" "}
         of its weight, one worth a tenth carries half.{" "}
         <span className="font-semibold">Weighted</span> is the column that sums to Legacy.
-        Tap any season for the stat line behind it.
+        Tap any season for the stat lines behind it and every game of the run.
       </p>
 
       {topShare != null && (
@@ -316,7 +283,9 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
                 </>
               )}
             </div>
-            {seasonOpen && <SeasonDetail slug={p.slug} season={s.season} onGoToLeaderboard={onGoToLeaderboard} />}
+            {seasonOpen && (
+              <SeasonPanel slug={p.slug} season={s.season} onGoToLeaderboard={onGoToLeaderboard} />
+            )}
           </div>
         );
       })}
@@ -333,15 +302,14 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
 }
 
 
-// The production behind a run, with what each part of it was worth. Every
-// column maps to exactly one VA category, so the bottom line reads as the
+// The production behind half a season, with what each part of it was worth.
+// Every column maps to exactly one VA category, so the bottom line reads as the
 // decomposition it is — and the ten of them sum to the run's VA/G.
 //
-// Hidden on a portrait phone and shown the moment the handset is turned
-// sideways — see the `tilt` screen in tailwind.config.js, which keys off
-// orientation rather than width because a landscape phone can be narrower than
-// any width breakpoint. It scrolls inside its own box rather than pushing the
-// page sideways when the viewport is narrower than the eleven columns need.
+// Eleven columns do not fit a portrait phone, so it wraps to two rows and opens
+// out to one the moment the handset is turned — see the `tilt` screen in
+// tailwind.config.js, which keys off orientation rather than width because a
+// landscape phone can be narrower than any width breakpoint.
 const STAT_COLS = [
   ["MPG", "mpg", null],
   ["PTS", "pts", "Points"],
@@ -356,36 +324,69 @@ const STAT_COLS = [
   ["FT%", "ft", "Free Throws"],
 ];
 
-// `always` drops the orientation gate: on the runs board the strip rides every
-// row, so it waits for the phone to be turned; inside a season drop-down it is
-// already behind a tap and should just be there.
-function StatStrip({ stats, always, note }) {
+// Decimals the VA line prints at. The comparison below rounds to it before
+// deciding, so the arrow always agrees with the two numbers on screen: a pair
+// that both print -0.7 gets the neutral dash rather than an arrow tracking a
+// difference in a digit the reader is never shown.
+const VA_DP = 1;
+
+// Which way a playoff category moved against the same category in the regular
+// season. Higher VA is better for every one of them — a turnover line costs
+// points, so -1.9 against -2.2 is a category he gave away LESS of, and reads as
+// up. That makes a plain numeric comparison the right one throughout; no column
+// needs its sense inverted.
+function vaTrend(va, prior) {
+  if (va == null || prior == null) return null;
+  const now = Number(va.toFixed(VA_DP));
+  const then = Number(prior.toFixed(VA_DP));
+  return now > then ? "up" : now < then ? "down" : "flat";
+}
+
+const TREND = {
+  up: ["↑", "more than"],
+  down: ["↓", "less than"],
+  flat: ["—", "the same as"],
+};
+
+function StatStrip({ stats, compareTo, action, note }) {
   if (!stats) return null;
   return (
-    <div className={`${always ? "block" : "hidden tilt:block"} px-2 pb-2 overflow-x-auto`}>
-      {/* On the runs board the strip is one landscape-only line. Inside a
-          season drop-down it has to work in portrait too, so there it wraps to
-          two rows rather than scrolling off the edge of a phone. */}
-      <div className={always
-        ? "grid grid-cols-6 tilt:grid-cols-11 gap-x-1 gap-y-2"
-        : "grid grid-cols-11 gap-x-1 min-w-[34rem]"}>
+    <div className="block px-2 pb-2 overflow-x-auto">
+      {/* Eleven stats over six columns leave the twelfth cell empty, and that
+          is where `action` goes. Turned sideways the row opens to twelve so the
+          button keeps its place at the end of the line rather than dropping to
+          a row of its own; with nothing to put there it stays eleven, so the
+          strip does not carry a blank column it has no use for. */}
+      <div className={`grid grid-cols-6 ${action ? "tilt:grid-cols-12" : "tilt:grid-cols-11"} gap-x-1 gap-y-2`}>
         {STAT_COLS.map(([label, key, cat]) => {
           const v = stats[key];
           const va = cat ? stats.va?.[cat] : null;
+          const prior = cat && compareTo ? compareTo.va?.[cat] : null;
+          const trend = vaTrend(va, prior);
+          const [glyph, phrase] = trend ? TREND[trend] : [];
           return (
             <div key={label} className="text-center">
               <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
               <div className="text-[11px] font-semibold text-stone-800 tabular-nums leading-tight">
                 {v == null ? "—" : v.toFixed(key.endsWith("%") || cat === "2-Pointers" || cat === "3-Pointers" || cat === "Free Throws" ? 1 : 1)}
               </div>
-              <div className={`text-[9px] tabular-nums leading-tight ${
-                va == null ? "text-stone-300"
-                  : va < 0 ? "text-red-600" : "text-stone-500"}`}>
-                {va == null ? "·" : (va > 0 ? "+" : "") + va.toFixed(1)}
+              <div
+                className={`text-[9px] tabular-nums leading-tight ${
+                  va == null ? "text-stone-300"
+                    : va < 0 ? "text-red-600" : "text-stone-500"}`}
+                title={trend ? `${label}: worth ${phrase} in the playoffs (${va.toFixed(VA_DP)}) as in the regular season (${prior.toFixed(VA_DP)})` : undefined}
+              >
+                {va == null ? "·" : (va > 0 ? "+" : "") + va.toFixed(VA_DP)}
+                {/* Grey whichever way it points. The number beside it is already
+                    red when the category cost him points, and a second colour
+                    saying something else about the same figure would read as
+                    disagreeing with the first. */}
+                {glyph && <span className="ml-[1px] text-stone-400" aria-hidden="true">{glyph}</span>}
               </div>
             </div>
           );
         })}
+        {action && <div className="text-center self-center">{action}</div>}
       </div>
       <div className="text-[8px] text-stone-400 mt-1">
         {note || "Per game, with the Value Added each one contributed underneath — the ten add up to VA/G."}
@@ -395,245 +396,126 @@ function StatStrip({ stats, always, note }) {
 }
 
 
-// One run, opened: every game of it, heaviest contribution first. This is where
-// the weighting becomes checkable — a bigger night in an earlier round can sit
-// below a quieter one in the Finals, and here you can see exactly why.
-function RunGames({ slug, season }) {
+// One season, opened all the way up: the production behind both halves of it,
+// and every game of the playoff run underneath.
+//
+// All of it comes from one response — /api/legacy/runs with a slug and a season
+// carries the playoff line, the regular season beside it, and the game log —
+// so the fold asks once and shows the lot.
+function SeasonPanel({ slug, season, onGoToLeaderboard }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
+    // Cleared on the way in: without this a panel reopened on a different
+    // season shows the previous one's numbers until the fetch lands.
+    setD(null);
+    setError(null);
     fetchJsonCached(`/api/legacy/runs?slug=${encodeURIComponent(slug)}&season=${encodeURIComponent(season)}`)
       .then((r) => { if (!cancelled) setD(r); })
       .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
   }, [slug, season]);
 
-  if (error) return <div className="px-2 py-3 text-[10px] text-red-600">Couldn’t load games — {error}</div>;
-  if (!d) return <div className="px-2 py-3 text-[10px] text-stone-500 italic">Loading games…</div>;
+  if (error) return <div className="px-2 py-2 text-[10px] text-red-600">Couldn’t load — {error}</div>;
+  if (!d) return <div className="px-2 py-2 text-[10px] text-stone-500 italic">Loading…</div>;
 
-  const best = Math.max(...d.games.map((g) => Math.abs(g.contribution)), 0.1);
+  const po = d.run.stats, rs = d.run.rsStats;
+  const games = d.games || [];
+  // Asked once here rather than inside the button: the strip has to size its
+  // grid around whether there is a button to place, before it renders one.
+  const canGo = !!(onGoToLeaderboard && d.run?.season);
+  const best = Math.max(...games.map((g) => Math.abs(g.contribution)), 0.1);
   const ROUND = { 1: "R1", 2: "R2", 3: "CF", 4: "F" };
 
   return (
-    <div className="px-2 pb-3 pt-1 bg-stone-50 border-t border-stone-200">
-      <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
-        {d.games.length} games, biggest contribution first. Every game of a series
-        carries the same weight, so the order is what he did times what the series
-        was worth — <span className="font-semibold">VA × weight</span>.
-      </p>
-
-      <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200">
-        <span>Game</span><span>Line</span>
-        <span className="text-right">VA</span>
-        <span className="text-right">×W</span>
-        <span className="text-right">Total</span>
-      </div>
-
-      {d.games.map((g) => {
-        const down = g.contribution < 0;
-        return (
-          <div key={g.gameId} className="pt-1 pb-1.5 border-b border-stone-100 last:border-0">
-            <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 items-baseline text-[11px]">
-              <span className="tabular-nums text-stone-700 font-semibold">
-                {ROUND[g.round] || `R${g.round}`} {g.opp}
-                <span className="text-stone-400 font-normal"> G{g.gameNo}</span>
-              </span>
-              <span className="text-[10px] text-stone-500 tabular-nums truncate">
-                {g.pts}p {g.reb}r {g.ast}a
-                {g.stl ? ` ${g.stl}s` : ""}{g.blk ? ` ${g.blk}b` : ""}
-                {" · "}{g.fgm}/{g.fga}{g.fta ? ` ${g.ftm}/${g.fta}ft` : ""}
-                {" · "}{Math.round(g.mp)}m
-              </span>
-              <span className={`text-right tabular-nums ${g.va < 0 ? "text-red-600" : "text-stone-600"}`}>{g.va.toFixed(1)}</span>
-              <span className="text-right tabular-nums text-stone-400">{g.weight.toFixed(2)}</span>
-              <span className={`text-right tabular-nums font-bold ${down ? "text-red-600" : "text-stone-900"}`}>{g.contribution.toFixed(0)}</span>
-            </div>
-            <div className="h-1 mt-1 bg-stone-200/60 rounded-sm overflow-hidden">
-              <div className={`h-full rounded-sm ${down ? "bg-red-500" : "bg-stone-900"}`}
-                style={{ width: `${(Math.abs(g.contribution) / best) * 100}%` }} />
-            </div>
+    <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
+      {po && (
+        <>
+          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+            {/* Where the run sits among every postseason run on record — the
+                one number here that is about the field rather than about this
+                career. */}
+            Playoffs · {po.games} games{d.run.rank ? ` · #${d.run.rank.toLocaleString()} all time` : ""}
           </div>
-        );
-      })}
-    </div>
-  );
-}
+          {/* Drawn against the regular season below it wherever there is one:
+              each playoff VA carries an arrow saying whether that part of his
+              game was worth more in the postseason than over the winter. */}
+          <StatStrip
+            stats={po}
+            compareTo={rs}
+            action={canGo ? <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" /> : null}
+            note={rs
+              ? "Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G. The arrow reads each against the same category in the regular season below; both are per game, so heavier playoff minutes lift the lot."
+              : "Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G."}
+          />
+        </>
+      )}
 
+      {rs && (
+        <>
+          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+            Regular season · {rs.games} games
+          </div>
+          <StatStrip
+            stats={rs}
+            action={canGo ? <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="regular" /> : null}
+            note="Computed on season totals, the same way the regular season’s VA is."
+          />
+        </>
+      )}
 
-// Every postseason run on record, ranked, searchable. The career board is an
-// argument; this is the evidence behind it — the surface where a number can be
-// checked against a run you actually watched.
-function RunsBoard() {
-  const [query, setQuery] = useState("");
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [limit, setLimit] = useState(100);
-  const [open, setOpen] = useState(null); // "<slug>-<season>"
-  const [season, setSeason] = useState("");
-  // Team only means something inside a season, so it is gated on one and
-  // cleared whenever the season changes out from under it.
-  const [team, setTeam] = useState("");
+      {!po && !rs && (
+        <div className="px-2 py-2 text-[10px] text-stone-400 italic">No stat line on record for this season.</div>
+      )}
 
-  // Debounced so a typed name is one request, not one per keystroke. The
-  // search runs server-side because it has to reach all 8,917 runs.
-  useEffect(() => {
-    let cancelled = false;
-    const t = setTimeout(() => {
-      const url = `/api/legacy/runs?limit=${limit}&q=${encodeURIComponent(query.trim())}`
-        + `&season=${encodeURIComponent(season)}&team=${encodeURIComponent(season ? team : "")}`;
-      fetchJsonCached(url)
-        .then((d) => { if (!cancelled) { setData(d); setError(null); } })
-        .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
-    }, query ? 220 : 0);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [query, limit, season, team]);
+      {/* Every game of the run, heaviest contribution first. This is where the
+          weighting becomes checkable — a bigger night in an earlier round can
+          sit below a quieter one in the Finals, and here you can see why. */}
+      {games.length > 0 && (
+        <div className="px-2 pb-3 pt-2 mt-1 bg-stone-50 border-t border-stone-200">
+          <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
+            {games.length} games, biggest contribution first. Every game of a series
+            carries the same weight, so the order is what he did times what the series
+            was worth — <span className="font-semibold">VA × weight</span>.
+          </p>
 
-  const runs = data?.runs || [];
-  // Magnitude, so the scale still means something when a filtered list is all
-  // negative — a team whose bench all cost their side points, say.
-  const max = Math.max(...runs.map((r) => Math.abs(r.lva)), 0.1);
+          <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200">
+            <span>Game</span><span>Line</span>
+            <span className="text-right">VA</span>
+            <span className="text-right">×W</span>
+            <span className="text-right">Total</span>
+          </div>
 
-  return (
-    <div>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => { setQuery(e.target.value); setLimit(100); }}
-        placeholder="Search a player…"
-        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
-      />
-
-      <div className="flex items-center gap-2 mb-2">
-        <select
-          value={season}
-          onChange={(e) => { setSeason(e.target.value); setTeam(""); setLimit(100); setOpen(null); }}
-          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800"
-        >
-          <option value="">All seasons</option>
-          {(data?.seasons || []).map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        {/* Disabled until a season is chosen — a team without one would be
-            asking a different question than the board can answer. */}
-        <select
-          value={team}
-          disabled={!season}
-          onChange={(e) => { setTeam(e.target.value); setLimit(100); setOpen(null); }}
-          className={`text-[11px] border px-2 py-1.5 ${
-            season
-              ? "bg-white border-stone-300 text-stone-800"
-              : "bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed"}`}
-          title={season ? "Filter to one team" : "Pick a season first"}
-        >
-          <option value="">{season ? "All teams" : "Team — pick a season first"}</option>
-          {season && (data?.teams || []).map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-
-        {(season || team) && (
-          <button
-            onClick={() => { setSeason(""); setTeam(""); setLimit(100); setOpen(null); }}
-            className="ml-auto text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700"
-          >✕ Clear</button>
-        )}
-      </div>
-
-      <div className="flex items-baseline gap-2 mb-1 px-2 text-[10px] text-stone-400 tabular-nums">
-        {data ? (
-          <>
-            <span>
-              {query.trim() || season || team
-                ? `${data.matched.toLocaleString()} of ${data.total.toLocaleString()} runs`
-                  + (season ? ` · ${season}` : "") + (team ? ` · ${team}` : "")
-                : `${data.total.toLocaleString()} postseason runs`}
-            </span>
-            <span className="ml-auto uppercase tracking-widest">Ranked by leveraged VA</span>
-          </>
-        ) : <span>Loading…</span>}
-      </div>
-
-      <div className="grid grid-cols-[2.2rem_1fr_2rem_3.2rem_2.6rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-        <span>#</span><span>Player</span><span className="text-right">G</span>
-        <span className="text-right">LVA</span><span className="text-right">VA/G</span>
-      </div>
-
-      {error && <div className="text-[10px] text-red-600 py-6 text-center">Couldn’t load — {error}</div>}
-      {data && !runs.length && !error && (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">
-          No runs match{query.trim() ? ` “${query.trim()}”` : ""}
-          {season ? ` in ${season}` : ""}{team ? ` for ${team}` : ""}.
+          {games.map((g) => {
+            const down = g.contribution < 0;
+            return (
+              <div key={g.gameId} className="pt-1 pb-1.5 border-b border-stone-100 last:border-0">
+                <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 items-baseline text-[11px]">
+                  <span className="tabular-nums text-stone-700 font-semibold">
+                    {ROUND[g.round] || `R${g.round}`} {g.opp}
+                    <span className="text-stone-400 font-normal"> G{g.gameNo}</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 tabular-nums truncate">
+                    {g.pts}p {g.reb}r {g.ast}a
+                    {g.stl ? ` ${g.stl}s` : ""}{g.blk ? ` ${g.blk}b` : ""}
+                    {" · "}{g.fgm}/{g.fga}{g.fta ? ` ${g.ftm}/${g.fta}ft` : ""}
+                    {" · "}{Math.round(g.mp)}m
+                  </span>
+                  <span className={`text-right tabular-nums ${g.va < 0 ? "text-red-600" : "text-stone-600"}`}>{g.va.toFixed(1)}</span>
+                  <span className="text-right tabular-nums text-stone-400">{g.weight.toFixed(2)}</span>
+                  <span className={`text-right tabular-nums font-bold ${down ? "text-red-600" : "text-stone-900"}`}>{g.contribution.toFixed(0)}</span>
+                </div>
+                <div className="h-1 mt-1 bg-stone-200/60 rounded-sm overflow-hidden">
+                  <div className={`h-full rounded-sm ${down ? "bg-red-500" : "bg-stone-900"}`}
+                    style={{ width: `${(Math.abs(g.contribution) / best) * 100}%` }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
-
-      {runs.map((r) => {
-        const isOpen = open === `${r.slug}-${r.season}`;
-        return (
-          <div key={`${r.slug}-${r.season}`} className="border-b border-stone-100">
-            <button
-              type="button"
-              aria-expanded={isOpen}
-              onClick={() => setOpen(isOpen ? null : `${r.slug}-${r.season}`)}
-              className={`w-full text-left grid grid-cols-[2.2rem_1fr_2rem_3.2rem_2.6rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
-            >
-              {/* The all-time rank, not the rank among matches — searching for a
-                  player should tell you where his runs sit in the whole list. */}
-              <span className="text-[10px] tabular-nums text-stone-400">{r.rank.toLocaleString()}</span>
-              <span className="min-w-0">
-                <span className="font-semibold text-stone-800 block truncate">
-                  <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
-                  {r.name}
-                </span>
-                <span className="text-[10px] text-stone-500 tabular-nums">
-                  {r.season}{r.team ? ` · ${r.team}` : ""}
-                </span>
-              </span>
-              <span className="text-right tabular-nums text-stone-600">{r.games}</span>
-              <span className="text-right tabular-nums font-bold text-stone-900">{fmt0(r.lva)}</span>
-              <span className="text-right tabular-nums text-stone-500">{r.vaPerG.toFixed(1)}</span>
-            </button>
-
-            {/* Two bars on one scale: the run, and the regular season that led
-                into it priced the same way. The light bar's length against the
-                dark one is the whole point — for most players the winter is a
-                fraction of the fortnight. */}
-            <div className="px-2 pt-1 pb-1.5 flex flex-col gap-[2px]">
-              {/* A run worth less than nothing draws red at its magnitude, the
-                  same as the career fold does. Clamping it to zero width would
-                  read as missing data rather than as a negative. */}
-              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden">
-                <div className={`h-full rounded-sm ${r.lva < 0 ? "bg-red-500" : "bg-stone-900"}`}
-                  style={{ width: `${Math.min(100, (Math.abs(r.lva) / max) * 100)}%` }} />
-              </div>
-              <div className="h-1 bg-stone-100 rounded-sm overflow-hidden" title="Regular season, same scale">
-                <div className={`h-full rounded-sm ${r.rsLVA < 0 ? "bg-red-300" : "bg-stone-400"}`}
-                  style={{ width: `${Math.max(0, Math.min(100, (Math.abs(r.rsLVA) / max) * 100))}%` }} />
-              </div>
-            </div>
-
-            <StatStrip stats={r.stats} />
-            {isOpen && <RunGames slug={r.slug} season={r.season} />}
-          </div>
-        );
-      })}
-
-      {data && data.matched > runs.length && (
-        <button
-          onClick={() => setLimit((n) => Math.min(500, n + 200))}
-          className="w-full mt-2 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-300 hover:bg-stone-50"
-        >
-          Show more ({(data.matched - runs.length).toLocaleString()} left)
-        </button>
-      )}
-
-      <div className="text-[10px] text-stone-400 italic mt-2 leading-relaxed">
-        Ranked on the playoff run alone. <span className="font-semibold">LVA</span> is
-        leveraged Value Added over the run; <span className="font-semibold">VA/G</span> is the raw,
-        unweighted per-game figure behind it. The dark bar is the run; the light bar under it
-        is that player&apos;s regular season the same year, priced the same way and drawn on the
-        same scale. Tap a run for its games; turn the phone sideways for the per-game stat line
-        and what each part of it was worth.
-      </div>
     </div>
   );
 }
@@ -744,8 +626,12 @@ function CareersBoard({ onGoToLeaderboard }) {
   const head = (key, label) => (
     <button
       onClick={() => setSortKey(key)}
-      className={`text-right uppercase tracking-wider ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
-    >{label}{sortKey === key ? " ▾" : ""}</button>
+      className={`text-right uppercase tracking-wider whitespace-nowrap ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
+    >{/* A non-breaking space, and nowrap on top of it: the caret belongs to the
+         label it marks, and a column narrow enough to break between them would
+         drop it onto a second line and push the header row taller than the
+         rule under it. */}
+      {label}{sortKey === key ? "\u00A0▾" : ""}</button>
   );
 
   return (
@@ -756,8 +642,8 @@ function CareersBoard({ onGoToLeaderboard }) {
 
       <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
         <span className="font-semibold">Legacy</span> is a career&apos;s value with every game
-        priced by what was at stake; <span className="font-semibold">Peak/G</span> is the same
-        weighting as a rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
+        priced by what was at stake; <span className="font-semibold">Peak</span> is the same
+        weighting as a per-game rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
         or a player for the season-by-season fold — and the{" "}
         <span className="font-bold">i</span> above for how the number is built. Each bar is
         split into the franchises that built it, earliest first.
@@ -806,10 +692,14 @@ function CareersBoard({ onGoToLeaderboard }) {
         </div>
       )}
 
-      <div className="grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-        <span></span><span>Player</span><span className="text-right">Sns</span>
+      <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
+        <span></span><span>Player</span><span className="text-right">Yr</span>
         {head("total", "Legacy")}
-        {head("peak", "Peak/G")}
+        {/* "Peak", not "Peak/G": the per-game part is spelled out in the
+            paragraph above the board and in the fold's own tile, and four
+            characters plus a sort caret fit any handset's idea of this font
+            with room to spare. */}
+        {head("peak", "Peak")}
       </div>
 
       {!shown.length && (
@@ -832,7 +722,7 @@ function CareersBoard({ onGoToLeaderboard }) {
               type="button"
               aria-expanded={isOpen}
               onClick={() => setOpen(isOpen ? null : p.slug)}
-              className={`w-full text-left grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
+              className={`w-full text-left ${BOARD_COLS} px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
             >
               {/* The rank the server assigned in the sorted order, not the row's
                   position in whatever has been paged in so far. */}
@@ -1021,27 +911,16 @@ function LegacyInfo({ dials }) {
 }
 
 
-// Two readings of the same numbers. Careers is the argument the metric makes;
-// Runs is the evidence it rests on — one row per postseason run, so a score can
-// be checked against a run you remember rather than taken on trust.
-export function LegacyView({ onGoToLeaderboard = null }) {
-  const [mode, setMode] = useState("careers"); // "careers" | "runs"
+// The career board. Legacy is deliberately two numbers rather than one, the
+// board makes that argument, and a career opens into the seasons it was folded
+// from — each of those into the stat lines and the games behind them.
+export function CareerView({ onGoToLeaderboard = null }) {
   const [info, setInfo] = useState(false);
-
-  const tab = (key, label) => (
-    <button
-      onClick={() => setMode(key)}
-      className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border ${
-        mode === key
-          ? "bg-stone-900 text-white border-stone-900"
-          : "text-stone-500 border-stone-300 hover:text-stone-800"}`}
-    >{label}</button>
-  );
 
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-3">
-        <h2 className="text-base font-bold text-stone-900">Legacy</h2>
+        <h2 className="text-base font-bold text-stone-900">Career</h2>
         <button
           onClick={() => setInfo((v) => !v)}
           aria-expanded={info}
@@ -1052,10 +931,11 @@ export function LegacyView({ onGoToLeaderboard = null }) {
               ? "bg-stone-900 border-stone-900 text-white"
               : "border-stone-400 text-stone-500 hover:border-stone-900 hover:text-stone-900"}`}
         >i</button>
-        <span className="ml-auto flex gap-1">{tab("careers", "Careers")}{tab("runs", "Runs")}</span>
       </div>
+
       {info && <LegacyInfo />}
-      {mode === "careers" ? <CareersBoard onGoToLeaderboard={onGoToLeaderboard} /> : <RunsBoard />}
+
+      <CareersBoard onGoToLeaderboard={onGoToLeaderboard} />
     </div>
   );
 }
