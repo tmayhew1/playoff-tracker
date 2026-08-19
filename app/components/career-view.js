@@ -307,7 +307,31 @@ const STAT_COLS = [
   ["FT%", "ft", "Free Throws"],
 ];
 
-function StatStrip({ stats, note }) {
+// Decimals the VA line prints at. The comparison below rounds to it before
+// deciding, so the arrow always agrees with the two numbers on screen: a pair
+// that both print -0.7 gets the neutral dash rather than an arrow tracking a
+// difference in a digit the reader is never shown.
+const VA_DP = 1;
+
+// Which way a playoff category moved against the same category in the regular
+// season. Higher VA is better for every one of them — a turnover line costs
+// points, so -1.9 against -2.2 is a category he gave away LESS of, and reads as
+// up. That makes a plain numeric comparison the right one throughout; no column
+// needs its sense inverted.
+function vaTrend(va, prior) {
+  if (va == null || prior == null) return null;
+  const now = Number(va.toFixed(VA_DP));
+  const then = Number(prior.toFixed(VA_DP));
+  return now > then ? "up" : now < then ? "down" : "flat";
+}
+
+const TREND = {
+  up: ["↑", "more than"],
+  down: ["↓", "less than"],
+  flat: ["—", "the same as"],
+};
+
+function StatStrip({ stats, compareTo, note }) {
   if (!stats) return null;
   return (
     <div className="block px-2 pb-2 overflow-x-auto">
@@ -315,16 +339,27 @@ function StatStrip({ stats, note }) {
         {STAT_COLS.map(([label, key, cat]) => {
           const v = stats[key];
           const va = cat ? stats.va?.[cat] : null;
+          const prior = cat && compareTo ? compareTo.va?.[cat] : null;
+          const trend = vaTrend(va, prior);
+          const [glyph, phrase] = trend ? TREND[trend] : [];
           return (
             <div key={label} className="text-center">
               <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
               <div className="text-[11px] font-semibold text-stone-800 tabular-nums leading-tight">
                 {v == null ? "—" : v.toFixed(key.endsWith("%") || cat === "2-Pointers" || cat === "3-Pointers" || cat === "Free Throws" ? 1 : 1)}
               </div>
-              <div className={`text-[9px] tabular-nums leading-tight ${
-                va == null ? "text-stone-300"
-                  : va < 0 ? "text-red-600" : "text-stone-500"}`}>
-                {va == null ? "·" : (va > 0 ? "+" : "") + va.toFixed(1)}
+              <div
+                className={`text-[9px] tabular-nums leading-tight ${
+                  va == null ? "text-stone-300"
+                    : va < 0 ? "text-red-600" : "text-stone-500"}`}
+                title={trend ? `${label}: worth ${phrase} in the playoffs (${va.toFixed(VA_DP)}) as in the regular season (${prior.toFixed(VA_DP)})` : undefined}
+              >
+                {va == null ? "·" : (va > 0 ? "+" : "") + va.toFixed(VA_DP)}
+                {/* Grey whichever way it points. The number beside it is already
+                    red when the category cost him points, and a second colour
+                    saying something else about the same figure would read as
+                    disagreeing with the first. */}
+                {glyph && <span className="ml-[1px] text-stone-400" aria-hidden="true">{glyph}</span>}
               </div>
             </div>
           );
@@ -381,7 +416,16 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
             </span>
             <GoToBoard onGo={onGoToLeaderboard} run={d.run} scope="playoffs" />
           </div>
-          <StatStrip stats={po} note="Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G." />
+          {/* Drawn against the regular season below it wherever there is one:
+              each playoff VA carries an arrow saying whether that part of his
+              game was worth more in the postseason than over the winter. */}
+          <StatStrip
+            stats={po}
+            compareTo={rs}
+            note={rs
+              ? "Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G. The arrow reads each against the same category in the regular season below; both are per game, so heavier playoff minutes lift the lot."
+              : "Per game, with the Value Added each contributed underneath — the ten sum to the run’s VA/G."}
+          />
         </>
       )}
 
