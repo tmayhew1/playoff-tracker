@@ -103,6 +103,14 @@ export const GOLD_BG = withAlpha("#fbbf24", 0.28); // bg-amber-400, translucent
 
 export const MIDNIGHT_PURPLE = "#2e1065";          // violet-950 — the VA+ accent
 
+// The rule a below-replacement row wears down its right edge, on both Explore
+// boards. A negative row already swaps its bar to a red wash, but a team whose
+// primary color IS red — Houston, Toronto, Miami — fills its POSITIVE rows with
+// nearly that same wash, so on those rosters the tint can't be read as a sign.
+// The rule sits out at the far right where a negative row's stub of a bar never
+// reaches, and it is the same color on every team.
+export const NEGATIVE_EDGE = withAlpha("#dc2626", 0.45);
+
 
 // --- Color math (OKLab) ------------------------------------------------------
 // The comparison palette has to answer "do these two colors read apart?" and

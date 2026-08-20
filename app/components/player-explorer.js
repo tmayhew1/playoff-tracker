@@ -7,7 +7,7 @@ import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, comparePalette, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, comparePalette, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 
@@ -873,6 +873,17 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 <span className={`w-14 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
                 <span className={`w-11 text-right tabular-nums ${rowVaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{rowVaPerG.toFixed(2)}</span>
               </div>
+              {/* Below replacement: a light rule down the season's right edge.
+                  Last in the row so it paints over the open-row wash rather
+                  than under it, and pointer-transparent so it stays out of the
+                  way of the tap that opens the breakdown or ticks the season. */}
+              {rowVa < 0 && (
+                <div
+                  className="absolute inset-y-0 right-0 w-[3px] pointer-events-none"
+                  style={{ backgroundColor: NEGATIVE_EDGE }}
+                  aria-hidden
+                />
+              )}
             </div>
             {sOpen && (scope === "playoffs" ? (
               <PlayerSeasonDrill
