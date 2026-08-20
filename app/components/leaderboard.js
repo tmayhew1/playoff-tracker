@@ -6,7 +6,7 @@ import { valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, normalizeName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 
 
@@ -713,6 +713,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               <span className={`w-14 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
               <span className={`w-11 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
               </div>
+              {/* Below replacement: a light rule down the row's right edge.
+                  Last in the row so it paints over the open-row wash rather
+                  than under it, and pointer-transparent so it stays out of the
+                  way of the tap that opens the breakdown. */}
+              {rowVa < 0 && (
+                <div
+                  className="absolute inset-y-0 right-0 w-[3px] pointer-events-none"
+                  style={{ backgroundColor: NEGATIVE_EDGE }}
+                  aria-hidden
+                />
+              )}
             </div>
             {isOpen && (scope === "playoffs" ? (
               <VABreakdown
