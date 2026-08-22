@@ -107,14 +107,81 @@ export const DEF_PBP_PRIOR_POSS_PO = 500;
 export const DEF_EST_CAL = 0.5;
 export const DEF_EST_CAL_LG = 0.646;
 
+// --- Season coverage: how much of the team's season the player was there for -
+// The team terms above — the line IND subtracts, and the edge vs league the
+// team-share pays out — are properties of the team's WHOLE season. The player
+// is only on the floor for part of it, and the counterfactual dVA is defined
+// against is the team's defense over the possessions HE played, not over the
+// 82 games the line was averaged from. For a player who dressed every night
+// those are the same window and there is nothing to correct. For an 11-game
+// player they are not: his team's season line is an estimate of his window
+// carrying the full game-to-game spread of team defense, and paying it out at
+// face value hands him a full season's worth of team context on a fortnight
+// of evidence. (Zach Edey's 2025-26: 82% of his +7.9 net came from the team
+// terms, on 11 games — which is what put an 11-game season 3rd all-time.)
+//
+// So the team terms are weighted by their own reliability. Reading the
+// player's window as g of the team's G games, the season line misses the
+// window's true level with variance sigma_g^2 (1/g - 1/G) — the finite-
+// population form, exactly zero when g = G — against a between-team spread of
+// tau^2, so the standard regression-to-the-mean weight is
+//
+//   teamW = tau^2 / (tau^2 + sigma_g^2 (1/g - 1/G))  =  g / (g + K (1 - g/G))
+//
+// with K = (sigma_g/tau)^2. Both scales are measured off this repo's own data:
+// sigma_g = 11.5 pts/100 is the SD of a team's per-game defensive rating
+// around its own mean (5,953 postseason games in history-*.json, scored at
+// each season's pace), tau = 3.0 is the SD of team season ratings around
+// their league line (1,292 team-seasons in def-ratings.json's team maps).
+//
+// The weight is a shrink toward the null, not a bias correction: a random
+// window's expected level IS the season line. What it says is that a claim
+// about one team-season is only worth what the sample supports, so the
+// endpoints are the two forms this file already has — teamW = 1 is the
+// team-aware branch unchanged (every full-season player, ~4,400 of the 19,387
+// indexed seasons, moves by exactly nothing), and teamW -> 0 is the plain
+// vs-league fallback the 2TM rows take, reached continuously instead of by a
+// switch. Both the prior's anchor (calibratedEst) and the baseline IND
+// subtracts ride the same weight, or the low-coverage end would hold a
+// cup-of-coffee player to a bad team's line while crediting him against the
+// league's.
+export const DEF_TEAM_GAME_SD = 11.5;   // per-game team DRtg, SD around its own season
+export const DEF_TEAM_SPREAD_SD = 3;    // team-season DRtg, SD around the league line
+export const DEF_TEAM_COVERAGE_K =
+  (DEF_TEAM_GAME_SD / DEF_TEAM_SPREAD_SD) ** 2; // ~14.7
+
+// g of G games -> the weight the team terms carry. 1 (no shrink) whenever the
+// coverage is unknown: seasons baked before the team maps carried games, and
+// rows with no game count, keep the un-weighted behaviour.
+export function teamCoverageW(games, teamGames) {
+  if (!(games > 0) || !(teamGames > 0)) return 1;
+  const f = Math.min(1, games / teamGames);
+  return games / (games + DEF_TEAM_COVERAGE_K * (1 - f));
+}
+
 // The box-score estimate rescaled onto the play-by-play scale, shrunk toward
 // the player's own team line when there is one and the league line otherwise.
+// teamW slides between the two: the anchor and the slope it is shrunk by are
+// both mixed by the coverage weight, so a full-season player gets the team
+// form exactly and a cup of coffee gets the league form (see teamCoverageW).
 // Passes null through: a missing estimate stays missing.
-export function calibratedEst(est, teamDrtg, laDRtg) {
+export function calibratedEst(est, teamDrtg, laDRtg, teamW = 1) {
   if (est == null) return null;
-  return teamDrtg > 0
-    ? teamDrtg + DEF_EST_CAL * (est - teamDrtg)
-    : laDRtg + DEF_EST_CAL_LG * (est - laDRtg);
+  if (!(teamDrtg > 0)) return laDRtg + DEF_EST_CAL_LG * (est - laDRtg);
+  const anchor = teamW * teamDrtg + (1 - teamW) * laDRtg;
+  const cal = teamW * DEF_EST_CAL + (1 - teamW) * DEF_EST_CAL_LG;
+  return anchor + cal * (est - anchor);
+}
+
+// One clause explaining the team line a tooltip is quoting, for the views that
+// show it. Empty string above DEF_TEAM_NOTE_W, where the weighting moves the
+// line by less than the tenth of a point the views print and the caveat would
+// be noise — the math itself is continuous and has no such threshold.
+export const DEF_TEAM_NOTE_W = 0.95;
+
+export function teamLineNote(info, team) {
+  if (!info || !(info.teamW < DEF_TEAM_NOTE_W) || info.teamSeasonDrtg == null) return "";
+  return ` — ${team || "the team"} rated ${info.teamSeasonDrtg.toFixed(1)} across the season, carried at ${(info.teamW * 100).toFixed(0)}% for the share of it he played and the rest at the league line`;
 }
 
 export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
@@ -124,11 +191,16 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   const e = defs?.[season];
   const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
   const t = tmap?.[row?.team];
+  // How much of the team's season this player was actually present for — the
+  // weight every team term below carries (see teamCoverageW). Rows carry games
+  // as `g` (regular-season bakes) or `gp` (leaderboard/normalised rows).
+  const teamW = teamCoverageW(row?.g ?? row?.gp, t?.g);
   // The prior is the CALIBRATED estimate, not the raw one, so the two sides of
   // the blend are on one scale (see DEF_EST_CAL). The team line it shrinks
   // toward is the same box-score team rating the IND term subtracts, and is
-  // itself left alone — team ratings are already measured, slope 0.96.
-  const est = calibratedEst(ent.est, t?.drtg, la);
+  // itself left alone — team ratings are already measured, slope 0.96 — up to
+  // the coverage weight, which both sides ride together.
+  const est = calibratedEst(ent.est, t?.drtg, la, teamW);
   // Posterior weight on the PBP rating: poss / (poss + prior). Pure est when
   // no PBP sample exists (pre-2000, unbaked seasons, unjoined names); pure
   // PBP in the rare case the estimate is missing.
@@ -148,9 +220,13 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   // Blocks weigh what VA says they're worth: laDRBrate of a steal.
   const bw = lgaX.laDRBrate > 0 ? lgaX.laDRBrate : 1;
   const teamStockRate = t ? (t.stlpm || 0) + bw * (t.blkpm || 0) : 0;
-  let net, w = null, teamDrtg = null;
+  let net, w = null, teamDrtg = null, teamSeasonDrtg = null;
   if (t && t.drtg > 0 && teamStockRate > 0 && row.mp > 0) {
-    teamDrtg = pbpTeamDrtg > 0 ? pbpW * pbpTeamDrtg + (1 - pbpW) * t.drtg : t.drtg;
+    teamSeasonDrtg = pbpTeamDrtg > 0 ? pbpW * pbpTeamDrtg + (1 - pbpW) * t.drtg : t.drtg;
+    // The season line, weighted by how much of that season the player saw.
+    // teamW = 1 leaves it untouched; teamW → 0 walks it to the league line,
+    // where both terms below collapse into the plain vs-league fallback.
+    teamDrtg = teamW * teamSeasonDrtg + (1 - teamW) * la;
     const edge = la - teamDrtg;
     const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
     const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;
@@ -160,7 +236,10 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   } else {
     net = la - drtg;
   }
-  return { dva: (net / 100) * lgaX.laPOSSperM * viewMp, drtg, w, teamDrtg, laDRtg: la, pbpW };
+  return {
+    dva: (net / 100) * lgaX.laPOSSperM * viewMp,
+    drtg, w, teamDrtg, teamSeasonDrtg, teamW, laDRtg: la, pbpW,
+  };
 }
 
 

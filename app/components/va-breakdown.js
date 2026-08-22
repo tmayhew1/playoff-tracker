@@ -5,7 +5,7 @@ import { TEAMS } from "../teams";
 import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
-import { defVAInfo, useDefRatings } from "../lib/defense";
+import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
@@ -370,7 +370,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
               <div
                 className="flex items-baseline justify-center gap-2 mb-2"
                 title={dInfo?.w != null
-                  ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)`
+                  ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
                   : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
               >
                 <span className="text-[9px] uppercase tracking-widest text-stone-400">VA+</span>
@@ -1291,8 +1291,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       v: perGame ? v / (selfRow.gp || 1) : v,
       drtg,
       team: selfRow.team || null,
+      weighted: info.teamW < DEF_TEAM_NOTE_W ? (selfRow.gp || selfRow.g || 0) : 0,
       label: `${selfRow.team || "TEAM"} ${drtg}`,
-      title: `${selfRow.team || "The team"}’s own defensive rating (${drtg} DRTG vs ${info.laDRtg.toFixed(1)} league) — ${self.name} lands right of this line when he defends better than his team does`,
+      title: `The team defense ${self.name} is measured against (${drtg} DRTG vs ${info.laDRtg.toFixed(1)} league) — he lands right of this line when he defends better than it${teamLineNote(info, selfRow.team)}`,
     };
   }, [selSeg, selfRow, lga, defs, seasonKey, defScope, perGame, self.name]);
 
@@ -1620,7 +1621,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
-              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = ${teamRefLine.team || "his team"} itself at ${teamRefLine.drtg} DRTG (right of it he out-defends his own team)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
+              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
               : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</>}
           </div>
         </div>
@@ -1907,7 +1908,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         <div
           className="text-center text-[9px] mb-1"
           title={dInfo?.w != null
-            ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)`
+            ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
             : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
         >
           <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>

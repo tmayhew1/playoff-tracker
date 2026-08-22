@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
-import { defVAInfo, useDefRatings } from "../lib/defense";
+import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
 
@@ -131,6 +131,8 @@ export function DRatingView() {
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
           DRTG = box-score estimate, calibrated onto the play-by-play scale (within-team spread ×0.5), as the prior (≈1500 poss) — updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
           IND = player's edge over his own team's D · TM+ = his stock-rate share of the team's edge vs the league line ·
+          TEAM = that team's D over the season, weighted by the share of the season the player was there for and the
+          balance taken at the league line (whole-season players carry it in full; an 11-of-72-game season carries ~46%) ·
           both as points/game, so IND + TM+ = D/G · “–” = no single-team context (traded)
         </div>
       )}
@@ -194,7 +196,10 @@ export function DRatingView() {
             );
           })()}
           <span className="text-right tabular-nums text-stone-700">{Math.round(info.drtg)}</span>
-          <span className="text-right tabular-nums text-stone-500">{info.teamDrtg != null ? info.teamDrtg.toFixed(1) : "–"}</span>
+          <span
+            className="text-right tabular-nums text-stone-500"
+            title={info.teamDrtg != null ? `The team defense this rating is measured against${teamLineNote(info, r.team) || ` — ${r.team || "the team"}'s own season line`}` : undefined}
+          >{info.teamDrtg != null ? info.teamDrtg.toFixed(1) : "–"}</span>
           <span className={`text-right tabular-nums ${indG != null && indG < 0 ? "text-red-600" : "text-stone-700"}`}>{indG != null ? sgn2(indG) : "–"}</span>
           <span className={`text-right tabular-nums ${tmpG != null && tmpG < 0 ? "text-red-600" : "text-stone-700"}`}>{tmpG != null ? sgn2(tmpG) : "–"}</span>
           <span className={`text-right tabular-nums font-semibold ${perG < 0 ? "text-red-600" : "text-stone-900"}`}>{sgn2(perG)}</span>

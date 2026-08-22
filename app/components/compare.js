@@ -1171,12 +1171,15 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     const sg1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
     const sg2 = (v) => (v > 0 ? "+" : "") + v.toFixed(2);
     const val = (v, disp) => (v == null ? none : [v, disp(v)]);
-    // The player's own team defense: its rating, and how far that sits under
-    // (green) or over (red) the season's league line. This is the pot the
-    // second half of a D Rating is drawn from — a player earns a share of his
-    // team's edge — so it's the context the rating above is read against.
-    // Absent for multi-team (2TM) rows and seasons with no team map, where the
-    // rating falls back to the plain vs-league form.
+    // The team defense the rating is measured against: its line, and how far
+    // that sits under (green) or over (red) the season's league line. This is
+    // the pot the second half of a D Rating is drawn from — a player earns a
+    // share of his team's edge — so it's the context the rating above is read
+    // against. It is the team's season line weighted by the share of the season
+    // the player was actually there for (defense.js's teamCoverageW), which is
+    // the same line IND subtracts, so the two stay consistent. Absent for
+    // multi-team (2TM) rows and seasons with no team map, where the rating
+    // falls back to the plain vs-league form.
     const team = (i) => {
       if (!i || i.teamDrtg == null) return none;
       const edge = i.laDRtg - i.teamDrtg;
