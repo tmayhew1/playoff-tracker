@@ -108,7 +108,16 @@ recompute_leaderboards <- function(lgas) {
 #           separate so the app can weight blocks by that season's
 #           laDRBrate (the same valuation VA gives them: a block only ends
 #           the possession when the defense rebounds it) when computing
-#           each player's stock-rate share of the team's edge.
+#           each player's stock-rate share of the team's edge,
+#   g     — the team's games, read as the most any one member played. The
+#           app divides a player's own games by it to weight the team terms
+#           by how much of the season he was there for (defense.js's
+#           teamCoverageW): the season line is a claim about G games and an
+#           11-game player has only 11 games of evidence that it describes
+#           his minutes. Roster max rather than a schedule constant because
+#           it is right for a season still in progress and for the 66- and
+#           72-game years, and the weight barely moves if the team had no
+#           iron-man (MEM 2025-26: 72 vs 82 shifts it by 0.006).
 # "team" comes from the regular-season bake, "teamPo" from the playoff
 # leaderboard roster. Derived data, no network; fetch_def_ratings.R only
 # writes rs/po, so this pass (re)builds the team maps after every bake.
@@ -122,19 +131,23 @@ def_team_map <- function(players, ratings) {
     # Multi-team aggregate rows (2TM/3TM/TOT) carry no single team context.
     if (!nzchar(t) || grepl("TM$", t) || t == "TOT" || mp <= 0) next
     a <- acc[[t]]
-    if (is.null(a)) a <- c(0, 0, 0, 0, 0)  # drtg*mp, rated mp, stl, blk, all mp
+    if (is.null(a)) a <- c(0, 0, 0, 0, 0, 0)  # drtg*mp, rated mp, stl, blk, all mp, max g
     v <- ratings[[as.character(p$slug %||% "")]]
     if (!is.null(v)) { a[1] <- a[1] + as.numeric(v) * mp; a[2] <- a[2] + mp }
     a[3] <- a[3] + as.numeric(p$stl %||% 0)
     a[4] <- a[4] + as.numeric(p$blk %||% 0)
     a[5] <- a[5] + mp
+    # Regular-season rows carry games as `g`, playoff leaderboard rows as `gp`.
+    a[6] <- max(a[6], as.numeric(p$g %||% p$gp %||% 0))
     acc[[t]] <- a
   }
   out <- list()
   for (t in sort(names(acc))) {
     a <- acc[[t]]
     if (a[2] <= 0 || a[5] <= 0) next
-    out[[t]] <- list(drtg = a[1] / a[2], stlpm = a[3] / a[5], blkpm = a[4] / a[5])
+    row <- list(drtg = a[1] / a[2], stlpm = a[3] / a[5], blkpm = a[4] / a[5])
+    if (a[6] > 0) row$g <- a[6]
+    out[[t]] <- row
   }
   out
 }
