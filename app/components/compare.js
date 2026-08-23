@@ -826,16 +826,37 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // hidden while comparing; the Values/Percentiles mode lives in the parent's
   // toggle row.)
   // Groups AND raw-stats cards are independent accordions — any number can be
-  // open at once, and they stay open for the life of this comparison (the
-  // panel is keyed by the comparison at its call sites, so picking a different
+  // open at once, and they stay as left until the Values/Percentiles toggle
+  // re-shapes them (below) or the comparison itself changes (the panel is
+  // keyed by the comparison at its call sites, so picking a different
   // player-season or season row resets everything).
-  // Every group starts OPEN: the four group rows on their own say which side
-  // won each bucket but never why, and the answer is always one level down.
-  // Opening them costs nothing — the member rows are the same strip — so the
-  // card opens on the reading it would take four taps to reach otherwise, and
-  // the group headers still collapse.
-  const [openGroups, setOpenGroups] = useState(() => new Set(VA_GROUPS.map((g) => g.key)));
+  // The MODE sets the depth the card opens at, and re-sets it on every tap of
+  // the Values/Percentiles toggle:
+  //
+  //   PERCENTILES — half open: the four groups down, raw stats shut. The group
+  //     rows on their own say which side won each bucket but never why, and
+  //     the answer is always one level down; the member rows are the same
+  //     strip, so opening them costs nothing but four taps saved.
+  //   VALUES — fully shut: four rows. Values are read against each other, and
+  //     the whole comparison in four lines is the reading that view is for.
+  //
+  // Either depth is only a starting point — every group and raw card still
+  // opens and closes by hand, and the rail still expands or collapses the lot.
+  // But the toggle owns the default, so switching modes lands on that mode's
+  // shape rather than carrying the other one's over.
+  const shapeFor = (m) => (m === "values" ? new Set() : new Set(VA_GROUPS.map((g) => g.key)));
+  const [openGroups, setOpenGroups] = useState(() => shapeFor(mode));
   const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
+  // Re-shape on a mode CHANGE only: on mount the state above already matches,
+  // and hand-opened rows must survive every other render.
+  const lastMode = useRef(mode);
+  useEffect(() => {
+    if (lastMode.current === mode) return;
+    lastMode.current = mode;
+    setOpenGroups(shapeFor(mode));
+    setOpenKeys(new Set());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
   // Per-game vs. season-total value added — the same /G ON·OFF switch the
   // individual view's category card carries, and it governs this panel the
   // same way: ON (the default) reads every bar, number and career bar as
@@ -1342,9 +1363,10 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
           opens (or closes) every group and every raw-stats card at once. The
           rail reads COLLAPSE ALL whenever anything is open — including the
-          four groups the card opens on — so the tap that clears the card is
+          four groups Percentiles opens on — so the tap that clears the card is
           always the one on offer; EXPAND ALL only comes up once everything is
-          shut, which is the only state where opening everything is the move. */}
+          shut, which is the only state where opening everything is the move
+          (and the state Values starts in). */}
       <div className="flex items-stretch gap-1">
       {(() => {
         const anyOpen = openGroups.size > 0 || openKeys.size > 0;
@@ -1705,9 +1727,12 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 // The Compare chip for the breakdown toggle rows: opens the picker, then
 // shows the active comparison with a clear ✕.
 //
-// `palette` is the compared side's palette (comparePalette), so the chip wears
-// the same color the panel below draws that player in. Hosts that have no color
-// of their own to compare against leave it off and the chip keeps the old gold.
+// It stays GOLD in every state — the same gold the idle "Compare" button
+// wears. It used to take the compared player's palette, which read as that
+// player's color rather than as the control it is, and went actively wrong the
+// moment the panel below repalettes (career-year selections drop the compared
+// side to neutral grey, leaving a blue chip over a grey player). Gold is what
+// the reader already knows this slot by, and it can't drift.
 //
 // `careerPick` is a career-year selection made down in the panel's chart
 // ({ label, clear }, reported by ComparePanel's onPickChange). While one is
@@ -1716,16 +1741,13 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 // comparison rather than clearing the whole thing, which is the one step the
 // reader wants first and the only order that keeps the chip honest at each
 // stage.
-export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null, palette = null }) {
+export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null }) {
   if (compare) {
-    // Active chip wears the same LIGHT wash as the compared player's wrappers.
     return (
       <button
         onClick={careerPick ? careerPick.clear : onClear}
         className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
-        style={palette
-          ? { backgroundColor: palette.bg, borderColor: palette.edge, color: palette.ink }
-          : { backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+        style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : undefined}
         aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
       >

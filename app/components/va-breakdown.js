@@ -470,7 +470,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
             compare={compare}
             picking={picking}
             careerPick={careerPick}
-            palette={cmpPal}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
@@ -517,7 +516,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           <CompareButton
             compare={compare}
             picking={picking}
-            palette={cmpPal}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
@@ -1129,10 +1127,49 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     }
     return segs;
   }, [lga, catKey, showZones, perGame, rateMode, withDef, defs, defScope, seasonKey]);
-  // The component the card is currently filtered to (null unless a bar is
-  // tapped). Clears itself if the segment list no longer holds the key (e.g.
-  // switching from Scoring to 2-Pointers with FT/3PT selected).
-  const selSeg = (SEGMENTS && selectedSeg && SEGMENTS.find((s) => s.key === selectedSeg)) || null;
+  // The two headline totals over the six shot-distance bars are readings in
+  // their own right, so they select exactly like a bar does — the season
+  // leaderboard, the all-time board and the by-season trend all re-rank on
+  // them. Having no bar of their own is the only thing that sets them apart:
+  //   EFF     3P + 2P + FT value added, the scoring rows' shooting value
+  //   IMPACT  the six shot-distance values summed
+  // EFF is box-score shooting value, defined for every season, so it ranks
+  // against the whole index. IMPACT is only as old as shot-location data, so
+  // it carries the same era gate the four 2-point zones do.
+  const TOTAL_SEGMENTS = useMemo(() => {
+    if (!SEGMENTS || !showZones || catKey === "2-Pointers") return null;
+    // True shooting — points per shooting possession — is the rate column for
+    // both: they are two readings of scoring efficiency, and TS% is the one
+    // rate the whole six-distance row is about. (Scale-free, so the card's /G
+    // toggle leaves it alone, same as every other FG% on the card.)
+    const ts = (r) => {
+      const den = 2 * ((r.fga || 0) + 0.44 * (r.fta || 0));
+      return den > 0 ? `${(((r.pts || 0) / den) * 100).toFixed(1)}% TS` : "–";
+    };
+    return [
+      {
+        key: "eff", sub: "Eff", note: "3P + 2P + FT value added", rate: ts,
+        // One valueAddByCategory per row (the same call catVATotal makes),
+        // three keys off it — the all-time pool runs to five figures.
+        val: (r, lx = lga) => {
+          const by = r?.catVA || valueAddByCategory(r, lx);
+          return (by["3-Pointers"] || 0) + (by["2-Pointers"] || 0) + (by["Free Throws"] || 0);
+        },
+      },
+      {
+        key: "impact", sub: "Impact", note: "the six shot-distance values summed", rate: ts,
+        era: (s) => !!lgaForSeason(s)?.zoneFG,
+        eraNote: " with shot-location data (1996-97 on)",
+        val: (r, lx = lga, s = seasonKey) => SEGMENTS.reduce((t, seg) => t + seg.val(r, lx, s), 0),
+      },
+    ];
+  }, [SEGMENTS, showZones, catKey, lga, seasonKey]);
+  // The component the card is currently filtered to (null unless a bar — or
+  // one of the two totals — is tapped). Clears itself if the segment list no
+  // longer holds the key (e.g. switching from Scoring to 2-Pointers with
+  // FT/3PT selected).
+  const selSeg = (selectedSeg
+    && [...(SEGMENTS || []), ...(TOTAL_SEGMENTS || [])].find((s) => s.key === selectedSeg)) || null;
   // Seasons a filtered card can rank against — everything, unless the selected
   // component only exists for part of league history.
   const segEra = (season) => !selSeg?.era || selSeg.era(season);
@@ -1517,19 +1554,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                   Total <span className={`text-[9px] font-bold tabular-nums ${segTotals.total > 0.05 ? "text-green-600" : segTotals.total < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(segTotals.total)}</span>
                 </span>
               ) : (
+                // Both totals SELECT, the same way a distance bar does: the
+                // whole card — season leaderboard, all-time board, trend —
+                // re-ranks the league on that reading. Same pressed styling
+                // the bars wear, so it's clear they're the same control.
                 <>
-                  <span
-                    className="uppercase tracking-wider text-[8px] text-stone-400 whitespace-nowrap"
-                    title={`Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value)`}
-                  >
-                    Eff <span className={`text-[9px] font-bold tabular-nums ${segTotals.efficiency > 0.05 ? "text-green-600" : segTotals.efficiency < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(segTotals.efficiency)}</span>
-                  </span>
-                  <span
-                    className="uppercase tracking-wider text-[8px] text-stone-400 whitespace-nowrap"
-                    title={`Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}`}
-                  >
-                    Impact <span className={`text-[9px] font-bold tabular-nums ${segTotals.impact > 0.05 ? "text-green-600" : segTotals.impact < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(segTotals.impact)}</span>
-                  </span>
+                  {[
+                    { key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value)` },
+                    { key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}` },
+                  ].map((t) => {
+                    const isSel = selectedSeg === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setSelectedSeg(isSel ? null : t.key)}
+                        aria-pressed={isSel}
+                        title={`${t.title} — tap to rank the card on it`}
+                        className={`uppercase tracking-wider text-[8px] whitespace-nowrap rounded px-1 -mx-0.5 py-0.5 -my-0.5 transition-colors ${isSel ? "bg-stone-200 ring-1 ring-stone-800 text-stone-700" : "text-stone-400 hover:bg-stone-100"}`}
+                      >
+                        {t.label} <span className={`text-[9px] font-bold tabular-nums ${t.v > 0.05 ? "text-green-600" : t.v < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(t.v)}</span>
+                      </button>
+                    );
+                  })}
                 </>
               ))}
               {selSeg && (
@@ -1633,7 +1680,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
               ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
-              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed." : ""}</>}
+              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
           </div>
         </div>
       )}
