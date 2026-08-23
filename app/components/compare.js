@@ -823,18 +823,29 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // open at once, and they stay open for the life of this comparison (the
   // panel is keyed by the comparison at its call sites, so picking a different
   // player-season or season row resets everything).
-  const [openGroups, setOpenGroups] = useState(() => new Set());
+  // Every group starts OPEN: the four group rows on their own say which side
+  // won each bucket but never why, and the answer is always one level down.
+  // Opening them costs nothing — the member rows are the same strip — so the
+  // card opens on the reading it would take four taps to reach otherwise, and
+  // the group headers still collapse.
+  const [openGroups, setOpenGroups] = useState(() => new Set(VA_GROUPS.map((g) => g.key)));
   const [openKeys, setOpenKeys] = useState(() => new Set()); // member categories with raw stats open
   // Per-game vs. season-total value added — the same /G ON·OFF switch the
   // individual view's category card carries, and it governs this panel the
-  // same way: ON (the default) reads every bar, number, percentile and career
-  // bar as per-game VA; OFF re-reads the whole comparison on season totals, so
-  // a full season stops being measured against a half one at the same rate.
-  // Locked ON while either side is a multi-season aggregate: the percentile
-  // pool is single player-seasons, and a three-season total has no meaningful
-  // rank against them. Per-game VA is scale-free, so it does.
-  const [perGameRaw, setPerGame] = useState(true);
-  const perGame = isMulti ? true : perGameRaw;
+  // same way: ON (the default) reads every bar, number and career bar as
+  // per-game VA; OFF re-reads the whole comparison on season totals, so a full
+  // season stops being measured against a half one at the same rate. Runs get
+  // the switch too: "whose six years added up to more" is as fair a question
+  // of two runs as it is of two seasons, and the career bars underneath answer
+  // it season by season either way.
+  const [perGame, setPerGame] = useState(true);
+  // The one figure the switch can't carry over to a run is the PERCENTILE: the
+  // pool is single player-seasons, and a six-season total ranks above every one
+  // of them for no reason but its length. So whenever either side is pooled,
+  // percentiles stay per-game whatever the switch says — scale-free, and the
+  // same footing for both sides of a season-vs-run comparison. The values, bars
+  // and career chart still read as totals; the footnote says which is which.
+  const pctPerGame = isMulti ? true : perGame;
   // Confirmation step for the compared-player chip: the first tap arms a
   // "Go →" button in the chip's place; only that button navigates, and a tap
   // anywhere else disarms without doing whatever it landed on. The mechanics
@@ -869,7 +880,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
           return nk;
         });
       } else {
-        next.add(gk); // insertion order = most-recently-opened last (drives the chart)
+        next.add(gk);
       }
       return next;
     });
@@ -968,16 +979,18 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const ALL_KEYS = [...GROUP_KEYS, ...MEMBER_KEYS];
 
   const d = useMemo(() => {
-    // Every figure in the panel — bars, numbers and the percentile pool alike
-    // — is read on whichever side of the /G switch is showing, so a rank never
-    // means one thing in the strip and another in the number beside it. `dva`
-    // is the row's defensive value added, computed once per row and folded into
-    // both the rows it belongs to (its own, and Defense's total).
-    const valOf = (r, lgaX, key, dva) => {
+    // Every figure in the panel is read on whichever side of the /G switch is
+    // showing, so a bar never means one thing and the number beside it another.
+    // `pg` is that switch for the values and `pctPerGame` for the percentiles —
+    // the same flag except on a run reading season totals, where the rank falls
+    // back to per game (see above). `dva` is the row's defensive value added,
+    // computed once per row and folded into both the rows it belongs to (its
+    // own, and Defense's total).
+    const valOf = (r, lgaX, key, dva, pg) => {
       const v = key === DEF_KEY
         ? dva
         : catVATotal(r, lgaX, key) + (key === "Defense" ? dva : 0);
-      return perGame ? v / (r.gp || 1) : v;
+      return pg ? v / (r.gp || 1) : v;
     };
     // Percentiles rank against EVERY indexed player-season (all-time pool),
     // each row measured era-fair against its own season's baselines. One pass
@@ -991,7 +1004,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       const dva = dvaOf(r, lgaX, r.season);
       const out = {};
       for (const key of ALL_KEYS) {
-        out[key] = valOf(r, lgaX, key, dva);
+        out[key] = valOf(r, lgaX, key, dva, pctPerGame);
         if (maxByKey[key] == null || out[key] > maxByKey[key]) maxByKey[key] = out[key];
       }
       return out;
@@ -1006,21 +1019,25 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     const adva = dvaOf(a, lgaA, a.season);
     const bdva = dvaOf(b, lgaB, b.season);
     for (const key of ALL_KEYS) {
-      const av = valOf(a, lgaA, key, adva);
-      const bv = valOf(b, lgaB, key, bdva);
+      const av = valOf(a, lgaA, key, adva, perGame);
+      const bv = valOf(b, lgaB, key, bdva, perGame);
+      // What the rank is taken on, which is `av`/`bv` itself unless a run is
+      // reading season totals.
+      const ap = pctPerGame === perGame ? av : valOf(a, lgaA, key, adva, pctPerGame);
+      const bp = pctPerGame === perGame ? bv : valOf(b, lgaB, key, bdva, pctPerGame);
       rows[key] = {
         key, av, bv,
-        apct: pctFor(av, key), bpct: pctFor(bv, key),
+        apct: pctFor(ap, key), bpct: pctFor(bp, key),
         // #1 in the category = at least the pool max. Epsilon absorbs the tiny
         // mp-rounding gap between a leaderboard row (full-precision minutes)
         // and its own copy in the index pool (minutes rounded to 0.1).
-        atop: maxByKey[key] != null && av >= maxByKey[key] - 1e-6,
-        btop: maxByKey[key] != null && bv >= maxByKey[key] - 1e-6,
+        atop: maxByKey[key] != null && ap >= maxByKey[key] - 1e-6,
+        btop: maxByKey[key] != null && bp >= maxByKey[key] - 1e-6,
       };
     }
     const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
     return { rows, diff };
-  }, [a, b, lgaA, lgaB, context, perGame, withDef, defs, defScope]);
+  }, [a, b, lgaA, lgaB, context, perGame, pctPerGame, withDef, defs, defScope]);
 
   // Per-game figures are an order of magnitude smaller than season totals, so
   // they carry a second decimal; totals match the leaderboard's one.
@@ -1029,8 +1046,9 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // a VA+ margin and says so.
   const vaUnit = `${withDef ? "VA+" : "VA"}${perGame ? "/G" : ""}`;
   // Season totals run to four figures for a career scoring leader, where the
-  // per-game column's width would run the two players' numbers together.
-  const valW = perGame ? "w-10" : "w-14";
+  // per-game column's width would run the two players' numbers together — and
+  // a pooled run's total takes a fifth, so it gets another notch again.
+  const valW = perGame ? "w-10" : isMulti ? "w-16" : "w-14";
   const leader = d.diff >= 0 ? a : b;
   // Bars scale per level: groups against groups, members against their group.
   const scaleFor = (ks) => Math.max(...ks.flatMap((k) => [Math.abs(d.rows[k].av), Math.abs(d.rows[k].bv)]), perGame ? 0.1 : 1);
@@ -1065,10 +1083,13 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // a small chart rather than a distorted one, and two rookies get the same
   // bar width they'd have as sophomores.
   const SLOT_MAX = "25%";
-  // Deepest selection wins: an open member category, else the open group.
-  // The career overlay follows the deepest interaction: an open raw-stats card
-  // wins; otherwise the most-recently-opened group (Set insertion order).
-  const activeKey = ([...openKeys].at(-1) ?? null) || ([...openGroups].at(-1) ?? null);
+  // The career overlay answers to MEMBER categories only — the most recently
+  // opened raw-stats card (Set insertion order), nothing otherwise. Groups are
+  // open from the start and are meant to be browsed freely, so letting one
+  // drive the chart would mean the bars underneath had already left all-around
+  // VA before the reader asked anything of them. Opening a category is the
+  // deliberate act: that, and only that, re-points the career bars.
+  const activeKey = [...openKeys].at(-1) ?? null;
   const careerVal = (s) => {
     const lgaS = lgaForSeason(s.season);
     const dva = (!activeKey || activeKey === "Defense" || activeKey === DEF_KEY) ? dvaOf(s, lgaS, s.season) : 0;
@@ -1230,16 +1251,13 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // The /G switch rides in the career chart's header — the same place the
   // individual card's category view parks it, above the bars that most visibly
   // answer to it. It still governs the whole panel.
-  // Absent entirely while a multi-season run is on screen: per-game is the
-  // only reading available there, so a switch that can't move is just a
-  // control that doesn't work.
-  const gToggle = isMulti ? null : (
+  const gToggle = (
     <PerGameToggle
       perGame={perGame}
       onToggle={() => setPerGame((v) => !v)}
       title={perGame
-        ? "Comparison shown per game — tap for season totals"
-        : "Comparison shown on season totals — tap for per-game"}
+        ? `${isMulti ? "Runs" : "Comparison"} shown per game — tap for ${isMulti ? "run" : "season"} totals`
+        : `${isMulti ? "Runs" : "Comparison"} shown on ${isMulti ? "run" : "season"} totals — tap for per-game`}
     />
   );
 
@@ -1439,8 +1457,11 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       </div>
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
-          ? `${perGame ? "Per-game" : "Season-total"} VA, each vs their own ${isMulti ? "run’s blended league baseline" : "season’s league baseline"}`
-          : `Percentile of ${perGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`)
+          ? `${perGame ? "Per-game" : isMulti ? "Run-total" : "Season-total"} VA, each vs their own ${isMulti ? "run’s blended league baseline" : "season’s league baseline"}`
+          : `Percentile of ${pctPerGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`
+            // The switch is on totals but the rank isn't, and a reader
+            // comparing the two strips deserves to be told why.
+            + (pctPerGame !== perGame ? " — a pooled run has no rank against single seasons, so percentiles stay per game" : ""))
           + (withDef ? " · Defense carries D Rating, so the four groups sum to VA+" : "")
           + " · tap a group for its categories, a category for raw stats"}
       </div>

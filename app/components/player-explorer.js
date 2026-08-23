@@ -272,7 +272,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   const picking = pickOverride?.key === pickKey
     ? pickOverride.open
     : (picked.size >= 2 && !multiCompare);
-  const [compareMode, setCompareMode] = useState("values"); // "values" | "pct"
+  // "values" | "pct". A comparison opens on PERCENTILES: two raw VA figures
+  // only say who was bigger, while the percentile pair says how big each was
+  // against everyone who ever played the category — which is the thing the
+  // card is for. Values is one tap away for the reader who wants the margin.
+  const [compareMode, setCompareMode] = useState("pct");
   // A career-year selection made in the compare panel's chart, mirrored up here
   // so the card's vs-chip can name it instead of the run it opened on.
   const [careerPick, setCareerPick] = useState(null);
