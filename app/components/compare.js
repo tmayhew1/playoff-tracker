@@ -78,6 +78,12 @@ export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [
 export const B_FILL = 0.5;
 export const CAREER_B_FILL = 0.75;
 
+// Diameter of the percentile-strip dots (w-2.5/h-2.5), in px. The connector
+// drawn between a row's two dots is inset by one radius at each end, so it
+// spans exactly the gap between their edges — and vanishes on its own the
+// moment that gap closes, which is the rule: no bar when the dots touch.
+const PCT_DOT_PX = 10;
+
 
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
@@ -1395,6 +1401,23 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                   <>
                     <div className="flex-1 relative h-4">
                       <div className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1 bg-stone-200 rounded-full" />
+                      {/* The stretch of track between the two dots, painted in
+                          the color of whoever sits higher — the row's winner —
+                          so the gap itself says who took the category. Width is
+                          the span minus one dot diameter, floored at zero: the
+                          strip is fluid, so only CSS knows how many px a
+                          percentile is worth, and max() lets it collapse the
+                          bar exactly when the dots meet or overlap. */}
+                      {r.apct != null && r.bpct != null && (
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 h-1"
+                          style={{
+                            left: `calc(${Math.min(r.apct, r.bpct)}% + ${PCT_DOT_PX / 2}px)`,
+                            width: `max(0px, calc(${Math.abs(r.apct - r.bpct)}% - ${PCT_DOT_PX}px))`,
+                            backgroundColor: r.apct > r.bpct ? ca : cb,
+                          }}
+                        />
+                      )}
                       {r.apct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 ring-1 ring-white" style={{ left: `${r.apct}%`, backgroundColor: ca }} />}
                       {r.bpct != null && <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 box-border" style={{ left: `${r.bpct}%`, backgroundColor: cbFill, border: cbEdge }} />}
                     </div>
