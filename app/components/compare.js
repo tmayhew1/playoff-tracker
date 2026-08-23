@@ -775,7 +775,7 @@ function careerYearLabel(idxs) {
 }
 
 
-export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null, onPickChange = null }) {
+export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null, onPickChange = null, onYearTicks = null }) {
   // A selection made in the career chart at the foot of this panel: the career
   // years ticked there, resolved into one row per side — the season itself when
   // a single year is ticked, an aggregate of them when several are. It REPLACES
@@ -1139,6 +1139,29 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     });
     setPicked(null);
   };
+
+  // The A-side seasons the career chart is pointing at: the years ticked while
+  // the picker is open, the confirmed selection once one is being read, nothing
+  // otherwise. Reported up because a caller whose own table lists those seasons
+  // — By Player's career table, one row per season — has a box for every one of
+  // them, and a year ticked down here should light the row up there rather than
+  // leave the two halves of one screen disagreeing about what is selected.
+  //
+  // Seasons, not slot indices: the caller knows its rows by season and has no
+  // idea which career year each fell in. A key string carries them through the
+  // effect so a re-render with the same ticks doesn't call the caller again.
+  const yearTickKey = (() => {
+    const idxs = picked ? [...picked].sort((x, y) => x - y) : pick ? pick.years : null;
+    if (!idxs?.length) return "";
+    return idxs.map((i) => aSeasons[i]?.season).filter(Boolean).join("|");
+  })();
+  useEffect(() => {
+    onYearTicks?.(yearTickKey ? yearTickKey.split("|") : null);
+  }, [yearTickKey, onYearTicks]);
+  // Leaving the card behind takes the mirrored ticks with it, the same way the
+  // chip label goes: a table still showing them would be showing a selection
+  // nothing on screen can clear.
+  useEffect(() => () => onYearTicks?.(null), [onYearTicks]);
 
   // Rate shown for a row in its tooltip. D Rating has no box-score rate of its
   // own — its "rate" is the rating itself — and catRateLabel only knows the ten
