@@ -113,10 +113,17 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
   const ftAdd = ((p.ftm / (p.fta || 1)) - lga.laFT) * p.fta;
 
   // For series: counting stats as per-36 or per-game (user-toggleable),
-  // shooting as made/att (pct%). Single-game drill-in keeps raw counts.
+  // shooting as made/att (pct%) on that same toggle. Single-game drill-in
+  // keeps raw counts.
   const r36 = (v, tag) => `${(mp > 0 ? (v / mp) * 36 : 0).toFixed(1)} ${tag}/36`;
   const rG  = (v, tag) => `${(p.gp > 0 ? v / p.gp : 0).toFixed(1)} ${tag}/G`;
-  const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
+  // Made/attempted follows the same per-game / per-36 toggle as the counting
+  // rows (and as the context card's M/A) — season totals ran to four figures
+  // for a high-volume 2P line and overflowed the row. Pct is scale-invariant.
+  const shot = (m, att) => {
+    const div = rateMode === "perG" ? (p.gp || 1) : (mp / 36);
+    return `${(m / div).toFixed(1)}/${(att / div).toFixed(1)} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
+  };
   const cnt = (v, tag) => {
     if (!effectiveRate) return `${v} ${tag}`;
     return rateMode === "perG" ? rG(v, tag) : r36(v, tag);
@@ -1814,7 +1821,11 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   const ftAdd = ((p.ftm / (p.fta || 1)) - lga.laFT) * p.fta;
   const r36 = (v, tag) => `${((v / mp) * 36).toFixed(1)} ${tag}/36`;
   const rG = (v, tag) => `${(v / gp).toFixed(1)} ${tag}/G`;
-  const shot = (m, att) => `${m}/${att} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
+  // M/A on the same toggle as the counting rows — see VABreakdown above.
+  const shot = (m, att) => {
+    const div = rateMode === "perG" ? gp : (mp / 36);
+    return `${(m / div).toFixed(1)}/${(att / div).toFixed(1)} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
+  };
   const cnt = (v, tag) => (rateMode === "perG" ? rG(v, tag) : r36(v, tag));
 
   // D Rating — the player's edge over his own team's defense plus his
