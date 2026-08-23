@@ -1340,12 +1340,16 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
         {slots < 1 && gToggle && <div className="absolute right-0 top-0">{gToggle}</div>}
       </div>
       {/* Rows flanked by a slim vertical Expand All / Collapse All rail that
-          opens (or closes) every group and every raw-stats card at once. */}
+          opens (or closes) every group and every raw-stats card at once. The
+          rail reads COLLAPSE ALL whenever anything is open — including the
+          four groups the card opens on — so the tap that clears the card is
+          always the one on offer; EXPAND ALL only comes up once everything is
+          shut, which is the only state where opening everything is the move. */}
       <div className="flex items-stretch gap-1">
       {(() => {
-        const allOpen = openGroups.size >= VA_GROUPS.length && openKeys.size >= MEMBER_KEYS.length;
+        const anyOpen = openGroups.size > 0 || openKeys.size > 0;
         const toggleAll = () => {
-          if (allOpen) {
+          if (anyOpen) {
             setOpenGroups(new Set());
             setOpenKeys(new Set());
           } else {
@@ -1357,11 +1361,12 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
           <button
             type="button"
             onClick={toggleAll}
-            aria-pressed={allOpen}
+            aria-pressed={anyOpen}
+            title={anyOpen ? "Close every group and raw-stats card" : "Open every group and raw-stats card"}
             className="shrink-0 w-4 rounded-sm border border-stone-200 bg-white text-[8px] uppercase tracking-[0.15em] text-stone-400 hover:text-stone-700 hover:border-stone-300 flex items-center justify-center"
             style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
           >
-            {allOpen ? "Collapse All" : "Expand All"}
+            {anyOpen ? "Collapse All" : "Expand All"}
           </button>
         );
       })()}
