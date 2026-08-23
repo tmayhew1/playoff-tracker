@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts, lgaForSeason } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
@@ -276,11 +276,77 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // A career-year selection made in the compare panel's chart, mirrored up here
   // so the card's vs-chip can name it instead of the run it opened on.
   const [careerPick, setCareerPick] = useState(null);
+  // The seasons behind that chart's ticks — the years being picked, or the
+  // selection already being read — reported by the panel (see its onYearTicks).
+  // The table's boxes follow them while they last: a career year ticked down
+  // there IS a season up here, and a screen where the chart says six years and
+  // the boxes say three is one where neither can be believed. The pool itself
+  // (`picked`) is untouched, so the comparison the panel is reading doesn't
+  // change under the reader mid-tick; ticking a row adopts what the boxes show
+  // (see togglePick) and hands the selection back to the table.
+  const [yearTicks, setYearTicks] = useState(null); // Set of season strings | null
+  const handleYearTicks = useCallback((list) => {
+    setYearTicks(list?.length ? new Set(list) : null);
+  }, []);
   // VA vs VA+ (VA + defensive net rating), the same switch the By Season
   // leaderboard carries. VA+ re-scores the whole career table: the sort, the
   // TOT/per-game columns, the bar widths, the career total in the subtitle,
   // and the D-Rating layer inside every drill-in below.
   const [metric, setMetric] = useState("va"); // "va" | "vaPlus"
+  // Scroll-driven pinned header, the same mechanism the By Season board uses
+  // (leaderboard.js) and for the same reason: who this table is about, which
+  // metric it is reading and what the columns mean all scroll off within a
+  // couple of rows, and a career opened to its comparison is read entirely
+  // below that point. So the header is rendered a SECOND time in a
+  // position:fixed overlay, mounted only while the table straddles the top of
+  // the viewport and fully unmounted otherwise — position:sticky leaves a ghost
+  // white bar on iOS Safari after un-sticking. `fixedBar` holds the overlay's
+  // horizontal geometry (matched to the table) or null when it shouldn't show.
+  const [fixedBar, setFixedBar] = useState(null);
+  const cardElRef = useRef(null);
+  const headerFlowRef = useRef(null);
+  const [cardMounted, setCardMounted] = useState(false);
+  const setCardEl = useCallback((node) => { cardElRef.current = node; setCardMounted(!!node); }, []);
+  useEffect(() => {
+    if (!cardMounted) return;
+    const measure = () => {
+      const card = cardElRef.current;
+      const head = headerFlowRef.current;
+      if (!card || !head) return;
+      const r = card.getBoundingClientRect();
+      const h = head.offsetHeight || 72;
+      // Hand over exactly where the real header leaves: show once the in-flow
+      // copy's top has passed above the viewport, and release once the table's
+      // bottom rises to within one header's height, so the bar goes away with
+      // the thing it heads rather than hanging over what follows.
+      const show = head.getBoundingClientRect().top < 0 && r.bottom > h;
+      // The bar is inset px-2, so it is laid out eight pixels wider on each
+      // side than the table it heads: the padding gives it a white margin
+      // inside the page's own gutter while its CONTENTS still line up column
+      // for column with the rows scrolling underneath.
+      const geom = { left: Math.round(r.left) - 8, width: Math.round(r.width) + 16 };
+      setFixedBar((prev) => {
+        if (!show) return prev === null ? prev : null;
+        return prev && prev.left === geom.left && prev.width === geom.width ? prev : geom;
+      });
+    };
+    let raf = 0;
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; measure(); }); };
+    measure();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    // Opening a season, ticking a run, taking a comparison — all resize the
+    // table with no scroll event of their own, which would strand the overlay
+    // stale (or missing) until the next touch.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onScroll) : null;
+    if (ro && cardElRef.current) ro.observe(cardElRef.current);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (ro) ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [cardMounted]);
   const defs = useDefRatings();
   // Playoff runs are rated on the playoff sample; the other two scopes on the
   // regular-season one, matching the drill-ins below.
@@ -298,7 +364,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 
   const togglePick = (season) => {
     setPicked((prev) => {
-      const next = new Set(prev);
+      // Whatever the boxes are showing is what a tap edits. With the chart's
+      // career years mirrored into them, ticking a row starts from THAT shape
+      // rather than from the pool it replaced on screen — otherwise a tap on a
+      // box you can see ticked would tick it again, and the row selection the
+      // reader thought they were editing would jump back into view.
+      const next = new Set(yearTicks || prev);
       if (next.has(season)) next.delete(season); else next.add(season);
       return next;
     });
@@ -513,6 +584,22 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       : null),
     [selectedSeasons, player.name, player.slug]
   );
+  // What the table SHOWS as ticked, and what the chip counts — the chart's
+  // mirrored years while there are any, the pool otherwise. Only the display
+  // reads this; `selectedSeasons` and `aggA` above stay the pool, so the
+  // comparison being read never shifts under a tick made in the chart.
+  const boxPicks = yearTicks || picked;
+  const boxSeasons = useMemo(
+    () => (yearTicks ? seasons.filter((x) => yearTicks.has(x.season)) : selectedSeasons),
+    [yearTicks, seasons, selectedSeasons]
+  );
+  const boxGames = boxSeasons.reduce((n, x) => n + (x.gp || 0), 0);
+  // The chart plots the WHOLE career, so a year ticked down there can belong to
+  // a season this table is currently filtering out — a Dallas year under a GSW
+  // filter. The box for it simply isn't on screen, which would leave the chip
+  // counting more than the reader can see, so the line under the table says how
+  // many went that way rather than letting the two numbers quietly disagree.
+  const boxHidden = yearTicks ? boxSeasons.filter((x) => !isVisible(x)).length : 0;
   // Only light the D-Rating layer while the table is reading VA+, and then
   // only when a selected season actually has a rating — otherwise the row
   // would read a flat +0.00 and look like a measurement rather than missing
@@ -534,14 +621,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     onNext: i < shown.length - 1 ? () => setOpenSeason(shown[i + 1].season) : undefined,
   });
 
-  return (
-    <div>
-      <button
-        onClick={onBack}
-        className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
-      >
-        ‹ Back to search
-      </button>
+  // The player display and the column labels — the header of this table,
+  // rendered in flow below and again in the pinned overlay while the table is
+  // scrolled past. One block, used twice, so the two copies cannot drift.
+  const headerBlock = (
+    <>
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
           {/* The selection chip rides on the NAME's line rather than in the
@@ -558,12 +642,17 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
                 // The only way out of the mode, and so also the way back to the
                 // breakdowns — say both, since the rows no longer open them.
-                title="Stop picking seasons — rows go back to opening their breakdown"
+                title={yearTicks
+                  ? "The career years ticked in the comparison below — ✕ stops picking seasons and clears the selection"
+                  : "Stop picking seasons — rows go back to opening their breakdown"}
                 aria-label="Stop picking seasons and clear the selection"
               >
-                {picked.size === 0
+                {/* Counts what the boxes show, so the chip and the ticked rows
+                    can never disagree — including while the chart below is
+                    driving them. */}
+                {boxPicks.size === 0
                   ? "Pick seasons"
-                  : `${picked.size} season${picked.size === 1 ? "" : "s"}`}
+                  : `${boxPicks.size} season${boxPicks.size === 1 ? "" : "s"}`}
                 <span className="opacity-60">✕</span>
               </button>
             )}
@@ -715,10 +804,23 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▼" : ""}
         </button>
       </div>
+    </>
+  );
+
+  return (
+    <>
+    <div ref={setCardEl}>
+      <button
+        onClick={onBack}
+        className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
+      >
+        ‹ Back to search
+      </button>
+      <div ref={headerFlowRef}>{headerBlock}</div>
       {shown.map((s, i) => {
         const rank = sortedAll.indexOf(s) + 1;
         const sOpen = openSeason === s.season;
-        const isPicked = picked.has(s.season);
+        const isPicked = boxPicks.has(s.season);
         const tc = teamColor(s.team);
         // Armed cards wear the team color at full strength — solid border, a
         // deeper fill, a soft ring around it, and a chevron — so it's obvious
@@ -989,13 +1091,22 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             defActive={multiDefActive}
             defScope={defScope}
             onPickChange={setCareerPick}
+            // Career years ticked in the panel's chart, back up to the table's
+            // boxes — the same selection, said in both places at once.
+            onYearTicks={handleYearTicks}
           />
         </div>
       );
       })()}
       <div className="text-[10px] text-stone-400 italic mt-2 px-2">
         {selecting
-          ? picked.size === 0
+          // The chart below owns the boxes for as long as its ticks are on
+          // them, so the line under the table follows them too. Say which way
+          // each tap goes from here: Compare → down there reads the years, a
+          // season tapped up here takes them as the pool instead.
+          ? yearTicks
+            ? `${boxPicks.size} career year${boxPicks.size === 1 ? "" : "s"} ticked below · ${boxGames} G${boxHidden ? ` · ${boxHidden} hidden by the current filter` : ""} — Compare → reads them, or tap a season here to pool exactly these.`
+            : picked.size === 0
             // Said once, at the moment the mode is armed and nothing is ticked
             // yet: the rows tick now, and the ✕ is what hands them back.
             ? `Tap any season to tick it — or tap # again to take all ${shown.length} shown${teamFilter ? ` for ${teamFilter}` : ""}${minGames != null ? ` with ≥${minGames} games` : ""}. ✕ to go back to breakdowns.`
@@ -1009,6 +1120,22 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           : "Tap a season for the per-stat breakdown, then a category for its league context."}
       </div>
     </div>
+    {/* Pinned header overlay — position:fixed (not sticky) and only in the DOM
+        while scrolled into the career table, aligned to its width. It carries
+        the whole player display, so the filters and the metric toggle stay
+        reachable from the comparison at the foot of the page, not only from
+        the top of it. The white ground and the rule under it are the overlay's
+        own: in flow this header sits on the page, with the column labels'
+        border for its edge. */}
+    {fixedBar && (
+      <div
+        className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm px-2 pt-2"
+        style={{ left: fixedBar.left, width: fixedBar.width }}
+      >
+        {headerBlock}
+      </div>
+    )}
+    </>
   );
 }
 
