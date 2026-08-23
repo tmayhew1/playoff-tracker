@@ -657,40 +657,48 @@ function CareersBoard({ onGoToLeaderboard }) {
         className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-2"
       />
 
+      {/* Both gates on one line. The select says "400+ games" in full, so a MIN
+          label ahead of it only repeated what the control already reads as —
+          and the width it gave back is what lets the position chips sit beside
+          it rather than a row below. */}
       <div className="flex items-center gap-2 mb-2">
-        <label className="text-[10px] uppercase tracking-widest text-stone-400">Min</label>
         <select
           value={minGames}
           onChange={(e) => setMinGames(Number(e.target.value))}
-          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800"
+          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800 shrink-0"
           title="Career games a player must have played to appear"
         >
           {GAME_FLOORS.map(([v, label]) => (
             <option key={v} value={v}>{label}</option>
           ))}
         </select>
-        {minGames !== 400 && (
-          <button
-            onClick={() => setMinGames(400)}
-            className="text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700"
-          >✕ Reset</button>
-        )}
-        <span className="ml-auto text-[10px] text-stone-400 tabular-nums">
-          {query.trim() || pos
-            ? `${total.toLocaleString()} of ${data.qualified.toLocaleString()}`
-            : `${data.qualified.toLocaleString()} careers`}
-        </span>
-      </div>
 
-      {/* Hidden until the corpus actually carries positions: the field lands
-          season by season as the backfill runs, and a filter whose every option
-          empties the board would read as a broken board rather than a pending
-          one. */}
-      {data.hasPos && (
-        <div className="mb-2 overflow-x-auto">
-          <PositionFilter value={pos} onChange={setPos} />
-        </div>
-      )}
+        {/* Hidden until the corpus actually carries positions: the field lands
+            season by season as the backfill runs, and a filter whose every
+            option empties the board would read as a broken board rather than a
+            pending one.
+
+            min-w-0 is what makes the flex child actually shrink, and the scroll
+            lives here rather than on the whole row so the count stays pinned to
+            the right edge while the chips slide under it on a narrow phone. */}
+        {data.hasPos && (
+          <div className="min-w-0 flex-1 overflow-x-auto">
+            <PositionFilter value={pos} onChange={setPos} />
+          </div>
+        )}
+
+        {/* Just the matched count, and only while something is actually
+            filtering. The "of 1,133" half was the qualified total, which the
+            line above the search box already prints — and with the chips now
+            sharing this row it was the widest thing on it that said nothing
+            new. Unfiltered, the whole span was that duplicate. */}
+        {(query.trim() || pos) && (
+          <span
+            className="ml-auto shrink-0 text-[10px] text-stone-400 tabular-nums whitespace-nowrap"
+            title={`${total.toLocaleString()} of ${data.qualified.toLocaleString()} qualified careers match`}
+          >{total.toLocaleString()}</span>
+        )}
+      </div>
 
       <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
         <span></span><span>Player</span><span className="text-right">Yr</span>
