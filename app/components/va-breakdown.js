@@ -470,7 +470,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
             compare={compare}
             picking={picking}
             careerPick={careerPick}
-            palette={cmpPal}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
@@ -517,7 +516,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
           <CompareButton
             compare={compare}
             picking={picking}
-            palette={cmpPal}
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />

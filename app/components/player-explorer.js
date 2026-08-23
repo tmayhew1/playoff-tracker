@@ -7,7 +7,7 @@ import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, comparePalette, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 
@@ -1045,12 +1045,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           onCancel={() => setPickOverride({ key: pickKey, open: false })}
         />
       )}
-      {aggA && multiCompare && multiContext && (() => {
-      // The compared run's palette, picked against this run's own team color —
-      // the same call ComparePanel makes below, so the chip and the panel agree
-      // on what color that player is here.
-      const cmpPal = comparePalette(multiCompare.row.team, teamColor(aggA.team));
-      return (
+      {aggA && multiCompare && multiContext && (
         // The comparison lives under the table, not in place of it: the ticked
         // rows stay on screen above, so a season can be added or dropped and
         // every number here moves with it.
@@ -1066,7 +1061,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             <button
               onClick={() => (careerPick ? careerPick.clear() : setMultiCompare(null))}
               className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
-              style={{ backgroundColor: cmpPal.bg, borderColor: cmpPal.edge, color: cmpPal.ink }}
+              // Gold in every state, like the Compare button it replaces —
+              // the compared player's palette read as his color rather than as
+              // a control, and went wrong outright once the chart below
+              // repaletted him for a career-year selection.
+              style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
               title={careerPick ? `Back to ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}` : undefined}
               aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
             >
@@ -1100,8 +1099,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             onYearTicks={handleYearTicks}
           />
         </div>
-      );
-      })()}
+      )}
       <div className="text-[10px] text-stone-400 italic mt-2 px-2">
         {selecting
           // The chart below owns the boxes for as long as its ticks are on

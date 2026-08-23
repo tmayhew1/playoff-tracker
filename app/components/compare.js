@@ -1705,9 +1705,12 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 // The Compare chip for the breakdown toggle rows: opens the picker, then
 // shows the active comparison with a clear ✕.
 //
-// `palette` is the compared side's palette (comparePalette), so the chip wears
-// the same color the panel below draws that player in. Hosts that have no color
-// of their own to compare against leave it off and the chip keeps the old gold.
+// It stays GOLD in every state — the same gold the idle "Compare" button
+// wears. It used to take the compared player's palette, which read as that
+// player's color rather than as the control it is, and went actively wrong the
+// moment the panel below repalettes (career-year selections drop the compared
+// side to neutral grey, leaving a blue chip over a grey player). Gold is what
+// the reader already knows this slot by, and it can't drift.
 //
 // `careerPick` is a career-year selection made down in the panel's chart
 // ({ label, clear }, reported by ComparePanel's onPickChange). While one is
@@ -1716,16 +1719,13 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 // comparison rather than clearing the whole thing, which is the one step the
 // reader wants first and the only order that keeps the chip honest at each
 // stage.
-export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null, palette = null }) {
+export function CompareButton({ compare, picking, onOpen, onClear, careerPick = null }) {
   if (compare) {
-    // Active chip wears the same LIGHT wash as the compared player's wrappers.
     return (
       <button
         onClick={careerPick ? careerPick.clear : onClear}
         className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
-        style={palette
-          ? { backgroundColor: palette.bg, borderColor: palette.edge, color: palette.ink }
-          : { backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
+        style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : undefined}
         aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
       >
