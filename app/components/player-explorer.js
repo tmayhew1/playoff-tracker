@@ -527,7 +527,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 
   // The # header's three steps. Defined here, below `shown`, because the
   // middle one reaches for it.
-  //   1. arm — the rank column becomes check boxes
+  //   1. arm — the rank column becomes check boxes, and the table re-sorts by
+  //      VA/G descending (the rate you'd be choosing a run on)
   //   2. armed, nothing ticked — take every season CURRENTLY SHOWN, which is
   //      what makes the team badges compose with this: filter to HOU, tap #
   //      twice, and you have his whole Houston run without ticking nine rows
@@ -546,6 +547,13 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       // the mode — and the same close happens when a navigation arms selection
       // for us (see the pendingRun effect).
       setOpenSeason(null);
+      // Order the table for the job it's about to do. Picking a run is picking
+      // the seasons worth pooling, and VA/G is the rate that says which those
+      // are — the composite default mixes in volume, so a short monster year
+      // sits below a long ordinary one exactly where you're choosing between
+      // them. The VA/G header still toggles back to the default sort, and a
+      // min-games filter already forces this order anyway (effectiveSort).
+      setSortMode("vaPerG");
       setSelecting(true);
       return;
     }
@@ -734,7 +742,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           onClick={tapHash}
           className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${selecting ? "text-stone-900 font-bold underline" : ""}`}
           title={!selecting
-            ? "Tap to pick multiple seasons, then tap # again to compare them against another player’s run"
+            ? "Tap to pick multiple seasons — the table sorts by VA/G — then tap # again to compare them against another player’s run"
             : picked.size === 0
             ? `Tap seasons to tick them — or tap # again to take all ${shown.length} shown${teamFilter || minGames != null ? " under the current filter" : ""}`
             : `Compare these ${picked.size} seasons against another player’s run`}
