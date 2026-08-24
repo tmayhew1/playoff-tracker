@@ -919,16 +919,16 @@ function LegacyInfo({ dials }) {
 }
 
 
-// The career board. Legacy is deliberately two numbers rather than one, the
+// The Legacy board. Legacy is deliberately two numbers rather than one, the
 // board makes that argument, and a career opens into the seasons it was folded
 // from — each of those into the stat lines and the games behind them.
-export function CareerView({ onGoToLeaderboard = null }) {
+export function LegacyView({ onGoToLeaderboard = null }) {
   const [info, setInfo] = useState(false);
 
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-3">
-        <h2 className="text-base font-bold text-stone-900">Career</h2>
+        <h2 className="text-base font-bold text-stone-900">Legacy</h2>
         <button
           onClick={() => setInfo((v) => !v)}
           aria-expanded={info}

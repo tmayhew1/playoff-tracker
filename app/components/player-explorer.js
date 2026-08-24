@@ -73,7 +73,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     setNavSeason(target.season || null);
     setNavCompare(target.season ? target.compare || null : null);
     setNavRun(null);
-    // The season row scrolls itself into view; only a plain career-view jump
+    // The season row scrolls itself into view; only a plain legacy-view jump
     // wants the top of the page.
     if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
