@@ -1,4 +1,4 @@
-import { ALPHA_DEFAULT, gameWeight, seriesGameWeight } from "./leverage";
+import { ALPHA_DEFAULT, OMEGA_DEFAULT, gameWeight, seriesGameWeight } from "./leverage";
 import DIALS from "../data/legacy-dials.json";
 
 // Isomorphic (no "use client"), for the same reason ./leverage.js is: the fold
@@ -59,10 +59,14 @@ export function pForHalfWeightAt(share, half = 0.5) {
 // 1980-81 Moses Malone). Legacy uses the per-game aggregation because gamma is
 // defined on a stat line and a game IS a stat line. See spec §7.4.
 
-// Weights are derived HERE from each game's stored cLI, not read off the row.
-// ALPHA has to stay a live dial — precomputing weights at load time silently
-// freezes it, and a sweep over ALPHA then returns the same board every step.
-export function seasonLVA(season, { alpha = ALPHA_DEFAULT, includeRS = true } = {}) {
+// Weights are derived HERE from what the row stores about each game — its cLI,
+// its series' length, and how much of that series the team won — never read off
+// the row as a resolved number. ALPHA and OMEGA have to stay live dials, and
+// precomputing weights at load time silently freezes them: a sweep over either
+// would then return the same board at every step.
+export function seasonLVA(season, {
+  alpha = ALPHA_DEFAULT, omega = OMEGA_DEFAULT, includeRS = true,
+} = {}) {
   const anchor = season.anchor;
   const depth = season.depth || 4;
   // The two halves are accumulated apart and summed at the end so a season can
@@ -74,13 +78,15 @@ export function seasonLVA(season, { alpha = ALPHA_DEFAULT, includeRS = true } = 
 
   // Playoff games are priced by the SERIES they belong to, not by the score
   // they were played at (see seriesGameWeight in ./leverage). Every game of a
-  // series therefore carries the same weight, and a series that ended early
-  // carries it in fewer games — so closing a team out concentrates value
-  // instead of forfeiting it.
+  // series therefore carries the same weight for a given team, and a series
+  // that ended early carries it in fewer games — so closing a team out
+  // concentrates value instead of forfeiting it. The two teams do NOT split
+  // that pot evenly: omega hands the side that won more of the games more of
+  // it, which is what keeps a sweep from paying its loser like its winner.
   for (const g of season.games || []) {
     if (g.va == null) continue;
     const w = g.seriesGames > 0
-      ? seriesGameWeight(g.roundsAfter, depth, g.seriesGames, alpha)
+      ? seriesGameWeight(g.roundsAfter, depth, g.seriesGames, alpha, g.seriesWins, omega)
       // A game whose series could not be resolved (an in-progress bracket)
       // falls back to its own state rather than scoring zero.
       : gameWeight(g.cli, alpha, anchor);
@@ -166,6 +172,7 @@ export function legacyFold(lvas, p = P_DEFAULT) {
 // where the data join lives).
 export function playerLegacy(player, {
   alpha = ALPHA_DEFAULT,
+  omega = OMEGA_DEFAULT,
   p = P_DEFAULT,
   includeRS = true,
   peakSeasons = PEAK_SEASONS_DEFAULT,
@@ -173,7 +180,7 @@ export function playerLegacy(player, {
   const rows = (player.seasons || []).map((s) => ({
     season: s.season,
     team: s.team,
-    ...seasonLVA(s, { alpha, includeRS }),
+    ...seasonLVA(s, { alpha, omega, includeRS }),
   }));
 
   rows.sort((a, b) => b.lva - a.lva);
@@ -302,6 +309,7 @@ export function balanceOf(players, opts = {}) {
 export function dialSweep(players, {
   dial = "p",
   alpha = ALPHA_DEFAULT,
+  omega = OMEGA_DEFAULT,
   p = P_DEFAULT,
   includeRS = true,
   from = dial === "p" ? 1 : 0,
@@ -311,11 +319,11 @@ export function dialSweep(players, {
 } = {}) {
   const xs = Array.from({ length: steps }, (_, i) => from + ((to - from) * i) / (steps - 1));
 
-  const base = rankLegacy(players, { alpha, p, includeRS }).slice(0, topN);
+  const base = rankLegacy(players, { alpha, omega, p, includeRS }).slice(0, topN);
   const tracked = base.map((x) => x.slug);
   const byStep = xs.map((x) => {
-    const o = dial === "p" ? { alpha, p: x } : { alpha: x, p };
-    const board = rankLegacy(players, { ...o, includeRS });
+    // Every dial sweeps the same way: hold the other two, move this one.
+    const board = rankLegacy(players, { alpha, omega, p, [dial]: x, includeRS });
     const rank = new Map(board.map((pl, i) => [pl.slug, i + 1]));
     const score = new Map(board.map((pl) => [pl.slug, pl.total]));
     return { rank, score };

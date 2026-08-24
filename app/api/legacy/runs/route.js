@@ -1,6 +1,6 @@
 import { cachedCareers, clearCareerCache } from "../../_lib/careers.js";
 import { seasonLVA } from "../../../lib/legacy.js";
-import { ALPHA_DEFAULT, seriesGameWeight, gameWeight } from "../../../lib/leverage.js";
+import { ALPHA_DEFAULT, OMEGA_DEFAULT, seriesGameWeight, gameWeight } from "../../../lib/leverage.js";
 import { normalizeName } from "../../../lib/format.js";
 import { valueAddByCategory, VA_CATEGORY_KEYS, lgaForSeason } from "../../../scoring.js";
 
@@ -17,12 +17,12 @@ export const revalidate = 86400;
 // Ranking happens server-side because all 8,917 runs is ~360KB and the search
 // has to reach every one of them, not just a prefix the client happens to hold.
 
-// Ranked once per alpha and reused; the corpus behind it is static between
-// bakes, so the only thing that can invalidate this is the dial.
+// Ranked once per dial setting and reused; the corpus behind it is static
+// between bakes, so the only thing that can invalidate this is the dials.
 const RANKED = new Map();
 
-function rankedRuns(alpha) {
-  const key = String(alpha);
+function rankedRuns(alpha, omega) {
+  const key = `${alpha}|${omega}`;
   const hit = RANKED.get(key);
   if (hit) return hit;
 
@@ -30,11 +30,11 @@ function rankedRuns(alpha) {
   const runs = [];
   for (const p of built.players) {
     for (const s of p.seasons || []) {
-      const r = seasonLVA(s, { alpha, includeRS: false });
+      const r = seasonLVA(s, { alpha, omega, includeRS: false });
       if (!(r.poGames > 0)) continue;
       // The regular season of the SAME year, priced the same way, so a run can
       // be read against the winter that preceded it.
-      const full = seasonLVA(s, { alpha, includeRS: true });
+      const full = seasonLVA(s, { alpha, omega, includeRS: true });
       runs.push({
         slug: p.slug,
         name: p.name,
@@ -106,14 +106,14 @@ function rsStats(row) {
 }
 
 // Every game of one run, heaviest contribution first.
-function runGames(row, alpha) {
+function runGames(row, alpha, omega) {
   const depth = row.depth || 4;
   const lga = lgaForSeason(row.season);
   return (row.games || [])
     .filter((g) => g.va != null)
     .map((g) => {
       const w = g.seriesGames > 0
-        ? seriesGameWeight(g.roundsAfter, depth, g.seriesGames, alpha)
+        ? seriesGameWeight(g.roundsAfter, depth, g.seriesGames, alpha, g.seriesWins, omega)
         : gameWeight(g.cli, alpha, row.anchor);
       const l = g.line || {};
       return {
@@ -123,6 +123,9 @@ function runGames(row, alpha) {
         gameNo: g.seriesGameNumber,
         seriesGames: g.seriesGames,
         state: g.a != null && g.b != null ? `${g.a}-${g.b}` : "",
+        // How the series came out for this team, which is what set the weight
+        // above — the game's own state only names where in it the game fell.
+        seriesWins: g.seriesWins ?? null,
         mp: r2(l.mp || 0), pts: l.pts || 0, reb: l.reb || 0, ast: l.ast || 0,
         stl: l.stl || 0, blk: l.blk || 0, tov: l.tov || 0,
         fgm: l.fgm || 0, fga: l.fga || 0, tpm: l.tpm || 0, tpa: l.tpa || 0,
@@ -147,6 +150,7 @@ const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 export async function GET(request) {
   const q = new URL(request.url).searchParams;
   const alpha = clamp(num(q.get("alpha"), ALPHA_DEFAULT), 0, 3);
+  const omega = clamp(num(q.get("omega"), OMEGA_DEFAULT), 0, 1);
   const limit = clamp(Math.round(num(q.get("limit"), 100)), 1, 500);
   const offset = clamp(Math.round(num(q.get("offset"), 0)), 0, 20000);
   const season = (q.get("season") || "").trim();
@@ -155,7 +159,7 @@ export async function GET(request) {
 
   let all;
   try {
-    all = rankedRuns(alpha);
+    all = rankedRuns(alpha, omega);
   } catch (e) {
     clearCareerCache();
     RANKED.clear();
@@ -184,7 +188,7 @@ export async function GET(request) {
         stats: runStats(row),
         rsStats: rsStats(row),
       },
-      games: runGames(row, alpha),
+      games: runGames(row, alpha, omega),
       categories: VA_CATEGORY_KEYS,
     }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } });
   }

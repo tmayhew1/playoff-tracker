@@ -121,16 +121,69 @@ export function seriesAnchor(depth) {
 // series concentrates that total into fewer games; a longer one dilutes it.
 export const EXPECTED_SERIES_GAMES = 5.8125;
 
-// What one game of a series is worth. `seriesGames` is the length the series
-// actually ran — the TEAM's games, not the player's, so sitting one out
-// dilutes his share rather than flattering it.
-export function seriesGameWeight(roundsAfter, depth, seriesGames, alpha = ALPHA_DEFAULT) {
+
+// --- Who the stake goes to ---------------------------------------------------
+// Pricing the series ex ante and spreading it evenly fixed the fast WINNER and
+// broke the fast loser in the same stroke: both sides of a sweep drew the same
+// 1.45 per game, the top of the round's range, so being swept in four was the
+// most expensive basketball a round had to offer — each of those games priced
+// 1.75x a Game 7 of the same round. Winning early is supposed to concentrate
+// value. Losing early was concentrating it too.
+//
+// No amount of leverage arithmetic separates them. Under the neutral coin a
+// game moves the two teams' title probability by P(a+1,b) − P(a,b) and
+// P(a,b) − P(a,b+1), and since P(a,b) is the average of its two children those
+// are both exactly half the swing — equal in size, opposite in sign, in every
+// game of every series. The winner and the loser of a sweep each moved a title
+// by the same 0.5 of a round-1 unit. Championship leverage is symmetric, and it
+// is symmetric on purpose: it prices the EVENT, and both teams played it.
+//
+// So the asymmetry has to be asserted, and is named as such. OMEGA is the
+// second taste dial in the leverage half, and reads the way ALPHA does — 0 is
+// the outcome not counting at all. The series pot is conserved either way;
+// omega only says how much of it is handed out by who won the games rather
+// than shared evenly.
+//
+//   share = omega * (teamWins / seriesGames) + (1 − omega) * 0.5
+//
+// omega = 0 is the even split this replaces. omega = 1 hands the pot out
+// strictly in proportion to games won, which overpays: at 1 a low-VA role
+// player on a dynasty rides his teammates' share up 45 places. 0.5 keeps both
+// orderings the design wants and nothing more — winning in 4 (8.72 of a round-1
+// pot) beats winning in 7 (6.23), so closing out early still concentrates
+// value; and losing in 7 (5.40) beats being swept (2.91), so taking a team the
+// distance beats not troubling them. The two are monotone against each other at
+// every length: a win always outprices the loss it was.
+//
+// Note this is the one place team outcome enters an individual metric on
+// purpose. It was already in there as a cliff — the winner advances and plays
+// another, dearer series, the loser goes home — and this makes it continuous
+// across the series boundary rather than adding a new channel.
+export const OMEGA_DEFAULT = 0.5;
+
+// A team's share of its series' pot. Both teams' shares sum to 1 for any
+// omega, which is what conserves the pot. `teamWins` null — an unresolved
+// series — falls back to the even split rather than guessing.
+export function seriesShare(teamWins, seriesGames, omega = OMEGA_DEFAULT) {
+  if (teamWins == null || !(seriesGames > 0)) return 0.5;
+  const won = Math.min(Math.max(teamWins, 0), seriesGames) / seriesGames;
+  return omega * won + (1 - omega) * 0.5;
+}
+
+// What one game of a series is worth to one of its teams. `seriesGames` is the
+// length the series actually ran — the TEAM's games, not the player's, so
+// sitting one out dilutes his share rather than flattering it. `teamWins` is
+// that same team's wins in it; omitted, the pot splits evenly and this returns
+// the outcome-blind price.
+export function seriesGameWeight(roundsAfter, depth, seriesGames, alpha = ALPHA_DEFAULT,
+                                 teamWins = null, omega = OMEGA_DEFAULT) {
   if (!(seriesGames > 0)) return 0;
   const anchor = seriesAnchor(depth);
   if (!(anchor > 0)) return 0;
   const stake = seriesStake(roundsAfter);
   const w = alpha === 0 ? 1 : Math.pow(stake / anchor, alpha);
-  return w * (EXPECTED_SERIES_GAMES / seriesGames);
+  // 2x because a share of 0.5 is the even split the pot is quoted against.
+  return w * (EXPECTED_SERIES_GAMES / seriesGames) * 2 * seriesShare(teamWins, seriesGames, omega);
 }
 
 
@@ -344,6 +397,12 @@ export function gameLeverage(historySeries) {
     const games = [...(series.games || [])].sort(
       (x, y) => gameKey(x).localeCompare(gameKey(y)));
 
+    // The FINAL tally, taken up front, because seriesShare prices every game of
+    // a series by how the whole thing came out — not by the state it was played
+    // at, which is what `a`/`b` below carry. On a bracket still in progress this
+    // is the standing so far, the same way shape.bestOf and seriesGames are.
+    const finalWins = seriesWins(series);
+
     const wins = new Map(teams.map((t) => [t, 0]));
     for (const g of games) {
       const home = triOf(g.home), away = triOf(g.away);
@@ -355,6 +414,8 @@ export function gameLeverage(historySeries) {
           seriesIdx: si,
           round: shape.round[si],
           roundsAfter, bestOf, a, b,
+          seriesWins: finalWins.get(me) || 0,
+          seriesGames: games.length,
         });
       }
       const w = gameWinner(g);
@@ -365,9 +426,13 @@ export function gameLeverage(historySeries) {
   return { shape, map };
 }
 
-// Convenience: the weight for one player-game, given a leverage map.
-export function weightForGame(lev, gameId, tri, alpha = ALPHA_DEFAULT) {
+// Convenience: the weight for one player-game, given a leverage map. Prices by
+// the SERIES the game belongs to, which is what the boards use; a game whose
+// series has no length on record falls back to its own state.
+export function weightForGame(lev, gameId, tri, alpha = ALPHA_DEFAULT, omega = OMEGA_DEFAULT) {
   const e = lev.map.get(`${gameId}|${tri}`);
   if (!e) return null;
-  return gameWeight(e.cli, alpha, lev.shape.anchor);
+  if (!(e.seriesGames > 0)) return gameWeight(e.cli, alpha, lev.shape.anchor);
+  return seriesGameWeight(e.roundsAfter, lev.shape.depth, e.seriesGames, alpha,
+    e.seriesWins, omega);
 }

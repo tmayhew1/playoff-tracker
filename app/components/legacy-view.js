@@ -3,7 +3,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { teamColor } from "../lib/format";
-import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT } from "../lib/leverage";
+import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT, OMEGA_DEFAULT } from "../lib/leverage";
 import { weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT } from "../lib/legacy";
 import { positionChips, positionParent } from "../lib/positions";
 
@@ -795,7 +795,7 @@ function CareersBoard({ onGoToLeaderboard }) {
           carry half the weight — rather than chosen, and it means the weights adapt to the
           career instead of being imposed on it.</>
         ) : null}{" "}
-        Leverage α {data.dials.alpha}; regular season{" "}
+        Leverage α {data.dials.alpha}; series split ω {data.dials.omega}; regular season{" "}
         {data.dials.includeRS ? "included" : "excluded"}; minimum{" "}
         {data.dials.minSeasons > 1 ? `${data.dials.minSeasons} seasons and ` : ""}
         {fmt0(data.dials.minGames)} career games.
@@ -818,6 +818,7 @@ const shadeFor = (w) => (w >= 2.9 ? "bg-stone-900 text-white"
 
 function LegacyInfo({ dials }) {
   const alpha = dials?.alpha ?? ALPHA_DEFAULT;
+  const omega = dials?.omega ?? OMEGA_DEFAULT;
   const p = dials?.p ?? P_DEFAULT;
   // A modern bracket: four rounds deep, quoted against its own opening series.
   const rsW = gameWeight(rsCLI("2015-16", 4), alpha, anchorCLI(4, 7));
@@ -840,7 +841,9 @@ function LegacyInfo({ dials }) {
         The stake belongs to the <span className="font-semibold">series</span>, not the score
         it reaches. Winning one moves a title by half for every round still to come, and that
         stake is shared across however many games the series takes — so closing a team out in
-        four concentrates it rather than forfeiting it.
+        four concentrates it rather than forfeiting it. The two teams do not share it evenly:
+        a fraction ω = {omega} of it goes out by who won the games, which is what keeps a
+        sweep from paying the team that lost it what it pays the team that won.
       </p>
       <div className="grid grid-cols-[3.9rem_repeat(4,1fr)] gap-[2px] mb-1">
         <span />
@@ -851,10 +854,13 @@ function LegacyInfo({ dials }) {
           <Fragment key={label}>
             <span className="text-[9px] text-stone-500 flex items-center">{label}</span>
             {[4, 5, 6, 7].map((n) => {
-              const w = seriesGameWeight(ra, 4, n, alpha);
+              // A best-of-7: the winner takes four of them, the loser the rest.
+              const won = seriesGameWeight(ra, 4, n, alpha, 4, omega);
+              const lost = seriesGameWeight(ra, 4, n, alpha, n - 4, omega);
               return (
-                <span key={n} className={`text-[10px] font-bold tabular-nums text-center py-1 ${shadeFor(w)}`}>
-                  {w.toFixed(2)}
+                <span key={n} className={`text-center py-1 leading-tight ${shadeFor(won)}`}>
+                  <span className="block text-[10px] font-bold tabular-nums">{won.toFixed(2)}</span>
+                  <span className="block text-[8px] tabular-nums opacity-60">{lost.toFixed(2)}</span>
                 </span>
               );
             })}
@@ -863,6 +869,7 @@ function LegacyInfo({ dials }) {
       </div>
       <p className="text-[9px] text-stone-400 mb-2">
         Each game of that series, against a round-1 series of average length = 1.00.
+        Top number to the team that won it, bottom to the team that lost.
       </p>
 
       <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">

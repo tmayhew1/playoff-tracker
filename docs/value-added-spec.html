@@ -667,7 +667,7 @@
 
 <p>About 1/51 of a playoff opener raw, about 1/7 after compression. <span class="m g">G</span> is tabulated, not measured: <code>max(g)</code> over a season&rsquo;s totals overshoots, because a traded player&rsquo;s TOT row sums his games across teams (1999-00 and 2003-04 both report 85).</p>
 
-<p><span class="m g">&alpha;</span> is <strong>the one free parameter in the construction, and it is a taste parameter, not a derivation.</strong> <span class="m"><span class="g">&alpha;</span> = 1</span> is raw championship leverage, under which a Finals Game 7 is worth 25.6 openers and the regular season all but disappears; <span class="m"><span class="g">&alpha;</span> = 0</span> is flat and reproduces context-free VA exactly. The default &frac12; says importance counts at diminishing returns.</p>
+<p><span class="m g">&alpha;</span> is <strong>a taste parameter, not a derivation</strong> &mdash; the first of the two the leverage half spends (&sect;7.4.2a names the other). <span class="m"><span class="g">&alpha;</span> = 1</span> is raw championship leverage, under which a Finals Game 7 is worth 25.6 openers and the regular season all but disappears; <span class="m"><span class="g">&alpha;</span> = 0</span> is flat and reproduces context-free VA exactly. The default &frac12; says importance counts at diminishing returns.</p>
 
 <div class="eq">
   LVA(season) <span class="op">=</span>
@@ -676,6 +676,67 @@
   <span class="op">+</span>
   <span class="g">w</span><sub class="s">RS</sub> <span class="op">&middot;</span> VA<sub class="s">RS</sub>
 </div>
+
+<h4>7.4.2a &nbsp; Stakes belong to the series, not the game state</h4>
+
+<p>The <span class="m"><span class="g">w</span>(<span class="g">g</span>)</span> above is <strong>not</strong> the per-game weight of &sect;7.4.1. cLI prices a <em>game</em> by the score it was played at, which is the right answer to &ldquo;how much did this game matter&rdquo; and the wrong one to &ldquo;how good was this player&rdquo;, because a team removes the stakes by winning early. A sweep is played entirely at 0-0, 1-0, 2-0, 3-0 &mdash; weights 1.00, 1.00, 0.89, 0.63, the bottom of the round&rsquo;s range &mdash; while a seven-game series averages 1.21 across seven games. Winning fast cost roughly 2.4&times; the weighted volume: charged once for playing fewer games, and again for the games being cheap.</p>
+
+<p>So a series is priced <strong>ex ante and once</strong>. Under the same neutral coin, winning it moves a title by <span class="m">2<sup>&minus;<span class="g">&rho;</span></sup></span> whatever score it reaches, and that stake is spread across however many games <span class="m g">m</span> the series actually took:</p>
+
+<div class="eq">
+  <span class="g">w</span><sub class="s">series</sub> <span class="op">=</span>
+  ( <span class="fr"><span class="nu">2<sup>&minus;<span class="g">&rho;</span></sup></span><span class="de">2<sup>&minus;(<span class="g">d</span>&minus;1)</sup></span></span> )<sup class="g">&alpha;</sup>
+  <span class="op">&middot;</span>
+  <span class="fr"><span class="nu g">E</span><span class="de g">m</span></span>
+  <span class="lbl">E = <span class="big">Σ</span> <span class="g">m</span> &middot; Pr(<span class="g">m</span>) = 5.8125</span>
+</div>
+
+<p>where <span class="m g">E</span> is the expected length of a best-of-7 under the fair coin (Pr = 1/8, 1/4, 5/16, 5/16 for <span class="m"><span class="g">m</span> = 4, 5, 6, 7</span>). Dividing by <span class="m g">m</span> and multiplying by <span class="m g">E</span> holds the unit: a round-1 series of expected length still prices its games at exactly 1.00, the same opener &sect;7.4.1&rsquo;s weights are quoted against. This is already how the regular season is priced &mdash; a berth worth <span class="m">2<sup>&minus;<span class="g">d</span></sup></span>, divided by the schedule &mdash; so the playoffs were the inconsistent half. A game whose series cannot be resolved, a bracket still in progress, falls back to its own cLI.</p>
+
+<p><strong>Who the stake goes to.</strong> Pricing the series ex ante fixed the fast winner and broke the fast loser in the same stroke: both sides of a sweep drew the same 1.4531 per game, the top of the round&rsquo;s range, so being swept in four became the most expensive basketball a round had to offer &mdash; each of those games priced 1.75&times; a Game 7 of the same round.</p>
+
+<p>No amount of leverage arithmetic separates them. Since <span class="m"><span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span>)</span> is the average of its two children, a game moves the two teams&rsquo; title probability by</p>
+
+<div class="eq">
+  <span class="g">W</span>(<span class="g">a</span>+1,<span class="g">b</span>) <span class="op">&minus;</span> <span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span>)
+  <span class="op">=</span>
+  <span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">&minus;</span> <span class="g">W</span>(<span class="g">a</span>,<span class="g">b</span>+1)
+  <span class="op">=</span>
+  &frac12; <span class="g">&sigma;</span>(<span class="g">a</span>,<span class="g">b</span>)
+</div>
+
+<p>equal in size and opposite in sign, in every game of every series. The winner and the loser of a sweep each moved a title by the same 0.5 of a round-1 unit. <strong>Championship leverage is symmetric</strong>, and deliberately so: it prices the event, and both teams played it.</p>
+
+<p>The asymmetry is therefore asserted, and named as such. <span class="m g">&omega;</span> is the second taste parameter, and reads the way <span class="m g">&alpha;</span> does &mdash; 0 is the outcome not counting at all. The series pot is conserved either way; <span class="m g">&omega;</span> only says how much of it is handed out by who won the games rather than shared evenly:</p>
+
+<div class="eq">
+  <span class="g">s</span> <span class="op">=</span>
+  <span class="g">&omega;</span> <span class="op">&middot;</span>
+  <span class="fr"><span class="nu g">k</span><span class="de g">m</span></span>
+  <span class="op">+</span>
+  (1 <span class="op">&minus;</span> <span class="g">&omega;</span>) <span class="op">&middot;</span> &frac12;
+  <span class="lbl"><span class="g">w</span>(<span class="g">g</span>) = 2 <span class="g">s</span> &middot; <span class="g">w</span><sub>series</sub></span>
+</div>
+
+<p>for a team that won <span class="m g">k</span> of the series&rsquo; <span class="m g">m</span> games. The two teams&rsquo; shares sum to 1 at every <span class="m g">&omega;</span>, so the pot is exactly conserved. The factor 2 is there because the pot is quoted against an even split, which makes <span class="m"><span class="g">&omega;</span> = 0</span> identical to the scheme it replaces; an unresolved series takes <span class="m"><span class="g">s</span> = &frac12;</span>.</p>
+
+<p><span class="m"><span class="g">&omega;</span> = 1</span> hands the pot out strictly in proportion to games won, which overpays &mdash; at 1 a low-VA role player on a dynasty rides his teammates&rsquo; share up 45 places on the board. The default &frac12; buys the two orderings the construction wants and nothing beyond them:</p>
+
+<div class="tw">
+<table>
+  <thead><tr><th>round-1 best-of-7</th><th>won, per game</th><th>won, series</th><th>lost, per game</th><th>lost, series</th></tr></thead>
+  <tbody>
+    <tr><th class="cat">4-0</th><td>2.180</td><td>8.72</td><td>0.727</td><td>2.91</td></tr>
+    <tr><th class="cat">4-1</th><td>1.511</td><td>7.56</td><td>0.814</td><td>4.07</td></tr>
+    <tr><th class="cat">4-2</th><td>1.130</td><td>6.78</td><td>0.807</td><td>4.84</td></tr>
+    <tr><th class="cat">4-3</th><td>0.890</td><td>6.23</td><td>0.771</td><td>5.40</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Winning in four still concentrates value over winning in seven (8.72 against 6.23), so closing a team out is never charged for; and losing in seven now beats being swept (5.40 against 2.91), so taking a team the distance beats not troubling them. A win outprices the loss it was at every round and length.</p>
+
+<p>This is the one place a <strong>team</strong> outcome enters an individual metric, and it is deliberate. The outcome was already in there as a cliff &mdash; the winner advances and plays another, dearer series, the loser goes home &mdash; and <span class="m g">&omega;</span> makes it continuous across the series boundary rather than opening a second channel.</p>
 
 <h4>7.4.3 &nbsp; Peak and longevity</h4>
 
@@ -793,6 +854,7 @@
   <li>Non-NBA populations get <strong>their own</strong> <span class="m g">λ</span>; the formula is portable, the baselines are not.</li>
   <li>A season is scored by one <span class="m"><span class="g">λ</span>(<span class="g">y</span>)</span> from one source table; a plausibility gate (<span class="m">0.33 <span class="op">&lt;</span> <span class="g">μ</span><sub class="s">PTS</sub> <span class="op">&lt;</span> 0.52</span>) refuses to write a baseline derived from a mis-parsed page.</li>
   <li>Any category the source does not carry is <strong>absent</strong>, never zero-filled — a missing measurement must not read as below-average performance.</li>
+  <li>Championship leverage <strong>reweights</strong> the decomposition and never enters it, so invariant 1 holds unchanged on every surface (&sect;7.4). Within a series its weight is conserved: the two teams&rsquo; shares sum to 1 at every <span class="m g">&omega;</span>, so <span class="m g">&omega;</span> only redistributes the pot and can never create weight.</li>
 </ol>
 
 <footer>

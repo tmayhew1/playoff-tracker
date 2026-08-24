@@ -2,7 +2,7 @@ import { cachedCareers, clearCareerCache } from "../_lib/careers.js";
 import {
   rankLegacy, weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT,
 } from "../../lib/legacy.js";
-import { ALPHA_DEFAULT } from "../../lib/leverage.js";
+import { ALPHA_DEFAULT, OMEGA_DEFAULT } from "../../lib/leverage.js";
 import { normalizeName } from "../../lib/format.js";
 import { POSITIONS, matchesPosition } from "../../lib/positions.js";
 import DIALS from "../../data/legacy-dials.json";
@@ -18,7 +18,7 @@ export const revalidate = 86400;
 // whole corpus — every playoff game's VA for every player across 46 seasons,
 // tens of megabytes of it. The client gets the board, not the careers.
 //
-// The dials stay live as query params (?alpha=&p=) instead of being baked
+// The dials stay live as query params (?alpha=&omega=&p=) instead of being baked
 // into the response: the whole argument of the metric is that a ranking which
 // moves under a defensible range of the dials is a ranking with an argument in
 // it, so the API has to be able to answer for any setting, not just the default.
@@ -46,6 +46,9 @@ export async function GET(request) {
   // negative alpha would invert leverage so a Game 7 counted for less than a
   // Game 1.
   const alpha = clamp(num(q.get("alpha"), ALPHA_DEFAULT), 0, 3);
+  // omega is a share, so it is only defined on [0, 1]: 0 splits a series' pot
+  // evenly between its two teams, 1 splits it strictly by games won.
+  const omega = clamp(num(q.get("omega"), OMEGA_DEFAULT), 0, 1);
   const p = clamp(num(q.get("p"), P_DEFAULT), 1, 8);
   const peakSeasons = clamp(Math.round(num(q.get("peakSeasons"), PEAK_SEASONS_DEFAULT)), 1, 30);
   const includeRS = q.get("rs") !== "0";
@@ -83,7 +86,7 @@ export async function GET(request) {
     return Response.json({ error: `legacy corpus unavailable: ${e.message}` }, { status: 503 });
   }
 
-  const opts = { alpha, p, includeRS, peakSeasons, minSeasons, minGames };
+  const opts = { alpha, omega, p, includeRS, peakSeasons, minSeasons, minGames };
   const ranked = rankLegacy(built.players, opts);
   // rankLegacy already orders by total; re-sort only when asked for the other
   // axis, and take the rank from THIS order so a row reports where it sits on
@@ -163,7 +166,7 @@ export async function GET(request) {
     sort,
     firstSeason: built.seasons[0] ?? null,
     lastSeason: built.seasons[built.seasons.length - 1] ?? null,
-    dials: { alpha, p, includeRS, peakSeasons, minSeasons, minGames },
+    dials: { alpha, omega, p, includeRS, peakSeasons, minSeasons, minGames },
     // The dial in one sentence, for the tab to print: what a season worth a
     // tenth / a half of your best actually carries.
     weightAtTenth: weightForShare(0.1, p),
