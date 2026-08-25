@@ -609,16 +609,104 @@ tabulated, not measured: `max(g)` over a season's totals overshoots, because a
 traded player's TOT row sums his games across teams (1999-00 and 2003-04 both
 report 85).
 
-$\alpha$ is **the one free parameter in the construction, and it is a taste
-parameter, not a derivation.** $\alpha = 1$ is raw championship leverage, under
-which a Finals Game 7 is worth 25.6 openers and the regular season all but
-disappears; $\alpha = 0$ is flat and reproduces context-free VA exactly. The
-default $\tfrac12$ says importance counts at diminishing returns.
+$\alpha$ is **a taste parameter, not a derivation** — the first of the two the
+leverage half spends (§7.4.2a names the other). $\alpha = 1$ is raw
+championship leverage, under which a Finals Game 7 is worth 25.6 openers and
+the regular season all but disappears; $\alpha = 0$ is flat and reproduces
+context-free VA exactly. The default $\tfrac12$ says importance counts at
+diminishing returns.
 
 $$
 \mathrm{LVA}(\text{season}) \;=\; \sum_{g \in \text{playoffs}} w(g)\,\mathrm{VA}(g)
 \;+\; w_{\mathrm{RS}}\,\mathrm{VA}_{\mathrm{RS}}
 $$
+
+#### 7.4.2a Stakes belong to the series, not the game state
+
+The $w(g)$ above is **not** the per-game weight of §7.4.1. cLI prices a *game*
+by the score it was played at, which is the right answer to "how much did this
+game matter" and the wrong one to "how good was this player", because a team
+removes the stakes by winning early. A sweep is played entirely at 0-0, 1-0,
+2-0, 3-0 — weights $1.00, 1.00, 0.89, 0.63$, the bottom of the round's range —
+while a seven-game series averages $1.21$ across seven games. Winning fast cost
+roughly $2.4\times$ the weighted volume: charged once for playing fewer games,
+and again for the games being cheap.
+
+So a series is priced **ex ante and once**. Under the same neutral coin,
+winning it moves a title by $2^{-\rho}$ whatever score it reaches, and that
+stake is spread across however many games $m$ the series actually took:
+
+$$
+w_{\text{series}} \;=\; \left(\frac{2^{-\rho}}{2^{-(d-1)}}\right)^{\!\alpha}
+\cdot \frac{E}{m},
+\qquad
+E \;=\; \textstyle\sum_m m\,\Pr(m) \;=\; 5.8125
+$$
+
+where $E$ is the expected length of a best-of-7 under the fair coin
+($\Pr = \tfrac18, \tfrac14, \tfrac5{16}, \tfrac5{16}$ for $m = 4,5,6,7$).
+Dividing by $m$ and multiplying by $E$ holds the unit: a round-1 series of
+expected length still prices its games at exactly $1.00$, the same opener
+§7.4.1's weights are quoted against. This is already how the regular season is
+priced — a berth worth $2^{-d}$, divided by the schedule — so the playoffs were
+the inconsistent half. A game whose series cannot be resolved, a bracket still
+in progress, falls back to its own cLI.
+
+**Who the stake goes to.** Pricing the series ex ante fixed the fast winner and
+broke the fast loser in the same stroke: both sides of a sweep drew the same
+$1.4531$ per game, the top of the round's range, so being swept in four became
+the most expensive basketball a round had to offer — each of those games priced
+$1.75\times$ a Game 7 of the same round.
+
+No amount of leverage arithmetic separates them. Since $W(a,b)$ is the average
+of its two children, a game moves the two teams' title probability by
+
+$$
+W(a{+}1,b) - W(a,b) \;=\; W(a,b) - W(a,b{+}1) \;=\; \tfrac12\,\sigma(a,b),
+$$
+
+equal in size and opposite in sign, in every game of every series. The winner
+and the loser of a sweep each moved a title by the same $0.5$ of a round-1
+unit. **Championship leverage is symmetric**, and deliberately so: it prices
+the event, and both teams played it.
+
+The asymmetry is therefore asserted, and named as such. $\omega$ is the second
+taste parameter, and reads the way $\alpha$ does — $0$ is the outcome not
+counting at all. The series pot is conserved either way; $\omega$ only says
+how much of it is handed out by who won the games rather than shared evenly:
+
+$$
+\boxed{\;s \;=\; \omega\,\frac{k}{m} \;+\; (1-\omega)\,\tfrac12\;}
+\qquad
+w(g) \;=\; 2\,s\;w_{\text{series}}
+$$
+
+for a team that won $k$ of the series' $m$ games. The two teams' shares sum to
+$1$ at every $\omega$, so the pot is exactly conserved. The factor $2$ is
+there because the pot is quoted against an even split, which makes $\omega=0$
+identical to the scheme it replaces; an unresolved series takes $s = \tfrac12$.
+
+$\omega = 1$ hands the pot out strictly in proportion to games won, which
+overpays — at $1$ a low-VA role player on a dynasty rides his teammates' share
+up 45 places on the board. The default $\tfrac12$ buys the two orderings the
+construction wants and nothing beyond them:
+
+| round-1 best-of-7 | won, per game | won, series | lost, per game | lost, series |
+|---|---|---|---|---|
+| 4-0 | 2.180 | 8.72 | 0.727 | 2.91 |
+| 4-1 | 1.511 | 7.56 | 0.814 | 4.07 |
+| 4-2 | 1.130 | 6.78 | 0.807 | 4.84 |
+| 4-3 | 0.890 | 6.23 | 0.771 | 5.40 |
+
+Winning in four still concentrates value over winning in seven ($8.72$ against
+$6.23$), so closing a team out is never charged for; and losing in seven now
+beats being swept ($5.40$ against $2.91$), so taking a team the distance beats
+not troubling them. A win outprices the loss it was at every round and length.
+
+This is the one place a **team** outcome enters an individual metric, and it is
+deliberate. The outcome was already in there as a cliff — the winner advances
+and plays another, dearer series, the loser goes home — and $\omega$ makes it
+continuous across the series boundary rather than opening a second channel.
 
 #### 7.4.3 Peak and longevity
 
@@ -748,3 +836,7 @@ own class rather than mixed into one column.
    from a mis-parsed page.
 5. Any category the source does not carry is **absent**, never zero-filled — a
    missing measurement must not read as below-average performance.
+6. Championship leverage **reweights** the decomposition and never enters it, so
+   invariant 1 holds unchanged on every surface (§7.4). Within a series its
+   weight is conserved: the two teams' shares sum to $1$ at every $\omega$, so
+   $\omega$ only redistributes the pot and can never create weight.

@@ -2,10 +2,10 @@
 // Legacy rankings — the leverage-weighted all-time board.
 //
 //   node scripts/legacy-report.mjs                     # default dials
-//   node scripts/legacy-report.mjs --alpha 1 --p 1
+//   node scripts/legacy-report.mjs --alpha 1 --p 1 --omega 0
 //   node scripts/legacy-report.mjs --top 40 --no-rs
 //   node scripts/legacy-report.mjs --player jamesle01 --player jordami01
-//   node scripts/legacy-report.mjs --sweep p
+//   node scripts/legacy-report.mjs --sweep p        # or --sweep alpha, --sweep omega
 //   node scripts/legacy-report.mjs --verify
 //
 // The board also ships as the Legacy tab (/api/legacy), which ranks the same
@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { buildCareers } from "../app/api/_lib/careers.js";
 import {
   gameLeverage, bracketShape, swing, cLI, gameWeight, rsCLI, rsGamesFor, anchorCLI,
-  seriesGameWeight, EXPECTED_SERIES_GAMES, ALPHA_DEFAULT,
+  seriesGameWeight, seriesShare, EXPECTED_SERIES_GAMES, ALPHA_DEFAULT, OMEGA_DEFAULT,
 } from "../app/lib/leverage.js";
 import {
   rankLegacy, dialSweep, legacyFold, balanceOf, rankTau, weightForShare,
@@ -57,9 +57,10 @@ function build() {
 const fmt = (n, w = 8, d = 0) => n.toLocaleString("en-US", {
   minimumFractionDigits: d, maximumFractionDigits: d }).padStart(w);
 
-function printBoard(board, { top, alpha, p, includeRS, firstSeason }) {
+function printBoard(board, { top, alpha, omega, p, includeRS, firstSeason }) {
   console.log(`\n=== Legacy — top ${top} `
-    + `(alpha ${alpha}, p ${p}, regular season ${includeRS ? "in" : "out"}) ===\n`);
+    + `(alpha ${alpha}, omega ${omega}, p ${p}, `
+    + `regular season ${includeRS ? "in" : "out"}) ===\n`);
   console.log("  #  player                     legacy   peak/g  raw/g   sns  span         games");
   console.log("  " + "-".repeat(83));
   board.slice(0, top).forEach((p, i) => {
@@ -196,6 +197,45 @@ function verify({ players, seasons }) {
         && seriesGameWeight(3, 4, 4, 0) > seriesGameWeight(3, 4, 7, 0));
   }
   {
+    // The omega split. Everything above prices the series outcome-blind; these
+    // are the identities that decide how that price is divided between the two
+    // teams, and the reason the split exists at all — a sweep used to pay its
+    // loser exactly what it paid its winner, at the top of the round's range.
+    const W = (n, wins, lam = 0.5) => seriesGameWeight(3, 4, n, 0.5, wins, lam);
+    let conserved = true;
+    for (const lam of [0, 0.25, 0.5, 0.75, 1]) {
+      for (const n of [4, 5, 6, 7]) {
+        if (!close(seriesShare(4, n, lam) + seriesShare(n - 4, n, lam), 1, 1e-12)) conserved = false;
+        if (!close(W(n, 4, lam) * n + W(n, n - 4, lam) * n, 2 * EXPECTED_SERIES_GAMES, 1e-9)) conserved = false;
+      }
+    }
+    ok("the two teams' shares sum to 1, so the series pot is conserved", conserved,
+      `${(W(4, 4) * 4 + W(4, 0) * 4).toFixed(4)} at every length and omega`);
+    ok("omega = 0 is exactly the even split it replaces",
+      [4, 5, 6, 7].every((n) => [4, n - 4].every((wins) =>
+        close(W(n, wins, 0), seriesGameWeight(3, 4, n, 0.5), 1e-12))));
+    ok("an unresolved series falls back to the even split",
+      close(seriesGameWeight(3, 4, 6, 0.5, null), seriesGameWeight(3, 4, 6, 0.5), 1e-12));
+    let mono = true;
+    for (const ra of [0, 1, 2, 3]) {
+      for (const n of [4, 5, 6, 7]) {
+        if (!(seriesGameWeight(ra, 4, n, 0.5, 4) > seriesGameWeight(ra, 4, n, 0.5, n - 4))) mono = false;
+      }
+    }
+    ok("a win always outprices the loss it was, every round and length", mono);
+    ok("winning early still concentrates: 4 beats 7 per game and in total",
+      W(4, 4) > W(7, 4) && W(4, 4) * 4 > W(7, 4) * 7,
+      `${(W(4, 4) * 4).toFixed(2)} > ${(W(7, 4) * 7).toFixed(2)}`);
+    ok("losing early no longer pays: being swept trails being taken to 7",
+      W(4, 0) < W(7, 3) && W(4, 0) * 4 < W(7, 3) * 7,
+      `${W(4, 0).toFixed(3)} < ${W(7, 3).toFixed(3)} per game`);
+    // The defect this dial exists to fix, stated as the number it was.
+    ok("a swept team's game no longer outprices a Game 7 of the same round",
+      W(4, 0) < W(7, 3),
+      `${W(4, 0).toFixed(3)} vs ${W(7, 3).toFixed(3)}, `
+      + `was ${seriesGameWeight(3, 4, 4, 0.5).toFixed(3)} vs ${seriesGameWeight(3, 4, 7, 0.5).toFixed(3)}`);
+  }
+  {
     const xs = [12, 400, 3, 900, 75, 220];
     const a = legacyFold(xs, 1).total;
     const b = legacyFold([...xs].reverse(), 1).total;
@@ -254,19 +294,25 @@ function verify({ players, seasons }) {
     const s = lbj.seasons.find((r) => r.season === "2015-16");
     const fin = s.games.filter((g) => g.round === 4)
       .sort((x, y) => x.gameId.localeCompare(y.gameId));
-    const w = (g) => seriesGameWeight(g.roundsAfter, s.depth, g.seriesGames, 0.5);
-    console.log("    game  state  seriesGames  weight   VA      leveraged");
+    const w = (g) => seriesGameWeight(g.roundsAfter, s.depth, g.seriesGames, 0.5, g.seriesWins);
+    console.log("    game  state  seriesGames  wins  weight   VA      leveraged");
     fin.forEach((g, i) => {
-      console.log(`    G${i + 1}    ${g.a}-${g.b}    ${String(g.seriesGames).padStart(8)}   `
+      console.log(`    G${i + 1}    ${g.a}-${g.b}    ${String(g.seriesGames).padStart(8)}  `
+        + `${String(g.seriesWins).padStart(4)}  `
         + `${w(g).toFixed(4)}   ${g.va.toFixed(2)}   ${(w(g) * g.va).toFixed(1)}`);
     });
-    ok("every game of the series now weighs the same",
+    ok("Cleveland is recorded as having won it 4-3",
+      fin.every((g) => g.seriesWins === 4 && g.seriesGames === 7));
+    ok("every game of the series still weighs the same",
       fin.every((g) => close(w(g), w(fin[0]), 1e-12)), w(fin[0]).toFixed(4));
-    ok("that 7-game Finals prices its games at 2sqrt(2) x 7/7… i.e. below a sweep's",
-      w(fin[0]) < seriesGameWeight(0, 4, 4, 0.5),
-      `${w(fin[0]).toFixed(3)} < ${seriesGameWeight(0, 4, 4, 0.5).toFixed(3)}`);
-    ok("the series still totals what its stake says",
-      close(w(fin[0]) * fin.length, 2 * Math.SQRT2 * EXPECTED_SERIES_GAMES, 1e-9),
+    ok("a 7-game Finals won still prices below a Finals swept in 4",
+      w(fin[0]) < seriesGameWeight(0, 4, 4, 0.5, 4),
+      `${w(fin[0]).toFixed(3)} < ${seriesGameWeight(0, 4, 4, 0.5, 4).toFixed(3)}`);
+    // The stake, times the winning side's share of a 4-3: 0.5*(4/7) + 0.5*0.5,
+    // doubled because the pot is quoted against an even split.
+    const share = 2 * (0.5 * (4 / 7) + 0.5 * 0.5);
+    ok("the series totals what its stake says, times the winner's share",
+      close(w(fin[0]) * fin.length, 2 * Math.SQRT2 * EXPECTED_SERIES_GAMES * share, 1e-9),
       (w(fin[0]) * fin.length).toFixed(4));
     const flatPO = s.games.reduce((t, g) => t + g.va, 0);
     ok("playoff VA sums to 448.83", close(flatPO, 448.83, 0.01), flatPO.toFixed(2));
@@ -340,6 +386,7 @@ function main(argv) {
   const has = (name) => argv.includes(`--${name}`);
 
   const alpha = Number(arg("alpha", ALPHA_DEFAULT));
+  const omega = Number(arg("omega", OMEGA_DEFAULT));
   const p = Number(arg("p", P_DEFAULT));
   const includeRS = !has("no-rs");
   const top = Number(arg("top", 25));
@@ -347,7 +394,7 @@ function main(argv) {
   const peakSeasons = Number(arg("peak-seasons", PEAK_SEASONS_DEFAULT));
 
   const built = build();
-  const opts = { alpha, p, includeRS, peakSeasons, minSeasons: 1, minGames };
+  const opts = { alpha, omega, p, includeRS, peakSeasons, minSeasons: 1, minGames };
 
   if (has("verify")) process.exit(verify(built) ? 1 : 0);
 
@@ -356,10 +403,17 @@ function main(argv) {
 
   if (has("sweep")) {
     const dial = arg("sweep", "p");
+    // p runs 1..3; alpha and omega are both defined on 0..1 at the low end,
+    // and alpha keeps its wider range because raw leverage sits above 1.
+    const range = dial === "p" ? { from: 1, to: 3 }
+      : dial === "omega" ? { from: 0, to: 1 }
+      : { from: 0, to: 1 };
+    const held = { alpha, omega, p };
+    delete held[dial];
     const sw = dialSweep(built.players.filter((p) =>
-      p.seasons.length >= 3), { ...opts, dial, topN: Number(arg("top", 12)) });
-    console.log(`\n=== rank vs ${dial} (other dial held at `
-      + `${dial === "p" ? `alpha ${alpha}` : `p ${p}`}) ===\n`);
+      p.seasons.length >= 3), { ...opts, dial, ...range, topN: Number(arg("top", 12)) });
+    console.log(`\n=== rank vs ${dial} (others held at `
+      + `${Object.entries(held).map(([k, v]) => `${k} ${v}`).join(", ")}) ===\n`);
     const head = sw.xs.filter((_, i) => i % 5 === 0);
     console.log("  player".padEnd(26) + head.map((x) => x.toFixed(2).padStart(6)).join(""));
     for (const s of sw.series) {
@@ -389,7 +443,7 @@ function main(argv) {
     return;
   }
 
-  printBoard(board, { top, alpha, p, includeRS, firstSeason: built.seasons[0] });
+  printBoard(board, { top, alpha, omega, p, includeRS, firstSeason: built.seasons[0] });
   console.log(`\n  ${board.length} players qualified `
     + `(>= 3 seasons, >= ${minGames} games); peak axis = best ${peakSeasons} seasons.`);
   console.log(`  p ${p} => a season worth half a career's best carries `

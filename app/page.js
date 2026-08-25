@@ -7,7 +7,7 @@ import { DRatingView } from "./components/drating-view";
 import { ExploreView } from "./components/explore";
 import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
-import { CareerView } from "./components/career-view";
+import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
 
 
@@ -15,9 +15,9 @@ export default function PlayoffTracker() {
   const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
 
-  // A cross-tab jump: Career hands over a player-season and which half of it
+  // A cross-tab jump: Legacy hands over a player-season and which half of it
   // was being read, and Explore opens its leaderboard there. Held here because
-  // the two tabs are siblings — Explore unmounts while Career is showing, so
+  // the two tabs are siblings — Explore unmounts while Legacy is showing, so
   // it picks the target up on mount.
   const [exploreJump, setExploreJump] = useState(null);
   const goToLeaderboard = useCallback((target) => {
@@ -59,10 +59,10 @@ export default function PlayoffTracker() {
             </button>
           ))}
           <button
-            onClick={() => setTab("career")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "career" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+            onClick={() => setTab("legacy")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "legacy" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
-            Career
+            Legacy
           </button>
           <button
             onClick={() => setTab("college")}
@@ -91,7 +91,7 @@ export default function PlayoffTracker() {
         </div>
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} />
-          : tab === "career" ? <CareerView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );

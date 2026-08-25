@@ -26,7 +26,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCareers } from "../app/api/_lib/careers.js";
 import { balanceOf, rankLegacy, pForHalfWeightAt, weightForShare } from "../app/lib/legacy.js";
-import { ALPHA_DEFAULT } from "../app/lib/leverage.js";
+import { ALPHA_DEFAULT, OMEGA_DEFAULT } from "../app/lib/leverage.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
@@ -43,7 +43,14 @@ const built = buildCareers({ dataDir: DATA });
 if (built.skipped.length) {
   console.error(`  note: ${built.skipped.length} season(s) skipped — incomplete baseline`);
 }
-const opts = { alpha: ALPHA_DEFAULT, includeRS: true, minSeasons: 1, minGames: 400, p };
+// p itself falls out of the principle above and does not depend on the board.
+// The `gap` recorded below does — it is measured on the ranking — so the
+// leverage dials are named here rather than left to default, and moving either
+// of them means re-running this.
+const opts = {
+  alpha: ALPHA_DEFAULT, omega: OMEGA_DEFAULT,
+  includeRS: true, minSeasons: 1, minGames: 400, p,
+};
 
 console.log(`principle: a season worth ${HALF_WEIGHT_SHARE * 100}% of your best carries `
   + `${HALF * 100}% of its weight`);
@@ -72,6 +79,9 @@ const payload = {
     + `${HALF_WEIGHT_SHARE} of the best carries ${HALF} of its weight`,
   halfWeightShare: HALF_WEIGHT_SHARE,
   half: HALF,
+  // The leverage dials the `gap` below was measured under.
+  alpha: ALPHA_DEFAULT,
+  omega: OMEGA_DEFAULT,
   pool: bal ? bal.pool : null,
   gap: bal ? Number(bal.gap.toFixed(4)) : null,
   seasons: built.seasons.length,

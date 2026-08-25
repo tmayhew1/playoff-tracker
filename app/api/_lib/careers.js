@@ -87,9 +87,6 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
     const seasonCLI = rsCLI(season, lev.shape.depth);
     const anchor = lev.shape.anchor;
     const depth = lev.shape.depth;
-    // How long each series actually ran. Series pricing divides a stake by the
-    // games the SERIES took, so this is the team's count, not the player's.
-    const seriesGames = hist.series.map((s) => (s.games || []).length);
 
     // Playoffs: per-game VA is already baked, so leverage only reweights it.
     const lb = read(`leaderboard-${season}.json`);
@@ -107,7 +104,11 @@ export function buildCareers({ dataDir = defaultDataDir() } = {}) {
           gameId: g.gameId, va: g.va, cli: e?.cli ?? 0,
           round: e?.round, a: e?.a, b: e?.b, bestOf: e?.bestOf,
           seriesIdx: e?.seriesIdx, roundsAfter: e?.roundsAfter,
-          seriesGames: e?.seriesIdx != null ? seriesGames[e.seriesIdx] : 0,
+          // How long the series ran and how much of it this team won — the two
+          // facts series pricing needs. Both are the TEAM's, not the player's,
+          // so sitting a game out dilutes his share rather than flattering it.
+          seriesGames: e?.seriesGames ?? 0,
+          seriesWins: e?.seriesWins ?? null,
           // Enough to identify the game on screen without a second lookup.
           opp: g.opp, seriesGameNumber: g.seriesGameNumber,
           line: Object.fromEntries(STAT_KEYS.map((k) => [k, g[k] ?? 0])),
