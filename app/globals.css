@@ -2,11 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap');
-
 html, body {
   background: #f5f5f4;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Both faces come from next/font (see app/layout.js), which self-hosts them
+   and exposes each as a CSS variable already carrying its metric-adjusted
+   fallback. Setting the UI face on <body> keeps the whole tree — including
+   anything rendered outside the page's root div — on one font. */
+body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  /* Keep the phone from resizing text on its own: everything here is sized in
+     fixed px against a 672px column, and an inflated 9px stat cell wrecks the
+     table rows it sits in. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Horizontal chip/tab strips scroll without showing a scrollbar
