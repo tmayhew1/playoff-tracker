@@ -120,7 +120,7 @@ export function InfoView() {
             {" "}(above the boards, on Explore and any season tab) and that one term is measured
             instead against a line fit to <span className="italic">every</span> player-season in
             the league that year:
-            {" "}<span className="tabular-nums">PTS/min ≈ {fmt(USG.a)} + {fmt(USG.b)} × (poss. used/min)</span>,
+            {" "}<span className="tabular-nums">PTS/min ≈ {fmt(USG.b)} × (poss. used/min) {USG.a >= 0 ? "+" : "−"} {fmt(Math.abs(USG.a))}</span>,
             {" "}where possessions used = FGA + <span className="tabular-nums">{USG_FTA_W}</span> × FTA
             (2025-26&apos;s line; it explains <span className="tabular-nums">{Math.round(USG.r2 * 100)}%</span>
             {" "}of the spread in scoring rate). The baseline becomes what the league actually

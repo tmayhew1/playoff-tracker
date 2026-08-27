@@ -9,6 +9,7 @@ import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
+import { USG_FTA_W } from "./scoring";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 
 
@@ -43,7 +44,7 @@ function VABaselineToggle() {
       {usgAdj && (
         <div className="mt-1.5 text-[10px] text-stone-500 italic leading-snug">
           Scoring volume is measured against what the league scores on the possessions
-          he used (FGA + 2.2&thinsp;&times;&thinsp;FTA), not against the median minute —
+          he used (FGA + {USG_FTA_W}&thinsp;&times;&thinsp;FTA), not against the median minute —
           so volume only pays above the going rate for that workload. The other nine
           categories are unchanged.
         </div>

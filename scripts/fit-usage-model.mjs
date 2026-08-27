@@ -4,7 +4,7 @@
 // For each season, over EVERY player-season in that season's regular-season
 // totals, a minutes-weighted least-squares line
 //
-//   PTS/MP  ~  a  +  b · USG/MP,      USG = FGA + 2.2 · FTA
+//   PTS/MP  ~  a  +  b · USG/MP,      USG = FGA + 0.475 · FTA
 //
 // is fit. USG-ADJ mode then charges a player a + b·(USG/MP) points per minute
 // instead of the flat league median mu_PTS: the baseline becomes "what the
@@ -36,11 +36,14 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
 const OUT = path.join(DATA, "usage-model.json");
 
-// Points of a free-throw attempt in the usage index, per the mode's definition:
-// possessions used = 2.2 · FTA + FGA. KEEP IN SYNC with USG_FTA_W in
-// app/scoring.js — the fit and the scorer have to index usage the same way or
-// the baseline means nothing.
-const FTA_W = 2.2;
+// Possessions a free-throw attempt uses — Hollinger's coefficient, the same one
+// the possession estimate Pi already uses everywhere else in this repo
+// (scrape_common.R::lga_from_totals, spec section 1.2). Sharing it is the point:
+// USG is then denominated in the same possessions that pi prices, rather than in
+// a second, private currency. KEEP IN SYNC with USG_FTA_W in app/scoring.js —
+// the fit and the scorer have to index usage the same way or the baseline means
+// nothing.
+const FTA_W = 0.475;
 
 const usg = (p) => (p.fga || 0) + FTA_W * (p.fta || 0);
 
@@ -142,7 +145,7 @@ if (check) { console.log("\n--check: nothing written."); process.exit(0); }
 
 fs.writeFileSync(OUT, JSON.stringify({
   ftaWeight: FTA_W,
-  fit: "minutes-weighted OLS of PTS/MP on (FGA + 2.2*FTA)/MP, per season, over that season's regular-season player-seasons",
+  fit: "minutes-weighted OLS of PTS/MP on (FGA + 0.475*FTA)/MP, per season, over that season's regular-season player-seasons",
   generatedAt: new Date().toISOString(),
   seasons: out,
 }, null, 2) + "\n");

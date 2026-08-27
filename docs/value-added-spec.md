@@ -329,8 +329,15 @@ having?* USG-ADJ asks that one instead.
 **Usage.** Possessions used by a stat line:
 
 $$
-\mathrm{USG} \;=\; \mathrm{FGA} \;+\; 2.2\,\mathrm{FTA}.
+\mathrm{USG} \;=\; \mathrm{FGA} \;+\; 0.475\,\mathrm{FTA}.
 $$
+
+$0.475$ is Hollinger's free-throw coefficient — the same one the possession
+estimate $\Pi$ uses in §1.2. Sharing it is deliberate: $\mathrm{USG}$ is then
+denominated in the possessions $\pi$ already prices, not in a second private
+currency. It is the player-side half of $\Pi$, minus the turnovers (a turnover
+is a possession used, but it produces no shot, and it is already paid for in its
+own category).
 
 **The model.** For each season $y$, over **every** player-season $i$ in that
 season's regular-season table, with minutes $m_i$ as weights:
@@ -373,22 +380,38 @@ now a regressor rather than an omitted variable.
    the other nine categories.
 2. **It refines the baseline rather than replacing it.** Over the 46 baked
    seasons, evaluated at each season's median MINUTE of usage, the fitted line
-   sits $-0.003$ pts/min from $\mu_{\mathrm{PTS}}$ on average (worst $-0.016$,
+   sits $+0.002$ pts/min from $\mu_{\mathrm{PTS}}$ on average (worst $+0.016$,
    1995-96). The median-usage player is scored essentially the same either way:
    the mode redistributes value across the usage curve instead of moving the
-   whole league. Fit quality is $R^2 = 0.83$–$0.91$ per season.
+   whole league. Fit quality is $R^2 = 0.90$–$0.94$ per season.
 
-**Known bias in the 2.2 weight.** $\mathrm{USG}$ prices a free-throw attempt at
-2.2 field-goal attempts, while the fitted $\hat b \approx 0.68$ makes that
-$\approx 1.5$ baseline points per FTA against the $\approx 0.78$ a free-throw
-attempt is actually worth. High-free-throw-rate players therefore sit
-systematically below their fitted line: the minutes-weighted correlation
-between the residual and $\mathrm{FTA}/\mathrm{FGA}$ is $-0.57$ pooled across
-seasons. At the possession weight of $0.44$ the same correlation is $+0.37$ and
-$R^2$ rises to $\approx 0.92$, so the honest reading is that the truth sits
-between the two and 2.2 overcharges getting to the line. The weight is a single
-constant (`USG_FTA_W`, mirrored in the fit script) if that trade is ever
-re-made; changing it requires a re-bake, since $\hat a,\hat b$ are fit to it.
+**What $\hat b$ is, and what the residual still carries.** The fitted slope runs
+$\hat b \approx 1.16$–$1.18$ in recent seasons, a little **above** that season's
+$\pi$ ($1.117$ in 2024-25). That is the turnover exclusion showing up where it
+should: a possession that reaches a shot or a foul is worth more than the
+average possession, because the average includes the ones that end in a
+giveaway.
+
+The residual is not white. Its minutes-weighted correlation with
+$\mathrm{FTA}/\mathrm{FGA}$ is $+0.34$ pooled across seasons: players who get to
+the line score **above** the line fit to their usage. That is a real property of
+the shot mix rather than an indexing error — a trip to the line returns about
+$2 p_F \approx 1.56$ points per possession against a league $\pi \approx 1.12$ —
+and USG-ADJ paying for it is the intended behaviour, since the Free Throws
+category prices only the *conversion* ($\mathrm{FTM}/\mathrm{FTA}$ vs $p_F$) and
+never the rate at which a player draws the attempt. Under $\mu_{\mathrm{PTS}}$
+that skill was invisible in the volume term; under USG-ADJ it is paid.
+
+(The weight was 2.2 in the first cut of this section, which inverted the sign:
+at 2.2 a free-throw attempt costs $\approx 1.5$ baseline points against the
+$\approx 0.78$ it returns, the residual correlation is $-0.57$, and
+$R^2$ falls to $0.88$. Foul-drawing was being charged as if it were the most
+expensive way to use a possession. Hollinger's $0.475$ is both the better fit
+and the one that agrees with $\Pi$; $1/2.2 = 0.4545$ lands within
+$0.0014$ of it on $R^2$.)
+
+The weight is a single constant (`USG_FTA_W`, mirrored in the fit script);
+changing it requires a re-bake, since $\hat a,\hat b$ are fit to it.
 
 **Scope.** The switch re-prices Explore (both boards, every scope), the season
 tabs, and everything derived from them — category breakdowns, league pools and

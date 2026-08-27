@@ -22,7 +22,7 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 // USG-ADJ answers that instead. Per season, over EVERY player-season in that
 // season's regular-season table, a minutes-weighted line
 //
-//   PTS/MP  ≈  a  +  b · (USG/MP),      USG = FGA + 2.2 · FTA
+//   PTS/MP  ≈  a  +  b · (USG/MP),      USG = FGA + 0.475 · FTA
 //
 // is fit (scripts/fit-usage-model.mjs → data/usage-model.json), and its
 // prediction replaces μ_PTS in that one term. The baseline is then what the
@@ -38,19 +38,22 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 //     reproduces the per-season sum exactly. Only γ is non-linear, and it is
 //     untouched here.
 //   • It is a refinement of the baseline it replaces, not a new one. Across
-//     the 46 baked seasons the fitted line sits 0.003 pts/min from μ_PTS at
+//     the 46 baked seasons the fitted line sits 0.002 pts/min from μ_PTS at
 //     the median MINUTE of usage (worst 0.016), so the median-usage player is
 //     scored the same either way and the mode redistributes rather than
-//     re-levels. See the spec §4.6.
+//     re-levels. R² runs 0.90-0.94 per season. See the spec §4.6.
 //
 // Everything else in VA — the nine other categories, γ, VA+ — is unchanged.
 // The model rides on the baseline object as `usgModel`, so any code path that
 // already threads an `lga` through picks the mode up with no other change.
 export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
 
-// Free-throw attempts per possession used, per the mode's definition of
-// usage. KEEP IN SYNC with FTA_W in scripts/fit-usage-model.mjs.
-export const USG_FTA_W = USAGE_MODEL_DATA.ftaWeight ?? 2.2;
+// Possessions a free-throw attempt uses: Hollinger's coefficient, the same one
+// the possession estimate Π already uses (spec §1.2), so USG is denominated in
+// the possessions π prices rather than in a private currency of its own. KEEP
+// IN SYNC with FTA_W in scripts/fit-usage-model.mjs — a model fit to one weight
+// and read at another is not a baseline.
+export const USG_FTA_W = USAGE_MODEL_DATA.ftaWeight ?? 0.475;
 
 // Possessions used by a stat line, the model's one regressor.
 export const possUsed = (p) => (p?.fga || 0) + USG_FTA_W * (p?.fta || 0);
