@@ -613,16 +613,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         }
         const vaPerG = p.gp > 0 ? rowVa / p.gp : 0;
         const { first, last } = splitName(p.name);
-        // No measuring pass: the phone column fits about nine characters at
-        // the row's own 10px, so longer surnames step down a size instead of
-        // losing their tail, and the handful past fifteen wrap — every one of
-        // those is hyphenated, so the break lands on the hyphen. sm+ has the
-        // room for the whole name on one line at row size.
+        // No measuring pass: the phone column fits about eight characters at
+        // 11px, so longer surnames step down a size instead of losing their
+        // tail, and the handful past fifteen wrap — every one of those is
+        // hyphenated, so the break lands on the hyphen. sm+ has the room for
+        // the whole name on one line at row size.
         const lastCls = last.length > 15
           ? "text-[8px] break-words sm:truncate sm:text-[10px]"
           : last.length > 12 ? "text-[8px] truncate sm:text-[10px]"
           : last.length > 9 ? "text-[9px] truncate sm:text-[10px]"
-          : "truncate";
+          : last.length > 8 ? "text-[10px] truncate sm:text-[10px]"
+          : "text-[11px] sm:text-[10px] truncate";
         return (
           <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             {/* Bar wraps just the click row, not the expanded breakdown —
