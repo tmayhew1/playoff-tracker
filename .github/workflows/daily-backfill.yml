@@ -55,8 +55,16 @@ jobs:
           DAILY_FORCE_CURRENT: ${{ inputs.force_current || 'true' }}
         run: Rscript scripts/R/daily_backfill.R
 
+      # The USG-ADJ scoring baselines (app/data/usage-model.json) are fit from
+      # the regular-season tables the step above just re-baked, so they are
+      # re-fit in the same run rather than left a day behind the data — and so
+      # a season that was backfilled today gets a model at all. Pure Node over
+      # the JSON already on disk: no install step, a couple of seconds.
+      - name: Re-fit usage-adjusted baselines
+        run: node scripts/fit-usage-model.mjs
+
       - name: Commit baked JSON
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Daily historical backfill (R) [skip ci]"
-          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/def-ratings.json app/data/shooting-*.json"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json"

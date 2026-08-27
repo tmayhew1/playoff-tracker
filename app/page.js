@@ -9,9 +9,60 @@ import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
+import { VAModeProvider, useVAMode } from "./lib/va-mode";
+
+
+// The USG-ADJ switch (app/lib/va-mode.js, spec §4.6). It sits under the tab
+// strip rather than inside any one card because it re-prices every VA on the
+// page at once — the leaderboard, the drill-in categories, By Player's career
+// table, the box scores — and a control that global reads wrong tucked into a
+// card header.
+//
+// Shown only on the tabs it actually changes. Legacy is baked server-side
+// against the standard baseline and College has no fitted model, so on those
+// tabs the switch would be a lie; Info explains the mode in prose instead.
+function VABaselineToggle() {
+  const { usgAdj, setUsgAdj } = useVAMode();
+  const cls = (active) =>
+    `px-2 py-1 text-[9px] uppercase tracking-[0.15em] border ${active
+      ? "bg-stone-900 text-white border-stone-900"
+      : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 shrink-0">Scoring baseline</span>
+        <div className="inline-flex ml-auto shrink-0">
+          <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj}>
+            League median
+          </button>
+          <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj}>
+            USG-ADJ
+          </button>
+        </div>
+      </div>
+      {usgAdj && (
+        <div className="mt-1.5 text-[10px] text-stone-500 italic leading-snug">
+          Scoring volume is measured against what the league scores on the possessions
+          he used (FGA + 2.2&thinsp;&times;&thinsp;FTA), not against the median minute —
+          so volume only pays above the going rate for that workload. The other nine
+          categories are unchanged.
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 export default function PlayoffTracker() {
+  return (
+    <VAModeProvider>
+      <Tracker />
+    </VAModeProvider>
+  );
+}
+
+
+function Tracker() {
   const [tab, setTab] = useState("explore");
   const seasons = Object.keys(HISTORY);
 
@@ -89,6 +140,8 @@ export default function PlayoffTracker() {
             Info
           </button>
         </div>
+
+        {(tab === "explore" || seasons.includes(tab)) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}

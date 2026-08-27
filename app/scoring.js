@@ -2,6 +2,7 @@
 
 import { TEAMS, BRACKET, ROUND_BASE, ROUND_LABEL } from "./teams";
 import LEAGUE_AVERAGES_DATA from "./data/league-averages.json";
+import USAGE_MODEL_DATA from "./data/usage-model.json";
 
 // League averages per season, used to compute Value Added. Keeping VA
 // season-accurate matters for historical box scores (efficiency baselines
@@ -11,7 +12,96 @@ export const LEAGUE_AVERAGES = LEAGUE_AVERAGES_DATA;
 // Default (current season) — keeps existing callers unchanged.
 export const LGA = LEAGUE_AVERAGES["2025-26"];
 
-export const lgaForSeason = (season) => LEAGUE_AVERAGES[season] || LGA;
+// --- USG-ADJ: the usage-adjusted scoring baseline ---------------------------
+// The scoring-volume term charges a player the league's per-minute scoring
+// rate for the minutes he played: (PTS/MP − μ_PTS) · MP. μ_PTS is the same
+// number for a 30%-usage guard and a play-finishing big, which is the whole
+// point in the default view — VA pays for absorbing volume — and also its one
+// blind spot: it never asks whether the volume was worth having.
+//
+// USG-ADJ answers that instead. Per season, over EVERY player-season in that
+// season's regular-season table, a minutes-weighted line
+//
+//   PTS/MP  ≈  a  +  b · (USG/MP),      USG = FGA + 2.2 · FTA
+//
+// is fit (scripts/fit-usage-model.mjs → data/usage-model.json), and its
+// prediction replaces μ_PTS in that one term. The baseline is then what the
+// league actually scores on the possessions this player used, so scoring
+// volume is only paid for above the going rate for that workload — and a
+// player who uses nothing is charged almost nothing to clear.
+//
+// Two properties make it safe to bolt onto the existing engine:
+//
+//   • It is exactly linear. Baseline points = a·MP + b·USG, so the term is
+//     additive over games the way μ_PTS·MP is — a season's baseline equals
+//     the sum of its games', and a multi-season blend (lib/multi-season.js)
+//     reproduces the per-season sum exactly. Only γ is non-linear, and it is
+//     untouched here.
+//   • It is a refinement of the baseline it replaces, not a new one. Across
+//     the 46 baked seasons the fitted line sits 0.003 pts/min from μ_PTS at
+//     the median MINUTE of usage (worst 0.016), so the median-usage player is
+//     scored the same either way and the mode redistributes rather than
+//     re-levels. See the spec §4.6.
+//
+// Everything else in VA — the nine other categories, γ, VA+ — is unchanged.
+// The model rides on the baseline object as `usgModel`, so any code path that
+// already threads an `lga` through picks the mode up with no other change.
+export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
+
+// Free-throw attempts per possession used, per the mode's definition of
+// usage. KEEP IN SYNC with FTA_W in scripts/fit-usage-model.mjs.
+export const USG_FTA_W = USAGE_MODEL_DATA.ftaWeight ?? 2.2;
+
+// Possessions used by a stat line, the model's one regressor.
+export const possUsed = (p) => (p?.fga || 0) + USG_FTA_W * (p?.fta || 0);
+
+export const usageModelFor = (season) => USAGE_MODELS[season] || null;
+
+// A season's baselines with the usage model attached (or the plain baselines
+// back, when that season has no fit — a missing model must read as "mode
+// unavailable here", never as a zero baseline; spec invariant 5). Cached so
+// repeated calls return the SAME object: the client threads these through
+// useMemo dependency lists, which compare by identity.
+const usgAdjCache = new Map();
+
+export function usgAdjLga(lga, season) {
+  const model = usageModelFor(season);
+  if (!lga || !model) return lga;
+  if (!usgAdjCache.has(lga)) usgAdjCache.set(lga, { ...lga, usgModel: model });
+  return usgAdjCache.get(lga);
+}
+
+export const lgaForSeason = (season, usgAdj = false) => {
+  const lga = LEAGUE_AVERAGES[season] || LGA;
+  return usgAdj ? usgAdjLga(lga, season) : lga;
+};
+
+// The league's expected POINTS for this workload — the counterfactual the
+// scoring-volume term subtracts. μ_PTS · MP normally; the fitted line's
+// prediction, a·MP + b·USG, when the baseline carries a usage model.
+export function baselinePts(p, lga) {
+  const mp = p?.mp || 0;
+  const m = lga?.usgModel;
+  return m ? m.a * mp + m.b * possUsed(p) : lga.laPTSperM * mp;
+}
+
+// The scoring-volume category. One definition, shared by valueAddParts,
+// valueAddByCategory and the two breakdown panels, so all four agree in both
+// modes (spec invariant 1).
+export function volumeVA(p, lga) {
+  return (p?.pts || 0) - baselinePts(p, lga);
+}
+
+// What USG-ADJ does to a VA total that was computed the standard way. The
+// term is linear in MP and USG, so the two modes differ by a closed-form
+// amount — which lets a row that arrives with `va` already baked (the playoff
+// leaderboard route, the /api/players index) be converted without re-deriving
+// the other nine categories from its box score.
+export function usgAdjDelta(p, lga) {
+  const m = lga?.usgModel;
+  if (!m || !(p?.mp > 0)) return 0;
+  return lga.laPTSperM * p.mp - (m.a * p.mp + m.b * possUsed(p));
+}
 
 // --- Rebound credit (γ) -----------------------------------------------------
 // A rebound is the one box-score event that is guaranteed to be allocated and
@@ -55,7 +145,7 @@ export function valueAddParts(p, lga = LGA) {
   const tpAdd = ((tpm / (tpa || 1)) - lga.la3P) * tpa;
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
-  const volume = ((pts / mp) - lga.laPTSperM) * mp;
+  const volume = volumeVA(p, lga);
   const efficiency = 3 * tpAdd + 2 * twoAdd + ftAdd;
   const astVal = ((ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG);
   const stlVal = ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss;
@@ -92,7 +182,7 @@ export function valueAddByCategory(p, lga = LGA) {
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
   return {
-    "Points": ((pts / mp) - lga.laPTSperM) * mp,
+    "Points": volumeVA(p, lga),
     "3-Pointers": 3 * tpAdd,
     "2-Pointers": 2 * twoAdd,
     "Free Throws": ftAdd,

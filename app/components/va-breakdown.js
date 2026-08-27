@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
-import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, zoneShotValue, hasZoneData } from "../scoring";
+import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, volumeVA, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
@@ -11,6 +11,7 @@ import { GOLD, GOLD_BG, comparePalette, normalizeName, seasonTag, shortName, tea
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
+import { useLgaFor } from "../lib/va-mode";
 
 
 export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
@@ -144,7 +145,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
 
   const categories = [
-    { key: "Points", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
+    { key: "Points", value: volumeVA(p, lga), label: cnt(p.pts, "PTS") },
     { key: "3-Pointers", value: 3 * tpAdd, label: shoot(p.tpm, p.tpa, "3P") },
     { key: "2-Pointers", value: 2 * twoAdd, label: shoot(twoPm, twoPa, "2P") },
     { key: "Free Throws", value: ftAdd, label: shoot(p.ftm, p.fta, "FT") },
@@ -646,7 +647,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
         })}
       </div>
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show contribution above/below the league baseline (median rates){context && atSeasonLevel ? " · tap a category for league context" : ""}
+        Bars show contribution above/below the league baseline ({lga?.usgModel ? "median rates, scoring usage-adjusted" : "median rates"}){context && atSeasonLevel ? " · tap a category for league context" : ""}
       </div>
       </>
       )}
@@ -970,6 +971,11 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
 // The ranking metric is per-game category VA so longevity doesn't dominate a
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
 export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs" }) {
+  // The pools below are scored season by season, so they need the same
+  // baseline getter the card above them was handed (lib/va-mode.js) — a rank
+  // computed against the standard baseline under a USG-ADJ card would be a
+  // different statistic from the value it ranks.
+  const lgaFor = useLgaFor();
   const { poolsBySeason, allRows, self: ownerSelf } = context;
   // The card owner — the player whose breakdown row opened this drill-in.
   const ownerSeasonKey = pProp.season || context.season;
@@ -1227,7 +1233,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const floorA = Math.min(5, p.gp || 1);
     const all = allRows
       .filter((r) => (r.gp || 0) >= floorA && r.mp > 0 && segEra(r.season))
-      .map((r) => ({ r, m: metric(r, lgaForSeason(r.season), r.season) }))
+      .map((r) => ({ r, m: metric(r, lgaFor(r.season), r.season) }))
       .sort((a, b) => b.m - a.m);
     const allN = all.length;
     const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
@@ -1241,7 +1247,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       .filter((s) => s.mp > 0 && segEra(s.season))
       .sort((a, b) => a.season.localeCompare(b.season))
       .map((s) => {
-        const lgaS = lgaForSeason(s.season);
+        const lgaS = lgaFor(s.season);
         // Carry the player's slug onto the season row so metric() can fold in
         // D Rating (defVAInfo keys off slug) — self.seasons rows don't have it.
         const sRow = { ...s, name: self.name, slug: self.slug || null };
@@ -1260,7 +1266,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
     return { floor, N, rank: selfIdx + 1, win,
              floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
-  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, selfRow, perGame, withDef, defScope, selSeg]);
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, withDef, defScope, selSeg]);
 
   const segData = useMemo(() => {
     if (!SEGMENTS) return null;
@@ -1890,7 +1896,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   const vaPlus = dVA != null ? (p.va || 0) + dVA : null;
 
   const cats = [
-    { key: "Points", value: ((p.pts / mp) - lga.laPTSperM) * mp, label: cnt(p.pts, "PTS") },
+    { key: "Points", value: volumeVA(p, lga), label: cnt(p.pts, "PTS") },
     { key: "3-Pointers", value: 3 * tpAdd, label: shot(p.tpm, p.tpa) },
     { key: "2-Pointers", value: 2 * twoAdd, label: shot(twoPm, twoPa) },
     { key: "Free Throws", value: ftAdd, label: shot(p.ftm, p.fta) },
@@ -2014,7 +2020,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         );
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{context ? " · tap a category for league context" : ""}
+        Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{lga?.usgModel ? ", scoring usage-adjusted" : ""}{context ? " · tap a category for league context" : ""}
       </div>
       </>
       )}

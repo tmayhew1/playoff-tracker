@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import { lgaForSeason, ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
+import { ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
+import { useLgaFor } from "../lib/va-mode";
 
 
 // --- Compare (both breakdowns) ----------------------------------------------
@@ -88,6 +89,9 @@ const PCT_DOT_PX = 10;
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
 export function ComparePicker({ context, self = null, onPick, onCancel }) {
+  // Season baselines under the active USG-ADJ mode; the comp shapes below are
+  // per-category VA, so they move with it (lib/va-mode.js).
+  const lgaFor = useLgaFor();
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);
   const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
@@ -123,11 +127,11 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // shootProfileVec) instead of the 10-dim box-category vector — null when
   // either side has no zone data (pre-1996-97, or a season the
   // shooting-splits bake hasn't reached).
-  const selfShootVec = self ? shootProfileVec(self, lgaForSeason(self.season)) : null;
+  const selfShootVec = self ? shootProfileVec(self, lgaFor(self.season)) : null;
   const selfShootNorm = selfShootVec ? Math.hypot(...selfShootVec) : 0;
   const rawComps = useMemo(() => {
     if (!self || !(self.mp > 0)) return [];
-    const qVec = perGameVAVec(self, lgaForSeason(self.season));
+    const qVec = perGameVAVec(self, lgaFor(self.season));
     const qNorm = Math.hypot(...qVec);
     if (!qNorm) return [];
     const selfSlug = self.slug || null;
@@ -151,7 +155,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
       if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
       if (Math.abs(r.mp / (r.gp || 1) - qMPG) > MPG_BAND) continue;
-      const v = perGameVAVec(r, lgaForSeason(r.season));
+      const v = perGameVAVec(r, lgaFor(r.season));
       const n = Math.hypot(...v);
       if (!n) continue;
       let dot = 0;
@@ -162,7 +166,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       let shootCos = null, shootMag = null, shootScore = null;
       const r3Rate = r.fga > 0 ? r.tpa / r.fga : 0;
       if (shootOk && Math.abs(r3Rate - q3Rate) <= THREE_RATE_BAND) {
-        const zv = shootProfileVec(r, lgaForSeason(r.season));
+        const zv = shootProfileVec(r, lgaFor(r.season));
         const zn = zv ? Math.hypot(...zv) : 0;
         if (zn > 0) {
           let zdot = 0;
@@ -181,7 +185,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       arr.push({ r, cos, mag, score: cos * mag, shootCos, shootMag, shootScore });
     }
     return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
-  }, [self, context, selfShootVec, selfShootNorm]);
+  }, [self, context, selfShootVec, selfShootNorm, lgaFor]);
 
   // Value of the currently selected metric for a candidate.
   const metricVal = (o) => (
@@ -355,6 +359,9 @@ const runKey = (run) => `${run.player.slug || run.player.name}:${run.seasons[0].
 // once a player is chosen by hand, pre-ticks his best N seasons, which is
 // what "compare this run against him" usually means.
 export function MultiComparePicker({ context, self = null, selfRow = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null, asked = false }) {
+  // As in ComparePicker: run shapes are per-category VA, so they follow the
+  // active baseline (lib/va-mode.js).
+  const lgaFor = useLgaFor();
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(null);       // the chosen player
   const [picked, setPicked] = useState(null); // Set of season strings
@@ -374,8 +381,8 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   const RUNS_PER_DECADE = 8;
   const runLen = Math.max(1, suggestCount);
   const runComps = useMemo(
-    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE }),
-    [players, selfRow, runLen, selfKey]
+    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaFor }),
+    [players, selfRow, runLen, selfKey, lgaFor]
   );
   // Gold-lit across every decade row, so the single strongest run stands out
   // wherever it landed.
@@ -394,7 +401,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       name: pl.name,
       slug: pl.slug || null,
       seasons: pl.seasons,
-      row: aggregateSeasons(run.seasons, { name: pl.name, slug: pl.slug || null }),
+      row: aggregateSeasons(run.seasons, { name: pl.name, slug: pl.slug || null }, lgaFor),
     });
   };
 
@@ -782,6 +789,10 @@ function careerYearLabel(idxs) {
 
 
 export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, mode, setMode, defs = null, defActive = false, defScope = "rs", aSeasons: aSeasonsProp = null, onPickChange = null, onYearTicks = null }) {
+  // Every baseline this panel scores against — each side's own, the pooled
+  // percentile field, the career bars — comes from here, so the whole
+  // comparison follows the USG-ADJ switch together (lib/va-mode.js).
+  const lgaFor = useLgaFor();
   // A selection made in the career chart at the foot of this panel: the career
   // years ticked there, resolved into one row per side — the season itself when
   // a single year is ticked, an aggregate of them when several are. It REPLACES
@@ -922,8 +933,8 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // An aggregate carries its own volume-weighted baseline; a season row looks
   // its season up. Everything downstream reads these two and stays unaware of
   // which kind it got.
-  const lgaA = lgaForRow(a);
-  const lgaB = lgaForRow(b);
+  const lgaA = lgaForRow(a, lgaFor);
+  const lgaB = lgaForRow(b, lgaFor);
   const ca = teamColor(a.team);
   // The comparison side's whole palette, chosen against A's color — see
   // comparePalette. `cb` draws (bar outlines, swatch borders), `cbInk` writes
@@ -955,7 +966,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     if (!withDef) return 0;
     if (r?.multi) {
       return r.seasons.reduce((sum, s) => (
-        sum + (s.mp > 0 ? (defVAInfo(s, s.mp, lgaForSeason(s.season), defs, s.season, defScope)?.dva ?? 0) : 0)
+        sum + (s.mp > 0 ? (defVAInfo(s, s.mp, lgaFor(s.season), defs, s.season, defScope)?.dva ?? 0) : 0)
       ), 0);
     }
     return r?.mp > 0 ? (defVAInfo(r, r.mp, lgaX, defs, season, defScope)?.dva ?? 0) : 0;
@@ -970,7 +981,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     if (!r?.multi) return r?.mp > 0 ? defVAInfo(r, r.mp, lgaX, defs, r.season, defScope) : null;
     let mp = 0, drtg = 0, teamDrtg = 0, teamMp = 0, laD = 0, dva = 0, any = false;
     for (const s of r.seasons) {
-      const info = s.mp > 0 ? defVAInfo(s, s.mp, lgaForSeason(s.season), defs, s.season, defScope) : null;
+      const info = s.mp > 0 ? defVAInfo(s, s.mp, lgaFor(s.season), defs, s.season, defScope) : null;
       if (!info) continue;
       any = true;
       mp += s.mp;
@@ -1027,7 +1038,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     const pool = context.allRows.filter((r) => (r.gp || 0) >= 5 && r.mp > 0);
     const maxByKey = {};
     const poolVals = pool.map((r) => {
-      const lgaX = lgaForSeason(r.season);
+      const lgaX = lgaFor(r.season);
       const dva = dvaOf(r, lgaX, r.season);
       const out = {};
       for (const key of ALL_KEYS) {
@@ -1064,7 +1075,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     }
     const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
     return { rows, diff };
-  }, [a, b, lgaA, lgaB, context, perGame, pctPerGame, withDef, defs, defScope]);
+  }, [a, b, lgaA, lgaB, context, perGame, pctPerGame, withDef, defs, defScope, lgaFor]);
 
   // Per-game figures are an order of magnitude smaller than season totals, so
   // they carry a second decimal; totals match the leaderboard's one.
@@ -1118,7 +1129,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // deliberate act: that, and only that, re-points the career bars.
   const activeKey = [...openKeys].at(-1) ?? null;
   const careerVal = (s) => {
-    const lgaS = lgaForSeason(s.season);
+    const lgaS = lgaFor(s.season);
     const dva = (!activeKey || activeKey === "Defense" || activeKey === DEF_KEY) ? dvaOf(s, lgaS, s.season) : 0;
     // No category selected the bars are the season's whole value — VA+ when
     // the D-Rating layer is on, so they match the rows above.
@@ -1179,7 +1190,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     if (!pickedIdxs.length) return;
     const side = (rows, src) => (rows.length === 1
       ? { ...rows[0], name: src.name, slug: src.slug || null }
-      : aggregateSeasons(rows, { name: src.name, slug: src.slug || null }));
+      : aggregateSeasons(rows, { name: src.name, slug: src.slug || null }, lgaFor));
     setPick({
       a: side(pickedRows(aSeasons), aProp),
       b: side(pickedRows(bAll), bProp),

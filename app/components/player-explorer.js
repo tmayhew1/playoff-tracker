@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
-import { valueAddParts, lgaForSeason } from "../scoring";
+import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
@@ -10,6 +10,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
+import { useLgaFor, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -22,7 +23,11 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   const [query, setQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
   const selectPlayer = (k) => setSelectedKey(k);
-  const index = cache[scope] || null;
+  // Re-priced once, here, when USG-ADJ is on: this index is the source for the
+  // career table, the league pools the drill-ins rank against, and the
+  // closest-comps candidates, so one pass keeps all three agreeing with the
+  // leaderboard (lib/va-mode.js).
+  const index = useUsgAdjIndex(cache[scope] || null);
   const loading = !index && !error;
 
   useEffect(() => {
@@ -219,6 +224,11 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
 export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onNavigateToRun = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null, pendingCompare = null, onCompareHandled = null, pendingRun = null, onRunHandled = null }) {
+  // Season baselines under the active USG-ADJ mode (lib/va-mode.js). The rows
+  // themselves arrive already re-priced from the index; this is what scores
+  // everything derived from them here — per-season efficiency, the pooled
+  // multi-season row, the drill-in cards.
+  const lgaFor = useLgaFor();
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -459,11 +469,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     if (!defs) return m;
     for (const x of seasons) {
       if (!(x.mp > 0)) continue;
-      const info = defVAInfo({ ...x, slug: player.slug || null }, x.mp, lgaForSeason(x.season), defs, x.season, defScope);
+      const info = defVAInfo({ ...x, slug: player.slug || null }, x.mp, lgaFor(x.season), defs, x.season, defScope);
       if (info) m.set(x.season, info.dva);
     }
     return m;
-  }, [defs, seasons, player.slug, defScope]);
+  }, [defs, seasons, player.slug, defScope, lgaFor]);
   const dvaOf = (x) => (dvaBySeason.has(x.season) ? dvaBySeason.get(x.season) : null);
   // The active total for a row — VA, or VA+ (VA + dVA) when the toggle is on.
   // A season with no rating keeps its plain VA, so VA+ always exists.
@@ -592,9 +602,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   );
   const aggA = useMemo(
     () => (selectedSeasons.length
-      ? aggregateSeasons(selectedSeasons, { name: player.name, slug: player.slug || null })
+      ? aggregateSeasons(selectedSeasons, { name: player.name, slug: player.slug || null }, lgaFor)
       : null),
-    [selectedSeasons, player.name, player.slug]
+    [selectedSeasons, player.name, player.slug, lgaFor]
   );
   // What the table SHOWS as ticked, and what the chip counts — the chart's
   // mirrored years while there are any, the pool otherwise. Only the display
@@ -619,8 +629,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // page, so the four groups keep summing to the number the table shows.
   const multiDefActive = useMemo(() => {
     if (!defs || !aggA || metric !== "vaPlus") return false;
-    return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, lgaForSeason(x.season), defs, x.season, defScope) != null);
-  }, [defs, aggA, defScope, metric]);
+    return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, lgaFor(x.season), defs, x.season, defScope) != null);
+  }, [defs, aggA, defScope, metric, lgaFor]);
   const multiContext = useMemo(
     () => (contextData ? { ...contextData, self: player, scope, season: null, onNavigateToPlayer, onNavigateToRun } : null),
     [contextData, player, scope, onNavigateToPlayer, onNavigateToRun]
@@ -846,7 +856,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const barPct = (Math.abs(barValOf(s)) / maxAbsVa) * 100;
         const rowDva = dvaOf(s);
         const gp = s.gp || 1;
-        const eff = valueAddParts(s, lgaForSeason(s.season)).efficiency;
+        const eff = valueAddParts(s, lgaFor(s.season)).efficiency;
         // What a tap on the row body does. Armed, the row IS the check box;
         // unarmed it's the disclosure it has always been.
         const activate = () => {
@@ -1012,7 +1022,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             ) : (
               <VACategoryBreakdown
                 player={s}
-                lga={lgaForSeason(s.season)}
+                lga={lgaFor(s.season)}
                 baseline="NBA"
                 context={contextFor(s)}
                 showDRating={metric === "vaPlus"}
@@ -1156,7 +1166,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 // to the season-totals category breakdown when no game log exists.
 export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true, onPrev, onNext, pendingCompare = null, onCompareHandled = null }) {
   const season = s.season;
-  const lgaS = lgaForSeason(season);
+  const lgaS = useSeasonLga(season);
   const [lb, setLb] = useState(null);
   const [rs, setRs] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -1175,13 +1185,18 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true,
     return () => { cancelled = true; };
   }, [season]);
 
+  // The route bakes VA against the standard baseline, on the row and on each
+  // of its per-game splits; under USG-ADJ both are re-priced here, so this
+  // card's header, its bars and its game tiles read the same currency as the
+  // career table that opened it (lib/va-mode.js).
   const row = useMemo(() => {
     if (!lb?.players) return null;
     const n = normalizeName(indexPlayer.name);
-    return lb.players.find((p) =>
+    const hit = lb.players.find((p) =>
       (indexPlayer.slug && p.slug === indexPlayer.slug) || normalizeName(p.name) === n
     ) || null;
-  }, [lb, indexPlayer]);
+    return hit ? usgAdjRows([hit], lgaS)[0] : null;
+  }, [lb, indexPlayer, lgaS]);
 
   if (failed || (lb && (!row || !row.games?.length))) {
     return (

@@ -8,6 +8,7 @@ import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
+import { usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
@@ -174,6 +175,14 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     });
   }, [rsData, lga]);
 
+  // Playoff rows arrive from /api/leaderboard with `va` already baked against
+  // the standard baseline. Under USG-ADJ they are re-priced in place — the
+  // volume term's two modes differ by a closed form, so nothing has to be
+  // re-derived from the box score (lib/va-mode.js::usgAdjRows). The other two
+  // scopes are scored here from the box score and pick the mode up through
+  // `lga` on their own.
+  const poPlayers = useMemo(() => usgAdjRows(data?.players, lga), [data, lga]);
+
   const rsLookup = useMemo(() => {
     if (!rsData?.players?.length) return null;
     const bySlug = {}, byName = {}, byNorm = {};
@@ -235,7 +244,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // first row expand and cached per scope — and shared with By Player through
   // fetchJsonCached, so whichever view loads it first pays the cost.
   const [ctxByScope, setCtxByScope] = useState({});
-  const ctxPlayers = ctxByScope[scope] || null;
+  // Same index By Player reads, re-priced the same way when USG-ADJ is on, so
+  // a category's league ranking matches the board it was opened from.
+  const ctxPlayers = useUsgAdjIndex(ctxByScope[scope] || null);
   useEffect(() => {
     if (expanded == null || ctxByScope[scope]) return;
     let cancelled = false;
@@ -293,7 +304,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     // the dataSeason/rsSeason tags gate against that stale window.
     const source = scope === "regular" ? (rsSeason === season ? rsPlayers : null)
       : scope === "combined" ? (dataSeason === season ? combinedPlayers : null)
-      : (dataSeason === season ? data?.players : null);
+      : (dataSeason === season ? poPlayers : null);
     if (!source || !source.length) return; // rows for this season not ready yet
     const n = normalizeName(pendingNav.name || "");
     const match = (pendingNav.slug || n)
@@ -323,7 +334,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       setNavCompare(null);
     }
     onNavHandled?.();
-  }, [pendingNav, season, scope, data, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
+  }, [pendingNav, season, scope, poPlayers, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
 
   const title = scope === "regular" ? "Regular Season Leaderboard"
     : scope === "combined" ? "Combined Leaderboard"
@@ -348,7 +359,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     );
   }
 
-  const all = scope === "regular" ? rsPlayers : scope === "combined" ? combinedPlayers : data?.players;
+  const all = scope === "regular" ? rsPlayers : scope === "combined" ? combinedPlayers : poPlayers;
   if (!all?.length) return null;
   // Composite default sort: each axis (Total VA, VA/G) is scored as a
   // fraction of that axis's leader, then summed. So a player at half
@@ -409,6 +420,16 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             own line as a unit instead of the chips compressing (which used to
             break "≥N games" onto two lines when a team filter was also on). */}
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          {/* Which baseline the scoring-volume term used. The switch itself
+              lives under the tab strip (it re-prices the whole page), so the
+              board carries a marker instead — the numbers here are otherwise
+              indistinguishable from the standard ones, and the pinned header
+              is often all that's on screen. */}
+          {lga?.usgModel && (
+            <span className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border bg-stone-900 text-white border-stone-900">
+              USG-ADJ
+            </span>
+          )}
           {/* VA vs VA+ (adds defensive net rating). Midnight purple when on. */}
           <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
             <button
