@@ -6,7 +6,7 @@ import { valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 
 
@@ -469,9 +469,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
           Regular-season totals aren’t baked for {season} yet — showing playoff stats only.
         </div>
       )}
-      <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
-        <span className="w-6 text-right">#</span>
-        <span className="w-10">Team</span>
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+        <span className="w-5 sm:w-6 text-right">#</span>
+        <span className="w-8 sm:w-10">Team</span>
         {/* Arming step for the cross-over into By Player: tap Player here
             first, then a player's name — a bare row tap should never leave
             the leaderboard by accident. */}
@@ -493,7 +493,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-4 sm:w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -507,18 +507,21 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <span className="hidden sm:block w-8 text-right">BPG</span>
         {/* w-14/w-11 (mirrored in the row cells below): "TOT VA+ ▾" needs the
             extra room so the sort caret stays on one line instead of
-            stacking under the label in VA+ mode. */}
+            stacking under the label in VA+ mode. On a phone every pixel here
+            comes straight out of the player column, so both columns run
+            narrower and the total sheds its "TOT" — the two VA columns still
+            read against each other, and the surnames get the room back. */}
         <button
           type="button"
           onClick={() => {
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-11 sm:w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
           aria-label="Sort by total VA"
           aria-pressed={effectiveSort === "totalVA"}
         >
-          {metric === "vaPlus" ? "TOT VA+" : "TOT VA"}{effectiveSort === "totalVA" ? " ▾" : ""}
+          <span className="hidden sm:inline">TOT </span>{metric === "vaPlus" ? "VA+" : "VA"}{effectiveSort === "totalVA" ? " ▾" : ""}
         </button>
         <button
           type="button"
@@ -526,7 +529,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-10 sm:w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
           aria-label="Sort by VA per game"
           aria-pressed={effectiveSort === "vaPerG"}
         >
@@ -609,6 +612,15 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
           if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
         }
         const vaPerG = p.gp > 0 ? rowVa / p.gp : 0;
+        const { first, last } = splitName(p.name);
+        // One flat size for every surname — the column has room for it at
+        // 10px. The two hyphenated names past fifteen characters (Gilgeous-
+        // Alexander, Alexander-Walker) don't fit on one line at any
+        // reasonable size, so those alone wrap, breaking on the hyphen —
+        // wrapping mid-word looks worse than truncating, so an unhyphenated
+        // outlier (Mamukelashvili, by a few px) truncates instead. sm+ has
+        // the room for the whole name on one line at row size.
+        const lastCls = `text-[10px] ${last.length > 15 ? "break-words sm:truncate" : "truncate"}`;
         return (
           <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             {/* Bar wraps just the click row, not the expanded breakdown —
@@ -651,9 +663,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setExpanded(isOpen ? null : rowKey);
                 }
               }}
-              className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+              className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
             >
-              <span className="w-6 text-right tabular-nums text-stone-500">{rank}</span>
+              <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -661,7 +673,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setTeamFilter(teamFilter === p.team ? null : p.team);
                 }}
                 style={badgeStyle}
-                className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
+                className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
                 aria-label={`Filter by ${p.team}`}
               >{p.team}</button>
               {/* Armed, the name crosses over to By Player with this season
@@ -682,10 +694,21 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   : undefined}
               >
                 <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                {/* The name is the only part that truncates — the armed
-                    chevron sits outside it so a long name can't eat the one
-                    mark that says the tap goes somewhere. */}
-                <span className={`truncate ${nameArmed && canOpenPlayer ? "underline decoration-dotted" : ""}`}>{p.name}</span>
+                {/* Phone: the given name rides small and grey above the
+                    surname, so the surname — the half that identifies the
+                    player — gets the whole column instead of sharing it and
+                    losing its tail ("Shai Gilgeo…"). Long surnames drop a
+                    size or two so they still land whole. From sm up the
+                    column has room for one line, and the two parts sit back
+                    side by side at the row's own size.
+
+                    The name is still the only part that truncates — the
+                    armed chevron sits outside it so a long name can't eat
+                    the one mark that says the tap goes somewhere. */}
+                <span className={`min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1] ${nameArmed && canOpenPlayer ? "underline decoration-dotted" : ""}`}>
+                  {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:text-inherit sm:shrink-0">{first}</span>}
+                  <span className={lastCls}>{last}</span>
+                </span>
                 {nameArmed && canOpenPlayer && <span className="text-[8px] ml-0.5 shrink-0" aria-hidden>›</span>}
               </button>
               <button
@@ -701,7 +724,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setGArmed(false);
                   if (next != null) setPendingScrollName(p.name);
                 }}
-                className={`w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                className={`w-4 sm:w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
                 aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
               >{p.gp}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
@@ -710,8 +733,8 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.ast / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.stl / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.blk / p.gp).toFixed(1)}</span>
-              <span className={`w-14 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
-              <span className={`w-11 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
+              <span className={`w-11 sm:w-14 text-right tabular-nums font-bold ${rowVa < 0 ? "text-red-600" : "text-stone-900"}`}>{rowVa.toFixed(1)}</span>
+              <span className={`w-10 sm:w-11 text-right tabular-nums ${vaPerG < 0 ? "text-red-600" : "text-stone-700"}`}>{vaPerG.toFixed(2)}</span>
               </div>
               {/* Below replacement: a light rule down the row's right edge.
                   Last in the row so it paints over the open-row wash rather
