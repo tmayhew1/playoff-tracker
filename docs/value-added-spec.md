@@ -413,6 +413,13 @@ $0.0014$ of it on $R^2$.)
 The weight is a single constant (`USG_FTA_W`, mirrored in the fit script);
 changing it requires a re-bake, since $\hat a,\hat b$ are fit to it.
 
+**Reading it.** The Usage tab (`app/components/usage-view.js`) is the audit
+surface: per season and scope, every player-season's $\mathrm{PTS}/\mathrm{MP}$,
+the line's prediction $\hat a + \hat b\,(\mathrm{USG}/\mathrm{MP})$ at his own
+usage, the scoring-volume term under each baseline, and their difference —
+which, because the other nine categories are identical in both modes, is the
+whole gap between a player's two VA totals.
+
 **Scope.** The switch re-prices Explore (both boards, every scope), the season
 tabs, and everything derived from them — category breakdowns, league pools and
 percentile ranks, closest comps, multi-season selections. It does **not** touch

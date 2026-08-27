@@ -9,6 +9,7 @@ import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
+import { UsageView } from "./components/usage-view";
 import { USG_FTA_W } from "./scoring";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 
@@ -129,6 +130,12 @@ function Tracker() {
             D Rating
           </button>
           <button
+            onClick={() => setTab("usage")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "usage" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Usage
+          </button>
+          <button
             onClick={() => setTab("shotzones")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "shotzones" ? "bg-stone-900 text-white" : "text-stone-500"}`}
           >
@@ -145,7 +152,7 @@ function Tracker() {
         {(tab === "explore" || seasons.includes(tab)) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
   );
