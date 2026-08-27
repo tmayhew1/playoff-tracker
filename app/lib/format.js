@@ -87,6 +87,18 @@ export function shortName(name) {
 }
 
 
+// Given name / surname, split the way shortName splits ("Shai
+// Gilgeous-Alexander" -> { first: "Shai", last: "Gilgeous-Alexander" },
+// "Tim Hardaway Jr." -> { first: "Tim", last: "Hardaway Jr." }). A
+// single-token name is all surname, so a stacked cell renders one line.
+export function splitName(name) {
+  const full = (name || "").trim();
+  const last = shortName(full);
+  const first = last && full.endsWith(last) ? full.slice(0, full.length - last.length).trim() : "";
+  return { first, last: last || full };
+}
+
+
 // Like shortName but prefixed with the first initial ("Trey Murphy III" ->
 // "T. Murphy III"), so comp chips disambiguate same-surname players.
 export function compName(name) {
