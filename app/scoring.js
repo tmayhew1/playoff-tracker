@@ -100,6 +100,42 @@ export function volumeVA(p, lga) {
 // amount — which lets a row that arrives with `va` already baked (the playoff
 // leaderboard route, the /api/players index) be converted without re-deriving
 // the other nine categories from its box score.
+// --- Under review: the same model with a ceiling ----------------------------
+// A candidate third baseline, wired to nothing but the Usage tab: charge the
+// fitted line OR the median minute, whichever is LOWER —
+//
+//   λ_Points = min( a + b·(USG/MP),  μ_PTS )
+//
+// so a player is never asked to clear a bar above the league's typical minute,
+// and a low-usage player is not charged for scoring he was never given the
+// possessions to do. Equivalently (and the identity is worth knowing when
+// reading the tab) it is `max` of the two volume terms:
+//
+//   PTS − min(pred, μ)·MP  =  max( PTS − pred·MP,  PTS − μ·MP )
+//
+// which is why it can only ever raise a VA, never lower one: every player with
+// pred ≥ μ scores exactly the standard number, and everyone else gains.
+//
+// Two properties differ from USG-ADJ and matter if it is ever promoted to the
+// switch. It is continuous in usage (min of two continuous functions), so
+// there is no cliff at the threshold — but it is NOT linear, so a season's
+// baseline no longer equals the sum of its games' (a player whose game-level
+// usage straddles μ picks a different branch game to game; measured on three
+// playoff fields, season and Σgames diverge by 3.2 points on average and up to
+// 34). The closed-form conversion `usgAdjDelta` relies on that linearity, so
+// this baseline would need rows re-scored from the box score rather than
+// re-priced.
+export function cappedBaselinePts(p, lga) {
+  const mp = p?.mp || 0;
+  const m = lga?.usgModel;
+  if (!m || !(mp > 0)) return (lga?.laPTSperM || 0) * mp;
+  return Math.min(m.a + m.b * (possUsed(p) / mp), lga.laPTSperM) * mp;
+}
+
+export function cappedVolumeVA(p, lga) {
+  return (p?.pts || 0) - cappedBaselinePts(p, lga);
+}
+
 export function usgAdjDelta(p, lga) {
   const m = lga?.usgModel;
   if (!m || !(p?.mp > 0)) return 0;

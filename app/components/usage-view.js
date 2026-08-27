@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { USAGE_MODELS, USG_FTA_W, lgaForSeason, possUsed, usageModelFor, volumeVA } from "../scoring";
+import { USAGE_MODELS, USG_FTA_W, cappedVolumeVA, lgaForSeason, possUsed, usageModelFor, volumeVA } from "../scoring";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
 
@@ -15,12 +15,19 @@ import { normalizeName, teamColor } from "../lib/format";
 //   PRED   what the season's fitted line predicts at HIS usage — a + b·(USG/MP)
 //   VA     the scoring-volume category on the standard baseline, (PTS/M − μ_PTS)·MP
 //   USG    the same category on the fitted line, PTS − (a·MP + b·USG)
-//   Δ      USG − VA, which is exactly what flipping the switch moves his total by
+//   CAP    the same on the capped baseline min(PRED, μ_PTS) — the candidate
+//          under review (scoring.js::cappedVolumeVA), wired to nothing else
+//   Δ      the active alternative minus VA: what adopting it would move this
+//          player's total VA by
 //
-// PTS/M and PRED are per-minute by construction; the three point columns
-// follow the TOT ⁄ per-game switch. The nine other categories are identical
-// in both modes, so Δ here IS the whole difference between a player's two VA
-// totals — this table explains the entire gap between the two boards.
+// PTS/M and PRED are per-minute by construction; the point columns follow the
+// TOT ⁄ per-game switch. The nine other categories are identical under all
+// three baselines, so Δ here IS the whole difference between a player's VA
+// totals — this table accounts for the entire gap between the boards.
+//
+// CAP ≥ max(VA, USG) is not a coincidence but the identity in scoring.js:
+// capping the baseline means taking whichever of the two terms is larger, so
+// the column can only ever sit at or above the other two.
 export function UsageView() {
   // Only seasons with a fitted model (data/usage-model.json). A season the
   // fit hasn't reached has no second baseline to compare against, so it isn't
@@ -35,7 +42,15 @@ export function UsageView() {
   // natural direction (name ascending, everything else descending), second
   // tap flips it. Δ opens the tab because "who does this switch move, and
   // which way" is the question the table exists to answer.
-  const [sort, setSort] = useState({ key: "delta", dir: 1 });
+  // Opens on Δ, biggest first — under the capped candidate that is the rows it
+  // actually moves (it can only ever raise a VA, so the other direction is a
+  // screenful of zeros); under USG-ADJ, tap Δ once to flip to who it costs.
+  const [sort, setSort] = useState({ key: "delta", dir: -1 });
+  // Which alternative baseline Δ measures against the standard one. Both
+  // alternatives always have their own column; this only picks which gap is
+  // spelled out and sortable. Opens on the capped candidate — the one being
+  // reviewed.
+  const [deltaVs, setDeltaVs] = useState("cap"); // "cap" | "usg"
   // Min-minutes filter, same two-step arming as the D Rating tab: tap the MP
   // header to arm, then a row's MP to keep only players with at least that
   // many minutes.
@@ -78,11 +93,13 @@ export function UsageView() {
       // row here can never disagree with the same player's card.
       const va = volumeVA(r, lga);
       const usgVa = volumeVA(r, lgaUsg);
+      const capVa = cappedVolumeVA(r, lgaUsg);
       out.push({
         r, gp, usgPerM,
         ptsPerM: (r.pts || 0) / r.mp,
         pred: lgaUsg.usgModel.a + lgaUsg.usgModel.b * usgPerM,
-        va, usgVa, delta: usgVa - va,
+        va, usgVa, capVa,
+        delta: (deltaVs === "cap" ? capVa : usgVa) - va,
       });
     }
     // The three point columns sort on the scale they are DISPLAYED at, so
@@ -95,6 +112,7 @@ export function UsageView() {
       : sort.key === "pred" ? x.pred
       : sort.key === "va" ? scaled(x.va, x.gp)
       : sort.key === "usgVa" ? scaled(x.usgVa, x.gp)
+      : sort.key === "capVa" ? scaled(x.capVa, x.gp)
       : scaled(x.delta, x.gp)
     );
     out.sort((a, b) => {
@@ -103,12 +121,12 @@ export function UsageView() {
       return c !== 0 ? sort.dir * c : scaled(b.usgVa, b.gp) - scaled(a.usgVa, a.gp);
     });
     return out;
-  }, [rows, lga, lgaUsg, query, scope, sort, minMpFilter, perGame]);
+  }, [rows, lga, lgaUsg, query, scope, sort, minMpFilter, perGame, deltaVs]);
 
   // The three point columns share one scale: totals, or divided by games.
   const pts = (v, gp) => (perGame ? (gp > 0 ? v / gp : 0) : v);
   const sgn = (v) => (v > 0 ? "+" : "") + v.toFixed(perGame ? 2 : 1);
-  const cols = "grid grid-cols-[1.4rem_minmax(0,1fr)_2.1rem_2.3rem_2.3rem_2.9rem_2.9rem_2.7rem] gap-x-1 items-center";
+  const cols = "grid grid-cols-[1.2rem_minmax(0,1fr)_1.9rem_2.0rem_2.0rem_2.5rem_2.5rem_2.5rem_2.4rem] gap-x-[3px] items-center";
 
   return (
     <div className="text-[10px]">
@@ -127,6 +145,11 @@ export function UsageView() {
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setPerGame(false)} className={`px-1.5 py-0.5 ${!perGame ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Tot</button>
           <button onClick={() => setPerGame(true)} className={`px-1.5 py-0.5 border-l border-stone-300 ${perGame ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>/G</button>
+        </div>
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which alternative baseline the Δ column measures">
+          <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
+          <button onClick={() => setDeltaVs("cap")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "cap" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Cap</button>
+          <button onClick={() => setDeltaVs("usg")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "usg" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Usg</button>
         </div>
         {minMpFilter != null && (
           <button
@@ -154,13 +177,16 @@ export function UsageView() {
           PRED = that line at this player&apos;s own usage, against the flat median
           {" "}<span className="tabular-nums text-stone-600">{lga.laPTSperM.toFixed(3)}</span> PTS/min ·
           VA = scoring volume on the median baseline, USG = the same on the fitted line,
-          Δ = USG − VA, which is exactly what the USG-ADJ switch moves this player&apos;s
-          total VA by (the other nine categories don&apos;t change)
+          CAP = the same on min(PRED, median) — the capped candidate, which charges the
+          fitted line only where it asks LESS than the median minute, so it equals VA for
+          everyone at or above median usage and can never lower a player ·
+          Δ = {deltaVs === "cap" ? "CAP" : "USG"} − VA, exactly what adopting that baseline
+          moves this player&apos;s total VA by (the other nine categories don&apos;t change)
           {scope === "po" && " · playoff rows are scored against the season's regular-season line, as all VA baselines are"}
         </div>
       )}
       {(() => {
-        const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, delta: -1 };
+        const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, delta: -1 };
         const H = ({ k, label, right = true, title }) => (
           <button
             type="button"
@@ -192,13 +218,14 @@ export function UsageView() {
             <H k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
             <H k="va" label="VA" title="Scoring volume against the league's median minute" />
             <H k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
-            <H k="delta" label="Δ" title="USG − VA: what the switch moves his total by" />
+            <H k="capVa" label="Cap" title="Scoring volume against min(predicted, league median) — the candidate baseline" />
+            <H k="delta" label="Δ" title={`${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that baseline moves his total by`} />
           </div>
         );
       })()}
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
-      {list && list.map(({ r, gp, ptsPerM, pred, usgPerM, va, usgVa, delta }, i) => (
+      {list && list.map(({ r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, delta }, i) => (
         <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
           <span className="text-stone-400 tabular-nums">{i + 1}</span>
           <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
@@ -232,7 +259,15 @@ export function UsageView() {
           >{pred.toFixed(3)}</span>
           <span className={`text-right tabular-nums ${va < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(va, gp))}</span>
           <span className={`text-right tabular-nums ${usgVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(usgVa, gp))}</span>
-          <span className={`text-right tabular-nums font-semibold ${delta < 0 ? "text-red-600" : "text-stone-900"}`}>{sgn(pts(delta, gp))}</span>
+          {/* The capped column is dimmed wherever it is identical to VA — the
+              41% of a season's players who sit at or above median usage and
+              whom the candidate leaves alone — so the rows it actually moves
+              are the ones that read as live. */}
+          <span
+            className={`text-right tabular-nums ${capVa === va ? "text-stone-300" : capVa < 0 ? "text-red-600" : "text-stone-700"}`}
+            title={capVa === va ? "At or above median usage — the cap leaves this player on the standard baseline" : undefined}
+          >{sgn(pts(capVa, gp))}</span>
+          <span className={`text-right tabular-nums font-semibold ${delta < 0 ? "text-red-600" : delta === 0 ? "text-stone-300" : "text-stone-900"}`}>{sgn(pts(delta, gp))}</span>
         </div>
       ))}
       {list && list.length > 0 && (
