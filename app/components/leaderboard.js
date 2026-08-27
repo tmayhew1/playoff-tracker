@@ -471,7 +471,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       )}
       <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
         <span className="w-5 sm:w-6 text-right">#</span>
-        <span className="w-9 sm:w-10">Team</span>
+        <span className="w-8 sm:w-10">Team</span>
         {/* Arming step for the cross-over into By Player: tap Player here
             first, then a player's name — a bare row tap should never leave
             the leaderboard by accident. */}
@@ -493,7 +493,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-5 sm:w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-4 sm:w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -614,16 +614,16 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         const vaPerG = p.gp > 0 ? rowVa / p.gp : 0;
         const { first, last } = splitName(p.name);
         // No measuring pass: the phone column fits about eight characters at
-        // 11px, so longer surnames step down a size instead of losing their
+        // 12px, so longer surnames step down a size instead of losing their
         // tail, and the handful past fifteen wrap — every one of those is
         // hyphenated, so the break lands on the hyphen. sm+ has the room for
         // the whole name on one line at row size.
         const lastCls = last.length > 15
-          ? "text-[8px] break-words sm:truncate sm:text-[10px]"
-          : last.length > 12 ? "text-[8px] truncate sm:text-[10px]"
-          : last.length > 9 ? "text-[9px] truncate sm:text-[10px]"
-          : last.length > 8 ? "text-[10px] truncate sm:text-[10px]"
-          : "text-[11px] sm:text-[10px] truncate";
+          ? "text-[9px] break-words sm:truncate sm:text-[10px]"
+          : last.length > 12 ? "text-[9px] truncate sm:text-[10px]"
+          : last.length > 9 ? "text-[10px] truncate sm:text-[10px]"
+          : last.length > 8 ? "text-[11px] truncate sm:text-[10px]"
+          : "text-[12px] sm:text-[10px] truncate";
         return (
           <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             {/* Bar wraps just the click row, not the expanded breakdown —
@@ -676,7 +676,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setTeamFilter(teamFilter === p.team ? null : p.team);
                 }}
                 style={badgeStyle}
-                className="w-9 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
+                className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
                 aria-label={`Filter by ${p.team}`}
               >{p.team}</button>
               {/* Armed, the name crosses over to By Player with this season
@@ -727,7 +727,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setGArmed(false);
                   if (next != null) setPendingScrollName(p.name);
                 }}
-                className={`w-5 sm:w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                className={`w-4 sm:w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
                 aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
               >{p.gp}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
