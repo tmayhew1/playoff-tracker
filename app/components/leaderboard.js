@@ -336,9 +336,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     onNavHandled?.();
   }, [pendingNav, season, scope, poPlayers, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
 
-  const title = scope === "regular" ? "Regular Season Leaders"
+  // The header is abbreviated for space — it shares one line with the USG-ADJ
+  // and VA/VA+ chips, and "Regular" is the one scope wide enough to wrap them
+  // onto a second line on a narrow phone. `scopeLabel` keeps the spelled-out
+  // words for the empty-state sentence below, which has no such constraint and
+  // would otherwise read "…in the 1996-97 reg season board".
+  const title = scope === "regular" ? "Reg Season Leaders"
     : scope === "combined" ? "Combined Leaders"
     : "Playoff Leaders";
+  const scopeLabel = scope === "regular" ? "regular season"
+    : scope === "combined" ? "combined"
+    : "playoff";
   // What has to finish before this scope can render.
   const scopeLoading = scope === "regular" ? rsLoading : scope === "combined" ? (loading || rsLoading) : loading;
   const scopeError = scope === "regular" ? rsError : error;
@@ -810,7 +818,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       })()}
       {shown.length === 0 && (
         <div className="px-3 py-3 text-[10px] text-stone-400 italic text-center">
-          No {teamFilter ? `${teamFilter} ` : ""}players in the {season} {title.replace(" Leaders", "").toLowerCase()} board{minGames != null ? ` with ${minGames}+ games` : ""}.
+          No {teamFilter ? `${teamFilter} ` : ""}players in the {season} {scopeLabel} board{minGames != null ? ` with ${minGames}+ games` : ""}.
         </div>
       )}
       {!teamFilter && minGames == null && all.length > 10 && (
