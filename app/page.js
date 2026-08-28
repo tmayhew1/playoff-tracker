@@ -10,7 +10,6 @@ import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
 import { UsageView } from "./components/usage-view";
-import { USG_FTA_W, VOLUME_CREDIT } from "./scoring";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 
 
@@ -37,20 +36,15 @@ function VABaselineToggle() {
           <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj}>
             League median
           </button>
+          {/* Spelled out here, where there is room for it and where a reader
+              meeting the mode for the first time will be looking. The boards
+              keep the abbreviation on their own chips (lib/va-mode.js), and
+              Info carries the explanation in prose. */}
           <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj}>
-            USG-ADJ
+            Usage-adjusted
           </button>
         </div>
       </div>
-      {usgAdj && (
-        <div className="mt-1.5 text-[10px] text-stone-500 italic leading-snug">
-          Scoring volume splits in two — what he scored above the going rate on the
-          possessions he used (FGA + {USG_FTA_W}&thinsp;&times;&thinsp;FTA), and what he was
-          worth for carrying more or less load than a typical minute — and the second half
-          is paid at {VOLUME_CREDIT}&times;. Volume still counts, just not at face value.
-          The other nine categories are unchanged.
-        </div>
-      )}
     </div>
   );
 }
@@ -112,12 +106,10 @@ function Tracker() {
               {s}
             </button>
           ))}
-          <button
-            onClick={() => setTab("legacy")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "legacy" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Legacy
-          </button>
+          {/* Legacy is hidden while it's still being worked on — the tab
+              button only. The view, its route through the render below, and
+              the cross-tab jump it hands back are all left intact, so putting
+              it back is this button and nothing else. */}
           <button
             onClick={() => setTab("college")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
