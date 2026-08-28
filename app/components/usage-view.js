@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { USAGE_MODELS, USG_FTA_W, cappedVolumeVA, lgaForSeason, possUsed, usageModelFor, volumeVA } from "../scoring";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
@@ -28,6 +28,228 @@ import { normalizeName, teamColor } from "../lib/format";
 // CAP ≥ max(VA, USG) is not a coincidence but the identity in scoring.js:
 // capping the baseline means taking whichever of the two terms is larger, so
 // the column can only ever sit at or above the other two.
+// --- The cloud the line is fit to -------------------------------------------
+// PTS/min against possessions used/min, one dot per player-season, with all
+// three candidate baselines drawn over it:
+//
+//   median  a horizontal line at μ_PTS — what VA charges today, the same for
+//           everyone regardless of how much of the offense he used
+//   fitted  the season's least-squares line, a + b·x — what USG-ADJ charges
+//   cap     min(fitted, median): the fitted line up to the crossing, the flat
+//           median after it. Drawn thick and underneath, so it reads as a
+//           halo along whichever branch is live.
+//
+// The three coincide except in the shaded region left of the crossing, which
+// is the whole of what the capped candidate changes — a player is inside it or
+// the cap does nothing for him.
+//
+// A dot's vertical distance from a line IS its scoring-volume VA per minute
+// against that baseline, so "above the line" and "positive Points VA" are the
+// same statement, and the gap between the two lines under a dot is its Δ.
+// A little taller than wide-screen habit would suggest: a regression cloud
+// needs vertical room for "above or below the line" to be readable at a glance.
+const DOT_R = 0.7, TAP_R = 3.4, PLOT_H = 70;
+// Amber-600 rather than the shared GOLD (amber-500): this is a thin line and
+// 7px type on white, where amber-500 is too pale to read.
+const CAP_LINE = "#d97706";
+
+function UsageScatter({ rows, model, mu, selected, onSelect, seasonLabel, scopeLabel }) {
+  const svgRef = useRef(null);
+  const [menu, setMenu] = useState(null);
+  const [hover, setHover] = useState(null);
+
+  const view = useMemo(() => {
+    if (!rows.length || !model) return null;
+    const xMax = Math.max(...rows.map((r) => r.usgPerM)) * 1.06;
+    const yMax = Math.max(...rows.map((r) => r.ptsPerM)) * 1.06;
+    // Both axes start at zero: the intercept is a real quantity here (what the
+    // line charges a player who uses nothing), and the origin is what makes
+    // the slope readable as points per possession used.
+    const X = (v) => (v / xMax) * 100;
+    const Y = (v) => PLOT_H - (v / yMax) * PLOT_H;
+    const dots = rows.map((r) => ({ r, cx: X(r.usgPerM), cy: Y(r.ptsPerM) }));
+    // Where the fitted line crosses the median — the kink in the capped
+    // baseline, and the usage above which the cap does nothing at all.
+    const xStar = model.b !== 0 ? (mu - model.a) / model.b : null;
+    const inRange = xStar != null && xStar > 0 && xStar < xMax;
+    return {
+      X, Y, xMax, yMax, dots, xStar, inRange,
+      fit: { x1: X(0), y1: Y(model.a), x2: X(xMax), y2: Y(model.a + model.b * xMax) },
+      med: Y(mu),
+      kinkX: inRange ? X(xStar) : null,
+    };
+  }, [rows, model, mu]);
+
+  if (!view) return null;
+
+  // A tap maps straight back through the SVG's box (uniform scale from a
+  // 100-wide viewBox), the same hit test the breakdown scatter uses.
+  const hits = (e) => {
+    const box = svgRef.current?.getBoundingClientRect();
+    if (!box?.width) return [];
+    const vx = ((e.clientX - box.left) / box.width) * 100;
+    const vy = ((e.clientY - box.top) / box.height) * PLOT_H;
+    return view.dots
+      .map((d) => ({ d, dist: Math.hypot(d.cx - vx, d.cy - vy) }))
+      .filter((h) => h.dist <= TAP_R)
+      .sort((a, b) => a.dist - b.dist)
+      .map((h) => ({ ...h, vx, vy }));
+  };
+
+  const onTap = (e) => {
+    const h = hits(e);
+    if (!h.length) { setMenu(null); onSelect(null); return; }
+    if (h.length === 1) { setMenu(null); onSelect(h[0].d.r); return; }
+    setMenu({
+      left: Math.max(4, Math.min(96, h[0].vx)),
+      top: (Math.max(0, Math.min(PLOT_H, h[0].vy)) / PLOT_H) * 100,
+      flip: h[0].vy > PLOT_H * 0.55,
+      items: h.slice(0, 6).map((x) => x.d.r),
+    });
+  };
+
+  const shown = selected || hover;
+  const sel = shown ? view.dots.find((d) => d.r.key === shown.key) : null;
+
+  return (
+    <div className="mb-2">
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 100 ${PLOT_H}`}
+          className="w-full block touch-manipulation"
+          onClick={onTap}
+          onPointerMove={(e) => { if (e.pointerType === "mouse") setHover(hits(e)[0]?.d.r || null); }}
+          onPointerLeave={() => setHover(null)}
+          role="img"
+          aria-label={`Points per minute against possessions used per minute, ${rows.length} ${scopeLabel} player-seasons in ${seasonLabel}, with the league-median, fitted and capped baselines drawn over them. The table below lists the same players and the same numbers.`}
+        >
+          {/* Where the cap differs from today's baseline: left of the crossing
+              and nowhere else. */}
+          {view.kinkX != null && (
+            <rect x="0" y="0" width={view.kinkX} height={PLOT_H} fill="#f59e0b" fillOpacity="0.06" />
+          )}
+          {/* Frame, kept recessive — the lines below are the ink that matters. */}
+          <line x1="0" y1={PLOT_H} x2="100" y2={PLOT_H} stroke="#e7e5e4" strokeWidth="0.3" />
+          <line x1="0" y1="0" x2="0" y2={PLOT_H} stroke="#e7e5e4" strokeWidth="0.3" />
+
+          {view.dots.map((d, i) => (
+            <circle
+              key={i}
+              cx={d.cx} cy={d.cy} r={d.r.matched ? DOT_R * 1.5 : DOT_R}
+              fill={d.r.matched ? "#1c1917" : "#d6d3d1"}
+              fillOpacity={d.r.matched ? 0.9 : 0.75}
+            />
+          ))}
+
+          {/* Capped baseline first, thick and underneath, so it shows as a halo
+              along the fitted line to the left of the kink and along the median
+              to the right of it. */}
+          <path
+            d={view.kinkX == null
+              ? `M0 ${view.med} L100 ${view.med}`
+              : `M0 ${view.Y(model.a)} L${view.kinkX} ${view.med} L100 ${view.med}`}
+            fill="none" stroke={CAP_LINE} strokeWidth="1.6" strokeOpacity="0.55" strokeLinejoin="round"
+          />
+          <line x1="0" y1={view.med} x2="100" y2={view.med} stroke="#78716c" strokeWidth="0.35" strokeDasharray="2 1.5" />
+          <line x1={view.fit.x1} y1={view.fit.y1} x2={view.fit.x2} y2={view.fit.y2} stroke="#1c1917" strokeWidth="0.45" />
+          {view.kinkX != null && (
+            <circle cx={view.kinkX} cy={view.med} r="0.9" fill={CAP_LINE} stroke="#fff" strokeWidth="0.3" />
+          )}
+
+          {/* Selected/hovered player: white halo, black dot, and dashed drops to
+              both axes so the two rates can be read off the frame. */}
+          {sel && (
+            <>
+              <line x1={sel.cx} y1={sel.cy} x2={sel.cx} y2={PLOT_H} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
+              <line x1={sel.cx} y1={sel.cy} x2="0" y2={sel.cy} stroke="#1c1917" strokeWidth="0.25" strokeDasharray="1.5 1.5" strokeOpacity="0.45" />
+              <circle cx={sel.cx} cy={sel.cy} r="2.2" fill="#fff" />
+              <circle cx={sel.cx} cy={sel.cy} r="1.4" fill="#1c1917" />
+            </>
+          )}
+        </svg>
+
+        {/* The y axis is named where the data never reaches — this
+            relationship slopes up, so the top-left corner is always empty. */}
+        <div className="absolute left-0 top-0 text-[7px] leading-none text-stone-400 tabular-nums pointer-events-none">
+          PTS/MIN ↑ {view.yMax.toFixed(2)}
+        </div>
+
+        {menu && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} aria-hidden />
+            <div
+              className={`absolute z-20 ${menu.flip ? "-translate-y-full -mt-2" : "mt-2"} ${menu.left > 60 ? "-translate-x-full" : ""}`}
+              style={{ left: `${menu.left}%`, top: `${menu.top}%` }}
+            >
+              <div className="min-w-[8rem] rounded-sm border border-stone-300 bg-white shadow-md overflow-hidden">
+                <div className="px-1.5 py-0.5 text-[7px] uppercase tracking-wider text-stone-400 border-b border-stone-100">{menu.items.length} players here</div>
+                {menu.items.map((r) => (
+                  <button
+                    key={r.key}
+                    type="button"
+                    onClick={() => { setMenu(null); onSelect(r); }}
+                    className="w-full flex items-baseline justify-between gap-2 px-1.5 py-1 text-left hover:bg-stone-100"
+                  >
+                    <span className="truncate text-[9px] font-medium text-stone-800">{r.r.name}</span>
+                    <span className="shrink-0 text-[8px] tabular-nums text-stone-500">{r.ptsPerM.toFixed(3)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Axis extremes on the frame — the plot is small, so two numbers an axis
+          beats a full tick ladder. */}
+      <div className="flex justify-between text-[7px] text-stone-400 tabular-nums -mt-0.5">
+        <span>0</span>
+        <span className="uppercase tracking-wider">poss. used / min →</span>
+        <span>{view.xMax.toFixed(2)}</span>
+      </div>
+
+      {/* Legend under the plot rather than over it: three lines that mostly
+          overlap need naming, and there is nowhere inside the frame to put the
+          names where they don't land on data. Each carries its own dash
+          pattern as well as its colour. */}
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] leading-none">
+        <span className="text-stone-900"><span className="font-bold">──</span> fitted line</span>
+        <span className="text-stone-500"><span className="font-bold">- -</span> median {mu.toFixed(3)}</span>
+        <span style={{ color: CAP_LINE }}><span className="font-bold">━</span> cap = the lower of the two
+          {view.xStar != null && view.inRange ? `, bending at ${view.xStar.toFixed(2)}` : ""}</span>
+        {view.inRange && <span className="text-stone-400 italic">shaded = where the cap changes anything</span>}
+      </div>
+
+      {/* Readout: the dot under the finger, or the invitation to find one. */}
+      <div className="mt-1 h-[2.1rem] text-[9px] leading-tight">
+        {shown ? (
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-semibold" style={{ color: teamColor(shown.r.team) }}>
+              {shown.r.name} <span className="text-stone-400 font-normal text-[8px]">{shown.r.team}</span>
+            </span>
+            <span className="text-stone-500 tabular-nums">
+              {shown.ptsPerM.toFixed(3)} PTS/min on {shown.usgPerM.toFixed(3)} poss/min · line says {shown.pred.toFixed(3)}
+            </span>
+            <span className="tabular-nums">
+              <span className="text-stone-400">VA</span> <span className={shown.va < 0 ? "text-red-600" : "text-stone-700"}>{(shown.va > 0 ? "+" : "") + shown.va.toFixed(1)}</span>
+              {" · "}<span className="text-stone-400">USG</span> <span className={shown.usgVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.usgVa > 0 ? "+" : "") + shown.usgVa.toFixed(1)}</span>
+              {" · "}<span className="text-stone-400">CAP</span> <span className={shown.capVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.capVa > 0 ? "+" : "") + shown.capVa.toFixed(1)}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="text-stone-400 italic">
+            {rows.length} player-seasons · y = PTS/min, x = poss. used/min · a dot&rsquo;s height above a
+            line is its scoring VA per minute against that baseline · tap one to read it, or tap a name
+            in the table to find it up here
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 export function UsageView() {
   // Only seasons with a fitted model (data/usage-model.json). A season the
   // fit hasn't reached has no second baseline to compare against, so it isn't
@@ -56,6 +278,11 @@ export function UsageView() {
   // many minutes.
   const [minMpFilter, setMinMpFilter] = useState(null);
   const [mpArmed, setMpArmed] = useState(false);
+  // The scatter above the table, and the player picked out of it. The plot is
+  // where the baselines are legible as shapes; the table is the same data as
+  // numbers, and the two stay pointed at the same player.
+  const [showPlot, setShowPlot] = useState(true);
+  const [picked, setPicked] = useState(null);
   const sel = season || seasons[0] || null;
 
   useEffect(() => {
@@ -64,6 +291,7 @@ export function UsageView() {
     setRows(null);
     setMinMpFilter(null);
     setMpArmed(false);
+    setPicked(null);
     // The same two bakes the other tabs read, so this costs nothing extra
     // once either has been visited (fetchJsonCached shares the payload).
     fetchJsonCached(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
@@ -76,17 +304,16 @@ export function UsageView() {
   const lgaUsg = sel ? lgaForSeason(sel, true) : null;
   const model = sel ? usageModelFor(sel) : null;
 
-  const list = useMemo(() => {
+  // Every row scored once, tagged with whether it clears the sample floor.
+  // Rotation-sized samples only, so noise doesn't crowd the top — except that
+  // a search still reaches anyone, which is why the floor is a tag here rather
+  // than a filter.
+  const minMp = minMpFilter ?? (scope === "po" ? 40 : 100);
+  const scored = useMemo(() => {
     if (!rows || !lga || !lgaUsg?.usgModel) return null;
-    const q = normalizeName(query.trim());
-    // Without a search, keep to rotation-sized samples so noise doesn't crowd
-    // the top; a search shows anyone. A user-set filter replaces the floor.
-    const minMp = minMpFilter ?? (scope === "po" ? 40 : 100);
     const out = [];
     for (const r of rows) {
       if (!(r.mp > 0)) continue;
-      if (q && !normalizeName(r.name || "").includes(q)) continue;
-      if (minMpFilter != null ? r.mp < minMpFilter : (!q && r.mp < minMp)) continue;
       const gp = r.gp ?? r.g ?? 0;
       const usgPerM = possUsed(r) / r.mp;
       // Both baselines through the one shared definition (scoring.js), so a
@@ -96,12 +323,46 @@ export function UsageView() {
       const capVa = cappedVolumeVA(r, lgaUsg);
       out.push({
         r, gp, usgPerM,
+        key: (r.slug || r.name) + (r.team || ""),
+        qualified: r.mp >= minMp,
         ptsPerM: (r.pts || 0) / r.mp,
         pred: lgaUsg.usgModel.a + lgaUsg.usgModel.b * usgPerM,
         va, usgVa, capVa,
         delta: (deltaVs === "cap" ? capVa : usgVa) - va,
       });
     }
+    return out;
+  }, [rows, lga, lgaUsg, minMp, deltaVs]);
+
+  // What the plot draws: the qualified field, always — a search picks players
+  // OUT of the cloud rather than emptying it, since the cloud is the context
+  // the scatter exists to give. The table keeps the opposite behaviour and
+  // lists only what matches.
+  const plotRows = useMemo(() => {
+    if (!scored) return null;
+    const q = normalizeName(query.trim());
+    return scored
+      .filter((x) => x.qualified)
+      .map((x) => (q && normalizeName(x.r.name || "").includes(q) ? { ...x, matched: true } : x));
+  }, [scored, query]);
+
+  // Bring the picked player's row into view only when the table is short
+  // enough that the move is a nudge — a search, or a tight minutes filter. On
+  // the full board that row is hundreds down, and scrolling to it would throw
+  // the reader off the plot they are working in; the row keeps its highlight
+  // for whenever they get there, and the readout under the plot already
+  // carries the same numbers.
+  useEffect(() => {
+    if (!picked || !listRef.current || listRef.current.length > 25) return;
+    document.querySelector(`[data-usage-row="${CSS.escape(picked.key)}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [picked]);
+
+  const listRef = useRef(null);
+  const list = useMemo(() => {
+    if (!scored) return null;
+    const q = normalizeName(query.trim());
+    const out = scored.filter((x) => (q ? normalizeName(x.r.name || "").includes(q) : x.qualified));
     // The three point columns sort on the scale they are DISPLAYED at, so
     // switching to /G re-orders them rather than leaving per-game numbers
     // ordered by season totals.
@@ -121,7 +382,8 @@ export function UsageView() {
       return c !== 0 ? sort.dir * c : scaled(b.usgVa, b.gp) - scaled(a.usgVa, a.gp);
     });
     return out;
-  }, [rows, lga, lgaUsg, query, scope, sort, minMpFilter, perGame, deltaVs]);
+  }, [scored, query, sort, perGame]);
+  listRef.current = list;
 
   // The three point columns share one scale: totals, or divided by games.
   const pts = (v, gp) => (perGame ? (gp > 0 ? v / gp : 0) : v);
@@ -146,6 +408,12 @@ export function UsageView() {
           <button onClick={() => setPerGame(false)} className={`px-1.5 py-0.5 ${!perGame ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Tot</button>
           <button onClick={() => setPerGame(true)} className={`px-1.5 py-0.5 border-l border-stone-300 ${perGame ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>/G</button>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowPlot((v) => !v)}
+          className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border rounded-sm ${showPlot ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300"}`}
+          aria-pressed={showPlot}
+        >Plot</button>
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which alternative baseline the Δ column measures">
           <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
           <button onClick={() => setDeltaVs("cap")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "cap" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Cap</button>
@@ -184,6 +452,17 @@ export function UsageView() {
           moves this player&apos;s total VA by (the other nine categories don&apos;t change)
           {scope === "po" && " · playoff rows are scored against the season's regular-season line, as all VA baselines are"}
         </div>
+      )}
+      {showPlot && plotRows && plotRows.length > 0 && (
+        <UsageScatter
+          rows={plotRows}
+          model={lgaUsg.usgModel}
+          mu={lga.laPTSperM}
+          selected={picked}
+          onSelect={setPicked}
+          seasonLabel={sel}
+          scopeLabel={scope === "po" ? "playoff" : "regular-season"}
+        />
       )}
       {(() => {
         const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, delta: -1 };
@@ -225,12 +504,29 @@ export function UsageView() {
       })()}
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
-      {list && list.map(({ r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, delta }, i) => (
-        <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
+      {list && list.map((x, i) => {
+        const { r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, delta, key } = x;
+        const isPicked = picked?.key === key;
+        return (
+        <div
+          key={key}
+          data-usage-row={key}
+          className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${isPicked ? "bg-amber-50 ring-1 ring-amber-500" : i % 2 ? "bg-stone-50" : ""}`}
+        >
           <span className="text-stone-400 tabular-nums">{i + 1}</span>
-          <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
+          {/* The row's name is the other end of the plot's selection: tapping
+              it lights the same player's dot, so a name found by searching can
+              be located in the cloud. */}
+          <button
+            type="button"
+            onClick={() => setPicked(isPicked ? null : x)}
+            className="truncate font-semibold text-left"
+            style={{ color: teamColor(r.team) }}
+            aria-pressed={isPicked}
+            title={isPicked ? "Clear the highlight" : "Highlight this player in the plot"}
+          >
             {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
-          </span>
+          </button>
           {(() => {
             const mpVal = Math.round(r.mp);
             const isActive = minMpFilter === mpVal;
@@ -269,13 +565,15 @@ export function UsageView() {
           >{sgn(pts(capVa, gp))}</span>
           <span className={`text-right tabular-nums font-semibold ${delta < 0 ? "text-red-600" : delta === 0 ? "text-stone-300" : "text-stone-900"}`}>{sgn(pts(delta, gp))}</span>
         </div>
-      ))}
+        );
+      })}
       {list && list.length > 0 && (
         <div className="mt-2 text-center text-[9px] italic text-stone-400">
           {minMpFilter != null
             ? `Min ${minMpFilter} minutes · `
             : query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}
-          {perGame ? "per game" : "season totals"} · tap a column to sort · tap MP, then a player&rsquo;s MP, to filter by minutes
+          {perGame ? "per game" : "season totals"} · tap a column to sort · tap a name to find it in the plot ·
+          tap MP, then a player&rsquo;s MP, to filter by minutes
         </div>
       )}
     </div>
