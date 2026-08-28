@@ -48,6 +48,30 @@ export function useVAMode() {
   return useContext(VAModeContext) || DEFAULT;
 }
 
+// The switch as a board chip. The page-level control under the tab strip is
+// the one that explains itself; this is the same state, reachable from the
+// header of a board that is already re-scored by it — By Season and By Player
+// both carry one, next to their VA/VA+ chips. Two chips, one mode: it reads
+// the context, never a copy of it, so the two can never disagree.
+export function UsgAdjChip({ className = "" }) {
+  const { usgAdj, setUsgAdj } = useVAMode();
+  return (
+    <button
+      type="button"
+      onClick={() => setUsgAdj(!usgAdj)}
+      aria-pressed={usgAdj}
+      title={usgAdj
+        ? "Scoring volume is priced against the possessions used — tap for the league median baseline"
+        : "Price scoring volume against the possessions used instead of the median minute"}
+      className={`normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border rounded-sm ${
+        usgAdj ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-500 border-stone-300"
+      } ${className}`}
+    >
+      USG-ADJ
+    </button>
+  );
+}
+
 // The season → baselines getter for the active mode. Stable across renders,
 // new identity on every toggle: the dependency to list in a useMemo that
 // scores rows.

@@ -8,7 +8,7 @@ import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
-import { usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
@@ -420,16 +420,12 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             own line as a unit instead of the chips compressing (which used to
             break "≥N games" onto two lines when a team filter was also on). */}
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          {/* Which baseline the scoring-volume term used. The switch itself
-              lives under the tab strip (it re-prices the whole page), so the
-              board carries a marker instead — the numbers here are otherwise
-              indistinguishable from the standard ones, and the pinned header
-              is often all that's on screen. */}
-          {lga?.usgModel && (
-            <span className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border bg-stone-900 text-white border-stone-900">
-              USG-ADJ
-            </span>
-          )}
+          {/* Which baseline the scoring-volume term uses, and the switch for
+              it: the numbers here are otherwise indistinguishable from the
+              standard ones, and the pinned header is often all that's on
+              screen. Same state as the control under the tab strip, and the
+              same chip By Player carries. */}
+          <UsgAdjChip />
           {/* VA vs VA+ (adds defensive net rating). Midnight purple when on. */}
           <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
             <button

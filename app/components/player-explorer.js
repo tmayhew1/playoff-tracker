@@ -10,7 +10,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
-import { useLgaFor, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, useLgaFor, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -690,6 +690,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             toggle now standing beside a team filter and a games threshold,
             three chips and a long name can't share one line on a phone. */}
         <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1 shrink-0">
+          {/* Which baseline the scoring-volume term is measured against. Same
+              state as the switch under the tab strip, put here because this
+              board is one of the things it re-scores — the career total on the
+              left included. */}
+          <UsgAdjChip />
           {/* VA vs VA+ (adds defensive net rating). Midnight purple when on —
               the same control, in the same palette, as the By Season board's. */}
           <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
