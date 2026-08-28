@@ -802,8 +802,49 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // Clearing it restores the caller's comparison; see the chip in the chart's
   // header. { a, b, years } — years are 0-based slot indices.
   const [pick, setPick] = useState(null);
-  const a = pick?.a || aProp;
-  const b = pick?.b || bProp;
+
+  // --- Re-resolving the sides against the live pool ---------------------------
+  // Both sides arrive as rows that were resolved when the comparison was MADE
+  // and then held in a caller's state — `compare.row` / `compare.seasons` in
+  // the breakdown card, a run picked out of MultiComparePicker, the career-year
+  // selection below. The USG-ADJ switch re-prices the index underneath them
+  // (lib/va-mode.js rebuilds every row), so a held row keeps whatever VA it was
+  // carrying when it was picked and the comparison quietly reads two different
+  // baselines at once.
+  //
+  // So nothing held is trusted for its numbers, only for its identity: every
+  // row is looked up again in the CURRENT pool by (player, season) and an
+  // aggregate is re-pooled from its seasons' fresh rows. Raw stats are the same
+  // either way — it is `va` that moves — and fields the pool doesn't carry (a
+  // leaderboard row's per-game log) survive the merge.
+  const poolBy = useMemo(() => {
+    const m = new Map();
+    for (const r of context?.allRows || []) {
+      m.set(`${r.slug || "n:" + normalizeName(r.name || "")}|${r.season}`, r);
+    }
+    return m;
+  }, [context?.allRows]);
+  const freshSeason = useCallback((r) => {
+    if (!r?.season) return r;
+    const hit = poolBy.get(`${r.slug || "n:" + normalizeName(r.name || "")}|${r.season}`);
+    return hit ? { ...r, ...hit } : r;
+  }, [poolBy]);
+  // A whole side: a season row looked up, a multi-season row re-aggregated from
+  // its own seasons so its total, its blended baseline and its per-category
+  // vector are all rebuilt at the active baseline.
+  const freshSide = useCallback((row) => {
+    if (!row) return row;
+    if (!row.multi) return freshSeason(row);
+    const seasons = (row.seasons || []).map((sn) => ({
+      ...freshSeason(sn), name: row.name, slug: row.slug || null,
+    }));
+    return seasons.length
+      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaFor)
+      : row;
+  }, [freshSeason, lgaFor]);
+
+  const a = useMemo(() => freshSide(pick?.a || aProp), [freshSide, pick, aProp]);
+  const b = useMemo(() => freshSide(pick?.b || bProp), [freshSide, pick, bProp]);
   // A caller that renders the comparison's own chip above this panel (the gold
   // "vs MITCHELL ’18·’21·’24") takes the career-year chip over, because those
   // two chips can't both be right at once: once a career-year selection has
@@ -1105,11 +1146,13 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // being compared is visible in the shape of the career around it.
   // Identity comes off the CALLER's rows, not the effective ones: a selection
   // made in this chart changes which seasons are compared, never whose they are.
+  // Held the same way the sides are, and read for their VA by the career bars,
+  // so they are re-resolved the same way (see freshSeason).
   const aSeasons = (aSeasonsProp || context.self?.seasons || [])
-    .map((s) => ({ ...s, name: aProp.name, slug: aProp.slug || null }))
+    .map((s) => ({ ...freshSeason(s), name: aProp.name, slug: aProp.slug || null }))
     .sort((x, y) => x.season.localeCompare(y.season));
   const bAll = [...bSeasons]
-    .map((s) => ({ ...s, name: bProp.name, slug: bProp.slug || null }))
+    .map((s) => ({ ...freshSeason(s), name: bProp.name, slug: bProp.slug || null }))
     .sort((x, y) => x.season.localeCompare(y.season));
   // Which seasons on each side count as "the compared one" for full opacity.
   const aSel = aMulti ? a.seasonKeys : new Set([a.season]);
