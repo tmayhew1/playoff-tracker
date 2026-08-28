@@ -30,7 +30,12 @@ function VABaselineToggle() {
       : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
   return (
     <div className="mb-4">
-      <div className="flex items-center gap-2">
+      {/* Wraps rather than overflows: at 375px and below the label plus the
+          two spelled-out buttons are wider than the page, and on one line the
+          group ran off the right edge (taking the whole page into a sideways
+          scroll on the narrowest phones). Wrapped, the pair drops to its own
+          line under the label and stays right-aligned. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 shrink-0">Scoring baseline</span>
         <div className="inline-flex ml-auto shrink-0">
           <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj}>
