@@ -569,10 +569,54 @@ box score. A season whose model predates `muCrt` keeps $\mu_{\mathrm{AST}}$ and
 that half of $\Delta$ is exactly zero — absent, never a wrong baseline
 (invariant 5).
 
+**The candidate that keeps AST out of the baseline.** $\mathrm{CRT}$ contains
+the player's own assists, so each marginal assist raises the bar it must clear:
+at $\lambda = \tfrac12$ he keeps $71\%$ of one ($67$–$74\%$ across seasons). The
+alternative is to predict $\mathrm{AST}$ from a quantity he cannot move by
+assisting — his turnover rate — pivoting about $(\mu_{\mathrm{TOV}}, \mu_{\mathrm{AST}})$
+with $\bar e_T = \mu_{\mathrm{AST}}/\mu_{\mathrm{TOV}}$:
+
+$$
+\lambda_{\mathrm{AST}}^{\text{TOV}}(\lambda) \;=\; \bar e_T(1-\lambda)\,\frac{\mathrm{TOV}}{\mathrm{MP}} \;+\; \lambda\,\mu_{\mathrm{AST}}
+$$
+
+Assists are then credited at face value and a low-turnover passer is charged a
+lower bar. It needs no bake at all — $\mu_{\mathrm{TOV}}$ is already
+`laTOVperM`. It is built (`scoring.js::playmakingVATov`) and visible in the
+Usage tab's **Pass** view, and it is **not** on the switch, for three reasons:
+
+1. **It cannot restore the balance at any $\lambda$.** Playmaking's share of the
+   positive-VA pool is $49.9\%$ under standard VA and $61.5\%$ under the
+   points-only mode. This baseline reaches $58.5\%$ at $\lambda = \tfrac12$ and
+   $57.2\%$ at $\lambda = 0$ — where it charges purely per turnover with no
+   minute credit at all. It recovers about a third of the gap and then stops,
+   because the players inflating that pool are elite precisely for producing
+   assists *without* turnovers; charging per turnover is designed not to reach
+   them. In 1996-97 it returns Stockton ($1061$) to a tie with Jordan ($1067$),
+   the reading that prompted §4.7 in the first place.
+2. **$\mathrm{TOV}$ is weak evidence of playmaking load.** Minutes-weighted
+   $R^2$ of $\mathrm{AST}/\mathrm{MP}$ on $\mathrm{TOV}/\mathrm{MP}$ averages
+   $0.288$ over the 46 baked seasons, ranging $0.09$ to $0.52$ and drifting hard
+   by era. $\mathrm{CRT}$'s is $0.951$; the scoring side's is $0.923$.
+3. **Not every turnover is a passing turnover.** A centre's giveaways are
+   travels, offensive fouls and stripped post-ups. This baseline reads them as
+   evidence he was running the offense and raises his assist bar accordingly.
+
+And the property it exists to fix is one §4.6 already has. A made 2-pointer
+raises $\mathrm{USG}$ by one, so the shipped **scoring** baseline pays a
+marginal make $73\%$ of face value ($71$–$75\%$ across seasons) — within two
+points of what $\mathrm{CRT}$ pays a marginal assist. Being charged for the
+opportunity your own production consumed is the mechanism of the mode, not a
+defect specific to passing. It is also a discount and not a bound: assist value
+stays linear and unbounded under both baselines, at slope $0.71$ rather than
+$1$.
+
 **Reading it.** The Usage tab's **Pass** column view is the audit surface:
-$\mathrm{AST}/\mathrm{MP}$, the load $\mathrm{CRT}/\mathrm{MP}$, and the term's
-two halves per player-season. Under the tab's $\lambda$ option the $\Delta$
-column carries *both* halves, so it is exactly what the switch moves a player's
+$\mathrm{AST}/\mathrm{MP}$, $\mathrm{TOV}/\mathrm{MP}$, and the term under all
+three baselines — standard, shipped, and the candidate above — laid out as
+**Baselines** does for scoring. **P-Split** shows the shipped term's two halves
+per player-season. Under the tab's $\lambda$ option the $\Delta$ column carries
+*both* halves of the mode, so it is exactly what the switch moves a player's
 whole VA by.
 
 ---

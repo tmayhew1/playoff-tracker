@@ -148,6 +148,60 @@ export const possUsed = (p) => (p?.fga || 0) + USG_FTA_W * (p?.fta || 0);
 // price.
 export const crtUsed = (p) => (p?.ast || 0) + (p?.tov || 0);
 
+// --- Under review: a passing baseline that does not contain AST ------------
+// The objection to CRT is real and worth stating plainly: a player's own
+// assists sit in his own baseline, so each marginal assist raises the bar it
+// has to clear. Under the shipped baseline he keeps 71% of one (see below).
+// The alternative is to predict AST from a quantity he does not control by
+// assisting — his turnover rate — so assists are credited at face value and a
+// low-turnover passer is charged a lower bar:
+//
+//   λ_AST(λ) = ē_T(1−λ)·(TOV/MP) + λ·μ_AST,     ē_T = μ_AST / μ_TOV
+//
+// pivoting about (μ_TOV, μ_AST) exactly as the others do. It needs no bake at
+// all: μ_TOV is already `laTOVperM` in league-averages.json.
+//
+// It is wired to the Usage tab only, and here is why it is not on the switch.
+//
+//   • It cannot restore the balance at ANY λ. Playmaking's share of the
+//     positive-VA pool is 49.9% under standard VA and 61.5% under the
+//     points-only mode. This baseline lands at 58.5% at λ=½ and 57.2% even at
+//     λ=0, where it charges purely per turnover and grants no minute credit at
+//     all. It recovers about a third of the gap and then stops, because the
+//     players inflating that pool are elite precisely for having assists WITHOUT
+//     turnovers — charging per turnover is designed not to touch them. In
+//     1996-97 it returns Stockton (1061) to a tie with Jordan (1067), which is
+//     the reading that prompted the whole exercise.
+//   • TOV is weak evidence of playmaking load: minutes-weighted R² of AST/MP on
+//     TOV/MP averages 0.288 over the 46 baked seasons and ranges 0.09 to 0.52,
+//     drifting hard by era. CRT's is 0.951, the scoring side's 0.923. A baseline
+//     built on it is charging players against a line that explains a third of
+//     the variation.
+//   • Not every turnover is a passing turnover. A centre's giveaways are
+//     travels, offensive fouls and stripped post-ups; this baseline reads them
+//     as evidence he was running the offense and raises his assist bar for it.
+//
+// And the property it is meant to fix is one the scoring side already has. A
+// made 2-pointer raises USG by one, so the shipped scoring baseline pays a
+// marginal make 73% of face value (71–75% across seasons); CRT pays a marginal
+// assist 71% (67–74%). Being charged for the opportunity your own production
+// consumed is the mechanism of the mode, not a defect specific to passing —
+// and 71% is a discount, not a bound: assist value stays linear and unbounded
+// under both.
+export const tovLoad = (p) => (p?.tov || 0);
+
+export function baselineAstTov(p, lga, lambda = VOLUME_CREDIT) {
+  const mp = p?.mp || 0;
+  if (!(lga?.laTOVperM > 0)) return (lga?.laASTperM || 0) * mp;
+  const rate = lga.laASTperM / lga.laTOVperM;   // ē_T — assists per turnover
+  return rate * (1 - lambda) * tovLoad(p) + lambda * lga.laASTperM * mp;
+}
+
+export function playmakingVATov(p, lga, lambda = VOLUME_CREDIT) {
+  if (!(p?.mp > 0)) return 0;
+  return ((p.ast || 0) - baselineAstTov(p, lga, lambda)) * lga.laPTSperMake * (1 - lga.laFG);
+}
+
 export const usageModelFor = (season) => USAGE_MODELS[season] || null;
 
 // A season's baselines with the usage model attached (or the plain baselines
