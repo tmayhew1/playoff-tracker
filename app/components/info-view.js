@@ -135,13 +135,18 @@ export function InfoView() {
             Assists are charged per minute too — a flat{" "}
             <span className="tabular-nums">{fmt(LGA.laASTperM)}</span> per minute, with everything above it
             paid at face value — so discounting only the scoring side wouldn&apos;t price volume, it would
-            just move value from scorers to passers. So the playmaking term splits the same way, against
-            the possessions a player ended with his own pass:{" "}
-            <span className="tabular-nums">ball-handling load = AST + TOV</span>, whose median minute carries
-            {" "}<span className="tabular-nums">{fmt(USG.muCrt)}</span> of it. What he created on the
-            possessions he ran is paid in full; what he was worth for running more — or fewer — of them than
-            a typical minute is paid at the same{" "}
+            just move value from scorers to passers. The catch is that a passer&apos;s opportunity has to be
+            measured by something he can&apos;t move by assisting, or his own assists end up in his own
+            baseline. Shooting has a clean version of this — a miss raises your baseline as much as a make —
+            but the box score has no <span className="italic">missed pass</span>. What it does have is the
+            other cost of handling the ball: <span className="font-semibold">turnovers</span>. So the
+            playmaking term is priced against turnover rate, at{" "}
+            <span className="tabular-nums">{fmt(LGA.laASTperM / LGA.laTOVperM)}</span> assists per turnover
+            at the median minute. What a player produced above the going rate for the risk he took is paid
+            in full — an assist is always worth a full assist — and what he was worth for carrying more, or
+            less, of that risk than a typical minute is paid at the same{" "}
             <span className="tabular-nums">{VOLUME_CREDIT}×</span>. One dial, both places volume is paid.
+            A low-turnover passer is charged a lower bar, which is the question this term never asked before.
             The other eight categories are untouched, and every setting of that dial scores the
             median-load and median-usage player identically — it redistributes value rather
             than re-levelling it. Legacy and College keep the standard baseline. The

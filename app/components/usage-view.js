@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, crtUsed, fittedLineLga, lgaForSeason, passingSplit, playmakingVA, playmakingVATov, possUsed, splitPlaymakingVA, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
+import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, passingSplit, playmakingVA, playmakingVACrt, possUsed, splitPlaymakingVA, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 
@@ -26,12 +26,12 @@ import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 //
 // PASS compares the three passing baselines the way BASELINES compares the
 // three scoring ones: AST is the standard term (μ_AST per minute), λ_A is the
-// shipped one (against the ball-handling load AST+TOV), and TOV is the
-// candidate under review that keeps a player's own assists out of his baseline
-// by regressing on turnover rate alone (scoring.js::playmakingVATov). P-SPLIT
-// is the shipped baseline's own audit — the term split into what he created on
-// the possessions he ran (PEFF) and what he was worth for running more or fewer
-// of them than a median minute (PVOL), paid at the same λ.
+// shipped one (against TURNOVER rate, so a player's own assists stay out of his
+// own baseline), and CRT is the candidate under review that prices against the
+// ball-handling load AST + TOV (scoring.js::playmakingVACrt). P-SPLIT is the
+// shipped baseline's own audit — the term split into what he produced above the
+// going rate for the risk he took (PEFF) and what he was worth for carrying
+// more or less of that risk than a median minute (PVOL), paid at the same λ.
 //
 // PTS/M, PRED, AST/M and CRT/M are per-minute by construction; the point
 // columns follow the TOT ⁄ per-game switch. The eight remaining categories are
@@ -376,7 +376,6 @@ export function UsageView() {
       out.push({
         r, gp, usgPerM,
         astPerM: (r.ast || 0) / r.mp,
-        crtPerM: crtUsed(r) / r.mp,
         // Priced into points here, so PEFF/PVOL/λ_A sit on the same points
         // scale as every other number in the table.
         pEff: (pp?.eff ?? 0) * (pp?.price ?? 0),
@@ -386,7 +385,9 @@ export function UsageView() {
         // The AST-free candidate (scoring.js::playmakingVATov), wired to
         // nothing else. Priced off `lga`, not lgaMode: it needs only μ_AST and
         // μ_TOV, both of which are plain league averages.
-        pTovVa: playmakingVATov(r, lga, lambda),
+        // The AST+TOV candidate (scoring.js::playmakingVACrt), wired to
+        // nothing else. Priced off lgaMode, which carries the muCrt it needs.
+        pCrtVa: playmakingVACrt(r, lgaMode, lambda),
         tovPerM: (r.tov || 0) / r.mp,
         eff: sp?.eff ?? 0, vol: sp?.vol ?? 0, splitVa,
         key: (r.slug || r.name) + (r.team || ""),
@@ -450,13 +451,12 @@ export function UsageView() {
       : sort.key === "vol" ? scaled(x.vol, x.gp)
       : sort.key === "splitVa" ? scaled(x.splitVa, x.gp)
       : sort.key === "astPerM" ? x.astPerM
-      : sort.key === "crtPerM" ? x.crtPerM
       : sort.key === "pEff" ? scaled(x.pEff, x.gp)
       : sort.key === "pVol" ? scaled(x.pVol, x.gp)
       : sort.key === "pSplitVa" ? scaled(x.pSplitVa, x.gp)
       : sort.key === "tovPerM" ? x.tovPerM
       : sort.key === "pVa" ? scaled(x.pVa, x.gp)
-      : sort.key === "pTovVa" ? scaled(x.pTovVa, x.gp)
+      : sort.key === "pCrtVa" ? scaled(x.pCrtVa, x.gp)
       : scaled(x.delta, x.gp)
     );
     out.sort((a, b) => {
@@ -560,18 +560,17 @@ export function UsageView() {
           (λ=1 is plain VA to the decimal, λ=0 charges purely per possession used;
           the USG-ADJ switch ships λ={VOLUME_CREDIT}) ·
           The playmaking term pays for volume the same way and so gets the same dial: the
-          passer&apos;s opportunity is his ball-handling load CRT/min = (AST + TOV)/MP rather
-          than the flat minute, pivoting about the median
-          {model?.muCrt ? <> <span className="tabular-nums text-stone-600">{model.muCrt.toFixed(3)}</span></> : null}
-          {" "}— P-SPLIT shows its two halves (PEFF what he created on the possessions he ran,
-          PVOL what he was worth for running more or fewer of them than a median minute; they
-          sum to the standard term exactly), and PASS sets it beside the standard term and the
-          TOV candidate, which regresses on turnover rate alone
-          {lga?.laTOVperM > 0 ? <> (<span className="tabular-nums text-stone-600">{(lga.laASTperM / lga.laTOVperM).toFixed(2)}</span> assists per turnover
-          at the median minute)</> : null} so that a player&apos;s own assists stay out of his
-          own baseline. That candidate is wired to nothing else: it credits assists at face
-          value, but it cannot restore the scorer/passer balance at any λ, and turnovers
-          explain only about a third of the variation in assist rate ·
+          passer is charged against his TURNOVER rate rather than the flat minute
+          {lga?.laTOVperM > 0 ? <> (<span className="tabular-nums text-stone-600">{(lga.laASTperM / lga.laTOVperM).toFixed(2)}</span> assists
+          per turnover at the median minute)</> : null}, which keeps his own assists out of his
+          own baseline — so an assist is credited at face value, and a low-turnover passer is
+          charged a lower bar. P-SPLIT shows its two halves (PEFF what he produced above the
+          going rate for the risk he took, PVOL what he was worth for carrying more or less of
+          that risk than a median minute; they sum to the standard term exactly). PASS sets it
+          beside the standard term and the CRT candidate, which prices against the ball-handling
+          load AST + TOV: that one tracks playmaking load far more closely (R² 0.95 against
+          0.29) and rebalances the boards harder, but it puts a player&apos;s own assists back
+          in his own baseline, so it is wired to nothing else ·
           Δ = {deltaVs === "spl"
             ? "what the switch moves this player's whole VA by, both halves together"
             : `${deltaVs === "cap" ? "CAP" : "USG"} − VA, what adopting that scoring baseline moves his total by`}
@@ -593,7 +592,7 @@ export function UsageView() {
       )}
       {(() => {
         const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, eff: -1, vol: -1, splitVa: -1,
-          astPerM: -1, crtPerM: -1, tovPerM: -1, pEff: -1, pVol: -1, pSplitVa: -1, pVa: -1, pTovVa: -1, delta: -1 };
+          astPerM: -1, tovPerM: -1, pEff: -1, pVol: -1, pSplitVa: -1, pVa: -1, pCrtVa: -1, delta: -1 };
         const H = ({ k, label, right = true, title }) => (
           <button
             type="button"
@@ -625,8 +624,8 @@ export function UsageView() {
               <>
                 <H k="astPerM" label="AST/M" title="Assists per minute" />
                 {colView === "pass"
-                  ? <H k="tovPerM" label="TOV/M" title="Turnovers per minute — the AST-free candidate's whole regressor" />
-                  : <H k="crtPerM" label="CRT/M" title="Ball-handling load per minute — (AST + TOV)/MP, the shipped baseline's opportunity measure" />}
+                  ? <H k="tovPerM" label="TOV/M" title="Turnovers per minute — the shipped passing baseline's whole regressor" />
+                  : <H k="tovPerM" label="TOV/M" title="Turnovers per minute — what the shipped passing baseline prices against" />}
               </>
             ) : (
               <>
@@ -656,14 +655,14 @@ export function UsageView() {
                 <H
                   k="pSplitVa"
                   label={<span className="normal-case">λ<sub>A</sub>{lambda === VOLUME_CREDIT ? "*" : ""}</span>}
-                  title={`The playmaking term against the ball-handling load AST+TOV${lambda === VOLUME_CREDIT ? " — * what the USG-ADJ switch ships" : ""}`}
+                  title={`The playmaking term against TURNOVER rate — a player's own assists stay out of his own baseline, so an assist is credited at face value${lambda === VOLUME_CREDIT ? ". * this is what the USG-ADJ switch ships" : ""}`}
                 />
-                <H k="pTovVa" label="TOV" title="Candidate under review: the same term against TURNOVER rate alone, so a player's own assists stay out of his baseline. Wired to nothing else — it cannot restore the scorer/passer balance at any λ (see spec §4.7)" />
+                <H k="pCrtVa" label="CRT" title="Candidate under review: the same term against the ball-handling load AST+TOV. Measures playmaking load far better (R² 0.95 vs 0.29) and rebalances harder, but a player's own assists sit in his own baseline, discounting a marginal assist to 71% (see spec §4.7)" />
               </>
             ) : (
               <>
-                <H k="pEff" label="PEff" title="Assists above the going rate on the possessions he ran, in points" />
-                <H k="pVol" label="PVol" title="What he was worth for running more (or less) ball-handling load than a median minute — PEff + PVol = the standard playmaking term exactly" />
+                <H k="pEff" label="PEff" title="Assists above the going rate for the ball-handling risk he took, in points" />
+                <H k="pVol" label="PVol" title="What he was worth for carrying more (or less) ball-handling risk than a median minute — PEff + PVol = the standard playmaking term exactly" />
                 <H
                   k="pSplitVa"
                   label={<span className="normal-case">λ<sub>A</sub>{lambda === VOLUME_CREDIT ? "*" : ""}</span>}
@@ -684,7 +683,7 @@ export function UsageView() {
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
       {list && list.map((x, i) => {
-        const { r, gp, ptsPerM, pred, usgPerM, astPerM, crtPerM, tovPerM, pEff, pVol, pVa, pSplitVa, pTovVa,
+        const { r, gp, ptsPerM, pred, usgPerM, astPerM, tovPerM, pEff, pVol, pVa, pSplitVa, pCrtVa,
                 va, usgVa, capVa, eff, vol, splitVa, delta, key } = x;
         const isPicked = picked?.key === key;
         return (
@@ -732,7 +731,7 @@ export function UsageView() {
           <span
             className="text-right tabular-nums text-stone-500"
             title={`${usgPerM.toFixed(3)} possessions used per minute`}
-          >{colView === "pass" ? tovPerM.toFixed(3) : colView === "psplit" ? crtPerM.toFixed(3) : pred.toFixed(3)}</span>
+          >{colView === "pass" || colView === "psplit" ? tovPerM.toFixed(3) : pred.toFixed(3)}</span>
           {colView === "base" ? (
             <>
               <span className={`text-right tabular-nums ${va < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(va, gp))}</span>
@@ -756,7 +755,7 @@ export function UsageView() {
             <>
               <span className={`text-right tabular-nums ${pVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pVa, gp))}</span>
               <span className={`text-right tabular-nums ${pSplitVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pSplitVa, gp))}</span>
-              <span className={`text-right tabular-nums ${pTovVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pTovVa, gp))}</span>
+              <span className={`text-right tabular-nums ${pCrtVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pCrtVa, gp))}</span>
             </>
           ) : (
             <>

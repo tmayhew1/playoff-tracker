@@ -10,9 +10,9 @@ import { lgaForSeason, usageModelFor, usgAdjDelta } from "../scoring";
 //
 //   off — μ_PTS and μ_AST per MINUTE. Volume is paid for, in both.
 //   on  — the scoring term pivots about the median minute of possessions USED
-//         and the playmaking term about the median minute of ball-handling
-//         LOAD, each paying its volume half at the same λ. Volume still counts
-//         in both, at half face value rather than in full.
+//         and the playmaking term about the median minute of TURNOVERS, each
+//         paying its volume half at the same λ. Volume still counts in both, at
+//         half face value rather than in full.
 //
 // Both halves, not just scoring: the playmaking term pays for volume the same
 // way the scoring term does, so adjusting one and not the other would not price
@@ -67,8 +67,8 @@ export function UsgAdjChip({ className = "" }) {
       onClick={() => setUsgAdj(!usgAdj)}
       aria-pressed={usgAdj}
       title={usgAdj
-        ? "Scoring and passing volume are priced against the possessions used and run — tap for the league median baseline"
-        : "Price scoring and passing volume against the possessions used and run, instead of the median minute"}
+        ? "Scoring volume is priced against possessions used and passing against turnover rate — tap for the league median baseline"
+        : "Price scoring volume against possessions used and passing against turnover rate, instead of the median minute"}
       className={`normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border rounded-sm ${
         usgAdj ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-500 border-stone-300"
       } ${className}`}
@@ -101,7 +101,7 @@ export function useUsgAdjActive(season) {
 
 // Re-price rows that arrived with `va` already computed server-side (the
 // playoff leaderboard route, the /api/players index). Both adjusted terms are
-// linear in their counts — MP and USG for scoring, MP and AST+TOV for passing —
+// linear in their counts — MP and USG for scoring, MP and TOV for passing —
 // so the two modes differ by a closed form (scoring.js::usgAdjDelta) and the
 // other eight categories don't have to be re-derived from the box score.
 // Per-game splits carried on a row are re-priced the same way, so a row's games
