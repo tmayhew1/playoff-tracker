@@ -1,7 +1,7 @@
 {
   "ftaWeight": 0.475,
   "fit": "minutes-weighted OLS of PTS/MP on (FGA + 0.475*FTA)/MP, per season, over that season's regular-season player-seasons",
-  "generatedAt": "2026-08-27T01:29:35.873Z",
+  "generatedAt": "2026-08-28T21:34:41.020Z",
   "seasons": {
     "1980-81": {
       "a": -0.02459897,
