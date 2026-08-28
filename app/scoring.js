@@ -19,34 +19,54 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 // point in the default view — VA pays for absorbing volume — and also its one
 // blind spot: it never asks whether the volume was worth having.
 //
-// USG-ADJ answers that instead. Per season, over EVERY player-season in that
-// season's regular-season table, a minutes-weighted line
+// USG-ADJ answers that instead, by splitting the term rather than replacing
+// it. Write PTS as efficiency × usage and price a used possession at what one
+// returns at the league's median MINUTE of usage, ē = μ_PTS / ū (ū = `muUsg`,
+// the minutes-weighted median of USG/MP, baked in data/usage-model.json).
+// Then today's term splits exactly, with no residual:
 //
-//   PTS/MP  ≈  a  +  b · (USG/MP),      USG = FGA + 0.475 · FTA
+//   (PTS/MP − μ_PTS)·MP  =  (PTS − ē·USG)  +  ē·(USG − ū·MP)
+//                            └ efficiency ┘   └── volume ───┘
 //
-// is fit (scripts/fit-usage-model.mjs → data/usage-model.json), and its
-// prediction replaces μ_PTS in that one term. The baseline is then what the
-// league actually scores on the possessions this player used, so scoring
-// volume is only paid for above the going rate for that workload — and a
-// player who uses nothing is charged almost nothing to clear.
+// — what he scored above the going rate on the possessions he used, and what
+// he was worth for carrying more (or less) load than a typical minute. The
+// mode pays the second half at VOLUME_CREDIT:
+//
+//   Points(λ) = efficiency + λ · volume
+//
+// which as a baseline is one line pivoting about the median-minute point
+// (ū, μ_PTS): flat at λ = 1, which is plain VA to the decimal, and through
+// the origin at λ = 0, which charges purely per possession used. Shipping at
+// λ = ½, so a possession consumed is charged half of what the league gets for
+// one and volume still pays — just not at face value.
 //
 // Two properties make it safe to bolt onto the existing engine:
 //
-//   • It is exactly linear. Baseline points = a·MP + b·USG, so the term is
-//     additive over games the way μ_PTS·MP is — a season's baseline equals
-//     the sum of its games', and a multi-season blend (lib/multi-season.js)
-//     reproduces the per-season sum exactly. Only γ is non-linear, and it is
-//     untouched here.
-//   • It is a refinement of the baseline it replaces, not a new one. Across
-//     the 46 baked seasons the fitted line sits 0.002 pts/min from μ_PTS at
-//     the median MINUTE of usage (worst 0.016), so the median-usage player is
-//     scored the same either way and the mode redistributes rather than
-//     re-levels. R² runs 0.90-0.94 per season. See the spec §4.6.
+//   • It is exactly linear. Baseline points = ē(1−λ)·USG + λ·μ_PTS·MP, so the
+//     term is additive over games the way μ_PTS·MP is — a season's baseline
+//     equals the sum of its games', and a multi-season blend
+//     (lib/multi-season.js) reproduces the per-season sum exactly. Only γ is
+//     non-linear, and it is untouched here.
+//   • It is a refinement of the baseline it replaces, not a new one. Every
+//     line in the family passes through the median-minute point, so the
+//     median-usage player is scored identically at every λ and the dial
+//     redistributes rather than re-levels.
+//
+// The regression that started this — PTS/MP ≈ a + b·(USG/MP), fit per season
+// by scripts/fit-usage-model.mjs — is NOT what the mode charges. It is the
+// evidence that the relationship is real (R² 0.90–0.94) and one of the
+// candidates the Usage tab still plots; only ū is load-bearing here.
 //
 // Everything else in VA — the nine other categories, γ, VA+ — is unchanged.
 // The model rides on the baseline object as `usgModel`, so any code path that
 // already threads an `lga` through picks the mode up with no other change.
 export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
+
+// How much of the volume half the mode still pays (spec §4.6). 1 is plain VA,
+// 0 charges purely per possession used; a half was chosen by reading the two
+// ends against each other on real seasons — it keeps the volume scorers on top
+// where they belong while pricing what the possessions returned.
+export const VOLUME_CREDIT = 0.5;
 
 // Possessions a free-throw attempt uses: Hollinger's coefficient, the same one
 // the possession estimate Π already uses (spec §1.2), so USG is denominated in
@@ -69,9 +89,27 @@ const usgAdjCache = new Map();
 
 export function usgAdjLga(lga, season) {
   const model = usageModelFor(season);
-  if (!lga || !model) return lga;
-  if (!usgAdjCache.has(lga)) usgAdjCache.set(lga, { ...lga, usgModel: model });
+  // A season fit before `muUsg` existed carries no pivot point, so the mode
+  // has nothing to pivot on and the season stays on μ_PTS — absent, never a
+  // wrong baseline (spec invariant 5).
+  if (!lga || !(model?.muUsg > 0)) return lga;
+  if (!usgAdjCache.has(lga)) {
+    usgAdjCache.set(lga, { ...lga, usgModel: model, volumeCredit: VOLUME_CREDIT });
+  }
   return usgAdjCache.get(lga);
+}
+
+// The fitted line as a baseline in its own right — the λ ≈ 0 cousin the Usage
+// tab plots and prices its USG and CAP columns against. Carries the model but
+// no volume credit, which is what tells baselinePts to read a and b instead of
+// pivoting. Not reachable from the switch; see spec §4.6.
+const fittedCache = new Map();
+
+export function fittedLineLga(season) {
+  const lga = LEAGUE_AVERAGES[season], model = usageModelFor(season);
+  if (!lga || !model) return lga || LGA;
+  if (!fittedCache.has(lga)) fittedCache.set(lga, { ...lga, usgModel: model });
+  return fittedCache.get(lga);
 }
 
 export const lgaForSeason = (season, usgAdj = false) => {
@@ -85,7 +123,14 @@ export const lgaForSeason = (season, usgAdj = false) => {
 export function baselinePts(p, lga) {
   const mp = p?.mp || 0;
   const m = lga?.usgModel;
-  return m ? m.a * mp + m.b * possUsed(p) : lga.laPTSperM * mp;
+  if (!m) return lga.laPTSperM * mp;
+  // No volume credit on the baseline object means the fitted line itself (the
+  // Usage tab's USG column); with one, the pivoting family the mode ships.
+  const lam = lga.volumeCredit;
+  if (lam == null) return m.a * mp + m.b * possUsed(p);
+  const rate = m.muUsg > 0 ? lga.laPTSperM / m.muUsg : 0;
+  if (!(rate > 0)) return lga.laPTSperM * mp;
+  return rate * (1 - lam) * possUsed(p) + lam * lga.laPTSperM * mp;
 }
 
 // The scoring-volume category. One definition, shared by valueAddParts,
@@ -191,9 +236,8 @@ export function splitVolumeVA(p, lga, lambda = 1) {
 }
 
 export function usgAdjDelta(p, lga) {
-  const m = lga?.usgModel;
-  if (!m || !(p?.mp > 0)) return 0;
-  return lga.laPTSperM * p.mp - (m.a * p.mp + m.b * possUsed(p));
+  if (!lga?.usgModel || !(p?.mp > 0)) return 0;
+  return lga.laPTSperM * p.mp - baselinePts(p, lga);
 }
 
 // --- Rebound credit (γ) -----------------------------------------------------

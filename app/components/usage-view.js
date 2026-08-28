@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { USAGE_MODELS, USG_FTA_W, cappedVolumeVA, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
+import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 
@@ -295,9 +295,10 @@ export function UsageView() {
   // and what it pays for load. Nine columns is what fits a phone; twelve is a
   // spreadsheet nobody can read.
   const [colView, setColView] = useState("base"); // "base" | "split"
-  // The volume credit λ. 1 is today's VA exactly, 0 charges purely per
-  // possession used; it opens between the two so the dial reads as a dial.
-  const [lambda, setLambda] = useState(0.5);
+  // The volume credit λ. 1 is plain VA exactly, 0 charges purely per
+  // possession used. Opens where the USG-ADJ switch itself sits, so the λ
+  // column reads as what that switch does until the dial is moved.
+  const [lambda, setLambda] = useState(VOLUME_CREDIT);
   // Min-minutes filter, same two-step arming as the D Rating tab: tap the MP
   // header to arm, then a row's MP to keep only players with at least that
   // many minutes.
@@ -326,7 +327,11 @@ export function UsageView() {
   }, [sel, scope]);
 
   const lga = sel ? lgaForSeason(sel) : null;
-  const lgaUsg = sel ? lgaForSeason(sel, true) : null;
+  // The FITTED-LINE baseline, not the mode's: this tab prices its USG and CAP
+  // columns against the regression itself, which the switch no longer uses
+  // (it ships the λ pivot — see VOLUME_CREDIT). The λ column below reads the
+  // same object, since the split only needs ū and μ off it.
+  const lgaUsg = sel ? fittedLineLga(sel) : null;
   const model = sel ? usageModelFor(sel) : null;
 
   // Every row scored once, tagged with whether it clears the sample floor.
@@ -503,7 +508,8 @@ export function UsageView() {
           EFF + VOL is today&apos;s VA split exactly in two — what he scored above the going
           rate on the possessions he used, and what he was worth for carrying more or less
           load than a median minute — and λ pays the second half at the dial&apos;s rate
-          (λ=1 is today&apos;s VA to the decimal, λ=0 charges purely per possession used) ·
+          (λ=1 is plain VA to the decimal, λ=0 charges purely per possession used;
+          the USG-ADJ switch ships λ={VOLUME_CREDIT}) ·
           Δ = {deltaVs === "cap" ? "CAP" : deltaVs === "spl" ? "λ" : "USG"} − VA, exactly what
           adopting that baseline moves this player&apos;s total VA by (the other nine
           categories don&apos;t change)
@@ -563,7 +569,11 @@ export function UsageView() {
               <>
                 <H k="eff" label="Eff" title="Points above the going rate on the possessions he used" />
                 <H k="vol" label="Vol" title="What he was worth for carrying more (or less) load than a median minute — Eff + Vol = VA exactly" />
-                <H k="splitVa" label={<span className="normal-case">λ</span>} title="Eff + λ × Vol — today's VA at λ=1, a pure per-possession charge at λ=0" />
+                <H
+                  k="splitVa"
+                  label={<span className="normal-case">λ{lambda === VOLUME_CREDIT ? "*" : ""}</span>}
+                  title={`Eff + λ × Vol — plain VA at λ=1, a pure per-possession charge at λ=0${lambda === VOLUME_CREDIT ? ". * this is what the USG-ADJ switch scores" : ""}`}
+                />
               </>
             )}
             <H k="delta" label="Δ" title={`${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that baseline moves his total by`} />

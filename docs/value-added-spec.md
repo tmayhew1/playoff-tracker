@@ -346,14 +346,13 @@ $$
 (\hat a_y, \hat b_y) \;=\; \arg\min_{a,b} \sum_i m_i \left(\frac{\mathrm{PTS}_i}{m_i} - a - b\,\frac{\mathrm{USG}_i}{m_i}\right)^{\!2}
 $$
 
-fit by `scripts/fit-usage-model.mjs` into `app/data/usage-model.json`. The
-scoring-volume term then reads
-
-$$
-\mathrm{VA}_{\text{Points}}^{\,\mathrm{USG}} \;=\; \mathrm{PTS} \;-\; \bigl(\hat a_y\,\mathrm{MP} \;+\; \hat b_y\,\mathrm{USG}\bigr)
-\qquad\text{in place of}\qquad
-\bigl(\tfrac{\mathrm{PTS}}{\mathrm{MP}} - \mu_{\mathrm{PTS}}\bigr)\mathrm{MP}.
-$$
+fit by `scripts/fit-usage-model.mjs` into `app/data/usage-model.json`, which is
+also where $\bar u$ comes from. Read as a baseline of its own —
+$\mathrm{PTS} - (\hat a_y\mathrm{MP} + \hat b_y\mathrm{USG})$ — it is the
+**fitted-line candidate**, a near-neighbour of the $\lambda = 0$ end that fits
+its own slope and intercept instead of pivoting through
+$(\bar u, \mu_{\mathrm{PTS}})$. The switch does not use it; the Usage tab
+prices its USG column against it.
 
 **Why the fit is per season and minutes-weighted.** Per season because the
 league scored $\pi = 0.845$ points per possession in 1970-71 and $1.117$ in
@@ -368,22 +367,22 @@ now a regressor rather than an omitted variable.
 
 **Two properties that make it safe to bolt on.**
 
-1. **Linearity.** The baseline is $\hat a\,\mathrm{MP} + \hat b\,\mathrm{USG}$,
-   linear in both, so the term is additive over games exactly as
+1. **Linearity.** Every member of the family is linear in $\mathrm{MP}$ and
+   $\mathrm{USG}$, so the term is additive over games exactly as
    $\mu_{\mathrm{PTS}}\mathrm{MP}$ is: a season's baseline is the sum of its
    games', and the volume-weighted blend a multi-season selection uses
-   (`lib/multi-season.js`) reproduces the per-season sum with no drift —
-   $\hat a^{*}$ weighted by MP and $\hat b^{*}$ by USG. It also gives a closed
-   form for converting a VA that was computed the standard way,
-   $\Delta = \mu_{\mathrm{PTS}}\mathrm{MP} - (\hat a\,\mathrm{MP} + \hat b\,\mathrm{USG})$,
+   (`lib/multi-season.js`) reproduces the per-season sum with no drift. It also
+   gives a closed form for converting a VA computed the standard way,
+   $\Delta = (1-\lambda)\bigl(\mu_{\mathrm{PTS}}\mathrm{MP} - \bar e\,\mathrm{USG}\bigr)$,
    which is how server-baked rows are re-priced client-side without re-deriving
    the other nine categories.
-2. **It refines the baseline rather than replacing it.** Over the 46 baked
-   seasons, evaluated at each season's median MINUTE of usage, the fitted line
-   sits $+0.002$ pts/min from $\mu_{\mathrm{PTS}}$ on average (worst $+0.016$,
-   1995-96). The median-usage player is scored essentially the same either way:
-   the mode redistributes value across the usage curve instead of moving the
-   whole league. Fit quality is $R^2 = 0.90$–$0.94$ per season.
+2. **It refines the baseline rather than replacing it.** Every line in the
+   family passes through $(\bar u, \mu_{\mathrm{PTS}})$, so the median-usage
+   player is scored **identically** at every $\lambda$, by construction: the
+   dial redistributes value across the usage curve instead of moving the whole
+   league. (The fitted-line candidate has that property only approximately — it
+   lands $+0.002$ pts/min from $\mu_{\mathrm{PTS}}$ at the median minute on
+   average, worst $+0.016$.)
 
 **What $\hat b$ is, and what the residual still carries.** The fitted slope runs
 $\hat b \approx 1.16$–$1.18$ in recent seasons, a little **above** that season's
@@ -400,7 +399,8 @@ $2 p_F \approx 1.56$ points per possession against a league $\pi \approx 1.12$ �
 and USG-ADJ paying for it is the intended behaviour, since the Free Throws
 category prices only the *conversion* ($\mathrm{FTM}/\mathrm{FTA}$ vs $p_F$) and
 never the rate at which a player draws the attempt. Under $\mu_{\mathrm{PTS}}$
-that skill was invisible in the volume term; under USG-ADJ it is paid.
+that skill was invisible in the volume term; under USG-ADJ it lands in the
+efficiency half, which is paid in full at every $\lambda$.
 
 (The weight was 2.2 in the first cut of this section, which inverted the sign:
 at 2.2 a free-throw attempt costs $\approx 1.5$ baseline points against the
@@ -413,38 +413,23 @@ $0.0014$ of it on $R^2$.)
 The weight is a single constant (`USG_FTA_W`, mirrored in the fit script);
 changing it requires a re-bake, since $\hat a,\hat b$ are fit to it.
 
-**Splitting the term instead of replacing it, and the dial between.** The
-scoring-volume term already contains both questions; it answers them as one
-number. Writing $\mathrm{PTS} = \bar e\,\mathrm{USG} + (\mathrm{PTS} - \bar e\,\mathrm{USG})$
-with $\bar e = \mu_{\mathrm{PTS}}/\bar u$ — the points a used possession is
-worth at the median MINUTE of usage $\bar u$ (`muUsg`, baked with the fit) —
-splits it exactly, with no residual:
-
-$$
-\Bigl(\tfrac{\mathrm{PTS}}{\mathrm{MP}} - \mu_{\mathrm{PTS}}\Bigr)\mathrm{MP}
-\;=\;
-\underbrace{\bigl(\mathrm{PTS} - \bar e\,\mathrm{USG}\bigr)}_{\text{efficiency}}
-\;+\;
-\underbrace{\bar e\,\bigl(\mathrm{USG} - \bar u\,\mathrm{MP}\bigr)}_{\text{volume}}
-$$
-
-Neither half is new value — they sum to the number VA already prints. What the
-split allows is paying them at different rates,
-$\mathrm{Points}(\lambda) = \text{efficiency} + \lambda\,\text{volume}$, which in
-baseline terms is a single line pivoting about the median-minute point
-$(\bar u, \mu_{\mathrm{PTS}})$:
-
-$$
-\lambda_{\text{Points}}(\lambda) \;=\; \bar e\,(1-\lambda)\,\tfrac{\mathrm{USG}}{\mathrm{MP}} \;+\; \lambda\,\mu_{\mathrm{PTS}}
-$$
-
-flat at $\lambda = 1$ (today's VA, to the decimal) and through the origin at
-$\lambda = 0$ (no credit for absorbing load at all). USG-ADJ sits near the
-$\lambda = 0$ end but fits its own slope and intercept rather than pivoting
-through that point; the capped candidate is a per-player choice between the two
-ends rather than a fixed $\lambda$. Every member of the family is linear in
-$\mathrm{MP}$ and $\mathrm{USG}$, so unlike the cap it keeps additivity.
-`scoring.js::usageSplit` / `splitVolumeVA`; wired to the Usage tab only.
+**The candidates, and why this one.** Three were built and read against each
+other on real seasons in the Usage tab before this was settled. The **fitted
+line** is the $\lambda \approx 0$ end: it strips the volume credit entirely, and
+the resulting term is $\approx \mathrm{PTS} - \hat b\,\mathrm{USG}$ with
+$\hat b \approx \pi$ — points above what the possessions were worth, an
+efficiency statistic rather than a value one, and it drops volume scorers off
+the board wholesale. A **capped** baseline
+$\min(\hat a + \hat b\,\mathrm{USG}/\mathrm{MP},\ \mu_{\mathrm{PTS}})$ turns out
+to equal the $\max$ of the two volume terms, so it can only ever raise a VA: it
+leaves every at-or-above-median-usage player exactly where he was (41% of a
+season, including the whole top of the board) and pays everyone else extra —
+and being a $\min$ it is not linear, so a season stops equalling the sum of its
+games (3.2 points of divergence on average over three playoff fields, up to 34).
+$\lambda = \tfrac12$ keeps what VA is for — volume is real work and still pays —
+while pricing what the possessions returned, and it is the only candidate that
+is both continuous in usage and additive over games. All four remain visible in
+the Usage tab; only this one is wired to the switch.
 
 **Reading it.** The Usage tab (`app/components/usage-view.js`) is the audit
 surface: per season and scope, every player-season's $\mathrm{PTS}/\mathrm{MP}$,

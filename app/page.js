@@ -10,7 +10,7 @@ import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
 import { UsageView } from "./components/usage-view";
-import { USG_FTA_W } from "./scoring";
+import { USG_FTA_W, VOLUME_CREDIT } from "./scoring";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 
 
@@ -44,10 +44,11 @@ function VABaselineToggle() {
       </div>
       {usgAdj && (
         <div className="mt-1.5 text-[10px] text-stone-500 italic leading-snug">
-          Scoring volume is measured against what the league scores on the possessions
-          he used (FGA + {USG_FTA_W}&thinsp;&times;&thinsp;FTA), not against the median minute —
-          so volume only pays above the going rate for that workload. The other nine
-          categories are unchanged.
+          Scoring volume splits in two — what he scored above the going rate on the
+          possessions he used (FGA + {USG_FTA_W}&thinsp;&times;&thinsp;FTA), and what he was
+          worth for carrying more or less load than a typical minute — and the second half
+          is paid at {VOLUME_CREDIT}&times;. Volume still counts, just not at face value.
+          The other nine categories are unchanged.
         </div>
       )}
     </div>
