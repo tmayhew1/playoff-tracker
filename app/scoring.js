@@ -2,6 +2,7 @@
 
 import { TEAMS, BRACKET, ROUND_BASE, ROUND_LABEL } from "./teams";
 import LEAGUE_AVERAGES_DATA from "./data/league-averages.json";
+import USAGE_MODEL_DATA from "./data/usage-model.json";
 
 // League averages per season, used to compute Value Added. Keeping VA
 // season-accurate matters for historical box scores (efficiency baselines
@@ -11,7 +12,233 @@ export const LEAGUE_AVERAGES = LEAGUE_AVERAGES_DATA;
 // Default (current season) — keeps existing callers unchanged.
 export const LGA = LEAGUE_AVERAGES["2025-26"];
 
-export const lgaForSeason = (season) => LEAGUE_AVERAGES[season] || LGA;
+// --- USG-ADJ: the usage-adjusted scoring baseline ---------------------------
+// The scoring-volume term charges a player the league's per-minute scoring
+// rate for the minutes he played: (PTS/MP − μ_PTS) · MP. μ_PTS is the same
+// number for a 30%-usage guard and a play-finishing big, which is the whole
+// point in the default view — VA pays for absorbing volume — and also its one
+// blind spot: it never asks whether the volume was worth having.
+//
+// USG-ADJ answers that instead, by splitting the term rather than replacing
+// it. Write PTS as efficiency × usage and price a used possession at what one
+// returns at the league's median MINUTE of usage, ē = μ_PTS / ū (ū = `muUsg`,
+// the minutes-weighted median of USG/MP, baked in data/usage-model.json).
+// Then today's term splits exactly, with no residual:
+//
+//   (PTS/MP − μ_PTS)·MP  =  (PTS − ē·USG)  +  ē·(USG − ū·MP)
+//                            └ efficiency ┘   └── volume ───┘
+//
+// — what he scored above the going rate on the possessions he used, and what
+// he was worth for carrying more (or less) load than a typical minute. The
+// mode pays the second half at VOLUME_CREDIT:
+//
+//   Points(λ) = efficiency + λ · volume
+//
+// which as a baseline is one line pivoting about the median-minute point
+// (ū, μ_PTS): flat at λ = 1, which is plain VA to the decimal, and through
+// the origin at λ = 0, which charges purely per possession used. Shipping at
+// λ = ½, so a possession consumed is charged half of what the league gets for
+// one and volume still pays — just not at face value.
+//
+// Two properties make it safe to bolt onto the existing engine:
+//
+//   • It is exactly linear. Baseline points = ē(1−λ)·USG + λ·μ_PTS·MP, so the
+//     term is additive over games the way μ_PTS·MP is — a season's baseline
+//     equals the sum of its games', and a multi-season blend
+//     (lib/multi-season.js) reproduces the per-season sum exactly. Only γ is
+//     non-linear, and it is untouched here.
+//   • It is a refinement of the baseline it replaces, not a new one. Every
+//     line in the family passes through the median-minute point, so the
+//     median-usage player is scored identically at every λ and the dial
+//     redistributes rather than re-levels.
+//
+// The regression that started this — PTS/MP ≈ a + b·(USG/MP), fit per season
+// by scripts/fit-usage-model.mjs — is NOT what the mode charges. It is the
+// evidence that the relationship is real (R² 0.90–0.94) and one of the
+// candidates the Usage tab still plots; only ū is load-bearing here.
+//
+// Everything else in VA — the nine other categories, γ, VA+ — is unchanged.
+// The model rides on the baseline object as `usgModel`, so any code path that
+// already threads an `lga` through picks the mode up with no other change.
+export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
+
+// How much of the volume half the mode still pays (spec §4.6). 1 is plain VA,
+// 0 charges purely per possession used; a half was chosen by reading the two
+// ends against each other on real seasons — it keeps the volume scorers on top
+// where they belong while pricing what the possessions returned.
+export const VOLUME_CREDIT = 0.5;
+
+// Possessions a free-throw attempt uses: Hollinger's coefficient, the same one
+// the possession estimate Π already uses (spec §1.2), so USG is denominated in
+// the possessions π prices rather than in a private currency of its own. KEEP
+// IN SYNC with FTA_W in scripts/fit-usage-model.mjs — a model fit to one weight
+// and read at another is not a baseline.
+export const USG_FTA_W = USAGE_MODEL_DATA.ftaWeight ?? 0.475;
+
+// Possessions used by a stat line, the model's one regressor.
+export const possUsed = (p) => (p?.fga || 0) + USG_FTA_W * (p?.fta || 0);
+
+export const usageModelFor = (season) => USAGE_MODELS[season] || null;
+
+// A season's baselines with the usage model attached (or the plain baselines
+// back, when that season has no fit — a missing model must read as "mode
+// unavailable here", never as a zero baseline; spec invariant 5). Cached so
+// repeated calls return the SAME object: the client threads these through
+// useMemo dependency lists, which compare by identity.
+const usgAdjCache = new Map();
+
+export function usgAdjLga(lga, season) {
+  const model = usageModelFor(season);
+  // A season fit before `muUsg` existed carries no pivot point, so the mode
+  // has nothing to pivot on and the season stays on μ_PTS — absent, never a
+  // wrong baseline (spec invariant 5).
+  if (!lga || !(model?.muUsg > 0)) return lga;
+  if (!usgAdjCache.has(lga)) {
+    usgAdjCache.set(lga, { ...lga, usgModel: model, volumeCredit: VOLUME_CREDIT });
+  }
+  return usgAdjCache.get(lga);
+}
+
+// The fitted line as a baseline in its own right — the λ ≈ 0 cousin the Usage
+// tab plots and prices its USG and CAP columns against. Carries the model but
+// no volume credit, which is what tells baselinePts to read a and b instead of
+// pivoting. Not reachable from the switch; see spec §4.6.
+const fittedCache = new Map();
+
+export function fittedLineLga(season) {
+  const lga = LEAGUE_AVERAGES[season], model = usageModelFor(season);
+  if (!lga || !model) return lga || LGA;
+  if (!fittedCache.has(lga)) fittedCache.set(lga, { ...lga, usgModel: model });
+  return fittedCache.get(lga);
+}
+
+export const lgaForSeason = (season, usgAdj = false) => {
+  const lga = LEAGUE_AVERAGES[season] || LGA;
+  return usgAdj ? usgAdjLga(lga, season) : lga;
+};
+
+// The league's expected POINTS for this workload — the counterfactual the
+// scoring-volume term subtracts. μ_PTS · MP normally; the fitted line's
+// prediction, a·MP + b·USG, when the baseline carries a usage model.
+export function baselinePts(p, lga) {
+  const mp = p?.mp || 0;
+  const m = lga?.usgModel;
+  if (!m) return lga.laPTSperM * mp;
+  // No volume credit on the baseline object means the fitted line itself (the
+  // Usage tab's USG column); with one, the pivoting family the mode ships.
+  const lam = lga.volumeCredit;
+  if (lam == null) return m.a * mp + m.b * possUsed(p);
+  const rate = m.muUsg > 0 ? lga.laPTSperM / m.muUsg : 0;
+  if (!(rate > 0)) return lga.laPTSperM * mp;
+  return rate * (1 - lam) * possUsed(p) + lam * lga.laPTSperM * mp;
+}
+
+// The scoring-volume category. One definition, shared by valueAddParts,
+// valueAddByCategory and the two breakdown panels, so all four agree in both
+// modes (spec invariant 1).
+export function volumeVA(p, lga) {
+  return (p?.pts || 0) - baselinePts(p, lga);
+}
+
+// What USG-ADJ does to a VA total that was computed the standard way. The
+// term is linear in MP and USG, so the two modes differ by a closed-form
+// amount — which lets a row that arrives with `va` already baked (the playoff
+// leaderboard route, the /api/players index) be converted without re-deriving
+// the other nine categories from its box score.
+// --- Under review: the same model with a ceiling ----------------------------
+// A candidate third baseline, wired to nothing but the Usage tab: charge the
+// fitted line OR the median minute, whichever is LOWER —
+//
+//   λ_Points = min( a + b·(USG/MP),  μ_PTS )
+//
+// so a player is never asked to clear a bar above the league's typical minute,
+// and a low-usage player is not charged for scoring he was never given the
+// possessions to do. Equivalently (and the identity is worth knowing when
+// reading the tab) it is `max` of the two volume terms:
+//
+//   PTS − min(pred, μ)·MP  =  max( PTS − pred·MP,  PTS − μ·MP )
+//
+// which is why it can only ever raise a VA, never lower one: every player with
+// pred ≥ μ scores exactly the standard number, and everyone else gains.
+//
+// Two properties differ from USG-ADJ and matter if it is ever promoted to the
+// switch. It is continuous in usage (min of two continuous functions), so
+// there is no cliff at the threshold — but it is NOT linear, so a season's
+// baseline no longer equals the sum of its games' (a player whose game-level
+// usage straddles μ picks a different branch game to game; measured on three
+// playoff fields, season and Σgames diverge by 3.2 points on average and up to
+// 34). The closed-form conversion `usgAdjDelta` relies on that linearity, so
+// this baseline would need rows re-scored from the box score rather than
+// re-priced.
+export function cappedBaselinePts(p, lga) {
+  const mp = p?.mp || 0;
+  const m = lga?.usgModel;
+  if (!m || !(mp > 0)) return (lga?.laPTSperM || 0) * mp;
+  return Math.min(m.a + m.b * (possUsed(p) / mp), lga.laPTSperM) * mp;
+}
+
+export function cappedVolumeVA(p, lga) {
+  return (p?.pts || 0) - cappedBaselinePts(p, lga);
+}
+
+// --- Under review: splitting the volume term, and the dial between them -----
+// The scoring-volume term already contains both questions; it just answers
+// them as one number. Write PTS as efficiency × usage —
+//
+//   PTS = ē·USG + (PTS − ē·USG),   ē = the points a possession used is worth
+//
+// — and pick ē so that the league's median minute breaks even, ē = μ_PTS / ū,
+// where ū is the minutes-weighted median usage rate (`muUsg`, baked alongside
+// the fit). Then the standard term splits EXACTLY, with no residual:
+//
+//   (PTS/MP − μ)·MP  =  (PTS − ē·USG)  +  ē·(USG − ū·MP)
+//                        └ efficiency ┘   └── volume ───┘
+//
+//   efficiency  what he scored above the going rate on the possessions he used
+//   volume      what he was worth for taking on more (or less) of the load
+//                than a typical minute carries, priced at that same rate
+//
+// Neither half is new value: they sum to the number VA already prints. What
+// they allow is paying them at different rates —
+//
+//   Points(λ) = efficiency + λ · volume
+//
+// — where λ = 1 is today's VA to the decimal, λ = 0 charges purely per
+// possession used (no credit for absorbing load at all), and anything between
+// is a partial credit. In baseline terms the family is one line pivoting about
+// the median-minute point (ū, μ):
+//
+//   λ_Points(λ) = ē(1−λ)·(USG/MP) + λ·μ      per minute
+//
+// flat at λ = 1, through the origin at λ = 0. USG-ADJ is close to the λ = 0
+// end (it fits its own slope and intercept rather than pivoting through the
+// median point), and the capped candidate is a per-player choice between the
+// λ = 0 line and the λ = 1 line rather than a fixed λ.
+//
+// Linear in MP and USG at every λ, so unlike the cap it keeps the additivity
+// the rest of VA relies on.
+export function usageSplit(p, lga) {
+  const mp = p?.mp || 0;
+  const m = lga?.usgModel;
+  const mu = lga?.laPTSperM || 0;
+  if (!m || !(m.muUsg > 0) || !(mp > 0)) return null;
+  const rate = mu / m.muUsg;               // ē — points per possession used
+  const eff = (p.pts || 0) - rate * possUsed(p);
+  const vol = rate * (possUsed(p) - m.muUsg * mp);
+  return { eff, vol, rate };
+}
+
+// The volume term at a given credit λ. Falls back to the standard term when
+// the season carries no model, so a missing fit reads as "no dial here".
+export function splitVolumeVA(p, lga, lambda = 1) {
+  const s = usageSplit(p, lga);
+  return s ? s.eff + lambda * s.vol : volumeVA(p, { ...lga, usgModel: null });
+}
+
+export function usgAdjDelta(p, lga) {
+  if (!lga?.usgModel || !(p?.mp > 0)) return 0;
+  return lga.laPTSperM * p.mp - baselinePts(p, lga);
+}
 
 // --- Rebound credit (γ) -----------------------------------------------------
 // A rebound is the one box-score event that is guaranteed to be allocated and
@@ -55,7 +282,7 @@ export function valueAddParts(p, lga = LGA) {
   const tpAdd = ((tpm / (tpa || 1)) - lga.la3P) * tpa;
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
-  const volume = ((pts / mp) - lga.laPTSperM) * mp;
+  const volume = volumeVA(p, lga);
   const efficiency = 3 * tpAdd + 2 * twoAdd + ftAdd;
   const astVal = ((ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG);
   const stlVal = ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss;
@@ -92,7 +319,7 @@ export function valueAddByCategory(p, lga = LGA) {
   const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
   const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
   return {
-    "Points": ((pts / mp) - lga.laPTSperM) * mp,
+    "Points": volumeVA(p, lga),
     "3-Pointers": 3 * tpAdd,
     "2-Pointers": 2 * twoAdd,
     "Free Throws": ftAdd,

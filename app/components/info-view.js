@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LGA } from "../scoring";
+import { LGA, USG_FTA_W, VOLUME_CREDIT, usageModelFor } from "../scoring";
 import { timeAgo } from "../lib/format";
 
 
@@ -35,6 +35,9 @@ export function InfoView() {
     { label: "Blocks", f: `( BLK/min − ${fmt(LGA.laBLKperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
     { label: "Turnovers", f: `−( TOV/min − ${fmt(LGA.laTOVperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
   ];
+  // The USG-ADJ line for the current season, read from the fitted model rather
+  // than typed in, for the same reason the constants above are.
+  const USG = usageModelFor("2025-26");
   const REB = [
     { label: "Def. rebounds", f: `γ × ( DRB/min − ${fmt(LGA.laDRBperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laORBrate)}` },
     { label: "Off. rebounds", f: `γ × ( ORB/min − ${fmt(LGA.laORBperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
@@ -108,6 +111,29 @@ export function InfoView() {
           <span className="tabular-nums"> 1.05</span> on the offensive; a player who covers a third of his end reaches
           <span className="tabular-nums"> 1.5</span>. It reads only his own line, never his teammates&apos;.
         </p>
+        {USG && (
+          <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
+            <span className="font-semibold">USG-ADJ</span> is a second reading of that first line.
+            Scoring volume normally charges every player the same league rate for his minutes,
+            which is the point — VA pays for absorbing volume — but it never asks whether the
+            volume was worth having. It turns out that one line already contains both questions,
+            and splits in two exactly:
+            {" "}<span className="tabular-nums">(PTS/min − {fmt(LGA.laPTSperM)}) × min = (PTS − ē × poss. used) + ē × (poss. used − {fmt(USG.muUsg)} × min)</span>.
+            The first half is what he scored above the going rate
+            {" "}<span className="tabular-nums">ē = {fmt(LGA.laPTSperM / USG.muUsg)}</span> on the
+            possessions he used (poss. used = FGA + <span className="tabular-nums">{USG_FTA_W}</span> × FTA);
+            the second is what he was worth for carrying more — or less — load than a typical minute,
+            priced at the same rate. Flip <span className="font-semibold">Scoring baseline</span>
+            {" "}(above the boards, on Explore and any season tab) and the second half is paid at
+            {" "}<span className="tabular-nums">{VOLUME_CREDIT}×</span> instead of in full: volume still
+            counts, just not at face value. The other nine categories are untouched, and every setting
+            of that dial scores the median-usage player identically — it redistributes value rather
+            than re-levelling it. Legacy and College keep the standard baseline. The
+            {" "}<span className="font-semibold">Usage</span> tab is where this was worked out: it plots
+            the cloud, draws the candidate baselines over it, and lists what each one pays every
+            player-season.
+          </p>
+        )}
         <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>
       </Step>
 

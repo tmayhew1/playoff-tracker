@@ -253,6 +253,13 @@ rebound_gamma <- function(reb, mp, lga, rate) {
 # Translated 1:1 from app/scoring.js valueAddParts (and the matching copy in
 # app/api/leaderboard/route.js). KEEP IN SYNC with those JS definitions.
 # `lga` is one season's entry from league-averages.json.
+#
+# The USG-ADJ scoring baseline (spec section 4.6) is deliberately NOT here: it
+# is a reading the app switches on at display time, and everything baked stays
+# on the standard baseline. The client re-prices what these bakes emit, which
+# it can do in closed form because that term is linear in MP and USG. So the
+# `volume` line below still matches app/scoring.js with the mode off, which is
+# the only mode the bake ever sees.
 .den <- function(x) if (is.na(x) || x == 0) 1 else x  # JS `x || 1`
 
 value_add_parts <- function(p, lga) {

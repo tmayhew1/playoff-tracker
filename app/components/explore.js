@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { lgaForSeason } from "../scoring";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
 import { PlayerExplorer } from "./player-explorer";
 import { teamColor, withAlpha } from "../lib/format";
+import { useSeasonLga } from "../lib/va-mode";
 
 
 export const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
@@ -248,7 +248,9 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
     return () => { cancelled = true; };
   }, [season, mode, scope]);
 
-  const lga = lgaForSeason(season);
+  // Whichever baseline the USG-ADJ switch is on (lib/va-mode.js). Everything
+  // below — the leaderboard, the series box scores — is scored against it.
+  const lga = useSeasonLga(season);
   const byRound = useMemo(() => {
     const out = { r1: [], r2: [], r3: [], r4: [] };
     for (const s of data?.series || []) {

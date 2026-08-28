@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { scoreHistory, historyRounds } from "../historical";
-import { valueAddParts, potentialPoints, lgaForSeason } from "../scoring";
+import { valueAddParts, potentialPoints } from "../scoring";
 import { LiveGameBanner } from "./boxscore";
 import { BreakdownList, ScoreCard } from "./scoreboard";
 import { VABreakdown } from "./va-breakdown";
 import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, withAlpha } from "../lib/format";
+import { useSeasonLga } from "../lib/va-mode";
 
 
 export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
@@ -414,6 +415,9 @@ export function HistoryRoundSection({ round, teamsMap, lga, season }) {
 
 
 export function HistoryView({ season }) {
+  // Baselines for this season under the active USG-ADJ mode (lib/va-mode.js);
+  // the series box scores below are all scored against it.
+  const lga = useSeasonLga(season);
   const data = scoreHistory(season);
   const [showBreakdown, setShowBreakdown] = useState(null);
   const [histGames, setHistGames] = useState(null);
@@ -442,7 +446,6 @@ export function HistoryView({ season }) {
   if (!data) return <div className="text-stone-500 text-xs italic">No data for {season}</div>;
   const { breakdown, totals, meta } = data;
   const rounds = historyRounds(season, histGames);
-  const lga = lgaForSeason(season);
   const hasGames = rounds?.some((r) => r.series.some((s) => s.games.length > 0));
 
   return (

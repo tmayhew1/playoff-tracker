@@ -1,6 +1,6 @@
 "use client";
 
-import { LEAGUE_AVERAGES, ZONES, hasZoneData, lgaForSeason, valueAddByCategory } from "../scoring";
+import { LEAGUE_AVERAGES, ZONES, hasZoneData, lgaForSeason, possUsed, valueAddByCategory } from "../scoring";
 import { normalizeName, seasonTag } from "./format";
 import { VA_CATEGORY_ORDER, perGameVAVec } from "./va";
 
@@ -87,13 +87,13 @@ function zonesComplete(seasons) {
 // that rate. A weight that sums to zero (no threes attempted across the whole
 // selection, say) falls back to minutes, then to a plain mean, so the rate is
 // always a real number even when the player never used it.
-export function blendLeagueAverages(seasons, withZones = true) {
-  const lgas = seasons.map((s) => lgaForSeason(s.season));
+export function blendLeagueAverages(seasons, withZones = true, lgaFor = lgaForSeason) {
+  const lgas = seasons.map((s) => lgaFor(s.season));
   if (lgas.length === 1) return lgas[0];
   // Every key any of the selected seasons defines, so a rate the bake only
   // added later still comes through.
   const keys = new Set();
-  for (const l of lgas) for (const k of Object.keys(l)) if (k !== "zoneFG") keys.add(k);
+  for (const l of lgas) for (const k of Object.keys(l)) if (k !== "zoneFG" && k !== "usgModel") keys.add(k);
 
   const weighted = (get, weightOf) => {
     let num = 0, den = 0;
@@ -131,6 +131,23 @@ export function blendLeagueAverages(seasons, withZones = true) {
       if (v != null) zoneFG[z.key] = v;
     }
     if (Object.keys(zoneFG).length) out.zoneFG = zoneFG;
+  }
+
+  // USG-ADJ's scoring baseline (a·MP + b·USG) blends by the same rule and for
+  // the same reason as the shooting rates above: each coefficient weighted by
+  // the quantity it multiplies. That makes the blended line's prediction over
+  // the whole selection exactly the sum of the per-season predictions —
+  //
+  //   Σ_s (a_s·MP_s + b_s·USG_s)  ==  a*·ΣMP + b*·ΣUSG
+  //
+  // — so the aggregate's scoring-volume VA equals the seasons' own, the same
+  // identity the Points category has with μ_PTS. All-or-nothing across the
+  // selection, like the zones: half a run priced against a fitted line and
+  // half against the median minute is neither baseline.
+  if (lgas.every((l) => l.usgModel)) {
+    const a = blendOne((l) => l.usgModel.a, MP_WEIGHT);
+    const b = blendOne((l) => l.usgModel.b, (s) => possUsed(s));
+    if (a != null && b != null) out.usgModel = { a, b };
   }
   return out;
 }
@@ -182,7 +199,7 @@ function dominantTeam(seasons) {
 // string: it's a real season, so any code path that reaches for
 // lgaForSeason(row.season) degrades to a sane baseline instead of the default
 // one. Display goes through spanLabel.
-export function aggregateSeasons(seasonRows, identity = {}) {
+export function aggregateSeasons(seasonRows, identity = {}, lgaFor = lgaForSeason) {
   const seasons = [...seasonRows].sort((a, b) => a.season.localeCompare(b.season));
   const row = {
     name: identity.name || seasons[0]?.name || "",
@@ -206,7 +223,7 @@ export function aggregateSeasons(seasonRows, identity = {}) {
   // same VA the career table shows.
   const catVA = {};
   for (const s of seasons) {
-    const by = valueAddByCategory(s, lgaForSeason(s.season));
+    const by = valueAddByCategory(s, lgaFor(s.season));
     for (const k of Object.keys(by)) catVA[k] = (catVA[k] || 0) + by[k];
   }
 
@@ -220,7 +237,7 @@ export function aggregateSeasons(seasonRows, identity = {}) {
   row.multi = true;
   row.seasons = seasons.map((s) => ({ ...s, name: row.name, slug: row.slug }));
   row.seasonKeys = new Set(seasons.map((s) => s.season));
-  row.lga = blendLeagueAverages(seasons, zonesOk);
+  row.lga = blendLeagueAverages(seasons, zonesOk, lgaFor);
   row.catVA = catVA;
   row.spanLabel = seasonSpanLabel(seasons);
   return row;
@@ -294,8 +311,8 @@ export function careerYearsOf(allSeasons, pickedSeasonKeys) {
 
 // The baseline a row is measured against: an aggregate carries its own blended
 // one, an ordinary season row looks its season up.
-export function lgaForRow(row) {
-  return row?.lga || lgaForSeason(row?.season) || LEAGUE_AVERAGES["2025-26"];
+export function lgaForRow(row, lgaFor = lgaForSeason) {
+  return row?.lga || lgaFor(row?.season) || LEAGUE_AVERAGES["2025-26"];
 }
 
 
@@ -335,7 +352,7 @@ export const RUN_MIN_GP = 8;    // a season shorter than this can't carry a run
 export const RUN_MPG_BAND = 7;  // same minutes-role gate the season comps use
 export const RUN_MIN_COS = 0.3; // below this it's a different archetype, not a comp
 
-export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8 } = {}) {
+export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8, lgaFor = lgaForSeason } = {}) {
   const n = Math.max(1, Math.round(runLen));
   if (!players?.length || !selfRow || !(selfRow.gp > 0) || !(selfRow.mp > 0)) return [];
   const qVec = perGameVAVec(selfRow, lgaForRow(selfRow));
@@ -356,7 +373,7 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
     // season comps already do, and the windows themselves are adds and
     // subtracts on a 10-slot accumulator.
     const cats = career.map((s) => {
-      const by = valueAddByCategory(s, lgaForSeason(s.season));
+      const by = valueAddByCategory(s, lgaFor(s.season));
       return VA_CATEGORY_ORDER.map((k) => by[k] || 0);
     });
     const sum = new Array(dim).fill(0);

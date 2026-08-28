@@ -315,6 +315,137 @@ $$
 \mathrm{VA}/36 = 36\,\frac{\mathrm{VA}}{\mathrm{MP}}
 $$
 
+### 4.6 USG-ADJ — the usage-adjusted scoring baseline
+
+An optional reading of the **scoring-volume term only**, selected by a switch in
+the app (Explore and the season tabs). Everything else in §4 is unchanged.
+
+**The gap it closes.** The volume term charges $\mu_{\mathrm{PTS}}$ per minute
+to a 32%-usage guard and a play-finishing centre alike. That is deliberate
+(§4.2, *volume and efficiency are separate terms*) — absorbing possessions is
+real work — but the term never asks the other question: *was the volume worth
+having?* USG-ADJ asks that one instead.
+
+**Usage.** Possessions used by a stat line:
+
+$$
+\mathrm{USG} \;=\; \mathrm{FGA} \;+\; 0.475\,\mathrm{FTA}.
+$$
+
+$0.475$ is Hollinger's free-throw coefficient — the same one the possession
+estimate $\Pi$ uses in §1.2. Sharing it is deliberate: $\mathrm{USG}$ is then
+denominated in the possessions $\pi$ already prices, not in a second private
+currency. It is the player-side half of $\Pi$, minus the turnovers (a turnover
+is a possession used, but it produces no shot, and it is already paid for in its
+own category).
+
+**The model.** For each season $y$, over **every** player-season $i$ in that
+season's regular-season table, with minutes $m_i$ as weights:
+
+$$
+(\hat a_y, \hat b_y) \;=\; \arg\min_{a,b} \sum_i m_i \left(\frac{\mathrm{PTS}_i}{m_i} - a - b\,\frac{\mathrm{USG}_i}{m_i}\right)^{\!2}
+$$
+
+fit by `scripts/fit-usage-model.mjs` into `app/data/usage-model.json`, which is
+also where $\bar u$ comes from. Read as a baseline of its own —
+$\mathrm{PTS} - (\hat a_y\mathrm{MP} + \hat b_y\mathrm{USG})$ — it is the
+**fitted-line candidate**, a near-neighbour of the $\lambda = 0$ end that fits
+its own slope and intercept instead of pivoting through
+$(\bar u, \mu_{\mathrm{PTS}})$. The switch does not use it; the Usage tab
+prices its USG column against it.
+
+**Why the fit is per season and minutes-weighted.** Per season because the
+league scored $\pi = 0.845$ points per possession in 1970-71 and $1.117$ in
+2024-25: one pooled line would hand every modern player a surplus and every
+older one a deficit, which is invariant 2 broken by construction. Playoff runs
+use their own season's regular-season fit, exactly as $p_2,p_3,\mu_{\mathrm{PTS}}$
+already do. Minutes-weighted for the reason §2 gives, one level up: the line
+describes the median *minute*, not the median roster spot. The skew argument
+that made $\mu_{\mathrm{PTS}}$ a median rather than a mean does **not** carry
+over — what skewed that mean was precisely the high-usage stars, and usage is
+now a regressor rather than an omitted variable.
+
+**Two properties that make it safe to bolt on.**
+
+1. **Linearity.** Every member of the family is linear in $\mathrm{MP}$ and
+   $\mathrm{USG}$, so the term is additive over games exactly as
+   $\mu_{\mathrm{PTS}}\mathrm{MP}$ is: a season's baseline is the sum of its
+   games', and the volume-weighted blend a multi-season selection uses
+   (`lib/multi-season.js`) reproduces the per-season sum with no drift. It also
+   gives a closed form for converting a VA computed the standard way,
+   $\Delta = (1-\lambda)\bigl(\mu_{\mathrm{PTS}}\mathrm{MP} - \bar e\,\mathrm{USG}\bigr)$,
+   which is how server-baked rows are re-priced client-side without re-deriving
+   the other nine categories.
+2. **It refines the baseline rather than replacing it.** Every line in the
+   family passes through $(\bar u, \mu_{\mathrm{PTS}})$, so the median-usage
+   player is scored **identically** at every $\lambda$, by construction: the
+   dial redistributes value across the usage curve instead of moving the whole
+   league. (The fitted-line candidate has that property only approximately — it
+   lands $+0.002$ pts/min from $\mu_{\mathrm{PTS}}$ at the median minute on
+   average, worst $+0.016$.)
+
+**What $\hat b$ is, and what the residual still carries.** The fitted slope runs
+$\hat b \approx 1.16$–$1.18$ in recent seasons, a little **above** that season's
+$\pi$ ($1.117$ in 2024-25). That is the turnover exclusion showing up where it
+should: a possession that reaches a shot or a foul is worth more than the
+average possession, because the average includes the ones that end in a
+giveaway.
+
+The residual is not white. Its minutes-weighted correlation with
+$\mathrm{FTA}/\mathrm{FGA}$ is $+0.34$ pooled across seasons: players who get to
+the line score **above** the line fit to their usage. That is a real property of
+the shot mix rather than an indexing error — a trip to the line returns about
+$2 p_F \approx 1.56$ points per possession against a league $\pi \approx 1.12$ —
+and USG-ADJ paying for it is the intended behaviour, since the Free Throws
+category prices only the *conversion* ($\mathrm{FTM}/\mathrm{FTA}$ vs $p_F$) and
+never the rate at which a player draws the attempt. Under $\mu_{\mathrm{PTS}}$
+that skill was invisible in the volume term; under USG-ADJ it lands in the
+efficiency half, which is paid in full at every $\lambda$.
+
+(The weight was 2.2 in the first cut of this section, which inverted the sign:
+at 2.2 a free-throw attempt costs $\approx 1.5$ baseline points against the
+$\approx 0.78$ it returns, the residual correlation is $-0.57$, and
+$R^2$ falls to $0.88$. Foul-drawing was being charged as if it were the most
+expensive way to use a possession. Hollinger's $0.475$ is both the better fit
+and the one that agrees with $\Pi$; $1/2.2 = 0.4545$ lands within
+$0.0014$ of it on $R^2$.)
+
+The weight is a single constant (`USG_FTA_W`, mirrored in the fit script);
+changing it requires a re-bake, since $\hat a,\hat b$ are fit to it.
+
+**The candidates, and why this one.** Three were built and read against each
+other on real seasons in the Usage tab before this was settled. The **fitted
+line** is the $\lambda \approx 0$ end: it strips the volume credit entirely, and
+the resulting term is $\approx \mathrm{PTS} - \hat b\,\mathrm{USG}$ with
+$\hat b \approx \pi$ — points above what the possessions were worth, an
+efficiency statistic rather than a value one, and it drops volume scorers off
+the board wholesale. A **capped** baseline
+$\min(\hat a + \hat b\,\mathrm{USG}/\mathrm{MP},\ \mu_{\mathrm{PTS}})$ turns out
+to equal the $\max$ of the two volume terms, so it can only ever raise a VA: it
+leaves every at-or-above-median-usage player exactly where he was (41% of a
+season, including the whole top of the board) and pays everyone else extra —
+and being a $\min$ it is not linear, so a season stops equalling the sum of its
+games (3.2 points of divergence on average over three playoff fields, up to 34).
+$\lambda = \tfrac12$ keeps what VA is for — volume is real work and still pays —
+while pricing what the possessions returned, and it is the only candidate that
+is both continuous in usage and additive over games. All four remain visible in
+the Usage tab; only this one is wired to the switch.
+
+**Reading it.** The Usage tab (`app/components/usage-view.js`) is the audit
+surface: per season and scope, every player-season's $\mathrm{PTS}/\mathrm{MP}$,
+the line's prediction $\hat a + \hat b\,(\mathrm{USG}/\mathrm{MP})$ at his own
+usage, the scoring-volume term under each candidate baseline (including the split's two halves and the dial), and their difference —
+which, because the other nine categories are identical in both modes, is the
+whole gap between a player's two VA totals.
+
+**Scope.** The switch re-prices Explore (both boards, every scope), the season
+tabs, and everything derived from them — category breakdowns, league pools and
+percentile ranks, closest comps, multi-season selections. It does **not** touch
+Legacy (leverage-weighted career numbers are baked server-side against the
+standard baseline) or College (no fitted model exists for the college
+population). A season with no fitted model reads as *mode unavailable* and
+keeps $\mu_{\mathrm{PTS}}$ — never a zero baseline (invariant 5).
+
 ---
 
 ## 5. Exact decomposition
@@ -836,7 +967,12 @@ own class rather than mixed into one column.
    from a mis-parsed page.
 5. Any category the source does not carry is **absent**, never zero-filled — a
    missing measurement must not read as below-average performance.
-6. Championship leverage **reweights** the decomposition and never enters it, so
+6. USG-ADJ (§4.6) replaces the baseline $\lambda_{\text{Points}}$ and nothing
+   else. It is a per-player baseline, like $\gamma$ is a per-player price, so
+   invariant 1 holds within either mode; the two modes are separate currencies
+   and their numbers are never mixed on one surface, nor with a Legacy or
+   College number.
+7. Championship leverage **reweights** the decomposition and never enters it, so
    invariant 1 holds unchanged on every surface (§7.4). Within a series its
    weight is conserved: the two teams' shares sum to $1$ at every $\omega$, so
    $\omega$ only redistributes the pot and can never create weight.
