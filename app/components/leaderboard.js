@@ -336,9 +336,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     onNavHandled?.();
   }, [pendingNav, season, scope, poPlayers, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
 
-  const title = scope === "regular" ? "Regular Season Leaderboard"
-    : scope === "combined" ? "Combined Leaderboard"
-    : "Playoff Leaderboard";
+  const title = scope === "regular" ? "Regular Season Leaders"
+    : scope === "combined" ? "Combined Leaders"
+    : "Playoff Leaders";
   // What has to finish before this scope can render.
   const scopeLoading = scope === "regular" ? rsLoading : scope === "combined" ? (loading || rsLoading) : loading;
   const scopeError = scope === "regular" ? rsError : error;
@@ -810,7 +810,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       })()}
       {shown.length === 0 && (
         <div className="px-3 py-3 text-[10px] text-stone-400 italic text-center">
-          No {teamFilter ? `${teamFilter} ` : ""}players in the {season} {title.replace(" Leaderboard", "").toLowerCase()} board{minGames != null ? ` with ${minGames}+ games` : ""}.
+          No {teamFilter ? `${teamFilter} ` : ""}players in the {season} {title.replace(" Leaders", "").toLowerCase()} board{minGames != null ? ` with ${minGames}+ games` : ""}.
         </div>
       )}
       {!teamFilter && minGames == null && all.length > 10 && (

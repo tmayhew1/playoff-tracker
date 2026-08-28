@@ -5,6 +5,7 @@ import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
 import { PlayerExplorer } from "./player-explorer";
+import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 
@@ -271,11 +272,14 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
       </div>
-      <div className="mb-4 flex gap-1.5">
+      <div className="mb-2 flex gap-1.5">
         <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
         <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
         <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
       </div>
+      {/* Last of the three page-level choices, under the two that pick WHICH
+          games are counted — this one only prices them. */}
+      <VABaselineToggle />
 
       {mode === "player" ? (
         <PlayerExplorer

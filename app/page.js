@@ -10,49 +10,8 @@ import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
 import { UsageView } from "./components/usage-view";
-import { VAModeProvider, useVAMode } from "./lib/va-mode";
-
-
-// The USG-ADJ switch (app/lib/va-mode.js, spec §4.6). It sits under the tab
-// strip rather than inside any one card because it re-prices every VA on the
-// page at once — the leaderboard, the drill-in categories, By Player's career
-// table, the box scores — and a control that global reads wrong tucked into a
-// card header.
-//
-// Shown only on the tabs it actually changes. Legacy is baked server-side
-// against the standard baseline and College has no fitted model, so on those
-// tabs the switch would be a lie; Info explains the mode in prose instead.
-function VABaselineToggle() {
-  const { usgAdj, setUsgAdj } = useVAMode();
-  const cls = (active) =>
-    `px-2 py-1 text-[9px] uppercase tracking-[0.15em] border ${active
-      ? "bg-stone-900 text-white border-stone-900"
-      : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
-  return (
-    <div className="mb-4">
-      {/* Wraps rather than overflows: at 375px and below the label plus the
-          two spelled-out buttons are wider than the page, and on one line the
-          group ran off the right edge (taking the whole page into a sideways
-          scroll on the narrowest phones). Wrapped, the pair drops to its own
-          line under the label and stays right-aligned. */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 shrink-0">Scoring baseline</span>
-        <div className="inline-flex ml-auto shrink-0">
-          <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj}>
-            League median
-          </button>
-          {/* Spelled out here, where there is room for it and where a reader
-              meeting the mode for the first time will be looking. The boards
-              keep the abbreviation on their own chips (lib/va-mode.js), and
-              Info carries the explanation in prose. */}
-          <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj}>
-            Usage-adjusted
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { VABaselineToggle } from "./components/va-baseline-toggle";
+import { VAModeProvider } from "./lib/va-mode";
 
 
 export default function PlayoffTracker() {
@@ -147,7 +106,10 @@ function Tracker() {
           </button>
         </div>
 
-        {(tab === "explore" || seasons.includes(tab)) && <VABaselineToggle />}
+        {/* A season tab has no selectors of its own, so the switch sits at the
+            top of the page. Explore renders its own copy below the By
+            Season/By Player and scope rows — see ExploreView. */}
+        {seasons.includes(tab) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}

@@ -7,7 +7,7 @@ import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, compName, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
@@ -1450,7 +1450,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const cells = (
       <>
         <span className="text-right text-[9px] opacity-70">{rank}</span>
-        <span className="truncate text-[10px] font-medium">{r.name}</span>
+        {/* First initial + surname ("S. Gilgeous-Alexander"). The name column
+            is the only elastic one in a six-column row, and full given names
+            were truncating mid-word on a phone; the initial still separates
+            same-surname players. Full names stay in the aria-label below. */}
+        <span className="truncate text-[10px] font-medium" title={r.name}>{compName(r.name)}</span>
         <span className="text-right text-[9px]">{r.gp}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
@@ -1700,7 +1704,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         {d.top.map((x) => (
           <div key={"t" + x.rank} style={allRowGrid} className={`grid gap-x-1 items-center px-1 py-[2px] tabular-nums ${d.selfAll && x.rank === d.selfAll.rank ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
             <span className="text-right text-[9px] opacity-70">{x.rank}</span>
-            <span className="truncate text-[10px]">{x.r.name} <span className="opacity-60">{x.r.season}</span></span>
+            <span className="truncate text-[10px]" title={x.r.name}>{compName(x.r.name)} <span className="opacity-60">{x.r.season}</span></span>
             <span className="text-right text-[10px] font-semibold">{sgn(x.m)}</span>
           </div>
         ))}
@@ -1709,7 +1713,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             <div className="text-center text-stone-300 leading-none">⋯</div>
             <div style={allRowGrid} className="grid gap-x-1 items-center px-1 py-[2px] tabular-nums bg-stone-800 text-white rounded-sm">
               <span className="text-right text-[9px] opacity-70">{d.selfAll.rank}</span>
-              <span className="truncate text-[10px]">{d.selfAll.r.name} <span className="opacity-60">{d.selfAll.r.season}</span></span>
+              <span className="truncate text-[10px]" title={d.selfAll.r.name}>{compName(d.selfAll.r.name)} <span className="opacity-60">{d.selfAll.r.season}</span></span>
               <span className="text-right text-[10px] font-semibold">{sgn(d.selfAll.m)}</span>
             </div>
           </>
