@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { USAGE_MODELS, USG_FTA_W, cappedVolumeVA, lgaForSeason, possUsed, usageModelFor, volumeVA } from "../scoring";
+import { USAGE_MODELS, USG_FTA_W, cappedVolumeVA, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchJsonCached } from "../lib/fetch-cache";
-import { normalizeName, teamColor } from "../lib/format";
+import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 
 
 // Data-browser tab for the USG-ADJ scoring baseline (spec §4.6): every
@@ -53,7 +53,7 @@ const DOT_R = 0.7, TAP_R = 3.4, PLOT_H = 70;
 // 7px type on white, where amber-500 is too pale to read.
 const CAP_LINE = "#d97706";
 
-function UsageScatter({ rows, model, mu, selected, onSelect, seasonLabel, scopeLabel }) {
+function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel, scopeLabel }) {
   const svgRef = useRef(null);
   const [menu, setMenu] = useState(null);
   const [hover, setHover] = useState(null);
@@ -72,13 +72,20 @@ function UsageScatter({ rows, model, mu, selected, onSelect, seasonLabel, scopeL
     // baseline, and the usage above which the cap does nothing at all.
     const xStar = model.b !== 0 ? (mu - model.a) / model.b : null;
     const inRange = xStar != null && xStar > 0 && xStar < xMax;
+    // The λ family: one line pivoting about the median-minute point (ū, μ),
+    // flat at λ = 1 (today's baseline) and through the origin at λ = 0.
+    const rate = model.muUsg > 0 ? mu / model.muUsg : 0;
+    const lamY = (x) => rate * (1 - lambda) * x + lambda * mu;
     return {
       X, Y, xMax, yMax, dots, xStar, inRange,
       fit: { x1: X(0), y1: Y(model.a), x2: X(xMax), y2: Y(model.a + model.b * xMax) },
       med: Y(mu),
       kinkX: inRange ? X(xStar) : null,
+      lam: rate > 0
+        ? { x1: X(0), y1: Y(lamY(0)), x2: X(xMax), y2: Y(lamY(xMax)), px: X(model.muUsg), py: Y(mu) }
+        : null,
     };
-  }, [rows, model, mu]);
+  }, [rows, model, mu, lambda]);
 
   if (!view) return null;
 
@@ -152,6 +159,14 @@ function UsageScatter({ rows, model, mu, selected, onSelect, seasonLabel, scopeL
             fill="none" stroke={CAP_LINE} strokeWidth="1.6" strokeOpacity="0.55" strokeLinejoin="round"
           />
           <line x1="0" y1={view.med} x2="100" y2={view.med} stroke="#78716c" strokeWidth="0.35" strokeDasharray="2 1.5" />
+          {/* The dial, and the point it turns on. At λ = 1 it lies exactly
+              under the median line; at λ = 0 it runs through the origin. */}
+          {view.lam && (
+            <>
+              <line x1={view.lam.x1} y1={view.lam.y1} x2={view.lam.x2} y2={view.lam.y2} stroke={MIDNIGHT_PURPLE} strokeWidth="0.45" />
+              <circle cx={view.lam.px} cy={view.lam.py} r="0.8" fill="#fff" stroke={MIDNIGHT_PURPLE} strokeWidth="0.35" />
+            </>
+          )}
           <line x1={view.fit.x1} y1={view.fit.y1} x2={view.fit.x2} y2={view.fit.y2} stroke="#1c1917" strokeWidth="0.45" />
           {view.kinkX != null && (
             <circle cx={view.kinkX} cy={view.med} r="0.9" fill={CAP_LINE} stroke="#fff" strokeWidth="0.3" />
@@ -218,6 +233,7 @@ function UsageScatter({ rows, model, mu, selected, onSelect, seasonLabel, scopeL
         <span className="text-stone-500"><span className="font-bold">- -</span> median {mu.toFixed(3)}</span>
         <span style={{ color: CAP_LINE }}><span className="font-bold">━</span> cap = the lower of the two
           {view.xStar != null && view.inRange ? `, bending at ${view.xStar.toFixed(2)}` : ""}</span>
+        <span style={{ color: MIDNIGHT_PURPLE }}><span className="font-bold">──</span> λ = {lambda.toFixed(2)}, pivoting on the median minute</span>
         {view.inRange && <span className="text-stone-400 italic">shaded = where the cap changes anything</span>}
       </div>
 
@@ -235,6 +251,7 @@ function UsageScatter({ rows, model, mu, selected, onSelect, seasonLabel, scopeL
               <span className="text-stone-400">VA</span> <span className={shown.va < 0 ? "text-red-600" : "text-stone-700"}>{(shown.va > 0 ? "+" : "") + shown.va.toFixed(1)}</span>
               {" · "}<span className="text-stone-400">USG</span> <span className={shown.usgVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.usgVa > 0 ? "+" : "") + shown.usgVa.toFixed(1)}</span>
               {" · "}<span className="text-stone-400">CAP</span> <span className={shown.capVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.capVa > 0 ? "+" : "") + shown.capVa.toFixed(1)}</span>
+              {" · "}<span className="text-stone-400">λ</span> <span className={shown.splitVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.splitVa > 0 ? "+" : "") + shown.splitVa.toFixed(1)}</span>
             </span>
           </div>
         ) : (
@@ -272,7 +289,15 @@ export function UsageView() {
   // alternatives always have their own column; this only picks which gap is
   // spelled out and sortable. Opens on the capped candidate — the one being
   // reviewed.
-  const [deltaVs, setDeltaVs] = useState("cap"); // "cap" | "usg"
+  const [deltaVs, setDeltaVs] = useState("cap"); // "cap" | "usg" | "spl"
+  // Which trio of candidate columns the table shows: the three whole baselines,
+  // or the split of today's own volume term into what it pays for efficiency
+  // and what it pays for load. Nine columns is what fits a phone; twelve is a
+  // spreadsheet nobody can read.
+  const [colView, setColView] = useState("base"); // "base" | "split"
+  // The volume credit λ. 1 is today's VA exactly, 0 charges purely per
+  // possession used; it opens between the two so the dial reads as a dial.
+  const [lambda, setLambda] = useState(0.5);
   // Min-minutes filter, same two-step arming as the D Rating tab: tap the MP
   // header to arm, then a row's MP to keep only players with at least that
   // many minutes.
@@ -321,18 +346,21 @@ export function UsageView() {
       const va = volumeVA(r, lga);
       const usgVa = volumeVA(r, lgaUsg);
       const capVa = cappedVolumeVA(r, lgaUsg);
+      const sp = usageSplit(r, lgaUsg);
+      const splitVa = splitVolumeVA(r, lgaUsg, lambda);
       out.push({
         r, gp, usgPerM,
+        eff: sp?.eff ?? 0, vol: sp?.vol ?? 0, splitVa,
         key: (r.slug || r.name) + (r.team || ""),
         qualified: r.mp >= minMp,
         ptsPerM: (r.pts || 0) / r.mp,
         pred: lgaUsg.usgModel.a + lgaUsg.usgModel.b * usgPerM,
         va, usgVa, capVa,
-        delta: (deltaVs === "cap" ? capVa : usgVa) - va,
+        delta: (deltaVs === "cap" ? capVa : deltaVs === "spl" ? splitVa : usgVa) - va,
       });
     }
     return out;
-  }, [rows, lga, lgaUsg, minMp, deltaVs]);
+  }, [rows, lga, lgaUsg, minMp, deltaVs, lambda]);
 
   // What the plot draws: the qualified field, always — a search picks players
   // OUT of the cloud rather than emptying it, since the cloud is the context
@@ -374,6 +402,9 @@ export function UsageView() {
       : sort.key === "va" ? scaled(x.va, x.gp)
       : sort.key === "usgVa" ? scaled(x.usgVa, x.gp)
       : sort.key === "capVa" ? scaled(x.capVa, x.gp)
+      : sort.key === "eff" ? scaled(x.eff, x.gp)
+      : sort.key === "vol" ? scaled(x.vol, x.gp)
+      : sort.key === "splitVa" ? scaled(x.splitVa, x.gp)
       : scaled(x.delta, x.gp)
     );
     out.sort((a, b) => {
@@ -414,11 +445,6 @@ export function UsageView() {
           className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border rounded-sm ${showPlot ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300"}`}
           aria-pressed={showPlot}
         >Plot</button>
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which alternative baseline the Δ column measures">
-          <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
-          <button onClick={() => setDeltaVs("cap")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "cap" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Cap</button>
-          <button onClick={() => setDeltaVs("usg")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "usg" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Usg</button>
-        </div>
         {minMpFilter != null && (
           <button
             onClick={() => setMinMpFilter(null)}
@@ -436,6 +462,32 @@ export function UsageView() {
           className="flex-1 min-w-[6rem] text-[10px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
         />
       </div>
+      {/* Second row: which candidates the table shows, what Δ measures, and
+          the dial. Kept apart from the season/scope controls above — these
+          three change what the numbers MEAN, the ones above change which
+          numbers. */}
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Whole baselines, or today's volume term split into its two halves">
+          <button onClick={() => setColView("base")} className={`px-1.5 py-0.5 ${colView === "base" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Baselines</button>
+          <button onClick={() => setColView("split")} className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "split" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Split</button>
+        </div>
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which candidate the Δ column measures against today's VA">
+          <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
+          <button onClick={() => setDeltaVs("cap")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "cap" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Cap</button>
+          <button onClick={() => setDeltaVs("usg")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "usg" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Usg</button>
+          <button onClick={() => setDeltaVs("spl")} className={`px-1.5 py-0.5 border-l border-stone-300 normal-case ${deltaVs === "spl" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>λ</button>
+        </div>
+        <label className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider text-stone-500">
+          <span>Volume credit <span className="normal-case">λ</span></span>
+          <input
+            type="range" min="0" max="1" step="0.05" value={lambda}
+            onChange={(e) => setLambda(Number(e.target.value))}
+            className="w-20 h-1 accent-violet-950"
+            aria-label="Volume credit lambda: 1 is today's VA, 0 charges purely per possession used"
+          />
+          <span className="tabular-nums text-stone-900 font-semibold w-6">{lambda.toFixed(2)}</span>
+        </label>
+      </div>
       {model && lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
           {sel} line <span className="tabular-nums text-stone-600">
@@ -448,8 +500,13 @@ export function UsageView() {
           CAP = the same on min(PRED, median) — the capped candidate, which charges the
           fitted line only where it asks LESS than the median minute, so it equals VA for
           everyone at or above median usage and can never lower a player ·
-          Δ = {deltaVs === "cap" ? "CAP" : "USG"} − VA, exactly what adopting that baseline
-          moves this player&apos;s total VA by (the other nine categories don&apos;t change)
+          EFF + VOL is today&apos;s VA split exactly in two — what he scored above the going
+          rate on the possessions he used, and what he was worth for carrying more or less
+          load than a median minute — and λ pays the second half at the dial&apos;s rate
+          (λ=1 is today&apos;s VA to the decimal, λ=0 charges purely per possession used) ·
+          Δ = {deltaVs === "cap" ? "CAP" : deltaVs === "spl" ? "λ" : "USG"} − VA, exactly what
+          adopting that baseline moves this player&apos;s total VA by (the other nine
+          categories don&apos;t change)
           {scope === "po" && " · playoff rows are scored against the season's regular-season line, as all VA baselines are"}
         </div>
       )}
@@ -458,6 +515,7 @@ export function UsageView() {
           rows={plotRows}
           model={lgaUsg.usgModel}
           mu={lga.laPTSperM}
+          lambda={lambda}
           selected={picked}
           onSelect={setPicked}
           seasonLabel={sel}
@@ -465,7 +523,7 @@ export function UsageView() {
         />
       )}
       {(() => {
-        const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, delta: -1 };
+        const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, eff: -1, vol: -1, splitVa: -1, delta: -1 };
         const H = ({ k, label, right = true, title }) => (
           <button
             type="button"
@@ -495,9 +553,19 @@ export function UsageView() {
             </button>
             <H k="ptsPerM" label="PTS/M" title="Points per minute" />
             <H k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
-            <H k="va" label="VA" title="Scoring volume against the league's median minute" />
-            <H k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
-            <H k="capVa" label="Cap" title="Scoring volume against min(predicted, league median) — the candidate baseline" />
+            {colView === "base" ? (
+              <>
+                <H k="va" label="VA" title="Scoring volume against the league's median minute — today's VA" />
+                <H k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
+                <H k="capVa" label="Cap" title="Scoring volume against min(predicted, league median)" />
+              </>
+            ) : (
+              <>
+                <H k="eff" label="Eff" title="Points above the going rate on the possessions he used" />
+                <H k="vol" label="Vol" title="What he was worth for carrying more (or less) load than a median minute — Eff + Vol = VA exactly" />
+                <H k="splitVa" label={<span className="normal-case">λ</span>} title="Eff + λ × Vol — today's VA at λ=1, a pure per-possession charge at λ=0" />
+              </>
+            )}
             <H k="delta" label="Δ" title={`${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that baseline moves his total by`} />
           </div>
         );
@@ -505,7 +573,7 @@ export function UsageView() {
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
       {list && list.map((x, i) => {
-        const { r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, delta, key } = x;
+        const { r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, eff, vol, splitVa, delta, key } = x;
         const isPicked = picked?.key === key;
         return (
         <div
@@ -553,16 +621,26 @@ export function UsageView() {
             className="text-right tabular-nums text-stone-500"
             title={`${usgPerM.toFixed(3)} possessions used per minute`}
           >{pred.toFixed(3)}</span>
-          <span className={`text-right tabular-nums ${va < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(va, gp))}</span>
-          <span className={`text-right tabular-nums ${usgVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(usgVa, gp))}</span>
-          {/* The capped column is dimmed wherever it is identical to VA — the
-              41% of a season's players who sit at or above median usage and
-              whom the candidate leaves alone — so the rows it actually moves
-              are the ones that read as live. */}
-          <span
-            className={`text-right tabular-nums ${capVa === va ? "text-stone-300" : capVa < 0 ? "text-red-600" : "text-stone-700"}`}
-            title={capVa === va ? "At or above median usage — the cap leaves this player on the standard baseline" : undefined}
-          >{sgn(pts(capVa, gp))}</span>
+          {colView === "base" ? (
+            <>
+              <span className={`text-right tabular-nums ${va < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(va, gp))}</span>
+              <span className={`text-right tabular-nums ${usgVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(usgVa, gp))}</span>
+              {/* The capped column is dimmed wherever it is identical to VA —
+                  the ~40% of a season's players who sit at or above median
+                  usage and whom the candidate leaves alone — so the rows it
+                  actually moves are the ones that read as live. */}
+              <span
+                className={`text-right tabular-nums ${capVa === va ? "text-stone-300" : capVa < 0 ? "text-red-600" : "text-stone-700"}`}
+                title={capVa === va ? "At or above median usage — the cap leaves this player on the standard baseline" : undefined}
+              >{sgn(pts(capVa, gp))}</span>
+            </>
+          ) : (
+            <>
+              <span className={`text-right tabular-nums ${eff < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(eff, gp))}</span>
+              <span className={`text-right tabular-nums ${vol < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(vol, gp))}</span>
+              <span className={`text-right tabular-nums ${splitVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(splitVa, gp))}</span>
+            </>
+          )}
           <span className={`text-right tabular-nums font-semibold ${delta < 0 ? "text-red-600" : delta === 0 ? "text-stone-300" : "text-stone-900"}`}>{sgn(pts(delta, gp))}</span>
         </div>
         );

@@ -413,10 +413,43 @@ $0.0014$ of it on $R^2$.)
 The weight is a single constant (`USG_FTA_W`, mirrored in the fit script);
 changing it requires a re-bake, since $\hat a,\hat b$ are fit to it.
 
+**Splitting the term instead of replacing it, and the dial between.** The
+scoring-volume term already contains both questions; it answers them as one
+number. Writing $\mathrm{PTS} = \bar e\,\mathrm{USG} + (\mathrm{PTS} - \bar e\,\mathrm{USG})$
+with $\bar e = \mu_{\mathrm{PTS}}/\bar u$ — the points a used possession is
+worth at the median MINUTE of usage $\bar u$ (`muUsg`, baked with the fit) —
+splits it exactly, with no residual:
+
+$$
+\Bigl(\tfrac{\mathrm{PTS}}{\mathrm{MP}} - \mu_{\mathrm{PTS}}\Bigr)\mathrm{MP}
+\;=\;
+\underbrace{\bigl(\mathrm{PTS} - \bar e\,\mathrm{USG}\bigr)}_{\text{efficiency}}
+\;+\;
+\underbrace{\bar e\,\bigl(\mathrm{USG} - \bar u\,\mathrm{MP}\bigr)}_{\text{volume}}
+$$
+
+Neither half is new value — they sum to the number VA already prints. What the
+split allows is paying them at different rates,
+$\mathrm{Points}(\lambda) = \text{efficiency} + \lambda\,\text{volume}$, which in
+baseline terms is a single line pivoting about the median-minute point
+$(\bar u, \mu_{\mathrm{PTS}})$:
+
+$$
+\lambda_{\text{Points}}(\lambda) \;=\; \bar e\,(1-\lambda)\,\tfrac{\mathrm{USG}}{\mathrm{MP}} \;+\; \lambda\,\mu_{\mathrm{PTS}}
+$$
+
+flat at $\lambda = 1$ (today's VA, to the decimal) and through the origin at
+$\lambda = 0$ (no credit for absorbing load at all). USG-ADJ sits near the
+$\lambda = 0$ end but fits its own slope and intercept rather than pivoting
+through that point; the capped candidate is a per-player choice between the two
+ends rather than a fixed $\lambda$. Every member of the family is linear in
+$\mathrm{MP}$ and $\mathrm{USG}$, so unlike the cap it keeps additivity.
+`scoring.js::usageSplit` / `splitVolumeVA`; wired to the Usage tab only.
+
 **Reading it.** The Usage tab (`app/components/usage-view.js`) is the audit
 surface: per season and scope, every player-season's $\mathrm{PTS}/\mathrm{MP}$,
 the line's prediction $\hat a + \hat b\,(\mathrm{USG}/\mathrm{MP})$ at his own
-usage, the scoring-volume term under each baseline, and their difference —
+usage, the scoring-volume term under each candidate baseline (including the split's two halves and the dial), and their difference —
 which, because the other nine categories are identical in both modes, is the
 whole gap between a player's two VA totals.
 

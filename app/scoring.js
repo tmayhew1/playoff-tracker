@@ -136,6 +136,60 @@ export function cappedVolumeVA(p, lga) {
   return (p?.pts || 0) - cappedBaselinePts(p, lga);
 }
 
+// --- Under review: splitting the volume term, and the dial between them -----
+// The scoring-volume term already contains both questions; it just answers
+// them as one number. Write PTS as efficiency × usage —
+//
+//   PTS = ē·USG + (PTS − ē·USG),   ē = the points a possession used is worth
+//
+// — and pick ē so that the league's median minute breaks even, ē = μ_PTS / ū,
+// where ū is the minutes-weighted median usage rate (`muUsg`, baked alongside
+// the fit). Then the standard term splits EXACTLY, with no residual:
+//
+//   (PTS/MP − μ)·MP  =  (PTS − ē·USG)  +  ē·(USG − ū·MP)
+//                        └ efficiency ┘   └── volume ───┘
+//
+//   efficiency  what he scored above the going rate on the possessions he used
+//   volume      what he was worth for taking on more (or less) of the load
+//                than a typical minute carries, priced at that same rate
+//
+// Neither half is new value: they sum to the number VA already prints. What
+// they allow is paying them at different rates —
+//
+//   Points(λ) = efficiency + λ · volume
+//
+// — where λ = 1 is today's VA to the decimal, λ = 0 charges purely per
+// possession used (no credit for absorbing load at all), and anything between
+// is a partial credit. In baseline terms the family is one line pivoting about
+// the median-minute point (ū, μ):
+//
+//   λ_Points(λ) = ē(1−λ)·(USG/MP) + λ·μ      per minute
+//
+// flat at λ = 1, through the origin at λ = 0. USG-ADJ is close to the λ = 0
+// end (it fits its own slope and intercept rather than pivoting through the
+// median point), and the capped candidate is a per-player choice between the
+// λ = 0 line and the λ = 1 line rather than a fixed λ.
+//
+// Linear in MP and USG at every λ, so unlike the cap it keeps the additivity
+// the rest of VA relies on.
+export function usageSplit(p, lga) {
+  const mp = p?.mp || 0;
+  const m = lga?.usgModel;
+  const mu = lga?.laPTSperM || 0;
+  if (!m || !(m.muUsg > 0) || !(mp > 0)) return null;
+  const rate = mu / m.muUsg;               // ē — points per possession used
+  const eff = (p.pts || 0) - rate * possUsed(p);
+  const vol = rate * (possUsed(p) - m.muUsg * mp);
+  return { eff, vol, rate };
+}
+
+// The volume term at a given credit λ. Falls back to the standard term when
+// the season carries no model, so a missing fit reads as "no dial here".
+export function splitVolumeVA(p, lga, lambda = 1) {
+  const s = usageSplit(p, lga);
+  return s ? s.eff + lambda * s.vol : volumeVA(p, { ...lga, usgModel: null });
+}
+
 export function usgAdjDelta(p, lga) {
   const m = lga?.usgModel;
   if (!m || !(p?.mp > 0)) return 0;
