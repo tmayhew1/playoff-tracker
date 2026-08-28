@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
-import { LGA, ZONES, valueAddByCategory, lgaForSeason, reboundGamma, volumeVA, zoneShotValue, hasZoneData } from "../scoring";
+import { LGA, ZONES, valueAddByCategory, lgaForSeason, playmakingVA, reboundGamma, volumeVA, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
@@ -149,7 +149,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
     { key: "3-Pointers", value: 3 * tpAdd, label: shoot(p.tpm, p.tpa, "3P") },
     { key: "2-Pointers", value: 2 * twoAdd, label: shoot(twoPm, twoPa, "2P") },
     { key: "Free Throws", value: ftAdd, label: shoot(p.ftm, p.fta, "FT") },
-    { key: "Assists", value: ((p.ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG), label: cnt(p.ast, "AST") },
+    { key: "Assists", value: playmakingVA(p, lga), label: cnt(p.ast, "AST") },
     { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
     { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },
@@ -1904,7 +1904,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
     { key: "3-Pointers", value: 3 * tpAdd, label: shot(p.tpm, p.tpa) },
     { key: "2-Pointers", value: 2 * twoAdd, label: shot(twoPm, twoPa) },
     { key: "Free Throws", value: ftAdd, label: shot(p.ftm, p.fta) },
-    { key: "Assists", value: ((p.ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG), label: cnt(p.ast, "AST") },
+    { key: "Assists", value: playmakingVA(p, lga), label: cnt(p.ast, "AST") },
     { key: "Steals", value: ((p.stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss, label: cnt(p.stl, "STL") },
     { key: "Blocks", value: ((p.blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate, label: cnt(p.blk, "BLK") },
     { key: "Turnovers", value: -((p.tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss, label: cnt(p.tov, "TOV") },

@@ -317,8 +317,10 @@ $$
 
 ### 4.6 USG-ADJ — the usage-adjusted scoring baseline
 
-An optional reading of the **scoring-volume term only**, selected by a switch in
-the app (Explore and the season tabs). Everything else in §4 is unchanged.
+An optional reading of the **scoring-volume term**, selected by a switch in the
+app (Explore and the season tabs). The same switch re-reads the **playmaking**
+term the same way — see §4.7, which is part of the mode, not a second one.
+Everything else in §4 is unchanged.
 
 **The gap it closes.** The volume term charges $\mu_{\mathrm{PTS}}$ per minute
 to a 32%-usage guard and a play-finishing centre alike. That is deliberate
@@ -438,13 +440,140 @@ usage, the scoring-volume term under each candidate baseline (including the spli
 which, because the other nine categories are identical in both modes, is the
 whole gap between a player's two VA totals.
 
-**Scope.** The switch re-prices Explore (both boards, every scope), the season
+**Scope.** The switch re-prices the scoring-volume and playmaking terms (§4.7)
+across Explore (both boards, every scope), the season
 tabs, and everything derived from them — category breakdowns, league pools and
 percentile ranks, closest comps, multi-season selections. It does **not** touch
 Legacy (leverage-weighted career numbers are baked server-side against the
 standard baseline) or College (no fitted model exists for the college
 population). A season with no fitted model reads as *mode unavailable* and
 keeps $\mu_{\mathrm{PTS}}$ — never a zero baseline (invariant 5).
+
+
+### 4.7 The passing half of the same mode
+
+USG-ADJ as stated in §4.6 has a defect that only shows up once it is read on a
+board: it discounts one volume-paying term and leaves the other at face value.
+
+The playmaking term charges $\mu_{\mathrm{AST}}$ per **minute** and pays every
+assist above it in full — the identical shape, and the identical blind spot,
+that §4.6 objects to in the scoring term. Adjusting only the scoring side
+therefore does not price volume. It moves value from scorers to passers.
+
+The effect is not marginal. Over the 46 baked seasons, playmaking's share of a
+season's positive-VA pool averages $49.9\%$ under standard VA; adjusting points
+alone lifts it to $61.5\%$ — $+11.7$ points on average, $+7.7$ to $+16.0$ across
+seasons, and up in **every** one. In 1996-97 it takes Stockton (a $931.9$-point
+assist term out of a $1045.6$ VA) past Jordan, whose scoring-volume term is cut
+by $538$ while nothing he is charged for absorbing the ball is touched.
+
+**The construction is §4.6's, not a new one.** A scorer's volume is priced
+against the possessions he *used*; a passer's against the possessions he *ended
+with his own pass*:
+
+$$
+\mathrm{CRT} \;=\; \mathrm{AST} \;+\; \mathrm{TOV}
+$$
+
+— the successful half and the failed half, exactly as $\mathrm{FGM}/\mathrm{FGA}$
+split $\mathrm{USG}$. Let $\bar c$ (`muCrt`, baked next to $\bar u$ by
+`scripts/fit-usage-model.mjs`) be the minutes-weighted median of
+$\mathrm{CRT}/\mathrm{MP}$, and
+
+$$
+\bar e_A \;=\; \frac{\mu_{\mathrm{AST}}}{\bar c}
+$$
+
+the assists one unit of that load returns at the league's median minute. Then
+the playmaking term splits exactly, with no residual:
+
+$$
+\Bigl(\tfrac{\mathrm{AST}}{\mathrm{MP}} - \mu_{\mathrm{AST}}\Bigr)\mathrm{MP}
+\;=\;
+\underbrace{\bigl(\mathrm{AST} - \bar e_A\,\mathrm{CRT}\bigr)}_{\text{creation}}
+\;+\;
+\underbrace{\bar e_A\bigl(\mathrm{CRT} - \bar c\,\mathrm{MP}\bigr)}_{\text{load}}
+$$
+
+— what he turned into baskets on the possessions he ran, and what he was worth
+for running more (or fewer) of them than a typical minute. Both halves are
+priced at $\kappa(1-p_G)$ as before, and the load half is paid at $\lambda$:
+
+$$
+\lambda_{\mathrm{AST}}(\lambda) \;=\; \bar e_A(1-\lambda)\,\frac{\mathrm{CRT}}{\mathrm{MP}} \;+\; \lambda\,\mu_{\mathrm{AST}}
+\qquad\text{per minute}
+$$
+
+flat at $\lambda = 1$, through the origin at $\lambda = 0$, pivoting about
+$(\bar c, \mu_{\mathrm{AST}})$.
+
+**The same $\lambda$, deliberately.** $\lambda$ is not a second free parameter.
+The two terms are one question — *how much of volume as such do we still pay
+for?* — asked of two categories, and giving each its own dial would turn a
+principle into a pair of knobs tuned until the board looks right. `VOLUME_CREDIT`
+is read by both halves.
+
+**Why a median and not a fit.** On the scoring side a regression of
+$\mathrm{PTS}$ on $\mathrm{USG}$ is meaningful because they are different
+quantities. Here $\mathrm{AST}$ sits on both sides of a regression of
+$\mathrm{AST}$ on $\mathrm{AST}+\mathrm{TOV}$, so a fitted slope would largely
+recover that identity rather than measure anything. Only the pivot $\bar c$ is
+load-bearing, and it is a minutes-weighted median like every other per-minute
+baseline in §1.2.
+
+**The turnover counted twice.** $\mathrm{TOV}$ appears in its own category and
+again as load here, so at $\lambda < 1$ a giveaway costs on both. This is the
+symmetry, not an oversight: a missed shot has always cost twice on the scoring
+side too — the 2-point term charges the miss, and the attempt still raises
+$\mathrm{USG}$ and so the scoring baseline. A possession consumed and a
+possession lost are two different facts, and VA has always paid for both.
+
+**A degenerate check.** Had the load been denominated in minutes
+($\mathrm{CRT} := \mathrm{MP}$, so $\bar c = 1$ and $\bar e_A = \mu_{\mathrm{AST}}$),
+the family would collapse to $\mu_{\mathrm{AST}}\mathrm{MP}$ at every $\lambda$.
+The construction is a genuine re-denomination of the *opportunity*, not a
+rescaling of the price.
+
+**That it corrects rather than over-corrects.** With both halves adjusted, that
+same share averages $47.9\%$ against standard VA's $49.9\%$ — a residual of
+$-2.0$ points on average, spanning $-6.1$ to $+3.5$, and **closer to standard VA
+than the points-only mode in all 46 seasons**. The metric lands back where the
+unadjusted one had it rather than overshooting past it, which is the test that
+separates a correction from a thumb on the scale in the other direction.
+
+The boards agree. 1996-97 reads Malone, Jordan, Stockton where points-only gave
+Malone, Stockton, Jordan and standard VA gave Malone, Jordan, Hill; 1987-88
+reads Jordan, Bird, Barkley, Stockton against points-only's Jordan, Stockton,
+Bird. Stockton stays a top-four season in both — the correction re-prices what
+he is paid for volume, it does not erase him. A caveat worth stating: at
+$\lambda = \tfrac12$ a low-load big is charged only half of the median-minute
+assist rate he does not clear, so rim-running centres rise a few places on
+modern boards (Zubac and Allen enter 2024-25's top ten). That is the pivot
+family behaving consistently — the same relief a low-usage player already gets
+on the scoring side — rather than a passing-specific artifact.
+
+**The properties of §4.6 all carry.** The term is linear in $\mathrm{MP}$,
+$\mathrm{AST}$ and $\mathrm{TOV}$, so it is additive over games (a season's
+baseline is the sum of its games'), the multi-season blend reproduces the
+per-season sum, and the closed-form re-pricing extends by one term:
+
+$$
+\Delta \;=\; \underbrace{(1-\lambda)\bigl(\mu_{\mathrm{PTS}}\mathrm{MP} - \bar e\,\mathrm{USG}\bigr)}_{\text{scoring}}
+\;+\; \underbrace{(1-\lambda)\bigl(\mu_{\mathrm{AST}}\mathrm{MP} - \bar e_A\,\mathrm{CRT}\bigr)\kappa(1-p_G)}_{\text{passing}}
+$$
+
+which is what `scoring.js::usgAdjDelta` computes. Every baked row carries
+$\mathrm{AST}$ and $\mathrm{TOV}$ (leaderboard season rows and their per-game
+splits, `/api/players` season rows), so no surface needs re-deriving from the
+box score. A season whose model predates `muCrt` keeps $\mu_{\mathrm{AST}}$ and
+that half of $\Delta$ is exactly zero — absent, never a wrong baseline
+(invariant 5).
+
+**Reading it.** The Usage tab's **Pass** column view is the audit surface:
+$\mathrm{AST}/\mathrm{MP}$, the load $\mathrm{CRT}/\mathrm{MP}$, and the term's
+two halves per player-season. Under the tab's $\lambda$ option the $\Delta$
+column carries *both* halves, so it is exactly what the switch moves a player's
+whole VA by.
 
 ---
 
@@ -967,11 +1096,14 @@ own class rather than mixed into one column.
    from a mis-parsed page.
 5. Any category the source does not carry is **absent**, never zero-filled — a
    missing measurement must not read as below-average performance.
-6. USG-ADJ (§4.6) replaces the baseline $\lambda_{\text{Points}}$ and nothing
-   else. It is a per-player baseline, like $\gamma$ is a per-player price, so
-   invariant 1 holds within either mode; the two modes are separate currencies
-   and their numbers are never mixed on one surface, nor with a Legacy or
-   College number.
+6. USG-ADJ replaces the baselines $\lambda_{\text{Points}}$ (§4.6) and
+   $\lambda_{\text{Assists}}$ (§4.7) and nothing else — the two terms that pay
+   for volume as such, at one shared $\lambda$. Both are per-player baselines,
+   like $\gamma$ is a per-player price, so invariant 1 holds within either
+   mode; the two modes are separate currencies and their numbers are never
+   mixed on one surface, nor with a Legacy or College number. Both halves are
+   linear in their counts, so both are additive over games and re-pricable in
+   closed form.
 7. Championship leverage **reweights** the decomposition and never enters it, so
    invariant 1 holds unchanged on every surface (§7.4). Within a series its
    weight is conserved: the two teams' shares sum to $1$ at every $\omega$, so

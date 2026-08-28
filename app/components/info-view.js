@@ -123,11 +123,27 @@ export function InfoView() {
             {" "}<span className="tabular-nums">ē = {fmt(LGA.laPTSperM / USG.muUsg)}</span> on the
             possessions he used (poss. used = FGA + <span className="tabular-nums">{USG_FTA_W}</span> × FTA);
             the second is what he was worth for carrying more — or less — load than a typical minute,
-            priced at the same rate. Flip <span className="font-semibold">Scoring baseline</span>
+            priced at the same rate. Flip <span className="font-semibold">Volume baseline</span>
             {" "}(above the boards, on Explore and any season tab) and the second half is paid at
             {" "}<span className="tabular-nums">{VOLUME_CREDIT}×</span> instead of in full: volume still
-            counts, just not at face value. The other nine categories are untouched, and every setting
-            of that dial scores the median-usage player identically — it redistributes value rather
+            counts, just not at face value.
+          </p>
+        )}
+        {USG && (
+          <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
+            <span className="font-semibold">Passing gets the same treatment</span>, for the same reason.
+            Assists are charged per minute too — a flat{" "}
+            <span className="tabular-nums">{fmt(LGA.laASTperM)}</span> per minute, with everything above it
+            paid at face value — so discounting only the scoring side wouldn&apos;t price volume, it would
+            just move value from scorers to passers. So the playmaking term splits the same way, against
+            the possessions a player ended with his own pass:{" "}
+            <span className="tabular-nums">ball-handling load = AST + TOV</span>, whose median minute carries
+            {" "}<span className="tabular-nums">{fmt(USG.muCrt)}</span> of it. What he created on the
+            possessions he ran is paid in full; what he was worth for running more — or fewer — of them than
+            a typical minute is paid at the same{" "}
+            <span className="tabular-nums">{VOLUME_CREDIT}×</span>. One dial, both places volume is paid.
+            The other eight categories are untouched, and every setting of that dial scores the
+            median-load and median-usage player identically — it redistributes value rather
             than re-levelling it. Legacy and College keep the standard baseline. The
             {" "}<span className="font-semibold">Usage</span> tab is where this was worked out: it plots
             the cloud, draws the candidate baselines over it, and lists what each one pays every
