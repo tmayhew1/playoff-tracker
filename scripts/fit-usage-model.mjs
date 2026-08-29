@@ -25,10 +25,6 @@
 // upward was the handful of high-usage stars, and usage is now a regressor
 // rather than an omitted variable.
 //
-// It also bakes `muCrt`, the minutes-weighted median of (AST + TOV)/MP, which is
-// the pivot point for the PASSING half of the same mode (spec §4.7). No line is
-// fit there — see the note above `crt` below.
-//
 // Usage: npm run usage:fit  [-- --check]
 //   --check  compares the fit against the existing baseline and writes nothing.
 
@@ -51,14 +47,6 @@ const FTA_W = 0.475;
 
 const usg = (p) => (p.fga || 0) + FTA_W * (p.fta || 0);
 
-// The passing side's opportunity measure: the possessions a player ended with
-// his own pass, made or lost. AST is the successful half, TOV the failed one,
-// exactly as FGM/FGA split USG on the scoring side. Only the minutes-weighted
-// MEDIAN of this rate is baked (`muCrt`) — the passing baseline pivots about
-// (muCrt, mu_AST) rather than fitting a line, because AST sits on both sides of
-// a regression of AST on AST+TOV and the slope would be an artifact of that.
-// KEEP IN SYNC with crtUsed in app/scoring.js.
-const crt = (p) => (p.ast || 0) + (p.tov || 0);
 
 // Minutes-weighted OLS of y = PTS/MP on x = USG/MP. Returns the line plus the
 // weighted R^2 and the sample it was fit on.
@@ -118,7 +106,6 @@ for (const season of seasons) {
   const f = fitSeason(players);
   if (!f) { console.warn(`  !! ${season}: no usable rows — skipped`); continue; }
   const muUsg = weightedMedianRate(players, usg);
-  const muCrt = weightedMedianRate(players, crt);
   const atMedian = f.a + f.b * muUsg;
   const muPts = lga[season]?.laPTSperM ?? null;
   // A season whose line lands nowhere near its own median-minute scoring rate
@@ -133,20 +120,17 @@ for (const season of seasons) {
     r2: round(f.r2, 4), n: f.n, mp: f.mp,
     muUsg: round(muUsg, 6),
     atMuUsg: round(atMedian, 6),
-    muCrt: round(muCrt, 6),
   };
-  rows.push({ season, ...f, muUsg, muCrt, atMedian, muPts, muAst: lga[season]?.laASTperM ?? null });
+  rows.push({ season, ...f, muUsg, atMedian, muPts });
 }
 
-console.log("season    a        b       R^2    med USG/m  line@med   mu_PTS    diff   med CRT/m  e_AST     n");
+console.log("season    a        b       R^2    med USG/m  line@med   mu_PTS    diff    n");
 for (const r of rows) {
   console.log(
     `${r.season}  ${r.a.toFixed(4)}  ${r.b.toFixed(4)}  ${r.r2.toFixed(3)}  ` +
     `${r.muUsg.toFixed(4)}     ${r.atMedian.toFixed(4)}  ` +
     `${r.muPts == null ? "   -  " : r.muPts.toFixed(4)}  ` +
-    `${r.muPts == null ? "   -  " : (r.atMedian - r.muPts >= 0 ? "+" : "") + (r.atMedian - r.muPts).toFixed(4)}  ` +
-    `${r.muCrt.toFixed(4)}     ` +
-    `${r.muAst == null ? "  -   " : (r.muAst / r.muCrt).toFixed(4)}  ${r.n}`
+    `${r.muPts == null ? "   -  " : (r.atMedian - r.muPts >= 0 ? "+" : "") + (r.atMedian - r.muPts).toFixed(4)}  ${r.n}`
   );
 }
 const diffs = rows.filter((r) => r.muPts != null).map((r) => r.atMedian - r.muPts);
@@ -163,7 +147,6 @@ if (check) { console.log("\n--check: nothing written."); process.exit(0); }
 fs.writeFileSync(OUT, JSON.stringify({
   ftaWeight: FTA_W,
   fit: "minutes-weighted OLS of PTS/MP on (FGA + 0.475*FTA)/MP, per season, over that season's regular-season player-seasons",
-  muCrt: "minutes-weighted median of (AST + TOV)/MP, per season — the pivot point for the passing half of USG-ADJ",
   generatedAt: new Date().toISOString(),
   seasons: out,
 }, null, 2) + "\n");

@@ -57,11 +57,14 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 // evidence that the relationship is real (R² 0.90–0.94) and one of the
 // candidates the Usage tab still plots; only ū is load-bearing here.
 //
-// The playmaking term gets the same treatment for the same reason — see the
-// passing-half block below; adjusting only the scoring side does not price
-// volume, it moves value from scorers to passers. It is priced against turnover
-// rate rather than possessions used, for reasons that block gives. Everything
-// else in VA — the eight remaining categories, γ, VA+ — is unchanged. The model rides on the
+// Everything else in VA — the nine other categories, γ, VA+ — is unchanged.
+//
+// The playmaking term also pays for volume as such, and three usage-adjusted
+// passing baselines were built and measured before this was settled (against
+// AST+TOV, against TOV alone, and the dial between them). All three were
+// dropped: the scorer/passer imbalance they were chasing turned out to be a
+// PRICE problem, not a baseline one, and it is fixed at the price instead — see
+// `assistPrice` below and spec §4.2a. The history is spec §4.7. The model rides on the
 // baseline object as `usgModel`, so any code path that already threads an
 // `lga` through picks the mode up with no other change.
 export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
@@ -69,10 +72,7 @@ export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
 // How much of the volume half the mode still pays (spec §4.6). 1 is plain VA,
 // 0 charges purely per possession used; a half was chosen by reading the two
 // ends against each other on real seasons — it keeps the volume scorers on top
-// where they belong while pricing what the possessions returned. ONE dial, read
-// by both the scoring and the passing half (§4.7): the two are the same
-// question asked of two categories, and giving each its own λ would turn a
-// principle into a pair of tuning knobs.
+// where they belong while pricing what the possessions returned.
 export const VOLUME_CREDIT = 0.5;
 
 // Possessions a free-throw attempt uses: Hollinger's coefficient, the same one
@@ -84,111 +84,6 @@ export const USG_FTA_W = USAGE_MODEL_DATA.ftaWeight ?? 0.475;
 
 // Possessions used by a stat line, the model's one regressor.
 export const possUsed = (p) => (p?.fga || 0) + USG_FTA_W * (p?.fta || 0);
-
-// --- The passing half of the same mode -------------------------------------
-// The scoring-volume term is not the only one that pays for volume as such.
-// The playmaking term charges μ_AST per MINUTE and pays every assist above it
-// at face value, so re-denominating only the scoring side leaves the mode
-// lopsided: it halves what a scorer earns for carrying load while leaving what
-// a passer earns for carrying load untouched. Measured on the positive-VA pool,
-// adjusting points alone lifts playmaking's share of a season from ~50% to
-// ~62% (1980-81 through 2025-26, +11.7 points on average) — the mode was not
-// pricing volume, it was moving value from scorers to passers.
-//
-// The fix is the same construction, not a new one — but the passer's
-// opportunity has to be measured by something he does NOT control by assisting.
-// A scorer's usage counts ATTEMPTS: a miss raises his baseline exactly as much
-// as a make, so the baseline tracks opportunity and efficiency decides whether
-// he clears it. The box score has no "missed pass" to make the mirror exact, so
-// the measure used here is the other observable cost of handling the ball:
-//
-//   TOV — the possessions he handled and lost
-//
-// Let ē_T = μ_AST / μ_TOV be the assists one turnover's worth of ball-handling
-// risk returns at the league's median minute. Both quantities are already baked
-// (`laASTperM`, `laTOVperM`); this half needs no model of its own. Then the
-// playmaking term splits exactly, with no residual:
-//
-//   (AST/MP − μ_AST)·MP  =  (AST − ē_T·TOV)  +  ē_T·(TOV − μ_TOV·MP)
-//                            └ creation ──┘     └──── risk ─────┘
-//
-// — what he produced above the going rate for the ball-handling risk he took,
-// and what he was worth for carrying more (or less) of that risk than a typical
-// minute. Both halves are priced at κ(1−p_G) as before, and the risk half is
-// paid at the SAME λ the scoring side uses. That matters: λ is not a second
-// free parameter to tune until the board looks right. One dial — "how much of
-// volume as such do we still pay for" — applied to both places volume is paid.
-//
-// What this buys, and it is the reason for choosing it over AST + TOV (which is
-// kept as a candidate below, and does rebalance the boards harder):
-//
-//   • A player's own assists are NOT in his own baseline, so an assist is
-//     credited at face value. Under an AST+TOV load a marginal assist raises
-//     the bar it has to clear and is worth 71% of one; here it is worth 1.
-//   • A low-turnover passer is charged a lower bar, which is the thing the
-//     playmaking term never asked about before. Steve Kerr's 1996-97 (4.07
-//     AST/TO) gains 65 points; Trae Young's 2024-25 (880 AST on 355 TOV) gives
-//     back 297.
-//
-// Two costs are real and worth stating. TOV is weaker evidence of playmaking
-// load than AST + TOV is — minutes-weighted R² of AST/MP on TOV/MP averages
-// 0.288 across the 46 baked seasons against 0.951 — and not every turnover is
-// a passing turnover, so a post-up big whose giveaways are travels and strips
-// is charged an assist bar for them (Shawn Kemp's 1996-97, 0.56 AST/TO, gives
-// back 109). Both are visible in the Usage tab's Pass view against the
-// alternatives.
-//
-// A degenerate check worth knowing: had the risk been denominated in MINUTES
-// (TOV := MP, so μ_TOV = 1 and ē_T = μ_AST) the whole construction would
-// collapse to μ_AST·MP at every λ, so it is a genuine re-denomination of the
-// opportunity and not a rescaling of the price.
-//
-// A season with no turnover baseline (none is baked today; TOV was not recorded
-// before 1977-78) keeps μ_AST·MP at every λ — absent, never a wrong baseline
-// (spec invariant 5).
-
-// The candidate load measure below. Kept out of the shipped baseline because it
-// contains AST; see the block above and `playmakingVACrt`.
-export const crtUsed = (p) => (p?.ast || 0) + (p?.tov || 0);
-
-// --- Under review: the AST + TOV load ---------------------------------------
-// The alternative opportunity measure, and the one that rebalances the boards
-// hardest: charge the passer against every possession he ENDED with his own
-// pass, made or lost.
-//
-//   CRT = AST + TOV,   ē_A = μ_AST / c̄
-//
-// with c̄ (`muCrt`) the minutes-weighted median of CRT/MP, baked next to ū by
-// scripts/fit-usage-model.mjs. Same pivot, same λ, same exact split — only the
-// load differs.
-//
-// It measures playmaking load far better than TOV alone does: minutes-weighted
-// R² of AST/MP on CRT/MP averages 0.951 across the 46 baked seasons (TOV alone,
-// 0.288; the scoring side, 0.923), and it restores playmaking's share of the
-// positive-VA pool to 47.9% against standard VA's 49.9% — closer to standard
-// than the shipped baseline gets, in every season.
-//
-// It is not on the switch because a player's own assists sit in his own
-// baseline: each marginal assist raises the bar it has to clear, so an assist
-// is worth 71% of face value rather than 1. (That is a discount, not a bound —
-// the term stays linear and unbounded — and the shipped SCORING baseline does
-// the same thing to a made 2-pointer, paying it 73%. But on the passing side it
-// is avoidable, and the shipped baseline avoids it.)
-//
-// Kept scored and visible in the Usage tab's Pass view so the two can be read
-// against each other on real seasons.
-export function baselineAstCrt(p, lga, lambda = VOLUME_CREDIT) {
-  const mp = p?.mp || 0;
-  const m = lga?.usgModel;
-  if (!m || !(m.muCrt > 0)) return (lga?.laASTperM || 0) * mp;
-  const rate = lga.laASTperM / m.muCrt;
-  return rate * (1 - lambda) * crtUsed(p) + lambda * lga.laASTperM * mp;
-}
-
-export function playmakingVACrt(p, lga, lambda = VOLUME_CREDIT) {
-  if (!(p?.mp > 0)) return 0;
-  return ((p.ast || 0) - baselineAstCrt(p, lga, lambda)) * lga.laPTSperMake * (1 - lga.laFG);
-}
 
 export const usageModelFor = (season) => USAGE_MODELS[season] || null;
 
@@ -205,10 +100,6 @@ export function usgAdjLga(lga, season) {
   // has nothing to pivot on and the season stays on μ_PTS — absent, never a
   // wrong baseline (spec invariant 5).
   if (!lga || !(model?.muUsg > 0)) return lga;
-  // The gate is the SCORING model: the mode is all-or-nothing per season, so a
-  // season with no fit keeps both standard baselines rather than picking up the
-  // passing half alone. The passing half itself needs no model — only μ_AST and
-  // μ_TOV, which every baked season carries.
   if (!usgAdjCache.has(lga)) {
     usgAdjCache.set(lga, { ...lga, usgModel: model, volumeCredit: VOLUME_CREDIT });
   }
@@ -256,30 +147,60 @@ export function volumeVA(p, lga) {
   return (p?.pts || 0) - baselinePts(p, lga);
 }
 
-// The league's expected ASSISTS for this workload — the counterfactual the
-// playmaking term subtracts, on the count scale (the κ(1−p_G) price is applied
-// by the caller, as it always was). μ_AST · MP normally; the pivoting family
-// above when the baseline carries a volume credit.
+// --- The price of an assist (spec §4.2a) ------------------------------------
+// Every other event price in VA is denominated in POSSESSIONS and priced at π:
+// a steal is worth π, a block π·ρ_D, a rebound γ·π·ρ, a turnover −π. The assist
+// was the one exception — priced at κ(1−p_G), built on κ, the points per MADE
+// FIELD GOAL, which is about 2.6× π.
 //
-// Keyed on `volumeCredit` alone, not on the usage model: this half needs only
-// μ_AST and μ_TOV, both plain league averages. The mode's baseline object is
-// the only one that carries a credit, so the fitted-line baseline (a scoring
-// construct) correctly falls through to μ_AST here.
-export function baselineAst(p, lga) {
-  const mp = p?.mp || 0;
-  const lam = lga?.volumeCredit;
-  if (lam == null || !(lga?.laTOVperM > 0)) return lga.laASTperM * mp;
-  const rate = lga.laASTperM / lga.laTOVperM;   // ē_T — assists per turnover
-  return rate * (1 - lam) * (p?.tov || 0) + lam * lga.laASTperM * mp;
+// That is the wrong denominator, because an assist does not create a
+// possession. The possession already existed and would have returned π on its
+// own. What the pass created is the DIFFERENCE: the possession returned a made
+// basket, κ, instead of the generic π. So the surplus the play produced is
+//
+//   κ − π
+//
+// and the passer's share of it is the same (1−p_G) §4.2 already uses — the part
+// not attributable to the conversion the shooter would have managed anyway:
+//
+//   assistPrice = (κ − π)(1 − p_G)
+//
+// Expanding shows exactly what changed: (κ−π)(1−p_G) = κ(1−p_G) − π(1−p_G), so
+// this is the old price with the possession's own baseline return netted out at
+// the same share. In 1996-97, 0.901 = 1.465 − 0.564.
+//
+// This is VA's own master-equation principle applied to the one place it was
+// skipped: every category is (rate − baseline) × opportunity × price, and the
+// assist price was the single spot where a raw κ entered with no baseline
+// subtracted.
+//
+// Two properties worth knowing. The ratio to the old price is 0.585–0.669
+// across 56 seasons (mean 0.609), so this is a near-constant contraction rather
+// than an era artifact. And because the term is (AST/MP − μ_AST)·MP·price, a
+// player at exactly μ_AST is unchanged at ANY price — the change is a pure
+// contraction about the league median rate, so nothing reorders WITHIN assists;
+// only the weight of assists against the other nine categories moves.
+//
+// What it does not fix: the shooter still banks the whole basket through PTS,
+// so an assisted basket is still credited more than once (155% of the basket
+// before, 134% after). Closing that properly needs per-player assisted-FG
+// rates, which are on basketball-reference's shooting page but not in this
+// repo's bake. See spec §4.2a.
+//
+// KEEP IN SYNC with scripts/R/scrape_common.R::value_add_parts — the bake and
+// the client have to price an assist identically or the two disagree on disk.
+export function assistPrice(lga) {
+  return ((lga?.laPTSperMake || 0) - (lga?.laPTSperPoss || 0)) * (1 - (lga?.laFG || 0));
 }
 
 // The playmaking category, in points. One definition shared by valueAddParts,
-// valueAddByCategory and the breakdown panels, so all of them agree in both
-// modes (spec invariant 1) — the same contract volumeVA has for Points.
+// valueAddByCategory and the two breakdown panels, so all of them agree
+// (spec invariant 1) — the same contract volumeVA has for Points.
 export function playmakingVA(p, lga) {
   if (!(p?.mp > 0)) return 0;
-  return ((p.ast || 0) - baselineAst(p, lga)) * lga.laPTSperMake * (1 - lga.laFG);
+  return ((p.ast || 0) - lga.laASTperM * p.mp) * assistPrice(lga);
 }
+
 
 // What USG-ADJ does to a VA total that was computed the standard way. The
 // term is linear in MP and USG, so the two modes differ by a closed-form
@@ -369,28 +290,6 @@ export function usageSplit(p, lga) {
   return { eff, vol, rate };
 }
 
-// The playmaking term's two halves, on the count scale — the passing mirror of
-// usageSplit. `rate` is ē_T, the assists a turnover's worth of ball-handling
-// risk returns at the league's median minute. Null when the season has no μ_TOV.
-export function passingSplit(p, lga) {
-  const mp = p?.mp || 0;
-  const mu = lga?.laASTperM || 0;
-  const muTov = lga?.laTOVperM || 0;
-  if (!(muTov > 0) || !(mp > 0)) return null;
-  const rate = mu / muTov;
-  const tov = p.tov || 0;
-  const eff = (p.ast || 0) - rate * tov;
-  const vol = rate * (tov - muTov * mp);
-  return { eff, vol, rate, price: lga.laPTSperMake * (1 - lga.laFG) };
-}
-
-// The playmaking term at a given credit λ, in points. Falls back to the
-// standard term when the season carries no μ_TOV — "no dial here", not zero.
-export function splitPlaymakingVA(p, lga, lambda = 1) {
-  const s = passingSplit(p, lga);
-  return s ? (s.eff + lambda * s.vol) * s.price : playmakingVA(p, { ...lga, volumeCredit: null });
-}
-
 // The volume term at a given credit λ. Falls back to the standard term when
 // the season carries no model, so a missing fit reads as "no dial here".
 export function splitVolumeVA(p, lga, lambda = 1) {
@@ -398,19 +297,14 @@ export function splitVolumeVA(p, lga, lambda = 1) {
   return s ? s.eff + lambda * s.vol : volumeVA(p, { ...lga, usgModel: null });
 }
 
-// Both halves of the mode as a single closed-form correction to a standard VA.
-// Each is a difference of baselines on its own count scale, so the assist half
-// is converted to points here the same way the category is. A row must carry
-// `tov` for the passing half; every baked row does (leaderboard season rows and
-// their per-game splits, /api/players season rows), and baselineAst reduces to
-// μ_AST · MP for a season with no μ_TOV, which makes that half exactly zero
-// rather than a wrong number.
+// The mode as a single closed-form correction to a standard VA. The volume
+// term is linear in MP and USG, so the two modes differ by a closed form and
+// the other nine categories don't have to be re-derived from the box score.
 export function usgAdjDelta(p, lga) {
   if (!lga?.usgModel || !(p?.mp > 0)) return 0;
-  const pts = lga.laPTSperM * p.mp - baselinePts(p, lga);
-  const ast = (lga.laASTperM * p.mp - baselineAst(p, lga)) * lga.laPTSperMake * (1 - lga.laFG);
-  return pts + ast;
+  return lga.laPTSperM * p.mp - baselinePts(p, lga);
 }
+
 
 // --- Rebound credit (γ) -----------------------------------------------------
 // A rebound is the one box-score event that is guaranteed to be allocated and
@@ -525,7 +419,8 @@ const BASELINE_REQUIRES = {
   "Points": ["laPTSperM"],
   "2-Pointers": ["la2P"],
   "Free Throws": ["laFT"],
-  "Assists": ["laASTperM", "laPTSperMake"],
+  // laPTSperPoss joined the list when the price became (κ − π)(1 − p_G).
+  "Assists": ["laASTperM", "laPTSperMake", "laPTSperPoss"],
   "Steals": ["laSTLperM", "laPTSperPoss"],
   "Blocks": ["laBLKperM", "laPTSperPoss", "laDRBrate"],
   "Turnovers": ["laTOVperM", "laPTSperPoss"],

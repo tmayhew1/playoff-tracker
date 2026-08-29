@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, passingSplit, playmakingVA, playmakingVACrt, possUsed, splitPlaymakingVA, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
+import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 
@@ -20,23 +20,10 @@ import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 //   Δ      the active alternative minus VA: what adopting it would move this
 //          player's total VA by
 //
-// Under the λ option Δ carries BOTH halves of the mode, so it is exactly what
-// the USG-ADJ switch moves this player's whole VA by; the CAP and USG options
-// are scoring-only candidates and their Δ stays scoring-only.
-//
-// PASS compares the three passing baselines the way BASELINES compares the
-// three scoring ones: AST is the standard term (μ_AST per minute), λ_A is the
-// shipped one (against TURNOVER rate, so a player's own assists stay out of his
-// own baseline), and CRT is the candidate under review that prices against the
-// ball-handling load AST + TOV (scoring.js::playmakingVACrt). P-SPLIT is the
-// shipped baseline's own audit — the term split into what he produced above the
-// going rate for the risk he took (PEFF) and what he was worth for carrying
-// more or less of that risk than a median minute (PVOL), paid at the same λ.
-//
-// PTS/M, PRED, AST/M and CRT/M are per-minute by construction; the point
-// columns follow the TOT ⁄ per-game switch. The eight remaining categories are
-// identical under every baseline here, so the two terms this table shows
-// account for the entire gap between the boards.
+// PTS/M and PRED are per-minute by construction; the point columns follow the
+// TOT ⁄ per-game switch. The nine other categories are identical under all
+// three baselines, so Δ here IS the whole difference between a player's VA
+// totals — this table accounts for the entire gap between the boards.
 //
 // CAP ≥ max(VA, USG) is not a coincidence but the identity in scoring.js:
 // capping the baseline means taking whichever of the two terms is larger, so
@@ -307,7 +294,7 @@ export function UsageView() {
   // or the split of today's own volume term into what it pays for efficiency
   // and what it pays for load. Nine columns is what fits a phone; twelve is a
   // spreadsheet nobody can read.
-  const [colView, setColView] = useState("base"); // "base" | "split" | "pass" | "psplit"
+  const [colView, setColView] = useState("base"); // "base" | "split"
   // The volume credit λ. 1 is plain VA exactly, 0 charges purely per
   // possession used. Opens where the USG-ADJ switch itself sits, so the λ
   // column reads as what that switch does until the dial is moved.
@@ -345,9 +332,6 @@ export function UsageView() {
   // (it ships the λ pivot — see VOLUME_CREDIT). The λ column below reads the
   // same object, since the split only needs ū and μ off it.
   const lgaUsg = sel ? fittedLineLga(sel) : null;
-  // The baseline object the USG-ADJ switch itself hands out — the one carrying
-  // muCrt and the volume credit. The passing columns price against this.
-  const lgaMode = sel ? lgaForSeason(sel, true) : null;
   const model = sel ? usageModelFor(sel) : null;
 
   // Every row scored once, tagged with whether it clears the sample floor.
@@ -369,43 +353,19 @@ export function UsageView() {
       const capVa = cappedVolumeVA(r, lgaUsg);
       const sp = usageSplit(r, lgaUsg);
       const splitVa = splitVolumeVA(r, lgaUsg, lambda);
-      // The passing half. `lgaMode` rather than lgaUsg: the passing split has
-      // no fitted-line cousin to price against — it only ever pivots — so it
-      // reads the mode's own baseline object, the one carrying muCrt.
-      const pp = passingSplit(r, lgaMode);
       out.push({
         r, gp, usgPerM,
-        astPerM: (r.ast || 0) / r.mp,
-        // Priced into points here, so PEFF/PVOL/λ_A sit on the same points
-        // scale as every other number in the table.
-        pEff: (pp?.eff ?? 0) * (pp?.price ?? 0),
-        pVol: (pp?.vol ?? 0) * (pp?.price ?? 0),
-        pVa: playmakingVA(r, lga),
-        pSplitVa: splitPlaymakingVA(r, lgaMode, lambda),
-        // The AST-free candidate (scoring.js::playmakingVATov), wired to
-        // nothing else. Priced off `lga`, not lgaMode: it needs only μ_AST and
-        // μ_TOV, both of which are plain league averages.
-        // The AST+TOV candidate (scoring.js::playmakingVACrt), wired to
-        // nothing else. Priced off lgaMode, which carries the muCrt it needs.
-        pCrtVa: playmakingVACrt(r, lgaMode, lambda),
-        tovPerM: (r.tov || 0) / r.mp,
         eff: sp?.eff ?? 0, vol: sp?.vol ?? 0, splitVa,
         key: (r.slug || r.name) + (r.team || ""),
         qualified: r.mp >= minMp,
         ptsPerM: (r.pts || 0) / r.mp,
         pred: lgaUsg.usgModel.a + lgaUsg.usgModel.b * usgPerM,
         va, usgVa, capVa,
-        // Under λ — the baseline the switch actually ships — Δ carries BOTH
-        // halves of the mode, so the column is what toggling USG-ADJ moves
-        // this player's whole VA by. The two candidate columns are scoring
-        // constructs with no passing cousin, so theirs stays scoring-only.
-        delta: deltaVs === "spl"
-          ? (splitVa - va) + (splitPlaymakingVA(r, lgaMode, lambda) - playmakingVA(r, lga))
-          : (deltaVs === "cap" ? capVa : usgVa) - va,
+        delta: (deltaVs === "cap" ? capVa : deltaVs === "spl" ? splitVa : usgVa) - va,
       });
     }
     return out;
-  }, [rows, lga, lgaUsg, lgaMode, minMp, deltaVs, lambda]);
+  }, [rows, lga, lgaUsg, minMp, deltaVs, lambda]);
 
   // What the plot draws: the qualified field, always — a search picks players
   // OUT of the cloud rather than emptying it, since the cloud is the context
@@ -450,13 +410,6 @@ export function UsageView() {
       : sort.key === "eff" ? scaled(x.eff, x.gp)
       : sort.key === "vol" ? scaled(x.vol, x.gp)
       : sort.key === "splitVa" ? scaled(x.splitVa, x.gp)
-      : sort.key === "astPerM" ? x.astPerM
-      : sort.key === "pEff" ? scaled(x.pEff, x.gp)
-      : sort.key === "pVol" ? scaled(x.pVol, x.gp)
-      : sort.key === "pSplitVa" ? scaled(x.pSplitVa, x.gp)
-      : sort.key === "tovPerM" ? x.tovPerM
-      : sort.key === "pVa" ? scaled(x.pVa, x.gp)
-      : sort.key === "pCrtVa" ? scaled(x.pCrtVa, x.gp)
       : scaled(x.delta, x.gp)
     );
     out.sort((a, b) => {
@@ -519,11 +472,9 @@ export function UsageView() {
           three change what the numbers MEAN, the ones above change which
           numbers. */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Whole scoring baselines, the scoring volume term split into its two halves, or the same split for the passing term">
+        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Whole baselines, or today's volume term split into its two halves">
           <button onClick={() => setColView("base")} className={`px-1.5 py-0.5 ${colView === "base" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Baselines</button>
           <button onClick={() => setColView("split")} className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "split" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Split</button>
-          <button onClick={() => setColView("pass")} className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "pass" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Pass</button>
-          <button onClick={() => setColView("psplit")} className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "psplit" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>P-Split</button>
         </div>
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which candidate the Δ column measures against today's VA">
           <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
@@ -559,22 +510,9 @@ export function UsageView() {
           load than a median minute — and λ pays the second half at the dial&apos;s rate
           (λ=1 is plain VA to the decimal, λ=0 charges purely per possession used;
           the USG-ADJ switch ships λ={VOLUME_CREDIT}) ·
-          The playmaking term pays for volume the same way and so gets the same dial: the
-          passer is charged against his TURNOVER rate rather than the flat minute
-          {lga?.laTOVperM > 0 ? <> (<span className="tabular-nums text-stone-600">{(lga.laASTperM / lga.laTOVperM).toFixed(2)}</span> assists
-          per turnover at the median minute)</> : null}, which keeps his own assists out of his
-          own baseline — so an assist is credited at face value, and a low-turnover passer is
-          charged a lower bar. P-SPLIT shows its two halves (PEFF what he produced above the
-          going rate for the risk he took, PVOL what he was worth for carrying more or less of
-          that risk than a median minute; they sum to the standard term exactly). PASS sets it
-          beside the standard term and the CRT candidate, which prices against the ball-handling
-          load AST + TOV: that one tracks playmaking load far more closely (R² 0.95 against
-          0.29) and rebalances the boards harder, but it puts a player&apos;s own assists back
-          in his own baseline, so it is wired to nothing else ·
-          Δ = {deltaVs === "spl"
-            ? "what the switch moves this player's whole VA by, both halves together"
-            : `${deltaVs === "cap" ? "CAP" : "USG"} − VA, what adopting that scoring baseline moves his total by`}
-          {" "}(the other eight categories don&apos;t change)
+          Δ = {deltaVs === "cap" ? "CAP" : deltaVs === "spl" ? "λ" : "USG"} − VA, exactly what
+          adopting that baseline moves this player&apos;s total VA by (the other nine
+          categories don&apos;t change)
           {scope === "po" && " · playoff rows are scored against the season's regular-season line, as all VA baselines are"}
         </div>
       )}
@@ -592,7 +530,7 @@ export function UsageView() {
       )}
       {(() => {
         const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, eff: -1, vol: -1, splitVa: -1,
-          astPerM: -1, tovPerM: -1, pEff: -1, pVol: -1, pSplitVa: -1, pVa: -1, pCrtVa: -1, delta: -1 };
+          delta: -1 };
         const H = ({ k, label, right = true, title }) => (
           <button
             type="button"
@@ -620,26 +558,15 @@ export function UsageView() {
             >
               MP
             </button>
-            {colView === "pass" || colView === "psplit" ? (
-              <>
-                <H k="astPerM" label="AST/M" title="Assists per minute" />
-                {colView === "pass"
-                  ? <H k="tovPerM" label="TOV/M" title="Turnovers per minute — the shipped passing baseline's whole regressor" />
-                  : <H k="tovPerM" label="TOV/M" title="Turnovers per minute — what the shipped passing baseline prices against" />}
-              </>
-            ) : (
-              <>
-                <H k="ptsPerM" label="PTS/M" title="Points per minute" />
-                <H k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
-              </>
-            )}
+            <H k="ptsPerM" label="PTS/M" title="Points per minute" />
+            <H k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
             {colView === "base" ? (
               <>
                 <H k="va" label="VA" title="Scoring volume against the league's median minute — today's VA" />
                 <H k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
                 <H k="capVa" label="Cap" title="Scoring volume against min(predicted, league median)" />
               </>
-            ) : colView === "split" ? (
+            ) : (
               <>
                 <H k="eff" label="Eff" title="Points above the going rate on the possessions he used" />
                 <H k="vol" label="Vol" title="What he was worth for carrying more (or less) load than a median minute — Eff + Vol = VA exactly" />
@@ -649,33 +576,13 @@ export function UsageView() {
                   title={`Eff + λ × Vol — plain VA at λ=1, a pure per-possession charge at λ=0${lambda === VOLUME_CREDIT ? ". * this is what the USG-ADJ switch scores" : ""}`}
                 />
               </>
-            ) : colView === "pass" ? (
-              <>
-                <H k="pVa" label="AST" title="The playmaking term on the standard baseline — μ_AST per minute" />
-                <H
-                  k="pSplitVa"
-                  label={<span className="normal-case">λ<sub>A</sub>{lambda === VOLUME_CREDIT ? "*" : ""}</span>}
-                  title={`The playmaking term against TURNOVER rate — a player's own assists stay out of his own baseline, so an assist is credited at face value${lambda === VOLUME_CREDIT ? ". * this is what the USG-ADJ switch ships" : ""}`}
-                />
-                <H k="pCrtVa" label="CRT" title="Candidate under review: the same term against the ball-handling load AST+TOV. Measures playmaking load far better (R² 0.95 vs 0.29) and rebalances harder, but a player's own assists sit in his own baseline, discounting a marginal assist to 71% (see spec §4.7)" />
-              </>
-            ) : (
-              <>
-                <H k="pEff" label="PEff" title="Assists above the going rate for the ball-handling risk he took, in points" />
-                <H k="pVol" label="PVol" title="What he was worth for carrying more (or less) ball-handling risk than a median minute — PEff + PVol = the standard playmaking term exactly" />
-                <H
-                  k="pSplitVa"
-                  label={<span className="normal-case">λ<sub>A</sub>{lambda === VOLUME_CREDIT ? "*" : ""}</span>}
-                  title={`PEff + λ × PVol — the standard playmaking term at λ=1${lambda === VOLUME_CREDIT ? ". * this is what the USG-ADJ switch scores" : ""}`}
-                />
-              </>
             )}
             <H
               k="delta"
               label="Δ"
               title={deltaVs === "spl"
-                ? "What the USG-ADJ switch moves his whole VA by at this λ — the scoring half and the passing half together"
-                : `${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that scoring baseline moves his total by`}
+                ? "What the USG-ADJ switch moves his VA by at this λ"
+                : `${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that baseline moves his total by`}
             />
           </div>
         );
@@ -683,8 +590,7 @@ export function UsageView() {
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
       {list && list.map((x, i) => {
-        const { r, gp, ptsPerM, pred, usgPerM, astPerM, tovPerM, pEff, pVol, pVa, pSplitVa, pCrtVa,
-                va, usgVa, capVa, eff, vol, splitVa, delta, key } = x;
+        const { r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, eff, vol, splitVa, delta, key } = x;
         const isPicked = picked?.key === key;
         return (
         <div
@@ -724,14 +630,14 @@ export function UsageView() {
               >{mpVal}</button>
             );
           })()}
-          <span className="text-right tabular-nums text-stone-700">{colView === "pass" || colView === "psplit" ? astPerM.toFixed(3) : ptsPerM.toFixed(3)}</span>
+          <span className="text-right tabular-nums text-stone-700">{ptsPerM.toFixed(3)}</span>
           {/* The usage this prediction was read off, on the cell it produced —
               the model's one input, and the reason two players with the same
               PTS/min can carry different baselines. */}
           <span
             className="text-right tabular-nums text-stone-500"
             title={`${usgPerM.toFixed(3)} possessions used per minute`}
-          >{colView === "pass" || colView === "psplit" ? tovPerM.toFixed(3) : pred.toFixed(3)}</span>
+          >{pred.toFixed(3)}</span>
           {colView === "base" ? (
             <>
               <span className={`text-right tabular-nums ${va < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(va, gp))}</span>
@@ -745,23 +651,11 @@ export function UsageView() {
                 title={capVa === va ? "At or above median usage — the cap leaves this player on the standard baseline" : undefined}
               >{sgn(pts(capVa, gp))}</span>
             </>
-          ) : colView === "split" ? (
+          ) : (
             <>
               <span className={`text-right tabular-nums ${eff < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(eff, gp))}</span>
               <span className={`text-right tabular-nums ${vol < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(vol, gp))}</span>
               <span className={`text-right tabular-nums ${splitVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(splitVa, gp))}</span>
-            </>
-          ) : colView === "pass" ? (
-            <>
-              <span className={`text-right tabular-nums ${pVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pVa, gp))}</span>
-              <span className={`text-right tabular-nums ${pSplitVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pSplitVa, gp))}</span>
-              <span className={`text-right tabular-nums ${pCrtVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pCrtVa, gp))}</span>
-            </>
-          ) : (
-            <>
-              <span className={`text-right tabular-nums ${pEff < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pEff, gp))}</span>
-              <span className={`text-right tabular-nums ${pVol < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pVol, gp))}</span>
-              <span className={`text-right tabular-nums ${pSplitVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(pSplitVa, gp))}</span>
             </>
           )}
           <span className={`text-right tabular-nums font-semibold ${delta < 0 ? "text-red-600" : delta === 0 ? "text-stone-300" : "text-stone-900"}`}>{sgn(pts(delta, gp))}</span>

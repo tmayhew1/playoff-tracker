@@ -30,7 +30,7 @@ export function InfoView() {
     { label: "Free throws", f: `( FTM/FTA − ${fmt(LGA.laFT)} ) × FTA` },
   ];
   const PLAYDEF = [
-    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ${fmt(LGA.laPTSperMake)} × (1 − ${fmt(LGA.laFG)})` },
+    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ( ${fmt(LGA.laPTSperMake)} − ${fmt(LGA.laPTSperPoss)} ) × (1 − ${fmt(LGA.laFG)})` },
     { label: "Steals", f: `( STL/min − ${fmt(LGA.laSTLperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
     { label: "Blocks", f: `( BLK/min − ${fmt(LGA.laBLKperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
     { label: "Turnovers", f: `−( TOV/min − ${fmt(LGA.laTOVperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
@@ -131,28 +131,22 @@ export function InfoView() {
         )}
         {USG && (
           <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
-            <span className="font-semibold">Passing gets the same treatment</span>, for the same reason.
-            Assists are charged per minute too — a flat{" "}
-            <span className="tabular-nums">{fmt(LGA.laASTperM)}</span> per minute, with everything above it
-            paid at face value — so discounting only the scoring side wouldn&apos;t price volume, it would
-            just move value from scorers to passers. The catch is that a passer&apos;s opportunity has to be
-            measured by something he can&apos;t move by assisting, or his own assists end up in his own
-            baseline. Shooting has a clean version of this — a miss raises your baseline as much as a make —
-            but the box score has no <span className="italic">missed pass</span>. What it does have is the
-            other cost of handling the ball: <span className="font-semibold">turnovers</span>. So the
-            playmaking term is priced against turnover rate, at{" "}
-            <span className="tabular-nums">{fmt(LGA.laASTperM / LGA.laTOVperM)}</span> assists per turnover
-            at the median minute. What a player produced above the going rate for the risk he took is paid
-            in full — an assist is always worth a full assist — and what he was worth for carrying more, or
-            less, of that risk than a typical minute is paid at the same{" "}
-            <span className="tabular-nums">{VOLUME_CREDIT}×</span>. One dial, both places volume is paid.
-            A low-turnover passer is charged a lower bar, which is the question this term never asked before.
-            The other eight categories are untouched, and every setting of that dial scores the
-            median-load and median-usage player identically — it redistributes value rather
-            than re-levelling it. Legacy and College keep the standard baseline. The
-            {" "}<span className="font-semibold">Usage</span> tab is where this was worked out: it plots
-            the cloud, draws the candidate baselines over it, and lists what each one pays every
-            player-season.
+            <span className="font-semibold">A note on what an assist is worth.</span> Every other
+            event in VA is priced in <span className="italic">possessions</span>: a steal is worth a
+            full one <span className="tabular-nums">({fmt(LGA.laPTSperPoss)})</span>, a block that
+            possession times the chance the defense secures it, a rebound likewise. The assist used to
+            be the exception — priced off a made basket
+            {" "}<span className="tabular-nums">({fmt(LGA.laPTSperMake)})</span>, roughly two and a half
+            times as much. But a pass doesn&apos;t create a possession; the possession already existed
+            and would have returned <span className="tabular-nums">{fmt(LGA.laPTSperPoss)}</span> on its
+            own. What the pass created is the difference — a made basket instead of an ordinary trip —
+            so the surplus is <span className="tabular-nums">{fmt(LGA.laPTSperMake - LGA.laPTSperPoss)}</span>,
+            and the passer keeps the same <span className="tabular-nums">{fmt(1 - LGA.laFG)}</span> share
+            of it as before: the part the shooter wouldn&apos;t have converted on his own. That is the
+            {" "}<span className="tabular-nums">{fmt((LGA.laPTSperMake - LGA.laPTSperPoss) * (1 - LGA.laFG))}</span>
+            {" "}points an assist is worth here. A player at exactly the league assist rate is unaffected
+            either way, so this changes how much assists weigh against the other nine categories without
+            reordering anyone within them.
           </p>
         )}
         <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>

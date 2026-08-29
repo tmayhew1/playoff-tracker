@@ -271,7 +271,14 @@ value_add_parts <- function(p, lga) {
   ftAdd  <- ((p$ftm / .den(p$fta)) - lga$laFT) * p$fta
   volume <- ((p$pts / mp) - lga$laPTSperM) * mp
   efficiency <- 3 * tpAdd + 2 * twoAdd + ftAdd
-  astVal <- ((p$ast / mp) - lga$laASTperM) * mp * lga$laPTSperMake * (1 - lga$laFG)
+  # Assist price (spec section 4.2a): (kappa - pi) * (1 - p_G). An assist does
+  # not create a possession -- the possession already existed and would have
+  # returned pi -- so the surplus the pass produced is kappa - pi, not kappa,
+  # and the passer's share of it is the same (1 - p_G) as before. This is the
+  # only event price in VA that was not possession-denominated.
+  # KEEP IN SYNC with assistPrice() in app/scoring.js.
+  astPrice <- (lga$laPTSperMake - lga$laPTSperPoss) * (1 - lga$laFG)
+  astVal <- ((p$ast / mp) - lga$laASTperM) * mp * astPrice
   stlVal <- ((p$stl / mp) - lga$laSTLperM) * mp * lga$laPTSperPoss
   blkVal <- ((p$blk / mp) - lga$laBLKperM) * mp * lga$laPTSperPoss * lga$laDRBrate
   tovVal <- -((p$tov / mp) - lga$laTOVperM) * mp * lga$laPTSperPoss

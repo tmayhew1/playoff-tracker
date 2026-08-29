@@ -29,17 +29,14 @@ export function VABaselineToggle({ className = "mb-4" }) {
           scroll on the narrowest phones). Wrapped, the pair drops to its own
           line under the label and stays right-aligned. */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        {/* "Volume", not "Scoring": the switch re-prices both terms that pay
-            for volume as such — scoring and playmaking (spec §4.6-4.7). It was
-            accurate when the mode only touched the scoring term. */}
-        <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 shrink-0">Volume baseline</span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 shrink-0">Scoring baseline</span>
         <div className="inline-flex ml-auto shrink-0">
-          <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj} aria-label="League average volume baseline">
+          <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj} aria-label="League average scoring baseline">
             LG AVG
           </button>
           {/* The boards keep the bare abbreviation on their own chips
               (lib/va-mode.js); Info carries the explanation in prose. */}
-          <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj} aria-label="Usage-adjusted volume baseline">
+          <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj} aria-label="Usage-adjusted scoring baseline">
             USG-Adjusted
           </button>
         </div>

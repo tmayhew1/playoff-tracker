@@ -5,18 +5,17 @@ import { lgaForSeason, usageModelFor, usgAdjDelta } from "../scoring";
 
 
 // --- USG-ADJ mode ------------------------------------------------------------
-// One app-wide switch over which baselines the two volume-paying terms are
-// measured against (see the USG-ADJ blocks in app/scoring.js and spec §4.6-4.7):
+// One app-wide switch over which baseline the scoring-volume term is measured
+// against (see the USG-ADJ block in app/scoring.js and spec §4.6):
 //
-//   off — μ_PTS and μ_AST per MINUTE. Volume is paid for, in both.
-//   on  — the scoring term pivots about the median minute of possessions USED
-//         and the playmaking term about the median minute of TURNOVERS, each
-//         paying its volume half at the same λ. Volume still counts in both, at
-//         half face value rather than in full.
+//   off — μ_PTS, the league's median scoring MINUTE. Volume is paid for.
+//   on  — the term pivots about the median minute of possessions USED, paying
+//         its volume half at λ. Volume still counts, at half face value.
 //
-// Both halves, not just scoring: the playmaking term pays for volume the same
-// way the scoring term does, so adjusting one and not the other would not price
-// volume — it would move value from scorers to passers.
+// Scoring only. The playmaking term pays for volume the same way, and three
+// usage-adjusted passing baselines were built and measured before that was
+// settled; all were dropped once the imbalance turned out to be a PRICE
+// problem, fixed in base VA instead (scoring.js::assistPrice, spec §4.2a).
 //
 // The mode never travels as its own prop. Every VA surface already threads a
 // season baseline object around, so the switch simply decides WHICH baseline
@@ -67,8 +66,8 @@ export function UsgAdjChip({ className = "" }) {
       onClick={() => setUsgAdj(!usgAdj)}
       aria-pressed={usgAdj}
       title={usgAdj
-        ? "Scoring volume is priced against possessions used and passing against turnover rate — tap for the league median baseline"
-        : "Price scoring volume against possessions used and passing against turnover rate, instead of the median minute"}
+        ? "Scoring volume is priced against the possessions used — tap for the league median baseline"
+        : "Price scoring volume against the possessions used instead of the median minute"}
       className={`normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border rounded-sm ${
         usgAdj ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-500 border-stone-300"
       } ${className}`}
@@ -100,12 +99,11 @@ export function useUsgAdjActive(season) {
 }
 
 // Re-price rows that arrived with `va` already computed server-side (the
-// playoff leaderboard route, the /api/players index). Both adjusted terms are
-// linear in their counts — MP and USG for scoring, MP and TOV for passing —
-// so the two modes differ by a closed form (scoring.js::usgAdjDelta) and the
-// other eight categories don't have to be re-derived from the box score.
-// Per-game splits carried on a row are re-priced the same way, so a row's games
-// still sum to its season.
+// playoff leaderboard route, the /api/players index). The volume term is linear
+// in MP and USG, so the two modes differ by a closed form
+// (scoring.js::usgAdjDelta) and the other nine categories don't have to be
+// re-derived from the box score. Per-game splits carried on a row are re-priced
+// the same way, so a row's games still sum to its season.
 //
 // Returns the input array untouched when the mode is off or the season has no
 // model, so callers can wrap unconditionally without copying rows for nothing.

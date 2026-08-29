@@ -150,7 +150,7 @@ $r_c$, baseline $\lambda_c$, opportunity $n_c$, and price $w_c$:
 | 3-Pointers | $\mathrm{3PM}/\mathrm{3PA}$ | $p_3$ | $\mathrm{3PA}$ | $3$ |
 | 2-Pointers | $\mathrm{2PM}/\mathrm{2PA}$ | $p_2$ | $\mathrm{2PA}$ | $2$ |
 | Free Throws | $\mathrm{FTM}/\mathrm{FTA}$ | $p_F$ | $\mathrm{FTA}$ | $1$ |
-| Assists | $\mathrm{AST}/\mathrm{MP}$ | $\mu_{\mathrm{AST}}$ | $\mathrm{MP}$ | $\kappa\,(1 - p_G)$ |
+| Assists | $\mathrm{AST}/\mathrm{MP}$ | $\mu_{\mathrm{AST}}$ | $\mathrm{MP}$ | $(\kappa - \pi)(1 - p_G)$ |
 | Steals | $\mathrm{STL}/\mathrm{MP}$ | $\mu_{\mathrm{STL}}$ | $\mathrm{MP}$ | $\pi$ |
 | Blocks | $\mathrm{BLK}/\mathrm{MP}$ | $\mu_{\mathrm{BLK}}$ | $\mathrm{MP}$ | $\pi\,\rho_D$ |
 | Turnovers | $\mathrm{TOV}/\mathrm{MP}$ | $\mu_{\mathrm{TOV}}$ | $\mathrm{MP}$ | $-\pi$ |
@@ -173,7 +173,7 @@ $$
 \;+\; \underbrace{3\Bigl(\tfrac{\mathrm{3PM}}{\mathrm{3PA}} - p_3\Bigr)\mathrm{3PA}
 \;+\; 2\Bigl(\tfrac{\mathrm{2PM}}{\mathrm{2PA}} - p_2\Bigr)\mathrm{2PA}
 \;+\; \Bigl(\tfrac{\mathrm{FTM}}{\mathrm{FTA}} - p_F\Bigr)\mathrm{FTA}}_{\text{scoring efficiency}} \\[6pt]
-&+\; \underbrace{\Bigl(\tfrac{\mathrm{AST}}{\mathrm{MP}} - \mu_{\mathrm{AST}}\Bigr)\mathrm{MP}\;\kappa\,(1-p_G)}_{\text{playmaking}}
+&+\; \underbrace{\Bigl(\tfrac{\mathrm{AST}}{\mathrm{MP}} - \mu_{\mathrm{AST}}\Bigr)\mathrm{MP}\;(\kappa-\pi)(1-p_G)}_{\text{playmaking}}
 \;+\; \underbrace{\Bigl(\tfrac{\mathrm{STL}}{\mathrm{MP}} - \mu_{\mathrm{STL}}\Bigr)\mathrm{MP}\,\pi
 \;+\; \Bigl(\tfrac{\mathrm{BLK}}{\mathrm{MP}} - \mu_{\mathrm{BLK}}\Bigr)\mathrm{MP}\,\pi\,\rho_D}_{\text{defensive events}} \\[6pt]
 &-\; \underbrace{\Bigl(\tfrac{\mathrm{TOV}}{\mathrm{MP}} - \mu_{\mathrm{TOV}}\Bigr)\mathrm{MP}\,\pi}_{\text{ball security}}
@@ -184,10 +184,84 @@ $$
 
 ### 4.2 Reading the weights
 
-- **Assist.** An assist is worth the field goal it created, $\kappa$, times the
-  share of those baskets that would *not* have happened without the pass,
-  $(1 - p_G)$. Deliberately opinionated: it refuses to credit the passer for the
-  league-baseline conversion the shooter would have managed anyway.
+- **Assist.** An assist is worth the *surplus* the pass produced over an
+  ordinary possession, $(\kappa - \pi)$, times the share of it not attributable
+  to the conversion the shooter would have managed anyway, $(1 - p_G)$. The
+  second factor is deliberately opinionated; the first is what keeps the assist
+  denominated in possessions like every other event price. See §4.2a.
+### 4.2a Why the assist price is $(\kappa - \pi)$ and not $\kappa$
+
+Every other event price in the table converts an event into **possessions** and
+prices it at $\pi$:
+
+| event | price | 1996-97 |
+|---|---|---|
+| Steal | $\pi$ | $1.034$ |
+| Block | $\pi\rho_D$ | $0.715$ |
+| D Rebound | $\gamma\pi\rho_O$ | $0.373$ |
+| O Rebound | $\gamma\pi\rho_D$ | $0.751$ |
+| Turnover | $-\pi$ | $-1.034$ |
+| **Assist (v2.0)** | $\kappa(1-p_G)$ | $1.465$ |
+
+The assist was the one exception, built on $\kappa$ — points per *made field
+goal* — which is about $2.6\times$ $\pi$.
+
+That is the wrong denominator. **An assist does not create a possession.** The
+possession already existed and would have returned $\pi$ on its own. What the
+pass created is the difference: the possession returned a made basket, $\kappa$,
+instead of the generic $\pi$. So the surplus the play produced is $\kappa - \pi$,
+and the passer's share of *that* is the same $(1-p_G)$ §4.2 already applies:
+
+$$
+w_{\mathrm{AST}} \;=\; (\kappa - \pi)(1 - p_G)
+$$
+
+Expanding shows precisely what changed:
+
+$$
+(\kappa-\pi)(1-p_G) \;=\; \underbrace{\kappa(1-p_G)}_{\text{v2.0}} \;-\; \pi(1-p_G)
+\qquad 0.901 \;=\; 1.465 - 0.564 \quad \text{(1996-97)}
+$$
+
+— the old price with the possession's own baseline return netted out at the same
+share. This is the master equation's own principle applied to the one place it
+was skipped: every category is (rate $-$ baseline) $\times$ opportunity $\times$
+price, and the assist price was the single spot where a raw $\kappa$ entered
+with no baseline subtracted.
+
+**What was wrong before.** The shooter banks the whole basket through
+$\mathrm{PTS}$, and the passer was banking $\kappa(1-p_G)$ on top, so one
+assisted basket was credited $\kappa(2-p_G) = 4.15$ points against a
+$2.69$-point basket — $155\%$. Roughly $61\%$ of made field goals are assisted,
+so this ran on most baskets, and it is why Assists was $27.5\%$ of the entire
+positive-VA pool pooled over 46 seasons, second only to Points ($33.7\%$) and
+more than 3P + 2P + FT combined ($11.2\%$). The new price brings one assisted
+basket to $3.59$, or $134\%$.
+
+**Why not further.** Reaching $100\%$ means the passer's credit coming *out of*
+the shooter's, which needs per-player assisted-FG rates. Basketball-reference
+publishes them on its Shooting page; this repo does not bake them. Until it
+does, $134\%$ is the honest stopping point, and it is stated rather than hidden.
+
+**Two properties.**
+
+1. **It is a contraction about the league median rate, not a re-levelling.**
+   The term is $(\mathrm{AST}/\mathrm{MP} - \mu_{\mathrm{AST}})\,\mathrm{MP}\,w$,
+   so a player at exactly $\mu_{\mathrm{AST}}$ scores $0$ at *any* price. Every
+   other player's assist term scales by the same factor, which means **nothing
+   reorders within Assists** — only the weight of Assists against the other nine
+   categories moves. Negative terms shrink too: a poor passer's penalty is
+   reduced by the same factor as a great passer's credit.
+2. **It is era-stable.** $w_{\text{new}}/w_{\text{old}} = 1 - \pi/\kappa$ runs
+   $0.585$–$0.669$ across 56 seasons (mean $0.609$), so this is a near-constant
+   $\approx 0.61\times$ rather than an era artifact.
+
+**Scope.** This is a change to **base VA**, not a display mode: it is in
+`scoring.js::assistPrice` and mirrored in
+`scripts/R/scrape_common.R::value_add_parts`, and the baked playoff files were
+re-scored by `scripts/rebake-leaderboard-va.mjs`. Every VA on every surface
+moves. USG-ADJ (§4.6) is unaffected and remains scoring-only.
+
 - **Steal vs. block.** A steal ends the possession outright, so it earns a full
   $\pi$. A block only ends it if the defense secures the carom — about $\rho_D$
   of the time — so it earns $\pi\rho_D$. The same asymmetry is reused verbatim
@@ -450,153 +524,44 @@ population). A season with no fitted model reads as *mode unavailable* and
 keeps $\mu_{\mathrm{PTS}}$ — never a zero baseline (invariant 5).
 
 
-### 4.7 The passing half of the same mode
+### 4.7 Usage-adjusting the playmaking term — tried, and dropped
 
-USG-ADJ as stated in §4.6 has a defect that only shows up once it is read on a
-board: it discounts one volume-paying term and leaves the other at face value.
+USG-ADJ (§4.6) discounts the scoring-volume term and leaves the playmaking term
+at face value. That is a real asymmetry: the playmaking term charges
+$\mu_{\mathrm{AST}}$ per **minute** and pays every assist above it in full, the
+same shape and the same blind spot §4.6 objects to in scoring. Measured on the
+positive-VA pool, adjusting points alone lifted playmaking's share from $49.9\%$
+to $61.5\%$ — up in every one of the 46 baked seasons.
 
-The playmaking term charges $\mu_{\mathrm{AST}}$ per **minute** and pays every
-assist above it in full — the identical shape, and the identical blind spot,
-that §4.6 objects to in the scoring term. Adjusting only the scoring side
-therefore does not price volume. It moves value from scorers to passers.
+Three usage-adjusted passing baselines were built and read against real seasons.
+All are removed from the codebase; this section is the record.
 
-The effect is not marginal. Over the 46 baked seasons, playmaking's share of a
-season's positive-VA pool averages $49.9\%$ under standard VA; adjusting points
-alone lifts it to $61.5\%$ — $+11.7$ points on average, $+7.7$ to $+16.0$ across
-seasons, and up in **every** one. In 1996-97 it takes Stockton (a $931.9$-point
-assist term out of a $1045.6$ VA) past Jordan, whose scoring-volume term is cut
-by $538$ while nothing he is charged for absorbing the ball is touched.
+Each priced the passer against a *load* $\ell$, pivoting about
+$(\bar\ell, \mu_{\mathrm{AST}})$ with $\bar e = \mu_{\mathrm{AST}}/\bar\ell$, so
+that the term split exactly and the median-load player scored identically at
+every $\lambda$ — the §4.6 construction, with only the load differing.
 
-**The measure of opportunity.** §4.6's construction applies directly, but the
-passer's opportunity has to be something he does **not** control by assisting.
-This is where the mirror is imperfect and the imperfection has to be chosen
-deliberately. $\mathrm{USG}$ counts *attempts*: a miss raises a scorer's
-baseline exactly as much as a make, so the baseline tracks opportunity and
-efficiency decides whether he clears it. The box score records no *missed pass*,
-so there is no exact analogue. What it does record is the other observable cost
-of handling the ball — the possessions he handled and **lost**:
+| load $\ell$ | $R^2$ of $\mathrm{AST}/\mathrm{MP}$ on $\ell/\mathrm{MP}$ | AST share at $\lambda=\tfrac12$ | why it was dropped |
+|---|---|---|---|
+| $\mathrm{AST}+\mathrm{TOV}$ | $0.951$ | $47.9\%$ | A player's own assists sit in his own baseline: each marginal assist raises the bar it must clear, so an assist is worth $71\%$ of face value. |
+| $\mathrm{TOV}$ | $0.288$ | $58.5\%$ | Weak evidence of load, era-drifting ($0.09$–$0.52$); charges a post-up centre an assist bar for travels and strips; and cannot close the gap at any $\lambda$ ($57.2\%$ even at $\lambda=0$). |
+| $\mathrm{TOV}+\mathrm{USG}$ | $0.092$ | $61.6\%$ | No explanatory power and no rebalancing at all. |
 
-$$
-\bar e_T \;=\; \frac{\mu_{\mathrm{AST}}}{\mu_{\mathrm{TOV}}}
-$$
+(Standard VA's share is $49.9\%$; the scoring side's own fit is $R^2 = 0.923$.)
 
-the assists a turnover's worth of ball-handling risk returns at the league's
-median minute. Both quantities are already baked (`laASTperM`, `laTOVperM`);
-this half needs no model of its own. The playmaking term then splits exactly,
-with no residual:
+**Why none of them was the answer.** All three were rationing a quantity whose
+unit price was too high. The scorer/passer imbalance was not a baseline problem
+— it was that an assisted basket was credited $155\%$ of its own value, because
+the assist was the only event in VA not denominated in possessions. Fixing the
+**price** (§4.2a) addresses it at the source, applies to base VA rather than to
+one display mode, needs no new bake, introduces no self-reference, no era
+artifact and no second charge on turnovers, and reorders nobody within Assists.
 
-$$
-\Bigl(\tfrac{\mathrm{AST}}{\mathrm{MP}} - \mu_{\mathrm{AST}}\Bigr)\mathrm{MP}
-\;=\;
-\underbrace{\bigl(\mathrm{AST} - \bar e_T\,\mathrm{TOV}\bigr)}_{\text{creation}}
-\;+\;
-\underbrace{\bar e_T\bigl(\mathrm{TOV} - \mu_{\mathrm{TOV}}\,\mathrm{MP}\bigr)}_{\text{risk}}
-$$
-
-— what he produced above the going rate for the ball-handling risk he took, and
-what he was worth for carrying more (or less) of that risk than a typical
-minute. Both halves are priced at $\kappa(1-p_G)$ as before, and the risk half
-is paid at $\lambda$:
-
-$$
-\lambda_{\mathrm{AST}}(\lambda) \;=\; \bar e_T(1-\lambda)\,\frac{\mathrm{TOV}}{\mathrm{MP}} \;+\; \lambda\,\mu_{\mathrm{AST}}
-\qquad\text{per minute}
-$$
-
-flat at $\lambda = 1$, through the origin at $\lambda = 0$, pivoting about
-$(\mu_{\mathrm{TOV}}, \mu_{\mathrm{AST}})$.
-
-**The same $\lambda$, deliberately.** $\lambda$ is not a second free parameter.
-The two terms are one question — *how much of volume as such do we still pay
-for?* — asked of two categories, and giving each its own dial would turn a
-principle into a pair of knobs tuned until the board looks right.
-`VOLUME_CREDIT` is read by both halves.
-
-**What this buys.** A player's own assists are not in his own baseline, so an
-assist is credited at **face value** and a low-turnover passer is charged a
-lower bar — the question the playmaking term never asked before. Steve Kerr's
-1996-97 ($4.07$ AST/TO) gains $65$ points; Trae Young's 2024-25 ($880$ AST on
-$355$ TOV) gives back $297$.
-
-**What it costs, stated plainly.** Two things.
-
-1. **$\mathrm{TOV}$ is weak evidence of playmaking load.** Minutes-weighted
-   $R^2$ of $\mathrm{AST}/\mathrm{MP}$ on $\mathrm{TOV}/\mathrm{MP}$ averages
-   $0.288$ over the 46 baked seasons, ranging $0.09$ to $0.52$ and drifting by
-   era. The $\mathrm{AST}+\mathrm{TOV}$ alternative below is $0.951$; the
-   scoring side is $0.923$.
-2. **Not every turnover is a passing turnover.** A centre's giveaways are
-   travels, offensive fouls and stripped post-ups, and this baseline reads them
-   as evidence he was running the offense. Shawn Kemp's 1996-97 ($0.56$ AST/TO)
-   gives back $109$ points.
-
-It also only partly closes the gap it was built to close: playmaking's share of
-the positive-VA pool lands at $58.5\%$ against standard VA's $49.9\%$, and at
-$57.2\%$ even at $\lambda = 0$ where the minute credit vanishes entirely. It
-recovers roughly a third, because the players inflating that pool are elite
-precisely for producing assists *without* turnovers, and charging per turnover
-is designed not to reach them. In 1996-97 the board reads Malone $1170$, Jordan
-$1067$, Stockton $1061$ — Jordan back ahead, but narrowly.
-
-That trade was made knowingly: crediting an assist at face value was judged
-worth more than closing the remaining share gap. The alternative is kept scored
-and visible rather than deleted, so the judgement can be revisited against real
-seasons.
-
-**The alternative: the $\mathrm{AST} + \mathrm{TOV}$ load.** Charge the passer
-against every possession he *ended with his own pass*, made or lost:
-
-$$
-\mathrm{CRT} \;=\; \mathrm{AST} + \mathrm{TOV}, \qquad \bar e_A = \frac{\mu_{\mathrm{AST}}}{\bar c}
-$$
-
-with $\bar c$ (`muCrt`) the minutes-weighted median of
-$\mathrm{CRT}/\mathrm{MP}$, baked next to $\bar u$. Same pivot, same $\lambda$,
-same exact split — only the load differs. It measures playmaking load far
-better ($R^2$ $0.951$) and restores the share to $47.9\%$, closer to standard VA
-than the shipped baseline reaches, in every season. It is not on the switch
-because a player's own assists sit in his own baseline: each marginal assist
-raises the bar it must clear, so an assist is worth $71\%$ of face value
-($67$–$74\%$ across seasons) rather than $1$.
-
-That $71\%$ is a discount, not a bound — the term stays linear and unbounded
-either way — and it is worth knowing that the shipped **scoring** baseline does
-the same thing to a made 2-pointer, which raises $\mathrm{USG}$ by one and is
-therefore paid $73\%$ of face value ($71$–$75\%$). Being charged for the
-opportunity your own production consumed is the mechanism of §4.6, not a defect.
-On the passing side it is merely avoidable, and the shipped baseline avoids it.
-Implemented as `scoring.js::playmakingVACrt`, visible in the Usage tab.
-
-**The properties of §4.6 all carry.** The term is linear in $\mathrm{MP}$ and
-$\mathrm{TOV}$, so it is additive over games (a season's baseline is the sum of
-its games'), the multi-season blend reproduces the per-season sum, and the
-closed-form re-pricing extends by one term:
-
-$$
-\Delta \;=\; \underbrace{(1-\lambda)\bigl(\mu_{\mathrm{PTS}}\mathrm{MP} - \bar e\,\mathrm{USG}\bigr)}_{\text{scoring}}
-\;+\; \underbrace{(1-\lambda)\bigl(\mu_{\mathrm{AST}}\mathrm{MP} - \bar e_T\,\mathrm{TOV}\bigr)\kappa(1-p_G)}_{\text{passing}}
-$$
-
-which is what `scoring.js::usgAdjDelta` computes. Every baked row carries
-$\mathrm{TOV}$ (leaderboard season rows and their per-game splits,
-`/api/players` season rows), so no surface needs re-deriving from the box score.
-A season with no $\mu_{\mathrm{TOV}}$ — none is baked today; turnovers were not
-recorded before 1977-78 — keeps $\mu_{\mathrm{AST}}$ and that half of $\Delta$
-is exactly zero: absent, never a wrong baseline (invariant 5).
-
-**A degenerate check.** Had the risk been denominated in minutes
-($\mathrm{TOV} := \mathrm{MP}$, so $\mu_{\mathrm{TOV}} = 1$ and
-$\bar e_T = \mu_{\mathrm{AST}}$) the family would collapse to
-$\mu_{\mathrm{AST}}\mathrm{MP}$ at every $\lambda$. The construction is a
-genuine re-denomination of the *opportunity*, not a rescaling of the price.
-
-**Reading it.** The Usage tab's **Pass** column view is the audit surface:
-$\mathrm{AST}/\mathrm{MP}$, $\mathrm{TOV}/\mathrm{MP}$, and the term under all
-three baselines — standard, shipped, and the $\mathrm{CRT}$ alternative — laid
-out as **Baselines** does for scoring. **P-Split** shows the shipped term's two
-halves per player-season. Under the tab's $\lambda$ option the $\Delta$ column
-carries *both* halves of the mode, so it is exactly what the switch moves a
-player's whole VA by.
+**The one thing worth keeping from the exercise.** $\mathrm{AST}+\mathrm{TOV}$
+is an excellent predictor of assist rate ($R^2 = 0.951$, better than the scoring
+side's own $0.923$). If a playmaking-load adjustment is ever wanted again, that
+is the regressor — and the AST-in-your-own-baseline objection is the thing to
+solve, not the fit.
 
 ---
 
@@ -1119,15 +1084,11 @@ own class rather than mixed into one column.
    from a mis-parsed page.
 5. Any category the source does not carry is **absent**, never zero-filled — a
    missing measurement must not read as below-average performance.
-6. USG-ADJ replaces the baselines $\lambda_{\text{Points}}$ (§4.6, against
-   $\mathrm{USG}$) and $\lambda_{\text{Assists}}$ (§4.7, against
-   $\mathrm{TOV}$) and nothing else — the two terms that pay for volume as
-   such, at one shared $\lambda$. Both are per-player baselines,
+6. USG-ADJ (§4.6) replaces the baseline $\lambda_{\text{Points}}$ and nothing
+   else. It is a per-player baseline,
    like $\gamma$ is a per-player price, so invariant 1 holds within either
    mode; the two modes are separate currencies and their numbers are never
-   mixed on one surface, nor with a Legacy or College number. Both halves are
-   linear in their counts, so both are additive over games and re-pricable in
-   closed form.
+   mixed on one surface, nor with a Legacy or College number.
 7. Championship leverage **reweights** the decomposition and never enters it, so
    invariant 1 holds unchanged on every surface (§7.4). Within a series its
    weight is conserved: the two teams' shares sum to $1$ at every $\omega$, so
