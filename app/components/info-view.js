@@ -30,7 +30,7 @@ export function InfoView() {
     { label: "Free throws", f: `( FTM/FTA − ${fmt(LGA.laFT)} ) × FTA` },
   ];
   const PLAYDEF = [
-    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ( ${fmt(LGA.laFGPTSperMake)} − ${fmt(LGA.laPTSperPoss)} ) × (1 − ${fmt(LGA.laFG)})` },
+    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ${fmt(LGA.laFGPTSperMake)} × (1 − ${fmt(LGA.laFG)})` },
     { label: "Steals", f: `( STL/min − ${fmt(LGA.laSTLperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
     { label: "Blocks", f: `( BLK/min − ${fmt(LGA.laBLKperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
     { label: "Turnovers", f: `−( TOV/min − ${fmt(LGA.laTOVperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
@@ -131,25 +131,20 @@ export function InfoView() {
         )}
         {USG && (
           <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
-            <span className="font-semibold">A note on what an assist is worth.</span> Every other
-            event in VA is priced in <span className="italic">possessions</span>: a steal is worth a
-            full one <span className="tabular-nums">({fmt(LGA.laPTSperPoss)})</span>, a block that
-            possession times the chance the defense secures it, a rebound likewise. The assist takes two
-            steps to line up with them. First, a pass doesn&apos;t create a possession — the possession
-            already existed and would have returned <span className="tabular-nums">{fmt(LGA.laPTSperPoss)}</span>{" "}
-            on its own, so the pass is worth the <span className="italic">difference</span> between a made
-            basket and that ordinary trip, never the whole basket. Second, that made basket is a field
-            goal — worth its <span className="tabular-nums">{fmt(LGA.laFGPTSperMake)}</span> field-goal
-            points, not the <span className="tabular-nums">{fmt(LGA.laPTSperMake)}</span> of PTS ÷ made-FG,
-            which quietly spreads the league&apos;s free throws across every make (an assist mints a field
-            goal, never a free throw). So the surplus is{" "}
-            <span className="tabular-nums">{fmt(LGA.laFGPTSperMake - LGA.laPTSperPoss)}</span>, and the
-            passer keeps the same <span className="tabular-nums">{fmt(1 - LGA.laFG)}</span> share of it as
-            before — the part the shooter wouldn&apos;t have converted on his own. That is the
-            {" "}<span className="tabular-nums">{fmt((LGA.laFGPTSperMake - LGA.laPTSperPoss) * (1 - LGA.laFG))}</span>
-            {" "}points an assist is worth here. A player at exactly the league assist rate is unaffected
-            either way, so this changes how much assists weigh against the other nine categories without
-            reordering anyone within them.
+            <span className="font-semibold">A note on what an assist is worth.</span> An assist is
+            credited on a made field goal, so it&apos;s worth what that basket is worth times the share
+            the passer is responsible for. The basket is a <span className="italic">field goal</span> —
+            worth its <span className="tabular-nums">{fmt(LGA.laFGPTSperMake)}</span> field-goal points,
+            not the <span className="tabular-nums">{fmt(LGA.laPTSperMake)}</span> of PTS ÷ made-FG, which
+            quietly spreads the league&apos;s free throws across every make (an assist mints a field goal,
+            never a free throw). The passer keeps the{" "}
+            <span className="tabular-nums">{fmt(1 - LGA.laFG)}</span> share of it that wouldn&apos;t have
+            dropped without the pass — refusing him credit for the conversion the shooter would have
+            managed on his own. That is the{" "}
+            <span className="tabular-nums">{fmt(LGA.laFGPTSperMake * (1 - LGA.laFG))}</span> points an
+            assist is worth here. A player at exactly the league assist rate is unaffected, so the price
+            sets how much assists weigh against the other nine categories without reordering anyone within
+            them.
           </p>
         )}
         <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>

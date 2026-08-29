@@ -277,10 +277,13 @@ value_add_parts <- function(p, lga) {
   # and the passer's share of it is the same (1 - p_G) as before. This is the
   # only event price in VA that was not possession-denominated.
   # KEEP IN SYNC with assistPrice() in app/scoring.js.
-  # (kappa_FG - pi)(1 - p_G): the field goal an assist creates is worth its FG
-  # points (laFGPTSperMake), not PTS/FGM which carries amortized free throws.
-  # See assistPrice() in app/scoring.js and spec 4.2a. KEEP IN SYNC.
-  astPrice <- (lga$laFGPTSperMake - lga$laPTSperPoss) * (1 - lga$laFG)
+  # kappa_FG * (1 - p_G): the field goal an assist creates, worth its FG points
+  # (laFGPTSperMake, not PTS/FGM which carries amortized free throws), times the
+  # passer's share (1 - p_G). No -pi term: "possession returns pi anyway" and
+  # "shooter converts p_G anyway" are the SAME counterfactual (pi ~= p_G*kappa_FG),
+  # so subtracting pi AND multiplying by (1-p_G) double-counts it. See
+  # assistPrice() in app/scoring.js and spec 4.2a. KEEP IN SYNC.
+  astPrice <- lga$laFGPTSperMake * (1 - lga$laFG)
   astVal <- ((p$ast / mp) - lga$laASTperM) * mp * astPrice
   stlVal <- ((p$stl / mp) - lga$laSTLperM) * mp * lga$laPTSperPoss
   blkVal <- ((p$blk / mp) - lga$laBLKperM) * mp * lga$laPTSperPoss * lga$laDRBrate
