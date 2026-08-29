@@ -694,9 +694,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         {/* The chip stack wraps rather than compressing: with the metric
             toggle now standing beside a team filter and a games threshold,
             three chips and a long name can't share one line on a phone — so on
-            a phone they don't, and the stack starts at the left edge of its own
-            row instead of hugging a right margin that isn't there. */}
-        <div className="flex flex-wrap items-center justify-start sm:justify-end gap-1.5 sm:pt-1 sm:shrink-0">
+            a phone they don't, and the stack takes a row of its own. It stays
+            right-aligned in either layout, so the chips sit under the card's
+            right edge rather than under the name they no longer sit beside. */}
+        <div className="flex flex-wrap items-center justify-end gap-1.5 sm:pt-1 sm:shrink-0">
           {/* Which baseline the scoring-volume term is measured against. Same
               state as the switch under the tab strip, put here because this
               board is one of the things it re-scores — the career total on the
