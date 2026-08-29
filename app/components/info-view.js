@@ -30,7 +30,7 @@ export function InfoView() {
     { label: "Free throws", f: `( FTM/FTA − ${fmt(LGA.laFT)} ) × FTA` },
   ];
   const PLAYDEF = [
-    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ${fmt(LGA.laPTSperMake)} × (1 − ${fmt(LGA.laFG)})` },
+    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ${fmt(LGA.laFGPTSperMake)} × (1 − ${fmt(LGA.laFG)})` },
     { label: "Steals", f: `( STL/min − ${fmt(LGA.laSTLperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
     { label: "Blocks", f: `( BLK/min − ${fmt(LGA.laBLKperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
     { label: "Turnovers", f: `−( TOV/min − ${fmt(LGA.laTOVperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
@@ -123,15 +123,28 @@ export function InfoView() {
             {" "}<span className="tabular-nums">ē = {fmt(LGA.laPTSperM / USG.muUsg)}</span> on the
             possessions he used (poss. used = FGA + <span className="tabular-nums">{USG_FTA_W}</span> × FTA);
             the second is what he was worth for carrying more — or less — load than a typical minute,
-            priced at the same rate. Flip <span className="font-semibold">Scoring baseline</span>
+            priced at the same rate. Flip <span className="font-semibold">Volume baseline</span>
             {" "}(above the boards, on Explore and any season tab) and the second half is paid at
             {" "}<span className="tabular-nums">{VOLUME_CREDIT}×</span> instead of in full: volume still
-            counts, just not at face value. The other nine categories are untouched, and every setting
-            of that dial scores the median-usage player identically — it redistributes value rather
-            than re-levelling it. Legacy and College keep the standard baseline. The
-            {" "}<span className="font-semibold">Usage</span> tab is where this was worked out: it plots
-            the cloud, draws the candidate baselines over it, and lists what each one pays every
-            player-season.
+            counts, just not at face value.
+          </p>
+        )}
+        {USG && (
+          <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
+            <span className="font-semibold">A note on what an assist is worth.</span> An assist is
+            credited on a made field goal, so it&apos;s worth what that basket is worth times the share
+            the passer is responsible for. The basket is a <span className="italic">field goal</span> —
+            worth its <span className="tabular-nums">{fmt(LGA.laFGPTSperMake)}</span> field-goal points,
+            not the <span className="tabular-nums">{fmt(LGA.laPTSperMake)}</span> of PTS ÷ made-FG, which
+            quietly spreads the league&apos;s free throws across every make (an assist mints a field goal,
+            never a free throw). The passer keeps the{" "}
+            <span className="tabular-nums">{fmt(1 - LGA.laFG)}</span> share of it that wouldn&apos;t have
+            dropped without the pass — refusing him credit for the conversion the shooter would have
+            managed on his own. That is the{" "}
+            <span className="tabular-nums">{fmt(LGA.laFGPTSperMake * (1 - LGA.laFG))}</span> points an
+            assist is worth here. A player at exactly the league assist rate is unaffected, so the price
+            sets how much assists weigh against the other nine categories without reordering anyone within
+            them.
           </p>
         )}
         <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>

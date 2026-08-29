@@ -58,8 +58,15 @@ export const LGA = LEAGUE_AVERAGES["2025-26"];
 // candidates the Usage tab still plots; only ū is load-bearing here.
 //
 // Everything else in VA — the nine other categories, γ, VA+ — is unchanged.
-// The model rides on the baseline object as `usgModel`, so any code path that
-// already threads an `lga` through picks the mode up with no other change.
+//
+// The playmaking term also pays for volume as such, and three usage-adjusted
+// passing baselines were built and measured before this was settled (against
+// AST+TOV, against TOV alone, and the dial between them). All three were
+// dropped: the scorer/passer imbalance they were chasing turned out to be a
+// PRICE problem, not a baseline one, and it is fixed at the price instead — see
+// `assistPrice` below and spec §4.2a. The history is spec §4.7. The model rides on the
+// baseline object as `usgModel`, so any code path that already threads an
+// `lga` through picks the mode up with no other change.
 export const USAGE_MODELS = USAGE_MODEL_DATA.seasons || {};
 
 // How much of the volume half the mode still pays (spec §4.6). 1 is plain VA,
@@ -139,6 +146,78 @@ export function baselinePts(p, lga) {
 export function volumeVA(p, lga) {
   return (p?.pts || 0) - baselinePts(p, lga);
 }
+
+// --- The price of an assist: κ_FG(1 − p_G) (spec §4.2a) ---------------------
+// An assist is credited on a made field goal. Its value to the passer is what
+// that basket is worth, times the share of it he is responsible for:
+//
+//   assistPrice = κ_FG · (1 − p_G)
+//
+//   κ_FG     what the made field goal is worth — (2·2PM + 3·3PM)/FGM, pure
+//            field-goal points per make (`laFGPTSperMake`, baked per season).
+//   1 − p_G  the passer's share: the fraction of assisted makes that would NOT
+//            have dropped without the pass. §4.2's original, deliberately
+//            opinionated choice — it refuses to credit the passer for the
+//            league-baseline conversion the shooter would have managed alone.
+//
+// Why κ_FG and not κ = PTS/FGM. κ amortizes the league's ENTIRE free-throw
+// output across made field goals. But an assist mints a FIELD GOAL (worth 2 or
+// 3) and never a free throw — free throws are a different possession-outcome
+// class (a possession can end at the line with no field goal at all). Carrying
+// FT points in the basket value is a stoichiometric leak, points booked against
+// the wrong event. In 1996-97 the leak is κ − κ_FG = 2.686 − 2.168 = 0.519,
+// ~19% of κ; it runs 15–20% every season. (One residual: an and-1 does tie a
+// real FT to a made FG, so κ_FG very slightly UNDER-credits those — ~5% of
+// makes × ~0.75 pts ≈ 0.037/make, an order of magnitude under the leak it
+// removes, and erring toward under-payment.) This correction IS possession
+// stoichiometry: value the event in points that belong to it.
+//
+// Why NOT also subtract π, as an earlier cut did (assistPrice =
+// (κ_FG − π)(1 − p_G)). That looked like possession accounting — "the
+// possession would have returned the league-average π anyway, so credit only
+// the surplus κ_FG − π." But it double-counts the counterfactual. "The
+// possession returns π anyway" and "the shooter converts at his own rate p_G
+// anyway" are the SAME baseline, not two: π ≈ p_G·κ_FG (1996-97: 1.034 vs
+// 0.986). So (1 − p_G) already nets out what a possession is worth without the
+// pass; subtracting −π on top applies that same discount a second time. The
+// tell is that the two coherent single-counterfactual prices agree —
+// κ_FG(1 − p_G) = 1.182 and κ_FG − π = 1.134 in 1996-97, within 4% — because
+// they are one model written two ways; multiplying them (the shipped cut)
+// roughly halved the term. Only ONE counterfactual belongs, and (1 − p_G) is
+// the assist-specific one §4.2 was built on.
+//
+// (Not to be confused with the per-minute μ_AST baseline inside the playmaking
+// term itself: that is the OPPORTUNITY baseline — "more assists than a median
+// player in these minutes" — a separate, legitimate subtraction that resolves
+// to a count before this price is applied. The double-count above was entirely
+// within this per-assist price.)
+//
+// Per assisted basket (1996-97): shooter banks κ_FG = 2.168 through PTS, passer
+// banks κ_FG(1 − p_G) = 1.182, total 3.35 — 155% of the basket. The residual
+// over 100% is the shooter/passer double-pay, a separate and declined question
+// (spec §4.7): closing it means paying the passer OUT of the shooter's PTS,
+// which needs per-player assisted-FG rates with a pre-1996-97 coverage cliff.
+//
+// Properties. A per-season constant, so the term stays linear in AST and
+// additive over games (lib/multi-season.js and usgAdjDelta untouched), and a
+// player at exactly μ_AST scores 0 at ANY price — a pure contraction about the
+// league median assist rate, reordering nobody within Assists; only the weight
+// of Assists against the other nine categories moves.
+//
+// KEEP IN SYNC with scripts/R/scrape_common.R::value_add_parts — the bake and
+// the client have to price an assist identically or the two disagree on disk.
+export function assistPrice(lga) {
+  return (lga?.laFGPTSperMake || 0) * (1 - (lga?.laFG || 0));
+}
+
+// The playmaking category, in points. One definition shared by valueAddParts,
+// valueAddByCategory and the two breakdown panels, so all of them agree
+// (spec invariant 1) — the same contract volumeVA has for Points.
+export function playmakingVA(p, lga) {
+  if (!(p?.mp > 0)) return 0;
+  return ((p.ast || 0) - lga.laASTperM * p.mp) * assistPrice(lga);
+}
+
 
 // What USG-ADJ does to a VA total that was computed the standard way. The
 // term is linear in MP and USG, so the two modes differ by a closed-form
@@ -235,10 +314,14 @@ export function splitVolumeVA(p, lga, lambda = 1) {
   return s ? s.eff + lambda * s.vol : volumeVA(p, { ...lga, usgModel: null });
 }
 
+// The mode as a single closed-form correction to a standard VA. The volume
+// term is linear in MP and USG, so the two modes differ by a closed form and
+// the other nine categories don't have to be re-derived from the box score.
 export function usgAdjDelta(p, lga) {
   if (!lga?.usgModel || !(p?.mp > 0)) return 0;
   return lga.laPTSperM * p.mp - baselinePts(p, lga);
 }
+
 
 // --- Rebound credit (γ) -----------------------------------------------------
 // A rebound is the one box-score event that is guaranteed to be allocated and
@@ -284,7 +367,7 @@ export function valueAddParts(p, lga = LGA) {
   const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
   const volume = volumeVA(p, lga);
   const efficiency = 3 * tpAdd + 2 * twoAdd + ftAdd;
-  const astVal = ((ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG);
+  const astVal = playmakingVA(p, lga);
   const stlVal = ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss;
   const blkVal = ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate;
   const tovVal = -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss;
@@ -323,7 +406,7 @@ export function valueAddByCategory(p, lga = LGA) {
     "3-Pointers": 3 * tpAdd,
     "2-Pointers": 2 * twoAdd,
     "Free Throws": ftAdd,
-    "Assists": ((ast / mp) - lga.laASTperM) * mp * lga.laPTSperMake * (1 - lga.laFG),
+    "Assists": playmakingVA(p, lga),
     "Steals": ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss,
     "Blocks": ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate,
     "Turnovers": -((tov / mp) - lga.laTOVperM) * mp * lga.laPTSperPoss,
@@ -353,7 +436,9 @@ const BASELINE_REQUIRES = {
   "Points": ["laPTSperM"],
   "2-Pointers": ["la2P"],
   "Free Throws": ["laFT"],
-  "Assists": ["laASTperM", "laPTSperMake"],
+  // The price is κ_FG(1 − p_G): laFGPTSperMake replaced laPTSperMake when κ
+  // became κ_FG, and π (laPTSperPoss) was dropped when −π was removed (§4.2a).
+  "Assists": ["laASTperM", "laFGPTSperMake"],
   "Steals": ["laSTLperM", "laPTSperPoss"],
   "Blocks": ["laBLKperM", "laPTSperPoss", "laDRBrate"],
   "Turnovers": ["laTOVperM", "laPTSperPoss"],

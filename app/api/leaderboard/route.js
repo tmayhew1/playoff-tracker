@@ -311,10 +311,11 @@ export async function GET(req) {
             seriesGameNumber, opp,
           };
           if (p) {
-            const { va, efficiency } = valueAddParts(p, lga);
+            // Per-game VA, kept only for the game row (the sparkline). The
+            // player's season va/eff are scored from the aggregated line after
+            // this loop, not summed here — see the note by that loop.
+            const { va } = valueAddParts(p, lga);
             a.gp += 1;
-            a.va += va;
-            a.eff += efficiency;
             for (const k of ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"]) {
               a[k] += p[k] || 0;
             }
@@ -338,6 +339,22 @@ export async function GET(req) {
     }
 
     const players = [...agg.values()];
+    // Score each player's SEASON line, not the running sum of his per-game VAs.
+    // The two are not equal: the rebound credit γ = 1/(1−q) is non-linear (convex)
+    // in a player's own rebound rate, so a season scored once on ~1,400 rebound
+    // opportunities — the sample γ is designed for (spec §4.3) — differs from the
+    // sum of games each scored on ~32, which by Jensen's inequality biases heavy
+    // rebounders upward (up to ~12 pts). Every other surface scores the season
+    // line: the baked leaderboard-<season>.json files, /api/players, the regular-
+    // season route (which has no per-game data at all). This route summed games,
+    // so an in-progress season's VA silently dropped by up to ~12 pts the day it
+    // got baked. Scoring the aggregated line here removes that discontinuity.
+    // Per-game g.va (built in the loop above) stays untouched for the sparkline.
+    for (const a of players) {
+      const { va, efficiency } = valueAddParts(a, lga);
+      a.va = va;
+      a.eff = efficiency;
+    }
     players.sort((a, b) => b.va - a.va);
     attachZoneFields(players, await loadZoneSide(season, "po"));
 

@@ -47,6 +47,7 @@ const FTA_W = 0.475;
 
 const usg = (p) => (p.fga || 0) + FTA_W * (p.fta || 0);
 
+
 // Minutes-weighted OLS of y = PTS/MP on x = USG/MP. Returns the line plus the
 // weighted R^2 and the sample it was fit on.
 function fitSeason(players) {

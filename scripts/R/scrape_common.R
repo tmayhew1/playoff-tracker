@@ -271,7 +271,20 @@ value_add_parts <- function(p, lga) {
   ftAdd  <- ((p$ftm / .den(p$fta)) - lga$laFT) * p$fta
   volume <- ((p$pts / mp) - lga$laPTSperM) * mp
   efficiency <- 3 * tpAdd + 2 * twoAdd + ftAdd
-  astVal <- ((p$ast / mp) - lga$laASTperM) * mp * lga$laPTSperMake * (1 - lga$laFG)
+  # Assist price (spec section 4.2a): (kappa - pi) * (1 - p_G). An assist does
+  # not create a possession -- the possession already existed and would have
+  # returned pi -- so the surplus the pass produced is kappa - pi, not kappa,
+  # and the passer's share of it is the same (1 - p_G) as before. This is the
+  # only event price in VA that was not possession-denominated.
+  # KEEP IN SYNC with assistPrice() in app/scoring.js.
+  # kappa_FG * (1 - p_G): the field goal an assist creates, worth its FG points
+  # (laFGPTSperMake, not PTS/FGM which carries amortized free throws), times the
+  # passer's share (1 - p_G). No -pi term: "possession returns pi anyway" and
+  # "shooter converts p_G anyway" are the SAME counterfactual (pi ~= p_G*kappa_FG),
+  # so subtracting pi AND multiplying by (1-p_G) double-counts it. See
+  # assistPrice() in app/scoring.js and spec 4.2a. KEEP IN SYNC.
+  astPrice <- lga$laFGPTSperMake * (1 - lga$laFG)
+  astVal <- ((p$ast / mp) - lga$laASTperM) * mp * astPrice
   stlVal <- ((p$stl / mp) - lga$laSTLperM) * mp * lga$laPTSperPoss
   blkVal <- ((p$blk / mp) - lga$laBLKperM) * mp * lga$laPTSperPoss * lga$laDRBrate
   tovVal <- -((p$tov / mp) - lga$laTOVperM) * mp * lga$laPTSperPoss
@@ -315,6 +328,12 @@ lga_from_totals <- function(t) {
     laDRBperM = safe(t$drb, t$mp),
     laORBperM = safe(t$orb, t$mp),
     laPTSperMake = safe(t$pts, t$fgm),
+    # Field-goal points per made FG: (2*2PM + 3*3PM)/FGM. This is what a made
+    # field goal is actually worth, and it is what the assist price uses --
+    # laPTSperMake (PTS/FGM) amortizes the league's free-throw points onto made
+    # FGs, but an assist mints a field goal, never a free throw. See §4.2a and
+    # assistPrice() in app/scoring.js. KEEP IN SYNC.
+    laFGPTSperMake = safe(2 * twoPm + 3 * t$tpm, t$fgm),
     laPTSperPoss = safe(t$pts, poss),
     laDRBrate = safe(t$drb, reb),
     laORBrate = safe(t$orb, reb)

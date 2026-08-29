@@ -529,7 +529,8 @@ export function UsageView() {
         />
       )}
       {(() => {
-        const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, eff: -1, vol: -1, splitVa: -1, delta: -1 };
+        const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, eff: -1, vol: -1, splitVa: -1,
+          delta: -1 };
         const H = ({ k, label, right = true, title }) => (
           <button
             type="button"
@@ -576,7 +577,13 @@ export function UsageView() {
                 />
               </>
             )}
-            <H k="delta" label="Δ" title={`${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that baseline moves his total by`} />
+            <H
+              k="delta"
+              label="Δ"
+              title={deltaVs === "spl"
+                ? "What the USG-ADJ switch moves his VA by at this λ"
+                : `${deltaVs === "cap" ? "CAP" : "USG"} − VA: what adopting that baseline moves his total by`}
+            />
           </div>
         );
       })()}
