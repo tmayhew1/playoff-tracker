@@ -147,50 +147,96 @@ export function volumeVA(p, lga) {
   return (p?.pts || 0) - baselinePts(p, lga);
 }
 
-// --- The price of an assist (spec §4.2a) ------------------------------------
-// Every other event price in VA is denominated in POSSESSIONS and priced at π:
-// a steal is worth π, a block π·ρ_D, a rebound γ·π·ρ, a turnover −π. The assist
-// was the one exception — priced at κ(1−p_G), built on κ, the points per MADE
-// FIELD GOAL, which is about 2.6× π.
+// --- The price of an assist: possession stoichiometry (spec §4.2a) ----------
+// VA is possession accounting. A possession is the conserved unit — it is
+// spent exactly once and returns some points — and every event price in the
+// metric measures how the event changes a possession's outcome, denominated in
+// what a possession is worth. That is why the whole defensive/rebounding side
+// prices in π = points per possession:
 //
-// That is the wrong denominator, because an assist does not create a
-// possession. The possession already existed and would have returned π on its
-// own. What the pass created is the DIFFERENCE: the possession returned a made
-// basket, κ, instead of the generic π. So the surplus the play produced is
+//   steal      +π          a possession taken outright
+//   block      +π·ρ_D      a shot erased, worth a possession × P(secure it)
+//   turnover   −π          a possession spent for nothing
+//   rebound    +γ·π·ρ      a possession's second chance, claimant-adjusted
 //
-//   κ − π
+// The assist has to balance in those same units, and reaching it takes two
+// corrections — the same idea (value the event in what it actually did to a
+// possession) applied on two axes. Both are stoichiometry, not taste.
 //
-// and the passer's share of it is the same (1−p_G) §4.2 already uses — the part
-// not attributable to the conversion the shooter would have managed anyway:
+// ── Correction 1: an assist is priced on a POSSESSION's surplus, not a whole
+//    possession. ─────────────────────────────────────────────────────────────
+// An assist does not CREATE a possession — the possession already existed and,
+// left alone, would have returned the league-average π. What the pass created
+// is the difference between this possession's outcome (a made field goal) and
+// that generic π. So the assist is worth the SURPLUS, (FG value − π), never the
+// gross basket. Pricing it on the gross basket would be double-counting the
+// possession itself: charging for a possession the offense already had. This is
+// the master-equation shape (value − baseline) that every other category has;
+// the assist was the one place a gross figure entered with no baseline netted
+// out.
 //
-//   assistPrice = (κ − π)(1 − p_G)
+// ── Correction 2: the FG value is κ_FG (field-goal points per make), not
+//    κ = PTS/FGM. ─────────────────────────────────────────────────────────────
+// κ = PTS/FGM amortizes the LEAGUE'S ENTIRE FREE-THROW output across made field
+// goals. But free throws are a different possession-outcome class: a possession
+// can end at the line with no field goal at all, and — crucially — an assist is
+// recorded on a made FIELD GOAL, worth 2 or 3, and never mints a free throw.
+// Carrying FT points in the assist's basket value is a stoichiometric leak:
+// points booked against the wrong event. In 1996-97 that leak is
+// κ − κ_FG = 2.686 − 2.168 = 0.519, a full 19% of κ; it runs 15–20% every
+// season. So the field goal an assist creates is worth
 //
-// Expanding shows exactly what changed: (κ−π)(1−p_G) = κ(1−p_G) − π(1−p_G), so
-// this is the old price with the possession's own baseline return netted out at
-// the same share. In 1996-97, 0.901 = 1.465 − 0.564.
+//   κ_FG = (2·2PM + 3·3PM) / FGM     (`laFGPTSperMake`, baked per season)
 //
-// This is VA's own master-equation principle applied to the one place it was
-// skipped: every category is (rate − baseline) × opportunity × price, and the
-// assist price was the single spot where a raw κ entered with no baseline
-// subtracted.
+// — pure made-field-goal points per make. (The one residual: an and-1 does tie
+// a real FT to a made FG, so κ_FG very slightly UNDER-credits those. And-1s are
+// ~5% of makes at ~0.75 FT pts each ≈ 0.037 pts/make, against the 0.40–0.52 the
+// FT leak was adding — an order of magnitude smaller, and erring toward
+// under- rather than over-payment.)
 //
-// Two properties worth knowing. The ratio to the old price is 0.585–0.669
-// across 56 seasons (mean 0.609), so this is a near-constant contraction rather
-// than an era artifact. And because the term is (AST/MP − μ_AST)·MP·price, a
-// player at exactly μ_AST is unchanged at ANY price — the change is a pure
-// contraction about the league median rate, so nothing reorders WITHIN assists;
-// only the weight of assists against the other nine categories moves.
+// ── The two together ───────────────────────────────────────────────────────
 //
-// What it does not fix: the shooter still banks the whole basket through PTS,
-// so an assisted basket is still credited more than once (155% of the basket
-// before, 134% after). Closing that properly needs per-player assisted-FG
-// rates, which are on basketball-reference's shooting page but not in this
-// repo's bake. See spec §4.2a.
+//   assistPrice = (κ_FG − π)(1 − p_G)
+//
+// The (1 − p_G) factor is unchanged from §4.2 — the passer's share, refusing
+// credit for the league-baseline conversion the shooter would have managed on
+// his own. It is an attribution split, orthogonal to the possession
+// stoichiometry above.
+//
+// The balanced ledger, per assisted basket (1996-97):
+//
+//   the possession returns a made FG          κ_FG = 2.168
+//   its generic alternative would return      π    = 1.034
+//   surplus the pass created                       = 1.133
+//   passer's share of the surplus       × (1 − p_G) = 0.618   ← assistPrice
+//
+//   shooter banks (through PTS)                     = 2.168
+//   passer banks                                   = 0.618
+//   total credited on the basket                   = 2.786  (129% of 2.168)
+//
+// The residual 29% over 100% is the shooter still banking the whole basket in
+// PTS while the passer is paid on top. Closing it to exactly 100% means moving
+// the passer's share OUT of the shooter's PTS, which needs per-player
+// assisted-FG rates (on basketball-reference's Shooting page, not in this bake)
+// and — the reason it is declined — a coverage cliff before 1996-97 that would
+// split the flagship number into two eras. Costed and recorded in spec §4.7.
+//
+// Two properties, unchanged by κ_FG. Because the term is
+// (AST/MP − μ_AST)·MP·price, a player at exactly μ_AST scores 0 at ANY price:
+// this is a pure contraction about the league median assist rate, so it
+// reorders NOBODY within Assists — only the weight of Assists against the other
+// nine categories moves. And the price is a per-season constant, so the term
+// stays linear in AST and additive over games (the closed forms in
+// lib/multi-season.js and usgAdjDelta are untouched).
+//
+// History: this shipped in two steps — (κ−π)(1−p_G) first (Correction 1), then
+// κ_FG (Correction 2). The three usage-adjusted passing BASELINES tried before
+// either are spec §4.7.
 //
 // KEEP IN SYNC with scripts/R/scrape_common.R::value_add_parts — the bake and
 // the client have to price an assist identically or the two disagree on disk.
 export function assistPrice(lga) {
-  return ((lga?.laPTSperMake || 0) - (lga?.laPTSperPoss || 0)) * (1 - (lga?.laFG || 0));
+  return ((lga?.laFGPTSperMake || 0) - (lga?.laPTSperPoss || 0)) * (1 - (lga?.laFG || 0));
 }
 
 // The playmaking category, in points. One definition shared by valueAddParts,
@@ -419,8 +465,9 @@ const BASELINE_REQUIRES = {
   "Points": ["laPTSperM"],
   "2-Pointers": ["la2P"],
   "Free Throws": ["laFT"],
-  // laPTSperPoss joined the list when the price became (κ − π)(1 − p_G).
-  "Assists": ["laASTperM", "laPTSperMake", "laPTSperPoss"],
+  // laPTSperPoss joined the list when the price became (κ − π)(1 − p_G);
+  // laFGPTSperMake replaced laPTSperMake when κ became κ_FG (§4.2a).
+  "Assists": ["laASTperM", "laFGPTSperMake", "laPTSperPoss"],
   "Steals": ["laSTLperM", "laPTSperPoss"],
   "Blocks": ["laBLKperM", "laPTSperPoss", "laDRBrate"],
   "Turnovers": ["laTOVperM", "laPTSperPoss"],

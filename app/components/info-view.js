@@ -30,7 +30,7 @@ export function InfoView() {
     { label: "Free throws", f: `( FTM/FTA − ${fmt(LGA.laFT)} ) × FTA` },
   ];
   const PLAYDEF = [
-    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ( ${fmt(LGA.laPTSperMake)} − ${fmt(LGA.laPTSperPoss)} ) × (1 − ${fmt(LGA.laFG)})` },
+    { label: "Assists", f: `( AST/min − ${fmt(LGA.laASTperM)} ) × min × ( ${fmt(LGA.laFGPTSperMake)} − ${fmt(LGA.laPTSperPoss)} ) × (1 − ${fmt(LGA.laFG)})` },
     { label: "Steals", f: `( STL/min − ${fmt(LGA.laSTLperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
     { label: "Blocks", f: `( BLK/min − ${fmt(LGA.laBLKperM)} ) × min × ${fmt(LGA.laPTSperPoss)} × ${fmt(LGA.laDRBrate)}` },
     { label: "Turnovers", f: `−( TOV/min − ${fmt(LGA.laTOVperM)} ) × min × ${fmt(LGA.laPTSperPoss)}` },
@@ -134,16 +134,19 @@ export function InfoView() {
             <span className="font-semibold">A note on what an assist is worth.</span> Every other
             event in VA is priced in <span className="italic">possessions</span>: a steal is worth a
             full one <span className="tabular-nums">({fmt(LGA.laPTSperPoss)})</span>, a block that
-            possession times the chance the defense secures it, a rebound likewise. The assist used to
-            be the exception — priced off a made basket
-            {" "}<span className="tabular-nums">({fmt(LGA.laPTSperMake)})</span>, roughly two and a half
-            times as much. But a pass doesn&apos;t create a possession; the possession already existed
-            and would have returned <span className="tabular-nums">{fmt(LGA.laPTSperPoss)}</span> on its
-            own. What the pass created is the difference — a made basket instead of an ordinary trip —
-            so the surplus is <span className="tabular-nums">{fmt(LGA.laPTSperMake - LGA.laPTSperPoss)}</span>,
-            and the passer keeps the same <span className="tabular-nums">{fmt(1 - LGA.laFG)}</span> share
-            of it as before: the part the shooter wouldn&apos;t have converted on his own. That is the
-            {" "}<span className="tabular-nums">{fmt((LGA.laPTSperMake - LGA.laPTSperPoss) * (1 - LGA.laFG))}</span>
+            possession times the chance the defense secures it, a rebound likewise. The assist takes two
+            steps to line up with them. First, a pass doesn&apos;t create a possession — the possession
+            already existed and would have returned <span className="tabular-nums">{fmt(LGA.laPTSperPoss)}</span>{" "}
+            on its own, so the pass is worth the <span className="italic">difference</span> between a made
+            basket and that ordinary trip, never the whole basket. Second, that made basket is a field
+            goal — worth its <span className="tabular-nums">{fmt(LGA.laFGPTSperMake)}</span> field-goal
+            points, not the <span className="tabular-nums">{fmt(LGA.laPTSperMake)}</span> of PTS ÷ made-FG,
+            which quietly spreads the league&apos;s free throws across every make (an assist mints a field
+            goal, never a free throw). So the surplus is{" "}
+            <span className="tabular-nums">{fmt(LGA.laFGPTSperMake - LGA.laPTSperPoss)}</span>, and the
+            passer keeps the same <span className="tabular-nums">{fmt(1 - LGA.laFG)}</span> share of it as
+            before — the part the shooter wouldn&apos;t have converted on his own. That is the
+            {" "}<span className="tabular-nums">{fmt((LGA.laFGPTSperMake - LGA.laPTSperPoss) * (1 - LGA.laFG))}</span>
             {" "}points an assist is worth here. A player at exactly the league assist rate is unaffected
             either way, so this changes how much assists weigh against the other nine categories without
             reordering anyone within them.

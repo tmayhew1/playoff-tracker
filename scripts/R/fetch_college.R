@@ -31,6 +31,9 @@ lga_from_totals <- function(t) {
     laSTLperM = safe(t$stl, t$mp), laBLKperM = safe(t$blk, t$mp),
     laTOVperM = safe(t$tov, t$mp), laDRBperM = safe(t$drb, t$mp),
     laORBperM = safe(t$orb, t$mp), laPTSperMake = safe(t$pts, t$fgm),
+    # Field-goal points per make, for the assist price (§4.2a). KEEP IN SYNC
+    # with lga_from_totals in scrape_common.R and assistPrice in scoring.js.
+    laFGPTSperMake = safe(2 * twoPm + 3 * t$tpm, t$fgm),
     laPTSperPoss = safe(t$pts, poss), laDRBrate = safe(t$drb, reb),
     laORBrate = safe(t$orb, reb)
   )
