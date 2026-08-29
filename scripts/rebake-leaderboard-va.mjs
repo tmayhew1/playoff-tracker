@@ -58,7 +58,14 @@ for (const f of files) {
     p.va = r.va; p.eff = r.efficiency;
     maxDelta = Math.max(maxDelta, Math.abs(r.va - before));
   }
-  if (!check) fs.writeFileSync(full, JSON.stringify(data) + "\n");
+  // Two-space indent and a trailing newline, matching what jsonlite writes on
+  // the R side. Not byte-identical to it — R prints floats at 17 significant
+  // digits (803.95000000000005) where JS prints the shortest round-trip form
+  // (803.95); the doubles are the same, only the text differs — but keeping the
+  // STRUCTURE identical is what matters: it keeps the diff line-level and
+  // readable, and it keeps the daily R backfill merging cleanly instead of
+  // conflicting on one enormous minified line.
+  if (!check) fs.writeFileSync(full, JSON.stringify(data, null, 2) + "\n");
   changed++;
 }
 console.log(`${check ? "would rewrite" : "rewrote"} ${changed} leaderboard files; largest season-VA change ${maxDelta.toFixed(1)}`);
