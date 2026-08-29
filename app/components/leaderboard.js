@@ -337,11 +337,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   }, [pendingNav, season, scope, poPlayers, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
 
   // The header is abbreviated for space — it shares one line with the USG-ADJ
-  // and VA/VA+ chips, and "Regular" is the one scope wide enough to wrap them
-  // onto a second line on a narrow phone. `scopeLabel` keeps the spelled-out
-  // words for the empty-state sentence below, which has no such constraint and
-  // would otherwise read "…in the 1996-97 reg season board".
-  const title = scope === "regular" ? "Reg Season Leaders"
+  // and VA/VA+ chips, and "Regular Season" is the one scope wide enough to wrap
+  // them onto a second line on a narrow phone. Even "Reg Season" was a few
+  // pixels too wide at 390px, so it is cut to the shortest form still readable
+  // as the words it stands for. `scopeLabel` keeps the spelled-out ones for the
+  // empty-state sentence below, which has no such constraint and would
+  // otherwise read "…in the 1996-97 reg seas board".
+  const title = scope === "regular" ? "Reg Seas Leaders"
     : scope === "combined" ? "Combined Leaders"
     : "Playoff Leaders";
   const scopeLabel = scope === "regular" ? "regular season"
