@@ -648,7 +648,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // scrolled past. One block, used twice, so the two copies cannot drift.
   const headerBlock = (
     <>
-      <div className="mb-3 flex items-start justify-between gap-2">
+      {/* Stacked on a phone, side by side from sm up: the chip stack squeezed
+          the name column to a third of the width, which wrapped a
+          well-travelled career's subtitle into four lines. Given its own row,
+          the subtitle reads across the whole card and the chips keep their
+          full labels. */}
+      <div className="mb-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1.5 sm:gap-2">
         <div className="min-w-0">
           {/* The selection chip rides on the NAME's line rather than in the
               filter stack at the right: the subtitle under it already wraps to
@@ -688,8 +693,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         </div>
         {/* The chip stack wraps rather than compressing: with the metric
             toggle now standing beside a team filter and a games threshold,
-            three chips and a long name can't share one line on a phone. */}
-        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1 shrink-0">
+            three chips and a long name can't share one line on a phone — so on
+            a phone they don't, and the stack starts at the left edge of its own
+            row instead of hugging a right margin that isn't there. */}
+        <div className="flex flex-wrap items-center justify-start sm:justify-end gap-1.5 sm:pt-1 sm:shrink-0">
           {/* Which baseline the scoring-volume term is measured against. Same
               state as the switch under the tab strip, put here because this
               board is one of the things it re-scores — the career total on the
