@@ -1518,7 +1518,11 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                       <Swatch color={comp ? cb : ca} outline={comp} />
                       <span className="truncate font-semibold text-[10px] leading-tight" style={{ color: comp ? cbInk : ca }}>{row.name}</span>
                     </div>
-                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
+                    {/* Season/span · games · the minutes role those games were
+                        played in — two players at the same PTS/G off 34 and 22
+                        MPG aren't the same scorer, and PTS/36 below only reads
+                        as a projection once you can see how far it reaches. */}
+                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G{row.mp > 0 ? ` · ${(row.mp / (row.gp || 1)).toFixed(1)} MPG` : ""}</div>
                   </div>
                 );
                 const cell = (disp, win, comp) => (
