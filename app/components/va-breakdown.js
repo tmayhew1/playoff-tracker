@@ -1207,11 +1207,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
     : context.scope === "combined" ? "combined (RS+PO)" : "playoff";
-  // Same selector, spelled the way the scope buttons at the top of the page do,
-  // for the ranking header (the card already names the player and season above,
-  // so the header says WHICH pool the rank is against instead of repeating them).
+  // Same selector as the scope buttons at the top of the page, for the ranking
+  // header (the card already names the player and season above, so the header
+  // says WHICH pool the rank is against instead of repeating them). Combined
+  // abbreviates "Regular Season" — spelled out it wraps to two lines beside the
+  // rank on a phone.
   const scopeTitle = context.scope === "regular" ? "Regular Season"
-    : context.scope === "combined" ? "Regular Season & Playoffs" : "Playoffs";
+    : context.scope === "combined" ? "Reg Seas & Playoffs" : "Playoffs";
 
   const d = useMemo(() => {
     // Ranking metric — total category VA, or per-game when the /G toggle is on
