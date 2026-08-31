@@ -415,9 +415,11 @@ export function HistoryRoundSection({ round, teamsMap, lga, season }) {
 
 
 export function HistoryView({ season }) {
-  // Baselines for this season under the active USG-ADJ mode (lib/va-mode.js);
-  // the series box scores below are all scored against it.
-  const lga = useSeasonLga(season);
+  // Baselines for this season under the active USG-ADJ mode (lib/va-mode.js).
+  // Everything below this line is a playoff box score, so it is the blended
+  // playoff baseline (spec §4.8) — the same one /api/leaderboard scores the
+  // board against, so a series page and the board agree on a game's VA.
+  const lga = useSeasonLga(season, "po");
   const data = scoreHistory(season);
   const [showBreakdown, setShowBreakdown] = useState(null);
   const [histGames, setHistGames] = useState(null);

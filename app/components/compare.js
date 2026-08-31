@@ -7,7 +7,7 @@ import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeNam
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
-import { useLgaFor } from "../lib/va-mode";
+import { lgaScopeFor, useLgaFor } from "../lib/va-mode";
 
 
 // --- Compare (both breakdowns) ----------------------------------------------
@@ -120,7 +120,7 @@ function stageNote({ from, to = from, atLeast = false, selfFrom = null, selfTo =
 export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // Season baselines under the active USG-ADJ mode; the comp shapes below are
   // per-category VA, so they move with it (lib/va-mode.js).
-  const lgaFor = useLgaFor();
+  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
   const [query, setQuery] = useState("");
   // The chosen player is held by KEY and looked up in the pool on every render:
   // holding the object would freeze his season rows at the baseline they
@@ -435,7 +435,7 @@ const runKey = (run) => `${run.player.slug || run.player.name}:${run.seasons[0].
 export function MultiComparePicker({ context, self = null, selfRow = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null, asked = false }) {
   // As in ComparePicker: run shapes are per-category VA, so they follow the
   // active baseline (lib/va-mode.js).
-  const lgaFor = useLgaFor();
+  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
   const [query, setQuery] = useState("");
   // The chosen player by KEY, looked up in the pool below — held this way for
   // the same reason as in ComparePicker: the pool is rebuilt under a running
@@ -916,7 +916,7 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 // a new identity when the pool or the mode changes, so they can be listed as
 // useMemo dependencies. A row the pool doesn't carry comes back untouched.
 export function useFreshRows(context) {
-  const lgaFor = useLgaFor();
+  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
   const poolBy = useMemo(() => {
     const m = new Map();
     for (const r of context?.allRows || []) m.set(`${comparePlayerKey(r)}|${r.season}`, r);
@@ -960,7 +960,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // Every baseline this panel scores against — each side's own, the pooled
   // percentile field, the career bars — comes from here, so the whole
   // comparison follows the USG-ADJ switch together (lib/va-mode.js).
-  const lgaFor = useLgaFor();
+  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
   // A selection made in the career chart at the foot of this panel: the career
   // years ticked there, resolved into one row per side — the season itself when
   // a single year is ticked, an aggregate of them when several are. It REPLACES

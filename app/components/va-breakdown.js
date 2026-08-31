@@ -14,7 +14,7 @@ import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, V
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -84,7 +84,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
         if (cancelled) return;
         const nn = normalizeName(cmpName || "");
         const pl = (dd.players || []).find((x) => (cmpSlug && x.slug === cmpSlug) || normalizeName(x.name) === nn);
-        const priced = pl ? usgAdjRows([pl], lgaFor(cmpSeason))[0] : null;
+        // A playoff game log, so the compared season's PLAYOFF baseline — the
+        // same one /api/leaderboard baked it against.
+        const priced = pl ? usgAdjRows([pl], lgaFor(cmpSeason, "po"))[0] : null;
         const run = (priced?.games || []).filter((g) => g.va != null).map((g) => g.va);
         setCompareRun(run.length ? run : null);
       })
@@ -211,13 +213,20 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
   const referenceScale = selectedGame ? 1 : (p.gp || 1);
   const refByKey = (() => {
     if (!regularSeasonTotals || !(regularSeasonTotals.g > 0) || !(regularSeasonTotals.mp > 0)) return null;
-    const full = valueAddByCategory(regularSeasonTotals, lga);
+    // These are the player's REGULAR-SEASON totals, so they are scored against
+    // the regular-season baseline even when the panel above them is a playoff
+    // run on the playoff-blended one (spec §4.8). The tick means "what this
+    // player normally produces", and it would stop meaning that if his regular
+    // season were charged a playoff bar. `rsLga` falls back to `lga` for
+    // callers that are already on the regular season.
+    const refLga = rsLga || lga;
+    const full = valueAddByCategory(regularSeasonTotals, refLga);
     const out = {};
     for (const k of Object.keys(full)) out[k] = (full[k] / regularSeasonTotals.g) * referenceScale;
     for (const g of VA_GROUPS) out[g.key] = g.cats.reduce((s, c) => s + (out[c] || 0), 0);
     // D Rating reference: the player's rs defensive value over rs minutes,
     // per game — same "what he normally produces" tick the groups get.
-    const dRef = defVAInfo(regularSeasonTotals, regularSeasonTotals.mp, lga, defs, seasonKey, "rs")?.dva ?? null;
+    const dRef = defVAInfo(regularSeasonTotals, regularSeasonTotals.mp, refLga, defs, seasonKey, "rs")?.dva ?? null;
     if (dRef != null) out["D Rating"] = (dRef / regularSeasonTotals.g) * referenceScale;
     return out;
   })();
@@ -1235,6 +1244,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // rank on a phone.
   const scopeTitle = context.scope === "regular" ? "Regular Season"
     : context.scope === "combined" ? "Reg Seas & Playoffs" : "Playoffs";
+  // Which baseline this pool's rows are scored against (spec §4.8). A playoff
+  // pool is playoff lines and takes the blended playoff baseline; the other two
+  // stay on the regular season. Combined rows are a summed regular season plus
+  // playoff run whose minute split the pooled index does not carry, so they are
+  // ranked on the regular-season baseline — every row in the pool the same way,
+  // which is what a ranking needs, even though the board they came from prices
+  // each row's own mix (scoring.js::combinedLga).
+  const poolScope = context.scope === "playoffs" ? "po" : "rs";
 
   const d = useMemo(() => {
     // Ranking metric — total category VA, or per-game when the /G toggle is on
@@ -1256,7 +1273,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const floorA = Math.min(5, p.gp || 1);
     const all = allRows
       .filter((r) => (r.gp || 0) >= floorA && r.mp > 0 && segEra(r.season))
-      .map((r) => ({ r, m: metric(r, lgaFor(r.season), r.season) }))
+      .map((r) => ({ r, m: metric(r, lgaFor(r.season, poolScope), r.season) }))
       .sort((a, b) => b.m - a.m);
     const allN = all.length;
     const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
@@ -1270,7 +1287,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       .filter((s) => s.mp > 0 && segEra(s.season))
       .sort((a, b) => a.season.localeCompare(b.season))
       .map((s) => {
-        const lgaS = lgaFor(s.season);
+        const lgaS = lgaFor(s.season, poolScope);
         // Carry the player's slug onto the season row so metric() can fold in
         // D Rating (defVAInfo keys off slug) — self.seasons rows don't have it.
         const sRow = { ...s, name: self.name, slug: self.slug || null };

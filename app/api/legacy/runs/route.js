@@ -85,7 +85,10 @@ function statsFrom(line, cats) {
 }
 
 function runStats(row) {
-  const lga = lgaForSeason(row.season);
+  // A playoff run, so the playoff-blended baseline (spec §4.8). rsStats below
+  // stays on the regular-season one — the two halves of a season are scored
+  // against the league each was actually played in.
+  const lga = lgaForSeason(row.season, false, "po");
   // Category VA is summed PER GAME so the ten categories add up to the run's
   // own VA. Evaluating them once on the run's totals would come out slightly
   // different — the rebound credit is non-linear in REB/MP (spec §7.4).
@@ -108,7 +111,7 @@ function rsStats(row) {
 // Every game of one run, heaviest contribution first.
 function runGames(row, alpha, omega) {
   const depth = row.depth || 4;
-  const lga = lgaForSeason(row.season);
+  const lga = lgaForSeason(row.season, false, "po");
   return (row.games || [])
     .filter((g) => g.va != null)
     .map((g) => {

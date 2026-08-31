@@ -66,4 +66,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Bake shooting splits (R) [skip ci]"
-          file_pattern: "app/data/shooting-*.json app/data/league-averages.json"
+          file_pattern: "app/data/shooting-*.json app/data/league-averages.json app/data/playoff-league-averages.json"

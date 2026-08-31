@@ -186,6 +186,15 @@ main <- function(season) {
     stop(sprintf(paste0("No league averages for %s. Backfill them first:\n",
                         "  Rscript scripts/R/fetch_league_averages.R %s"), season, season))
   }
+  # Playoff lines are scored against the blend of this season's regular season
+  # and its own playoff field (spec section 4.8). The playoff half is MEASURED
+  # from the rows this script is about to write, so on a season's first bake
+  # there is nothing to blend with yet and this falls back to the regular
+  # season. recompute_derived.R closes the loop on the same run: it rebuilds
+  # playoff-league-averages.json from the freshly baked rows and re-scores every
+  # va here against the blend. Which is why the numbers this script writes are
+  # provisional whenever the playoff entry is missing or a round behind.
+  lga <- blend_playoff_lga(lga, load_playoff_league_averages()[[season]])
   message(sprintf("Baking %s from basketball-reference...", season))
 
   urls <- sort(fetch_playoff_game_urls(end_year))

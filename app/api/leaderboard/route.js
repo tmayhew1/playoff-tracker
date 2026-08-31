@@ -239,7 +239,10 @@ export async function GET(req) {
     // 4. Fetch every game's box score, in batches so we don't hammer ESPN.
     // Try the site summary first; fall back to ESPN's CDN core endpoint for
     // older events that summary returns without player blocks.
-    const lga = lgaForSeason(season);
+    // Playoff lines, so the playoff-blended baseline (spec §4.8) — the same
+    // one the baked leaderboard files are scored against, so a live season and
+    // a baked one are the same statistic.
+    const lga = lgaForSeason(season, false, "po");
     const results = await inBatches(allGames, 10, async (g) => {
       let players = null;
       try {

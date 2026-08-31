@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { valueAddParts, lgaForSeason } from "../../scoring";
+import { valueAddParts, lgaForSeason, combinedLga } from "../../scoring";
 
 export const runtime = "nodejs";
 
@@ -126,6 +126,12 @@ function combineRows(lbRows, rsRows) {
     if (r) used.add(r);
     const sum = { name: p.name, slug: p.slug || (r && r.slug) || undefined, team: p.team, gp: (p.gp || 0) + (r ? r.gp || 0 : 0) };
     for (const k of RAW_KEYS) sum[k] = (p[k] || 0) + (r ? r[k] || 0 : 0);
+    // The two halves are kept alongside the sum because they are scored against
+    // DIFFERENT baselines — regular-season minutes against the regular season,
+    // playoff minutes against the playoff blend (spec §4.8). The row still
+    // displays as one combined stat line; only its VA is built from the parts.
+    sum._po = p;
+    sum._rs = r || null;
     out.push({ season, p: sum });
   }
   for (const { season, p } of rsRows) {
@@ -166,9 +172,23 @@ export async function GET(req) {
     attachZones(rows, zoneMap, "po");
   }
 
-  // Playoff bakes carry VA; regular/combined rows need it computed against the
-  // season's league baselines.
-  const vaOf = (season, p) => (scope === "playoffs" ? p.va : valueAddParts(p, lgaForSeason(season)).va);
+  // Playoff bakes carry VA; regular rows need it computed against the season's
+  // regular-season baselines.
+  //
+  // A combined row summed two lines played in two different leagues, so it is
+  // scored against the minutes-weighted mix of the two baselines
+  // (scoring.js::combinedLga) — which, every per-minute term being linear in
+  // its baseline, is exactly the two halves scored separately and added. That
+  // keeps this row agreeing with the playoff board about its playoff minutes
+  // and with the regular-season board about the rest, and it is the same
+  // baseline the Combined leaderboard scores with client-side.
+  const vaOf = (season, p) => {
+    if (scope === "playoffs") return p.va;
+    const lga = scope === "combined" && (p._po || p._rs)
+      ? combinedLga(season, p._rs?.mp || 0, p._po?.mp || 0)
+      : lgaForSeason(season);
+    return valueAddParts(p, lga).va;
+  };
 
   // normalized-name -> slug, from rows that DO have a slug. Lets slug-less rows
   // attach to the right player instead of forming a duplicate keyed by name.

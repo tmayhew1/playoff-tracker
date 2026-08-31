@@ -10,7 +10,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
-import { UsgAdjChip, useLgaFor, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, lgaScopeFor, useLgaFor, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -27,7 +27,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   // career table, the league pools the drill-ins rank against, and the
   // closest-comps candidates, so one pass keeps all three agreeing with the
   // leaderboard (lib/va-mode.js).
-  const index = useUsgAdjIndex(cache[scope] || null);
+  const index = useUsgAdjIndex(cache[scope] || null, lgaScopeFor(scope));
   const loading = !index && !error;
 
   useEffect(() => {
@@ -228,7 +228,13 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // themselves arrive already re-priced from the index; this is what scores
   // everything derived from them here — per-season efficiency, the pooled
   // multi-season row, the drill-in cards.
-  const lgaFor = useLgaFor();
+  // Bound to this view's scope, so every season it scores below — the career
+  // table, the aggregates, the drill-ins — is measured against the league that
+  // side of the season was played in (spec §4.8). Playoff runs take the blended
+  // playoff baseline; the regular-season and combined scopes stay on the
+  // regular season, combined because the pooled index carries the summed line
+  // without the minute split its own mix would need.
+  const lgaFor = useLgaFor(lgaScopeFor(scope));
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -1179,7 +1185,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
 // to the season-totals category breakdown when no game log exists.
 export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true, onPrev, onNext, pendingCompare = null, onCompareHandled = null }) {
   const season = s.season;
-  const lgaS = useSeasonLga(season);
+  // A playoff run, so the blended playoff baseline — and the regular-season one
+  // alongside it for VABreakdown's "what he normally produces" ticks, which are
+  // scored on the player's regular-season line (spec §4.8).
+  const lgaS = useSeasonLga(season, "po");
+  const rsLgaS = useSeasonLga(season);
   const [lb, setLb] = useState(null);
   const [rs, setRs] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -1252,6 +1262,7 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true,
     <VABreakdown
       p={row}
       lga={lgaS}
+      rsLga={rsLgaS}
       teams={{}}
       rate
       season={season}
