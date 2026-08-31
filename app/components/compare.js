@@ -11,11 +11,17 @@ import { useLgaFor } from "../lib/va-mode";
 
 
 // --- Compare (both breakdowns) ----------------------------------------------
+// How a player is identified across a rebuilt pool: his slug, or his name when
+// the bake carries no slug. The pickers hold this rather than the player object
+// itself, so a selection survives the pool being rebuilt under it by the
+// USG-ADJ switch (see useFreshRows for the same rule on a picked row).
+export const comparePlayerKey = (p) => p?.slug || "n:" + normalizeName(p?.name || "");
+
 // Group the context pools back into players for the Compare picker.
 export function buildComparePlayers(allRows) {
   const m = new Map();
   for (const r of allRows) {
-    const k = r.slug || "n:" + normalizeName(r.name);
+    const k = comparePlayerKey(r);
     let e = m.get(k);
     if (!e) m.set(k, (e = { name: r.name, slug: r.slug || null, seasons: [] }));
     e.seasons.push(r);
@@ -93,8 +99,16 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // per-category VA, so they move with it (lib/va-mode.js).
   const lgaFor = useLgaFor();
   const [query, setQuery] = useState("");
-  const [sel, setSel] = useState(null);
-  const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  // The chosen player is held by KEY and looked up in the pool on every render:
+  // holding the object would freeze his season rows at the baseline they
+  // carried when he was chosen, and the season chips below print those rows'
+  // VA/G (lib/va-mode.js re-prices the whole pool on a USG-ADJ toggle).
+  const [selKey, setSelKey] = useState(null);
+  const players = useMemo(() => buildComparePlayers(context.allRows), [context.allRows]);
+  const sel = useMemo(
+    () => (selKey ? players.find((pl) => comparePlayerKey(pl) === selKey) || null : null),
+    [players, selKey]
+  );
   const matches = useMemo(() => {
     const q = normalizeName(query.trim());
     if (q.length < 2) return [];
@@ -307,7 +321,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
           {matches.map((pl) => (
             <button
               key={pl.slug || pl.name}
-              onClick={() => setSel(pl)}
+              onClick={() => setSelKey(comparePlayerKey(pl))}
               className="w-full flex items-baseline justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-stone-50"
             >
               <span className="font-semibold text-stone-800">{pl.name}</span>
@@ -319,7 +333,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
         <>
           <div className="flex items-baseline justify-between mb-1">
             <span className="font-semibold text-stone-800">{sel.name}</span>
-            <button onClick={() => setSel(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+            <button onClick={() => setSelKey(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1">
             {sel.seasons.map((s) => (
@@ -363,7 +377,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   // active baseline (lib/va-mode.js).
   const lgaFor = useLgaFor();
   const [query, setQuery] = useState("");
-  const [sel, setSel] = useState(null);       // the chosen player
+  // The chosen player by KEY, looked up in the pool below — held this way for
+  // the same reason as in ComparePicker: the pool is rebuilt under a running
+  // selection whenever USG-ADJ is toggled, and the ticked seasons print their
+  // rows' VA/G.
+  const [selKey, setSelKey] = useState(null);
   const [picked, setPicked] = useState(null); // Set of season strings
   // How the other player's seasons are pre-ticked. One switch, cycling:
   //   best — his highest-VA seasons, the same number as the selection
@@ -371,7 +389,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   //   same — the same CALENDAR seasons, whatever career year those fell in
   const [matchMode, setMatchMode] = useState("best");
   const canMatchYear = !!selfYears?.length && selfCareerLen > 0;
-  const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  const players = useMemo(() => buildComparePlayers(context.allRows), [context.allRows]);
+  const sel = useMemo(
+    () => (selKey ? players.find((pl) => comparePlayerKey(pl) === selKey) || null : null),
+    [players, selKey]
+  );
   const selfKey = self ? (self.slug || normalizeName(self.name || "")) : null;
 
   // The suggestions this picker opens on: the closest runs of the same length
@@ -458,7 +480,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
     // overlapped the run to someone who never did shouldn't tick nothing.
     const m = modeOk(pl, matchMode) ? matchMode : "best";
     setMatchMode(m);
-    setSel(pl);
+    setSelKey(comparePlayerKey(pl));
     setPicked(new Set(suggestFor(pl, m)));
   };
   // Flipping the switch re-picks from scratch. It's a "choose them for me"
@@ -524,7 +546,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       name: sel.name,
       slug: sel.slug || null,
       seasons: sel.seasons,
-      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }),
+      // Scored at the ACTIVE baseline, like the run suggestions above — the
+      // aggregate carries its own blended lga and per-category vector, and
+      // building those against the standard baseline under USG-ADJ would hand
+      // the panel a row in the wrong currency.
+      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }, lgaFor),
     });
   };
 
@@ -641,7 +667,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
         <>
           <div className="flex items-baseline justify-between mb-1">
             <span className="font-semibold text-stone-800">{sel.name}</span>
-            <button onClick={() => { setSel(null); setPicked(null); }} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+            <button onClick={() => { setSelKey(null); setPicked(null); }} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1 mb-1.5">
             {[...sel.seasons].sort((x, y) => y.season.localeCompare(x.season)).map((s) => {
@@ -773,6 +799,54 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
+// --- Re-resolving a held row against the live pool ---------------------------
+// A comparison's rows are resolved when the comparison is MADE and then held
+// in a caller's state — `compare.row` / `compare.seasons` in the breakdown
+// card, a run picked out of MultiComparePicker, the panel's own career-year
+// selection. The USG-ADJ switch re-prices the index underneath them
+// (lib/va-mode.js rebuilds every row), so a held row keeps whatever VA it was
+// carrying when it was picked and the card quietly reads two different
+// baselines at once: the player's own figures move with the switch and the
+// compared player's don't.
+//
+// So nothing held is trusted for its numbers, only for its identity: every row
+// is looked up again in the CURRENT pool by (player, season) and an aggregate
+// is re-pooled from its seasons' fresh rows. Raw stats are the same either way
+// — it is `va` that moves — and fields the pool doesn't carry (a leaderboard
+// row's per-game log) survive the merge.
+//
+// Returns { freshSeason, freshSide }: one season row looked up, and a whole
+// side — a season row looked up, a multi-season row re-aggregated from its own
+// seasons so its total, its blended baseline and its per-category vector are
+// all rebuilt at the active baseline. Both are stable across renders and take
+// a new identity when the pool or the mode changes, so they can be listed as
+// useMemo dependencies. A row the pool doesn't carry comes back untouched.
+export function useFreshRows(context) {
+  const lgaFor = useLgaFor();
+  const poolBy = useMemo(() => {
+    const m = new Map();
+    for (const r of context?.allRows || []) m.set(`${comparePlayerKey(r)}|${r.season}`, r);
+    return m;
+  }, [context?.allRows]);
+  const freshSeason = useCallback((r) => {
+    if (!r?.season) return r;
+    const hit = poolBy.get(`${comparePlayerKey(r)}|${r.season}`);
+    return hit ? { ...r, ...hit } : r;
+  }, [poolBy]);
+  const freshSide = useCallback((row) => {
+    if (!row) return row;
+    if (!row.multi) return freshSeason(row);
+    const seasons = (row.seasons || []).map((sn) => ({
+      ...freshSeason(sn), name: row.name, slug: row.slug || null,
+    }));
+    return seasons.length
+      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaFor)
+      : row;
+  }, [freshSeason, lgaFor]);
+  return useMemo(() => ({ freshSeason, freshSide }), [freshSeason, freshSide]);
+}
+
+
 // The chip label for a selection made in the career chart: "Career year 4",
 // "Career years 3–6" for a run, "Career years 3·5·8" for one with gaps (capped,
 // so a twelve-year pick stays chip-sized). Slot indices in, 1-based years out —
@@ -803,45 +877,9 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // header. { a, b, years } — years are 0-based slot indices.
   const [pick, setPick] = useState(null);
 
-  // --- Re-resolving the sides against the live pool ---------------------------
-  // Both sides arrive as rows that were resolved when the comparison was MADE
-  // and then held in a caller's state — `compare.row` / `compare.seasons` in
-  // the breakdown card, a run picked out of MultiComparePicker, the career-year
-  // selection below. The USG-ADJ switch re-prices the index underneath them
-  // (lib/va-mode.js rebuilds every row), so a held row keeps whatever VA it was
-  // carrying when it was picked and the comparison quietly reads two different
-  // baselines at once.
-  //
-  // So nothing held is trusted for its numbers, only for its identity: every
-  // row is looked up again in the CURRENT pool by (player, season) and an
-  // aggregate is re-pooled from its seasons' fresh rows. Raw stats are the same
-  // either way — it is `va` that moves — and fields the pool doesn't carry (a
-  // leaderboard row's per-game log) survive the merge.
-  const poolBy = useMemo(() => {
-    const m = new Map();
-    for (const r of context?.allRows || []) {
-      m.set(`${r.slug || "n:" + normalizeName(r.name || "")}|${r.season}`, r);
-    }
-    return m;
-  }, [context?.allRows]);
-  const freshSeason = useCallback((r) => {
-    if (!r?.season) return r;
-    const hit = poolBy.get(`${r.slug || "n:" + normalizeName(r.name || "")}|${r.season}`);
-    return hit ? { ...r, ...hit } : r;
-  }, [poolBy]);
-  // A whole side: a season row looked up, a multi-season row re-aggregated from
-  // its own seasons so its total, its blended baseline and its per-category
-  // vector are all rebuilt at the active baseline.
-  const freshSide = useCallback((row) => {
-    if (!row) return row;
-    if (!row.multi) return freshSeason(row);
-    const seasons = (row.seasons || []).map((sn) => ({
-      ...freshSeason(sn), name: row.name, slug: row.slug || null,
-    }));
-    return seasons.length
-      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaFor)
-      : row;
-  }, [freshSeason, lgaFor]);
+  // Both sides are re-resolved against the live pool before anything reads
+  // their numbers — see useFreshRows.
+  const { freshSeason, freshSide } = useFreshRows(context);
 
   const a = useMemo(() => freshSide(pick?.a || aProp), [freshSide, pick, aProp]);
   const b = useMemo(() => freshSide(pick?.b || bProp), [freshSide, pick, bProp]);

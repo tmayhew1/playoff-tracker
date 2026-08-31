@@ -4,14 +4,14 @@ import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
 import { LGA, ZONES, valueAddByCategory, lgaForSeason, playmakingVA, reboundGamma, volumeVA, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
-import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget } from "./compare";
+import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget, useFreshRows } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, compName, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
-import { useLgaFor } from "../lib/va-mode";
+import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 
 
 export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
@@ -52,24 +52,45 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
     if (sel) { setCompare(sel); setPicking(false); }
     onCompareHandled?.();
   }, [pendingCompare, context, onCompareHandled]);
+  // Season baselines under the active USG-ADJ mode (lib/va-mode.js).
+  const lgaFor = useLgaFor();
+  // The comparison is held in state as it was when it was made, so the tiles
+  // below read the compared player out of the LIVE pool instead of that
+  // snapshot: the USG-ADJ switch re-prices this card's own figures, and the
+  // gold ones beside them have to move with it (see useFreshRows). The panel
+  // further down does the same for itself.
+  const { freshSide } = useFreshRows(context);
+  const cmpRow = useMemo(() => (compare ? freshSide(compare.row) : null), [compare, freshSide]);
   // The compared player's own playoff game log (per-game VA), overlaid onto
-  // the VA-by-Game chart above (aligned at game 1) while comparing.
+  // the VA-by-Game chart above (aligned at game 1) while comparing. The route
+  // bakes plain VA on every game split, so the log is re-priced here against
+  // the COMPARED season's baselines under the active mode — those bars share
+  // an axis with this card's own re-priced ones, and one side moving with the
+  // USG-ADJ switch while the other doesn't is two currencies on one chart.
+  //
+  // Keyed on the compared player's identity, not on the selection object: that
+  // object takes a new identity on every toggle (it is re-resolved against the
+  // live pool above), and the season's log is the same fetch either way.
   const [compareRun, setCompareRun] = useState(null);
+  const cmpSeason = compare?.row?.season || null;
+  const cmpSlug = compare?.slug || null;
+  const cmpName = compare?.name || null;
   useEffect(() => {
-    if (!compare) { setCompareRun(null); return; }
+    if (!cmpSeason) { setCompareRun(null); return; }
     let cancelled = false;
     setCompareRun(null);
-    fetchJsonCached(`/api/leaderboard?season=${compare.row.season}`)
+    fetchJsonCached(`/api/leaderboard?season=${cmpSeason}`)
       .then((dd) => {
         if (cancelled) return;
-        const nn = normalizeName(compare.name || "");
-        const pl = (dd.players || []).find((x) => (compare.slug && x.slug === compare.slug) || normalizeName(x.name) === nn);
-        const run = (pl?.games || []).filter((g) => g.va != null).map((g) => g.va);
+        const nn = normalizeName(cmpName || "");
+        const pl = (dd.players || []).find((x) => (cmpSlug && x.slug === cmpSlug) || normalizeName(x.name) === nn);
+        const priced = pl ? usgAdjRows([pl], lgaFor(cmpSeason))[0] : null;
+        const run = (priced?.games || []).filter((g) => g.va != null).map((g) => g.va);
         setCompareRun(run.length ? run : null);
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [compare]);
+  }, [cmpSeason, cmpSlug, cmpName, lgaFor]);
   // Per-36 vs per-game normalization for the counting-stat labels (PTS,
   // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
   // hidden in the single-game drill-in where raw counts are shown.
@@ -375,7 +396,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
               <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
               {compare && atSeasonLevel && (
-                <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(compare.row.va ?? 0).toFixed(1)}</span>
+                <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(cmpRow.va ?? 0).toFixed(1)}</span>
               )}
             </div>
             {vaPlus != null && (
@@ -395,14 +416,14 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
                 {compare && atSeasonLevel && (
-                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{compare.row.gp || 0}</div>
+                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{cmpRow.gp || 0}</div>
                 )}
               </div>
               <div className="flex flex-col justify-end text-center">
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN/G</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
                 {compare && atSeasonLevel && (
-                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{((compare.row.mp || 0) / (compare.row.gp || 1)).toFixed(1)}</div>
+                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{((cmpRow.mp || 0) / (cmpRow.gp || 1)).toFixed(1)}</div>
                 )}
               </div>
               {multiGame && (
@@ -410,7 +431,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, teams = TEAMS, rate = false
                   <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
                   <div className={`tabular-nums text-base font-semibold ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.va / p.gp).toFixed(2)}</div>
                   {compare && atSeasonLevel && (
-                    <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(compare.row.vaPerG ?? ((compare.row.va || 0) / (compare.row.gp || 1))).toFixed(2)}</div>
+                    <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(cmpRow.vaPerG ?? ((cmpRow.va || 0) / (cmpRow.gp || 1))).toFixed(2)}</div>
                   )}
                 </div>
               )}
