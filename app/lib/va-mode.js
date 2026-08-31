@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { lgaForSeason, usageModelFor, usgAdjDelta } from "../scoring";
+import { combinedLga, lgaForSeason, usageModelFor, usgAdjDelta } from "../scoring";
 
 
 // --- USG-ADJ mode ------------------------------------------------------------
@@ -99,11 +99,32 @@ export function useLgaFor(scope = null) {
     [lgaFor, scope]);
 }
 
-// The baseline scope a board's row scope is scored in. The playoff boards score
-// playoff lines; the regular-season and combined boards are scored against the
-// regular season (spec §4.8 — a combined row's own minute-weighted mix is
-// applied where the split is known, on the board itself).
-export const lgaScopeFor = (rowScope) => (rowScope === "playoffs" || rowScope === "po" ? "po" : "rs");
+// The baseline scope a board's row scope is scored in (spec §4.8). "combined"
+// stays its own answer rather than collapsing to "rs", because a combined row
+// is scored against ITS OWN minute-weighted mix of the two baselines — which
+// needs the row, not just the season. Pass it to useRowLga or
+// usgAdjSeasonRows, both of which know to look for the split; anything that
+// can only offer a season resolves it to the regular season.
+export const lgaScopeFor = (rowScope) =>
+  (rowScope === "playoffs" || rowScope === "po" ? "po"
+    : rowScope === "combined" ? "combined"
+    : "rs");
+
+// The baseline for one ROW under the active mode. Playoff and regular-season
+// rows are a season lookup; a combined row also needs its own minute split,
+// which it carries as `mpPo` (the playoff half of its summed minutes — baked by
+// /api/players, and known directly on the boards that build combined rows
+// themselves). A combined row without one falls back to the regular season
+// rather than guessing a split.
+export function useRowLga(scope) {
+  const { usgAdj, lgaFor } = useVAMode();
+  return useCallback((row) => {
+    if (scope === "combined" && row?.mpPo > 0) {
+      return combinedLga(row.season, (row.mp || 0) - row.mpPo, row.mpPo, usgAdj);
+    }
+    return lgaFor(row?.season, lgaScopeFor(scope));
+  }, [scope, usgAdj, lgaFor]);
+}
 
 // One season's baselines under the active mode, for the scope being scored —
 // "rs" (default) or "po" for the blended playoff baseline.
@@ -153,7 +174,13 @@ export function usgAdjRows(rows, lga) {
 export function usgAdjSeasonRows(rows, usgAdj, scope = "rs") {
   if (!usgAdj || !Array.isArray(rows)) return rows;
   return rows.map((r) => {
-    const lga = lgaForSeason(r.season, true, scope);
+    // A combined row is re-priced against its own minute-weighted mix, the same
+    // baseline the route scored it with — re-pricing it against the plain
+    // regular season would apply the mode's delta at a baseline the row was
+    // never measured on (spec §4.8).
+    const lga = scope === "combined" && r.mpPo > 0
+      ? combinedLga(r.season, (r.mp || 0) - r.mpPo, r.mpPo, true)
+      : lgaForSeason(r.season, true, scope);
     if (!lga.usgModel) return r;
     const row = { ...r, va: (r.va || 0) + usgAdjDelta(r, lga) };
     if (r.vaPerG != null) row.vaPerG = r.gp > 0 ? row.va / r.gp : 0;

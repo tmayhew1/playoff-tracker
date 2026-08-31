@@ -8,7 +8,7 @@ import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
-import { UsgAdjChip, usgAdjRows, useSeasonLga, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
@@ -18,6 +18,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // `lga`, the playoffs scope uses `poLga`, and a combined row gets the
   // minutes-weighted mix of the two (scoring.js::combinedLga).
   const poLga = useSeasonLga(season, "po");
+  // Combined rows are mixed per row, so they need the mode as a value rather
+  // than pre-applied to a season baseline (scoring.js::combinedLga).
+  const { usgAdj } = useVAMode();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -237,7 +240,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       // Two lines from two leagues, so the mix of their two baselines — which
       // for every per-minute term is exactly the two halves scored separately
       // and added, while staying one object the category bars can sum against.
-      sum.lga = combinedLga(season, r?.mp || 0, p.mp || 0);
+      sum.lga = combinedLga(season, r?.mp || 0, p.mp || 0, usgAdj);
       const parts = valueAddParts(sum, sum.lga);
       sum.va = parts.va;
       sum.eff = parts.efficiency;
@@ -247,7 +250,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       if (!used.has(r)) rows.push(r);
     }
     return rows;
-  }, [data, rsPlayers, lga, season]);
+  }, [data, rsPlayers, lga, season, usgAdj]);
 
   // League-context pools for the category drill-ins (same panel as By
   // Player). The scope index is a multi-MB payload, so it's fetched lazily on
@@ -256,7 +259,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   const [ctxByScope, setCtxByScope] = useState({});
   // Same index By Player reads, re-priced the same way when USG-ADJ is on, so
   // a category's league ranking matches the board it was opened from.
-  const ctxPlayers = useUsgAdjIndex(ctxByScope[scope] || null);
+  // Re-priced in the SCOPE the pool was fetched for: a playoff pool is playoff
+  // rows and re-prices against the playoff baseline (spec §4.8). Left on the
+  // regular season it would rank a playoff card against a differently-scored
+  // field.
+  const ctxPlayers = useUsgAdjIndex(ctxByScope[scope] || null, lgaScopeFor(scope));
   useEffect(() => {
     if (expanded == null || ctxByScope[scope]) return;
     let cancelled = false;

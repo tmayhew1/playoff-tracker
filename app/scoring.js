@@ -241,7 +241,15 @@ export function playoffLga(season) {
 // bounded instead of growing one entry per player.
 const combinedLgaCache = new Map();
 
-export function combinedLga(season, mpRs, mpPo) {
+export function combinedLga(season, mpRs, mpPo, usgAdj = false) {
+  const mixed = combinedLgaBase(season, mpRs, mpPo);
+  // The USG-ADJ switch has to survive the mix, or the Combined board silently
+  // ignores it. usgAdjLga reads the blended pivot off `muUsgBlend` below and
+  // caches on the mixed object's identity, which combinedLgaBase keeps stable.
+  return usgAdj ? usgAdjLga(mixed, season) : mixed;
+}
+
+function combinedLgaBase(season, mpRs, mpPo) {
   const total = (mpRs || 0) + (mpPo || 0);
   if (!(total > 0)) return LEAGUE_AVERAGES[season] || LGA;
   const w = Math.round(((mpPo || 0) / total) * 1000) / 1000;
@@ -272,6 +280,12 @@ export function combinedLga(season, mpRs, mpPo) {
 // blended playoff baseline above. The scope travels INSIDE the returned
 // object, exactly the way the USG-ADJ mode does — nothing between here and the
 // scorer has to know which one it is holding.
+//
+// There is deliberately no "combined" here: that baseline depends on a ROW's
+// own minute split, not just its season, so it cannot be answered from a season
+// alone. Anything but "po" resolves to the regular season, which is the right
+// fallback for a combined caller that has no split to give — combinedLga is
+// what a caller that HAS one should use.
 export const lgaForSeason = (season, usgAdj = false, scope = "rs") => {
   const lga = (scope === "po" ? playoffLga(season) : LEAGUE_AVERAGES[season]) || LGA;
   return usgAdj ? usgAdjLga(lga, season) : lga;
