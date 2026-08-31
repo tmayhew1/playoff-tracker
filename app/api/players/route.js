@@ -221,6 +221,11 @@ export async function GET(req) {
       va: r2(va),
       vaPerG: p.gp ? r2(va / p.gp) : 0,
       ...raw,
+      // The playoff half of a combined row's minutes. One number, and it is
+      // what lets the client rebuild the exact mixed baseline this row was
+      // scored against — without it, re-pricing under USG-ADJ would apply the
+      // mode's delta at a baseline the row was never measured on (spec §4.8).
+      ...(scope === "combined" && p._po?.mp > 0 ? { mpPo: r1(p._po.mp) } : {}),
     });
   }
 

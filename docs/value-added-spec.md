@@ -701,7 +701,14 @@ $$
 
 while remaining one baseline object, so the ten categories still sum to the
 row's VA (invariant 1). The residual against a true split — $\gamma$ and the
-shooting terms, the only non-linear parts — is $\approx 0.02\%$.
+shooting terms, the only non-linear parts — is $\approx 0.02\%$. USG-ADJ
+composes with the mix rather than being lost to it: the mixed object carries a
+mixed $\bar u$ and is wrapped by `usgAdjLga` when the mode is on, so the closed
+form `usgAdjDelta` still lands exactly on a from-scratch re-score. The row
+carries its playoff minutes as `mpPo` precisely so the client can rebuild the
+baseline the route scored it against — re-pricing a combined row at the plain
+regular-season baseline would apply the mode's delta at a bar the row was never
+measured on.
 
 **Scope.** A change to **base VA** for playoff lines, not a display mode. The
 playoff half is baked to `app/data/playoff-league-averages.json` by
@@ -1259,7 +1266,11 @@ own class rather than mixed into one column.
    else. It is a per-player baseline,
    like $\gamma$ is a per-player price, so invariant 1 holds within either
    mode; the two modes are separate currencies and their numbers are never
-   mixed on one surface, nor with a Legacy or College number.
+   mixed on one surface, nor with a Legacy or College number. It **composes**
+   with the playoff blend (§4.8) rather than being replaced by it: a blended
+   $\mu_{\mathrm{PTS}}$ is always read against a blended pivot $\bar u$, on the
+   playoff and combined baselines alike, and the mode's additivity over games
+   survives the blend exactly because the blend is a per-season constant.
 7. Championship leverage **reweights** the decomposition and never enters it, so
    invariant 1 holds unchanged on every surface (§7.4). Within a series its
    weight is conserved: the two teams' shares sum to $1$ at every $\omega$, so

@@ -10,7 +10,7 @@ import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
-import { UsgAdjChip, lgaScopeFor, useLgaFor, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, lgaScopeFor, useLgaFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -235,6 +235,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // regular season, combined because the pooled index carries the summed line
   // without the minute split its own mix would need.
   const lgaFor = useLgaFor(lgaScopeFor(scope));
+  // Per-ROW, because a combined row is scored against its own minute-weighted
+  // mix of the two baselines and `lgaFor` can only answer per season. For the
+  // playoff and regular-season scopes the two agree exactly.
+  const rowLga = useRowLga(scope);
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
   const [teamFilter, setTeamFilter] = useState(null);
@@ -475,11 +479,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     if (!defs) return m;
     for (const x of seasons) {
       if (!(x.mp > 0)) continue;
-      const info = defVAInfo({ ...x, slug: player.slug || null }, x.mp, lgaFor(x.season), defs, x.season, defScope);
+      const info = defVAInfo({ ...x, slug: player.slug || null }, x.mp, rowLga(x), defs, x.season, defScope);
       if (info) m.set(x.season, info.dva);
     }
     return m;
-  }, [defs, seasons, player.slug, defScope, lgaFor]);
+  }, [defs, seasons, player.slug, defScope, rowLga]);
   const dvaOf = (x) => (dvaBySeason.has(x.season) ? dvaBySeason.get(x.season) : null);
   // The active total for a row — VA, or VA+ (VA + dVA) when the toggle is on.
   // A season with no rating keeps its plain VA, so VA+ always exists.
@@ -635,8 +639,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // page, so the four groups keep summing to the number the table shows.
   const multiDefActive = useMemo(() => {
     if (!defs || !aggA || metric !== "vaPlus") return false;
-    return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, lgaFor(x.season), defs, x.season, defScope) != null);
-  }, [defs, aggA, defScope, metric, lgaFor]);
+    return aggA.seasons.some((x) => x.mp > 0 && defVAInfo(x, x.mp, rowLga(x), defs, x.season, defScope) != null);
+  }, [defs, aggA, defScope, metric, rowLga]);
   const multiContext = useMemo(
     () => (contextData ? { ...contextData, self: player, scope, season: null, onNavigateToPlayer, onNavigateToRun } : null),
     [contextData, player, scope, onNavigateToPlayer, onNavigateToRun]
@@ -875,7 +879,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         const barPct = (Math.abs(barValOf(s)) / maxAbsVa) * 100;
         const rowDva = dvaOf(s);
         const gp = s.gp || 1;
-        const eff = valueAddParts(s, lgaFor(s.season)).efficiency;
+        const eff = valueAddParts(s, rowLga(s)).efficiency;
         // What a tap on the row body does. Armed, the row IS the check box;
         // unarmed it's the disclosure it has always been.
         const activate = () => {
@@ -1041,7 +1045,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             ) : (
               <VACategoryBreakdown
                 player={s}
-                lga={lgaFor(s.season)}
+                lga={rowLga(s)}
                 baseline="NBA"
                 context={contextFor(s)}
                 showDRating={metric === "vaPlus"}
