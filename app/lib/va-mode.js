@@ -24,6 +24,12 @@ import { lgaForSeason, usageModelFor, usgAdjDelta } from "../scoring";
 // The scorer reads that; nothing between here and there has to know the mode
 // exists.
 //
+// The playoff baseline (spec §4.8) rides the same rail. `lgaFor(season, "po")`
+// hands back the blended playoff object instead of the regular-season one, and
+// again nothing downstream has to know: a scope is a different baseline object,
+// not a different scorer. The default stays "rs", so a surface that has not
+// been told which side of the season it is scoring keeps the behaviour it had.
+//
 // The getter's identity changes with the mode and the baseline objects
 // themselves are cached per season (scoring.js::usgAdjLga), so putting
 // `lgaFor` in a useMemo dependency list re-derives exactly once per toggle and
@@ -37,11 +43,11 @@ import { lgaForSeason, usageModelFor, usgAdjDelta } from "../scoring";
 
 const VAModeContext = createContext(null);
 
-const DEFAULT = { usgAdj: false, setUsgAdj: () => {}, lgaFor: (s) => lgaForSeason(s) };
+const DEFAULT = { usgAdj: false, setUsgAdj: () => {}, lgaFor: (s, scope) => lgaForSeason(s, false, scope) };
 
 export function VAModeProvider({ children }) {
   const [usgAdj, setUsgAdj] = useState(false);
-  const lgaFor = useCallback((season) => lgaForSeason(season, usgAdj), [usgAdj]);
+  const lgaFor = useCallback((season, scope = "rs") => lgaForSeason(season, usgAdj, scope), [usgAdj]);
   const value = useMemo(() => ({ usgAdj, setUsgAdj, lgaFor }), [usgAdj, lgaFor]);
   return <VAModeContext.Provider value={value}>{children}</VAModeContext.Provider>;
 }
@@ -80,14 +86,30 @@ export function UsgAdjChip({ className = "" }) {
 // The season → baselines getter for the active mode. Stable across renders,
 // new identity on every toggle: the dependency to list in a useMemo that
 // scores rows.
-export function useLgaFor() {
-  return useVAMode().lgaFor;
+//
+// Pass a scope to bind it — `useLgaFor("po")` returns a getter that hands out
+// the blended playoff baseline for whatever season it is asked about, so a
+// component that scores one side of the season states that once at the top
+// rather than at every call. Still stable across renders, and still a new
+// identity whenever the mode or the scope changes.
+export function useLgaFor(scope = null) {
+  const { lgaFor } = useVAMode();
+  return useMemo(
+    () => (scope == null ? lgaFor : (season, override = scope) => lgaFor(season, override)),
+    [lgaFor, scope]);
 }
 
-// One season's baselines under the active mode.
-export function useSeasonLga(season) {
+// The baseline scope a board's row scope is scored in. The playoff boards score
+// playoff lines; the regular-season and combined boards are scored against the
+// regular season (spec §4.8 — a combined row's own minute-weighted mix is
+// applied where the split is known, on the board itself).
+export const lgaScopeFor = (rowScope) => (rowScope === "playoffs" || rowScope === "po" ? "po" : "rs");
+
+// One season's baselines under the active mode, for the scope being scored —
+// "rs" (default) or "po" for the blended playoff baseline.
+export function useSeasonLga(season, scope = "rs") {
   const lgaFor = useLgaFor();
-  return useMemo(() => lgaFor(season), [lgaFor, season]);
+  return useMemo(() => lgaFor(season, scope), [lgaFor, season, scope]);
 }
 
 // Whether the active mode actually changes anything for a season — false when
@@ -128,10 +150,10 @@ export function usgAdjRows(rows, lga) {
 // career table, a pool of player-seasons from /api/players. Each row is
 // measured against its own season's model (spec invariant 2), and a row whose
 // season has no fit keeps its standard VA.
-export function usgAdjSeasonRows(rows, usgAdj) {
+export function usgAdjSeasonRows(rows, usgAdj, scope = "rs") {
   if (!usgAdj || !Array.isArray(rows)) return rows;
   return rows.map((r) => {
-    const lga = lgaForSeason(r.season, true);
+    const lga = lgaForSeason(r.season, true, scope);
     if (!lga.usgModel) return r;
     const row = { ...r, va: (r.va || 0) + usgAdjDelta(r, lga) };
     if (r.vaPerG != null) row.vaPerG = r.gp > 0 ? row.va / r.gp : 0;
@@ -143,7 +165,7 @@ export function usgAdjSeasonRows(rows, usgAdj) {
 // career table, the league pools the category drill-ins rank against, and the
 // closest-comps candidate set all come from, so re-pricing here is what keeps
 // those three agreeing with the leaderboard.
-export function useUsgAdjIndex(indexPlayers) {
+export function useUsgAdjIndex(indexPlayers, scope = "rs") {
   const { usgAdj } = useVAMode();
   return useMemo(() => {
     if (!usgAdj || !Array.isArray(indexPlayers)) return indexPlayers;
@@ -153,9 +175,9 @@ export function useUsgAdjIndex(indexPlayers) {
     // players the search offers first, are the same statistic as the table.
     return indexPlayers
       .map((pl) => {
-        const seasons = usgAdjSeasonRows(pl.seasons, true);
+        const seasons = usgAdjSeasonRows(pl.seasons, true, scope);
         return { ...pl, seasons, careerVa: seasons.reduce((t, s) => t + (s.va || 0), 0) };
       })
       .sort((a, b) => b.careerVa - a.careerVa);
-  }, [indexPlayers, usgAdj]);
+  }, [indexPlayers, usgAdj, scope]);
 }

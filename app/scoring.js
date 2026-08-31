@@ -2,12 +2,18 @@
 
 import { TEAMS, BRACKET, ROUND_BASE, ROUND_LABEL } from "./teams";
 import LEAGUE_AVERAGES_DATA from "./data/league-averages.json";
+import PLAYOFF_LEAGUE_AVERAGES_DATA from "./data/playoff-league-averages.json";
 import USAGE_MODEL_DATA from "./data/usage-model.json";
 
 // League averages per season, used to compute Value Added. Keeping VA
 // season-accurate matters for historical box scores (efficiency baselines
 // drift year to year). Sourced from data/league-averages.json.
 export const LEAGUE_AVERAGES = LEAGUE_AVERAGES_DATA;
+
+// The same baselines measured over PLAYOFF minutes, baked by
+// scripts/bake-playoff-averages.mjs from the playoff rows already on disk.
+// Never scored against directly — only ever as half of the blend below.
+export const PLAYOFF_LEAGUE_AVERAGES = PLAYOFF_LEAGUE_AVERAGES_DATA;
 
 // Default (current season) — keeps existing callers unchanged.
 export const LGA = LEAGUE_AVERAGES["2025-26"];
@@ -101,7 +107,14 @@ export function usgAdjLga(lga, season) {
   // wrong baseline (spec invariant 5).
   if (!lga || !(model?.muUsg > 0)) return lga;
   if (!usgAdjCache.has(lga)) {
-    usgAdjCache.set(lga, { ...lga, usgModel: model, volumeCredit: VOLUME_CREDIT });
+    // On a playoff-blended baseline the pivot is blended too (`muUsgBlend`,
+    // set by playoffLga below). USG-ADJ prices a used possession at
+    // ē = μ_PTS / ū, so a blended μ_PTS read against the regular-season ū
+    // would be two baselines wearing one name — the mode would stop passing
+    // through the median-minute point that makes it a refinement rather than
+    // a re-levelling (spec §4.6).
+    const usgModel = lga.muUsgBlend > 0 ? { ...model, muUsg: lga.muUsgBlend } : model;
+    usgAdjCache.set(lga, { ...lga, usgModel, volumeCredit: VOLUME_CREDIT });
   }
   return usgAdjCache.get(lga);
 }
@@ -119,8 +132,148 @@ export function fittedLineLga(season) {
   return fittedCache.get(lga);
 }
 
-export const lgaForSeason = (season, usgAdj = false) => {
-  const lga = LEAGUE_AVERAGES[season] || LGA;
+// --- The playoff baseline (spec §4.8) ---------------------------------------
+// VA scores a line against what a typical league minute produced. Until now
+// that minute was always a REGULAR-SEASON one, on both sides of the season —
+// a playoff run was measured against the bar its own league had cleared in
+// October through April.
+//
+// Playoff basketball does not clear that bar. Over the 46 baked seasons the
+// median playoff minute scores 0.0161 pts/min LESS than the median regular-
+// season minute — 3.8%, about 6.6 standard errors from zero, and negative in
+// 38 of the 46. Assists run ~5% lower, 2P% lower in most seasons, pace lower
+// in nearly all. Rotations shorten (which pushes the median minute UP, toward
+// a better player) and defenses tighten (which pushes it down); the second
+// wins, and by a lot. So the old baseline systematically UNDER-credited every
+// playoff line, and did it unevenly — hardest on the categories the playoffs
+// suppress most.
+//
+// The fix is not to swap in the playoff baseline whole, because a playoff
+// field is a small sample. It is ~7% of a regular season's minutes and ~220
+// players, and the minutes-weighted median over it is roughly twice as noisy
+// as its regular-season counterpart (bootstrap SD ~0.017-0.028 vs ~0.007-0.013
+// pts/min). Measured across the 46 seasons, the year-to-year variance of the
+// regular-season → playoff gap (0.000279) is actually SMALLER than the
+// sampling variance of the estimate itself (0.000455): the level shift is
+// real and stable, the season-to-season wiggle in it is essentially all noise.
+//
+// So the playoff estimate is SHRUNK toward the regular season:
+//
+//   μ_playoff-VA = (1 − β)·μ_regular-season + β·μ_playoffs,   β = PLAYOFF_BLEND
+//
+// at β = ½ — half the level shift, a quarter of the playoff estimate's
+// variance. Every baseline in the object blends the same way, including the
+// shot-zone rates and the USG-ADJ pivot, so the ten categories stay measured
+// against one consistent league rather than a mixture of two.
+//
+// Properties. The blend is a per-season CONSTANT, so every VA term stays
+// exactly as linear and as additive over games as it was — the closed forms in
+// lib/multi-season.js and usgAdjDelta are untouched, and only γ remains
+// non-linear, as before. And it is a pure re-levelling within a season: every
+// playoff line moves against the same new bar, so nothing reorders for a
+// reason other than the categories it actually shifted.
+export const PLAYOFF_BLEND = 0.5;
+
+// Keys on a playoff entry that describe the SAMPLE rather than the league, and
+// so are carried, not blended.
+const PLAYOFF_META = new Set(["mp", "players", "muUsg", "zoneFG"]);
+
+const playoffLgaCache = new Map();
+
+// One season's blended playoff baselines. Falls back to the regular-season
+// object — the same identity, not a copy — when that season has no playoff
+// bake, so a missing measurement reads as "unblended", never as a wrong
+// baseline (spec invariant 5).
+export function playoffLga(season) {
+  const rs = LEAGUE_AVERAGES[season];
+  const po = PLAYOFF_LEAGUE_AVERAGES[season];
+  if (!rs || !po) return rs || LGA;
+  if (playoffLgaCache.has(season)) return playoffLgaCache.get(season);
+  const b = PLAYOFF_BLEND, mix = (x, y) => (1 - b) * x + b * y;
+  const out = { ...rs };
+  for (const [k, v] of Object.entries(rs)) {
+    // A key the regular season carries and the playoff bake does not keeps its
+    // regular-season value rather than being dropped or halved toward zero.
+    if (typeof v !== "number" || PLAYOFF_META.has(k)) continue;
+    if (typeof po[k] === "number") out[k] = mix(v, po[k]);
+  }
+  // Shot-distance rates blend zone by zone, and only where both sides carry
+  // them: basketball-reference has no shot locations before 1996-97, so an
+  // earlier season keeps whatever the regular season had (usually nothing).
+  if (rs.zoneFG && po.zoneFG) {
+    out.zoneFG = Object.fromEntries(Object.entries(rs.zoneFG).map(
+      ([z, v]) => [z, typeof po.zoneFG[z] === "number" ? mix(v, po.zoneFG[z]) : v]));
+  }
+  // The USG-ADJ pivot, blended on the same terms and left for usgAdjLga to
+  // pick up. It rides beside the model rather than inside it because the mode
+  // is a display switch: a baseline object is built once per season and only
+  // becomes a usage-adjusted one if the switch is on.
+  const rsMuUsg = usageModelFor(season)?.muUsg;
+  if (rsMuUsg > 0 && po.muUsg > 0) out.muUsgBlend = mix(rsMuUsg, po.muUsg);
+  playoffLgaCache.set(season, out);
+  return out;
+}
+
+// The baseline for a COMBINED line — one row summing a regular season and the
+// playoff run that followed it. Two lines played in two different leagues, so
+// neither league's baseline alone is right for their sum.
+//
+// The mix is by MINUTES, and that is not a compromise: every per-minute term in
+// VA has the form (S/MP − λ)·MP·price, which is linear in λ, so scoring the
+// SUMMED line against
+//
+//   λ_mix = (λ_rs·MP_rs + λ_po·MP_po) / (MP_rs + MP_po)
+//
+// gives back exactly (S_rs − λ_rs·MP_rs) + (S_po − λ_po·MP_po) — the two halves
+// scored separately and added, to the decimal. So the combined row agrees with
+// the playoff board about its playoff minutes and with the regular-season board
+// about its regular-season ones, while still being ONE baseline object: the ten
+// categories sum to the row's VA the way spec invariant 1 requires, and every
+// surface that threads a single `lga` keeps working unchanged.
+//
+// (The conversion constants — the shooting percentages, points per make, the
+// rebound shares — mix on the same weights, where the identity is close rather
+// than exact. They are prices, not per-minute bars, and a player's combined
+// shooting is genuinely a mixture of the two leagues he shot in.)
+//
+// Keyed on the minute split rounded to a thousandth, so the object identity a
+// caller puts in a useMemo dependency list (and the usgAdjLga cache) stays
+// bounded instead of growing one entry per player.
+const combinedLgaCache = new Map();
+
+export function combinedLga(season, mpRs, mpPo) {
+  const total = (mpRs || 0) + (mpPo || 0);
+  if (!(total > 0)) return LEAGUE_AVERAGES[season] || LGA;
+  const w = Math.round(((mpPo || 0) / total) * 1000) / 1000;
+  if (w <= 0) return LEAGUE_AVERAGES[season] || LGA;
+  if (w >= 1) return playoffLga(season);
+  const key = `${season}|${w}`;
+  if (combinedLgaCache.has(key)) return combinedLgaCache.get(key);
+  const rs = LEAGUE_AVERAGES[season], po = playoffLga(season);
+  if (!rs || po === rs) return rs || LGA;
+  const mix = (x, y) => (1 - w) * x + w * y;
+  const out = { ...rs };
+  for (const [k, v] of Object.entries(rs)) {
+    if (typeof v !== "number") continue;
+    if (typeof po[k] === "number") out[k] = mix(v, po[k]);
+  }
+  if (rs.zoneFG && po.zoneFG) {
+    out.zoneFG = Object.fromEntries(Object.entries(rs.zoneFG).map(
+      ([z, v]) => [z, typeof po.zoneFG[z] === "number" ? mix(v, po.zoneFG[z]) : v]));
+  }
+  const rsMuUsg = usageModelFor(season)?.muUsg;
+  if (rsMuUsg > 0 && po.muUsgBlend > 0) out.muUsgBlend = mix(rsMuUsg, po.muUsgBlend);
+  combinedLgaCache.set(key, out);
+  return out;
+}
+
+// A season's baselines for the scope being scored. "rs" is the regular season
+// (and the default, so every existing caller is unchanged); "po" is the
+// blended playoff baseline above. The scope travels INSIDE the returned
+// object, exactly the way the USG-ADJ mode does — nothing between here and the
+// scorer has to know which one it is holding.
+export const lgaForSeason = (season, usgAdj = false, scope = "rs") => {
+  const lga = (scope === "po" ? playoffLga(season) : LEAGUE_AVERAGES[season]) || LGA;
   return usgAdj ? usgAdjLga(lga, season) : lga;
 };
 

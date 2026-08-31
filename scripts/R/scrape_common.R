@@ -24,6 +24,7 @@ R_DIR    <- dirname(.this_file)
 ROOT     <- normalizePath(file.path(R_DIR, "..", ".."))
 DATA_DIR <- file.path(ROOT, "app", "data")
 LGA_PATH <- file.path(DATA_DIR, "league-averages.json")
+PO_LGA_PATH <- file.path(DATA_DIR, "playoff-league-averages.json")
 
 # --- HTTP (polite, throttled, mirrors the Node 2.5s spacing) ---------------
 UA <- paste0(
@@ -394,6 +395,85 @@ lga_plausible <- function(l) {
 load_league_averages <- function() {
   if (!file.exists(LGA_PATH)) return(list())
   jsonlite::fromJSON(LGA_PATH, simplifyVector = FALSE)
+}
+
+# --- The playoff baseline (spec section 4.8) -------------------------------
+# VA scores a line against what a typical league MINUTE produced, and that
+# minute used to be a regular-season one on both sides of the season. It should
+# not be: across the 46 baked seasons the median playoff minute scores 3.8% less
+# than the median regular-season minute (about 6.6 standard errors from zero,
+# negative in 38 of 46), assists run ~5% lower, and pace is lower in nearly all.
+#
+# So a playoff line is scored against a blend, shrunk toward the regular season
+# because a playoff field is only ~7% of a regular season's minutes and its
+# median is roughly twice as noisy:
+#
+#   blended = (1 - PLAYOFF_BLEND) * regular_season + PLAYOFF_BLEND * playoffs
+#
+# KEEP IN SYNC with PLAYOFF_BLEND and playoffLga() in app/scoring.js - the bake
+# and the client have to price a playoff minute identically or the two disagree
+# on disk.
+PLAYOFF_BLEND <- 0.5
+
+load_playoff_league_averages <- function() {
+  if (!file.exists(PO_LGA_PATH)) return(list())
+  jsonlite::fromJSON(PO_LGA_PATH, simplifyVector = FALSE)
+}
+
+# Playoff baselines from the leaderboard's own per-player playoff rows - the
+# same definition lga_from_players uses (minutes-weighted MEDIAN per-minute
+# rates, aggregate conversion ratios), plus the USG-ADJ pivot measured over
+# playoff minutes so a blended mu_PTS is never read against a regular-season
+# median usage.
+po_lga_from_players <- function(players) {
+  base <- lga_from_players(players)
+  usg <- vapply(players, function(p) {
+    (as.numeric(p$fga %||% 0)) + 0.475 * (as.numeric(p$fta %||% 0))
+  }, numeric(1))
+  mp <- vapply(players, function(p) as.numeric(p$mp %||% 0), numeric(1))
+  base$muUsg <- weighted_median_rate(usg, mp)
+  base
+}
+
+# Keys on a playoff entry that describe the SAMPLE rather than the league, and
+# so are carried through rather than blended.
+PO_LGA_META <- c("mp", "players", "muUsg", "zoneFG")
+
+# One season's blended playoff baselines. Returns the regular-season entry
+# unchanged when there is no playoff entry to blend with, so a season whose
+# playoff field has not been measured yet reads as "unblended" rather than
+# being scored against a wrong number (spec invariant 5).
+blend_playoff_lga <- function(rs, po) {
+  if (is.null(rs)) return(NULL)
+  if (is.null(po)) return(rs)
+  b <- PLAYOFF_BLEND
+  out <- rs
+  for (k in names(rs)) {
+    if (k %in% PO_LGA_META) next
+    v <- rs[[k]]
+    w <- po[[k]]
+    if (!is.numeric(v) || length(v) != 1) next
+    if (is.null(w) || !is.numeric(w) || length(w) != 1) next
+    out[[k]] <- (1 - b) * v + b * w
+  }
+  # Shot-distance rates blend zone by zone, and only where both sides carry
+  # them; basketball-reference has no shot locations before 1996-97.
+  if (!is.null(rs$zoneFG) && !is.null(po$zoneFG)) {
+    z <- rs$zoneFG
+    for (k in names(z)) {
+      w <- po$zoneFG[[k]]
+      if (!is.null(w) && is.numeric(w)) z[[k]] <- (1 - b) * z[[k]] + b * w
+    }
+    out$zoneFG <- z
+  }
+  out
+}
+
+# season -> blended playoff baselines, for every season that has both halves.
+playoff_lgas <- function(lgas = load_league_averages(), pos = load_playoff_league_averages()) {
+  out <- list()
+  for (season in names(lgas)) out[[season]] <- blend_playoff_lga(lgas[[season]], pos[[season]])
+  out
 }
 
 # --- JSON output (matches JSON.stringify(obj, null, 2) + "\n") --------------

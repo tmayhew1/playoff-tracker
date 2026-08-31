@@ -11,6 +11,12 @@
 // directly for the playoffs scope (route.js: `scope === "playoffs" ? p.va : …`),
 // so a stale file would leave By Player and the leaderboard disagreeing.
 //
+// Playoff lines, so the blended playoff baseline (spec §4.8). That blend is
+// measured from the RAW stats in these same files, never from the `va` this
+// script rewrites, so re-baking cannot move the baseline it was baked against —
+// no iteration, and a second run is a no-op. Run
+// scripts/bake-playoff-averages.mjs first if the raw rows have changed.
+//
 // Usage: node scripts/rebake-leaderboard-va.mjs [--check]
 import fs from "node:fs";
 import path from "node:path";
@@ -39,7 +45,7 @@ let changed = 0, maxDelta = 0;
 for (const f of files) {
   const full = path.join(DATA, f);
   const data = JSON.parse(fs.readFileSync(full, "utf8"));
-  const lga = lgaForSeason(data.season);
+  const lga = lgaForSeason(data.season, false, "po");
   for (const p of data.players || []) {
     const before = p.va || 0;
     // The season row is scored from the SUMMED season line, and each game from
@@ -48,8 +54,8 @@ for (const f of files) {
     // rebound credit gamma is non-linear in a player's own rate), and
     // /api/leaderboard builds its season number the other way, by summing
     // games. That divergence is pre-existing and deliberately left alone here:
-    // this script changes the assist PRICE and nothing else, so the diff stays
-    // attributable to one thing.
+    // this script re-scores against a different BASELINE and changes nothing
+    // else, so the diff stays attributable to one thing.
     for (const g of p.games || []) {
       if (g.va == null) continue;
       g.va = valueAddParts(g, lga).va;

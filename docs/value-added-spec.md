@@ -47,6 +47,12 @@ season's *player* season-totals table and stored in
 `app/data/league-averages.json`. Two families of quantity, computed two
 different ways on purpose (§3):
 
+The same two families are computed a second time over that season's **playoff**
+minutes and stored in `app/data/playoff-league-averages.json`. A playoff line is
+scored against a blend of the two, not against either alone — see §4.8, which is
+where the sizes, the noise, and the blend weight are established. Everything
+below describes one $\lambda$; both are that shape.
+
 **Per-minute rate baselines** (minutes-weighted medians — §2):
 
 $$
@@ -613,6 +619,117 @@ one (assists over-weighted as a category), which the FT correction addressed.
 A bake plus an era cliff plus a strong "finishers deserve far less" stance, to
 close a $155\% \to 100\%$ residual, is a bad trade. Recorded, not built.
 
+### 4.8 The playoff baseline
+
+Every baseline above is measured on a **regular-season** player-totals table
+(§1.2), and until now a playoff line was scored against it too. A playoff run
+was being asked to clear the bar its own league had cleared in October through
+April.
+
+**Playoff basketball does not clear that bar.** Measured over the 46 baked
+seasons, with $\mu^{PO}$ the minutes-weighted median of the playoff field and
+$\mu^{RS}$ its regular-season counterpart:
+
+| | mean gap $\mu^{PO}-\mu^{RS}$ | as % of $\mu^{RS}$ | seasons negative |
+|---|---|---|---|
+| $\mu_{\mathrm{PTS}}$ | $-0.0161$ pts/min | $-3.8\%$ | 38 / 46 |
+| $\mu_{\mathrm{AST}}$ | — | $\approx -5\%$ | — |
+| $p_2$ | — | lower in most seasons | — |
+| pace ($\Pi$/min) | — | lower in nearly all | — |
+
+The scoring gap is about $6.6$ standard errors from zero. Two forces pull on
+the median playoff minute and they oppose: rotations shorten, which pushes it
+**up** toward a better player, and defences tighten, which pushes it **down**.
+The second wins, and by a lot. So the old baseline systematically
+**under-credited** every playoff line, and did it unevenly — hardest on the
+categories the playoffs suppress most.
+
+**Why not simply swap in $\lambda^{PO}$.** A playoff field is a small sample:
+$\approx 7\%$ of a regular season's minutes and $\approx 220$ players, and its
+minutes-weighted median is roughly twice as noisy as the regular season's
+(bootstrap SD $0.017$–$0.028$ vs $0.007$–$0.013$ pts/min). The decisive
+measurement is that across the 46 seasons the **year-to-year variance of the
+gap** ($0.000279$) is *smaller* than the **sampling variance of the estimate**
+($0.000455$). The level shift is real and stable; the season-to-season wiggle in
+it is essentially all noise. A season-specific $\lambda^{PO}$ read on its own
+would import more noise than signal.
+
+**So the playoff estimate is shrunk toward the regular season:**
+
+$$
+\lambda^{\mathrm{PO\text{-}VA}}(y) \;=\; (1-\beta)\,\lambda^{RS}(y) \;+\; \beta\,\lambda^{PO}(y),
+\qquad \beta = \tfrac{1}{2}
+$$
+
+Half the level shift, a quarter of the playoff estimate's variance. **Every**
+entry of $\lambda$ blends on the same weight — the seven per-minute medians, the
+four shooting rates, the conversion constants, the shot-zone rates $p_z$ (§7.1),
+and the USG-ADJ pivot $\bar u$ (§4.6) — so the ten categories are measured
+against one consistent league rather than a mixture of two. Blending $\bar u$ is
+not optional: USG-ADJ prices a used possession at $\bar e = \mu_{\mathrm{PTS}}/\bar u$,
+and a blended $\mu_{\mathrm{PTS}}$ read against a regular-season $\bar u$ would stop
+passing through the median-minute point that makes the mode a refinement rather
+than a re-levelling.
+
+**Properties.**
+
+1. **Linearity and additivity survive intact.** $\lambda^{\mathrm{PO\text{-}VA}}$
+   is a per-season *constant*, so every term stays exactly as linear in the box
+   score as it was. `lib/multi-season.js`, `usgAdjDelta`, and the per-game bake
+   are untouched; $\gamma$ remains the only non-linearity.
+2. **A pure re-levelling within a season.** Every playoff line moves against the
+   same new bar, so nothing reorders except through the categories that actually
+   shifted. Measured: playoff VA rises by $\approx 2$–$7$ per player on average,
+   the season leader by $15$–$40$, and about $6.6$ of the top 20 positions
+   change per season. Seasons whose playoffs ran *hotter* than their regular
+   season (1984-85, 1986-87) move the other way, as they should.
+3. **No circularity.** $\lambda^{PO}$ is measured from the **raw** box-score
+   totals in `leaderboard-<season>.json`, never from the `va` those files carry,
+   so re-scoring cannot move the baseline it was scored against. The bake is a
+   fixed point on the first pass.
+
+**A combined line** (§7.2's "combined" scope — one row summing a regular season
+and the playoff run after it) is two lines from two leagues, and is scored
+against the **minutes-weighted mix** of the two baselines. Because every
+per-minute term is linear in its baseline, this is *exactly* the two halves
+scored separately and added:
+
+$$
+\Big(S - \tfrac{\lambda_{RS} M_{RS} + \lambda_{PO} M_{PO}}{M_{RS}+M_{PO}}\,M\Big)
+\;=\; (S_{RS} - \lambda_{RS} M_{RS}) + (S_{PO} - \lambda_{PO} M_{PO})
+$$
+
+while remaining one baseline object, so the ten categories still sum to the
+row's VA (invariant 1). The residual against a true split — $\gamma$ and the
+shooting terms, the only non-linear parts — is $\approx 0.02\%$.
+
+**Scope.** A change to **base VA** for playoff lines, not a display mode. The
+playoff half is baked to `app/data/playoff-league-averages.json` by
+`scripts/bake-playoff-averages.mjs` (and rebuilt on the R side by
+`recompute_derived.R::rebuild_playoff_lga`) from playoff rows already on disk —
+no network. The blend lives in `scoring.js::playoffLga` /
+`scrape_common.R::blend_playoff_lga`, and reaches every surface through the same
+rail USG-ADJ uses: `lgaFor(season, "po")` hands out a different baseline object
+and nothing downstream has to know. The regular-season baselines are
+**unchanged**, and so is every regular-season VA — including the "what he
+normally produces" reference tick in the playoff breakdown panel, which scores
+the player's regular-season line and therefore stays on $\lambda^{RS}$.
+
+**Not done: smoothing the regular-season baselines.** A trailing 3-season
+average was considered for $\lambda^{RS}$ and rejected on measurement. The
+regular-season baseline is computed from $\approx 570$ players and
+$\approx 590{,}000$ minutes — it is very nearly a population quantity, not a
+noisy estimate — and its year-to-year movement is real league drift, not error:
+the lag-1 autocorrelation of its *first differences* is $-0.20$, near the $0$ of
+a genuine random walk rather than the $-0.5$ of a noisy level. A trailing window
+would therefore smooth away signal and add a systematic lag pointing the wrong
+way in exactly the eras that move: $1.4\%$ of a baseline on average, $3.2\%$ at
+worst, deflating VA through the rising-scoring 2010s and inflating it through
+the late-90s decline. That is the opposite of the era-neutrality §3 is for. The
+place a multi-season window *does* pay is the playoff half, where the wiggle is
+demonstrably noise — `scripts/bake-playoff-averages.mjs --window=N` implements
+it (centered, minutes-weighted), and it is **off** by default at $N=1$.
+
 ---
 
 ## 5. Exact decomposition
@@ -1113,7 +1230,7 @@ own class rather than mixed into one column.
 | Possessions | $\mathrm{2PA}+\mathrm{3PA}+\mathrm{TOV}+\mathrm{FTA}/2.1$; pre-1973 imputed by OLS on $\mu_{\mathrm{PTS}},\mu_{\mathrm{TRB}}$ | Hollinger: $\mathrm{FGA}-\mathrm{ORB}+\mathrm{TOV}+0.475\,\mathrm{FTA}$ |
 | Rebound credit | $\gamma = 1$ | per-player $\gamma = 1/(1-q)$ (§4.3); was a flat $5/4$ through July 2026 |
 | Coverage | 1949-50+, via three nested variants ($\mathrm{VA}_1$ full; $\mathrm{VA}_2$ drops TOV for 1974-77; $\mathrm{VA}_3$ drops TOV/STL/BLK and estimates rebound splits for 1952-73), selected by `coalesce()` | 1979-80+, single variant, complete box score |
-| Playoffs | separate tab | first-class scope, scored against that season's **regular-season** baselines |
+| Playoffs | separate tab | first-class scope, scored against that season's **playoff-blended** baselines (§4.8; was the plain regular-season ones through August 2026) |
 | Defense | box-score events only | $\mathrm{VA}^{+}$ (§6) |
 | Shot location | Four Factors visuals | zone VA + Shooting comps (§7.1–7.2) |
 | Non-NBA | — | NCAA D-I on college-derived baselines |
@@ -1125,15 +1242,19 @@ own class rather than mixed into one column.
 
 1. $\sum_c \mathrm{VA}_c = \mathrm{VA}$, to the decimal, on every surface.
 2. Baselines are **season-local**: a 1987 season is scored against 1987, never
-   against today. Playoff runs use their own season's regular-season baselines,
-   so October and June are the same currency.
+   against today. A playoff run uses its **own season's** blend of that regular
+   season and that playoff field (§4.8) — never another year's, and never the
+   playoff field alone.
 3. Non-NBA populations get **their own** $\lambda$; the formula is portable, the
    baselines are not.
 4. A season is scored by one $\lambda(y)$ from one source table; a plausibility
    gate ($0.33 < \mu_{\mathrm{PTS}} < 0.52$) refuses to write a baseline derived
    from a mis-parsed page.
 5. Any category the source does not carry is **absent**, never zero-filled — a
-   missing measurement must not read as below-average performance.
+   missing measurement must not read as below-average performance. A season with
+   no measurable playoff field blends to its regular-season baseline unchanged,
+   for the same reason: an unmeasured half must read as absent, never as a bar
+   of zero.
 6. USG-ADJ (§4.6) replaces the baseline $\lambda_{\text{Points}}$ and nothing
    else. It is a per-player baseline,
    like $\gamma$ is a per-player price, so invariant 1 holds within either

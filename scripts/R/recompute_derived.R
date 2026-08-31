@@ -6,9 +6,14 @@
 #      (Those files are parsed from BR's player-totals page and verified
 #      accurate; entries for seasons without a regular-season bake are left
 #      untouched.)
+#   1b. playoff-league-averages.json — the same baselines measured over PLAYOFF
+#      minutes, rebuilt from each leaderboard file's own player rows. Derived
+#      from data already on disk, like everything else here.
 #   2. leaderboard-<season>.json — each player's va/eff and each game's va are
 #      recomputed from the file's own raw stats against the (possibly just
-#      corrected) season baselines, and players are re-sorted by va.
+#      corrected) season baselines, and players are re-sorted by va. Playoff
+#      lines are scored against the BLENDED playoff baseline (spec §4.8), which
+#      is why step 1b has to run first.
 #
 # Exists because the historical baselines mixed two definitions across eras
 # (aggregate means before 1996-97, per-player rates after), which made
@@ -59,14 +64,57 @@ rebuild_lga <- function() {
   existing
 }
 
+# --- 1b. Playoff league averages from the playoff rows ----------------------
+# The playoff field is its own league (spec §4.8), and the leaderboard files
+# already carry every playoff player's totals, so this needs no network. A
+# season still mid-playoffs is measured over the games played so far, exactly
+# the way an in-progress regular season is - the baseline firms up as the
+# bracket does.
+rebuild_playoff_lga <- function() {
+  existing <- load_playoff_league_averages()
+  files <- list.files(DATA_DIR, pattern = "^leaderboard-[0-9]{4}-[0-9]{2}\\.json$")
+  built <- 0
+  for (f in files) {
+    season <- lb_season_of(f)
+    d <- jsonlite::fromJSON(file.path(DATA_DIR, f), simplifyVector = FALSE)
+    rows <- Filter(function(p) (as.numeric(p$mp %||% 0)) > 0, d$players)
+    # A handful of rows is not a league; leave the season absent so the blend
+    # falls back to the regular season rather than inventing a bar.
+    if (length(rows) < 50) next
+    lga <- po_lga_from_players(rows)
+    # Same band the regular-season bake refuses to write outside of, widened at
+    # the bottom because playoff scoring genuinely runs below its season's.
+    if (is.null(lga$laPTSperM) || lga$laPTSperM <= 0.30 || lga$laPTSperM >= 0.52) {
+      message(sprintf("  !! %s: playoff laPTSperM=%.4f implausible - skipping", season, lga$laPTSperM %||% 0))
+      next
+    }
+    # zoneFG comes from fetch_shooting_splits.R's own scrape (the `po` side of
+    # shooting-<season>.json), not from here, so carry any existing one through
+    # rather than dropping it on every rebuild.
+    if (!is.null(existing[[season]]$zoneFG)) lga$zoneFG <- existing[[season]]$zoneFG
+    lga$mp <- sum(vapply(rows, function(p) as.numeric(p$mp %||% 0), numeric(1)))
+    lga$players <- length(rows)
+    existing[[season]] <- lga
+    built <- built + 1
+  }
+  existing <- existing[order(names(existing))]
+  write_json_pretty(existing, PO_LGA_PATH)
+  message(sprintf("playoff-league-averages.json: %d season(s) measured", built))
+  existing
+}
+
 # --- 2. Baked VA in the leaderboards ----------------------------------------
-recompute_leaderboards <- function(lgas) {
+recompute_leaderboards <- function(lgas, po_lgas) {
   files <- list.files(DATA_DIR, pattern = "^leaderboard-[0-9]{4}-[0-9]{2}\\.json$")
   touched <- 0
   for (f in files) {
     season <- lb_season_of(f)
-    lga <- lgas[[season]]
-    if (!lga_plausible(lga)) {
+    # Playoff lines against the blended playoff baseline (spec §4.8). The
+    # plausibility gate stays on the REGULAR-SEASON entry: it is the half that
+    # has to be trustworthy for the blend to mean anything, and a season with no
+    # playoff entry blends to the regular season unchanged.
+    lga <- blend_playoff_lga(lgas[[season]], po_lgas[[season]])
+    if (!lga_plausible(lgas[[season]])) {
       # No trustworthy baseline (e.g. seasons still waiting on a regular-season
       # bake) - leave the file for the daily backfill to re-bake properly.
       message(sprintf("  skip %s - no plausible baseline yet", season))
@@ -242,8 +290,13 @@ rebuild_rounds <- function() {
 main <- function() {
   message("Rebuilding league averages from regular-season bakes ...")
   lgas <- rebuild_lga()
+  # Before the VA pass, because a playoff line is scored against the blend of
+  # this season's regular season and its own playoff field (spec §4.8), and the
+  # playoff half is measured from the very rows about to be re-scored.
+  message("Rebuilding playoff league averages from the playoff rows ...")
+  po_lgas <- rebuild_playoff_lga()
   message("Recomputing baked leaderboard VA ...")
-  recompute_leaderboards(lgas)
+  recompute_leaderboards(lgas, po_lgas)
   message("Rebuilding team defensive context ...")
   rebuild_def_teams()
   message("Re-deriving bracket rounds ...")

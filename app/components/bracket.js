@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { TEAMS, ROUND_BASE } from "../teams";
-import { LGA, potentialPoints } from "../scoring";
+import { potentialPoints } from "../scoring";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { ownerBg, ownerColor, ownerDot } from "../lib/format";
+import { useSeasonLga } from "../lib/va-mode";
 
+
+// The season the live bracket is showing. The board is single-season by
+// construction; naming it keeps the baseline lookup and the season label from
+// drifting apart.
+const LIVE_SEASON = "2025-26";
 
 export function WinCircles({ value, actualValue, onChange, disabled, owner, dim }) {
   const fillColor = owner === "Spencer"
@@ -99,6 +105,10 @@ export function TeamButton({ code, selected, disabled, onClick, gamesWon, actual
 
 
 export function SeriesRow({ series, roundKey, matchups, winners, gameWins, actualGameWins, onPick, onGamesChange, liveGame }) {
+  // Live playoff games, so the blended playoff baseline for this season (spec
+  // §4.8) — the same one Explore and History score these very games against,
+  // and it follows the USG-ADJ switch, which a bare LGA constant did not.
+  const lga = useSeasonLga(LIVE_SEASON, "po");
   const [expanded, setExpanded] = useState(false);
   const [a, b] = matchups[series.id] || [];
   const winner = winners[series.id];
@@ -155,11 +165,11 @@ export function SeriesRow({ series, roundKey, matchups, winners, gameWins, actua
         <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimB} pointValue={ptsB} />
       </div>
-      <SeriesAverages games={seriesGames} teamsMap={TEAMS} lga={LGA} dimTeam={dimTeam} season="2025-26" />
+      <SeriesAverages games={seriesGames} teamsMap={TEAMS} lga={lga} dimTeam={dimTeam} season={LIVE_SEASON} />
       {realGames.map((g, i) => {
         const num = i + 1;
         const gameLabel = num <= 7 ? `Game ${num}` : null;
-        return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} dimTeam={dimTeam} />;
+        return <LiveGameBanner key={g.gameId || i} liveGame={g} gameLabel={gameLabel} lga={lga} dimTeam={dimTeam} />;
       })}
       <TbdCard gameNumbers={tbdGameNumbers} />
     </>

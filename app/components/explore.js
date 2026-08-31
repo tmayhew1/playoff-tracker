@@ -249,9 +249,13 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
     return () => { cancelled = true; };
   }, [season, mode, scope]);
 
-  // Whichever baseline the USG-ADJ switch is on (lib/va-mode.js). Everything
-  // below — the leaderboard, the series box scores — is scored against it.
+  // Whichever baseline the USG-ADJ switch is on (lib/va-mode.js). Two of them,
+  // because this view holds both sides of the season: `lga` is the regular
+  // season, which PlayoffLeaderboard needs for its rs/combined scopes (and from
+  // which it derives its own playoff baseline), while the series box scores
+  // below are playoff games and take the blended playoff baseline (spec §4.8).
   const lga = useSeasonLga(season);
+  const poLga = useSeasonLga(season, "po");
   const byRound = useMemo(() => {
     const out = { r1: [], r2: [], r3: [], r4: [] };
     for (const s of data?.series || []) {
@@ -314,7 +318,7 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
                 <>
                   <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
                   {(["r1", "r2", "r3", "r4"]).map((rk) => (
-                    <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={lga} season={season} />
+                    <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={poLga} season={season} />
                   ))}
                   {data.series && data.series.length === 0 && (
                     <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>

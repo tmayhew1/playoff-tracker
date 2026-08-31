@@ -234,6 +234,7 @@ load_shooting <- function(season) {
 
 main <- function() {
   lga_all <- load_league_averages()
+  po_lga_all <- load_playoff_league_averages()
   seasons <- vapply(start_year:end_year, make_season, character(1))
 
   added <- 0; skipped <- 0; failed <- 0
@@ -300,12 +301,25 @@ main <- function() {
     } else {
       message(sprintf("  (no league-averages entry for %s yet - zoneFG not merged; run fetch_league_averages.R first)", season))
     }
+    # The playoff side of the same split, onto the playoff baselines the
+    # blend reads (spec section 4.8). Only this scrape knows the playoff zone
+    # rates - recompute_derived.R rebuilds every other playoff baseline from the
+    # leaderboard box scores, which carry no shot locations - so it carries any
+    # existing zoneFG through rather than dropping it.
+    po_entry <- po_lga_all[[season]]
+    if (!is.null(res$po) && !is.null(po_entry)) {
+      po_entry$zoneFG <- zone_rates_from_totals(league_zone_totals(res$po))
+      po_lga_all[[season]] <- po_entry
+    }
     added <- added + 1
   }
 
   lga_all <- lga_all[order(names(lga_all))]
   write_json_pretty(lga_all, LGA_PATH)
-  message(sprintf("Done. +%d new, %d skipped, %d failed. Updated %s", added, skipped, failed, LGA_PATH))
+  po_lga_all <- po_lga_all[order(names(po_lga_all))]
+  write_json_pretty(po_lga_all, PO_LGA_PATH)
+  message(sprintf("Done. +%d new, %d skipped, %d failed. Updated %s and %s",
+                  added, skipped, failed, LGA_PATH, PO_LGA_PATH))
 }
 
 main()

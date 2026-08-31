@@ -2,9 +2,10 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { BRACKET, STORAGE_KEY } from "../teams";
-import { LGA, computePoints } from "../scoring";
+import { computePoints } from "../scoring";
 import { RoundSection } from "./bracket";
 import { PlayoffLeaderboard } from "./leaderboard";
+import { useSeasonLga } from "../lib/va-mode";
 import { BreakdownList, ProjectionList, ScoreCard, UpcomingTodayBanner, WhatIfClinchedList } from "./scoreboard";
 import { ownerColor } from "../lib/format";
 
@@ -13,7 +14,14 @@ import { ownerColor } from "../lib/format";
 // playoffs are over and that tab now renders through HistoryView like every
 // other finished season. Re-wire this (new teams.js draft + a "current" tab
 // in PlayoffTracker) when the 2026-27 playoffs start.
+// The season this view is wired to. PlayoffLeaderboard takes the REGULAR-SEASON
+// baseline and derives its own playoff one (spec §4.8), so this hands it the
+// regular season — read through the mode getter rather than as a bare constant,
+// so its rs and combined scopes follow the USG-ADJ switch like everywhere else.
+const LIVE_SEASON = "2025-26";
+
 export function CurrentView() {
+  const liveLga = useSeasonLga(LIVE_SEASON);
   const [winners, setWinners] = useState({});
   const [gameWins, setGameWins] = useState({});
   const [loaded, setLoaded] = useState(false);
@@ -272,7 +280,7 @@ export function CurrentView() {
       </div>
 
       <div className="mt-6">
-        <PlayoffLeaderboard season="2025-26" lga={LGA} />
+        <PlayoffLeaderboard season={LIVE_SEASON} lga={liveLga} />
       </div>
     </div>
   );

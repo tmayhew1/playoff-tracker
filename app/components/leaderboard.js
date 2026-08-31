@@ -2,16 +2,22 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
-import { valueAddParts, ZONES } from "../scoring";
+import { combinedLga, valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchJsonCached } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
-import { UsgAdjChip, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, usgAdjRows, useSeasonLga, useUsgAdjIndex } from "../lib/va-mode";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
+  // `lga` is the REGULAR-SEASON baseline for this season; the playoff one is
+  // derived here rather than passed, because this board scores both sides of
+  // the season and each scope needs its own (spec §4.8). The rs scope keeps
+  // `lga`, the playoffs scope uses `poLga`, and a combined row gets the
+  // minutes-weighted mix of the two (scoring.js::combinedLga).
+  const poLga = useSeasonLga(season, "po");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -181,7 +187,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // re-derived from the box score (lib/va-mode.js::usgAdjRows). The other two
   // scopes are scored here from the box score and pick the mode up through
   // `lga` on their own.
-  const poPlayers = useMemo(() => usgAdjRows(data?.players, lga), [data, lga]);
+  const poPlayers = useMemo(() => usgAdjRows(data?.players, poLga), [data, poLga]);
 
   const rsLookup = useMemo(() => {
     if (!rsData?.players?.length) return null;
@@ -228,7 +234,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         sum[k] = (p[k] || 0) + (r ? r[k] || 0 : 0);
       }
       sum.reb = sum.drb + sum.orb;
-      const parts = valueAddParts(sum, lga);
+      // Two lines from two leagues, so the mix of their two baselines — which
+      // for every per-minute term is exactly the two halves scored separately
+      // and added, while staying one object the category bars can sum against.
+      sum.lga = combinedLga(season, r?.mp || 0, p.mp || 0);
+      const parts = valueAddParts(sum, sum.lga);
       sum.va = parts.va;
       sum.eff = parts.efficiency;
       return sum;
@@ -237,7 +247,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       if (!used.has(r)) rows.push(r);
     }
     return rows;
-  }, [data, rsPlayers, lga]);
+  }, [data, rsPlayers, lga, season]);
 
   // League-context pools for the category drill-ins (same panel as By
   // Player). The scope index is a multi-MB payload, so it's fetched lazily on
@@ -371,6 +381,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
 
   const all = scope === "regular" ? rsPlayers : scope === "combined" ? combinedPlayers : poPlayers;
   if (!all?.length) return null;
+  // The baseline a given row is measured against. One per scope, except in the
+  // combined scope where it is per-row — a row carries the mix of the two
+  // baselines its own minute split earned (a regular-season-only player in that
+  // scope carries none, and falls back to the regular season, which is right).
+  const lgaOf = (p) => (scope === "regular" ? lga : scope === "combined" ? (p.lga || lga) : poLga);
   // Composite default sort: each axis (Total VA, VA/G) is scored as a
   // fraction of that axis's leader, then summed. So a player at half
   // the leader's volume scores 0.5 on Total VA — not just "rank #2" —
@@ -389,7 +404,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // The active total for a row — VA, or VA+ (VA + dVA) when the toggle is on.
   // dVA is 0 when a player-season has no rating, so VA+ always exists.
   const vaOf = (p) => metric === "vaPlus"
-    ? (p.va || 0) + (defVAInfo(p, p.mp, lga, defs, season, defScope)?.dva || 0)
+    ? (p.va || 0) + (defVAInfo(p, p.mp, lgaOf(p), defs, season, defScope)?.dva || 0)
     : (p.va || 0);
   const vaPerG = (p) => vaOf(p) / Math.max(1, p.gp);
   const safeRatio = (v, max) => (max > 0 ? v / max : 0);
@@ -589,7 +604,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         // scale as the team-color bar — gold extending past the bar's end
         // when defense adds value, red backing into it when it subtracts.
         // VA+ view skips it: its main bar already contains dVA.
-        const dvaOf = (p) => defVAInfo(p, p.mp, lga, defs, season, defScope)?.dva ?? null;
+        const dvaOf = (p) => defVAInfo(p, p.mp, lgaOf(p), defs, season, defScope)?.dva ?? null;
         // Bars follow the active sort: when the list is ordered by VA/G the
         // bar lengths switch to the VA/G scale (each value divided by the
         // player's games), so the widths track the same metric the rows are
@@ -778,7 +793,8 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             {isOpen && (scope === "playoffs" ? (
               <VABreakdown
                 p={p}
-                lga={lga}
+                lga={poLga}
+                rsLga={lga}
                 teams={{}}
                 rate
                 season={season}
@@ -806,7 +822,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               // context drill-ins as the playoff view.
               <VACategoryBreakdown
                 player={p}
-                lga={lga}
+                lga={lgaOf(p)}
                 baseline="NBA"
                 context={contextFor(p)}
                 showDRating={metric === "vaPlus"}
