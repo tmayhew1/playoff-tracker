@@ -111,6 +111,11 @@ export function usgAdjRows(rows, lga) {
   if (!lga?.usgModel || !Array.isArray(rows)) return rows;
   return rows.map((r) => {
     const row = { ...r, va: (r.va || 0) + usgAdjDelta(r, lga) };
+    // A baked per-game figure is the same statistic divided by games, so it
+    // moves with the total rather than sitting beside it at the old baseline
+    // (the compare picker's season chips and the breakdown's VA/Game tile both
+    // read it straight off the row).
+    if (r.vaPerG != null) row.vaPerG = r.gp > 0 ? row.va / r.gp : 0;
     if (Array.isArray(r.games)) {
       row.games = r.games.map((g) => (g && g.va != null ? { ...g, va: g.va + usgAdjDelta(g, lga) } : g));
     }
@@ -127,7 +132,10 @@ export function usgAdjSeasonRows(rows, usgAdj) {
   if (!usgAdj || !Array.isArray(rows)) return rows;
   return rows.map((r) => {
     const lga = lgaForSeason(r.season, true);
-    return lga.usgModel ? { ...r, va: (r.va || 0) + usgAdjDelta(r, lga) } : r;
+    if (!lga.usgModel) return r;
+    const row = { ...r, va: (r.va || 0) + usgAdjDelta(r, lga) };
+    if (r.vaPerG != null) row.vaPerG = r.gp > 0 ? row.va / r.gp : 0;
+    return row;
   });
 }
 

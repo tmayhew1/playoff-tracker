@@ -5,17 +5,23 @@ import { ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
+import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
 
 
 // --- Compare (both breakdowns) ----------------------------------------------
+// How a player is identified across a rebuilt pool: his slug, or his name when
+// the bake carries no slug. The pickers hold this rather than the player object
+// itself, so a selection survives the pool being rebuilt under it by the
+// USG-ADJ switch (see useFreshRows for the same rule on a picked row).
+export const comparePlayerKey = (p) => p?.slug || "n:" + normalizeName(p?.name || "");
+
 // Group the context pools back into players for the Compare picker.
 export function buildComparePlayers(allRows) {
   const m = new Map();
   for (const r of allRows) {
-    const k = r.slug || "n:" + normalizeName(r.name);
+    const k = comparePlayerKey(r);
     let e = m.get(k);
     if (!e) m.set(k, (e = { name: r.name, slug: r.slug || null, seasons: [] }));
     e.seasons.push(r);
@@ -57,8 +63,8 @@ export function resolveCompareTarget(context, target) {
 
 // The two ways to rank/label closest comps. Order matches the toggle.
 export const COMP_METRIC_OPTS = [
-  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), combined into one closeness score" },
-  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+)" },
+  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), then discounted for landing at a different point in a career — each chip's tooltip names both sides" },
+  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+), then discounted for landing at a different point in a career — each chip's tooltip names both sides" },
 ];
 
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
@@ -86,6 +92,29 @@ export const CAREER_B_FILL = 0.75;
 const PCT_DOT_PX = 10;
 
 
+// "4" for one career year, "4–5" for a run's span. Rounded: a two-season
+// window's stage is the middle of it, and half a career year is not a thing
+// anyone says.
+const stageDigits = (from, to = from, atLeast = false) => {
+  const a = Math.round(from), b = Math.round(to);
+  return `${a === b ? a : `${a}–${b}`}${atLeast ? "+" : ""}`;
+};
+
+// The career-stage clause of a comp chip's tooltip: which years of his own
+// career the comp covers, which of yours the selection does, and — when the
+// distance between them actually cost the comp something — what it matched on
+// the box score alone before that discount. Nothing at all when the stage is
+// unknown (a scope that carries the player for one season only tells us that
+// season was his first in it).
+function stageNote({ from, to = from, atLeast = false, selfFrom = null, selfTo = selfFrom, selfAtLeast = false, shape = null, stageF = 1 }) {
+  if (from == null) return null;
+  const parts = [careerStageLabel(from, to, atLeast)];
+  if (selfFrom != null) parts.push(`yours: ${stageDigits(selfFrom, selfTo, selfAtLeast)}`);
+  if (shape != null && stageF < 0.98) parts.push(`${Math.min(99, Math.round(shape * 100))}% before the career-stage discount`);
+  return parts.join(" · ");
+}
+
+
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
 export function ComparePicker({ context, self = null, onPick, onCancel }) {
@@ -93,8 +122,16 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // per-category VA, so they move with it (lib/va-mode.js).
   const lgaFor = useLgaFor();
   const [query, setQuery] = useState("");
-  const [sel, setSel] = useState(null);
-  const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  // The chosen player is held by KEY and looked up in the pool on every render:
+  // holding the object would freeze his season rows at the baseline they
+  // carried when he was chosen, and the season chips below print those rows'
+  // VA/G (lib/va-mode.js re-prices the whole pool on a USG-ADJ toggle).
+  const [selKey, setSelKey] = useState(null);
+  const players = useMemo(() => buildComparePlayers(context.allRows), [context.allRows]);
+  const sel = useMemo(
+    () => (selKey ? players.find((pl) => comparePlayerKey(pl) === selKey) || null : null),
+    [players, selKey]
+  );
   const matches = useMemo(() => {
     const q = normalizeName(query.trim());
     if (q.length < 2) return [];
@@ -103,6 +140,16 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       .sort((a, b) => b.bestVa - a.bestVa)
       .slice(0, 12);
   }, [players, query]);
+
+  // Career stage: which year of his own career each candidate season was, and
+  // which year of his this one is (lib/multi-season.js). The comps below are
+  // discounted by the distance between the two, so "who does this look like"
+  // is answered from the same point in a career rather than by a 15-year
+  // veteran whose box score happens to land in the same place.
+  const debutBy = useMemo(() => careerDebuts(players, comparePlayerKey), [players]);
+  const selfDebut = self ? debutBy.get(comparePlayerKey(self)) || null : null;
+  const selfStage = self?.season ? careerStageOf(self.season, selfDebut?.year ?? null) : null;
+  const selfStageAtLeast = !!selfDebut?.censored;
 
   // Closest comps: the nearest player-seasons to `self` by per-game VA-category
   // shape — the full ranked list per decade, best match first. Similarity =
@@ -163,7 +210,15 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       const cos = dot / (qNorm * n);
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
       const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
-      let shootCos = null, shootMag = null, shootScore = null;
+      // Where this season sat in his career, and what the distance from the
+      // selection's own stage costs it. Both metrics are discounted by the
+      // same factor — a shooting profile from year 18 answers as different a
+      // question as a box score from year 18.
+      const rDebut = debutBy.get(comparePlayerKey(r)) || null;
+      const stage = careerStageOf(r.season, rDebut?.year ?? null);
+      const stageAtLeast = !!rDebut?.censored;
+      const stageF = careerStageFactor(selfStage, stage, { aAtLeast: selfStageAtLeast, bAtLeast: stageAtLeast });
+      let shootCos = null, shootMag = null, shootScore = null, shootShape = null;
       const r3Rate = r.fga > 0 ? r.tpa / r.fga : 0;
       if (shootOk && Math.abs(r3Rate - q3Rate) <= THREE_RATE_BAND) {
         const zv = shootProfileVec(r, lgaFor(r.season));
@@ -175,17 +230,20 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
           if (zc >= 0.3) { // same "clearly different archetype" floor, on the shooting profile
             shootCos = zc;
             shootMag = Math.min(selfShootNorm, zn) / Math.max(selfShootNorm, zn);
-            shootScore = shootCos * shootMag;
+            shootShape = shootCos * shootMag;
+            shootScore = shootShape * stageF;
           }
         }
       }
       const dec = Math.floor(parseInt(r.season.slice(0, 4), 10) / 10) * 10;
       let arr = byDecade.get(dec);
       if (!arr) byDecade.set(dec, (arr = []));
-      arr.push({ r, cos, mag, score: cos * mag, shootCos, shootMag, shootScore });
+      // `score`/`shootScore` rank and print; `shape`/`shootShape` are the same
+      // match before the career-stage discount, which the tooltip still credits.
+      arr.push({ r, cos, mag, shape: cos * mag, score: cos * mag * stageF, stage, stageAtLeast, stageF, shootCos, shootMag, shootShape, shootScore });
     }
     return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
-  }, [self, context, selfShootVec, selfShootNorm, lgaFor]);
+  }, [self, context, selfShootVec, selfShootNorm, lgaFor, debutBy, selfStage, selfStageAtLeast]);
 
   // Value of the currently selected metric for a candidate.
   const metricVal = (o) => (
@@ -255,7 +313,10 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
           {query.trim() === "" && comps.length > 0 && (
             <div className="mb-1">
               <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
-                <span className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0">Closest comps · by decade</span>
+                <span
+                  className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0"
+                  title={`Ranked by how close the season is AND how close it sits to the same point in a career${selfStage != null ? ` — this one is your career year ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}. Hover a comp for the career year it came from.`}
+                >Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
                   {COMP_METRIC_OPTS.map((o) => {
                     // "Shooting" needs self to have zone-shot data for its
@@ -285,13 +346,26 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                       const { r } = item;
                       const pct = Math.min(99, Math.round(metricVal(item) * 100));
                       const isBest = compKey(r) === bestCompKey;
+                      const note = stageNote({
+                        from: item.stage,
+                        atLeast: item.stageAtLeast,
+                        selfFrom: selfStage,
+                        selfAtLeast: selfStageAtLeast,
+                        shape: compMetric === "shoot" ? item.shootShape : item.shape,
+                        stageF: item.stageF,
+                      });
                       return (
                         <button
                           key={compKey(r)}
                           onClick={() => pickComp(r)}
                           className={`shrink-0 px-1.5 py-0.5 border rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap ${isBest ? "border-amber-500" : "border-stone-200"}`}
                           style={isBest ? { backgroundColor: GOLD_BG, borderColor: GOLD } : undefined}
-                          title={`${r.name} ${r.season} · ${r.team} · ${pct}% ${COMP_METRIC_WORD[compMetric]}${isBest ? " · best match" : ""}`}
+                          title={[
+                            `${r.name} ${r.season}`, r.team,
+                            `${pct}% ${COMP_METRIC_WORD[compMetric]}`,
+                            note,
+                            isBest ? "best match" : null,
+                          ].filter(Boolean).join(" · ")}
                         >
                           <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
@@ -307,7 +381,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
           {matches.map((pl) => (
             <button
               key={pl.slug || pl.name}
-              onClick={() => setSel(pl)}
+              onClick={() => setSelKey(comparePlayerKey(pl))}
               className="w-full flex items-baseline justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-stone-50"
             >
               <span className="font-semibold text-stone-800">{pl.name}</span>
@@ -319,7 +393,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
         <>
           <div className="flex items-baseline justify-between mb-1">
             <span className="font-semibold text-stone-800">{sel.name}</span>
-            <button onClick={() => setSel(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+            <button onClick={() => setSelKey(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1">
             {sel.seasons.map((s) => (
@@ -363,7 +437,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   // active baseline (lib/va-mode.js).
   const lgaFor = useLgaFor();
   const [query, setQuery] = useState("");
-  const [sel, setSel] = useState(null);       // the chosen player
+  // The chosen player by KEY, looked up in the pool below — held this way for
+  // the same reason as in ComparePicker: the pool is rebuilt under a running
+  // selection whenever USG-ADJ is toggled, and the ticked seasons print their
+  // rows' VA/G.
+  const [selKey, setSelKey] = useState(null);
   const [picked, setPicked] = useState(null); // Set of season strings
   // How the other player's seasons are pre-ticked. One switch, cycling:
   //   best — his highest-VA seasons, the same number as the selection
@@ -371,7 +449,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   //   same — the same CALENDAR seasons, whatever career year those fell in
   const [matchMode, setMatchMode] = useState("best");
   const canMatchYear = !!selfYears?.length && selfCareerLen > 0;
-  const players = useMemo(() => buildComparePlayers(context.allRows), [context]);
+  const players = useMemo(() => buildComparePlayers(context.allRows), [context.allRows]);
+  const sel = useMemo(
+    () => (selKey ? players.find((pl) => comparePlayerKey(pl) === selKey) || null : null),
+    [players, selKey]
+  );
   const selfKey = self ? (self.slug || normalizeName(self.name || "")) : null;
 
   // The suggestions this picker opens on: the closest runs of the same length
@@ -380,9 +462,29 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   // pooled — the same one-tap shortcut the season picker's comps give.
   const RUNS_PER_DECADE = 8;
   const runLen = Math.max(1, suggestCount);
+  // Where the ticked run sits in this player's own career, in years since his
+  // first indexed season (lib/multi-season.js). Handed to similarRuns, it
+  // discounts candidate runs by how far their own stage is from it — the
+  // suggestions for a 2-year run in years 4-5 lead with other players' years
+  // 4-5, not with a 37-year-old's last two.
+  const debutBy = useMemo(() => careerDebuts(players, comparePlayerKey), [players]);
+  const selfDebut = self ? debutBy.get(comparePlayerKey(self)) || null : null;
+  const selfStageAtLeast = !!selfDebut?.censored;
+  const selfRunRows = useMemo(
+    () => selfRow?.seasons || (selfRow?.season ? [selfRow] : []),
+    [selfRow]
+  );
+  const selfStages = useMemo(
+    () => selfRunRows.map((x) => careerStageOf(x.season, selfDebut?.year ?? null)).filter((y) => y != null).sort((a, b) => a - b),
+    [selfRunRows, selfDebut]
+  );
+  const selfStage = useMemo(
+    () => careerStageCenter(selfRunRows, selfDebut?.year ?? null),
+    [selfRunRows, selfDebut]
+  );
   const runComps = useMemo(
-    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaFor }),
-    [players, selfRow, runLen, selfKey, lgaFor]
+    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaFor, selfStage, selfStageAtLeast }),
+    [players, selfRow, runLen, selfKey, lgaFor, selfStage, selfStageAtLeast]
   );
   // Gold-lit across every decade row, so the single strongest run stands out
   // wherever it landed.
@@ -458,7 +560,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
     // overlapped the run to someone who never did shouldn't tick nothing.
     const m = modeOk(pl, matchMode) ? matchMode : "best";
     setMatchMode(m);
-    setSel(pl);
+    setSelKey(comparePlayerKey(pl));
     setPicked(new Set(suggestFor(pl, m)));
   };
   // Flipping the switch re-picks from scratch. It's a "choose them for me"
@@ -524,7 +626,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       name: sel.name,
       slug: sel.slug || null,
       seasons: sel.seasons,
-      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }),
+      // Scored at the ACTIVE baseline, like the run suggestions above — the
+      // aggregate carries its own blended lga and per-category vector, and
+      // building those against the standard baseline under USG-ADJ would hand
+      // the panel a row in the wrong currency.
+      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }, lgaFor),
     });
   };
 
@@ -582,7 +688,10 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
             <>
               {runComps.length > 0 && (
                 <div className="mb-1">
-                  <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">
+                  <div
+                    className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5"
+                    title={`Ranked by how close the run is AND how close it sits to the same point in a career${selfStages.length ? ` — this one is your career year${selfStages.length > 1 ? "s" : ""} ${stageDigits(selfStages[0], selfStages[selfStages.length - 1], selfStageAtLeast)}` : ""}. Hover a run for the career years it came from.`}
+                  >
                     {runLen === 1 ? "Closest seasons" : `Closest ${runLen}-year runs`} · by decade
                   </div>
                   {runComps.map(({ dec, list }) => (
@@ -592,6 +701,16 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                         {list.map((run) => {
                           const pct = Math.min(99, Math.round(run.score * 100));
                           const isBest = runKey(run) === bestRunKey;
+                          const note = stageNote({
+                            from: run.stageFrom,
+                            to: run.stageTo,
+                            atLeast: run.stageAtLeast,
+                            selfFrom: selfStages[0] ?? null,
+                            selfTo: selfStages[selfStages.length - 1] ?? null,
+                            selfAtLeast: selfStageAtLeast,
+                            shape: run.shape,
+                            stageF: run.shape > 0 ? run.score / run.shape : 1,
+                          });
                           return (
                             <button
                               key={runKey(run)}
@@ -602,6 +721,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                                 `${run.player.name} ${run.span}`, run.team,
                                 `${run.gp} G`, `${run.va.toFixed(1)} VA`,
                                 `${pct}% ${COMP_METRIC_WORD.impsim}`,
+                                note,
                                 isBest ? "best match" : null,
                               ].filter(Boolean).join(" · ")}
                             >
@@ -641,7 +761,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
         <>
           <div className="flex items-baseline justify-between mb-1">
             <span className="font-semibold text-stone-800">{sel.name}</span>
-            <button onClick={() => { setSel(null); setPicked(null); }} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+            <button onClick={() => { setSelKey(null); setPicked(null); }} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1 mb-1.5">
             {[...sel.seasons].sort((x, y) => y.season.localeCompare(x.season)).map((s) => {
@@ -773,6 +893,54 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 }
 
 
+// --- Re-resolving a held row against the live pool ---------------------------
+// A comparison's rows are resolved when the comparison is MADE and then held
+// in a caller's state — `compare.row` / `compare.seasons` in the breakdown
+// card, a run picked out of MultiComparePicker, the panel's own career-year
+// selection. The USG-ADJ switch re-prices the index underneath them
+// (lib/va-mode.js rebuilds every row), so a held row keeps whatever VA it was
+// carrying when it was picked and the card quietly reads two different
+// baselines at once: the player's own figures move with the switch and the
+// compared player's don't.
+//
+// So nothing held is trusted for its numbers, only for its identity: every row
+// is looked up again in the CURRENT pool by (player, season) and an aggregate
+// is re-pooled from its seasons' fresh rows. Raw stats are the same either way
+// — it is `va` that moves — and fields the pool doesn't carry (a leaderboard
+// row's per-game log) survive the merge.
+//
+// Returns { freshSeason, freshSide }: one season row looked up, and a whole
+// side — a season row looked up, a multi-season row re-aggregated from its own
+// seasons so its total, its blended baseline and its per-category vector are
+// all rebuilt at the active baseline. Both are stable across renders and take
+// a new identity when the pool or the mode changes, so they can be listed as
+// useMemo dependencies. A row the pool doesn't carry comes back untouched.
+export function useFreshRows(context) {
+  const lgaFor = useLgaFor();
+  const poolBy = useMemo(() => {
+    const m = new Map();
+    for (const r of context?.allRows || []) m.set(`${comparePlayerKey(r)}|${r.season}`, r);
+    return m;
+  }, [context?.allRows]);
+  const freshSeason = useCallback((r) => {
+    if (!r?.season) return r;
+    const hit = poolBy.get(`${comparePlayerKey(r)}|${r.season}`);
+    return hit ? { ...r, ...hit } : r;
+  }, [poolBy]);
+  const freshSide = useCallback((row) => {
+    if (!row) return row;
+    if (!row.multi) return freshSeason(row);
+    const seasons = (row.seasons || []).map((sn) => ({
+      ...freshSeason(sn), name: row.name, slug: row.slug || null,
+    }));
+    return seasons.length
+      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaFor)
+      : row;
+  }, [freshSeason, lgaFor]);
+  return useMemo(() => ({ freshSeason, freshSide }), [freshSeason, freshSide]);
+}
+
+
 // The chip label for a selection made in the career chart: "Career year 4",
 // "Career years 3–6" for a run, "Career years 3·5·8" for one with gaps (capped,
 // so a twelve-year pick stays chip-sized). Slot indices in, 1-based years out —
@@ -803,45 +971,9 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // header. { a, b, years } — years are 0-based slot indices.
   const [pick, setPick] = useState(null);
 
-  // --- Re-resolving the sides against the live pool ---------------------------
-  // Both sides arrive as rows that were resolved when the comparison was MADE
-  // and then held in a caller's state — `compare.row` / `compare.seasons` in
-  // the breakdown card, a run picked out of MultiComparePicker, the career-year
-  // selection below. The USG-ADJ switch re-prices the index underneath them
-  // (lib/va-mode.js rebuilds every row), so a held row keeps whatever VA it was
-  // carrying when it was picked and the comparison quietly reads two different
-  // baselines at once.
-  //
-  // So nothing held is trusted for its numbers, only for its identity: every
-  // row is looked up again in the CURRENT pool by (player, season) and an
-  // aggregate is re-pooled from its seasons' fresh rows. Raw stats are the same
-  // either way — it is `va` that moves — and fields the pool doesn't carry (a
-  // leaderboard row's per-game log) survive the merge.
-  const poolBy = useMemo(() => {
-    const m = new Map();
-    for (const r of context?.allRows || []) {
-      m.set(`${r.slug || "n:" + normalizeName(r.name || "")}|${r.season}`, r);
-    }
-    return m;
-  }, [context?.allRows]);
-  const freshSeason = useCallback((r) => {
-    if (!r?.season) return r;
-    const hit = poolBy.get(`${r.slug || "n:" + normalizeName(r.name || "")}|${r.season}`);
-    return hit ? { ...r, ...hit } : r;
-  }, [poolBy]);
-  // A whole side: a season row looked up, a multi-season row re-aggregated from
-  // its own seasons so its total, its blended baseline and its per-category
-  // vector are all rebuilt at the active baseline.
-  const freshSide = useCallback((row) => {
-    if (!row) return row;
-    if (!row.multi) return freshSeason(row);
-    const seasons = (row.seasons || []).map((sn) => ({
-      ...freshSeason(sn), name: row.name, slug: row.slug || null,
-    }));
-    return seasons.length
-      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaFor)
-      : row;
-  }, [freshSeason, lgaFor]);
+  // Both sides are re-resolved against the live pool before anything reads
+  // their numbers — see useFreshRows.
+  const { freshSeason, freshSide } = useFreshRows(context);
 
   const a = useMemo(() => freshSide(pick?.a || aProp), [freshSide, pick, aProp]);
   const b = useMemo(() => freshSide(pick?.b || bProp), [freshSide, pick, bProp]);

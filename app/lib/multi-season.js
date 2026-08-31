@@ -309,6 +309,108 @@ export function careerYearsOf(allSeasons, pickedSeasonKeys) {
 }
 
 
+// --- Career stage ------------------------------------------------------------
+// WHERE in a career a season sits, in years: 1 for the player's first indexed
+// season, one more for every calendar year after it. The closest-comps finders
+// weigh it, because two runs can post nearly the same box score and still not
+// be the same thing — a wing's years 4-5 and a 37-year-old's years 18-19 are
+// different questions, and the shape match alone can't tell them apart.
+//
+// Counted in CALENDAR years rather than by position in the season list,
+// because the list is only as complete as the scope it came from: under
+// Playoffs it holds the runs a player actually made, so counting entries would
+// read Dirk's 16th season as his 15th, and a year missed to injury would not
+// advance the count at all. Under Playoffs "career year 1" is his first
+// playoff season — the years before it aren't in that index to be counted.
+export const seasonStartYear = (season) => parseInt(String(season || "").slice(0, 4), 10);
+
+// The earliest season in a list, as its start year. Rows or plain season keys.
+export function debutYearOf(seasons) {
+  let first = Infinity;
+  for (const s of seasons || []) {
+    const y = seasonStartYear(s?.season ?? s);
+    if (Number.isFinite(y) && y < first) first = y;
+  }
+  return Number.isFinite(first) ? first : null;
+}
+
+// 1-based career year of one season, against a debut from debutYearOf.
+export function careerStageOf(season, debutYear) {
+  const y = seasonStartYear(season);
+  return debutYear == null || !Number.isFinite(y) ? null : y - debutYear + 1;
+}
+
+// Debut year per player, plus whether that debut is only an upper bound on
+// when the career really started. A player whose earliest season is the
+// earliest the index carries was already in the league when the data begins —
+// the bake starts at 1980-81, so Julius Erving's 1984-85 reads as his 5th
+// season when it was his 9th in the NBA. His stage is then a LOWER BOUND:
+// "career year 5 or later", which is still worth something (see
+// careerStageFactor) and is labelled "y5+" wherever it's shown.
+//
+// `keyOf` maps a player to the key the returned map is keyed by — identity for
+// callers holding the player objects, a slug/name key for callers looking rows
+// up by identity. Values are { year, censored }, or null for a player with no
+// usable season at all.
+export function careerDebuts(players, keyOf = (pl) => pl) {
+  const out = new Map();
+  let earliest = Infinity;
+  for (const pl of players || []) {
+    const year = debutYearOf(pl.seasons);
+    if (year != null && year < earliest) earliest = year;
+    out.set(keyOf(pl), year == null ? null : { year, censored: false });
+  }
+  for (const [k, d] of out) if (d && d.year <= earliest) out.set(k, { year: d.year, censored: true });
+  return out;
+}
+
+// The middle of a run, so a 2-season window over years 4 and 5 sits at 4.5 and
+// compares on the same scale as a single season.
+export function careerStageCenter(seasons, debutYear) {
+  const ys = (seasons || []).map((s) => careerStageOf(s?.season ?? s, debutYear)).filter((y) => y != null);
+  return ys.length ? ys.reduce((t, y) => t + y, 0) / ys.length : null;
+}
+
+// How much a comp is discounted for coming from a different point in a career.
+// A soft weight rather than a band like RUN_MPG_BAND: a decade may hold no
+// same-stage comp at all, and the honest answer there is the best match it
+// does hold, shown for what it is — not an empty row.
+//
+//   ±1 year   free (a rookie year against a second year is the same question)
+//   ±4        ~0.72        ±8   ~0.38
+//   far apart floors out at STAGE_FLOOR rather than vanishing, so a genuinely
+//             uncanny match from the wrong end of a career still surfaces
+//             below the same-stage ones instead of being dropped.
+//
+// A side flagged `atLeast` (a censored debut, above) carries a lower bound
+// instead of a stage. The bound bites only when it ALREADY clears the other
+// side — Dantley's 1988-89 is his 9th indexed season and therefore at least
+// his 9th, which is a real gap from a 4th-year run whatever the true number
+// is. When it doesn't clear it, the truth could be anywhere above and the
+// factor stays 1 rather than crediting a match it can't vouch for.
+export const STAGE_GRACE = 1;
+export const STAGE_TOL = 4;
+export const STAGE_FLOOR = 0.35;
+
+export function careerStageFactor(a, b, { aAtLeast = false, bAtLeast = false } = {}) {
+  if (a == null || b == null) return 1;              // unknown on either side: don't guess
+  if (aAtLeast && bAtLeast) return 1;                // two bounds say nothing about the gap
+  if (bAtLeast && b <= a) return 1;                  // b could be anywhere from here up
+  if (aAtLeast && a <= b) return 1;
+  const d = Math.max(0, Math.abs(a - b) - STAGE_GRACE);
+  return STAGE_FLOOR + (1 - STAGE_FLOOR) * Math.exp(-((d / STAGE_TOL) ** 2));
+}
+
+// "career year 18" / "career years 18-19" for a chip's tooltip, and
+// "career year 9 or later" when the debut was only bounded (careerDebuts).
+export function careerStageLabel(from, to = from, atLeast = false) {
+  if (from == null) return "";
+  const a = Math.round(from), b = Math.round(to);
+  const span = a === b ? `career year ${a}` : `career years ${a}\u2013${b}`;
+  return atLeast ? `${span} or later` : span;
+}
+
+
 // The baseline a row is measured against: an aggregate carries its own blended
 // one, an ordinary season row looks its season up.
 export function lgaForRow(row, lgaFor = lgaForSeason) {
@@ -348,11 +450,19 @@ export function rowSeasonLabel(row) {
 // One run per player: the best-scoring window. Overlapping windows of one
 // career (’11–’13, ’12–’14, ’13–’15) are near-copies of each other and would
 // crowd every other player out of the list.
+//
+// `selfStage` is where the selection sits in its own career (careerStageCenter
+// above). Given one, every candidate window is discounted by how far its own
+// career stage is from it (careerStageFactor), which both re-ranks the list and
+// moves each player's chosen window towards the same point in HIS career: the
+// question a run asks is "who else looked like this, at this stage", and
+// Dirk at 37 answers a different one than Dirk at 23. Left null, the score is
+// the shape match alone and nothing about the ranking changes.
 export const RUN_MIN_GP = 8;    // a season shorter than this can't carry a run
 export const RUN_MPG_BAND = 7;  // same minutes-role gate the season comps use
 export const RUN_MIN_COS = 0.3; // below this it's a different archetype, not a comp
 
-export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8, lgaFor = lgaForSeason } = {}) {
+export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8, lgaFor = lgaForSeason, selfStage = null, selfStageAtLeast = false } = {}) {
   const n = Math.max(1, Math.round(runLen));
   if (!players?.length || !selfRow || !(selfRow.gp > 0) || !(selfRow.mp > 0)) return [];
   const qVec = perGameVAVec(selfRow, lgaForRow(selfRow));
@@ -360,6 +470,10 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
   if (!qNorm) return [];
   const qMPG = selfRow.mp / selfRow.gp;
   const dim = VA_CATEGORY_ORDER.length;
+
+  // Debuts once for the whole pool, so the censoring rule (careerDebuts) sees
+  // every player and the picker's own career-year labels agree with these.
+  const debuts = careerDebuts(players);
 
   const byDecade = new Map(); // decade -> best run per player, unsorted
   for (const pl of players) {
@@ -376,6 +490,13 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
       const by = valueAddByCategory(s, lgaFor(s.season));
       return VA_CATEGORY_ORDER.map((k) => by[k] || 0);
     });
+    // Career stage per season, off his WHOLE indexed career rather than the
+    // RUN_MIN_GP-filtered list — a 5-game rookie year is still the year the
+    // career started, and dropping it would make every later window look a
+    // season younger than it was.
+    const debut = debuts.get(pl);
+    const stageAtLeast = !!debut?.censored;
+    const stages = career.map((s) => careerStageOf(s.season, debut?.year ?? null));
     const sum = new Array(dim).fill(0);
     let gp = 0, mp = 0;
     let best = null;
@@ -404,7 +525,14 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
       const cos = dot / (qNorm * norm);
       if (cos < RUN_MIN_COS) continue;
       const mag = Math.min(qNorm, norm) / Math.max(qNorm, norm);
-      const score = cos * mag;
+      // Shape match, then the same match discounted for landing at a different
+      // point in the career. Both are kept: `score` is what ranks and what the
+      // chip prints, `shape` is what the chip's tooltip credits the run with
+      // before the discount, so a great match at the wrong stage still says so.
+      const shape = cos * mag;
+      const stageFrom = stages[i - n + 1], stageTo = stages[i];
+      const stage = stageFrom == null || stageTo == null ? null : (stageFrom + stageTo) / 2;
+      const score = shape * careerStageFactor(selfStage, stage, { aAtLeast: selfStageAtLeast, bAtLeast: stageAtLeast });
       if (best && !(score > best.score)) continue;
       const seasons = career.slice(i - n + 1, i + 1);
       best = {
@@ -416,6 +544,11 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
         va: seasons.reduce((t, s) => t + (s.va || 0), 0),
         cos,
         mag,
+        shape,
+        stage,
+        stageFrom,
+        stageTo,
+        stageAtLeast,
         score,
       };
     }
