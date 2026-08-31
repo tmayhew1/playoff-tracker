@@ -5,7 +5,7 @@ import { ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { aggregateSeasons, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
+import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
 
@@ -63,8 +63,8 @@ export function resolveCompareTarget(context, target) {
 
 // The two ways to rank/label closest comps. Order matches the toggle.
 export const COMP_METRIC_OPTS = [
-  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), combined into one closeness score" },
-  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+)" },
+  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), then discounted for landing at a different point in a career (y-number on each chip)" },
+  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+), then discounted for landing at a different point in a career (y-number on each chip)" },
 ];
 
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
@@ -92,6 +92,29 @@ export const CAREER_B_FILL = 0.75;
 const PCT_DOT_PX = 10;
 
 
+// "4" for one career year, "4–5" for a run's span. Rounded: a two-season
+// window's stage is the middle of it, and half a career year is not a thing
+// anyone says.
+const stageDigits = (from, to = from, atLeast = false) => {
+  const a = Math.round(from), b = Math.round(to);
+  return `${a === b ? a : `${a}–${b}`}${atLeast ? "+" : ""}`;
+};
+
+// The career-stage clause of a comp chip's tooltip: which years of his own
+// career the comp covers, which of yours the selection does, and — when the
+// distance between them actually cost the comp something — what it matched on
+// the box score alone before that discount. Nothing at all when the stage is
+// unknown (a scope that carries the player for one season only tells us that
+// season was his first in it).
+function stageNote({ from, to = from, atLeast = false, selfFrom = null, selfTo = selfFrom, selfAtLeast = false, shape = null, stageF = 1 }) {
+  if (from == null) return null;
+  const parts = [careerStageLabel(from, to, atLeast)];
+  if (selfFrom != null) parts.push(`yours: ${stageDigits(selfFrom, selfTo, selfAtLeast)}`);
+  if (shape != null && stageF < 0.98) parts.push(`${Math.min(99, Math.round(shape * 100))}% before the career-stage discount`);
+  return parts.join(" · ");
+}
+
+
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
 export function ComparePicker({ context, self = null, onPick, onCancel }) {
@@ -117,6 +140,16 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       .sort((a, b) => b.bestVa - a.bestVa)
       .slice(0, 12);
   }, [players, query]);
+
+  // Career stage: which year of his own career each candidate season was, and
+  // which year of his this one is (lib/multi-season.js). The comps below are
+  // discounted by the distance between the two, so "who does this look like"
+  // is answered from the same point in a career rather than by a 15-year
+  // veteran whose box score happens to land in the same place.
+  const debutBy = useMemo(() => careerDebuts(players, comparePlayerKey), [players]);
+  const selfDebut = self ? debutBy.get(comparePlayerKey(self)) || null : null;
+  const selfStage = self?.season ? careerStageOf(self.season, selfDebut?.year ?? null) : null;
+  const selfStageAtLeast = !!selfDebut?.censored;
 
   // Closest comps: the nearest player-seasons to `self` by per-game VA-category
   // shape — the full ranked list per decade, best match first. Similarity =
@@ -177,7 +210,15 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       const cos = dot / (qNorm * n);
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
       const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
-      let shootCos = null, shootMag = null, shootScore = null;
+      // Where this season sat in his career, and what the distance from the
+      // selection's own stage costs it. Both metrics are discounted by the
+      // same factor — a shooting profile from year 18 answers as different a
+      // question as a box score from year 18.
+      const rDebut = debutBy.get(comparePlayerKey(r)) || null;
+      const stage = careerStageOf(r.season, rDebut?.year ?? null);
+      const stageAtLeast = !!rDebut?.censored;
+      const stageF = careerStageFactor(selfStage, stage, { aAtLeast: selfStageAtLeast, bAtLeast: stageAtLeast });
+      let shootCos = null, shootMag = null, shootScore = null, shootShape = null;
       const r3Rate = r.fga > 0 ? r.tpa / r.fga : 0;
       if (shootOk && Math.abs(r3Rate - q3Rate) <= THREE_RATE_BAND) {
         const zv = shootProfileVec(r, lgaFor(r.season));
@@ -189,17 +230,20 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
           if (zc >= 0.3) { // same "clearly different archetype" floor, on the shooting profile
             shootCos = zc;
             shootMag = Math.min(selfShootNorm, zn) / Math.max(selfShootNorm, zn);
-            shootScore = shootCos * shootMag;
+            shootShape = shootCos * shootMag;
+            shootScore = shootShape * stageF;
           }
         }
       }
       const dec = Math.floor(parseInt(r.season.slice(0, 4), 10) / 10) * 10;
       let arr = byDecade.get(dec);
       if (!arr) byDecade.set(dec, (arr = []));
-      arr.push({ r, cos, mag, score: cos * mag, shootCos, shootMag, shootScore });
+      // `score`/`shootScore` rank and print; `shape`/`shootShape` are the same
+      // match before the career-stage discount, which the tooltip still credits.
+      arr.push({ r, cos, mag, shape: cos * mag, score: cos * mag * stageF, stage, stageAtLeast, stageF, shootCos, shootMag, shootShape, shootScore });
     }
     return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
-  }, [self, context, selfShootVec, selfShootNorm, lgaFor]);
+  }, [self, context, selfShootVec, selfShootNorm, lgaFor, debutBy, selfStage, selfStageAtLeast]);
 
   // Value of the currently selected metric for a candidate.
   const metricVal = (o) => (
@@ -269,7 +313,10 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
           {query.trim() === "" && comps.length > 0 && (
             <div className="mb-1">
               <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
-                <span className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0">Closest comps · by decade</span>
+                <span
+                  className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0"
+                  title={`Ranked by how close the season is AND how close it sits to the same point in a career — y5 is the comp’s 5th season, y5+ his 5th or later (his career starts before the data does)${selfStage != null ? `, against your ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}.`}
+                >Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
                   {COMP_METRIC_OPTS.map((o) => {
                     // "Shooting" needs self to have zone-shot data for its
@@ -299,16 +346,32 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                       const { r } = item;
                       const pct = Math.min(99, Math.round(metricVal(item) * 100));
                       const isBest = compKey(r) === bestCompKey;
+                      const note = stageNote({
+                        from: item.stage,
+                        atLeast: item.stageAtLeast,
+                        selfFrom: selfStage,
+                        selfAtLeast: selfStageAtLeast,
+                        shape: compMetric === "shoot" ? item.shootShape : item.shape,
+                        stageF: item.stageF,
+                      });
                       return (
                         <button
                           key={compKey(r)}
                           onClick={() => pickComp(r)}
                           className={`shrink-0 px-1.5 py-0.5 border rounded-sm hover:border-amber-500 hover:bg-amber-50 whitespace-nowrap ${isBest ? "border-amber-500" : "border-stone-200"}`}
                           style={isBest ? { backgroundColor: GOLD_BG, borderColor: GOLD } : undefined}
-                          title={`${r.name} ${r.season} · ${r.team} · ${pct}% ${COMP_METRIC_WORD[compMetric]}${isBest ? " · best match" : ""}`}
+                          title={[
+                            `${r.name} ${r.season}`, r.team,
+                            `${pct}% ${COMP_METRIC_WORD[compMetric]}`,
+                            note,
+                            isBest ? "best match" : null,
+                          ].filter(Boolean).join(" · ")}
                         >
                           <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
+                          {item.stage != null && (
+                            <span className="text-stone-400 tabular-nums text-[9px]"> y{stageDigits(item.stage, item.stage, item.stageAtLeast)}</span>
+                          )}
                           <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                         </button>
                       );
@@ -402,9 +465,29 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   // pooled — the same one-tap shortcut the season picker's comps give.
   const RUNS_PER_DECADE = 8;
   const runLen = Math.max(1, suggestCount);
+  // Where the ticked run sits in this player's own career, in years since his
+  // first indexed season (lib/multi-season.js). Handed to similarRuns, it
+  // discounts candidate runs by how far their own stage is from it — the
+  // suggestions for a 2-year run in years 4-5 lead with other players' years
+  // 4-5, not with a 37-year-old's last two.
+  const debutBy = useMemo(() => careerDebuts(players, comparePlayerKey), [players]);
+  const selfDebut = self ? debutBy.get(comparePlayerKey(self)) || null : null;
+  const selfStageAtLeast = !!selfDebut?.censored;
+  const selfRunRows = useMemo(
+    () => selfRow?.seasons || (selfRow?.season ? [selfRow] : []),
+    [selfRow]
+  );
+  const selfStages = useMemo(
+    () => selfRunRows.map((x) => careerStageOf(x.season, selfDebut?.year ?? null)).filter((y) => y != null).sort((a, b) => a - b),
+    [selfRunRows, selfDebut]
+  );
+  const selfStage = useMemo(
+    () => careerStageCenter(selfRunRows, selfDebut?.year ?? null),
+    [selfRunRows, selfDebut]
+  );
   const runComps = useMemo(
-    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaFor }),
-    [players, selfRow, runLen, selfKey, lgaFor]
+    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaFor, selfStage, selfStageAtLeast }),
+    [players, selfRow, runLen, selfKey, lgaFor, selfStage, selfStageAtLeast]
   );
   // Gold-lit across every decade row, so the single strongest run stands out
   // wherever it landed.
@@ -608,7 +691,10 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
             <>
               {runComps.length > 0 && (
                 <div className="mb-1">
-                  <div className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5">
+                  <div
+                    className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5"
+                    title={`Ranked by how close the run is AND how close it sits to the same point in a career — y5 is the run’s 5th season, y5+ his 5th or later (his career starts before the data does)${selfStages.length ? `, against your ${stageDigits(selfStages[0], selfStages[selfStages.length - 1], selfStageAtLeast)}` : ""}.`}
+                  >
                     {runLen === 1 ? "Closest seasons" : `Closest ${runLen}-year runs`} · by decade
                   </div>
                   {runComps.map(({ dec, list }) => (
@@ -618,6 +704,16 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                         {list.map((run) => {
                           const pct = Math.min(99, Math.round(run.score * 100));
                           const isBest = runKey(run) === bestRunKey;
+                          const note = stageNote({
+                            from: run.stageFrom,
+                            to: run.stageTo,
+                            atLeast: run.stageAtLeast,
+                            selfFrom: selfStages[0] ?? null,
+                            selfTo: selfStages[selfStages.length - 1] ?? null,
+                            selfAtLeast: selfStageAtLeast,
+                            shape: run.shape,
+                            stageF: run.shape > 0 ? run.score / run.shape : 1,
+                          });
                           return (
                             <button
                               key={runKey(run)}
@@ -628,11 +724,15 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                                 `${run.player.name} ${run.span}`, run.team,
                                 `${run.gp} G`, `${run.va.toFixed(1)} VA`,
                                 `${pct}% ${COMP_METRIC_WORD.impsim}`,
+                                note,
                                 isBest ? "best match" : null,
                               ].filter(Boolean).join(" · ")}
                             >
                               <span className="font-semibold" style={{ color: teamColor(run.team) }}>{compName(run.player.name)}</span>
                               <span className="text-stone-400"> {run.span}</span>
+                              {run.stageFrom != null && (
+                                <span className="text-stone-400 tabular-nums text-[9px]"> y{stageDigits(run.stageFrom, run.stageTo, run.stageAtLeast)}</span>
+                              )}
                               <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                             </button>
                           );
