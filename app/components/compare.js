@@ -63,8 +63,8 @@ export function resolveCompareTarget(context, target) {
 
 // The two ways to rank/label closest comps. Order matches the toggle.
 export const COMP_METRIC_OPTS = [
-  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), then discounted for landing at a different point in a career (y-number on each chip)" },
-  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+), then discounted for landing at a different point in a career (y-number on each chip)" },
+  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), then discounted for landing at a different point in a career — each chip's tooltip names both sides" },
+  { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+), then discounted for landing at a different point in a career — each chip's tooltip names both sides" },
 ];
 
 export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [o.key, o.word]));
@@ -315,7 +315,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
               <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
                 <span
                   className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0"
-                  title={`Ranked by how close the season is AND how close it sits to the same point in a career — y5 is the comp’s 5th season, y5+ his 5th or later (his career starts before the data does)${selfStage != null ? `, against your ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}.`}
+                  title={`Ranked by how close the season is AND how close it sits to the same point in a career${selfStage != null ? ` — this one is your career year ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}. Hover a comp for the career year it came from.`}
                 >Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
                   {COMP_METRIC_OPTS.map((o) => {
@@ -369,9 +369,6 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                         >
                           <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
-                          {item.stage != null && (
-                            <span className="text-stone-400 tabular-nums text-[9px]"> y{stageDigits(item.stage, item.stage, item.stageAtLeast)}</span>
-                          )}
                           <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                         </button>
                       );
@@ -693,7 +690,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                 <div className="mb-1">
                   <div
                     className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5"
-                    title={`Ranked by how close the run is AND how close it sits to the same point in a career — y5 is the run’s 5th season, y5+ his 5th or later (his career starts before the data does)${selfStages.length ? `, against your ${stageDigits(selfStages[0], selfStages[selfStages.length - 1], selfStageAtLeast)}` : ""}.`}
+                    title={`Ranked by how close the run is AND how close it sits to the same point in a career${selfStages.length ? ` — this one is your career year${selfStages.length > 1 ? "s" : ""} ${stageDigits(selfStages[0], selfStages[selfStages.length - 1], selfStageAtLeast)}` : ""}. Hover a run for the career years it came from.`}
                   >
                     {runLen === 1 ? "Closest seasons" : `Closest ${runLen}-year runs`} · by decade
                   </div>
@@ -730,9 +727,6 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                             >
                               <span className="font-semibold" style={{ color: teamColor(run.team) }}>{compName(run.player.name)}</span>
                               <span className="text-stone-400"> {run.span}</span>
-                              {run.stageFrom != null && (
-                                <span className="text-stone-400 tabular-nums text-[9px]"> y{stageDigits(run.stageFrom, run.stageTo, run.stageAtLeast)}</span>
-                              )}
                               <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                             </button>
                           );
