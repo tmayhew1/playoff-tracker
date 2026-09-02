@@ -1,18 +1,29 @@
 #!/usr/bin/env Rscript
 # DIAGNOSTIC PROBE — writes nothing, prints a reachability/shape report.
 #
-# app/data/def-ratings.json has on-court (counted-possession) ratings for only
-# 20 of 26 PBP-era regular seasons and 7 of 26 postseasons, because
-# api.pbpstats.com's get-totals returns a season-dependent column subset and
-# OpponentPoints is permanently absent for some seasons (bake run #6). This
-# script asks, from a GitHub Actions runner — the only environment that can
-# reach these hosts — which alternative sources are usable:
+# app/data/def-ratings.json carries on-court (counted-possession) ratings for
+# only 20 of 26 PBP-era regular seasons and 7 of 26 postseasons. Round 1 of
+# this probe settled where a second source could come from:
 #
-#   A  api.pbpstats.com   which columns each gap season actually serves
-#   B  stats.nba.com      still datacenter-IP blocked?
-#   C  shufinskiy/nba_data  static raw PBP archives, 1996-97+, RS *and* PO
-#   D  basketball-reference /teams/<TM>/<YR>/on-off/  (BR already scrapes fine)
-#   E  sportsdataverse    pre-baked release assets
+#   stats.nba.com    still hard-blocked from Actions (30s, 0 bytes received,
+#                    full browser headers) - the ideal source stays unusable
+#   sportsdataverse  hoopR-data / hoopR-nba-stats-data publish 0 releases
+#   shufinskiy/nba_data  WORKS: raw stats.nba.com play-by-play as static
+#                    GitHub files, 1996-97 on, regular season AND playoffs,
+#                    0.4-0.6 MB per postseason. EVENTMSGTYPE 8 carries the
+#                    substitutions a lineup reconstruction needs.
+#   api.pbpstats.com WORKS TODAY on every season that failed in July,
+#                    OpponentPoints included - so the gaps are stale, not
+#                    permanent - and also serves Points and PlusMinus, from
+#                    which points allowed is derivable when it doesn't.
+#   basketball-reference /teams/<TM>/<YR>/on-off/  has an `on_off` table back
+#                    to 1996-97 and, in 2016, an `on_off_p` playoff table;
+#                    the Opponent group's ORtg is the on-court DRtg.
+#
+# Round 2 asks the two questions those answers opened:
+#   A  is pbpstats' recovery real across ALL the gap seasons, or luck?
+#   D  how far back does BR's playoff on-off table go, and is the Opponent
+#      ORtg column really points allowed per 100 with the player on court?
 #
 #   Rscript scripts/R/probe_def_sources.R
 
@@ -24,140 +35,104 @@ ok  <- function(...) message("  [ok]   ", sprintf(...))
 bad <- function(...) message("  [FAIL] ", sprintf(...))
 inf <- function(...) message("         ", sprintf(...))
 
-timed <- function(expr) {
-  t0 <- Sys.time()
-  res <- tryCatch(expr, error = function(e) e)
-  list(res = res, secs = as.numeric(difftime(Sys.time(), t0, units = "secs")))
-}
+num_of <- function(v) suppressWarnings(as.numeric(if (is.null(v)) NA else v))
 
-# --- A: what api.pbpstats.com actually serves per season --------------------
-# The bake needs points-allowed and defensive possessions. DefPoss is always
-# there; the question is whether ANY points-allowed column is, and whether a
-# derivation (Points - PlusMinus) is available when it isn't.
-hdr("A. api.pbpstats.com get-totals column sets")
-WANT_PTS <- c("OpponentPoints", "PtsAllowed", "OppPts")
-DERIVE   <- c("Points", "PlusMinus", "OnOffRtg", "DefRtg", "DefEff")
+# --- A: every gap season, not a sample ---------------------------------------
+# Also reports the minute-weighted mean rating: a column can be present and
+# still be junk, and the bake's own plausibility gate is 95 < wmean < 125.
+hdr("A. api.pbpstats.com - all gap seasons")
 
 probe_pbpstats <- function(season, season_type) {
-  t <- timed(httr::GET("https://api.pbpstats.com/get-totals/nba",
+  res <- tryCatch(httr::GET("https://api.pbpstats.com/get-totals/nba",
     query = list(Season = season, SeasonType = season_type, Type = "Player"),
     httr::timeout(60), httr::user_agent(UA),
-    httr::add_headers(Accept = "application/json")))
-  if (inherits(t$res, "error")) { bad("%s %-15s %s", season, season_type, conditionMessage(t$res)); return(invisible()) }
-  st <- httr::status_code(t$res)
-  if (st != 200) { bad("%s %-15s HTTP %d (%.1fs)", season, season_type, st, t$secs); return(invisible()) }
-  d <- jsonlite::fromJSON(httr::content(t$res, as = "text", encoding = "UTF-8"), simplifyVector = FALSE)
-  rows <- d$multi_row_table_data
+    httr::add_headers(Accept = "application/json")), error = function(e) e)
+  if (inherits(res, "error")) { bad("%s %-15s %s", season, season_type, conditionMessage(res)); return(invisible()) }
+  if (httr::status_code(res) != 200) { bad("%s %-15s HTTP %d", season, season_type, httr::status_code(res)); return(invisible()) }
+  rows <- jsonlite::fromJSON(httr::content(res, as = "text", encoding = "UTF-8"),
+                             simplifyVector = FALSE)$multi_row_table_data
   if (is.null(rows) || !length(rows)) { bad("%s %-15s no rows", season, season_type); return(invisible()) }
   k <- names(rows[[1]])
-  pts <- intersect(WANT_PTS, k); der <- intersect(DERIVE, k)
-  if (length(pts)) ok("%s %-15s %4d rows, has %s", season, season_type, length(rows), paste(pts, collapse = "/"))
-  else bad("%s %-15s %4d rows, NO points-allowed column", season, season_type, length(rows))
-  inf("derivable from: %s | DefPoss: %s",
-      if (length(der)) paste(der, collapse = ", ") else "(none)",
-      if ("DefPoss" %in% k) "yes" else "NO")
-}
-
-for (s in c("2000-01", "2009-10", "2016-17")) { probe_pbpstats(s, "Regular Season"); Sys.sleep(2) }
-for (s in c("2000-01", "2010-11", "2018-19", "2022-23")) { probe_pbpstats(s, "Playoffs"); Sys.sleep(2) }
-
-# --- B: is stats.nba.com still blocked from Actions? ------------------------
-# It is the ideal source (DEF_RATING + POSS, RS and Playoffs, 1996-97+), so
-# re-confirm the block rather than inherit the assumption. Full browser
-# headers: a bare UA is the classic cause of a hang that isn't really a block.
-hdr("B. stats.nba.com leaguedashplayerstats (Advanced)")
-t <- timed(httr::GET("https://stats.nba.com/stats/leaguedashplayerstats",
-  query = list(Season = "2016-17", SeasonType = "Regular Season", MeasureType = "Advanced",
-               PerMode = "Totals", LeagueID = "00", PaceAdjust = "N", PlusMinus = "N",
-               Rank = "N", Month = "0", OpponentTeamID = "0", Period = "0",
-               LastNGames = "0", TeamID = "0"),
-  httr::timeout(30), httr::user_agent(UA),
-  httr::add_headers(Accept = "application/json, text/plain, */*",
-                    `Accept-Language` = "en-US,en;q=0.9",
-                    Referer = "https://www.nba.com/", Origin = "https://www.nba.com",
-                    `x-nba-stats-origin` = "stats", `x-nba-stats-token` = "true",
-                    Connection = "keep-alive")))
-if (inherits(t$res, "error")) bad("blocked/hung after %.1fs - %s", t$secs, conditionMessage(t$res)) else
-  ok("HTTP %d in %.1fs, %d bytes", httr::status_code(t$res), t$secs,
-     length(httr::content(t$res, as = "raw")))
-
-# --- C: shufinskiy/nba_data static archives ---------------------------------
-# Raw stats.nba.com play-by-play, already scraped and committed to a public
-# repo: 1996-97 onward, regular season AND playoffs. Static files on GitHub,
-# so no rate limit, no IP block, no per-season column roulette. Costs a
-# lineup-tracking pass (substitution events) to turn events into per-player
-# defensive possessions and points allowed.
-hdr("C. shufinskiy/nba_data raw PBP archives")
-BASE <- "https://github.com/shufinskiy/nba_data/raw/main/datasets/%s.tar.xz"
-for (f in c("nbastats_po_1996", "nbastats_po_2013", "nbastats_po_2022", "nbastats_2016")) {
-  t <- timed(httr::HEAD(sprintf(BASE, f), httr::timeout(60), httr::user_agent(UA)))
-  if (inherits(t$res, "error")) { bad("%-18s %s", f, conditionMessage(t$res)); next }
-  n <- suppressWarnings(as.numeric(httr::headers(t$res)$`content-length`))
-  if (length(n) != 1 || is.na(n)) n <- NA_real_
-  if (httr::status_code(t$res) == 200) ok("%-18s HTTP 200, %.1f MB", f, n / 1e6)
-  else bad("%-18s HTTP %d", f, httr::status_code(t$res))
-}
-
-# Pull the smallest one and show the actual columns, so the lineup-tracking
-# cost is assessed against real data and not a guess.
-tmp <- tempfile(fileext = ".tar.xz")
-t <- timed(tryCatch(utils::download.file(sprintf(BASE, "nbastats_po_1996"), tmp, quiet = TRUE), error = function(e) e))
-if (!inherits(t$res, "error") && file.exists(tmp) && file.size(tmp) > 1000) {
-  ok("downloaded nbastats_po_1996 in %.1fs (%.1f MB)", t$secs, file.size(tmp) / 1e6)
-  ex <- file.path(tempdir(), "shuf"); dir.create(ex, showWarnings = FALSE)
-  utils::untar(tmp, exdir = ex)
-  csvs <- list.files(ex, pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
-  inf("extracted: %s", paste(basename(csvs), collapse = ", "))
-  if (length(csvs)) {
-    d <- utils::read.csv(csvs[1], nrows = 40000)
-    inf("%d rows read; columns: %s", nrow(d), paste(names(d), collapse = ","))
-    if ("EVENTMSGTYPE" %in% names(d)) {
-      inf("event-type counts (8 = substitution): %s",
-          paste(sprintf("%s:%d", names(table(d$EVENTMSGTYPE)), table(d$EVENTMSGTYPE)), collapse = " "))
-      subs <- d[d$EVENTMSGTYPE == 8, ]
-      inf("substitution rows: %d; sample: %s", nrow(subs),
-          if (nrow(subs)) paste(utils::capture.output(utils::str(subs[1, ], give.attr = FALSE)), collapse = " ") else "-")
+  direct <- "OpponentPoints" %in% k
+  derive <- all(c("Points", "PlusMinus") %in% k)
+  # Minute-weighted mean of 100*opp/defposs, opp taken directly or derived as
+  # Points - PlusMinus (a player's on-court margin is his team's points minus
+  # the opponent's, so the opponent's total falls straight out of the two).
+  wsum <- 0; msum <- 0; n <- 0; dmax <- 0
+  for (r in rows) {
+    dp <- num_of(r$DefPoss); mn <- num_of(r$Minutes)
+    opp <- if (direct) num_of(r$OpponentPoints)
+           else if (derive) num_of(r$Points) - num_of(r$PlusMinus) else NA
+    if (is.na(dp) || dp <= 0 || is.na(opp) || is.na(mn) || mn < 25) next
+    wsum <- wsum + mn * 100 * opp / dp; msum <- msum + mn; n <- n + 1
+    if (direct && derive) {
+      d <- abs(num_of(r$OpponentPoints) - (num_of(r$Points) - num_of(r$PlusMinus)))
+      if (!is.na(d) && d > dmax) dmax <- d
     }
-    gi <- grep("^GAME_ID$", names(d))
-    if (length(gi)) inf("distinct GAME_IDs in sample: %d", length(unique(d[[gi[1]]])))
   }
-} else bad("download failed: %s", if (inherits(t$res, "error")) conditionMessage(t$res) else "empty")
+  wmean <- if (msum > 0) wsum / msum else NA
+  gate <- !is.na(wmean) && wmean > 95 && wmean < 125
+  (if (direct && gate) ok else bad)(
+    "%s %-15s %4d rows | OpponentPoints:%-3s Points+PlusMinus:%-3s | %d rated, wmean %.1f %s",
+    season, season_type, length(rows), if (direct) "yes" else "NO",
+    if (derive) "yes" else "NO", n, wmean, if (gate) "(passes gate)" else "(FAILS gate)")
+  if (direct && derive) inf("max |OpponentPoints - (Points - PlusMinus)| across rows: %.0f", dmax)
+}
 
-# --- D: basketball-reference on-off -----------------------------------------
-# BR is already scraped by this pipeline every day, so reachability is proven.
-# Question is only whether the on-off page carries a per-100-possession team
-# DRtg with the player on court, and whether a playoff version exists.
-hdr("D. basketball-reference on-off pages")
-probe_br <- function(url) {
-  h <- tryCatch(parse_html_uncommented(throttled_fetch(url)), error = function(e) e)
-  if (inherits(h, "error")) { bad("%s - %s", url, conditionMessage(h)); return(invisible()) }
+RS_GAPS <- c("2000-01", "2005-06", "2009-10", "2011-12", "2014-15", "2016-17")
+PO_GAPS <- c("2000-01", "2001-02", "2003-04", "2005-06", "2006-07", "2007-08",
+             "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15",
+             "2016-17", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23",
+             "2023-24")
+for (s in RS_GAPS) { probe_pbpstats(s, "Regular Season"); Sys.sleep(2) }
+for (s in PO_GAPS) { probe_pbpstats(s, "Playoffs"); Sys.sleep(2) }
+
+# --- D: how far back does BR's playoff on-off go? ----------------------------
+# BR is scraped by this pipeline daily, so it is the one host whose
+# reachability is already proven. The question is coverage.
+hdr("D. basketball-reference on-off - playoff table coverage")
+
+br_tables <- function(team, year) {
+  h <- tryCatch(parse_html_uncommented(
+    throttled_fetch(sprintf("https://www.basketball-reference.com/teams/%s/%d/on-off/", team, year))),
+    error = function(e) e)
+  if (inherits(h, "error")) { bad("%s %d - %s", team, year, conditionMessage(h)); return(NULL) }
   tabs <- xml2::xml_find_all(h, "//table")
   ids <- xml2::xml_attr(tabs, "id")
-  ok("%s - %d tables: %s", sub(".*basketball-reference.com", "", url), length(tabs),
-     paste(ids[!is.na(ids)], collapse = ", "))
-  for (i in seq_along(tabs)) {
-    if (is.na(ids[i])) next
-    ths <- xml2::xml_text(xml2::xml_find_all(tabs[[i]], ".//thead//th"))
-    inf("%s headers: %s", ids[i], paste(unique(ths), collapse = " "))
-  }
+  keep <- !is.na(ids)
+  ok("%s %d - tables: %s", team, year, paste(ids[keep], collapse = ", "))
+  stats::setNames(as.list(tabs[keep]), ids[keep])
 }
-probe_br("https://www.basketball-reference.com/teams/BOS/2016/on-off/")
-probe_br("https://www.basketball-reference.com/teams/BOS/1997/on-off/")
 
-# --- E: pre-baked sportsdataverse release assets ----------------------------
-hdr("E. sportsdataverse release assets")
-for (repo in c("sportsdataverse/hoopR-data", "sportsdataverse/hoopR-nba-stats-data")) {
-  t <- timed(httr::GET(sprintf("https://api.github.com/repos/%s/releases?per_page=100", repo),
-                       httr::timeout(60), httr::user_agent(UA)))
-  if (inherits(t$res, "error") || httr::status_code(t$res) != 200) {
-    bad("%s - %s", repo, if (inherits(t$res, "error")) conditionMessage(t$res) else
-        paste("HTTP", httr::status_code(t$res)))
-    next
+# Walk back until the playoff table stops appearing. Champions, so the team
+# definitely played a postseason in the year probed.
+for (ty in list(c("MIA", 2013), c("LAL", 2010), c("SAS", 2007), c("DET", 2004),
+                c("LAL", 2001), c("CHI", 1998))) {
+  br_tables(ty[[1]], as.integer(ty[[2]]))
+}
+
+# --- D2: is Opponent/ORtg really the on-court points allowed per 100? --------
+# Print one team's actual rows so the column can be read against a rating that
+# is already known: the same team's season DRtg in def-ratings.json.
+hdr("D2. basketball-reference on-off - row shape")
+tabs <- br_tables("GSW", 2016)
+if (!is.null(tabs) && length(tabs)) {
+  tb <- tabs[[1]]
+  over <- xml2::xml_text(xml2::xml_find_all(tb, ".//thead/tr[1]/th"))
+  cols <- xml2::xml_find_all(tb, ".//thead/tr[2]/th")
+  inf("over-headers: %s", paste(over, collapse = " | "))
+  inf("data-stat keys: %s", paste(xml2::xml_attr(cols, "data-stat"), collapse = ","))
+  rows <- xml2::xml_find_all(tb, ".//tbody/tr")
+  shown <- 0
+  for (r in rows) {
+    cells <- xml2::xml_find_all(r, "./th|./td")
+    keys <- xml2::xml_attr(cells, "data-stat")
+    vals <- xml2::xml_text(cells)
+    if (!length(keys) || all(is.na(keys))) next
+    inf("%s", paste(sprintf("%s=%s", keys, vals), collapse = " "))
+    shown <- shown + 1
+    if (shown >= 4) break
   }
-  rel <- jsonlite::fromJSON(httr::content(t$res, as = "text", encoding = "UTF-8"), simplifyVector = FALSE)
-  ok("%s - %d releases", repo, length(rel))
-  for (r in rel) inf("tag %-34s %d assets, e.g. %s", r$tag_name, length(r$assets),
-                     if (length(r$assets)) r$assets[[1]]$name else "-")
 }
 
 message("\nProbe complete.")
