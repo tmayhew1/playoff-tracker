@@ -5,10 +5,11 @@ name: Probe defensive-rating data sources (R)
 # shape they arrive in, so the choice of a replacement/second source for
 # def-ratings.json's on-court keys rests on evidence rather than on what the
 # hosts do from a laptop. See scripts/R/probe_def_sources.R.
-# Dispatch-only now that runs 1 and 2 have answered the question the probe
-# was written for; its findings are recorded in the script's header. Re-run it
-# by hand when a source's behaviour is in doubt again.
 on:
+  push:
+    branches: ["claude/defensive-rating-data-sources-leqpnm"]
+    paths:
+      - "scripts/R/probe_def_sources.R"
   workflow_dispatch:
 
 concurrency:
