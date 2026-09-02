@@ -47,13 +47,15 @@ function Tracker() {
   return (
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <header className="mb-4 text-center">
+        <header className="pt-2 mb-4 text-center">
           {/* "Trey's" rides the eyebrow as the handwritten mark, sitting on the
               same baseline as the small-caps tag; the title drops a step so the
-              two lines read more evenly. Both lines centered as a unit. The
-              padding is the room the mark's descender hangs into — without it
-              the y's loop would land on the title. */}
-          <div className="flex items-baseline justify-center gap-2.5 mb-2" style={{ paddingBottom: treysMarkDescender(MARK_HEIGHT) }}>
+              two lines read more evenly. Both lines centered as a unit.
+              The padding is the room the mark's descender hangs into — without
+              it the y's loop would land on the title. The header's top padding
+              is the same measure taken back, so closing up under the eyebrow
+              lowers the eyebrow rather than raising the title. */}
+          <div className="flex items-baseline justify-center gap-2.5" style={{ paddingBottom: treysMarkDescender(MARK_HEIGHT) }}>
             <TreysMark height={MARK_HEIGHT} className="text-stone-800" />
             <span className="text-xs uppercase tracking-[0.3em] text-stone-500">NBA Box Score</span>
           </div>
