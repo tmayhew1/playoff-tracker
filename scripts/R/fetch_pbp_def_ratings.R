@@ -101,8 +101,8 @@ pick <- function(row, candidates, required = TRUE) {
     if (!is.null(v)) return(v)
   }
   if (required) {
-    stop(sprintf("none of [%s] present; row keys: %s",
-                 paste(candidates, collapse = ", "),
+    stop(sprintf("none of [%s] present; %d columns: %s",
+                 paste(candidates, collapse = ", "), length(names(row)),
                  paste(sort(names(row)), collapse = ",")))
   }
   NULL
@@ -145,33 +145,47 @@ MIN_MINUTES <- 25
 
 num_of <- function(v) suppressWarnings(as.numeric(v %||% NA))
 
-# pbpstats' get-totals serves a VARYING column subset: the same query
-# returned OpponentPoints on one call and omitted it on the next, and six
-# seasons missed it through every retry of bake runs #3-#6, which read as a
-# per-season fact. It wasn't. probe_def_sources.R re-asked for those same
-# seasons later and every one of them served OpponentPoints, so the subsetting
-# is a transient server-side condition and the right response to it is simply
-# to come back later — which the per-side retry in main() now does on its own.
-# Within a run, retries vary the query string with a throwaway param, since
-# responses are cached by query string and a re-request of the identical URL
-# can be served the same partial blob. The final error still carries the
-# row-key dump for a genuine schema change.
+# pbpstats' get-totals answers in one of two shapes, and which one you get
+# varies BY REQUEST, not by season. A good answer carries ~230 columns
+# (236 for a regular season, 221 for a postseason); a bad one carries ~15 —
+# DefPoss, OffPoss, TotalPoss, the Penalty family, and the row's identity.
+# So the failure is not "OpponentPoints went missing", it is a degraded
+# response that omits nine tenths of everything, which reads like a
+# server-side aggregation that hasn't finished computing.
 #
-# What CANNOT rescue a missing column is deriving it: Points is a player's own
-# scoring, not his team's while he is on the floor, so Points - PlusMinus
-# misses OpponentPoints by 1,200-1,800 a season (probe run 2).
-fetch_parsed <- function(params, parse_fn, tries = 4) {
+# Two theories have been tested and are dead. It is not per-season: probe
+# round 3 asked for 2005-06 eighteen times and got 236 columns eighteen
+# times, seven minutes after a bake had failed the identical query four
+# times. And it is not the response cache: plain and cache-busted URLs
+# succeeded six for six each in that same round, so run #6's CacheBust was
+# neither the cause of the failures nor a cure for them.
+#
+# What is left is patience. Retry the plain URL — the honest request, and
+# the one that can be served from a warm cache — with a backoff long enough
+# for a computation to finish rather than the 6/12/18s that only ever
+# re-asked a busy server three times in half a minute. A run that still
+# misses is no longer stuck either: main() asks per side and per run, so
+# the daily backfill retries whatever is outstanding the next day, and
+# coverage converges over a few days instead of hanging on one lucky pass.
+#
+# The final error carries the column COUNT as well as the row keys, because
+# the count is what separates a degraded response (~15) from a genuine
+# schema change (~230 with a renamed field).
+
+PARSE_BACKOFF <- c(20, 45, 90)  # seconds between attempts; length + 1 = tries
+
+fetch_parsed <- function(params, parse_fn) {
   err <- NULL
+  tries <- length(PARSE_BACKOFF) + 1
   for (attempt in seq_len(tries)) {
-    p <- params
-    if (attempt > 1) p$CacheBust <- sprintf("%d%d", as.integer(Sys.time()), attempt)
-    d <- pbp_fetch_json(p)
+    d <- pbp_fetch_json(params)
     out <- tryCatch(parse_fn(d), error = function(e) e)
     if (!inherits(out, "error")) return(out)
     err <- out
-    message(sprintf("  columns missing (attempt %d/%d), refetching%s", attempt, tries,
-                    if (attempt < tries) " with cache-buster" else ""))
-    Sys.sleep(6 * attempt)
+    if (attempt == tries) break
+    message(sprintf("  degraded response (attempt %d/%d), waiting %ds",
+                    attempt, tries, PARSE_BACKOFF[attempt]))
+    Sys.sleep(PARSE_BACKOFF[attempt])
   }
   stop(conditionMessage(err))
 }

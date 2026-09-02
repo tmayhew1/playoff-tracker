@@ -40,9 +40,12 @@ concurrency:
 jobs:
   bake:
     runs-on: ubuntu-latest
-    # 30 seasons x 4 requests + politeness delays ≈ minutes; the timeout
-    # mostly guards against stats.nba.com hanging connections.
-    timeout-minutes: 45
+    # A clean pass is minutes. The ceiling is sized for the bad case: every
+    # outstanding side burning its full 20/45/90s backoff against a pbpstats
+    # that is answering with degraded responses. Nothing is lost to a
+    # timeout that the next run won't retry, since each side is asked for
+    # on its own need.
+    timeout-minutes: 60
     permissions:
       contents: write
     steps:
