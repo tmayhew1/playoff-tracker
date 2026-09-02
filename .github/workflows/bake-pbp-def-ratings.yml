@@ -57,7 +57,14 @@ jobs:
           use-public-rspm: true
 
       - name: Install R packages
-        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+        # install.packages() does not fail the step when a mirror hiccups, so
+        # run #9 spent its whole dispatch getting to "there is no package
+        # called httr" inside the bake. Assert instead.
+        run: >
+          Rscript -e 'pkgs <- c("httr", "xml2", "jsonlite");
+          install.packages(pkgs);
+          missing <- setdiff(pkgs, rownames(installed.packages()));
+          if (length(missing)) stop("install failed: ", paste(missing, collapse=", "))'
 
       - name: Fetch on-court defensive ratings
         run: >
