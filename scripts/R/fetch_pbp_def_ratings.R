@@ -37,8 +37,12 @@
 # possessions are summed before the rating is taken, so the baked number is
 # the full-season on-court rate.
 #
-# Existing *Pbp entries are preserved unless --force is passed. A playoffs
-# fetch that fails leaves poPbp absent for that season (non-fatal).
+# Existing *Pbp entries are preserved unless --force is passed, and the two
+# sides are asked for separately: a season is fetched if EITHER rsPbp or
+# poPbp is missing, and each side has its own error handler, so a postseason
+# that failed is retried on the next run without disturbing a regular season
+# that already landed. A playoffs fetch that fails leaves poPbp absent for
+# that season (non-fatal) and the regular season is still written.
 
 source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
@@ -141,14 +145,21 @@ MIN_MINUTES <- 25
 
 num_of <- function(v) suppressWarnings(as.numeric(v %||% NA))
 
-# pbpstats' API serves CACHED responses keyed by query string, and a cached
-# blob carries whatever column subset the request that warmed it computed —
-# bake runs #3/#4 showed some season queries permanently missing
-# OpponentPoints while identical queries for other seasons had it, and
-# retries of the same URL just re-read the same bad cache entry. So on
-# retries, vary the query string with a throwaway param: new cache key, fresh
-# compute, full column set. The final error still carries the row-key dump
-# for a genuine schema change.
+# pbpstats' get-totals serves a VARYING column subset: the same query
+# returned OpponentPoints on one call and omitted it on the next, and six
+# seasons missed it through every retry of bake runs #3-#6, which read as a
+# per-season fact. It wasn't. probe_def_sources.R re-asked for those same
+# seasons later and every one of them served OpponentPoints, so the subsetting
+# is a transient server-side condition and the right response to it is simply
+# to come back later — which the per-side retry in main() now does on its own.
+# Within a run, retries vary the query string with a throwaway param, since
+# responses are cached by query string and a re-request of the identical URL
+# can be served the same partial blob. The final error still carries the
+# row-key dump for a genuine schema change.
+#
+# What CANNOT rescue a missing column is deriving it: Points is a player's own
+# scoring, not his team's while he is on the floor, so Points - PlusMinus
+# misses OpponentPoints by 1,200-1,800 a season (probe run 2).
 fetch_parsed <- function(params, parse_fn, tries = 4) {
   err <- NULL
   for (attempt in seq_len(tries)) {
@@ -236,56 +247,91 @@ main <- function() {
     # (Not %||%: is.na() on a multi-element season entry errors on R >= 4.3.)
     entry <- existing[[season]]
     if (is.null(entry)) entry <- list()
-    if (!is.null(entry$rsPbp) && !force) {
-      message(sprintf("  Skipping %s (rsPbp already present; pass --force to overwrite)", season))
+
+    # The two sides are fetched independently, and that is the point. The
+    # skip used to test rsPbp alone and the playoff fetch used to sit inside
+    # the regular season's error handler, so a postseason could only ever be
+    # attempted on the run that first landed its regular season: nineteen of
+    # twenty-six sat unfetched behind a regular season that had already
+    # succeeded, and the six seasons whose regular season failed lost their
+    # playoffs to the same error without either being tried. Neither could be
+    # retried except under a --force that also refetched the twenty seasons
+    # already sitting there. Now each side asks for itself.
+    need_rs <- force || is.null(entry$rsPbp)
+    need_po <- force || is.null(entry$poPbp)
+    if (!need_rs && !need_po) {
+      message(sprintf("  Skipping %s (both sides present; pass --force to overwrite)", season))
       skipped <- skipped + 1
       next
     }
-    rs_slugs <- load_slug_map(season, "rs")
-    if (is.null(rs_slugs)) {
-      message(sprintf("  x %s - no regular-season-%s.json bake to join against", season, season))
-      failed <- failed + 1
-      next
-    }
-    res <- tryCatch({
-      message(sprintf("Fetching %s regular season (api.pbpstats.com)", season))
-      rs <- fetch_players(season, "Regular Season", rs_slugs)
-      if (!pbp_plausible(rs, 250)) {
-        stop(sprintf("implausible RS on-court set (%d rows, wmean %.1f); refusing to write",
-                     length(rs$map), rs$wmean))
-      }
-      team_rs <- fetch_teams(season, "Regular Season")
-      if (length(team_rs) < 20) stop(sprintf("only %d RS team ratings", length(team_rs)))
 
-      po <- tryCatch({
-        po_slugs <- load_slug_map(season, "po")
-        if (is.null(po_slugs)) stop("no playoff bake to join against")
-        p <- fetch_players(season, "Playoffs", po_slugs)
-        if (!pbp_plausible(p, 60)) stop(sprintf("only %d playoff rows", length(p$map)))
-        team_po <- fetch_teams(season, "Playoffs")
-        list(players = p, teams = team_po)
+    got <- character(0); lost <- character(0)
+
+    if (need_rs) {
+      rs_res <- tryCatch({
+        message(sprintf("Fetching %s regular season (api.pbpstats.com)", season))
+        slugs <- load_slug_map(season, "rs")
+        if (is.null(slugs)) stop(sprintf("no regular-season-%s.json bake to join against", season))
+        rs <- fetch_players(season, "Regular Season", slugs)
+        if (!pbp_plausible(rs, 250)) {
+          stop(sprintf("implausible RS on-court set (%d rows, wmean %.1f); refusing to write",
+                       length(rs$map), rs$wmean))
+        }
+        team_rs <- fetch_teams(season, "Regular Season")
+        if (length(team_rs) < 20) stop(sprintf("only %d RS team ratings", length(team_rs)))
+        list(players = rs, teams = team_rs)
+      }, error = function(e) {
+        message(sprintf("  x %s regular season - %s", season, conditionMessage(e)))
+        NULL
+      })
+      if (is.null(rs_res)) {
+        lost <- c(lost, "rs")
+      } else {
+        entry$rsPbp <- rs_res$players$map
+        entry$teamPbp <- rs_res$teams
+        got <- c(got, sprintf("%d rs players (wmean %.1f, %d unjoined), %d teams",
+                              length(rs_res$players$map), rs_res$players$wmean,
+                              rs_res$players$unmatched, length(rs_res$teams)))
+      }
+    }
+
+    if (need_po) {
+      po_res <- tryCatch({
+        message(sprintf("Fetching %s playoffs (api.pbpstats.com)", season))
+        slugs <- load_slug_map(season, "po")
+        if (is.null(slugs)) stop(sprintf("no leaderboard-%s.json bake to join against", season))
+        p <- fetch_players(season, "Playoffs", slugs)
+        # Report both numbers: the gate gets tripped by an implausible mean as
+        # readily as by a thin row count, and a message naming only the rows
+        # sent an earlier diagnosis after the wrong cause.
+        if (!pbp_plausible(p, 60)) {
+          stop(sprintf("implausible PO on-court set (%d rows, wmean %.1f); refusing to write",
+                       length(p$map), p$wmean))
+        }
+        list(players = p, teams = fetch_teams(season, "Playoffs"))
       }, error = function(e) {
         message(sprintf("  (no playoff on-court ratings for %s - %s)", season, conditionMessage(e)))
         NULL
       })
-
-      entry$rsPbp <- rs$map
-      entry$teamPbp <- team_rs
-      if (!is.null(po)) {
-        entry$poPbp <- po$players$map
-        if (length(po$teams) >= 8) entry$teamPoPbp <- po$teams
+      if (is.null(po_res)) {
+        lost <- c(lost, "po")
+      } else {
+        entry$poPbp <- po_res$players$map
+        if (length(po_res$teams) >= 8) entry$teamPoPbp <- po_res$teams
+        got <- c(got, sprintf("%d po players (wmean %.1f, %d unjoined), %d teams",
+                              length(po_res$players$map), po_res$players$wmean,
+                              po_res$players$unmatched, length(po_res$teams)))
       }
-      message(sprintf("  ok %s - %d rs players (wmean %.1f, %d unjoined), %d teams%s",
-                      season, length(rs$map), rs$wmean, rs$unmatched, length(team_rs),
-                      if (is.null(po)) "" else sprintf(", %d po players", length(po$players$map))))
-      entry
-    }, error = function(e) {
-      message(sprintf("  x %s - %s", season, conditionMessage(e)))
-      NULL
-    })
-    if (!is.null(res)) {
-      existing[[season]] <- res
+    }
+
+    # A season counts as added when EITHER side landed, and as failed only
+    # when everything it asked for missed — a regular season that arrives
+    # beside a postseason that doesn't is progress, and is written.
+    if (length(got)) {
+      existing[[season]] <- entry
       added <- added + 1
+      message(sprintf("  ok %s - %s%s", season, paste(got, collapse = "; "),
+                      if (length(lost)) sprintf(" (%s still missing)", paste(lost, collapse = "+")) else ""))
     } else {
       failed <- failed + 1
     }
