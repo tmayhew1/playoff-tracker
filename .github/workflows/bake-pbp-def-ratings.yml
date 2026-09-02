@@ -68,3 +68,9 @@ jobs:
         with:
           commit_message: "Bake on-court (PBP) defensive ratings (R) [skip ci]"
           file_pattern: "app/data/def-ratings.json"
+          # The action's default `git fetch` prints every remote branch — a
+          # hundred-odd lines that push the bake's own per-season report out
+          # of the retrievable end of the log, which is exactly where the
+          # diagnosis lives when seasons fail. The checkout above is already
+          # at the ref being committed to.
+          skip_fetch: true
