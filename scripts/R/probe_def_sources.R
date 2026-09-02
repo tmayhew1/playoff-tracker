@@ -2,28 +2,61 @@
 # DIAGNOSTIC PROBE — writes nothing, prints a reachability/shape report.
 #
 # app/data/def-ratings.json carries on-court (counted-possession) ratings for
-# only 20 of 26 PBP-era regular seasons and 7 of 26 postseasons. Round 1 of
-# this probe settled where a second source could come from:
+# only 20 of 26 PBP-era regular seasons and 7 of 26 postseasons. Nineteen
+# missing postseasons is the real hole, and the bake's skip rule hides it: a
+# season whose regular season landed is skipped wholesale, so its playoff side
+# is never retried except under a --force that also refetches everything.
 #
-#   stats.nba.com    still hard-blocked from Actions (30s, 0 bytes received,
-#                    full browser headers) - the ideal source stays unusable
-#   sportsdataverse  hoopR-data / hoopR-nba-stats-data publish 0 releases
-#   shufinskiy/nba_data  WORKS: raw stats.nba.com play-by-play as static
-#                    GitHub files, 1996-97 on, regular season AND playoffs,
-#                    0.4-0.6 MB per postseason. EVENTMSGTYPE 8 carries the
-#                    substitutions a lineup reconstruction needs.
-#   api.pbpstats.com WORKS TODAY on every season that failed in July,
-#                    OpponentPoints included - so the gaps are stale, not
-#                    permanent - and also serves Points and PlusMinus, from
-#                    which points allowed is derivable when it doesn't.
-#   basketball-reference /teams/<TM>/<YR>/on-off/  has an `on_off` table back
-#                    to 1996-97 and, in 2016, an `on_off_p` playoff table;
-#                    the Opponent group's ORtg is the on-court DRtg.
+# WHAT THIS PROBE ESTABLISHED (runs 1 and 2, from an Actions runner — the only
+# environment that can reach these hosts):
 #
-# Round 2 asks the two questions those answers opened:
-#   A  is pbpstats' recovery real across ALL the gap seasons, or luck?
-#   D  how far back does BR's playoff on-off table go, and is the Opponent
-#      ORtg column really points allowed per 100 with the player on court?
+#   stats.nba.com    STILL BLOCKED. 30s, 0 bytes received, under full browser
+#                    headers (Referer/Origin/x-nba-stats-origin/-token). The
+#                    ideal source — DEF_RATING and possessions, both season
+#                    types, 1996-97 on — remains unusable from CI.
+#
+#   sportsdataverse  DEAD END. hoopR-data and hoopR-nba-stats-data both
+#                    publish 0 releases, so there are no assets to load.
+#
+#   api.pbpstats.com THE GAPS ARE STALE, NOT PERMANENT. Every season that
+#                    failed the July bake now serves OpponentPoints, and all
+#                    19 missing postseasons pass the bake's own 95-125
+#                    minute-weighted gate (98.6 in 2003-04 rising to 115.1 in
+#                    2020-21 — the right era shape). The column subsetting was
+#                    a transient server-side condition, not a per-season fact.
+#                    BUT: points allowed is NOT derivable when it goes missing
+#                    again — Points is a player's OWN scoring, not his team's
+#                    while on the floor, so Points - PlusMinus misses
+#                    OpponentPoints by 1,200-1,800 on every season tested.
+#                    The only recovery from a missing column is a later retry.
+#
+#   basketball-reference/teams/<TM>/<YR>/on-off/   THE SECOND SOURCE.
+#                    Table `on_off` and — for every playoff team probed back
+#                    to CHI 1998 — `on_off_p`, both on one page, so the
+#                    postseason costs no extra request. The Opponent group's
+#                    `opp_off_rtg` on the `On Court` row IS points allowed per
+#                    100 possessions with the player on the floor (Draymond
+#                    Green 2015-16: 100.2 on, 112.9 off), alongside `mp` and
+#                    `opp_pace`. Coverage runs to 1996-97, five seasons past
+#                    pbpstats. It is the one host this pipeline already
+#                    scrapes daily, throttling and all, and the player cell
+#                    carries the /players/ href — so rows join by slug
+#                    directly, with none of the name-matching that loses
+#                    15-20 players a season on the pbpstats path.
+#                    Caveat: BR estimates possessions where pbpstats counts
+#                    them, so the two sit ~1 pt/100 apart and DEF_EST_CAL was
+#                    fitted against the counted scale.
+#
+#   shufinskiy/nba_data  THE FALLBACK, if a derived rating is ever wanted.
+#                    Raw stats.nba.com play-by-play as static GitHub files,
+#                    1996-97 on, both season types, 0.4-0.6 MB per postseason
+#                    and 8.3 MB per regular season, fetched in under a second.
+#                    EVENTMSGTYPE 8 carries the substitutions (2,668 across
+#                    the 72 games of the 1997 playoffs), so on-court lineups —
+#                    and from them defensive possessions and points allowed —
+#                    are reconstructible without any live API. That
+#                    reconstruction is the whole cost, and it is why this
+#                    ranks behind BR rather than ahead of it.
 #
 #   Rscript scripts/R/probe_def_sources.R
 
