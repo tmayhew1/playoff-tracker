@@ -9,10 +9,14 @@ import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
+import { TreysMark, treysMarkDescender } from "./components/treys-mark";
 import { UsageView } from "./components/usage-view";
 import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider } from "./lib/va-mode";
 
+
+// Cap-to-baseline of the handwritten mark comes to about half of this.
+const MARK_HEIGHT = 54;
 
 export default function PlayoffTracker() {
   return (
@@ -44,11 +48,13 @@ function Tracker() {
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4 text-center">
-          {/* "Trey's" rides the eyebrow in the serif display face — bigger and
-              styled apart from the small-caps tag; the title drops a step so
-              the two lines read more evenly. Both lines centered as a unit. */}
-          <div className="flex items-baseline justify-center gap-1.5 mb-1">
-            <span className="text-xl font-bold italic text-stone-800 leading-none" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>Trey&rsquo;s</span>
+          {/* "Trey's" rides the eyebrow as the handwritten mark, sitting on the
+              same baseline as the small-caps tag; the title drops a step so the
+              two lines read more evenly. Both lines centered as a unit. The
+              padding is the room the mark's descender hangs into — without it
+              the y's loop would land on the title. */}
+          <div className="flex items-baseline justify-center gap-2.5 mb-1" style={{ paddingBottom: treysMarkDescender(MARK_HEIGHT) }}>
+            <TreysMark height={MARK_HEIGHT} className="text-stone-800" />
             <span className="text-xs uppercase tracking-[0.3em] text-stone-500">NBA Box Score</span>
           </div>
           <h1 className="text-2xl font-black text-stone-900 leading-none tracking-tight" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>Value Added Tracker</h1>
