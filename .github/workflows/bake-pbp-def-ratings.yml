@@ -40,12 +40,12 @@ concurrency:
 jobs:
   bake:
     runs-on: ubuntu-latest
-    # A clean pass is minutes. The ceiling is sized for the bad case: every
-    # outstanding side burning its full 20/45/90s backoff against a pbpstats
-    # that is answering with degraded responses. Nothing is lost to a
-    # timeout that the next run won't retry, since each side is asked for
-    # on its own need.
-    timeout-minutes: 60
+    # A clean pass is minutes; the ceiling is sized for the bad case, where
+    # every outstanding side burns its full 20/45/90s backoff against a
+    # pbpstats answering with degraded responses. The real ceiling sits on
+    # the fetch step below rather than here, so that an overrun ends that
+    # step instead of the job and the commit still happens.
+    timeout-minutes: 70
     permissions:
       contents: write
     steps:
@@ -67,6 +67,10 @@ jobs:
           if (length(missing)) stop("install failed: ", paste(missing, collapse=", "))'
 
       - name: Fetch on-court defensive ratings
+        # On the step, not the job: a job-level timeout kills the commit with
+        # it, throwing away every season the run had already fetched and
+        # written. Ending here leaves the commit below to bank them.
+        timeout-minutes: 55
         run: >
           Rscript scripts/R/fetch_pbp_def_ratings.R
           "${{ inputs.start_season || '2000-01' }}"
@@ -74,6 +78,11 @@ jobs:
           ${{ (inputs.force == 'true') && '--force' || '' }}
 
       - name: Commit baked JSON
+        # always(): the bake writes each season as it lands, so even a run
+        # that overran or died partway has real progress on disk worth
+        # keeping — and whatever it missed is simply outstanding again next
+        # run, since each side is fetched on its own need.
+        if: always()
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Bake on-court (PBP) defensive ratings (R) [skip ci]"

@@ -343,6 +343,14 @@ main <- function() {
     # beside a postseason that doesn't is progress, and is written.
     if (length(got)) {
       existing[[season]] <- entry
+      # Write as we go. A backoff long enough to outlast a degraded response
+      # is also long enough for a full backfill to reach the job's ceiling,
+      # and a single write at the end would hand a timeout every season this
+      # run had already paid for. Each season is durable the moment it lands,
+      # so a killed run is just a shorter one and the next pass picks up what
+      # is left. Reserialising a 1.3 MB file a couple of dozen times costs
+      # nothing next to one HTTP round trip.
+      write_json_pretty(existing[order(names(existing))], DEF_PATH)
       added <- added + 1
       message(sprintf("  ok %s - %s%s", season, paste(got, collapse = "; "),
                       if (length(lost)) sprintf(" (%s still missing)", paste(lost, collapse = "+")) else ""))
