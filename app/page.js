@@ -9,7 +9,7 @@ import { HistoryView } from "./components/history";
 import { InfoView } from "./components/info-view";
 import { LegacyView } from "./components/legacy-view";
 import { ShotZonesView } from "./components/shot-zones-view";
-import { TreysMark, treysMarkDescender } from "./components/treys-mark";
+import { TreysMark, treysMarkFrameDepth, treysMarkFrameInset } from "./components/treys-mark";
 import { UsageView } from "./components/usage-view";
 import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider } from "./lib/va-mode";
@@ -17,6 +17,14 @@ import { VAModeProvider } from "./lib/va-mode";
 
 // Cap-to-baseline of the handwritten mark comes to about half of this.
 const MARK_HEIGHT = 54;
+// What should read as the gap between the framed mark and the title. The title
+// is set leading-none at text-2xl, so its line box already carries about
+// TITLE_HALF_LEADING of blank above the caps — that blank is part of the gap the
+// eye sees, so it comes back out of the room reserved under the mark.
+const TITLE_GAP = 4;
+const TITLE_HALF_LEADING = 7;
+// Air between the framed mark and the tag beside it, measured off the frame.
+const TAG_GAP = 10;
 
 export default function PlayoffTracker() {
   return (
@@ -52,10 +60,16 @@ function Tracker() {
               same baseline as the small-caps tag; the title drops a step so the
               two lines read more evenly. Both lines centered as a unit.
               The padding is the room the mark's descender hangs into — without
-              it the y's loop would land on the title. The header's top padding
-              is the same measure taken back, so closing up under the eyebrow
-              lowers the eyebrow rather than raising the title. */}
-          <div className="flex items-baseline justify-center gap-2.5" style={{ paddingBottom: treysMarkDescender(MARK_HEIGHT) }}>
+              it the framed mark would land on the title. The header's top
+              padding is that measure taken back, so closing up under the
+              eyebrow lowers the eyebrow rather than raising the title. */}
+          <div
+            className="flex items-baseline justify-center"
+            style={{
+              gap: treysMarkFrameInset(MARK_HEIGHT) + TAG_GAP,
+              paddingBottom: treysMarkFrameDepth(MARK_HEIGHT) + TITLE_GAP - TITLE_HALF_LEADING,
+            }}
+          >
             <TreysMark height={MARK_HEIGHT} className="text-stone-800" />
             <span className="text-xs uppercase tracking-[0.3em] text-stone-500">NBA Box Score</span>
           </div>

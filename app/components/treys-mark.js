@@ -21,25 +21,47 @@
 // would hand it the bottom of the loop.
 //
 // So the box is cut off at the baseline — the element is only the 409x155 above
-// it — and the loop is left to spill out of the viewport under overflow:visible.
+// it — and the rest is left to spill out of the viewport under overflow:visible.
 // The bottom edge is then the writing baseline, and `items-baseline` beside it
 // just works. (A negative bottom margin does not: it shortens the box for
 // layout, but Chromium synthesizes the baseline off the border box and ignores
-// it, which rides the mark up by the whole descender.) The spilled loop is
-// outside the flow and overlaps whatever follows, so whoever places the mark
-// owes it that space back — see treysMarkDescender.
+// it, which rides the mark up by the whole descender.)
+//
+// The frame spills the same way. It's drawn in the trace's own units so it
+// scales with the writing, filled in the page's color and stacked above the
+// line, which is what lets the mark sit over its neighbours instead of tangling
+// with them. All of it is outside the flow, so whoever places the mark owes it
+// that room back — see treysMarkFrameDepth.
 
 const VIEW_W = 409;
 const VIEW_H = 306;
 const BASELINE_Y = 155;
-const DESCENDER = (VIEW_H - BASELINE_Y) / VIEW_H;
+const PAD = 40;                 // frame's clearance around the ink
+const STROKE = 6;               // frame's weight, ~1px at header size
+const FRAME_Y = -PAD - STROKE / 2;
+const FRAME_BOTTOM = VIEW_H + PAD + STROKE / 2;
 
-/** How far the y's loop hangs below the line, for a mark of this height. */
-export function treysMarkDescender(height) {
-  return Math.round(height * DESCENDER);
+/**
+ * How far the mark hangs below the line it sits on — the y's loop and the frame
+ * around it — for a mark of this height. It hangs outside the flow, so the
+ * caller has to reserve this much room under the line itself.
+ */
+export function treysMarkFrameDepth(height) {
+  return Math.round((height * (FRAME_BOTTOM - BASELINE_Y)) / VIEW_H);
 }
 
-export function TreysMark({ height = 46, className = "" }) {
+/**
+ * How far the frame stands out past the mark's own box on each side. Anything
+ * set beside the mark has to clear this before its own spacing starts.
+ */
+export function treysMarkFrameInset(height) {
+  return Math.round((height * (PAD + STROKE / 2)) / VIEW_H);
+}
+
+// `plate` fills the frame so the mark reads as one solid object over whatever it
+// lands on; it defaults to the page's own bg-stone-100 and has to be repointed
+// if the mark is ever set on another ground.
+export function TreysMark({ height = 46, plate = "#f5f5f4", className = "" }) {
   return (
     <svg
       role="img"
@@ -49,8 +71,17 @@ export function TreysMark({ height = 46, className = "" }) {
       height={(height * BASELINE_Y) / VIEW_H}
       fill="currentColor"
       className={className}
-      style={{ overflow: "visible" }}
+      style={{ overflow: "visible", position: "relative", zIndex: 1 }}
     >
+      <rect
+        x={FRAME_Y}
+        y={FRAME_Y}
+        width={VIEW_W + 2 * PAD + STROKE}
+        height={VIEW_H + 2 * PAD + STROKE}
+        fill={plate}
+        stroke="currentColor"
+        strokeWidth={STROKE}
+      />
       {/* potrace output: tenth-of-a-pixel units on a doubled, y-up grid. */}
       <g transform="translate(0 306) scale(0.05 -0.05)">
         <path d="
