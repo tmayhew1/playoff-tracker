@@ -10,13 +10,20 @@
 //     dilated about a pixel before tracing — enough to read as full at header
 //     size while leaving the counters in the "e" and the y's loop open.
 //
-// The trace lives in a 409x306 box. The writing baseline — the foot of the T,
-// what the rest of a line of type should sit on — is at y=155, a hair over
-// halfway down; everything below it is the y's loop. So the mark can't be
-// baseline-aligned as-is: a replaced element's baseline is its bottom edge,
-// which here is the bottom of that loop. Pulling the descender back off as a
-// negative bottom margin puts the writing baseline on the box's margin edge
-// instead, and lets the loop hang out of the line box. Whoever places the mark
+// The trace lives in a 409x306 box whose writing baseline — the foot of the T,
+// what a line of type beside it should sit on — is at y=155, a hair over
+// halfway down. Everything below that is the y's loop, and it has to be kept
+// out of the box: a replaced element has no real baseline, so a browser
+// synthesizes one at the bottom edge of its border box, and a full-height mark
+// would hand it the bottom of the loop.
+//
+// So the box is cut off at the baseline — the element is only the 409x155 above
+// it — and the loop is left to spill out of the viewport under overflow:visible.
+// The bottom edge is then the writing baseline, and `items-baseline` beside it
+// just works. (A negative bottom margin does not: it shortens the box for
+// layout, but Chromium synthesizes the baseline off the border box and ignores
+// it, which rides the mark up by the whole descender.) The spilled loop is
+// outside the flow and overlaps whatever follows, so whoever places the mark
 // owes it that space back — see treysMarkDescender.
 
 const VIEW_W = 409;
@@ -34,12 +41,12 @@ export function TreysMark({ height = 46, className = "" }) {
     <svg
       role="img"
       aria-label="Trey's"
-      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-      width={Math.round((height * VIEW_W) / VIEW_H)}
-      height={height}
+      viewBox={`0 0 ${VIEW_W} ${BASELINE_Y}`}
+      width={(height * VIEW_W) / VIEW_H}
+      height={(height * BASELINE_Y) / VIEW_H}
       fill="currentColor"
       className={className}
-      style={{ marginBottom: -treysMarkDescender(height), overflow: "visible" }}
+      style={{ overflow: "visible" }}
     >
       {/* potrace output: tenth-of-a-pixel units on a doubled, y-up grid. */}
       <g transform="translate(0 306) scale(0.05 -0.05)">

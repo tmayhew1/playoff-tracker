@@ -53,7 +53,7 @@ function Tracker() {
               two lines read more evenly. Both lines centered as a unit. The
               padding is the room the mark's descender hangs into — without it
               the y's loop would land on the title. */}
-          <div className="flex items-baseline justify-center gap-2.5 mb-1" style={{ paddingBottom: treysMarkDescender(MARK_HEIGHT) }}>
+          <div className="flex items-baseline justify-center gap-2.5 mb-2" style={{ paddingBottom: treysMarkDescender(MARK_HEIGHT) }}>
             <TreysMark height={MARK_HEIGHT} className="text-stone-800" />
             <span className="text-xs uppercase tracking-[0.3em] text-stone-500">NBA Box Score</span>
           </div>
