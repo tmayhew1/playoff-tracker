@@ -5,7 +5,7 @@ import { TEAMS, TEAM_CONF } from "../teams";
 import { combinedLga, valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
@@ -160,14 +160,14 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     setRsSeason(null);
     setLoading(true);
     setRsLoading(true);
-    fetchJsonCached(`/api/leaderboard?season=${season}`)
+    fetchBakedJson(`/api/leaderboard?season=${season}`)
       .then((d) => { if (!cancelled) { setData(d); setDataSeason(season); } })
       .catch((e) => !cancelled && setError(e.message || "Load failed"))
       .finally(() => !cancelled && setLoading(false));
     // Regular-season totals load independently so a slow BR fetch doesn't
     // block the playoff leaderboard; in playoff scope they only feed the
     // reference tick, in the other scopes they're the data itself.
-    fetchJsonCached(`/api/regular-season?season=${season}`)
+    fetchBakedJson(`/api/regular-season?season=${season}`)
       .then((d) => { if (!cancelled && Array.isArray(d.players)) { setRsData(d); setRsSeason(season); } })
       .catch((e) => !cancelled && setRsError(e.message || "Load failed"))
       .finally(() => !cancelled && setRsLoading(false));
@@ -255,7 +255,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // League-context pools for the category drill-ins (same panel as By
   // Player). The scope index is a multi-MB payload, so it's fetched lazily on
   // first row expand and cached per scope — and shared with By Player through
-  // fetchJsonCached, so whichever view loads it first pays the cost.
+  // fetchBakedJson, so whichever view loads it first pays the cost.
   const [ctxByScope, setCtxByScope] = useState({});
   // Same index By Player reads, re-priced the same way when USG-ADJ is on, so
   // a category's league ranking matches the board it was opened from.
@@ -267,7 +267,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   useEffect(() => {
     if (expanded == null || ctxByScope[scope]) return;
     let cancelled = false;
-    fetchJsonCached(`/api/players?scope=${scope}`)
+    fetchBakedJson(`/api/players?scope=${scope}`)
       .then((d) => { if (!cancelled) setCtxByScope((c) => ({ ...c, [scope]: d.players || [] })); })
       .catch(() => {}); // context is an enhancement; the breakdown works without it
     return () => { cancelled = true; };

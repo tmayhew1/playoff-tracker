@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
 
 
@@ -38,7 +38,7 @@ export function DRatingView() {
     setRows(null);
     setMinMpFilter(null);
     setMpArmed(false);
-    fetchJsonCached(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
+    fetchBakedJson(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
       .then((d) => { if (!cancelled) setRows(d.players || []); })
       .catch(() => { if (!cancelled) setRows([]); });
     return () => { cancelled = true; };

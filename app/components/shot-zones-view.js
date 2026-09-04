@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue } from "../scoring";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
 
 
@@ -55,7 +55,7 @@ export function ShotZonesView() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchJsonCached("/api/shooting")
+    fetchBakedJson("/api/shooting")
       .then((d) => { if (!cancelled) setSeasons([...(d.seasons || [])].sort().reverse()); })
       .catch(() => { if (!cancelled) setSeasons([]); });
     return () => { cancelled = true; };
@@ -65,7 +65,7 @@ export function ShotZonesView() {
     if (!sel) return;
     let cancelled = false;
     setData(null);
-    fetchJsonCached(`/api/shooting?season=${sel}`)
+    fetchBakedJson(`/api/shooting?season=${sel}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => { if (!cancelled) setData({}); });
     return () => { cancelled = true; };

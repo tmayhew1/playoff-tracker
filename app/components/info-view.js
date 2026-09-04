@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { LGA, USG_FTA_W, VOLUME_CREDIT, usageModelFor } from "../scoring";
 import { timeAgo } from "../lib/format";
+import { buildScoped } from "../lib/fetch-cache";
 
 
 // Informational page: data freshness, how the pipeline loads data, and the
@@ -11,7 +12,7 @@ export function InfoView() {
   const [status, setStatus] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/data-status")
+    fetch(buildScoped("/api/data-status"))
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled && d) setStatus(d); })
       .catch(() => {});

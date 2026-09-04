@@ -8,6 +8,7 @@ import { BreakdownList, ScoreCard } from "./scoreboard";
 import { VABreakdown } from "./va-breakdown";
 import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
+import { buildScoped } from "../lib/fetch-cache";
 
 
 export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
@@ -73,7 +74,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
   useEffect(() => {
     if (!open || rsLookup || !season) return;
     let cancelled = false;
-    fetch(`/api/regular-season?season=${season}`)
+    fetch(buildScoped(`/api/regular-season?season=${season}`))
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (cancelled || !d || !Array.isArray(d.players)) return;
@@ -431,7 +432,7 @@ export function HistoryView({ season }) {
     setHistGames(null);
     setGamesError(null);
     setGamesLoading(true);
-    fetch(`/api/history?season=${season}`)
+    fetch(buildScoped(`/api/history?season=${season}`))
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);

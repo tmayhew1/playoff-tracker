@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { VACategoryBreakdown } from "./va-breakdown";
 import { normalizeName } from "../lib/format";
+import { buildScoped } from "../lib/fetch-cache";
 
 
 export function CollegeView() {
@@ -15,7 +16,7 @@ export function CollegeView() {
   const [expanded, setExpanded] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/college")
+    fetch(buildScoped("/api/college"))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => { if (!cancelled) { setData(d); setLoading(false); } })
       .catch((e) => { if (!cancelled) { setError(e.message || "Load failed"); setLoading(false); } });

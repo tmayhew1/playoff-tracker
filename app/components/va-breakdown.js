@@ -6,7 +6,7 @@ import { LGA, ZONES, valueAddByCategory, lgaForSeason, playmakingVA, reboundGamm
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget, useFreshRows } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, compName, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
@@ -79,7 +79,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
     if (!cmpSeason) { setCompareRun(null); return; }
     let cancelled = false;
     setCompareRun(null);
-    fetchJsonCached(`/api/leaderboard?season=${cmpSeason}`)
+    fetchBakedJson(`/api/leaderboard?season=${cmpSeason}`)
       .then((dd) => {
         if (cancelled) return;
         const nn = normalizeName(cmpName || "");
