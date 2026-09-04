@@ -129,7 +129,7 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
   const [mode, setMode] = useState("season"); // "season" | "player"
   // Which games count: regular season, playoffs, or both summed. Applies to
   // both By Season and By Player.
-  const [scope, setScope] = useState("playoffs"); // "regular" | "playoffs" | "combined"
+  const [scope, setScope] = useState("combined"); // "regular" | "playoffs" | "combined"
   // A pending navigation into By Season, applied by the leaderboard once that
   // season's rows have loaded. Two shapes:
   //   { season, team, name, slug } — a player-season, from a compare panel's

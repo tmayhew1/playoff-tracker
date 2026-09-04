@@ -1,0 +1,94 @@
+name: Bake on-off defensive ratings (R)
+
+# Backfill of on-court defensive ratings from basketball-reference's team
+# On/Off pages into app/data/def-ratings.json as the rsOn/poOn/teamOn/teamPoOn
+# keys, which are the app's only on-court source. See
+# scripts/R/fetch_onoff_def_ratings.R.
+# GitHub only offers workflow_dispatch once this file is on the default
+# branch, so until this merges the push trigger below is the only way to run
+# the bake, and it carries the range. It is not forced: the script fetches on
+# need per side, so re-pushing once the backfill is done is a cheap no-op and
+# a run that ran out of clock simply finishes on the next one.
+#
+# The parse was proven against 2015-16 first, because pbpstats already covers
+# that season and the two could be read against each other rather than the new
+# numbers taken on trust: team lines came back at r = 0.999 and 0.17 apart on
+# average, players at r = 0.978 and 0.57, with no systematic offset — and
+# eleven players pbpstats had lost to name matching recovered, since these rows
+# join by their basketball-reference href.
+on:
+  push:
+    branches: ["claude/defensive-rating-data-sources-leqpnm"]
+    paths:
+      - "scripts/R/fetch_onoff_def_ratings.R"
+      - ".github/workflows/bake-onoff-def-ratings.yml"
+  workflow_dispatch:
+    inputs:
+      start_season:
+        description: "First season to bake (YYYY-YY; clamped to 1996-97)"
+        required: false
+        default: "1996-97"
+      end_season:
+        description: "Last season to bake (YYYY-YY)"
+        required: false
+        default: "2025-26"
+      force:
+        description: "Refetch seasons already present"
+        required: false
+        default: "false"
+
+env:
+  BAKE_START: "1996-97"
+  BAKE_END: "2025-26"
+
+concurrency:
+  group: bake-onoff-def-ratings-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    # One page per team-season at scrape_common's 2.5s spacing: ~75s a season,
+    # ~38 minutes for the full thirty. The real ceiling is on the fetch step so
+    # that an overrun ends that step rather than the job, leaving the commit
+    # below to bank the seasons already written.
+    timeout-minutes: 70
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      - name: Install R packages
+        # install.packages() does not fail the step when a mirror hiccups, and
+        # a silent miss costs a whole dispatch. Assert instead.
+        run: >
+          Rscript -e 'pkgs <- c("httr", "xml2", "jsonlite");
+          install.packages(pkgs);
+          missing <- setdiff(pkgs, rownames(installed.packages()));
+          if (length(missing)) stop("install failed: ", paste(missing, collapse=", "))'
+
+      - name: Fetch on-off defensive ratings
+        timeout-minutes: 55
+        run: >
+          Rscript scripts/R/fetch_onoff_def_ratings.R
+          "${{ inputs.start_season || env.BAKE_START }}"
+          "${{ inputs.end_season || env.BAKE_END }}"
+          ${{ (inputs.force == 'true') && '--force' || '' }}
+
+      - name: Commit baked JSON
+        # always(): the bake writes each season as it lands, so a run that
+        # overran still has real progress on disk, and whatever it missed is
+        # outstanding again next run.
+        if: always()
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake on-off defensive ratings (R) [skip ci]"
+          file_pattern: "app/data/def-ratings.json"
+          # The action's default fetch prints every remote branch, which pushes
+          # the bake's own per-season report off the end of the log.
+          skip_fetch: true

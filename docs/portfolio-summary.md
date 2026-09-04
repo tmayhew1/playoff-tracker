@@ -112,7 +112,7 @@ ingestion; GitHub Actions)
   that re-bakes the live season, backfills gaps, and recomputes derived values
   so nothing can drift from the raw data.
 - **Four upstream sources reconciled** (Basketball-Reference, the live NBA feed,
-  pbpstats.com, Sports-Reference CBB), joined by stable ID where available and
+  Sports-Reference CBB), joined by stable ID where available and
   normalized name otherwise.
 - **Defense-in-depth ingestion**: throttled scraping, layout-agnostic table
   discovery with ordered fallbacks, minimum-row assertions, and a plausibility
@@ -211,7 +211,7 @@ ingestion; GitHub Actions)
 | Code | ~4,300 lines R | ~9,000 lines JS + ~2,300 lines R |
 | Data | 107 season CSVs, daily refresh | 172 baked JSON files (~65 MB), 5 automated bakes |
 | Surfaces | 6 tabs + published methodology site | 5 top-level tabs (Explore → By Season / By Player / Compare, College, D Rating, Shot Zones, Info) + a tab per completed season |
-| Sources | Basketball-Reference | Basketball-Reference, NBA live feed, pbpstats.com, Sports-Reference CBB |
+| Sources | Basketball-Reference | Basketball-Reference, NBA live feed, Sports-Reference CBB |
 
 ---
 
