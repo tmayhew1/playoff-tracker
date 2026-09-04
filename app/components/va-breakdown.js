@@ -981,7 +981,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
               title={`${seg.cat || seg.sub} — ${isSel ? "back to the scatter" : "collapse the plot onto this stat and filter the card"}`}
               className={`flex flex-col items-center gap-0.5 min-w-0 rounded px-1 py-1 border transition-colors ${isSel ? "bg-stone-200 border-stone-800 ring-1 ring-stone-800" : "bg-white border-stone-200 hover:bg-stone-100"}`}
             >
-              <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub}{axis && !collapsed ? ` ${axis}` : ""}</span>
+              <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub}{seg.headUnit || ""}{axis && !collapsed ? ` ${axis}` : ""}</span>
               <span className="text-[11px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
               <span className={`text-[8px] font-semibold tabular-nums leading-none ${vaColor(shown)}`}>{sgn(shown)}</span>
             </button>
@@ -1059,14 +1059,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Blocks/Steals drill-ins stay pure box-score VA.
   const withDef = defActive && catKey === "Defense" && !!defs;
 
-  // Made/attempted (FG%) label honoring the card's /G toggle: per-game to one
-  // decimal when on (matching the per-game VA values), whole-season totals when
-  // off. The FG% is scale-invariant, so it's unchanged either way.
-  const maLabel = (made, att, gp) => {
+  // Made/attempted (FG%) label on the card's Per 36 / Per G toggle — the same
+  // divisor catRateLabel gives every other category's rate, so one column of
+  // the mini leaderboard can't be reading a different normalization from the
+  // row above it (and the fine print under it can name one of them). The FG%
+  // is scale-invariant, so it's unchanged either way.
+  const maLabel = (made, att, r) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
-    return perGame
-      ? `${(made / (gp || 1)).toFixed(1)}/${(att / (gp || 1)).toFixed(1)} (${pct}%)`
-      : `${made}/${att} (${pct}%)`;
+    const div = rateMode === "per36" ? ((r.mp || 1) / 36) : (r.gp || 1);
+    return `${(made / div).toFixed(1)}/${(att / div).toFixed(1)} (${pct}%)`;
   };
 
   // Split breakdown. Every "Basic" group card swaps the single percentile strip
@@ -1107,7 +1108,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         eraNote: group === "2p" ? " with shot-location data (1996-97 on)" : "",
         note: "FG% at that distance",
         head: (r) => (extra.a(r) > 0 ? `${((extra.m(r) / extra.a(r)) * 100).toFixed(0)}%` : null),
-        rate: (r) => maLabel(extra.m(r), extra.a(r), r.gp),
+        rate: (r) => maLabel(extra.m(r), extra.a(r), r),
         ...extra,
       });
       const all = [
@@ -1124,20 +1125,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     if (!grp) return null;
     // One bar per member category. Value added is the category's own VA, so the
     // bars sum to exactly the group row that opened this card. The headline is
-    // the player's rate at that stat, on the card's /G toggle — FG% for the
-    // shooting categories, the counting rate otherwise.
+    // the player's rate at that stat — FG% for the shooting categories, the
+    // counting rate otherwise.
     const segs = (SEG_ORDER[catKey] || grp.cats).map((cat) => ({
       key: cat, sub: SEG_SUB[cat] || cat, cat,
       note: CAT_SHOOTING[cat] ? "FG%" : `${rateMode === "perG" ? "per-game" : "per-36"} rate`,
+      // A per-36 headline is not the reading a bare "BLK 3.7" invites, so the
+      // chip's own label carries the unit in that mode. Per-game is the
+      // default reading and FG% says what it is, so neither needs one.
+      headUnit: !CAT_SHOOTING[cat] && rateMode === "per36" ? "/36" : "",
       head: (r) => {
         if (CAT_SHOOTING[cat]) {
           const [m, a] = CAT_SHOOTING[cat](r);
           return a > 0 ? `${((m / a) * 100).toFixed(0)}%` : null;
         }
         const v = r[CAT_COUNTING[cat][0]] || 0;
+        // Per 36 is a normalization of its own, so it outranks the /G toggle:
+        // a raw season total is what "per game, off" means, and the card is
+        // being asked for a per-36 rate. Under Per G the /G toggle still picks
+        // between the per-game rate and the season total it sums to.
+        if (rateMode === "per36") return ((v / (r.mp || 1)) * 36).toFixed(1);
         return perGame ? (v / (r.gp || 1)).toFixed(1) : String(v);
       },
-      rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r.gp) : catRateLabel(r, cat, rateMode)),
+      rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r) : catRateLabel(r, cat, rateMode)),
       val: (r, lx = lga) => catVATotal(r, lx, cat),
     }));
     // D Rating is the Defense group's fifth stat whenever VA+ is the active
@@ -1498,7 +1508,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="text-right text-[9px]">{r.gp}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r.gp) : catRateLabel(r, catKey, rateMode)}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode)}</span>
       </>
     );
     // The player the card is currently about is marked, not a link to itself.
@@ -1704,7 +1714,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 >
                   {/* The player's own rate at this component — FG% for a shot
                       distance or a shooting category, the counting rate (on the
-                      card's /G toggle) otherwise. */}
+                      Per 36 / Per G toggle, falling back to the /G toggle's
+                      season total under Per G) otherwise. */}
                   <span className="text-[10px] font-bold text-stone-800 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
                   {/* Value-added strip: low (bottom, light) → high (top, dark),
                       dot = player, tick = field median. The my-2 gutters give
@@ -1714,7 +1725,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                     <div className="absolute left-1/2 w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-white -translate-x-1/2 translate-y-1/2" style={{ bottom: `${selfPos}%` }} />
                   </div>
                   <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
-                  <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}</span>
+                  <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
                   {/* The distance the nickname stands for, so "Float" doesn't
                       have to be decoded. Sized down and untracked so the
                       longest range ("16 ft-3PT") clears a sixth of the row. */}
