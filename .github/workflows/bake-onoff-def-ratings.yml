@@ -11,7 +11,9 @@ name: Bake on-off defensive ratings (R)
 # runs it over SMOKE_SEASON alone — one season is ~75s of throttled fetches and
 # proves the parse, and 2015-16 is the one to prove it against because
 # pbpstats already covers it, so the new numbers can be read straight against
-# the counted ones rather than taken on trust.
+# the counted ones rather than taken on trust. The push path always forces:
+# a smoke test that skips the season because it ran once already is not a
+# test of anything.
 on:
   push:
     branches: ["claude/defensive-rating-data-sources-leqpnm"]
@@ -73,7 +75,7 @@ jobs:
           Rscript scripts/R/fetch_onoff_def_ratings.R
           "${{ inputs.start_season || env.SMOKE_SEASON }}"
           "${{ inputs.end_season || env.SMOKE_SEASON }}"
-          ${{ (inputs.force == 'true') && '--force' || '' }}
+          ${{ (github.event_name == 'push' || inputs.force == 'true') && '--force' || '' }}
 
       - name: Commit baked JSON
         # always(): the bake writes each season as it lands, so a run that

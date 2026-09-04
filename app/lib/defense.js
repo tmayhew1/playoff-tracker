@@ -110,8 +110,9 @@ export const DEF_PBP_PRIOR_POSS_PO = 500;
 // their observed variance shares (0.58 × 0.96 + 0.42 × 0.19 ≈ 0.65).
 // Both numbers were fitted against pbpstats' COUNTED possessions, and they
 // are left as they are now that basketball-reference's on-off pages fill the
-// seasons pbpstats won't serve. The two on-court scales differ by ~1 pt/100,
-// an order of magnitude under the separation this slope is correcting, and
+// seasons pbpstats won't serve. The two on-court scales turn out to differ by
+// far less than the separation this slope is correcting — a couple of tenths
+// on team lines, no systematic offset on players (see ON_COURT_SOURCES) — and
 // every place the difference could compound — the anchor the estimate shrinks
 // toward, and the team line IND subtracts — is read from the same source as
 // the player's own rating (see defRtgEntryFor). Re-fitting on the pooled set
@@ -228,7 +229,8 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   // pt/100 apart). Stock rates still come from the BR team map (plain box
   // stats, identical either way).
   // Read off the same scope and source the player's own rating came from, so
-  // the counted and estimated scales never end up on opposite sides of IND.
+  // a counted rating is never subtracted from an estimated line or the other
+  // way round, and neither is one scope's rating from the other's.
   const pbpTmap = ent.onSrc ? e?.[teamOnCourtKey(ent.onScope, ent.onSrc)] : null;
   const pbpTeamDrtg = pbpW > 0 ? pbpTmap?.[row?.team] : null;
   // Blocks weigh what VA says they're worth: laDRBrate of a steal.
@@ -261,10 +263,13 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
 // points allowed per 100 possessions while the player was on the floor — but
 // "Pbp" (api.pbpstats.com, 2000-01+) COUNTS possessions from the play-by-play
 // where "On" (basketball-reference's team on-off pages, 1996-97+) ESTIMATES
-// them from the box score, and the two scales sit ~1 pt/100 apart. Counted
-// wins: it is the better measurement, and it is the scale DEF_EST_CAL was
-// fitted against. The estimated side exists because pbpstats will not serve
-// six regular seasons or seventeen postseasons at all.
+// them from the box score. Counted wins: it is the better measurement, and it
+// is the scale DEF_EST_CAL was fitted against. The estimated side exists
+// because pbpstats will not serve six regular seasons or seventeen
+// postseasons at all. Measured against each other on 2015-16 the two agree
+// closely — team lines r = 0.999 and 0.17 apart on average, players r = 0.954
+// and 0.67 apart, no systematic offset either way — with the disagreements
+// concentrated in players with almost no floor time.
 const ON_COURT_SOURCES = ["Pbp", "On"];
 
 // The team map that goes with a scope and a source — teamPbp/teamOn for the
@@ -284,8 +289,8 @@ export function teamOnCourtKey(scope, source) {
 // the sample is what was asked about. Within a scope the order is
 // ON_COURT_SOURCES. Which one answered comes back as `onScope`/`onSrc`,
 // because the team line defVAInfo subtracts has to be read from the same pair
-// — resolving the two independently would put that ~1 pt/100 scale gap inside
-// a subtraction that is supposed to isolate the player from his team.
+// — resolving the two independently would put whatever gap there is between
+// the scales inside a subtraction meant to isolate the player from his team.
 export function defRtgEntryFor(defs, season, slug, pref = "rs") {
   if (!defs || !season || !slug) return null;
   const e = defs[season];

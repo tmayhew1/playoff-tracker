@@ -25,7 +25,11 @@
 # where it succeeds its numbers are better: pbpstats COUNTS possessions from
 # the play-by-play where basketball-reference ESTIMATES them from the box
 # score, and DEF_EST_CAL in app/lib/defense.js was fitted against that counted
-# scale. But pbpstats will not serve six regular seasons and seventeen
+# scale. The two agree more closely than that framing suggests — measured
+# against each other on 2015-16, team lines correlate at r = 0.999 and sit
+# 0.17 apart on average, players at r = 0.954 and 0.67 apart, with no
+# systematic offset either way (+0.12 for players, -0.13 for teams) and the
+# disagreements concentrated in players with almost no floor time. But pbpstats will not serve six regular seasons and seventeen
 # postseasons at all — its get-totals endpoint answers those with a degraded
 # ~15-column response instead of the full ~230, by request rather than by
 # season, and four bake runs including one that spent 55 minutes on patient
@@ -96,23 +100,30 @@ MIN_MINUTES <- 25
 
 ONOFF_URL <- "https://www.basketball-reference.com/teams/%s/%d/on-off/"
 
-# --- which teams played a season -------------------------------------------
-# Taken from the season's own bake rather than a hardcoded list, so the
-# abbreviations are the ones the app will look these rows up by, and the
-# relocations and renames (NJN/BRK, CHA/CHO, NOH/NOK) come out right for free.
-season_teams <- function(season) {
-  path <- file.path(DATA_DIR, sprintf("regular-season-%s.json", season))
-  if (!file.exists(path)) return(NULL)
-  d <- jsonlite::fromJSON(path, simplifyVector = FALSE)
-  players <- if (is.null(d$players)) list() else d$players
-  ts <- character(0)
-  for (p in players) {
-    t <- as.character(if (is.null(p$team)) "" else p$team)
-    # Multi-team aggregate rows carry no single team.
-    if (!nzchar(t) || grepl("TM$", t) || t == "TOT") next
-    ts <- c(ts, t)
+# --- which teams played a season, in basketball-reference's own tricodes -----
+# Discovered from BR rather than taken from this repo's season bake, because
+# the two do not spell teams the same way. The bake carries the NBA-current set
+# the app keys rows by (BKN, CHA, PHX); the on-off URL wants BR's own (BRK,
+# CHO, PHO). Inverting that is not a fixed table either — Charlotte alone is
+# CHH, then CHA, then CHO, and New Orleans is NOH, then NOK, then NOP — so the
+# season's ratings page, which links every team as /teams/XXX/<year>.html,
+# settles it in one fetch. scrape_common's to_nba() then turns each code back
+# into the one the app looks up by, which is the direction that mapping already
+# goes. (Keying off the bake cost the first smoke run BKN, CHA and PHX: three
+# teams silently absent, and with them their players.)
+br_season_teams <- function(year) {
+  url <- sprintf("https://www.basketball-reference.com/leagues/NBA_%d_ratings.html", year)
+  html <- tryCatch(throttled_fetch(url), error = function(e) e)
+  if (inherits(html, "error")) {
+    message(sprintf("  x ratings page for %d - %s", year, conditionMessage(html)))
+    return(NULL)
   }
-  sort(unique(ts))
+  doc <- parse_html_uncommented(html)
+  hrefs <- xml2::xml_attr(xml2::xml_find_all(doc, "//a[contains(@href,'/teams/')]"), "href")
+  pat <- sprintf("/teams/[A-Z]{3}/%d\\.html", year)
+  hits <- regmatches(hrefs, regexpr(pat, hrefs))
+  codes <- unique(sub(sprintf("^/teams/([A-Z]{3})/%d\\.html$", year), "\\1", hits))
+  sort(codes)
 }
 
 # --- one on-off table -> slug -> c(possessions, possessions*rating, minutes) -
@@ -189,10 +200,10 @@ load_def_ratings <- function() {
 
 # --- one season -------------------------------------------------------------
 fetch_season <- function(season, year, want_rs, want_po) {
-  teams <- season_teams(season)
-  if (is.null(teams) || !length(teams)) {
-    message(sprintf("  x %s - no regular-season-%s.json bake to take the team list from",
-                    season, season))
+  teams <- br_season_teams(year)
+  if (is.null(teams) || length(teams) < 20) {
+    message(sprintf("  x %s - ratings page listed %d teams", season,
+                    if (is.null(teams)) 0 else length(teams)))
     return(NULL)
   }
   rs_acc <- list(); po_acc <- list()
@@ -214,7 +225,7 @@ fetch_season <- function(season, year, want_rs, want_po) {
         if (length(rows)) {
           rs_acc <- merge_acc(rs_acc, rows)
           r <- rate_of(rows)
-          if (!is.na(r)) rs_team[[tm]] <- round(r, 1)
+          if (!is.na(r)) rs_team[[to_nba(tm)]] <- round(r, 1)
         }
       }
     }
@@ -227,7 +238,7 @@ fetch_season <- function(season, year, want_rs, want_po) {
         if (length(rows)) {
           po_acc <- merge_acc(po_acc, rows)
           r <- rate_of(rows)
-          if (!is.na(r)) po_team[[tm]] <- round(r, 1)
+          if (!is.na(r)) po_team[[to_nba(tm)]] <- round(r, 1)
         }
       }
     }
