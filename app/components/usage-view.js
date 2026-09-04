@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
 
 
@@ -319,8 +319,8 @@ export function UsageView() {
     setMpArmed(false);
     setPicked(null);
     // The same two bakes the other tabs read, so this costs nothing extra
-    // once either has been visited (fetchJsonCached shares the payload).
-    fetchJsonCached(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
+    // once either has been visited (fetchBakedJson shares the payload).
+    fetchBakedJson(scope === "po" ? `/api/leaderboard?season=${sel}` : `/api/regular-season?season=${sel}`)
       .then((d) => { if (!cancelled) setRows(d.players || []); })
       .catch(() => { if (!cancelled) setRows([]); });
     return () => { cancelled = true; };

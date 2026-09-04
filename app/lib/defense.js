@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchJsonCached } from "./fetch-cache";
+import { fetchBakedJson } from "./fetch-cache";
 
 // The math lives in ./defense-math, which imports nothing — that is what lets
 // scripts/fit-def-calibration.mjs run the very functions the app renders with
@@ -15,7 +15,7 @@ export function useDefRatings() {
   const [defs, setDefs] = useState(null);
   useEffect(() => {
     let ok = true;
-    fetchJsonCached("/api/def-ratings")
+    fetchBakedJson("/api/def-ratings")
       .then((d) => { if (ok) setDefs(d.seasons || {}); })
       .catch(() => {});
     return () => { ok = false; };

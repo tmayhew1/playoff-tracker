@@ -6,7 +6,7 @@ import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
@@ -17,7 +17,7 @@ import { UsgAdjChip, lgaScopeFor, useLgaFor, useRowLga, useSeasonLga, usgAdjRows
 // single player's playoff seasons ranked by Value Added.
 export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pendingPlayer = null, onPlayerNavHandled = null }) {
   // One index per scope, cached so flipping the selector doesn't refetch.
-  // fetchJsonCached also shares the payload with the By Season context fetch.
+  // fetchBakedJson also shares the payload with the By Season context fetch.
   const [cache, setCache] = useState({});
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
@@ -34,7 +34,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     if (cache[scope]) return;
     let cancelled = false;
     setError(null);
-    fetchJsonCached(`/api/players?scope=${scope}`)
+    fetchBakedJson(`/api/players?scope=${scope}`)
       .then((d) => { if (!cancelled) setCache((c) => ({ ...c, [scope]: d.players || [] })); })
       .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
@@ -1203,10 +1203,10 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true,
     setLb(null);
     setRs(null);
     setFailed(false);
-    fetchJsonCached(`/api/leaderboard?season=${season}`)
+    fetchBakedJson(`/api/leaderboard?season=${season}`)
       .then((d) => { if (!cancelled) setLb(d); })
       .catch(() => { if (!cancelled) setFailed(true); });
-    fetchJsonCached(`/api/regular-season?season=${season}`)
+    fetchBakedJson(`/api/regular-season?season=${season}`)
       .then((d) => { if (!cancelled) setRs(d); })
       .catch(() => {}); // reference ticks are optional
     return () => { cancelled = true; };

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useEffect } from "react";
-import { fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
 import { teamColor } from "../lib/format";
 import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT, OMEGA_DEFAULT } from "../lib/leverage";
 import { weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT } from "../lib/legacy";
@@ -412,7 +412,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
     // season shows the previous one's numbers until the fetch lands.
     setD(null);
     setError(null);
-    fetchJsonCached(`/api/legacy/runs?slug=${encodeURIComponent(slug)}&season=${encodeURIComponent(season)}`)
+    fetchBakedJson(`/api/legacy/runs?slug=${encodeURIComponent(slug)}&season=${encodeURIComponent(season)}`)
       .then((r) => { if (!cancelled) setD(r); })
       .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
@@ -586,7 +586,7 @@ function CareersBoard({ onGoToLeaderboard }) {
     let cancelled = false;
     const t = setTimeout(() => {
       setLoading(true);
-      fetchJsonCached(url(0))
+      fetchBakedJson(url(0))
         .then((d) => { if (!cancelled) { setData(d); setRows(d.players || []); setError(null); } })
         .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); })
         .finally(() => { if (!cancelled) setLoading(false); });
@@ -600,7 +600,7 @@ function CareersBoard({ onGoToLeaderboard }) {
   const more = () => {
     if (loading) return;
     setLoading(true);
-    fetchJsonCached(url(rows.length))
+    fetchBakedJson(url(rows.length))
       .then((d) => {
         // Discard a page that lands after the sort or the search moved on.
         if (d.sort !== sortKey || d.offset !== rows.length

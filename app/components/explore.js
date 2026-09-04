@@ -8,6 +8,7 @@ import { PlayerExplorer } from "./player-explorer";
 import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
+import { buildScoped } from "../lib/fetch-cache";
 
 
 export const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
@@ -216,7 +217,7 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/seasons")
+    fetch(buildScoped("/api/seasons"))
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (cancelled || !d?.seasons?.length) return;
@@ -237,7 +238,7 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
     setData(null);
     setError(null);
     setLoading(true);
-    fetch(`/api/history?season=${season}`)
+    fetch(buildScoped(`/api/history?season=${season}`))
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
