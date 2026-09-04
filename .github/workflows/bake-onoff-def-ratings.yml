@@ -2,10 +2,8 @@ name: Bake on-off defensive ratings (R)
 
 # Backfill of on-court defensive ratings from basketball-reference's team
 # On/Off pages into app/data/def-ratings.json as the rsOn/poOn/teamOn/teamPoOn
-# keys. The app prefers pbpstats' counted-possession keys and reads these only
-# where that source has nothing — six regular seasons and seventeen
-# postseasons it will not serve, plus 1996-97 through 1999-00, which predate
-# its coverage entirely. See scripts/R/fetch_onoff_def_ratings.R.
+# keys, which are the app's only on-court source. See
+# scripts/R/fetch_onoff_def_ratings.R.
 # GitHub only offers workflow_dispatch once this file is on the default
 # branch, so until this merges the push trigger below is the only way to run
 # the bake, and it carries the range. It is not forced: the script fetches on

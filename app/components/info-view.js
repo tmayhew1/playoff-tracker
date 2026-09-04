@@ -195,7 +195,7 @@ export function InfoView() {
 
       <section className="p-3 bg-white border border-stone-300 text-[10px] text-stone-400 leading-relaxed">
         <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Fine print</h2>
-        <p>Coverage follows the sources: box-score VA reaches 1979-80; shot zones start 1996-97; on-court defensive data starts 2000-01 (a handful of seasons in between lack it upstream and fall back to the estimate — they fill in automatically if the source ever adds them). Historical data comes from basketball-reference.com, live games from the NBA feed, on-court defense from pbpstats.com, college stats from sports-reference.com. Players are matched across sources by ID where possible, by normalized name otherwise.</p>
+        <p>Coverage follows the sources: box-score VA reaches 1979-80; shot zones start 1996-97; on-court defensive data starts 1996-97, the first season with play-by-play behind it. Historical data comes from basketball-reference.com, live games from the NBA feed, college stats from sports-reference.com. Players are matched across sources by ID where possible, by normalized name otherwise.</p>
       </section>
     </div>
   );

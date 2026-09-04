@@ -20,29 +20,22 @@
 #   Rscript scripts/R/fetch_onoff_def_ratings.R 1996-97 2025-26
 #   Rscript scripts/R/fetch_onoff_def_ratings.R 2016-17 --force
 #
-# WHY A SECOND ON-COURT SOURCE
-# fetch_pbp_def_ratings.R gets the same quantity from api.pbpstats.com, and
-# where it succeeds its numbers are better: pbpstats COUNTS possessions from
-# the play-by-play where basketball-reference ESTIMATES them from the box
-# score, and DEF_EST_CAL in app/lib/defense.js was fitted against that counted
-# scale. The two agree more closely than that framing suggests — measured
-# against each other on 2015-16, team lines correlate at r = 0.999 and sit
-# 0.17 apart on average, players at r = 0.978 and 0.57 apart, with no
-# systematic offset either way (+0.20 for players, -0.11 for teams) and the
-# disagreements concentrated in players with almost no floor time. But pbpstats will not serve six regular seasons and seventeen
-# postseasons at all — its get-totals endpoint answers those with a degraded
-# ~15-column response instead of the full ~230, by request rather than by
-# season, and four bake runs including one that spent 55 minutes on patient
-# retries recovered two of them. This source covers those holes, reaches back
-# to 1996-97 (five seasons past pbpstats), and lives on the host this pipeline
-# already scrapes every day.
-#
-# The app prefers pbpstats per season and per scope, and takes these keys only
-# where that source has nothing — see defRtgEntryFor in app/lib/defense.js.
-# The choice is made for a whole season-scope rather than per player, because
-# the IND term subtracts a player's rating from his own team's and the two
-# scales sit ~1 pt/100 apart: mixing them inside one subtraction would push
-# that gap straight into the number.
+# WHY THIS SOURCE
+# The on-court rating used to come from api.pbpstats.com, which counts
+# possessions from the play-by-play where basketball-reference estimates them
+# from the box score. Counting is the better measurement in principle, but
+# pbpstats would not serve six regular seasons or seventeen postseasons at
+# all — its get-totals endpoint answers those with a degraded ~15-column
+# response instead of the full ~230, by request rather than by season, and
+# four bake runs including one that spent 55 minutes on patient retries
+# recovered two of them. Read against each other on 2015-16, where both had
+# data, the two sources agreed to within a couple of tenths on team lines and
+# had no systematic offset on players, so the better measurement was buying
+# nothing that its coverage was not giving back. This is now the only
+# on-court source: it covers every season from 1996-97 for both halves, it
+# reaches five seasons further back than pbpstats ever did, its rows join by
+# href rather than by name (which pbpstats lost fifteen to twenty players a
+# season to), and it lives on the host this pipeline already scrapes daily.
 #
 # WHERE THE NUMBERS COME FROM
 # One page per team-season carries both tables — `on_off` for the regular
