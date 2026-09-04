@@ -85,6 +85,13 @@ export const COMP_METRIC_WORD = Object.fromEntries(COMP_METRIC_OPTS.map((o) => [
 export const B_FILL = 0.5;
 export const CAREER_B_FILL = 0.75;
 
+// The fill a career bar takes when it is neither side of the comparison. Only
+// the same-player chart uses it: there both "careers" are one career, so a bar
+// that isn't one of the two compared seasons belongs to nobody, and a dimmed
+// team color would still read as "his season, faded" rather than "not this
+// one". Stone-300 — visible as the shape of the career, silent as a side.
+const CAREER_NEUTRAL = "#d6d3d1";
+
 // Diameter of the percentile-strip dots (w-2.5/h-2.5), in px. The connector
 // drawn between a row's two dots is inset by one radius at each end, so it
 // spans exactly the gap between their edges — and vanishes on its own the
@@ -140,6 +147,18 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       .sort((a, b) => b.bestVa - a.bestVa)
       .slice(0, 12);
   }, [players, query]);
+
+  // A player CAN be compared against himself — his ’19 against his ’26 is one
+  // of the readings this card is for — but never against the very season the
+  // card is about: that comparison is all zeros, and every bar, percentile and
+  // career bar below it would say nothing. So when the player chosen here is
+  // the one under the card, the season(s) the card is already reading are shown
+  // locked rather than offered.
+  const selfKey = self ? comparePlayerKey(self) : null;
+  const selfSeasonKeys = self
+    ? new Set(self.multi ? [...(self.seasonKeys || [])] : self.season ? [self.season] : [])
+    : null;
+  const selIsSelf = !!(sel && selfKey && comparePlayerKey(sel) === selfKey);
 
   // Career stage: which year of his own career each candidate season was, and
   // which year of his this one is (lib/multi-season.js). The comps below are
@@ -396,16 +415,25 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
             <button onClick={() => setSelKey(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1">
-            {sel.seasons.map((s) => (
-              <button
-                key={s.season}
-                onClick={() => onPick({ name: sel.name, slug: sel.slug, seasons: sel.seasons, row: s })}
-                className="px-1.5 py-0.5 border border-stone-300 hover:border-amber-500 hover:bg-amber-50 tabular-nums"
-                style={{ color: teamColor(s.team) }}
-              >
-                {seasonTag(s.season)} {s.team} <span className="text-stone-500">{(s.vaPerG ?? 0).toFixed(1)}/G</span>
-              </button>
-            ))}
+            {sel.seasons.map((s) => {
+              // The card's own season, when he is being searched against
+              // himself: greyed and inert, so the one chip that would compare a
+              // season with itself can't be tapped.
+              const isSelf = selIsSelf && !!selfSeasonKeys?.has(s.season);
+              return (
+                <button
+                  key={s.season}
+                  onClick={() => onPick({ name: sel.name, slug: sel.slug, seasons: sel.seasons, row: s })}
+                  disabled={isSelf}
+                  aria-disabled={isSelf}
+                  title={isSelf ? "The season this card is already reading — pick another of his seasons" : undefined}
+                  className={`px-1.5 py-0.5 border tabular-nums ${isSelf ? "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed" : "border-stone-300 hover:border-amber-500 hover:bg-amber-50"}`}
+                  style={isSelf ? undefined : { color: teamColor(s.team) }}
+                >
+                  {seasonTag(s.season)} {s.team} <span className={isSelf ? "text-stone-300" : "text-stone-500"}>{(s.vaPerG ?? 0).toFixed(1)}/G</span>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
@@ -1289,6 +1317,16 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // Which seasons on each side count as "the compared one" for full opacity.
   const aSel = aMulti ? a.seasonKeys : new Set([a.season]);
   const bSel = bMulti ? b.seasonKeys : new Set([b.season]);
+  // The same player on both sides — his ’19 against his ’26. The two careers
+  // the chart aligns are then ONE career, so every slot would draw the same
+  // season twice, side by side at identical heights, and the pair of bars would
+  // say "two players" about a chart that has one. It draws one bar per year
+  // instead (see soloBar): the two compared seasons in their sides' colors, the
+  // rest of the career neutral.
+  //
+  // Identity off the CALLER's rows, like the chart itself: a career-year
+  // selection changes which seasons are compared, never whose.
+  const samePlayer = comparePlayerKey(aProp) === comparePlayerKey(bProp);
   const slots = Math.max(aSeasons.length, bAll.length);
   // Slots split the row evenly, so a one- or two-year chart would blow its bars
   // up into slabs the width of the card. Cap a slot at the width it would have
@@ -1313,7 +1351,12 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       : (s.va || 0) + dva;
     return perGame ? v / (s.gp || 1) : v;
   };
-  const cvals = [...aSeasons, ...bAll].map(careerVal);
+  // One entry per bar the chart will draw, which on the same player is one
+  // season per slot rather than that season counted on both sides.
+  const careerRows = samePlayer
+    ? Array.from({ length: slots }, (_, i) => aSeasons[i] || bAll[i]).filter(Boolean)
+    : [...aSeasons, ...bAll];
+  const cvals = careerRows.map(careerVal);
   const cHi = Math.max(0, ...cvals), cLo = Math.min(0, ...cvals);
   const cSpan = (cHi - cLo) || 1;
   const cZeroPct = (cHi / cSpan) * 100; // baseline's offset from the top
@@ -1322,6 +1365,33 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // category VA.
   const careerUnit = `${!activeKey && withDef ? "VA+" : "VA"}`;
   const careerLabel = `${activeKey ? `${CAT_SHORT[activeKey] || activeKey} ` : ""}${perGame ? `${careerUnit}/G` : `Total ${careerUnit}`} by career year`;
+
+  // Which side of the comparison a season belongs to, or null for one that is
+  // neither — only ever asked of the same-player chart, where the two sides
+  // draw from the one career.
+  const soloSideOf = (s) => (aSel.has(s.season) ? "a" : bSel.has(s.season) ? "b" : null);
+  // That chart's single bar, one per career year: A's season in A's solid fill,
+  // B's in B's pale-and-outlined one, everything else neutral — so the only
+  // colored bars in his career are the two seasons actually being compared.
+  const soloBar = (s) => {
+    if (!s) return null;
+    const v = careerVal(s);
+    const h = (Math.abs(v) / cSpan) * 100;
+    const topPct = v >= 0 ? cZeroPct - h : cZeroPct;
+    const side = soloSideOf(s);
+    const fill = side === "a"
+      ? { backgroundColor: ca }
+      : side === "b"
+      ? { backgroundColor: withAlpha(cbPal.light, CAREER_B_FILL), border: `1px solid ${cb}` }
+      : { backgroundColor: CAREER_NEUTRAL };
+    return (
+      <div
+        className="absolute box-border left-[22%] w-[56%]"
+        style={{ top: `${topPct}%`, height: `${Math.max(h, 1.5)}%`, ...fill }}
+        title={`${s.season}: ${sgn(v)}${activeKey ? ` ${CAT_SHORT[activeKey] || activeKey}` : ""} ${vaUnit}`}
+      />
+    );
+  };
 
   // Tapping a PAIR of career-year bars starts a selection: a checkbox drops in
   // under every pair, ticking more folds them together, and "Compare →" makes
@@ -1333,9 +1403,15 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // Only PAIRS are tickable. A career year one of them never reached has no
   // second side to compare, and folding it into one run alone would quietly
   // make the two selections different lengths.
+  //
+  // On the same player there are no pairs at all, so the whole selection goes
+  // away with them: a slot holds one season, and ticking it would compare that
+  // season against itself — ticking several, a run against the identical run.
+  // Changing which of his seasons is being read is what the Compare picker
+  // above is for.
   const [picked, setPicked] = useState(null); // Set of slot indices, or null when not picking
   const picking = !!picked;
-  const isPair = (i) => !!(aSeasons[i] && bAll[i]);
+  const isPair = (i) => !samePlayer && !!(aSeasons[i] && bAll[i]);
   const anyPair = Array.from({ length: slots }, (_, i) => isPair(i)).some(Boolean);
   // Where a selection STARTS when the first tick opens the picker. Normally
   // nothing — but with a career-year selection already being read (`pick`), the
@@ -1769,6 +1845,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                   />
                 );
               };
+              const solo = samePlayer ? (as || bs) : null;
               const pair = isPair(i);
               const ticked = !!picked?.has(i);
               // What a tap here would do. While picking that's just the tick
@@ -1781,11 +1858,12 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                   key={i}
                   className="flex-1 relative min-w-0"
                   style={{ maxWidth: SLOT_MAX }}
-                  title={`Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pair ? ` · tap to ${wouldUntick ? "untick" : "tick"} this year` : " · only one of them played this year"}`}
+                  title={samePlayer
+                    ? `Career year ${i + 1}${solo ? ` · ${seasonTag(solo.season)} ${sgn(careerVal(solo))}` : ""}${solo && soloSideOf(solo) === "a" ? " · the season this card is reading" : solo && soloSideOf(solo) === "b" ? " · the season it is compared against" : ""}`
+                    : `Career year ${i + 1}${as ? ` · ${seasonTag(as.season)} ${sgn(careerVal(as))}` : ""}${bs ? ` · ${seasonTag(bs.season)} ${sgn(careerVal(bs))}` : ""}${pair ? ` · tap to ${wouldUntick ? "untick" : "tick"} this year` : " · only one of them played this year"}`}
                 >
                   <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${cZeroPct}%` }} />
-                  {bar(as, ca, "a")}
-                  {bar(bs, cb, "b")}
+                  {samePlayer ? soloBar(solo) : <>{bar(as, ca, "a")}{bar(bs, cb, "b")}</>}
                   {pair && (
                     // Full-column tap target over the slot, ticking the year
                     // under it. A ticked column stays lit so the selection reads
@@ -1879,10 +1957,19 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
             </div>
           ) : (
             <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
-              Seasons aligned by career year · {isMulti ? "selected seasons at full strength" : "compared seasons at full strength"}
-              {anyPair ? (pick
-                ? <> · tap a pair to add it to the selected years or drop it, then <span className="font-semibold not-italic">Compare →</span> to re-read the comparison</>
-                : <> · tap a pair to tick that year, then <span className="font-semibold not-italic">Compare →</span> to read the ticked years as the comparison</>) : null}
+              {samePlayer ? (
+                // One career, one bar a year: the chart is his whole career as
+                // the backdrop the two compared seasons sit in, and there is no
+                // pair to tick — the picker above is where the seasons change.
+                <>One bar per season of his own career · the two compared seasons in color, the rest neutral</>
+              ) : (
+                <>
+                  Seasons aligned by career year · {isMulti ? "selected seasons at full strength" : "compared seasons at full strength"}
+                  {anyPair ? (pick
+                    ? <> · tap a pair to add it to the selected years or drop it, then <span className="font-semibold not-italic">Compare →</span> to re-read the comparison</>
+                    : <> · tap a pair to tick that year, then <span className="font-semibold not-italic">Compare →</span> to read the ticked years as the comparison</>) : null}
+                </>
+              )}
             </div>
           )}
         </div>
