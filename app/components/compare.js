@@ -5,9 +5,9 @@ import { ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, lgaForRow, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
-import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec } from "../lib/va";
-import { lgaScopeFor, useLgaFor } from "../lib/va-mode";
+import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, matchCareerYears, rowSeasonLabel, seasonSpanLabel, similarRuns } from "../lib/multi-season";
+import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal, catVAperGame, perGameVAVec, tunnelBreak, vaComposition } from "../lib/va";
+import { useRowLga } from "../lib/va-mode";
 
 
 // --- Compare (both breakdowns) ----------------------------------------------
@@ -63,7 +63,7 @@ export function resolveCompareTarget(context, target) {
 
 // The two ways to rank/label closest comps. Order matches the toggle.
 export const COMP_METRIC_OPTS = [
-  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), then discounted for landing at a different point in a career — each chip's tooltip names both sides" },
+  { key: "impsim", label: "Box Score VA", word: "box score VA", title: "Box Score VA — impact (how close their overall per-game VA level is) × similarity (cosine match of the two VA-by-category profiles), then discounted for landing at a different point in a career — each chip's tooltip names both sides. Only seasons that draw their value from the same parts of the game are eligible: offense vs defense first, then scoring vs passing and rebounding vs rim protection, then the categories themselves" },
   { key: "shoot", label: "Shooting", word: "shooting profile", title: "Shooting — cosine × magnitude match of the two shooting profiles (4 shot-distance zones + 3-Pointers + Free Throws; needs zone data, 1996-97+), then discounted for landing at a different point in a career — each chip's tooltip names both sides" },
 ];
 
@@ -125,9 +125,14 @@ function stageNote({ from, to = from, atLeast = false, selfFrom = null, selfTo =
 // Inline picker: search a player from the scope index, then tap one of their
 // seasons. onPick gets { name, slug, seasons, row }.
 export function ComparePicker({ context, self = null, onPick, onCancel }) {
-  // Season baselines under the active USG-ADJ mode; the comp shapes below are
-  // per-category VA, so they move with it (lib/va-mode.js).
-  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
+  // Baselines under the active USG-ADJ mode; the comp shapes below are
+  // per-category VA, so they move with it (lib/va-mode.js). Per ROW rather
+  // than per season: on the Combined board a row summed a regular season and a
+  // playoff run and is scored against its own minute-weighted mix of the two,
+  // which a season lookup cannot answer — it would price both sides of the
+  // comparison against the regular season alone and disagree with the very
+  // bars this panel draws underneath.
+  const lgaOf = useRowLga(context?.scope);
   const [query, setQuery] = useState("");
   // The chosen player is held by KEY and looked up in the pool on every render:
   // holding the object would freeze his season rows at the baseline they
@@ -174,9 +179,18 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // shape — the full ranked list per decade, best match first. Similarity =
   // cosine of the two 10-dim VA vectors (a dot product of unit vectors);
   // magnitude-weighted score breaks ties so equal-% chips still order by how
-  // close the overall level is. The ±7 MPG band keeps comps in a similar
-  // minutes role. Shown before searching. The single O(pool) similarity pass
-  // is unchanged; keeping 12 per decade instead of 1 costs nothing extra.
+  // close the overall level is. Shown before searching. The single O(pool)
+  // similarity pass is unchanged; keeping 12 per decade instead of 1 costs
+  // nothing extra.
+  //
+  // Two ADMISSIBILITY gates run before any of that, because neither is a
+  // matter of degree. The ±7 MPG band keeps comps in a similar minutes role,
+  // and the composition tunnel (lib/va.js) keeps them in the same parts of the
+  // game — a scorer whose value is 92% offense is not a 95% match for a big
+  // who gets a third of his on the glass and at the rim, however close the two
+  // vectors' angle comes out. The cosine cannot see that on its own: it is
+  // dominated by whichever category is largest, which for both of those is
+  // scoring volume.
   const COMPS_PER_DECADE = 12;
   // Which quantity the comps are ranked/shown by (see COMP_METRIC_OPTS):
   //   impsim — "Box Score VA": cosine similarity (archetype match) × magnitude
@@ -193,13 +207,14 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // shootProfileVec) instead of the 10-dim box-category vector — null when
   // either side has no zone data (pre-1996-97, or a season the
   // shooting-splits bake hasn't reached).
-  const selfShootVec = self ? shootProfileVec(self, lgaFor(self.season)) : null;
+  const selfShootVec = self ? shootProfileVec(self, lgaOf(self)) : null;
   const selfShootNorm = selfShootVec ? Math.hypot(...selfShootVec) : 0;
   const rawComps = useMemo(() => {
     if (!self || !(self.mp > 0)) return [];
-    const qVec = perGameVAVec(self, lgaFor(self.season));
+    const qVec = perGameVAVec(self, lgaOf(self));
     const qNorm = Math.hypot(...qVec);
     if (!qNorm) return [];
+    const qComp = vaComposition(qVec);
     const selfSlug = self.slug || null;
     const selfNormName = normalizeName(self.name || "");
     const shootOk = selfShootVec && selfShootNorm > 0;
@@ -221,13 +236,18 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       if ((r.gp || 0) < 8 || !(r.mp > 0)) continue;
       if (selfSlug ? r.slug === selfSlug : normalizeName(r.name) === selfNormName) continue;
       if (Math.abs(r.mp / (r.gp || 1) - qMPG) > MPG_BAND) continue;
-      const v = perGameVAVec(r, lgaFor(r.season));
+      const v = perGameVAVec(r, lgaOf(r));
       const n = Math.hypot(...v);
       if (!n) continue;
       let dot = 0;
       for (let i = 0; i < qVec.length; i++) dot += qVec[i] * v[i];
       const cos = dot / (qNorm * n);
       if (cos < 0.3) continue; // clearly different archetype — never a "comp"
+      // Built out of the same parts of the game, level by level? Recorded
+      // rather than skipped on: the Shooting lens asks a different question of
+      // the same pool (whose gate is the 3PA rate below), so only the box-score
+      // ranking drops what the tunnel refuses.
+      const tunnel = tunnelBreak(qComp, vaComposition(v));
       const mag = Math.min(qNorm, n) / Math.max(qNorm, n);
       // Where this season sat in his career, and what the distance from the
       // selection's own stage costs it. Both metrics are discounted by the
@@ -240,7 +260,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       let shootCos = null, shootMag = null, shootScore = null, shootShape = null;
       const r3Rate = r.fga > 0 ? r.tpa / r.fga : 0;
       if (shootOk && Math.abs(r3Rate - q3Rate) <= THREE_RATE_BAND) {
-        const zv = shootProfileVec(r, lgaFor(r.season));
+        const zv = shootProfileVec(r, lgaOf(r));
         const zn = zv ? Math.hypot(...zv) : 0;
         if (zn > 0) {
           let zdot = 0;
@@ -259,10 +279,10 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       if (!arr) byDecade.set(dec, (arr = []));
       // `score`/`shootScore` rank and print; `shape`/`shootShape` are the same
       // match before the career-stage discount, which the tooltip still credits.
-      arr.push({ r, cos, mag, shape: cos * mag, score: cos * mag * stageF, stage, stageAtLeast, stageF, shootCos, shootMag, shootShape, shootScore });
+      arr.push({ r, cos, mag, shape: cos * mag, score: cos * mag * stageF, stage, stageAtLeast, stageF, tunnel, shootCos, shootMag, shootShape, shootScore });
     }
     return [...byDecade.entries()].sort((x, y) => y[0] - x[0]); // most recent decade first
-  }, [self, context, selfShootVec, selfShootNorm, lgaFor, debutBy, selfStage, selfStageAtLeast]);
+  }, [self, context, selfShootVec, selfShootNorm, lgaOf, debutBy, selfStage, selfStageAtLeast]);
 
   // Value of the currently selected metric for a candidate.
   const metricVal = (o) => (
@@ -270,16 +290,22 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   );
 
   // Re-rank each decade by the selected metric (no dot products — just a
-  // sort). "Shooting" additionally drops candidates with no zone-VA overlap
-  // rather than showing them at the bottom with a meaningless score.
+  // sort), each lens dropping what it has no answer for rather than showing it
+  // at the bottom with a meaningless number: "Box Score VA" drops what the
+  // composition tunnel refused, "Shooting" drops candidates with no zone-VA
+  // overlap. A decade left with nothing is dropped whole — a bare decade label
+  // over an empty strip reads as a rendering fault, where no row at all is the
+  // honest "this decade held no comparable season".
   const comps = useMemo(() => {
-    return rawComps.map(([dec, arr]) => ({
-      dec,
-      list: [...arr]
-        .filter((o) => compMetric !== "shoot" || o.shootScore != null)
-        .sort((x, y) => (metricVal(y) - metricVal(x)) || (y.cos - x.cos))
-        .slice(0, COMPS_PER_DECADE),
-    }));
+    return rawComps
+      .map(([dec, arr]) => ({
+        dec,
+        list: [...arr]
+          .filter((o) => (compMetric === "shoot" ? o.shootScore != null : !o.tunnel))
+          .sort((x, y) => (metricVal(y) - metricVal(x)) || (y.cos - x.cos))
+          .slice(0, COMPS_PER_DECADE),
+      }))
+      .filter(({ list }) => list.length > 0);
   }, [rawComps, compMetric]);
 
   const compKey = (r) => r.season + (r.slug || r.name);
@@ -329,12 +355,19 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
             autoFocus
             className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
           />
+          {query.trim() === "" && comps.length === 0 && self && (
+            <div className="mb-1 py-1 text-[9px] text-stone-400 leading-snug">
+              No closest comps: no season in the index draws its value from the
+              same parts of the game at a similar minutes load. Search for a
+              player above to compare anyway.
+            </div>
+          )}
           {query.trim() === "" && comps.length > 0 && (
             <div className="mb-1">
               <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
                 <span
                   className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0"
-                  title={`Ranked by how close the season is AND how close it sits to the same point in a career${selfStage != null ? ` — this one is your career year ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}. Hover a comp for the career year it came from.`}
+                  title={`Ranked by how close the season is AND how close it sits to the same point in a career${selfStage != null ? ` — this one is your career year ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}. Only seasons built out of the same parts of the game are eligible at all, so a decade with nothing comparable in it is left out rather than filled. Hover a comp for the career year it came from.`}
                 >Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
                   {COMP_METRIC_OPTS.map((o) => {
@@ -463,7 +496,7 @@ const runKey = (run) => `${run.player.slug || run.player.name}:${run.seasons[0].
 export function MultiComparePicker({ context, self = null, selfRow = null, onPick, onCancel, suggestCount = 3, selfYears = null, selfCareerLen = 0, selfSeasons = null, asked = false }) {
   // As in ComparePicker: run shapes are per-category VA, so they follow the
   // active baseline (lib/va-mode.js).
-  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
+  const lgaOf = useRowLga(context?.scope);
   const [query, setQuery] = useState("");
   // The chosen player by KEY, looked up in the pool below — held this way for
   // the same reason as in ComparePicker: the pool is rebuilt under a running
@@ -511,8 +544,8 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
     [selfRunRows, selfDebut]
   );
   const runComps = useMemo(
-    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaFor, selfStage, selfStageAtLeast }),
-    [players, selfRow, runLen, selfKey, lgaFor, selfStage, selfStageAtLeast]
+    () => similarRuns(players, selfRow, { runLen, selfKey, perDecade: RUNS_PER_DECADE, lgaOf, selfStage, selfStageAtLeast }),
+    [players, selfRow, runLen, selfKey, lgaOf, selfStage, selfStageAtLeast]
   );
   // Gold-lit across every decade row, so the single strongest run stands out
   // wherever it landed.
@@ -531,7 +564,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       name: pl.name,
       slug: pl.slug || null,
       seasons: pl.seasons,
-      row: aggregateSeasons(run.seasons, { name: pl.name, slug: pl.slug || null }, lgaFor),
+      row: aggregateSeasons(run.seasons, { name: pl.name, slug: pl.slug || null }, lgaOf),
     });
   };
 
@@ -658,7 +691,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       // aggregate carries its own blended lga and per-category vector, and
       // building those against the standard baseline under USG-ADJ would hand
       // the panel a row in the wrong currency.
-      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }, lgaFor),
+      row: aggregateSeasons(chosen, { name: sel.name, slug: sel.slug || null }, lgaOf),
     });
   };
 
@@ -944,7 +977,7 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
 // a new identity when the pool or the mode changes, so they can be listed as
 // useMemo dependencies. A row the pool doesn't carry comes back untouched.
 export function useFreshRows(context) {
-  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
+  const lgaOf = useRowLga(context?.scope);
   const poolBy = useMemo(() => {
     const m = new Map();
     for (const r of context?.allRows || []) m.set(`${comparePlayerKey(r)}|${r.season}`, r);
@@ -962,9 +995,9 @@ export function useFreshRows(context) {
       ...freshSeason(sn), name: row.name, slug: row.slug || null,
     }));
     return seasons.length
-      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaFor)
+      ? aggregateSeasons(seasons, { name: row.name, slug: row.slug || null }, lgaOf)
       : row;
-  }, [freshSeason, lgaFor]);
+  }, [freshSeason, lgaOf]);
   return useMemo(() => ({ freshSeason, freshSide }), [freshSeason, freshSide]);
 }
 
@@ -988,7 +1021,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // Every baseline this panel scores against — each side's own, the pooled
   // percentile field, the career bars — comes from here, so the whole
   // comparison follows the USG-ADJ switch together (lib/va-mode.js).
-  const lgaFor = useLgaFor(lgaScopeFor(context?.scope));
+  const lgaOf = useRowLga(context?.scope);
   // A selection made in the career chart at the foot of this panel: the career
   // years ticked there, resolved into one row per side — the season itself when
   // a single year is ticked, an aggregate of them when several are. It REPLACES
@@ -1134,8 +1167,8 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // An aggregate carries its own volume-weighted baseline; a season row looks
   // its season up. Everything downstream reads these two and stays unaware of
   // which kind it got.
-  const lgaA = lgaForRow(a, lgaFor);
-  const lgaB = lgaForRow(b, lgaFor);
+  const lgaA = lgaOf(a);
+  const lgaB = lgaOf(b);
   const ca = teamColor(a.team);
   // The comparison side's whole palette, chosen against A's color — see
   // comparePalette. `cb` draws (bar outlines, swatch borders), `cbInk` writes
@@ -1167,7 +1200,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     if (!withDef) return 0;
     if (r?.multi) {
       return r.seasons.reduce((sum, s) => (
-        sum + (s.mp > 0 ? (defVAInfo(s, s.mp, lgaFor(s.season), defs, s.season, defScope)?.dva ?? 0) : 0)
+        sum + (s.mp > 0 ? (defVAInfo(s, s.mp, lgaOf(s), defs, s.season, defScope)?.dva ?? 0) : 0)
       ), 0);
     }
     return r?.mp > 0 ? (defVAInfo(r, r.mp, lgaX, defs, season, defScope)?.dva ?? 0) : 0;
@@ -1182,7 +1215,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     if (!r?.multi) return r?.mp > 0 ? defVAInfo(r, r.mp, lgaX, defs, r.season, defScope) : null;
     let mp = 0, drtg = 0, teamDrtg = 0, teamMp = 0, laD = 0, dva = 0, any = false;
     for (const s of r.seasons) {
-      const info = s.mp > 0 ? defVAInfo(s, s.mp, lgaFor(s.season), defs, s.season, defScope) : null;
+      const info = s.mp > 0 ? defVAInfo(s, s.mp, lgaOf(s), defs, s.season, defScope) : null;
       if (!info) continue;
       any = true;
       mp += s.mp;
@@ -1239,7 +1272,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     const pool = context.allRows.filter((r) => (r.gp || 0) >= 5 && r.mp > 0);
     const maxByKey = {};
     const poolVals = pool.map((r) => {
-      const lgaX = lgaFor(r.season);
+      const lgaX = lgaOf(r);
       const dva = dvaOf(r, lgaX, r.season);
       const out = {};
       for (const key of ALL_KEYS) {
@@ -1276,7 +1309,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     }
     const diff = GROUP_KEYS.reduce((s, k) => s + rows[k].av - rows[k].bv, 0);
     return { rows, diff };
-  }, [a, b, lgaA, lgaB, context, perGame, pctPerGame, withDef, defs, defScope, lgaFor]);
+  }, [a, b, lgaA, lgaB, context, perGame, pctPerGame, withDef, defs, defScope, lgaOf]);
 
   // Per-game figures are an order of magnitude smaller than season totals, so
   // they carry a second decimal; totals match the leaderboard's one.
@@ -1342,7 +1375,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   // deliberate act: that, and only that, re-points the career bars.
   const activeKey = [...openKeys].at(-1) ?? null;
   const careerVal = (s) => {
-    const lgaS = lgaFor(s.season);
+    const lgaS = lgaOf(s);
     const dva = (!activeKey || activeKey === "Defense" || activeKey === DEF_KEY) ? dvaOf(s, lgaS, s.season) : 0;
     // No category selected the bars are the season's whole value — VA+ when
     // the D-Rating layer is on, so they match the rows above.
@@ -1441,7 +1474,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     if (!pickedIdxs.length) return;
     const side = (rows, src) => (rows.length === 1
       ? { ...rows[0], name: src.name, slug: src.slug || null }
-      : aggregateSeasons(rows, { name: src.name, slug: src.slug || null }, lgaFor));
+      : aggregateSeasons(rows, { name: src.name, slug: src.slug || null }, lgaOf));
     setPick({
       a: side(pickedRows(aSeasons), aProp),
       b: side(pickedRows(bAll), bProp),

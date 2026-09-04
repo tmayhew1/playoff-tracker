@@ -621,11 +621,52 @@
 
 <div class="eq box">
   <span class="g">S</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
-  cos(<span class="g">a</span>,<span class="g">b</span>) <span class="op">×</span> mag(<span class="g">a</span>,<span class="g">b</span>)
-  <span class="lbl">archetype match × level match</span>
+  cos(<span class="g">a</span>,<span class="g">b</span>) <span class="op">×</span> mag(<span class="g">a</span>,<span class="g">b</span>) <span class="op">×</span> <span class="g">&#966;</span>(<span class="g">a</span>,<span class="g">b</span>)
+  <span class="lbl">archetype match × level match × career-stage discount</span>
 </div>
 
-<p>Admissible only under <span class="m">| <span class="s">MPG</span><sub class="g">a</sub> <span class="op">−</span> <span class="s">MPG</span><sub class="g">b</sub> | <span class="op">≤</span> 7</span> (same minutes role), <span class="m"><span class="s">G</span> <span class="op">≥</span> 8</span>, and <span class="m">cos <span class="op">≥</span> 0.3</span> — a clearly different archetype is never a comp.</p>
+<p>Cosine matches <strong>archetype</strong> (the shape of the value), magnitude matches <strong>level</strong> (how much of it), and <span class="m g">&#966;</span> discounts a comp for landing at a different point in a career. Writing <span class="m"><span class="g">y</span>(<span class="g">x</span>)</span> for the career year a season sits in (its start year less the player&rsquo;s first indexed season, so a rookie year is 1) and <span class="m"><span class="g">d</span> <span class="op">=</span> max ( 0 , | <span class="g">y</span>(<span class="g">a</span>) <span class="op">−</span> <span class="g">y</span>(<span class="g">b</span>) | <span class="op">−</span> 1 )</span>:</p>
+
+<div class="eq">
+  <span class="g">&#966;</span>(<span class="g">a</span>,<span class="g">b</span>) <span class="op">=</span>
+  0.35 <span class="op">+</span> 0.65 exp <span class="par">(</span> <span class="op">−</span><span class="par">(</span><span class="fr"><span class="nu"><span class="g">d</span></span><span class="de">4</span></span><span class="par">)</span><sup>2</sup> <span class="par">)</span>
+  <span class="lbl">a year apart is free; four years costs &asymp; 28%; floored at 0.35</span>
+</div>
+
+<p>A soft weight rather than a band, because a decade may hold no same-stage comp at all and the honest answer there is the best it does hold, shown for what it is. Where the index cannot see a player&rsquo;s real debut — his earliest season is the earliest the bake carries, so his career year is only a lower bound — the discount applies only when that bound already clears the other side, and is 1 otherwise. <span class="m g">S</span> is what a chip prints.</p>
+
+<p><strong>The composition tunnel.</strong> <span class="m">cos</span> is dominated by whichever component of <span class="m g">v</span> is largest, and for most rotation players that is scoring volume by a wide margin: Wembanyama&rsquo;s 2025-26 carries 95% of its vector <em>length</em> in the Points term alone, leaving the other nine categories to decide about 1.5% of the angle. Length adds in quadrature, value adds linearly, so a season that adds 5.6 points per game of value on the glass and at the rim reads as nearly parallel to one that adds none. Similarity therefore does not decide admissibility; a hierarchy of <strong>composition</strong> gates does, asked on signed shares of the value a season moved:</p>
+
+<div class="eq">
+  <span class="g">&#963;</span><sub class="g">N</sub>(<span class="g">x</span>) <span class="op">=</span>
+  <span class="fr"><span class="nu">&sum;<sub class="g">k &isin; N</sub> <span class="g">v</span><sub class="g">k</sub>(<span class="g">x</span>)</span><span class="de">&sum;<sub class="g">k</sub> | <span class="g">v</span><sub class="g">k</sub>(<span class="g">x</span>) |</span></span>
+  <span class="lbl">signed on top, absolute underneath</span>
+</div>
+
+<p>The numerator is signed so that value and damage are not pooled (a &minus;9.7 scoring term is not a &ldquo;scoring profile&rdquo;); the denominator is not, so it cannot collapse toward zero for a player whose terms cancel. Two seasons are comparable only where every node of the category tree agrees, level by level:</p>
+
+<table>
+  <thead>
+    <tr><th>level</th><th>nodes</th><th>band <span class="m g">&#946;</span></th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>offense (Scoring + Passing) vs defense (Rebounds + Blocks/Steals)</td><td>0.20</td></tr>
+    <tr><td>2</td><td>Scoring, Passing, Rebounds, Defense</td><td>0.22</td></tr>
+    <tr><td>3</td><td>the ten categories of §5</td><td>0.28</td></tr>
+  </tbody>
+</table>
+
+<div class="eq box">
+  admissible <span class="op">&hArr;</span>
+  | <span class="g">&#963;</span><sub class="g">N</sub>(<span class="g">a</span>) <span class="op">−</span> <span class="g">&#963;</span><sub class="g">N</sub>(<span class="g">b</span>) | <span class="op">≤</span> <span class="g">&#946;</span><sub class="g">&#8467;</sub>
+  <span class="lbl">for every node <span class="g">N</span> at every level <span class="g">&#8467;</span></span>
+</div>
+
+<p>Shares are taken of the season total at every level rather than of the parent node, which makes the deeper levels self-scaling: a blocks-vs-steals split inside a group worth 4% of a player&rsquo;s value can differ by at most 4 points and cannot fail on its own, while the same split for a rim protector can. Bands widen with depth because the levels above have already constrained the aggregate a node sits in. O Rebounds rides with the glass rather than with scoring — the level-1 split asks how much of a season&rsquo;s value came from putting the ball in the basket and moving it, against how much came from the glass and the rim.</p>
+
+<p>The bands were fitted over every rotation season in the index (40+ G at 20+ MPG, <span class="m"><span class="g">n</span> <span class="op">=</span> 9142</span>) against two competing costs: admitting comps built somewhere else, and leaving a reader with none. At these values 99.1% of those seasons keep candidates in all five decades and none is left with no comp at all, while Wembanyama&rsquo;s 2025-26 against Granger&rsquo;s 2008-09 — 30% of a season&rsquo;s value on the glass and at the rim against 3% — is refused at level 1 by 26.9 points. It would otherwise have scored 94% and led its decade.</p>
+
+<p>Admissible also only under <span class="m">| <span class="s">MPG</span><sub class="g">a</sub> <span class="op">−</span> <span class="s">MPG</span><sub class="g">b</sub> | <span class="op">≤</span> 7</span> (same minutes role), <span class="m"><span class="s">G</span> <span class="op">≥</span> 8</span>, and <span class="m">cos <span class="op">≥</span> 0.3</span> — a clearly different archetype is never a comp. A decade left with no admissible season is omitted rather than shown empty.</p>
 
 <p>The <strong>Shooting</strong> lens applies the identical <span class="m">cos <span class="op">×</span> mag</span> form to the 6-dimensional shooting profile (4 zones + 3-Pointers + Free Throws), additionally gated on shot diet: writing <span class="m"><span class="g">δ</span>(<span class="g">x</span>) <span class="op">=</span> <span class="s">3PA</span> ⁄ <span class="s">FGA</span></span> for the share of a player&rsquo;s field-goal attempts taken from three, a comp is admissible only when <span class="m">| <span class="g">δ</span>(<span class="g">a</span>) <span class="op">−</span> <span class="g">δ</span>(<span class="g">b</span>) | <span class="op">≤</span> 0.15</span>. Without that gate, two players with identical (zero) 3-point <em>impact</em> read as shooting twins even when one lives at the rim and the other is a high-volume league-average bomber.</p>
 
