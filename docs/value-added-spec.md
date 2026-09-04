@@ -905,15 +905,85 @@ $$
 \mathrm{mag}(a,b) = \frac{\min\bigl(\lVert v(a)\rVert, \lVert v(b)\rVert\bigr)}{\max\bigl(\lVert v(a)\rVert, \lVert v(b)\rVert\bigr)}
 $$
 
+Cosine matches **archetype** (the shape of the value), magnitude matches
+**level** (how much of it). The ranked score is
+
 $$
-S(a,b) \;=\; \mathrm{cos}(a,b)\cdot \mathrm{mag}(a,b)
+S(a,b) \;=\; \mathrm{cos}(a,b)\cdot \mathrm{mag}(a,b)\cdot \phi(a,b)
 $$
 
-Cosine matches **archetype** (the shape of the value), magnitude matches
-**level** (how much of it). Admissible only under
+where $\phi$ discounts a comp for landing at a different point in a career.
+Writing $y(x)$ for the career year a season sits in (its start year less the
+player's first indexed season, so a rookie year is 1) and
+$d = \max(0, \lvert y(a) - y(b)\rvert - 1)$:
+
+$$
+\phi(a,b) \;=\; 0.35 \;+\; 0.65\,\exp\!\left(-\left(\tfrac{d}{4}\right)^{\!2}\right)
+$$
+
+A year apart is free (a rookie season against a second season is the same
+question), four years costs $\approx 28\%$, and the floor keeps a genuinely
+uncanny match from the wrong end of a career visible below the same-stage ones
+instead of dropping it. A soft weight rather than a band, because a decade may
+hold no same-stage comp at all and the honest answer there is the best it does
+hold, shown for what it is. Where the index cannot see a player's real debut —
+his earliest season is the earliest the bake carries, so his career year is
+only a lower bound — the discount applies only when that bound already clears
+the other side, and is 1 otherwise. $S$ is what a chip prints.
+
+**The composition tunnel.** $\mathrm{cos}$ is dominated by whichever component
+of $v$ is largest, and for most rotation players that is scoring volume by a
+wide margin: Wembanyama's 2025-26 carries 95% of its vector *length* in the
+Points term alone, leaving the other nine categories to decide about 1.5% of
+the angle. Length adds in quadrature, value adds linearly, so a season that
+adds 5.6 points per game of value on the glass and at the rim reads as nearly
+parallel to one that adds none. Similarity therefore does not decide
+admissibility; a hierarchy of **composition** gates does, asked on signed
+shares of the value a season moved,
+
+$$
+\sigma_N(x) \;=\; \frac{\sum_{k \in N} v_k(x)}{\sum_{k=1}^{10} \lvert v_k(x) \rvert},
+$$
+
+for a node $N$ of the category tree. The numerator is signed so that value and
+damage are not pooled (a $-9.7$ scoring term is not a "scoring profile"); the
+denominator is not, so it cannot collapse toward zero for a player whose terms
+cancel. Two seasons are comparable only where every node agrees, level by level:
+
+| level | nodes | band $\beta$ |
+|---|---|---|
+| 1 | offense (Scoring + Passing) vs defense (Rebounds + Blocks/Steals) | 0.20 |
+| 2 | Scoring, Passing, Rebounds, Defense | 0.22 |
+| 3 | the ten categories of §5 | 0.28 |
+
+$$
+\text{admissible} \iff \lvert \sigma_N(a) - \sigma_N(b) \rvert \le \beta_{\ell}
+\quad \text{for every node } N \text{ at every level } \ell
+$$
+
+Shares are taken of the season total at every level rather than of the parent
+node, which makes the deeper levels self-scaling: a blocks-vs-steals split
+inside a group worth 4% of a player's value can differ by at most 4 points and
+cannot fail on its own, while the same split for a rim protector can. Bands
+widen with depth because the levels above have already constrained the
+aggregate a node sits in. O Rebounds rides with the glass rather than with
+scoring — the level-1 split asks how much of a season's value came from putting
+the ball in the basket and moving it, against how much came from the glass and
+the rim.
+
+The bands were fitted over every rotation season in the index (40+ G at 20+
+MPG, $n = 9142$) against two competing costs: admitting comps built somewhere
+else, and leaving a reader with none. At these values 99.1% of those seasons
+keep candidates in all five decades and none is left with no comp at all, while
+Wembanyama's 2025-26 against Granger's 2008-09 — 30% of a season's value on the
+glass and at the rim against 3% — is refused at level 1 by 26.9 points. It
+would otherwise have scored 94% and led its decade.
+
+Admissible also only under
 $\lvert \mathrm{MPG}_a - \mathrm{MPG}_b \rvert \le 7$ (same minutes role),
 $\mathrm{G} \ge 8$, and $\mathrm{cos} \ge 0.3$ (a clearly different archetype is
-never a comp). The **Shooting** lens applies the identical
+never a comp). A decade left with no admissible season is omitted rather than
+shown empty. The **Shooting** lens applies the identical
 $\mathrm{cos}\times\mathrm{mag}$ form to the 6-dimensional profile
 (4 zones + 3-Pointers + Free Throws), additionally gated on shot diet: writing
 $\delta(x) = \mathrm{3PA}/\mathrm{FGA}$ for the share of a player's field-goal

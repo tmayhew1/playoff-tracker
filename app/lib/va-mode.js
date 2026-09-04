@@ -110,16 +110,23 @@ export const lgaScopeFor = (rowScope) =>
     : rowScope === "combined" ? "combined"
     : "rs");
 
-// The baseline for one ROW under the active mode. Playoff and regular-season
-// rows are a season lookup; a combined row also needs its own minute split,
-// which it carries as `mpPo` (the playoff half of its summed minutes — baked by
-// /api/players, and known directly on the boards that build combined rows
-// themselves). A combined row without one falls back to the regular season
-// rather than guessing a split.
+// The baseline for one ROW under the active mode — multi-season.js::lgaForRow
+// with the USG-ADJ switch applied, and the getter every VA surface should be
+// threading. The two must not drift apart.
+//
+// An aggregate arrives carrying its own volume-weighted blend. A combined row
+// summed two lines played in two different leagues and needs its own minute
+// split, which it carries as `mpPo` (the playoff half of its summed minutes —
+// baked by /api/players, and known directly on the boards that build combined
+// rows themselves); only a combined row has one, so nothing here has to be
+// told the scope to spot it, and a combined row without one falls back to the
+// regular season rather than guessing a split. Everything else is a season
+// lookup in the scope's own baseline.
 export function useRowLga(scope) {
   const { usgAdj, lgaFor } = useVAMode();
   return useCallback((row) => {
-    if (scope === "combined" && row?.mpPo > 0) {
+    if (row?.lga) return row.lga;
+    if (row?.mpPo > 0) {
       return combinedLga(row.season, (row.mp || 0) - row.mpPo, row.mpPo, usgAdj);
     }
     return lgaFor(row?.season, lgaScopeFor(scope));

@@ -10,7 +10,7 @@ import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
-import { UsgAdjChip, lgaScopeFor, useLgaFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { UsgAdjChip, lgaScopeFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -231,13 +231,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // Bound to this view's scope, so every season it scores below — the career
   // table, the aggregates, the drill-ins — is measured against the league that
   // side of the season was played in (spec §4.8). Playoff runs take the blended
-  // playoff baseline; the regular-season and combined scopes stay on the
-  // regular season, combined because the pooled index carries the summed line
-  // without the minute split its own mix would need.
-  const lgaFor = useLgaFor(lgaScopeFor(scope));
-  // Per-ROW, because a combined row is scored against its own minute-weighted
-  // mix of the two baselines and `lgaFor` can only answer per season. For the
-  // playoff and regular-season scopes the two agree exactly.
+  // playoff baseline. Per ROW rather than per season, because a combined row
+  // summed a regular season and a playoff run and is scored against its own
+  // minute-weighted mix of the two, which a season lookup cannot answer; for
+  // the playoff and regular-season scopes the two agree exactly.
   const rowLga = useRowLga(scope);
   const [openSeason, setOpenSeason] = useState(null);
   const [sortMode, setSortMode] = useState("composite");
@@ -612,9 +609,9 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   );
   const aggA = useMemo(
     () => (selectedSeasons.length
-      ? aggregateSeasons(selectedSeasons, { name: player.name, slug: player.slug || null }, lgaFor)
+      ? aggregateSeasons(selectedSeasons, { name: player.name, slug: player.slug || null }, rowLga)
       : null),
-    [selectedSeasons, player.name, player.slug, lgaFor]
+    [selectedSeasons, player.name, player.slug, rowLga]
   );
   // What the table SHOWS as ticked, and what the chip counts — the chart's
   // mirrored years while there are any, the pool otherwise. Only the display

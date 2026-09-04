@@ -1,8 +1,8 @@
 "use client";
 
-import { LEAGUE_AVERAGES, ZONES, hasZoneData, lgaForSeason, possUsed, valueAddByCategory } from "../scoring";
+import { LEAGUE_AVERAGES, ZONES, combinedLga, hasZoneData, lgaForSeason, possUsed, valueAddByCategory } from "../scoring";
 import { normalizeName, seasonTag } from "./format";
-import { VA_CATEGORY_ORDER, perGameVAVec } from "./va";
+import { VA_CATEGORY_ORDER, perGameVAVec, tunnelBreak, vaComposition } from "./va";
 
 
 // --- Multi-season aggregates -------------------------------------------------
@@ -87,8 +87,8 @@ function zonesComplete(seasons) {
 // that rate. A weight that sums to zero (no threes attempted across the whole
 // selection, say) falls back to minutes, then to a plain mean, so the rate is
 // always a real number even when the player never used it.
-export function blendLeagueAverages(seasons, withZones = true, lgaFor = lgaForSeason) {
-  const lgas = seasons.map((s) => lgaFor(s.season));
+export function blendLeagueAverages(seasons, withZones = true, lgaOf = lgaForRow) {
+  const lgas = seasons.map((s) => lgaOf(s));
   if (lgas.length === 1) return lgas[0];
   // Every key any of the selected seasons defines, so a rate the bake only
   // added later still comes through.
@@ -199,7 +199,7 @@ function dominantTeam(seasons) {
 // string: it's a real season, so any code path that reaches for
 // lgaForSeason(row.season) degrades to a sane baseline instead of the default
 // one. Display goes through spanLabel.
-export function aggregateSeasons(seasonRows, identity = {}, lgaFor = lgaForSeason) {
+export function aggregateSeasons(seasonRows, identity = {}, lgaOf = lgaForRow) {
   const seasons = [...seasonRows].sort((a, b) => a.season.localeCompare(b.season));
   const row = {
     name: identity.name || seasons[0]?.name || "",
@@ -223,7 +223,7 @@ export function aggregateSeasons(seasonRows, identity = {}, lgaFor = lgaForSeaso
   // same VA the career table shows.
   const catVA = {};
   for (const s of seasons) {
-    const by = valueAddByCategory(s, lgaFor(s.season));
+    const by = valueAddByCategory(s, lgaOf(s));
     for (const k of Object.keys(by)) catVA[k] = (catVA[k] || 0) + by[k];
   }
 
@@ -237,7 +237,7 @@ export function aggregateSeasons(seasonRows, identity = {}, lgaFor = lgaForSeaso
   row.multi = true;
   row.seasons = seasons.map((s) => ({ ...s, name: row.name, slug: row.slug }));
   row.seasonKeys = new Set(seasons.map((s) => s.season));
-  row.lga = blendLeagueAverages(seasons, zonesOk, lgaFor);
+  row.lga = blendLeagueAverages(seasons, zonesOk, lgaOf);
   row.catVA = catVA;
   row.spanLabel = seasonSpanLabel(seasons);
   return row;
@@ -411,10 +411,22 @@ export function careerStageLabel(from, to = from, atLeast = false) {
 }
 
 
-// The baseline a row is measured against: an aggregate carries its own blended
-// one, an ordinary season row looks its season up.
+// The baseline a row is measured against. Three kinds of row reach this:
+//
+//   - an aggregate (aggregateSeasons) carries its own volume-weighted blend;
+//   - a COMBINED row summed a regular season and the playoff run that followed
+//     it, two lines played in two different leagues, so it is scored against
+//     the minute-weighted mix of the two (scoring.js::combinedLga). It carries
+//     the playoff half of its minutes as `mpPo` for exactly this — only a
+//     combined row has one, so its presence is the signal;
+//   - an ordinary season row looks its season up.
+//
+// This is the pure statement of the rule; va-mode.js::useRowLga is the same
+// rule with the USG-ADJ mode applied, and the two must not drift apart.
 export function lgaForRow(row, lgaFor = lgaForSeason) {
-  return row?.lga || lgaFor(row?.season) || LEAGUE_AVERAGES["2025-26"];
+  if (row?.lga) return row.lga;
+  if (row?.mpPo > 0) return combinedLga(row.season, (row.mp || 0) - row.mpPo, row.mpPo);
+  return lgaFor(row?.season) || LEAGUE_AVERAGES["2025-26"];
 }
 
 
@@ -462,13 +474,14 @@ export const RUN_MIN_GP = 8;    // a season shorter than this can't carry a run
 export const RUN_MPG_BAND = 7;  // same minutes-role gate the season comps use
 export const RUN_MIN_COS = 0.3; // below this it's a different archetype, not a comp
 
-export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8, lgaFor = lgaForSeason, selfStage = null, selfStageAtLeast = false } = {}) {
+export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perDecade = 8, lgaOf = lgaForRow, selfStage = null, selfStageAtLeast = false } = {}) {
   const n = Math.max(1, Math.round(runLen));
   if (!players?.length || !selfRow || !(selfRow.gp > 0) || !(selfRow.mp > 0)) return [];
-  const qVec = perGameVAVec(selfRow, lgaForRow(selfRow));
+  const qVec = perGameVAVec(selfRow, lgaOf(selfRow));
   const qNorm = Math.hypot(...qVec);
   if (!qNorm) return [];
   const qMPG = selfRow.mp / selfRow.gp;
+  const qComp = vaComposition(qVec);
   const dim = VA_CATEGORY_ORDER.length;
 
   // Debuts once for the whole pool, so the censoring rule (careerDebuts) sees
@@ -487,7 +500,7 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
     // season comps already do, and the windows themselves are adds and
     // subtracts on a 10-slot accumulator.
     const cats = career.map((s) => {
-      const by = valueAddByCategory(s, lgaFor(s.season));
+      const by = valueAddByCategory(s, lgaOf(s));
       return VA_CATEGORY_ORDER.map((k) => by[k] || 0);
     });
     // Career stage per season, off his WHOLE indexed career rather than the
@@ -524,6 +537,11 @@ export function similarRuns(players, selfRow, { runLen = 1, selfKey = null, perD
       if (!norm) continue;
       const cos = dot / (qNorm * norm);
       if (cos < RUN_MIN_COS) continue;
+      // A run has to be built out of the same parts of the game, level by
+      // level, before its shape is worth measuring (lib/va.js). The check sits
+      // inside the window loop rather than around the player, so a career that
+      // only lines up over some of its windows is comped on those.
+      if (tunnelBreak(qComp, vaComposition(sum.map((x) => x / gp)))) continue;
       const mag = Math.min(qNorm, norm) / Math.max(qNorm, norm);
       // Shape match, then the same match discounted for landing at a different
       // point in the career. Both are kept: `score` is what ranks and what the
