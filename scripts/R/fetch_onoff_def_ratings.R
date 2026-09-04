@@ -27,8 +27,8 @@
 # score, and DEF_EST_CAL in app/lib/defense.js was fitted against that counted
 # scale. The two agree more closely than that framing suggests — measured
 # against each other on 2015-16, team lines correlate at r = 0.999 and sit
-# 0.17 apart on average, players at r = 0.954 and 0.67 apart, with no
-# systematic offset either way (+0.12 for players, -0.13 for teams) and the
+# 0.17 apart on average, players at r = 0.978 and 0.57 apart, with no
+# systematic offset either way (+0.20 for players, -0.11 for teams) and the
 # disagreements concentrated in players with almost no floor time. But pbpstats will not serve six regular seasons and seventeen
 # postseasons at all — its get-totals endpoint answers those with a degraded
 # ~15-column response instead of the full ~230, by request rather than by

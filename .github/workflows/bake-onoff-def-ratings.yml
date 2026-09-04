@@ -6,14 +6,18 @@ name: Bake on-off defensive ratings (R)
 # where that source has nothing — six regular seasons and seventeen
 # postseasons it will not serve, plus 1996-97 through 1999-00, which predate
 # its coverage entirely. See scripts/R/fetch_onoff_def_ratings.R.
-# The full backfill runs through workflow_dispatch, which GitHub only offers
-# once this file is on the default branch. Until then the push trigger below
-# runs it over SMOKE_SEASON alone — one season is ~75s of throttled fetches and
-# proves the parse, and 2015-16 is the one to prove it against because
-# pbpstats already covers it, so the new numbers can be read straight against
-# the counted ones rather than taken on trust. The push path always forces:
-# a smoke test that skips the season because it ran once already is not a
-# test of anything.
+# GitHub only offers workflow_dispatch once this file is on the default
+# branch, so until this merges the push trigger below is the only way to run
+# the bake, and it carries the range. It is not forced: the script fetches on
+# need per side, so re-pushing once the backfill is done is a cheap no-op and
+# a run that ran out of clock simply finishes on the next one.
+#
+# The parse was proven against 2015-16 first, because pbpstats already covers
+# that season and the two could be read against each other rather than the new
+# numbers taken on trust: team lines came back at r = 0.999 and 0.17 apart on
+# average, players at r = 0.978 and 0.57, with no systematic offset — and
+# eleven players pbpstats had lost to name matching recovered, since these rows
+# join by their basketball-reference href.
 on:
   push:
     branches: ["claude/defensive-rating-data-sources-leqpnm"]
@@ -36,7 +40,8 @@ on:
         default: "false"
 
 env:
-  SMOKE_SEASON: "2015-16"
+  BAKE_START: "1996-97"
+  BAKE_END: "2025-26"
 
 concurrency:
   group: bake-onoff-def-ratings-${{ github.ref }}
@@ -73,9 +78,9 @@ jobs:
         timeout-minutes: 55
         run: >
           Rscript scripts/R/fetch_onoff_def_ratings.R
-          "${{ inputs.start_season || env.SMOKE_SEASON }}"
-          "${{ inputs.end_season || env.SMOKE_SEASON }}"
-          ${{ (github.event_name == 'push' || inputs.force == 'true') && '--force' || '' }}
+          "${{ inputs.start_season || env.BAKE_START }}"
+          "${{ inputs.end_season || env.BAKE_END }}"
+          ${{ (inputs.force == 'true') && '--force' || '' }}
 
       - name: Commit baked JSON
         # always(): the bake writes each season as it lands, so a run that

@@ -267,8 +267,8 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
 // is the scale DEF_EST_CAL was fitted against. The estimated side exists
 // because pbpstats will not serve six regular seasons or seventeen
 // postseasons at all. Measured against each other on 2015-16 the two agree
-// closely — team lines r = 0.999 and 0.17 apart on average, players r = 0.954
-// and 0.67 apart, no systematic offset either way — with the disagreements
+// closely — team lines r = 0.999 and 0.17 apart on average, players r = 0.978
+// and 0.57 apart, no systematic offset either way — with the disagreements
 // concentrated in players with almost no floor time.
 const ON_COURT_SOURCES = ["Pbp", "On"];
 
