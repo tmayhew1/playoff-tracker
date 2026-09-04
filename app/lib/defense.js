@@ -37,11 +37,15 @@ import { fetchJsonCached } from "./fetch-cache";
 // Defensive Rating, CALIBRATED onto the play-by-play scale (DEF_EST_CAL —
 // the raw estimate separates teammates about five times as hard as real
 // on-court play does), is the prior (worth DEF_PBP_PRIOR_POSS possessions
-// of evidence), updated by the actual on-court play-by-play rating (points
-// allowed per 100 possessions while on the floor, 2000-01+) in proportion
-// to the possessions the player really logged — see defRtgEntryFor and the
-// pbpW weight below. Pre-2000 (and unbaked/unjoined) seasons are simply
+// of evidence), updated by the actual on-court rating (points allowed per
+// 100 possessions while on the floor, 1996-97+) in proportion to the
+// possessions the player really logged — see defRtgEntryFor and the pbpW
+// weight below. Pre-1997 (and unbaked/unjoined) seasons are simply
 // all-prior, which is exactly why the prior has to be on the right scale.
+// The on-court side comes from whichever of the two baked sources has the
+// season: counted possessions from pbpstats where they exist, estimated
+// ones from basketball-reference's on-off pages where they don't (see
+// ON_COURT_SOURCES).
 // The league line is laPTSperPoss×100; laPOSSperM (pace/48) converts
 // per-possession into per-minute. Null (→ hidden in the UI) when the
 // player-season has no rating from either source.
@@ -104,6 +108,14 @@ export const DEF_PBP_PRIOR_POSS_PO = 500;
 // from the league line by DEF_EST_CAL_LG — the pooled slope measured on that
 // same regression (0.646), which is just the two components above mixed in
 // their observed variance shares (0.58 × 0.96 + 0.42 × 0.19 ≈ 0.65).
+// Both numbers were fitted against pbpstats' COUNTED possessions, and they
+// are left as they are now that basketball-reference's on-off pages fill the
+// seasons pbpstats won't serve. The two on-court scales differ by ~1 pt/100,
+// an order of magnitude under the separation this slope is correcting, and
+// every place the difference could compound — the anchor the estimate shrinks
+// toward, and the team line IND subtracts — is read from the same source as
+// the player's own rating (see defRtgEntryFor). Re-fitting on the pooled set
+// is worth doing once the on-off seasons are actually baked, not before.
 export const DEF_EST_CAL = 0.5;
 export const DEF_EST_CAL_LG = 0.646;
 
@@ -215,7 +227,9 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
   // from like at both extremes (counted vs estimated possessions sit ~1
   // pt/100 apart). Stock rates still come from the BR team map (plain box
   // stats, identical either way).
-  const pbpTmap = pref === "po" ? (e?.teamPoPbp || e?.teamPbp) : (e?.teamPbp || e?.teamPoPbp);
+  // Read off the same scope and source the player's own rating came from, so
+  // the counted and estimated scales never end up on opposite sides of IND.
+  const pbpTmap = ent.onSrc ? e?.[teamOnCourtKey(ent.onScope, ent.onSrc)] : null;
   const pbpTeamDrtg = pbpW > 0 ? pbpTmap?.[row?.team] : null;
   // Blocks weigh what VA says they're worth: laDRBrate of a steal.
   const bw = lgaX.laDRBrate > 0 ? lgaX.laDRBrate : 1;
@@ -243,21 +257,50 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs") {
 }
 
 
+// The two baked on-court sources, best first. Both measure the same thing —
+// points allowed per 100 possessions while the player was on the floor — but
+// "Pbp" (api.pbpstats.com, 2000-01+) COUNTS possessions from the play-by-play
+// where "On" (basketball-reference's team on-off pages, 1996-97+) ESTIMATES
+// them from the box score, and the two scales sit ~1 pt/100 apart. Counted
+// wins: it is the better measurement, and it is the scale DEF_EST_CAL was
+// fitted against. The estimated side exists because pbpstats will not serve
+// six regular seasons or seventeen postseasons at all.
+const ON_COURT_SOURCES = ["Pbp", "On"];
+
+// The team map that goes with a scope and a source — teamPbp/teamOn for the
+// regular season, teamPoPbp/teamPoOn for the playoffs.
+export function teamOnCourtKey(scope, source) {
+  return (scope === "po" ? "teamPo" : "team") + source;
+}
+
 // DRtg sources for a player-season, kept separate so defVAInfo can do the
-// Bayesian blend: `pbp` is the on-court play-by-play rating (rsPbp/poPbp —
-// actual points allowed per 100 possessions while on the floor, baked from
-// api.pbpstats.com for 2000-01+), `est` is basketball-reference's box-score
-// estimate. Within each source, `pref` picks the sample ("po" for playoff
-// views, "rs" otherwise) and the other side backstops it so a player with
-// only one sample still gets a rating. Null when neither source has one.
+// Bayesian blend: `pbp` is the on-court rating, `est` is basketball-
+// reference's box-score estimate. `pref` picks the sample ("po" for playoff
+// views, "rs" otherwise) and the other side backstops it so a player with only
+// one sample still gets a rating. Null when neither source has one.
+//
+// Scope is tried before source, so a playoff view takes a playoff rating even
+// off the estimated-possession side rather than a counted regular-season one:
+// the sample is what was asked about. Within a scope the order is
+// ON_COURT_SOURCES. Which one answered comes back as `onScope`/`onSrc`,
+// because the team line defVAInfo subtracts has to be read from the same pair
+// — resolving the two independently would put that ~1 pt/100 scale gap inside
+// a subtraction that is supposed to isolate the player from his team.
 export function defRtgEntryFor(defs, season, slug, pref = "rs") {
   if (!defs || !season || !slug) return null;
   const e = defs[season];
   if (!e) return null;
   const other = pref === "po" ? "rs" : "po";
-  const pbp = e[pref + "Pbp"]?.[slug] ?? e[other + "Pbp"]?.[slug] ?? null;
+  let pbp = null, onScope = null, onSrc = null;
+  for (const scope of [pref, other]) {
+    for (const src of ON_COURT_SOURCES) {
+      const v = e[scope + src]?.[slug];
+      if (v != null) { pbp = v; onScope = scope; onSrc = src; break; }
+    }
+    if (pbp != null) break;
+  }
   const est = e[pref]?.[slug] ?? e[other]?.[slug] ?? null;
-  return pbp != null || est != null ? { pbp, est } : null;
+  return pbp != null || est != null ? { pbp, est, onScope, onSrc } : null;
 }
 
 
