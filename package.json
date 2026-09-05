@@ -8,7 +8,6 @@
     "start": "next start",
     "legacy": "node --import ./scripts/node/register.mjs scripts/legacy-report.mjs",
     "legacy:verify": "node --import ./scripts/node/register.mjs scripts/legacy-report.mjs --verify",
-    "legacy:calibrate": "node --import ./scripts/node/register.mjs scripts/calibrate-legacy.mjs",
     "usage:fit": "node scripts/fit-usage-model.mjs",
     "bake:playoff-averages": "node scripts/bake-playoff-averages.mjs",
     "rebake:va": "node scripts/rebake-leaderboard-va.mjs",
@@ -23,6 +22,7 @@
   },
   "devDependencies": {
     "autoprefixer": "10.4.19",
+    "playwright-core": "^1.63.0",
     "postcss": "8.4.39",
     "tailwindcss": "3.4.7"
   }

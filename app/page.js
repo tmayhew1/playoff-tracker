@@ -70,10 +70,12 @@ function Tracker() {
               {s}
             </button>
           ))}
-          {/* Legacy is hidden while it's still being worked on — the tab
-              button only. The view, its route through the render below, and
-              the cross-tab jump it hands back are all left intact, so putting
-              it back is this button and nothing else. */}
+          <button
+            onClick={() => setTab("legacy")}
+            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "legacy" ? "bg-stone-900 text-white" : "text-stone-500"}`}
+          >
+            Legacy
+          </button>
           <button
             onClick={() => setTab("college")}
             className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}

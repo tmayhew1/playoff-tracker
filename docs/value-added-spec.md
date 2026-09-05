@@ -1167,33 +1167,54 @@ taste parameter, and reads the way $\alpha$ does — $0$ is the outcome not
 counting at all. The series pot is conserved either way; $\omega$ only says
 how much of it is handed out by who won the games rather than shared evenly:
 
+*What* drives the split is not a taste, though, and the obvious choice is
+wrong. A share linear in the win rate, $\omega\,k/m + (1-\omega)/2$, is
+steepest exactly where the two teams were hardest to tell apart: $4\text{-}3$
+and $3\text{-}4$ sit two games apart on that scale ($0.571$ against $0.429$)
+where $4\text{-}2$ and $4\text{-}3$ sit one apart, so the largest step in the
+whole ladder fell between a series won in seven and the same series lost in
+seven. A seven-game series is the one result that says the teams were even, and
+it should be the one whose pot splits most nearly down the middle.
+
+So the tilt runs on **margin**, measured against the race the series is — first
+to $n = \max(k, m-k)$ wins, the winner's own total:
+
 $$
-\boxed{\;s \;=\; \omega\,\frac{k}{m} \;+\; (1-\omega)\,\tfrac12\;}
+\boxed{\;s \;=\; \tfrac12\left(1 + \omega\, d\,|d|\right),
+\qquad d \;=\; \frac{k - (m-k)}{n}\;}
 \qquad
 w(g) \;=\; 2\,s\;w_{\text{series}}
 $$
 
-for a team that won $k$ of the series' $m$ games. The two teams' shares sum to
-$1$ at every $\omega$, so the pot is exactly conserved. The factor $2$ is
-there because the pot is quoted against an even split, which makes $\omega=0$
-identical to the scheme it replaces; an unresolved series takes $s = \tfrac12$.
+for a team that won $k$ of the series' $m$ games. $d \in [-1, 1]$ is $\pm 1$
+exactly on a sweep and $\pm\tfrac14$ on a seven-game best-of-7; squaring it
+with the sign kept puts the flat part of the curve at the close series and the
+steep part at the rout. Since $d\,|d|$ is odd in the win margin the two teams'
+shares sum to $1$ at every $\omega$, so the pot is exactly conserved. The
+factor $2$ is there because the pot is quoted against an even split, which
+makes $\omega=0$ identical to the scheme it replaces; an unresolved series
+takes $s = \tfrac12$.
 
-$\omega = 1$ hands the pot out strictly in proportion to games won, which
-overpays — at $1$ a low-VA role player on a dynasty rides his teammates' share
-up 45 places on the board. The default $\tfrac12$ buys the two orderings the
-construction wants and nothing beyond them:
+$\omega = 1$ hands the whole pot to a sweep's winner, which overpays — at $1$ a
+low-VA role player on a dynasty rides his teammates' share up the board. The
+default $\tfrac12$ prices a round-1 pot like this:
 
 | round-1 best-of-7 | won, per game | won, series | lost, per game | lost, series |
 |---|---|---|---|---|
 | 4-0 | 2.180 | 8.72 | 0.727 | 2.91 |
-| 4-1 | 1.511 | 7.56 | 0.814 | 4.07 |
-| 4-2 | 1.130 | 6.78 | 0.807 | 4.84 |
-| 4-3 | 0.890 | 6.23 | 0.771 | 5.40 |
+| 4-1 | 1.489 | 7.45 | 0.836 | 4.18 |
+| 4-2 | 1.090 | 6.54 | 0.848 | 5.09 |
+| 4-3 | 0.856 | 5.99 | 0.804 | 5.63 |
 
-Winning in four still concentrates value over winning in seven ($8.72$ against
-$6.23$), so closing a team out is never charged for; and losing in seven now
-beats being swept ($5.40$ against $2.91$), so taking a team the distance beats
-not troubling them. A win outprices the loss it was at every round and length.
+Read as series worth, the eight outcomes descend strictly from sweeping to
+being swept — $8.72,\, 7.45,\, 6.54,\, 5.99 \mid 5.63,\, 5.09,\, 4.18,\,
+2.91$ — and the *smallest* step of the eight ($0.36$, against $0.55$ on either
+side of it and $1.27$ at the ends) is the one from winning in seven to losing
+in seven. Winning in four still concentrates value over winning in seven, so
+closing a team out is never charged for; losing in seven still beats being
+swept, so taking a team the distance beats not troubling them; and a win still
+outprices the loss it was at every round and length. Both ends of the ladder,
+and both endpoints of $\omega$, are exactly what the linear split gave.
 
 This is the one place a **team** outcome enters an individual metric, and it is
 deliberate. The outcome was already in there as a cliff — the winner advances
@@ -1202,27 +1223,23 @@ continuous across the series boundary rather than opening a second channel.
 
 #### 7.4.3 Peak and longevity
 
-Order a player's seasons by LVA descending and fold with geometric decay:
+The volume axis is a **plain sum** over a player's seasons:
 
 $$
-\mathrm{Legacy} \;=\; \sum_{k \ge 1} D^{\,k-1}\, \mathrm{LVA}_{(k)} .
+\mathrm{Legacy} \;=\; \sum_{k \ge 1} \mathrm{LVA}_{(k)} .
 $$
 
-$D = 1$ is a plain career sum (pure longevity); $D \to 0$ keeps only the best
-season (pure peak). Every term is positive when the season was, so extra
-seasons only ever add — but they add geometrically less, so a long tail of
-replacement-level years is neither rewarded nor punished much.
+No fold and no per-season multiplier. Two earlier versions of this axis had
+one — a geometric decay $D^{k-1}$ by rank, then a value-weighted $l_p$ norm
+over the positive seasons — and both are gone. What a season was worth is
+already its LVA, and scaling it by a second number derived from that same LVA
+prices the same fact twice; the ordering it produced was a dial's opinion
+wearing a derivation.
 
-$D$ is pinned rather than chosen, by stating what share of a career the peak
-should carry. "The best $K$ of $N$ seasons carry half the weight" is
-
-$$
-\frac{1 - D^{K}}{1 - D^{N}} = \tfrac12
-\quad\Longrightarrow\quad
-D = 0.938068 \;\;\text{at}\;\; (K,N) = (7,20),
-$$
-
-hence the default $D = 0.94$.
+The cost is stated rather than hidden: summed straight, this axis is pure
+longevity, and an extra good-not-great season always adds. A season below the
+league's typical minute subtracts exactly what it cost, at face value. Neither
+property is an accident, and the rate axis below is what sits beside them.
 
 The second axis is the **rate**: LVA per weighted game across the best $K$
 seasons. Weighted, not raw — if leverage prices the total it must price the
@@ -1239,9 +1256,9 @@ two cross at $\alpha \approx 0.27$, and at the default $\alpha = \tfrac12$
 LeBron leads $21.84$ to $21.26$. The crossing sits in the same place on best-8
 ($0.279$) and best-10 ($0.257$), so it is not an artifact of $K$.
 
-On the volume axis there is **no** crossing at all: LeBron leads at every $D$
-from $0.5$ to $1$, because his best leveraged seasons are also better, and the
-margin widens with $D$. The dials move the board substantially further down —
+On the volume axis there is **no** crossing at all: LeBron leads whatever the
+remaining dials do, because his best leveraged seasons are also better and there
+are more of them. The dials move the board substantially further down —
 Harden falls from 3rd to 23rd as $\alpha$ runs 0 to 1, Magic climbs 13th to
 4th, Duncan 16th to 7th — which is the metric separating profiles, and is worth
 reading as the result rather than tuning away.
@@ -1311,7 +1328,7 @@ own class rather than mixed into one column.
 | Defense | box-score events only | $\mathrm{VA}^{+}$ (§6) |
 | Shot location | Four Factors visuals | zone VA + Shooting comps (§7.1–7.2) |
 | Non-NBA | — | NCAA D-I on college-derived baselines |
-| All-time ranking | career VA, summed | Legacy: championship-leverage weighted, peak/longevity dialled (§7.4) |
+| All-time ranking | career VA, summed | Legacy: championship-leverage weighted, volume and rate side by side (§7.4) |
 
 ---
 

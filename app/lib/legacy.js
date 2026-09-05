@@ -1,9 +1,8 @@
 import { ALPHA_DEFAULT, OMEGA_DEFAULT, gameWeight, seriesGameWeight } from "./leverage";
-import DIALS from "../data/legacy-dials.json";
 
-// Isomorphic (no "use client"), for the same reason ./leverage.js is: the fold
-// runs server-side in /api/legacy, where the career corpus lives, and a client
-// directive here would hand that route a client reference instead of the
+// Isomorphic (no "use client"), for the same reason ./leverage.js is: the board
+// is built server-side in /api/legacy, where the career corpus lives, and a
+// client directive here would hand that route a client reference instead of the
 // functions. Nothing below touches React or the DOM.
 
 
@@ -11,40 +10,21 @@ import DIALS from "../data/legacy-dials.json";
 //
 // Career VA summed straight is pure longevity: it cannot tell a decade of
 // very good from seven years of overwhelming. Career VA/G is pure rate: it
-// cannot tell a twenty-year peak from a four-year one. An all-time ranking
-// needs both, and the user's framing is the right one — peak matters about as
-// much as longevity, not infinitely more or less.
+// cannot tell a twenty-year peak from a four-year one. So Legacy is two
+// numbers, not one:
 //
-// So Legacy is two numbers, not one:
-//
-//   VOLUME  a value-weighted fold over a player's seasons (the l_p norm).
-//           p = 1 is a plain career sum; p -> infinity keeps only the best.
+//   VOLUME  the career's leveraged VA, added up. Every season at face value.
 //   RATE    leverage-weighted VA per weighted game over the best N seasons.
 //
-// The fold is the honest way to spend a longevity dial. Extra seasons only
-// ever ADD (every term is positive when the season was), but each adds in
-// proportion to how good it was, so hanging on for three replacement-level
-// years is neither rewarded much nor punished — those seasons weigh little
-// because they were worth little, not because of where they land in a sort.
-
-// P is read from disk, calibrated by scripts/calibrate-legacy.mjs from a stated
-// principle (see pForHalfWeightAt). Regenerate with `npm run legacy:calibrate`.
-export const P_DEFAULT = DIALS.p;
+// The volume axis is a PLAIN SUM. It used to be a value-weighted fold — the
+// l_p norm, which discounted a career's lesser seasons against its best — and
+// that dial is gone on purpose: what a season was worth is already in its LVA,
+// and multiplying it by a second number derived from the same LVA prices the
+// same fact twice. The cost is stated rather than hidden: summed straight, the
+// volume axis is pure longevity, and an extra good-not-great season always
+// helps. That is what the rate axis is beside it for, and neither is "the"
+// ranking.
 export const PEAK_SEASONS_DEFAULT = 7;
-
-// The whole dial in one sentence: a season worth `share` of your best carries
-// this much of the weight your best one carries.
-export function weightForShare(share, p = P_DEFAULT) {
-  if (!(share > 0)) return 0;
-  return Math.pow(share, p - 1);
-}
-
-// And the inverse, which is how p gets set: pick the share that should still be
-// worth half, and p follows. share = 0.1 gives p = 1.30103.
-export function pForHalfWeightAt(share, half = 0.5) {
-  if (!(share > 0) || share >= 1) return P_DEFAULT;
-  return 1 + Math.log(half) / Math.log(share);
-}
 
 
 // --- One season -------------------------------------------------------------
@@ -112,68 +92,13 @@ export function seasonLVA(season, {
 }
 
 
-// --- The fold ---------------------------------------------------------------
-// Weight by VALUE, not by rank.
-//
-// A rank-decayed fold says your eighth-best season counts 23% whether it was
-// nearly your best or nearly worthless. That is the arbitrariness no choice of
-// D can remove, because rank is the wrong variable: what should decide a
-// season's weight is how good it was.
-//
-// So the positive seasons aggregate under the l_p norm
-//
-//     L = ( sum x^p )^(1/p)
-//
-// which is the CES aggregator from economics, with p as the elasticity of
-// substitution between seasons. It needs no invented constants: p = 1 is a
-// plain career sum, p -> infinity keeps only the best season, exactly the two
-// endpoints the rank-decayed fold had. It is homogeneous of degree 1, so the
-// total stays in points; and by Euler's theorem on such functions the
-// per-season contributions below sum to it EXACTLY, so a career still reads as
-// the sum it is.
-//
-// The weight that falls out is (x_i / L)^(p-1) — nothing asserted. Relative to
-// the best season it is (x_i / x_1)^(p-1), which is the whole dial in a
-// sentence, and it adapts: a career with many near-peak years gets a long
-// plateau, one built on a single towering season gets a steep drop.
-//
-// Negative seasons are a linear debit rather than a curved one. Being below
-// league average costs a team points at face value; there is no peak to reward
-// in it, and a convex transform would pay for it (squared, the worst season on
-// the board — Bruce Bowen's -479.5 — becomes +229,948 of credit).
-export function legacyFold(lvas, p = P_DEFAULT) {
-  const sorted = [...lvas].sort((a, b) => b - a);
-
-  // Factor the best season out before raising anything to p. Summing v^p
-  // directly overflows to Infinity for large p — 900^400 is about 10^1181 —
-  // and every ratio here is <= 1, so this form cannot. It is also exactly
-  // equal: m * (sum (v/m)^p)^(1/p) = (sum v^p)^(1/p).
-  let debit = 0, m = 0;
-  for (const v of sorted) {
-    if (v > 0) { if (v > m) m = v; }
-    else debit += -v;
-  }
-  let ratios = 0;
-  if (m > 0) for (const v of sorted) if (v > 0) ratios += Math.pow(v / m, p);
-  const norm = m > 0 ? m * Math.pow(ratios, 1 / p) : 0;
-
-  const terms = sorted.map((lva, i) => {
-    const weight = lva > 0 ? (norm > 0 ? Math.pow(lva / norm, p - 1) : 0) : 1;
-    return { lva, rank: i + 1, weight, contribution: weight * lva };
-  });
-
-  return { total: norm - debit, terms, norm, debit };
-}
-
-
 // --- One career -------------------------------------------------------------
 // `player.seasons` is an array of season rows already carrying resolved
-// per-game weights (see buildCareers in scripts/legacy-report.mjs, which is
+// per-game weights (see buildCareers in app/api/_lib/careers.js, which is
 // where the data join lives).
 export function playerLegacy(player, {
   alpha = ALPHA_DEFAULT,
   omega = OMEGA_DEFAULT,
-  p = P_DEFAULT,
   includeRS = true,
   peakSeasons = PEAK_SEASONS_DEFAULT,
 } = {}) {
@@ -183,10 +108,16 @@ export function playerLegacy(player, {
     ...seasonLVA(s, { alpha, omega, includeRS }),
   }));
 
+  // Best season first. Nothing about the total depends on this order any more —
+  // a sum does not care — but it is the order the career reads in, and the
+  // order the peak rate below takes its seasons from.
   rows.sort((a, b) => b.lva - a.lva);
+  const seasons = rows.map((r, i) => ({ ...r, rank: i + 1 }));
 
-  const fold = legacyFold(rows.map((r) => r.lva), p);
-  const seasons = rows.map((r, i) => ({ ...r, ...fold.terms[i] }));
+  // The volume axis: every season at face value, positive and negative alike.
+  // A season spent below the league's typical minute is a debit of exactly its
+  // own size, which is what it cost.
+  const total = rows.reduce((s, r) => s + r.lva, 0);
 
   // Peak rate: leverage-weighted VA per weighted game across the best seasons.
   // Weighted, not raw, on purpose — if importance weights the total it has to
@@ -208,9 +139,8 @@ export function playerLegacy(player, {
     name: player.name,
     teams: player.teams,
     pos: player.pos ?? null,
-    total: fold.total,
+    total,
     peak, peakRaw,
-    careerLVA: rows.reduce((s, r) => s + r.lva, 0),
     careerGames: rows.reduce((s, r) => s + r.games, 0),
     seasonCount: rows.length,
     span: rows.length
@@ -238,68 +168,6 @@ export function rankLegacy(players, opts = {}) {
 }
 
 
-// --- Choosing D, without inventing constants --------------------------------
-// The superseded derivation asked "the best K seasons should carry `share` of
-// an N-season career" and solved for D. That is three assertions (K, N, share)
-// wearing one equation, and it does not deliver what it claims: at the 0.94 it
-// produced, the board sits tau 0.94 from a pure career sum but only tau 0.75
-// from a pure peak ranking. Half the WEIGHT is not half the INFLUENCE, because
-// the tail of a career is many cheap seasons.
-//
-// The fold has two endpoints that need no constants at all:
-//
-//   D = 1    a plain career sum          — pure longevity
-//   D -> 0   the single best season      — pure peak
-//
-// So "peak matters about as much as longevity" can be measured instead of
-// asserted: take the D whose ranking is equidistant from those two endpoints,
-// by rank correlation over the actual careers. One stated symmetry, no
-// invented numbers, and the answer moves only when the corpus does.
-
-// Kendall tau-a between two slug -> rank maps, over the slugs they share.
-export function rankTau(a, b, pool) {
-  let con = 0, dis = 0;
-  for (let i = 0; i < pool.length; i++) {
-    const ai = a.get(pool[i]), bi = b.get(pool[i]);
-    for (let j = i + 1; j < pool.length; j++) {
-      const s = (ai - a.get(pool[j])) * (bi - b.get(pool[j]));
-      if (s > 0) con++; else if (s < 0) dis++;
-    }
-  }
-  return con + dis === 0 ? 0 : (con - dis) / (con + dis);
-}
-
-// Where a given p leaves the board on that axis. This REPORTS rather than
-// solves: p is set by the half-weight rule above, and no p balances the two
-// distances anyway. Guaranteeing the tail real weight and sitting equidistant
-// between peak and longevity are incompatible for careers shaped like these —
-// the tails are long, so anything that keeps them alive tilts longevity-ward.
-// Worth measuring precisely because it is the cost of the shape.
-export function balanceOf(players, opts = {}) {
-  const board = rankLegacy(players, opts);
-  if (board.length < 2) return null;
-
-  // The two references are computed straight off the season values, not by
-  // running this family to its own limits: at large p the fold still carries
-  // the negative debit, so it never becomes a clean best-season ranking and
-  // using it as one would overstate the gap.
-  const rows = board.map((x) => ({
-    slug: x.slug,
-    here: x.total,
-    sum: x.seasons.reduce((s, r) => s + r.lva, 0),
-    max: x.seasons.length ? Math.max(...x.seasons.map((r) => r.lva)) : 0,
-  }));
-  const pool = rows.map((r) => r.slug);
-  const rankOf = (key) => new Map(
-    [...rows].sort((a, b) => b[key] - a[key]).map((r, i) => [r.slug, i + 1]));
-
-  const here = rankOf("here");
-  const tau = rankTau(here, rankOf("sum"), pool);
-  const tauPeak = rankTau(here, rankOf("max"), pool);
-  return { pool: pool.length, tau, tauPeak, gap: tau - tauPeak };
-}
-
-
 // --- The dial sweep ---------------------------------------------------------
 // Sweeps one dial across its range and reports each tracked player's score and
 // rank at every step, plus the exact dial values where two of the leaders swap
@@ -307,23 +175,25 @@ export function balanceOf(players, opts = {}) {
 // range of the dial is a ranking with an argument in it, and hiding that behind
 // one default would be dishonest.
 export function dialSweep(players, {
-  dial = "p",
+  dial = "alpha",
   alpha = ALPHA_DEFAULT,
   omega = OMEGA_DEFAULT,
-  p = P_DEFAULT,
   includeRS = true,
-  from = dial === "p" ? 1 : 0,
-  to = dial === "p" ? 3 : 1,
+  // Both remaining dials are defined on [0, 1] at the end that matters: omega
+  // is a share, and alpha's range above 1 is raw leverage rather than a
+  // compression of it.
+  from = 0,
+  to = 1,
   steps = 51,
   topN = 12,
 } = {}) {
   const xs = Array.from({ length: steps }, (_, i) => from + ((to - from) * i) / (steps - 1));
 
-  const base = rankLegacy(players, { alpha, omega, p, includeRS }).slice(0, topN);
+  const base = rankLegacy(players, { alpha, omega, includeRS }).slice(0, topN);
   const tracked = base.map((x) => x.slug);
   const byStep = xs.map((x) => {
-    // Every dial sweeps the same way: hold the other two, move this one.
-    const board = rankLegacy(players, { alpha, omega, p, [dial]: x, includeRS });
+    // Both dials sweep the same way: hold the other, move this one.
+    const board = rankLegacy(players, { alpha, omega, [dial]: x, includeRS });
     const rank = new Map(board.map((pl, i) => [pl.slug, i + 1]));
     const score = new Map(board.map((pl) => [pl.slug, pl.total]));
     return { rank, score };

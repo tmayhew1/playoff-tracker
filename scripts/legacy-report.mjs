@@ -2,16 +2,16 @@
 // Legacy rankings — the leverage-weighted all-time board.
 //
 //   node scripts/legacy-report.mjs                     # default dials
-//   node scripts/legacy-report.mjs --alpha 1 --p 1 --omega 0
+//   node scripts/legacy-report.mjs --alpha 1 --omega 0
 //   node scripts/legacy-report.mjs --top 40 --no-rs
 //   node scripts/legacy-report.mjs --player jamesle01 --player jordami01
-//   node scripts/legacy-report.mjs --sweep p        # or --sweep alpha, --sweep omega
+//   node scripts/legacy-report.mjs --sweep alpha    # or --sweep omega
 //   node scripts/legacy-report.mjs --verify
 //
 // The board also ships as the Legacy tab (/api/legacy), which ranks the same
 // careers from the same join — buildCareers lives in app/api/_lib/careers.js so
 // there is only one of it. This script stays the sharper instrument: dial
-// sweeps, per-player folds, and --verify, none of which the tab exposes.
+// sweeps, per-player breakdowns, and --verify, none of which the tab exposes.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -21,10 +21,7 @@ import {
   gameLeverage, bracketShape, swing, cLI, gameWeight, rsCLI, rsGamesFor, anchorCLI,
   seriesGameWeight, seriesShare, EXPECTED_SERIES_GAMES, ALPHA_DEFAULT, OMEGA_DEFAULT,
 } from "../app/lib/leverage.js";
-import {
-  rankLegacy, dialSweep, legacyFold, balanceOf, rankTau, weightForShare,
-  pForHalfWeightAt, P_DEFAULT, PEAK_SEASONS_DEFAULT,
-} from "../app/lib/legacy.js";
+import { rankLegacy, dialSweep, PEAK_SEASONS_DEFAULT } from "../app/lib/legacy.js";
 import { lgaForSeason, baselineCoverage } from "../app/scoring.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -57,9 +54,9 @@ function build() {
 const fmt = (n, w = 8, d = 0) => n.toLocaleString("en-US", {
   minimumFractionDigits: d, maximumFractionDigits: d }).padStart(w);
 
-function printBoard(board, { top, alpha, omega, p, includeRS, firstSeason }) {
+function printBoard(board, { top, alpha, omega, includeRS, firstSeason }) {
   console.log(`\n=== Legacy — top ${top} `
-    + `(alpha ${alpha}, omega ${omega}, p ${p}, `
+    + `(alpha ${alpha}, omega ${omega}, `
     + `regular season ${includeRS ? "in" : "out"}) ===\n`);
   console.log("  #  player                     legacy   peak/g  raw/g   sns  span         games");
   console.log("  " + "-".repeat(83));
@@ -76,12 +73,12 @@ function printBoard(board, { top, alpha, omega, p, includeRS, firstSeason }) {
 
 function printPlayer(p) {
   console.log(`\n--- ${p.name}  (${p.span}, ${p.seasonCount} seasons, ${p.careerGames} games) ---`);
-  console.log(`    legacy ${p.total.toFixed(0)} · career LVA ${p.careerLVA.toFixed(0)}`
+  console.log(`    legacy ${p.total.toFixed(0)}`
     + ` · peak/g ${p.peak.toFixed(2)} (raw ${p.peakRaw.toFixed(2)})`);
-  console.log("    rank  season     LVA    weight    weighted");
+  console.log("    rank  season     LVA        PO       RS");
   for (const s of p.seasons) {
     console.log(`    ${String(s.rank).padStart(4)}  ${s.season}  ${fmt(s.lva, 8, 1)}`
-      + `   ${s.weight.toFixed(4)}   ${fmt(s.contribution, 10, 1)}`);
+      + `${fmt(s.poLVA, 9, 1)}${fmt(s.rsLVA, 9, 1)}`);
   }
 }
 
@@ -234,58 +231,60 @@ function verify({ players, seasons }) {
       W(4, 0) < W(7, 3),
       `${W(4, 0).toFixed(3)} vs ${W(7, 3).toFixed(3)}, `
       + `was ${seriesGameWeight(3, 4, 4, 0.5).toFixed(3)} vs ${seriesGameWeight(3, 4, 7, 0.5).toFixed(3)}`);
+
+    // The ladder the quadratic tilt exists to produce: eight outcomes, strictly
+    // descending from a sweep to being swept, with the win/loss boundary — the
+    // one result that says the teams were even — the smallest step of the eight.
+    const OUT = [[4, 4], [4, 5], [4, 6], [4, 7], [3, 7], [2, 6], [1, 5], [0, 4]];
+    const series = OUT.map(([wins, n]) => W(n, wins) * n);
+    const steps = series.slice(1).map((v, i) => series[i] - v);
+    console.log("    series worth, round-1 pot: "
+      + OUT.map(([wins, n], i) => `${wins}-${n - wins} ${series[i].toFixed(2)}`).join("  "));
+    ok("the eight outcomes descend strictly, sweep to swept",
+      steps.every((d) => d > 0), steps.map((d) => d.toFixed(2)).join(" "));
+    ok("losing in 7 is the smallest step down, not the largest",
+      steps[3] === Math.min(...steps),
+      `${steps[3].toFixed(3)} vs ${Math.min(...steps.filter((_, i) => i !== 3)).toFixed(3)} next`);
+    ok("and it is a slight one: under a tenth of the ladder's range",
+      steps[3] / (series[0] - series[7]) < 0.1,
+      `${(100 * steps[3] / (series[0] - series[7])).toFixed(1)}%`);
+    // The ends are untouched by the reshaping — the same 8.72 and 2.91 the
+    // linear split priced them at, so omega still reads the way it did.
+    ok("a sweep and being swept are priced exactly as before",
+      close(series[0], 2 * EXPECTED_SERIES_GAMES * 0.75, 1e-9)
+        && close(series[7], 2 * EXPECTED_SERIES_GAMES * 0.25, 1e-9),
+      `${series[0].toFixed(2)} / ${series[7].toFixed(2)}`);
+    ok("omega = 1 hands a sweep the whole pot and the swept team none",
+      close(seriesShare(4, 4, 1), 1, 1e-12) && close(seriesShare(0, 4, 1), 0, 1e-12));
+    // Shorter series are on the same footing: the margin is quoted against the
+    // clinching number, so a 3-0 in a best-of-5 is a sweep and prices like one.
+    ok("a best-of-5 sweep prices like a best-of-7 sweep",
+      close(seriesShare(3, 3, 0.5), seriesShare(4, 4, 0.5), 1e-12));
+    ok("and a best-of-5 descends strictly too",
+      [[3, 3], [3, 4], [3, 5], [2, 5], [1, 4], [0, 3]]
+        .map(([wins, n]) => seriesShare(wins, n, 0.5))
+        .every((v, i, a) => i === 0 || a[i - 1] > v));
   }
   {
-    const xs = [12, 400, 3, 900, 75, 220];
-    const a = legacyFold(xs, 1).total;
-    const b = legacyFold([...xs].reverse(), 1).total;
-    ok("p=1 => fold is the plain career sum", close(a, b) && close(a, xs.reduce((s, v) => s + v, 0)));
-    ok("p -> infinity => fold is the best season", close(legacyFold(xs, 400).total, Math.max(...xs), 1e-6));
-    let mono = true;
-    for (let q = 1; q < 4; q += 0.25) {
-      if (legacyFold(xs, q + 0.25).total >= legacyFold(xs, q).total) mono = false;
-    }
-    ok("fold strictly decreasing in p", mono);
-    // Homogeneous of degree 1: the score is in points, so doubling every season
-    // doubles it. A raw power sum would quadruple it at p=2.
-    ok("doubling every season doubles the score",
-      close(legacyFold(xs.map((v) => 2 * v), 1.30103).total, 2 * legacyFold(xs, 1.30103).total, 1e-6));
-    // Euler's theorem, which is what lets the expansion show a career as a sum.
-    for (const q of [1.1, 1.30103, 2, 3]) {
-      const f = legacyFold([...xs, -40, -7], q);
-      ok(`contributions sum to the total at p=${q}`,
-        close(f.terms.reduce((s, t) => s + t.contribution, 0), f.total, 1e-6));
-    }
-    // A negative season is a debit at face value, never a credit — the failure
-    // that rules out a raw squared sum.
-    const withBad = legacyFold([500, 100, -300], 1.30103).total;
-    const withoutBad = legacyFold([500, 100], 1.30103).total;
-    ok("a negative season lowers the total", withBad < withoutBad,
-      `${withBad.toFixed(1)} < ${withoutBad.toFixed(1)}`);
-    ok("and lowers it by exactly its own size", close(withoutBad - withBad, 300, 1e-6));
-  }
-  {
-    // p is set by a stated rule rather than measured against the corpus: a
-    // season worth a tenth of your best still carries half the weight.
-    ok("p = 1 + ln(.5)/ln(.1) = 1.30103", close(pForHalfWeightAt(0.1), 1.30103, 1e-5),
-      pForHalfWeightAt(0.1).toFixed(5));
-    ok("p on disk matches that rule", close(P_DEFAULT, pForHalfWeightAt(0.1), 1e-5),
-      `${P_DEFAULT} vs ${pForHalfWeightAt(0.1).toFixed(5)}`);
-    ok("a tenth of your best carries half the weight",
-      close(weightForShare(0.1, P_DEFAULT), 0.5, 1e-6), weightForShare(0.1, P_DEFAULT).toFixed(4));
-    ok("weight rises with the season's value",
-      weightForShare(0.5, P_DEFAULT) > weightForShare(0.25, P_DEFAULT));
-    // The shape the value-weighting produces, which is the point of the change:
-    // a long plateau near the top rather than an immediate rank-decay.
-    const bal = balanceOf(players, { alpha: 0.5, includeRS: true, minSeasons: 1, minGames: 400 });
-    ok("the board is longevity-tilted, as the shape requires", bal.gap > 0,
-      `gap ${bal.gap.toFixed(3)} (sum ${bal.tau.toFixed(3)}, peak ${bal.tauPeak.toFixed(3)})`);
-    // Weighting by value, not rank: two seasons of equal worth weigh the same
-    // however far apart they sit in the sort.
-    const f = legacyFold([600, 500, 500, 40, 500], 1.30103);
-    const equal = f.terms.filter((t) => t.lva === 500).map((t) => t.weight);
-    ok("equal seasons carry equal weight regardless of rank",
-      equal.every((w) => close(w, equal[0], 1e-12)), `ranks differ, weight ${equal[0].toFixed(4)}`);
+    // The volume axis is a plain sum, and that is worth asserting rather than
+    // assuming: the fold that used to sit here is gone, so a career is exactly
+    // its seasons and a bad season costs exactly what it was.
+    const pl = players.find((p) => p.slug === "jamesle01");
+    const one = rankLegacy([pl], { alpha: 0.5, omega: 0.5, includeRS: true })[0];
+    ok("a career total is the sum of its seasons",
+      close(one.total, one.seasons.reduce((t, r) => t + r.lva, 0), 1e-9),
+      one.total.toFixed(1));
+    ok("seasons come back best first", one.seasons.every(
+      (r, i) => i === 0 || one.seasons[i - 1].lva >= r.lva));
+    ok("and are ranked in that order",
+      one.seasons.every((r, i) => r.rank === i + 1));
+    // Order-independence and linearity, the two properties a sum has that the
+    // fold did not: nothing about a season depends on where it lands in a sort.
+    const shuffled = rankLegacy(
+      [{ ...pl, seasons: [...pl.seasons].reverse() }],
+      { alpha: 0.5, omega: 0.5, includeRS: true })[0];
+    ok("the order the seasons arrive in cannot change the total",
+      close(one.total, shuffled.total, 1e-9));
   }
 
   console.log("\nTIER 3 — LeBron 2015-16, hand-checkable");
@@ -308,9 +307,10 @@ function verify({ players, seasons }) {
     ok("a 7-game Finals won still prices below a Finals swept in 4",
       w(fin[0]) < seriesGameWeight(0, 4, 4, 0.5, 4),
       `${w(fin[0]).toFixed(3)} < ${seriesGameWeight(0, 4, 4, 0.5, 4).toFixed(3)}`);
-    // The stake, times the winning side's share of a 4-3: 0.5*(4/7) + 0.5*0.5,
-    // doubled because the pot is quoted against an even split.
-    const share = 2 * (0.5 * (4 / 7) + 0.5 * 0.5);
+    // The stake, times the winning side's share of a 4-3. The margin is one
+    // game against a clinch of four, so d = 1/4 and the tilt is omega*d|d| =
+    // 0.5/16; doubled because the pot is quoted against an even split.
+    const share = 2 * 0.5 * (1 + 0.5 * (1 / 4) * (1 / 4));
     ok("the series totals what its stake says, times the winner's share",
       close(w(fin[0]) * fin.length, 2 * Math.SQRT2 * EXPECTED_SERIES_GAMES * share, 1e-9),
       (w(fin[0]) * fin.length).toFixed(4));
@@ -387,14 +387,13 @@ function main(argv) {
 
   const alpha = Number(arg("alpha", ALPHA_DEFAULT));
   const omega = Number(arg("omega", OMEGA_DEFAULT));
-  const p = Number(arg("p", P_DEFAULT));
   const includeRS = !has("no-rs");
   const top = Number(arg("top", 25));
   const minGames = Number(arg("min-games", 400));
   const peakSeasons = Number(arg("peak-seasons", PEAK_SEASONS_DEFAULT));
 
   const built = build();
-  const opts = { alpha, omega, p, includeRS, peakSeasons, minSeasons: 1, minGames };
+  const opts = { alpha, omega, includeRS, peakSeasons, minSeasons: 1, minGames };
 
   if (has("verify")) process.exit(verify(built) ? 1 : 0);
 
@@ -402,13 +401,11 @@ function main(argv) {
     (a === "--player" ? [...acc, argv[i + 1]] : acc), []);
 
   if (has("sweep")) {
-    const dial = arg("sweep", "p");
-    // p runs 1..3; alpha and omega are both defined on 0..1 at the low end,
-    // and alpha keeps its wider range because raw leverage sits above 1.
-    const range = dial === "p" ? { from: 1, to: 3 }
-      : dial === "omega" ? { from: 0, to: 1 }
-      : { from: 0, to: 1 };
-    const held = { alpha, omega, p };
+    const dial = arg("sweep", "alpha");
+    // Both dials run 0..1: omega is a share, and alpha above 1 is raw leverage
+    // rather than a compression of it.
+    const range = { from: 0, to: 1 };
+    const held = { alpha, omega };
     delete held[dial];
     const sw = dialSweep(built.players.filter((p) =>
       p.seasons.length >= 3), { ...opts, dial, ...range, topN: Number(arg("top", 12)) });
@@ -443,12 +440,10 @@ function main(argv) {
     return;
   }
 
-  printBoard(board, { top, alpha, omega, p, includeRS, firstSeason: built.seasons[0] });
+  printBoard(board, { top, alpha, omega, includeRS, firstSeason: built.seasons[0] });
   console.log(`\n  ${board.length} players qualified `
     + `(>= 3 seasons, >= ${minGames} games); peak axis = best ${peakSeasons} seasons.`);
-  console.log(`  p ${p} => a season worth half a career's best carries `
-    + `${(weightForShare(0.5, p) * 100).toFixed(0)}% of its weight; a tenth carries `
-    + `${(weightForShare(0.1, p) * 100).toFixed(0)}%.`);
+  console.log("  Legacy is the seasons added up — no fold, no per-season multiplier.");
 }
 
 main(process.argv.slice(2));
