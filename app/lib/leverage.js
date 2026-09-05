@@ -144,16 +144,39 @@ export const EXPECTED_SERIES_GAMES = 5.8125;
 // omega only says how much of it is handed out by who won the games rather
 // than shared evenly.
 //
-//   share = omega * (teamWins / seriesGames) + (1 − omega) * 0.5
+// WHAT the split is driven by is not a taste, though, and the obvious choice is
+// wrong. A share linear in the win rate — omega * k/m + (1 − omega)/2 — is
+// steepest exactly where the two teams were hardest to tell apart: 4-3 and 3-4
+// sit two games apart on that scale (0.571 against 0.429) where 4-2 and 4-3 sit
+// one apart, so the largest step in the whole ladder fell between a series won
+// in seven and the same series lost in seven. That is backwards. A seven-game
+// series is the one result that says the teams were even, and it should be the
+// one whose pot splits most nearly down the middle; a sweep is the one that says
+// they were not.
 //
-// omega = 0 is the even split this replaces. omega = 1 hands the pot out
-// strictly in proportion to games won, which overpays: at 1 a low-VA role
-// player on a dynasty rides his teammates' share up 45 places. 0.5 keeps both
-// orderings the design wants and nothing more — winning in 4 (8.72 of a round-1
-// pot) beats winning in 7 (6.23), so closing out early still concentrates
-// value; and losing in 7 (5.40) beats being swept (2.91), so taking a team the
-// distance beats not troubling them. The two are monotone against each other at
-// every length: a win always outprices the loss it was.
+// So the tilt runs on MARGIN, measured against the race the series actually is —
+// first to `need` wins, where need = max(k, m − k) is the winner's own total:
+//
+//   d     = (k − (m − k)) / need           in [−1, 1], ±1 exactly on a sweep
+//   share = 0.5 * (1 + omega * d * |d|)
+//
+// Squaring d (with its sign kept) is what puts the flat part of the curve at the
+// close series and the steep part at the rout. Both of omega's endpoints survive
+// unchanged: 0 is still the even split, 1 still hands a sweep the entire pot.
+//
+// At the default 0.5, a round-1 pot goes out like this — series totals, so this
+// is what a whole series is worth to a team:
+//
+//   won 4-0  8.72   won 4-1  7.45   won 4-2  6.54   won 4-3  5.99
+//   lost 3-4 5.63   lost 2-4 5.09   lost 1-4 4.18   lost 0-4 2.91
+//
+// Strictly descending from sweeping to being swept, with the SMALLEST step of
+// the eight (0.36, against 0.55 on either side of it and 1.27 at the ends)
+// falling between winning in seven and losing in seven. Closing out early still
+// concentrates value, taking a team the distance still beats not troubling them,
+// and a win still outprices the loss it was at every round and length — the two
+// orderings the dial exists for, now with the boundary priced like the coin flip
+// it is.
 //
 // Note this is the one place team outcome enters an individual metric on
 // purpose. It was already in there as a cliff — the winner advances and plays
@@ -161,13 +184,22 @@ export const EXPECTED_SERIES_GAMES = 5.8125;
 // across the series boundary rather than adding a new channel.
 export const OMEGA_DEFAULT = 0.5;
 
-// A team's share of its series' pot. Both teams' shares sum to 1 for any
-// omega, which is what conserves the pot. `teamWins` null — an unresolved
-// series — falls back to the even split rather than guessing.
+// A team's share of its series' pot. Both teams' shares sum to 1 for any omega
+// — d is odd in the win margin and so is d|d| — which is what conserves the
+// pot. `teamWins` null — an unresolved series — falls back to the even split
+// rather than guessing.
 export function seriesShare(teamWins, seriesGames, omega = OMEGA_DEFAULT) {
   if (teamWins == null || !(seriesGames > 0)) return 0.5;
-  const won = Math.min(Math.max(teamWins, 0), seriesGames) / seriesGames;
-  return omega * won + (1 - omega) * 0.5;
+  const won = Math.min(Math.max(teamWins, 0), seriesGames);
+  const lost = seriesGames - won;
+  // The clinching number, read off the series rather than passed in — the same
+  // way seriesBestOf below reads bestOf off the winner's win total. On a bracket
+  // still in progress this is the leader's standing so far, which is the honest
+  // margin to price a half-played series at.
+  const need = Math.max(won, lost);
+  if (!(need > 0)) return 0.5;
+  const d = (won - lost) / need;
+  return 0.5 * (1 + omega * d * Math.abs(d));
 }
 
 // What one game of a series is worth to one of its teams. `seriesGames` is the

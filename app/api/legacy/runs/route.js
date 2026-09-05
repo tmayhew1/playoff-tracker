@@ -102,7 +102,7 @@ function runStats(row) {
 
 // The regular season has no per-game lines baked, only totals — which is also
 // how its VA is computed, so evaluating the categories on those totals is the
-// consistent choice here and they sum to exactly the rsVA the fold used.
+// consistent choice here and they sum to exactly the rsVA the board used.
 function rsStats(row) {
   if (!row.rs || !(row.rs.gp > 0)) return null;
   return statsFrom(row.rs, valueAddByCategory(row.rs, lgaForSeason(row.season)));
@@ -176,7 +176,7 @@ export async function GET(request) {
   if (slug && season) {
     // Looked up against the whole corpus rather than against the ranked runs,
     // so a season the player spent out of the playoffs still opens — the
-    // Careers fold shows those rows and they have a regular season to explain.
+    // Careers board shows those rows and they have a regular season to explain.
     const pl = cachedCareers().players.find((x) => x.slug === slug);
     const row = pl && (pl.seasons || []).find((s) => s.season === season);
     if (!row) return Response.json({ error: "no such season" }, { status: 404 });

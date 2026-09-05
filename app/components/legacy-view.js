@@ -4,27 +4,25 @@ import { Fragment, useState, useEffect } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { teamColor } from "../lib/format";
 import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT, OMEGA_DEFAULT } from "../lib/leverage";
-import { weightForShare, P_DEFAULT, PEAK_SEASONS_DEFAULT } from "../lib/legacy";
+import { PEAK_SEASONS_DEFAULT } from "../lib/legacy";
 import { positionChips, positionParent } from "../lib/positions";
 
 
 // The all-time board. Legacy is deliberately TWO numbers rather than one
-// (app/lib/legacy.js): LEGACY is a value-weighted fold over a career's seasons,
-// which spends longevity at diminishing returns, and PEAK/G is the
-// leverage-weighted rate over the best seasons. They disagree — Jokić is ninth
-// by volume and third by peak — and blending them would hide exactly the
-// argument the metric exists to make, so both columns are sortable and neither
-// is "the" ranking.
+// (app/lib/legacy.js): LEGACY is a career's leveraged VA added up, which is
+// volume, and PEAK/G is the same weighting as a rate over the best seasons.
+// They disagree, and blending them would hide exactly the argument the metric
+// exists to make, so both columns are sortable and neither is "the" ranking.
 //
-// Tapping a row opens the fold itself. A career total is otherwise a number you
-// have to take on faith; the expansion shows it as the sum it is — every
-// season, ordered by value, with the weight that season earned and the
-// playoff/regular-season split underneath. Tapping a season goes one further,
-// to the stat lines behind both halves of it and every game of the run — which
-// is where the weighting stops being an assertion and becomes checkable.
+// Tapping a row opens the career up. A total is otherwise a number you have to
+// take on faith; the expansion shows it as the sum it is — every season, best
+// first, with the playoff/regular-season split underneath. Tapping a season
+// goes one further, to the stat lines behind both halves of it and every game
+// of the run — which is where the weighting stops being an assertion and
+// becomes checkable.
 //
 // MVP scope: the board at the default dials. The route already answers for any
-// alpha/p, so exposing them is a slider away.
+// alpha/omega, so exposing them is a slider away.
 
 const fmt0 = (n) => Math.round(n).toLocaleString("en-US");
 // Big numbers don't need a decimal and can't spare the width on a phone; small
@@ -32,7 +30,11 @@ const fmt0 = (n) => Math.round(n).toLocaleString("en-US");
 // same season).
 const fmtN = (n) => (Math.abs(n) >= 100 ? fmt0(n) : n.toFixed(1));
 
-const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-baseline";
+// The season table's columns. Two of them — the weight a season earned and the
+// weighted product — went out with the fold: a season contributes its LVA and
+// nothing multiplies it, so a column of 1.000s would have been ceremony. The
+// width they held goes to the season and its team/games line.
+const COLS = "grid grid-cols-[1.1rem_1fr_4rem] gap-x-1.5 items-baseline";
 
 // The board's five columns, shared by the header and every row so the two
 // cannot drift apart. Legacy and Peak are given the same width: they are peers
@@ -42,11 +44,11 @@ const COLS = "grid grid-cols-[1.1rem_1fr_3rem_2.7rem_3.2rem] gap-x-1.5 items-bas
 // which is how the caret ended up on its own line here once already.
 //
 // The gutter pays for that room rather than the name does: four gaps a step
-// tighter — the same 1.5 the season fold uses — give back exactly what the
+// tighter — the same 1.5 the season table uses — give back exactly what the
 // wider column costs, so a long name truncates no earlier than it did before.
 const BOARD_COLS = "grid grid-cols-[1.5rem_1fr_2rem_3.5rem_3.5rem] gap-x-1.5 items-center";
 
-// Careers per page. A row carries its whole season fold, so the pages are kept
+// Careers per page. A row carries its whole season list, so the pages are kept
 // small and asked for one at a time.
 const PAGE = 50;
 
@@ -76,10 +78,10 @@ const barColor = (t) => (isMultiTeam(t) ? "#a8a29e" : teamColor(t));
 // The career bar, split by who the career was played for.
 //
 // Widths are shares of whatever the bar is currently drawn on, not of some third
-// quantity: under Legacy that is the weighted contribution — the column that
-// sums to the total — and under Peak/G it is the leveraged VA of the peak
-// seasons the rate is computed over. Either way the colors partition the number
-// underneath them rather than a different one.
+// quantity: under Legacy that is each season's LVA — the column that sums to
+// the total — and under Peak/G it is the LVA of the peak seasons the rate is
+// computed over. Either way the colors partition the number underneath them
+// rather than a different one.
 //
 // Ordered by first season, so a career reads left to right the way it was
 // played. That order is taken from the WHOLE career even when only the peak
@@ -100,7 +102,7 @@ function teamSegments(seasons, sortKey, peakSeasons) {
   }
   for (const s of scored) {
     const t = at(s.team || "—");
-    t.value += sortKey === "peak" ? s.lva : s.contribution;
+    t.value += s.lva;
     t.seasons += 1;
   }
 
@@ -166,25 +168,20 @@ function GoToBoard({ onGo, run, scope }) {
 
 
 // One career, opened up: the summary the board has no room for, then every
-// season in the order the fold consumes them.
-function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
-  const best = Math.max(...p.seasons.map((s) => s.contribution), 0.1);
+// season, best first.
+function CareerSeasons({ p, segments, onGoToLeaderboard }) {
+  const best = Math.max(...p.seasons.map((s) => Math.abs(s.lva)), 0.1);
   const [openSeason, setOpenSeason] = useState(null);
-
-  // Why the column starts where it does. A weight is a season measured against
-  // the career TOTAL, not against the best season — which it has to be, or the
-  // weighted column would stop summing to Legacy. So the top weight reads how
-  // concentrated a career is: recover that share by inverting the exponent.
-  const topWeight = p.seasons[0]?.lva > 0 ? p.seasons[0].weight : null;
-  const topShare = topWeight && P_DEFAULT > 1
-    ? Math.pow(topWeight, 1 / (P_DEFAULT - 1)) : null;
 
   return (
     <div className="px-2 pb-3 pt-1 bg-stone-50 border-t border-stone-200">
-      <div className="grid grid-cols-4 gap-x-2 py-2 text-center">
+      {/* Three tiles, not four. "Career LVA" and the career total used to be
+          separate numbers because the fold sat between them; with the seasons
+          summed straight they are the same number, and printing it twice under
+          two names would suggest otherwise. */}
+      <div className="grid grid-cols-3 gap-x-2 py-2 text-center">
         {[
-          ["Career LVA", fmt0(p.careerLVA)],
-          ["Folded", fmt0(p.total)],
+          ["Legacy", fmt0(p.total)],
           ["Peak/G", p.peak.toFixed(1)],
           ["Raw/G", p.peakRaw.toFixed(1)],
         ].map(([label, value]) => (
@@ -206,31 +203,15 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
               <span className="font-semibold" style={{ color: barColor(t.team) }}>{t.team}</span>
             </Fragment>
           ))}</>
-        ) : p.teams?.length ? <> · {p.teams.join(", ")}</> : null}. Each season is weighted by
-        how good it was, not by where it lands in the sort — a season worth half his best
-        carries about{" "}
-        <span className="tabular-nums font-semibold">{(weightAtHalf * 100).toFixed(0)}%</span>{" "}
-        of its weight, one worth a tenth carries half.{" "}
-        <span className="font-semibold">Weighted</span> is the column that sums to Legacy.
+        ) : p.teams?.length ? <> · {p.teams.join(", ")}</> : null}. Every season counts at
+        face value — <span className="font-semibold">LVA</span> is the column that sums to
+        Legacy, and a season below the league&apos;s typical minute subtracts what it cost.
         Tap any season for the stat lines behind it and every game of the run.
       </p>
-
-      {topShare != null && (
-        <p className="text-[9px] text-stone-400 leading-relaxed mb-2">
-          The weights are against the career <em>total</em>, not against his best season, so
-          they start below 1 and start lower the deeper the career: his best is{" "}
-          <span className="tabular-nums">{(topShare * 100).toFixed(0)}%</span> of the whole,
-          which puts the column at{" "}
-          <span className="tabular-nums">{topWeight.toFixed(3)}</span>. That is what keeps
-          Weighted summing to Legacy — the ratios between his own seasons are unaffected.
-        </p>
-      )}
 
       <div className={`${COLS} text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200`}>
         <span>#</span><span>Season</span>
         <span className="text-right">LVA</span>
-        <span className="text-right">×W</span>
-        <span className="text-right">Wtd.</span>
       </div>
 
       {p.seasons.map((s) => {
@@ -238,7 +219,7 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
         // career — but it has no meaningful playoff/RS split to draw, so it
         // gets one red bar instead of two stacked ones.
         const down = s.lva <= 0;
-        const width = Math.min(100, (Math.abs(s.contribution) / best) * 100);
+        const width = Math.min(100, (Math.abs(s.lva) / best) * 100);
         const poShare = down ? 0 : Math.max(0, Math.min(1, s.poLVA / s.lva));
         const seasonOpen = openSeason === s.season;
         return (
@@ -262,9 +243,7 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
                     .filter(Boolean).map((part) => ` · ${part}`).join("")}
                 </span>
               </span>
-              <span className={`text-right tabular-nums ${down ? "text-red-600" : "text-stone-600"}`}>{fmtN(s.lva)}</span>
-              <span className="text-right tabular-nums text-stone-400">{s.weight.toFixed(3)}</span>
-              <span className={`text-right tabular-nums font-bold ${down ? "text-red-600" : "text-stone-900"}`}>{fmtN(s.contribution)}</span>
+              <span className={`text-right tabular-nums font-bold ${down ? "text-red-600" : "text-stone-900"}`}>{fmtN(s.lva)}</span>
             </button>
             <div className="h-1 mt-1 bg-stone-200/60 rounded-sm overflow-hidden flex">
               {down ? (
@@ -291,7 +270,7 @@ function CareerFold({ p, weightAtHalf, segments, onGoToLeaderboard }) {
       })}
 
       <p className="text-[9px] text-stone-400 leading-relaxed mt-2">
-        Bars are each season&apos;s discounted value against this career&apos;s best — the
+        Bars are each season&apos;s value against this career&apos;s best — the
         colored part is the playoff run, in that season&apos;s team colors;{" "}
         <span className="text-stone-500 font-semibold">grey</span> is the regular season.
         The playoffs are a fraction of the games and usually most of the bar; that
@@ -401,7 +380,7 @@ function StatStrip({ stats, compareTo, action, note }) {
 //
 // All of it comes from one response — /api/legacy/runs with a slug and a season
 // carries the playoff line, the regular season beside it, and the game log —
-// so the fold asks once and shows the lot.
+// so the panel asks once and shows the lot.
 function SeasonPanel({ slug, season, onGoToLeaderboard }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
@@ -569,7 +548,7 @@ function CareersBoard({ onGoToLeaderboard }) {
   const [open, setOpen] = useState(null);          // expanded player's slug
 
   // Pages accumulate rather than being refetched at a bigger size: a career
-  // carries its whole season fold, so re-asking for the first fifty every time
+  // carries its whole season list, so re-asking for the first fifty every time
   // would re-download the expensive part of the list on every tap.
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -642,9 +621,9 @@ function CareersBoard({ onGoToLeaderboard }) {
 
       <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
         <span className="font-semibold">Legacy</span> is a career&apos;s value with every game
-        priced by what was at stake; <span className="font-semibold">Peak</span> is the same
-        weighting as a per-game rate over the best {data.dials.peakSeasons} seasons. Tap either to sort,
-        or a player for the season-by-season fold — and the{" "}
+        priced by what was at stake, added up; <span className="font-semibold">Peak</span> is the
+        same weighting as a per-game rate over the best {data.dials.peakSeasons} seasons. Tap either
+        to sort, or a player for the season-by-season breakdown — and the{" "}
         <span className="font-bold">i</span> above for how the number is built. Each bar is
         split into the franchises that built it, earliest first.
       </p>
@@ -704,7 +683,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         <span></span><span>Player</span><span className="text-right">Yr</span>
         {head("total", "Legacy")}
         {/* "Peak", not "Peak/G": the per-game part is spelled out in the
-            paragraph above the board and in the fold's own tile, and four
+            paragraph above the board and in the expansion's own tile, and four
             characters plus a sort caret fit any handset's idea of this font
             with room to spare. */}
         {head("peak", "Peak")}
@@ -752,9 +731,8 @@ function CareersBoard({ onGoToLeaderboard }) {
               <CareerBar segments={segments} pct={Math.max(0, ((p[sortKey] ?? 0) / max) * 100)} />
             </div>
             {isOpen && (
-              <CareerFold
+              <CareerSeasons
                 p={p}
-                weightAtHalf={data.weightAtHalf}
                 segments={segments}
                 onGoToLeaderboard={onGoToLeaderboard}
               />
@@ -788,13 +766,8 @@ function CareersBoard({ onGoToLeaderboard }) {
           <>* career reaches {data.firstSeason}, the first season on record — it may extend
           earlier, in which case only part of it is measured.<br /></>
         )}
-        Seasons are weighted by value, not rank: one worth a share s of a career&apos;s best
-        carries s<sup>{(data.dials.p - 1).toFixed(3)}</sup> of its weight (p = {data.dials.p}).
-        {data.calibration?.isDefault ? (
-          <> That is set by one stated rule — a season worth a tenth of your best should still
-          carry half the weight — rather than chosen, and it means the weights adapt to the
-          career instead of being imposed on it.</>
-        ) : null}{" "}
+        Seasons are summed, not folded: nothing discounts a career&apos;s lesser years against
+        its best, so Legacy is volume and Peak is the rate beside it.{" "}
         Leverage α {data.dials.alpha}; series split ω {data.dials.omega}; regular season{" "}
         {data.dials.includeRS ? "included" : "excluded"}; minimum{" "}
         {data.dials.minSeasons > 1 ? `${data.dials.minSeasons} seasons and ` : ""}
@@ -816,13 +789,26 @@ const shadeFor = (w) => (w >= 2.9 ? "bg-stone-900 text-white"
   : w >= 1.0 ? "bg-stone-300 text-stone-900"
   : "bg-stone-200 text-stone-900");
 
+// The eight ways a best-of-7 can end, in the order the split ranks them: the
+// team's wins and the length it took. Read top to bottom, this is the ordering
+// the ω curve exists to produce.
+const SERIES_OUTCOMES = [
+  [4, 4, "Won 4-0"], [4, 5, "Won 4-1"], [4, 6, "Won 4-2"], [4, 7, "Won 4-3"],
+  [3, 7, "Lost 3-4"], [2, 6, "Lost 2-4"], [1, 5, "Lost 1-4"], [0, 4, "Lost 0-4"],
+];
+
 function LegacyInfo({ dials }) {
   const alpha = dials?.alpha ?? ALPHA_DEFAULT;
   const omega = dials?.omega ?? OMEGA_DEFAULT;
-  const p = dials?.p ?? P_DEFAULT;
   // A modern bracket: four rounds deep, quoted against its own opening series.
   const rsW = gameWeight(rsCLI("2015-16", 4), alpha, anchorCLI(4, 7));
-  const shares = [1, 0.5, 0.25, 0.1];
+  // A whole round-1 series, to each of its two teams — the per-game price times
+  // the games it ran. Computed, not typed, so the ladder cannot drift from the
+  // split it is illustrating.
+  const ladder = SERIES_OUTCOMES.map(([wins, games, label]) => ({
+    label, value: seriesGameWeight(3, 4, games, alpha, wins, omega) * games,
+  }));
+  const ladderMax = Math.max(...ladder.map((r) => r.value), 0.1);
 
   return (
     <div className="mb-3 p-3 bg-white border border-stone-300 text-[11px] text-stone-600 leading-relaxed">
@@ -842,8 +828,29 @@ function LegacyInfo({ dials }) {
         it reaches. Winning one moves a title by half for every round still to come, and that
         stake is shared across however many games the series takes — so closing a team out in
         four concentrates it rather than forfeiting it. The two teams do not share it evenly:
-        a fraction ω = {omega} of it goes out by who won the games, which is what keeps a
-        sweep from paying the team that lost it what it pays the team that won.
+        a fraction ω = {omega} of it is tilted by the <span className="font-semibold">margin</span>{" "}
+        the series was decided by, which is what keeps a sweep from paying the team that lost
+        it what it pays the team that won.
+      </p>
+      <div className="mb-1">
+        {ladder.map((r) => (
+          <div key={r.label} className="grid grid-cols-[3.4rem_1fr_2.2rem] gap-2 items-center py-[2px]">
+            <span className="text-[9px] text-stone-500 text-right">{r.label}</span>
+            <span className="h-1.5 bg-stone-100 rounded-sm overflow-hidden">
+              <span
+                className="block h-full bg-stone-900 rounded-sm"
+                style={{ width: `${(r.value / ladderMax) * 100}%` }}
+              />
+            </span>
+            <span className="text-[10px] font-bold tabular-nums text-stone-900">{r.value.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[9px] text-stone-400 mb-2">
+        A whole round-1 series, to one of its teams. The margin is squared, so the drop from
+        winning in seven to losing in seven is the <em>smallest</em> step on the ladder — a
+        series that goes the distance says the two teams were even — while a sweep and being
+        swept sit at opposite ends of it.
       </p>
       <div className="grid grid-cols-[3.9rem_repeat(4,1fr)] gap-[2px] mb-1">
         <span />
@@ -868,8 +875,8 @@ function LegacyInfo({ dials }) {
         ))}
       </div>
       <p className="text-[9px] text-stone-400 mb-2">
-        Each game of that series, against a round-1 series of average length = 1.00.
-        Top number to the team that won it, bottom to the team that lost.
+        By round, each <em>game</em> of that series against a round-1 series of average
+        length = 1.00. Top number to the team that won it, bottom to the team that lost.
       </p>
 
       <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
@@ -887,35 +894,22 @@ function LegacyInfo({ dials }) {
         3 · How the seasons add up
       </div>
       <p className="mb-2">
-        A career is folded by <span className="font-semibold">how good each season was</span>,
-        not by where it ranks — a rank rule would count your eighth-best season the same
-        fraction whether it was nearly your best or nearly worthless. One rule sets the curve:
-        a season worth a tenth of your best still carries half the weight.
+        They are <span className="font-semibold">added up</span>. Nothing discounts a
+        career&apos;s lesser seasons against its best: what a season was worth is already in its
+        leveraged VA, and multiplying that by a second number derived from the same figure
+        would price the same fact twice. A season below the league&apos;s typical minute
+        subtracts exactly what it cost.
       </p>
-      <div className="mb-1">
-        {shares.map((sh) => {
-          const w = weightForShare(sh, p);
-          return (
-            <div key={sh} className="grid grid-cols-[4.6rem_1fr_2rem] gap-2 items-center py-[2px]">
-              <span className="text-[9px] text-stone-500 text-right tabular-nums">{sh * 100}% as good</span>
-              <span className="h-1.5 bg-stone-100 rounded-sm overflow-hidden">
-                <span className="block h-full bg-stone-900 rounded-sm" style={{ width: `${w * 100}%` }} />
-              </span>
-              <span className="text-[10px] font-bold tabular-nums text-stone-900">{w.toFixed(2)}</span>
-            </div>
-          );
-        })}
-      </div>
       <p className="text-[9px] text-stone-400 mb-2">
-        Weight relative to a career&apos;s own best season{p ? ` (p = ${p})` : ""}. The shape adapts:
-        many near-peak years all count, a lone towering season doesn&apos;t lift the rest.
+        The cost of that is stated rather than hidden: summed straight, this axis is volume,
+        and an extra good-not-great season always helps. That is what the rate below is for.
       </p>
 
       <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
         4 · Two numbers, not one
       </div>
       <p className="mb-0">
-        <span className="font-semibold">Legacy</span> is that folded total — how much a career
+        <span className="font-semibold">Legacy</span> is that total — how much a career
         produced when its games are priced by what was at stake.{" "}
         <span className="font-semibold">Peak/G</span> is the same weighting as a rate over the
         best {dials?.peakSeasons ?? PEAK_SEASONS_DEFAULT} seasons. They disagree, and the disagreement is the
@@ -927,7 +921,7 @@ function LegacyInfo({ dials }) {
 
 
 // The Legacy board. Legacy is deliberately two numbers rather than one, the
-// board makes that argument, and a career opens into the seasons it was folded
+// board makes that argument, and a career opens into the seasons it is summed
 // from — each of those into the stat lines and the games behind them.
 export function LegacyView({ onGoToLeaderboard = null }) {
   const [info, setInfo] = useState(false);

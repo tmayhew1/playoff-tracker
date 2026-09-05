@@ -810,59 +810,59 @@
 
 <p>equal in size and opposite in sign, in every game of every series. The winner and the loser of a sweep each moved a title by the same 0.5 of a round-1 unit. <strong>Championship leverage is symmetric</strong>, and deliberately so: it prices the event, and both teams played it.</p>
 
-<p>The asymmetry is therefore asserted, and named as such. <span class="m g">&omega;</span> is the second taste parameter, and reads the way <span class="m g">&alpha;</span> does &mdash; 0 is the outcome not counting at all. The series pot is conserved either way; <span class="m g">&omega;</span> only says how much of it is handed out by who won the games rather than shared evenly:</p>
+<p>The asymmetry is therefore asserted, and named as such. <span class="m g">&omega;</span> is the second taste parameter, and reads the way <span class="m g">&alpha;</span> does &mdash; 0 is the outcome not counting at all. The series pot is conserved either way; <span class="m g">&omega;</span> only says how much of it is handed out by the result rather than shared evenly.</p>
+
+<p><em>What</em> drives the split is not a taste, though, and the obvious choice is wrong. A share linear in the win rate, <span class="m"><span class="g">&omega;</span><span class="op">&middot;</span><span class="g">k</span>/<span class="g">m</span> <span class="op">+</span> (1<span class="op">&minus;</span><span class="g">&omega;</span>)/2</span>, is steepest exactly where the two teams were hardest to tell apart: 4-3 and 3-4 sit two games apart on that scale (0.571 against 0.429) where 4-2 and 4-3 sit one apart, so the largest step in the whole ladder fell between a series won in seven and the same series lost in seven. A seven-game series is the one result that says the teams were even, and it should be the one whose pot splits most nearly down the middle.</p>
+
+<p>So the tilt runs on <strong>margin</strong>, measured against the race the series is &mdash; first to <span class="m"><span class="g">n</span> = max(<span class="g">k</span>, <span class="g">m</span><span class="op">&minus;</span><span class="g">k</span>)</span> wins, the winner&rsquo;s own total:</p>
 
 <div class="eq">
-  <span class="g">s</span> <span class="op">=</span>
-  <span class="g">&omega;</span> <span class="op">&middot;</span>
-  <span class="fr"><span class="nu g">k</span><span class="de g">m</span></span>
-  <span class="op">+</span>
-  (1 <span class="op">&minus;</span> <span class="g">&omega;</span>) <span class="op">&middot;</span> &frac12;
-  <span class="lbl"><span class="g">w</span>(<span class="g">g</span>) = 2 <span class="g">s</span> &middot; <span class="g">w</span><sub>series</sub></span>
+  <span class="g">s</span> <span class="op">=</span> &frac12;
+  <span class="op">(</span>1 <span class="op">+</span> <span class="g">&omega;</span>
+  <span class="op">&middot;</span> <span class="g">d</span>
+  <span class="op">&middot;</span> |<span class="g">d</span>|<span class="op">)</span>,
+  <span class="lbl"><span class="g">d</span> = (<span class="g">k</span> <span class="op">&minus;</span> (<span class="g">m</span><span class="op">&minus;</span><span class="g">k</span>)) / <span class="g">n</span></span>
 </div>
 
-<p>for a team that won <span class="m g">k</span> of the series&rsquo; <span class="m g">m</span> games. The two teams&rsquo; shares sum to 1 at every <span class="m g">&omega;</span>, so the pot is exactly conserved. The factor 2 is there because the pot is quoted against an even split, which makes <span class="m"><span class="g">&omega;</span> = 0</span> identical to the scheme it replaces; an unresolved series takes <span class="m"><span class="g">s</span> = &frac12;</span>.</p>
+<div class="eq">
+  <span class="g">w</span>(<span class="g">g</span>) <span class="op">=</span>
+  2 <span class="op">&middot;</span> <span class="g">s</span> <span class="op">&middot;</span>
+  <span class="g">w</span><sub class="s">series</sub>
+</div>
 
-<p><span class="m"><span class="g">&omega;</span> = 1</span> hands the pot out strictly in proportion to games won, which overpays &mdash; at 1 a low-VA role player on a dynasty rides his teammates&rsquo; share up 45 places on the board. The default &frac12; buys the two orderings the construction wants and nothing beyond them:</p>
+<p>for a team that won <span class="m g">k</span> of the series&rsquo; <span class="m g">m</span> games. <span class="m g">d</span> runs over <span class="m">[&minus;1, 1]</span> &mdash; <span class="m">&plusmn;1</span> exactly on a sweep, <span class="m">&plusmn;&frac14;</span> on a seven-game best-of-7 &mdash; and squaring it with the sign kept puts the flat part of the curve at the close series and the steep part at the rout. Since <span class="m"><span class="g">d</span>|<span class="g">d</span>|</span> is odd in the win margin, the two teams&rsquo; shares sum to 1 at every <span class="m g">&omega;</span>, so the pot is exactly conserved. The factor 2 is there because the pot is quoted against an even split, which makes <span class="m"><span class="g">&omega;</span> = 0</span> identical to the scheme it replaces; an unresolved series takes <span class="m"><span class="g">s</span> = &frac12;</span>.</p>
+
+<p><span class="m"><span class="g">&omega;</span> = 1</span> hands the whole pot to a sweep&rsquo;s winner, which overpays &mdash; at 1 a low-VA role player on a dynasty rides his teammates&rsquo; share up the board. The default &frac12; prices a round-1 pot like this:</p>
 
 <div class="tw">
 <table>
   <thead><tr><th>round-1 best-of-7</th><th>won, per game</th><th>won, series</th><th>lost, per game</th><th>lost, series</th></tr></thead>
   <tbody>
     <tr><th class="cat">4-0</th><td>2.180</td><td>8.72</td><td>0.727</td><td>2.91</td></tr>
-    <tr><th class="cat">4-1</th><td>1.511</td><td>7.56</td><td>0.814</td><td>4.07</td></tr>
-    <tr><th class="cat">4-2</th><td>1.130</td><td>6.78</td><td>0.807</td><td>4.84</td></tr>
-    <tr><th class="cat">4-3</th><td>0.890</td><td>6.23</td><td>0.771</td><td>5.40</td></tr>
+    <tr><th class="cat">4-1</th><td>1.489</td><td>7.45</td><td>0.836</td><td>4.18</td></tr>
+    <tr><th class="cat">4-2</th><td>1.090</td><td>6.54</td><td>0.848</td><td>5.09</td></tr>
+    <tr><th class="cat">4-3</th><td>0.856</td><td>5.99</td><td>0.804</td><td>5.63</td></tr>
   </tbody>
 </table>
 </div>
 
-<p>Winning in four still concentrates value over winning in seven (8.72 against 6.23), so closing a team out is never charged for; and losing in seven now beats being swept (5.40 against 2.91), so taking a team the distance beats not troubling them. A win outprices the loss it was at every round and length.</p>
+<p>Read as series worth, the eight outcomes descend strictly from sweeping to being swept &mdash; 8.72, 7.45, 6.54, 5.99 | 5.63, 5.09, 4.18, 2.91 &mdash; and the <em>smallest</em> step of the eight (0.36, against 0.55 on either side of it and 1.27 at the ends) is the one from winning in seven to losing in seven. Winning in four still concentrates value over winning in seven, so closing a team out is never charged for; losing in seven still beats being swept, so taking a team the distance beats not troubling them; and a win still outprices the loss it was at every round and length. Both ends of the ladder, and both endpoints of <span class="m g">&omega;</span>, are exactly what the linear split gave.</p>
 
 <p>This is the one place a <strong>team</strong> outcome enters an individual metric, and it is deliberate. The outcome was already in there as a cliff &mdash; the winner advances and plays another, dearer series, the loser goes home &mdash; and <span class="m g">&omega;</span> makes it continuous across the series boundary rather than opening a second channel.</p>
 
 <h4>7.4.3 &nbsp; Peak and longevity</h4>
 
-<p>Order a player&rsquo;s seasons by LVA descending and fold with geometric decay:</p>
+<p>The volume axis is a <strong>plain sum</strong> over a player&rsquo;s seasons:</p>
 
 <div class="eq">
   Legacy <span class="op">=</span>
   <span class="big">Σ</span><sub class="s">k ≥ 1</sub>
-  <span class="g">D</span><sup><span class="g">k</span><span class="op">&minus;</span>1</sup>
-  <span class="op">&middot;</span> LVA<sub class="s">(k)</sub>
+  LVA<sub class="s">(k)</sub>
 </div>
 
-<p><span class="m"><span class="g">D</span> = 1</span> is a plain career sum (pure longevity); <span class="m"><span class="g">D</span> &rarr; 0</span> keeps only the best season (pure peak). Every term is positive when the season was, so extra seasons only ever add &mdash; but they add geometrically less, so a long tail of replacement-level years is neither rewarded nor punished much.</p>
+<p>No fold and no per-season multiplier. Two earlier versions of this axis had one &mdash; a geometric decay <span class="m"><span class="g">D</span><sup><span class="g">k</span><span class="op">&minus;</span>1</sup></span> by rank, then a value-weighted <span class="m"><span class="g">l</span><sub class="s">p</sub></span> norm over the positive seasons &mdash; and both are gone. What a season was worth is already its LVA, and scaling it by a second number derived from that same LVA prices the same fact twice; the ordering it produced was a dial&rsquo;s opinion wearing a derivation.</p>
 
-<p><span class="m g">D</span> is pinned rather than chosen, by stating what share of a career the peak should carry. &ldquo;The best <span class="m g">K</span> of <span class="m g">N</span> seasons carry half the weight&rdquo; is</p>
-
-<div class="eq">
-  <span class="fr"><span class="nu">1 <span class="op">&minus;</span> <span class="g">D</span><sup><span class="g">K</span></sup></span><span class="de">1 <span class="op">&minus;</span> <span class="g">D</span><sup><span class="g">N</span></sup></span></span>
-  <span class="op">=</span> &frac12;
-  <span class="lbl">&rArr; <span class="g">D</span> = 0.938068 at (<span class="g">K</span>,<span class="g">N</span>) = (7,20)</span>
-</div>
-
-<p>hence the default <span class="m"><span class="g">D</span> = 0.94</span>.</p>
+<p>The cost is stated rather than hidden: summed straight, this axis is pure longevity, and an extra good-not-great season always adds. A season below the league&rsquo;s typical minute subtracts exactly what it cost, at face value. Neither property is an accident, and the rate axis below is what sits beside them.</p>
 
 <p>The second axis is the <strong>rate</strong>: LVA per weighted game across the best <span class="m g">K</span> seasons. Weighted, not raw &mdash; if leverage prices the total it must price the rate, or the two halves of the metric disagree about what a game is worth. The two axes are reported side by side rather than blended, because any blend needs both normalized against the pool leader, which would make a career number move when an unrelated rookie debuts.</p>
 
@@ -870,7 +870,7 @@
 
 <p>Over their best seven seasons Jordan leads on raw per-game VA, 23.19 to 21.75. He does not lead once the games are priced by what was at stake: the two cross at <span class="m"><span class="g">&alpha;</span> &asymp; 0.27</span>, and at the default <span class="m"><span class="g">&alpha;</span> = &frac12;</span> LeBron leads 21.84 to 21.26. The crossing sits in the same place on best-8 (0.279) and best-10 (0.257), so it is not an artifact of <span class="m g">K</span>.</p>
 
-<p>On the volume axis there is <strong>no</strong> crossing at all: LeBron leads at every <span class="m g">D</span> from 0.5 to 1, because his best leveraged seasons are also better, and the margin widens with <span class="m g">D</span>. The dials move the board substantially further down &mdash; Harden falls from 3rd to 23rd as <span class="m g">&alpha;</span> runs 0 to 1, Magic climbs 13th to 4th, Duncan 16th to 7th &mdash; which is the metric separating profiles, and is worth reading as the result rather than tuning away.</p>
+<p>On the volume axis there is <strong>no</strong> crossing at all: LeBron leads whatever the remaining dials do, because his best leveraged seasons are also better and there are more of them. The dials move the board substantially further down &mdash; Harden falls from 3rd to 23rd as <span class="m g">&alpha;</span> runs 0 to 1, Magic climbs 13th to 4th, Duncan 16th to 7th &mdash; which is the metric separating profiles, and is worth reading as the result rather than tuning away.</p>
 
 <h4>7.4.5 &nbsp; A known inexactness</h4>
 
@@ -943,7 +943,7 @@
       <td>NCAA D-I on college-derived baselines</td></tr>
     <tr><th class="cat">All-time ranking</th>
       <td>career VA, summed</td>
-      <td><strong>Legacy</strong>: championship-leverage weighted, peak/longevity dialled (&sect;7.4)</td></tr>
+      <td><strong>Legacy</strong>: championship-leverage weighted, volume and rate side by side (&sect;7.4)</td></tr>
   </tbody>
 </table>
 </div>
