@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import { ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
+import { USG_FTA_W, ZONES, possUsed, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
@@ -894,9 +894,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
 // tally, per-category paired team-color bars (or per-season-percentile dots),
 // and a career-year VA/G overlay.
 // Raw-stats drill for one category, laid out as metric-ROWS × player-COLUMNS
-// (the winner of each row is flagged so the UI can circle it). Counting cats:
-// per-game / per-36 / total; shooting cats: made-att per game / pct / total
-// makes. Fewer turnovers wins.
+// (the winner of each row is flagged so the UI can circle it, and a row with
+// no winner — POSS/G — flags neither). Counting cats: per-game / per-36 /
+// total, with possessions used per game between the rates and the total on
+// Points; shooting cats: made-att per game / pct / total makes. Fewer
+// turnovers wins.
 export function compareStatRows(a, b, key, lgaA, lgaB) {
   const rows = [];
   const push = (label, aDisp, bDisp, aCmp, bCmp, lowerBetter = false) => {
@@ -949,6 +951,21 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
   const lower = key === "Turnovers";
   push(`${tag}/G`, (av / (a.gp || 1)).toFixed(1), (bv / (b.gp || 1)).toFixed(1), av / (a.gp || 1), bv / (b.gp || 1), lower);
   push(`${tag}/36`, ((av / (a.mp || 1)) * 36).toFixed(1), ((bv / (b.mp || 1)) * 36).toFixed(1), (av / (a.mp || 1)) * 36, (bv / (b.mp || 1)) * 36, lower);
+  // Points only: what the scoring cost in ball. PTS/G and PTS/36 say how much
+  // a player scored, POSS/G says how much of the offense it took to do it —
+  // the same USG = FGA + 0.475·FTA the usage baseline is fitted on (spec §4.6),
+  // so the number here is the one USG-ADJ prices. Deliberately no winner
+  // circled: using more possessions is neither better nor worse on its own,
+  // it's the denominator the two scoring rows above should be read over.
+  if (key === "Points") {
+    const ap = possUsed(a) / (a.gp || 1), bp = possUsed(b) / (b.gp || 1);
+    if (ap > 0 || bp > 0) {
+      rows.push({
+        label: "POSS/G", a: ap.toFixed(1), b: bp.toFixed(1), win: null,
+        hint: `Possessions used per game — FGA + ${USG_FTA_W} × FTA, the usage the scoring baseline is fitted on`,
+      });
+    }
+  }
   push(`TOT ${tag}`, String(Math.round(av)), String(Math.round(bv)), av, bv, lower);
   return rows;
 }
@@ -1792,7 +1809,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                     </div>
                     {rows.map((r) => (
                       <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
-                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right">{r.label}</span>
+                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right" title={r.hint || undefined}>{r.label}</span>
                         {cell(r.a, r.win === "a", false)}
                         {cell(r.b, r.win === "b", true)}
                       </div>
