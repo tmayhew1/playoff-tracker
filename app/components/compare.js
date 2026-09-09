@@ -2046,6 +2046,24 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 }
 
 
+// The inside of a gold vs-chip, kept to a single line whatever the name is.
+// `text` shrinks with an ellipsis; `tail` (the compared seasons) and the ✕
+// never do — a chip reading "VS GILGEOUS-ALEX… ’22–’26 ✕" still says which
+// years are on screen and what tapping it drops, which a wrapped chip bought
+// at the price of a second row and a toggle knocked out of line beside it.
+// The chip's own overflow-hidden clips rather than wraps if even the tail
+// can't fit.
+export function CompareChipLabel({ text, tail }) {
+  return (
+    <>
+      <span className="truncate">{text}</span>
+      {tail && <span className="shrink-0">{tail}</span>}
+      <span className="shrink-0 opacity-60">✕</span>
+    </>
+  );
+}
+
+
 // The Compare chip for the breakdown toggle rows: opens the picker, then
 // shows the active comparison with a clear ✕.
 //
@@ -2068,14 +2086,20 @@ export function CompareButton({ compare, picking, onOpen, onClear, careerPick = 
     return (
       <button
         onClick={careerPick ? careerPick.clear : onClear}
-        className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+        className="min-w-0 overflow-hidden text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
         style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-        title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : undefined}
+        title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : `vs ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}`}
         aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
       >
-        {careerPick
-          ? careerPick.label
-          : `vs ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}`} <span className="opacity-60">✕</span>
+        {/* One line, always: a long surname (GILGEOUS-ALEXANDER) used to wrap
+            the chip onto a second row and shove the toggle beside it out of
+            line. The name is the only part that gives — the seasons and the ✕
+            say what the chip clears, so they stay whole and the full label
+            lives in the title. */}
+        <CompareChipLabel
+          text={careerPick ? careerPick.label : `vs ${shortName(compare.name)}`}
+          tail={careerPick ? null : rowSeasonLabel(compare.row)}
+        />
       </button>
     );
   }
