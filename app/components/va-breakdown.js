@@ -504,7 +504,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
-          <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+          <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
             <button
               type="button"
               onClick={() => setCompareMode("values")}
@@ -525,7 +525,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
         </div>
       ) : (
       <div className="flex justify-between items-center mb-1">
-        <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+        <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
           <button
             type="button"
             onClick={() => switchView("basic")}
@@ -552,7 +552,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           />
         )}
         {effectiveRate && (
-          <div className="inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+          <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
             <button
               type="button"
               onClick={() => setRateMode("per36")}
@@ -1994,14 +1994,14 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
-          <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
             <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
             <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
           </div>
         </div>
       ) : (
       <div className="flex justify-between items-center gap-1 mb-1.5">
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+        <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => switchView("basic")} className={`px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Basic</button>
           <button onClick={() => switchView("detail")} className={`px-1.5 py-0.5 border-l border-stone-300 ${viewMode === "detail" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>By Category</button>
         </div>
@@ -2013,7 +2013,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
             onClear={() => { setCompare(null); setPicking(false); }}
           />
         )}
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+        <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
           <button onClick={() => setRateMode("perG")} className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per G</button>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import { ZONES, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
+import { USG_FTA_W, ZONES, possUsed, zoneShotValue, hasZoneData, shootProfileVec } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
@@ -894,9 +894,11 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
 // tally, per-category paired team-color bars (or per-season-percentile dots),
 // and a career-year VA/G overlay.
 // Raw-stats drill for one category, laid out as metric-ROWS × player-COLUMNS
-// (the winner of each row is flagged so the UI can circle it). Counting cats:
-// per-game / per-36 / total; shooting cats: made-att per game / pct / total
-// makes. Fewer turnovers wins.
+// (the winner of each row is flagged so the UI can circle it, and a row with
+// no winner — POSS/G — flags neither). Counting cats: per-game / per-36 /
+// total, with possessions used per game between the rates and the total on
+// Points; shooting cats: made-att per game / pct / total makes. Fewer
+// turnovers wins.
 export function compareStatRows(a, b, key, lgaA, lgaB) {
   const rows = [];
   const push = (label, aDisp, bDisp, aCmp, bCmp, lowerBetter = false) => {
@@ -949,6 +951,21 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
   const lower = key === "Turnovers";
   push(`${tag}/G`, (av / (a.gp || 1)).toFixed(1), (bv / (b.gp || 1)).toFixed(1), av / (a.gp || 1), bv / (b.gp || 1), lower);
   push(`${tag}/36`, ((av / (a.mp || 1)) * 36).toFixed(1), ((bv / (b.mp || 1)) * 36).toFixed(1), (av / (a.mp || 1)) * 36, (bv / (b.mp || 1)) * 36, lower);
+  // Points only: what the scoring cost in ball. PTS/G and PTS/36 say how much
+  // a player scored, POSS/G says how much of the offense it took to do it —
+  // the same USG = FGA + 0.475·FTA the usage baseline is fitted on (spec §4.6),
+  // so the number here is the one USG-ADJ prices. Deliberately no winner
+  // circled: using more possessions is neither better nor worse on its own,
+  // it's the denominator the two scoring rows above should be read over.
+  if (key === "Points") {
+    const ap = possUsed(a) / (a.gp || 1), bp = possUsed(b) / (b.gp || 1);
+    if (ap > 0 || bp > 0) {
+      rows.push({
+        label: "POSS/G", a: ap.toFixed(1), b: bp.toFixed(1), win: null,
+        hint: `Possessions used per game — FGA + ${USG_FTA_W} × FTA, the usage the scoring baseline is fitted on`,
+      });
+    }
+  }
   push(`TOT ${tag}`, String(Math.round(av)), String(Math.round(bv)), av, bv, lower);
   return rows;
 }
@@ -1753,6 +1770,13 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                 // leader of each row circled (per the mock). B column keeps the
                 // comparison side's identity tint.
                 const rows = key === DEF_KEY ? defStatRows() : compareStatRows(a, b, key, lgaA, lgaB);
+                // Minutes get their own line whenever either side has them, so
+                // the two columns always carry the same number of meta lines
+                // and the MPG sits at the bottom of both (the header row is
+                // items-end). Left to flow, the two sides break at different
+                // points — one wrapping before the number, the other splitting
+                // "36.9" from "MPG" — and the reader has to hunt for it.
+                const anyMinutes = a.mp > 0 || b.mp > 0;
                 const head = (row, comp) => (
                   <div className="min-w-0 px-1 py-0.5 rounded-sm" style={comp ? { backgroundColor: cbBg } : undefined}>
                     <div className="flex items-center gap-0.5 justify-end">
@@ -1763,7 +1787,12 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                         played in — two players at the same PTS/G off 34 and 22
                         MPG aren't the same scorer, and PTS/36 below only reads
                         as a projection once you can see how far it reaches. */}
-                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G{row.mp > 0 ? ` · ${(row.mp / (row.gp || 1)).toFixed(1)} MPG` : ""}</div>
+                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
+                    {anyMinutes && (
+                      <div className="text-[8px] text-stone-400 text-right leading-tight whitespace-nowrap">
+                        {row.mp > 0 ? `${(row.mp / (row.gp || 1)).toFixed(1)} MPG` : " "}
+                      </div>
+                    )}
                   </div>
                 );
                 const cell = (disp, win, comp) => (
@@ -1780,7 +1809,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                     </div>
                     {rows.map((r) => (
                       <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
-                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right">{r.label}</span>
+                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right" title={r.hint || undefined}>{r.label}</span>
                         {cell(r.a, r.win === "a", false)}
                         {cell(r.b, r.win === "b", true)}
                       </div>
@@ -2034,6 +2063,24 @@ export function PerGameToggle({ perGame, onToggle, title }) {
 }
 
 
+// The inside of a gold vs-chip, kept to a single line whatever the name is.
+// `text` shrinks with an ellipsis; `tail` (the compared seasons) and the ✕
+// never do — a chip reading "VS GILGEOUS-ALEX… ’22–’26 ✕" still says which
+// years are on screen and what tapping it drops, which a wrapped chip bought
+// at the price of a second row and a toggle knocked out of line beside it.
+// The chip's own overflow-hidden clips rather than wraps if even the tail
+// can't fit.
+export function CompareChipLabel({ text, tail }) {
+  return (
+    <>
+      <span className="truncate">{text}</span>
+      {tail && <span className="shrink-0">{tail}</span>}
+      <span className="shrink-0 opacity-60">✕</span>
+    </>
+  );
+}
+
+
 // The Compare chip for the breakdown toggle rows: opens the picker, then
 // shows the active comparison with a clear ✕.
 //
@@ -2056,14 +2103,20 @@ export function CompareButton({ compare, picking, onOpen, onClear, careerPick = 
     return (
       <button
         onClick={careerPick ? careerPick.clear : onClear}
-        className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+        className="min-w-0 overflow-hidden text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
         style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-        title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : undefined}
+        title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : `vs ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}`}
         aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
       >
-        {careerPick
-          ? careerPick.label
-          : `vs ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}`} <span className="opacity-60">✕</span>
+        {/* One line, always: a long surname (GILGEOUS-ALEXANDER) used to wrap
+            the chip onto a second row and shove the toggle beside it out of
+            line. The name is the only part that gives — the seasons and the ✕
+            say what the chip clears, so they stay whole and the full label
+            lives in the title. */}
+        <CompareChipLabel
+          text={careerPick ? careerPick.label : `vs ${shortName(compare.name)}`}
+          tail={careerPick ? null : rowSeasonLabel(compare.row)}
+        />
       </button>
     );
   }

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
-import { ComparePanel, MultiComparePicker } from "./compare";
+import { CompareChipLabel, ComparePanel, MultiComparePicker } from "./compare";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
@@ -1098,20 +1098,24 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 dropping it. */}
             <button
               onClick={() => (careerPick ? careerPick.clear() : setMultiCompare(null))}
-              className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+              className="min-w-0 overflow-hidden text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
               // Gold in every state, like the Compare button it replaces —
               // the compared player's palette read as his color rather than as
               // a control, and went wrong outright once the chart below
               // repaletted him for a career-year selection.
               style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
-              title={careerPick ? `Back to ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}` : undefined}
+              title={careerPick ? `Back to ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}` : `vs ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}`}
               aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
             >
-              {careerPick
-                ? careerPick.label
-                : `vs ${shortName(multiCompare.name)} ${multiCompare.row.spanLabel}`} <span className="opacity-60">✕</span>
+              {/* One line, always — see CompareChipLabel: a long surname
+                  wrapped the chip onto a second row and pushed the
+                  Values/Percentiles toggle beside it out of line. */}
+              <CompareChipLabel
+                text={careerPick ? careerPick.label : `vs ${shortName(multiCompare.name)}`}
+                tail={careerPick ? null : multiCompare.row.spanLabel}
+              />
             </button>
-            <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+            <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
               <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
               <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
             </div>
