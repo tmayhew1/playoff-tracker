@@ -20,7 +20,7 @@ Status key: **FIXED** (in this change) · **OPEN** (real, not fixed here) ·
 | T4 | **By Season / By Player** | `explore.js:277` | which board is showing | `mode` |
 | T5 | **Basic / By Category** | `va-breakdown.js:531`, `:2005` | ten rows vs. four grouped rows | `viewMode` |
 | T6 | **Per 36 / Per G** | `va-breakdown.js:558`, `:2017` | the normalization of every **raw box-score rate label** | `rateMode` |
-| T7 | **/G ON · OFF** | `compare.js:2049` (`PerGameToggle`); mounted at `va-breakdown.js:1842` and `:1875` and `compare.js:1577` | whether **value added** reads per game or as a season total | `perGame` |
+| T7 | **/G ON · OFF** | `compare.js:2049` (`PerGameToggle`); mounted at `va-breakdown.js:1870` and `compare.js:1577` | whether **value added** reads per game or as a season total | `perGame` |
 | T8 | **Values / Percentiles** | `va-breakdown.js:510`, `:1998` | what the compare rows plot | `compareMode` |
 | T9 | **Stat / distance chips** | `CategoryContext` | filters the whole card to one component | `selectedSeg` |
 | T10 | **Category row tap** | `VABreakdown`, `VACategoryBreakdown` | opens the context card; swaps the spark line | `selectedCategory` / `openCat` |

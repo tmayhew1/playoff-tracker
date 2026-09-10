@@ -1835,11 +1835,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             >
               {careerBoard ? "Careers" : "Seasons"}
             </button>
-            {/* The board's other axis, and the reason the switch is worth
-                having: /G off ranks career VA summed, /G on ranks it per
-                career game. Same control as the one under the trend below —
-                one piece of state, mounted twice. */}
-            {gToggle}
             <span className="whitespace-nowrap text-stone-800 font-bold">{d.allRank > 0 ? `#${d.allRank}` : "–"}<span className="text-stone-400 font-normal"> of {d.allN}</span></span>
           </div>
         </div>
@@ -1867,7 +1862,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
       {/* View 6 — trend across this player's seasons, one labeled bar each */}
       <div className="border-t border-stone-100 pt-2">
-        {/* The same /G toggle the board above carries, so it's clear the
+        {/* Second /G toggle, in sync with the first, so it's clear the
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
         <div className="flex items-center justify-between mb-3">
