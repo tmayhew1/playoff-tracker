@@ -20,13 +20,14 @@ Status key: **FIXED** (in this change) · **OPEN** (real, not fixed here) ·
 | T4 | **By Season / By Player** | `explore.js:277` | which board is showing | `mode` |
 | T5 | **Basic / By Category** | `va-breakdown.js:531`, `:2005` | ten rows vs. four grouped rows | `viewMode` |
 | T6 | **Per 36 / Per G** | `va-breakdown.js:558`, `:2017` | the normalization of every **raw box-score rate label** | `rateMode` |
-| T7 | **/G ON · OFF** | `compare.js:2020` (`PerGameToggle`); mounted at `va-breakdown.js:1538` and `compare.js:1577` | whether **value added** reads per game or as a season total | `perGame` |
+| T7 | **/G ON · OFF** | `compare.js:2049` (`PerGameToggle`); mounted at `va-breakdown.js:1870` and `compare.js:1577` | whether **value added** reads per game or as a season total | `perGame` |
 | T8 | **Values / Percentiles** | `va-breakdown.js:510`, `:1998` | what the compare rows plot | `compareMode` |
 | T9 | **Stat / distance chips** | `CategoryContext` | filters the whole card to one component | `selectedSeg` |
 | T10 | **Category row tap** | `VABreakdown`, `VACategoryBreakdown` | opens the context card; swaps the spark line | `selectedCategory` / `openCat` |
 | T11 | **Game / series drill** | `VABreakdown` | which stat line the card is about | `selectedGame`, `selectedSeriesIdx` |
 | T12 | **Tot / /G** | `usage-view.js:444` | the scale of the seven point columns | `perGame` (local) |
 | T13 | Sort headers, arming filters (G, MP, Player, team), Plot on/off, λ dial, Expand/Collapse All, compare `matchMode` | various | ordering / filtering / disclosure only | — |
+| T14 | **Seasons / Careers** | `va-breakdown.js:1829` (`CategoryContext`) | whether the all-time board ranks single player-seasons or whole careers | `boardMode` |
 
 The two that collide are **T6** and **T7**. They look alike (both are
 "per-something" switches), they sit at opposite ends of a long card, and until

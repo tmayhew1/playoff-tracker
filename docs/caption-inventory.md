@@ -137,7 +137,7 @@ value added` — Eff/Impact keep only their tooltips.
 ---
 
 ### C4 — Context card · all-time board
-`app/components/va-breakdown.js:1772`
+`app/components/va-breakdown.js:1863`
 
 > Across all 19428 indexed combined (RS+PO) seasons (≥5 G).
 
@@ -146,6 +146,16 @@ appears in the `#8 of 19428` line directly above it.
 
 *Proposed:* delete. `#8 of 19428` above already carries it; append `≥5 G` to
 the section heading if the floor must be visible.
+
+The board's CAREERS mode (T14) says one more thing on the same line —
+
+> Across all 2163 indexed regular-season careers (≥100 G), value added per
+> career game.
+
+— because there the pool, the floor and the /G reading are all different from
+the card above it, and the two chips beside the heading only name the first
+of them. The *proposed* cull above still applies to the seasons line; this one
+is where the second clause has to survive it.
 
 **Yours:**
 
