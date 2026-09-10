@@ -4,13 +4,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
 import { LGA, ZONES, valueAddByCategory, lgaForSeason, playmakingVA, reboundGamma, volumeVA, zoneShotValue, hasZoneData } from "../scoring";
 import { GameVAChart } from "./charts";
-import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, resolveCompareTarget, useFreshRows } from "./compare";
+import { CompareButton, ComparePanel, ComparePicker, PerGameToggle, comparePlayerKey, resolveCompareTarget, useFreshRows } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, compName, comparePalette, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSnapshots } from "../lib/players";
-import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, catVAperGame, samePlayer } from "../lib/va";
+import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUP_BY_KEY, VA_GROUPS, VA_PARTITIONS_AFTER, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 
 
@@ -731,6 +731,17 @@ const SEG_ORDER = {
   "Scoring": ["Points", "Free Throws", "2-Pointers", "3-Pointers"],
 };
 
+// Games floor on the all-time CAREERS board — enough of a career that a
+// per-game figure means something, and always lowered to the viewed player's
+// own career total so the board they are ranked on has their career on it.
+const CAREER_GP_FLOOR = 100;
+
+// What a career row prints where a season row prints its season: "’08–’26",
+// or just "’14" for a one-season career. A season missed entirely sits inside
+// the span rather than breaking it — the span is the career's extent, not a
+// list of the years in it.
+const careerSpan = (c) => (c.first === c.last ? seasonTag(c.first) : `${seasonTag(c.first)}–${seasonTag(c.last)}`);
+
 
 // Dot radius and the tap radius around a finger press, in viewBox units. The
 // tap radius is generous on purpose — the cloud is dense, and catching several
@@ -1047,6 +1058,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // is PER-GAME category VA. Off: the whole card re-sorts and re-labels on
   // TOTAL category VA instead (a full season outranks a half one at the rate).
   const [perGame, setPerGame] = useState(true);
+  // SEASONS / CAREERS switch on the all-time board (view 4). SEASONS ranks
+  // single player-seasons — the reading the rest of the card is about; CAREERS
+  // sums each player's seasons and ranks the careers instead, so the board
+  // answers "where does this scorer rank among scorers" rather than "where
+  // does this season rank among seasons". The /G toggle still decides whether
+  // either one reads as a total or per game.
+  const [boardMode, setBoardMode] = useState("seasons");
+  const careerBoard = boardMode === "careers";
   // Split filter. Tapping a bar in View 2 scopes the WHOLE card — season
   // leaderboard, all-time board, and the by-season trend — to that single
   // component's value added (one shot distance, or one stat) instead of the
@@ -1224,25 +1243,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // the card's own league averages apply to every row on it.
   const segRateLabel = (r) => selSeg.rate(r, lga, seasonKey);
 
-  // The metric the entire card ranks and displays on, respecting the toggle
-  // (and folding in each row's D Rating when withDef). When a bar in the split
-  // row is selected it becomes that component's value added instead — same
-  // per-game / total treatment as the rolled-up category.
-  const metric = (r, lgaX, seasonOf = seasonKey) => {
+  // The card's metric for one stat line as a SEASON TOTAL, before the /G
+  // toggle divides it (and folding in the row's D Rating when withDef). When a
+  // bar in the split row is selected it becomes that component's value added
+  // instead. The careers board sums this across a player's seasons — each
+  // priced against its own season's baselines — and divides by CAREER games,
+  // which is why the total and the per-game reading are two functions here
+  // rather than one.
+  const metricTotal = (r, lgaX, seasonOf = seasonKey) => {
     if (selSeg) {
       // A component the season predates (a 2-point zone before 1996-97, a
       // defensive rating before the bake) has no league baseline; treat it as
       // no value rather than comparing against a 0% league FG%.
       if (!segEra(seasonOf)) return 0;
-      const v = selSeg.val(r, lgaX, seasonOf);
-      return perGame ? v / (r.gp || 1) : v;
+      return selSeg.val(r, lgaX, seasonOf);
     }
-    let v = perGame ? catVAperGame(r, lgaX, catKey) : catVATotal(r, lgaX, catKey);
-    if (withDef && r.mp > 0) {
-      const dva = defVAInfo(r, r.mp, lgaX, defs, seasonOf, defScope)?.dva ?? 0;
-      v += perGame ? dva / (r.gp || 1) : dva;
-    }
+    let v = catVATotal(r, lgaX, catKey);
+    if (withDef && r.mp > 0) v += defVAInfo(r, r.mp, lgaX, defs, seasonOf, defScope)?.dva ?? 0;
     return v;
+  };
+  // The metric every per-season view ranks and displays on, on the /G toggle.
+  const metric = (r, lgaX, seasonOf = seasonKey) => {
+    const v = metricTotal(r, lgaX, seasonOf);
+    return perGame ? v / (r.gp || 1) : v;
   };
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
@@ -1277,18 +1300,65 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     let lo = Math.max(0, selfIdx - 2), hi = Math.min(N, lo + 5); lo = Math.max(0, hi - 5);
     const win = pool.slice(lo, hi).map((x, i) => ({ ...x, rank: lo + i + 1 }));
 
-    // All-time (view 4): every player-season, season-accurate baselines. When
-    // a 2-point distance is selected, seasons without shot-location data drop
-    // out (their zone value is undefined, not zero).
+    // All-time board (view 4), on the SEASONS / CAREERS switch. Both pools are
+    // priced season by season against that season's own baselines, which is
+    // what makes either sum era-fair; only the active one is built, since each
+    // pass is a five-figure scan.
+    //
+    // Whichever pool it is, the board prints the top three PLUS the player and
+    // the rows immediately above and below them: a rank on its own doesn't say
+    // whether the next name up is a rounding error away or a tier above.
+    const boardWindow = (list, idx) => {
+      const want = new Set([0, 1, 2].filter((i) => i < list.length));
+      if (idx >= 0) for (const i of [idx - 1, idx, idx + 1]) if (i >= 0 && i < list.length) want.add(i);
+      const idxs = [...want].sort((a, b) => a - b);
+      // `gap` marks a row the ranks jump to, so a "⋯" can be drawn above it.
+      return idxs.map((i, n) => ({ ...list[i], rank: i + 1, isSelf: i === idx, gap: n > 0 && i > idxs[n - 1] + 1 }));
+    };
+
+    // SEASONS: every player-season on its own. When a 2-point distance is
+    // selected, seasons without shot-location data drop out (their zone value
+    // is undefined, not zero).
     const floorA = Math.min(5, p.gp || 1);
-    const all = allRows
-      .filter((r) => (r.gp || 0) >= floorA && r.mp > 0 && segEra(r.season))
-      .map((r) => ({ r, m: metric(r, lgaFor(r.season, poolScope), r.season) }))
-      .sort((a, b) => b.m - a.m);
-    const allN = all.length;
-    const allIdx = all.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
-    const top = all.slice(0, 3).map((x, i) => ({ ...x, rank: i + 1 }));
-    const selfAll = allIdx >= 0 ? { ...all[allIdx], rank: allIdx + 1 } : null;
+    // CAREERS: the same rows summed per player, so a long prime and a short
+    // peak are separable readings of one career — the total on /G off, career
+    // value per career game on /G on. The games floor keeps a 12-game career
+    // off a per-game board, lowered to the viewed player's own career total so
+    // the board never ranks a career against a pool it isn't in.
+    let careerFloor = 0, board = [], boardN = 0, boardRank = 0;
+    if (careerBoard) {
+      const careers = new Map();
+      for (const r of allRows) {
+        if (!(r.mp > 0) || !segEra(r.season)) continue;
+        const k = comparePlayerKey(r);
+        let c = careers.get(k);
+        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, m: 0, first: r.season, last: r.season }));
+        c.gp += r.gp || 0;
+        c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
+        if (r.season < c.first) c.first = r.season;
+        // Carry the name as it was spelled in the latest season on record.
+        if (r.season > c.last) { c.last = r.season; c.name = r.name; }
+      }
+      const selfCareer = careers.get(comparePlayerKey(selfRow)) || null;
+      careerFloor = Math.min(CAREER_GP_FLOOR, selfCareer?.gp || CAREER_GP_FLOOR);
+      const list = [...careers.values()]
+        .filter((c) => c.gp >= careerFloor)
+        .map((c) => ({ r: c, m: perGame ? c.m / (c.gp || 1) : c.m }))
+        .sort((a, b) => b.m - a.m);
+      boardN = list.length;
+      const idx = selfCareer ? list.findIndex((x) => x.r === selfCareer) : -1;
+      boardRank = idx + 1;
+      board = boardWindow(list, idx);
+    } else {
+      const list = allRows
+        .filter((r) => (r.gp || 0) >= floorA && r.mp > 0 && segEra(r.season))
+        .map((r) => ({ r, m: metric(r, lgaFor(r.season, poolScope), r.season) }))
+        .sort((a, b) => b.m - a.m);
+      boardN = list.length;
+      const idx = list.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
+      boardRank = idx + 1;
+      board = boardWindow(list, idx);
+    }
 
     // Trend (view 6): this player's own seasons over time. Each season also
     // carries the player's league rank that year on the same metric, so a
@@ -1315,8 +1385,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       });
 
     return { floor, N, rank: selfIdx + 1, win,
-             floorA, allN, allRank: allIdx + 1, top, selfAll, mine };
-  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, withDef, defScope, selSeg]);
+             floorA, careerFloor, board, allN: boardN, allRank: boardRank, mine };
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg]);
 
   const segData = useMemo(() => {
     if (!SEGMENTS) return null;
@@ -1447,6 +1517,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Total VA is a whole-season figure, so one decimal (matches the leaderboard);
   // per-game figures are an order of magnitude smaller, so show two.
   const sgn = (v, dp = perGame ? 2 : 1) => (v > 0 ? "+" : "") + v.toFixed(dp);
+  // Same figure on the all-time board, where a summed career total runs to
+  // five digits against a season total's three. The tenth of a point is noise
+  // at that scale, and dropping it keeps the value column the width the season
+  // rows set — which is why the rounding is the career board's alone: a season
+  // total reads the same here as in the leaderboard above.
+  const boardSgn = (v) => (careerBoard && Math.abs(v) >= 1000 ? (v > 0 ? "+" : "") + Math.round(v) : sgn(v));
   const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
 
   // Trend bars: one bar per season, diverging from a shared zero baseline.
@@ -1487,11 +1563,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // "19040" run straight into the name beside it. Size the track to the
   // longest rank the board actually prints — shared by every row, so the
   // names stay flush with each other whatever the widths work out to.
-  const allRankChars = Math.max(
-    1,
-    ...(d?.top || []).map((x) => String(x.rank).length),
-    d?.selfAll ? String(d.selfAll.rank).length : 1,
-  );
+  const allRankChars = Math.max(1, ...(d?.board || []).map((x) => String(x.rank).length));
   // ~0.36rem a digit at this size plus a constant of slack, which lands on the
   // stock 1.4rem for the three-digit ranks the season boards print and grows
   // from there, so short ranks look exactly as they always have.
@@ -1746,35 +1818,56 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         </div>
       )}
 
-      {/* View 4 — all-time rank */}
+      {/* View 4 — the all-time board: single seasons, or whole careers. Always
+          the top three plus the player's own neighbourhood of the ranking. */}
       <div className="border-t border-stone-100 pt-2">
-        <div className="flex items-baseline justify-between mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">All-time {metricLabel} VA</span>
-          <span className="text-stone-800 font-bold">#{d.allRank}<span className="text-stone-400 font-normal"> of {d.allN}</span></span>
-        </div>
-        {d.top.map((x) => (
-          <div key={"t" + x.rank} style={allRowGrid} className={`grid gap-x-1 items-center px-1 py-[2px] tabular-nums ${d.selfAll && x.rank === d.selfAll.rank ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}>
-            <span className="text-right text-[9px] opacity-70">{x.rank}</span>
-            <span className="truncate text-[10px]" title={x.r.name}>{compName(x.r.name)} <span className="opacity-60">{x.r.season}</span></span>
-            <span className="text-right text-[10px] font-semibold">{sgn(x.m)}</span>
+        <div className="flex items-baseline justify-between gap-1.5 mb-1">
+          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel} VA</span>
+          <div className="shrink-0 flex items-baseline gap-1.5">
+            <button
+              type="button"
+              onClick={() => setBoardMode(careerBoard ? "seasons" : "careers")}
+              aria-pressed={careerBoard}
+              title={careerBoard
+                ? `Ranking whole careers, ${perGame ? "career value added per career game" : "every season summed"} — tap to rank single ${scopeNoun} seasons instead`
+                : `Ranking single ${scopeNoun} seasons — tap to rank whole careers instead`}
+              className={`shrink-0 text-[8px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-sm border transition-colors ${careerBoard ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+            >
+              {careerBoard ? "Careers" : "Seasons"}
+            </button>
+            {/* The board's other axis, and the reason the switch is worth
+                having: /G off ranks career VA summed, /G on ranks it per
+                career game. Same control as the one under the trend below —
+                one piece of state, mounted twice. */}
+            {gToggle}
+            <span className="whitespace-nowrap text-stone-800 font-bold">{d.allRank > 0 ? `#${d.allRank}` : "–"}<span className="text-stone-400 font-normal"> of {d.allN}</span></span>
           </div>
-        ))}
-        {d.selfAll && d.allRank > 3 && (
-          <>
-            <div className="text-center text-stone-300 leading-none">⋯</div>
-            <div style={allRowGrid} className="grid gap-x-1 items-center px-1 py-[2px] tabular-nums bg-stone-800 text-white rounded-sm">
-              <span className="text-right text-[9px] opacity-70">{d.selfAll.rank}</span>
-              <span className="truncate text-[10px]" title={d.selfAll.r.name}>{compName(d.selfAll.r.name)} <span className="opacity-60">{d.selfAll.r.season}</span></span>
-              <span className="text-right text-[10px] font-semibold">{sgn(d.selfAll.m)}</span>
+        </div>
+        {d.board.map((x) => (
+          <React.Fragment key={x.rank}>
+            {/* The ranks jumped to get here. */}
+            {x.gap && <div className="text-center text-stone-300 leading-none">⋯</div>}
+            <div
+              style={allRowGrid}
+              aria-current={x.isSelf ? "true" : undefined}
+              className={`grid gap-x-1 items-center px-1 py-[2px] tabular-nums ${x.isSelf ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}
+            >
+              <span className="text-right text-[9px] opacity-70">{x.rank}</span>
+              <span className="truncate text-[10px]" title={x.r.name}>{compName(x.r.name)} <span className="opacity-60">{careerBoard ? careerSpan(x.r) : x.r.season}</span></span>
+              <span className="text-right text-[10px] font-semibold">{boardSgn(x.m)}</span>
             </div>
-          </>
-        )}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">Across all {d.allN} indexed {scopeNoun} seasons (≥{d.floorA} G){selSeg?.eraNote || ""}.</div>
+          </React.Fragment>
+        ))}
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">
+          {careerBoard
+            ? `Across all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G), ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
+            : `Across all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)${selSeg?.eraNote || ""}.`}
+        </div>
       </div>
 
       {/* View 6 — trend across this player's seasons, one labeled bar each */}
       <div className="border-t border-stone-100 pt-2">
-        {/* Second /G toggle, in sync with the first, so it's clear the
+        {/* The same /G toggle the board above carries, so it's clear the
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
         <div className="flex items-center justify-between mb-3">
