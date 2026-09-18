@@ -1201,6 +1201,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // EFF is box-score shooting value, defined for every season, so it ranks
   // against the whole index. IMPACT is only as old as shot-location data, so
   // it carries the same era gate the four 2-point zones do.
+  //
+  // They are NOT two roads to one number, and the gap between them is the most
+  // informative thing on the card. Two of the six bars — FT and 3PT — are the
+  // same expression their category is (see the `ft` and `tp` segments above)
+  // and cancel exactly, so the whole difference lives in the 2-point term:
+  //
+  //   EFF    2·(2PM/2PA − λ_2P)·2PA          one flat league 2P baseline
+  //   IMPACT Σ_z 2·(zm/za − λ_z)·za          the league AT EACH DISTANCE
+  //
+  // Subtract them and every player-specific rate cancels, leaving a pure
+  // shot-diet term that depends on nothing but where he shoots from:
+  //
+  //   IMPACT − EFF = Σ_z 2·(λ_z − λ_2P)·za
+  //
+  // — positive for a rim-heavy diet, negative for a jumper-heavy one, zero for
+  // a player shooting the league's own mix. So EFF charges shot selection and
+  // IMPACT is blind to it, measuring shot-making alone. A big spread is a real
+  // finding about the player, not a reconciliation error: Keyonte George's
+  // 2025-26 (EFF +0.32, IMPACT +1.47 per game) is a shooter above the league at
+  // three of four distances taking 17% of his 2s at the rim against a league
+  // 40% — a league-average shooter on his diet would post 49.1% on 2s, not the
+  // 55.0% λ_2P asks of him, and that 5.9-point gap over 520 attempts is the
+  // whole 1.15/G spread. Don't "fix" one to match the other.
   const TOTAL_SEGMENTS = useMemo(() => {
     if (!SEGMENTS || !showZones || catKey === "2-Pointers") return null;
     // True shooting — points per shooting possession — is the rate column for
@@ -1491,6 +1514,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // (3P + 2P + FT value added, what the three shooting rows sum to) and Impact
   // is the six distance bars summed. The 2-Pointers card is a partial split of
   // one category, so it gets neither.
+  //
+  // The zone-attempt slop is the SMALLER of the two reasons these differ, and
+  // usually not the reason at all: even when Σza reconciles to 2PA exactly, the
+  // two land apart by the shot-diet term Σ_z 2·(λ_z − λ_2P)·za, because only
+  // Impact prices a shot against the league at its own distance. See the
+  // TOTAL_SEGMENTS comment above — that spread is a reading, not a defect.
   const segTotals = useMemo(() => {
     if (!segData || catKey === "2-Pointers") return null;
     // Collapse a value that rounds to zero so a sliver-negative total doesn't
@@ -1692,8 +1721,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 // the bars wear, so it's clear they're the same control.
                 <>
                   {[
-                    { key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value)` },
-                    { key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}` },
+                    { key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value). Every 2 is priced against the league's overall 2P%, so shot selection is charged here: a diet of jumpers is asked to clear the bar a diet of rim attempts would` },
+                    { key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}. Each 2 is priced against the league AT THAT DISTANCE, so this reads shot-making alone and shot selection is free. Above Eff means he beats the league shot for shot but takes them from further out; below means the reverse` },
                   ].map((t) => {
                     const isSel = selectedSeg === t.key;
                     return (
@@ -1813,7 +1842,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
               ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
-              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
+              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it. They split on shot selection: Eff prices every 2 against the league's overall 2P%, Impact against the league at each distance." : ""}</>}
           </div>
         </div>
       )}
