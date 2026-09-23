@@ -12,6 +12,7 @@ import { comparePalette, normalizeName, seasonTag, shortName, teamColor } from "
 import { aggregateSnapshots } from "../lib/players";
 import { GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catVATotal } from "../lib/va";
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
+import { useCompareReport } from "../lib/share-state";
 import { CategoryContext } from "./category-context";
 
 
@@ -32,6 +33,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
+  // Into the page's link, when this breakdown is a board's open row.
+  useCompareReport(compare);
   const [picking, setPicking] = useState(false);
   // "values" | "pct". A comparison opens on PERCENTILES: two raw VA figures
   // only say who was bigger, while the percentile pair says how big each was
@@ -707,6 +710,8 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   const [viewMode, setViewMode] = useState("basic");
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
+  // Into the page's link, when this breakdown is a board's open row.
+  useCompareReport(compare);
   const [picking, setPicking] = useState(false);
   // "values" | "pct". A comparison opens on PERCENTILES: two raw VA figures
   // only say who was bigger, while the percentile pair says how big each was
