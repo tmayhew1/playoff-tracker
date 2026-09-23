@@ -23,6 +23,10 @@ on:
         description: "Re-bake the current season even if unchanged"
         required: false
         default: "true"
+      offseason_refresh:
+        description: "Re-scrape the finished season in Jul-Sep anyway (e.g. after a BR correction)"
+        required: false
+        default: "false"
 
 # Avoid overlapping runs racing on the same commit.
 concurrency:
@@ -53,6 +57,7 @@ jobs:
           DAILY_MIN_SEASON: ${{ inputs.min_season }}
           DAILY_MAX_BACKFILL: ${{ inputs.max_backfill || '6' }}
           DAILY_FORCE_CURRENT: ${{ inputs.force_current || 'true' }}
+          DAILY_OFFSEASON_REFRESH: ${{ inputs.offseason_refresh || 'false' }}
         run: Rscript scripts/R/daily_backfill.R
 
       # The USG-ADJ scoring baselines (app/data/usage-model.json) are fit from

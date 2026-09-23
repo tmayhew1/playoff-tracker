@@ -65,9 +65,9 @@ for (const f of files) {
     maxDelta = Math.max(maxDelta, Math.abs(r.va - before));
   }
   // Two-space indent and a trailing newline, matching what jsonlite writes on
-  // the R side. Not byte-identical to it — R prints floats at 17 significant
-  // digits (803.95000000000005) where JS prints the shortest round-trip form
-  // (803.95); the doubles are the same, only the text differs — but keeping the
+  // the R side. Not byte-identical to it — R prints floats at 15 significant
+  // digits where JS prints the shortest round-trip form, so a long computed
+  // value can differ in its last digits — but keeping the
   // STRUCTURE identical is what matters: it keeps the diff line-level and
   // readable, and it keeps the daily R backfill merging cleanly instead of
   // conflicting on one enormous minified line.

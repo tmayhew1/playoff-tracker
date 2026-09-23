@@ -4,7 +4,8 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
-import { CompareChipLabel, ComparePanel, MultiComparePicker } from "./compare";
+import { CompareChipLabel, ComparePanel } from "./compare";
+import { MultiComparePicker } from "./compare-picker";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";

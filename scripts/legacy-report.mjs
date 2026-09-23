@@ -315,7 +315,9 @@ function verify({ players, seasons }) {
       close(w(fin[0]) * fin.length, 2 * Math.SQRT2 * EXPECTED_SERIES_GAMES * share, 1e-9),
       (w(fin[0]) * fin.length).toFixed(4));
     const flatPO = s.games.reduce((t, g) => t + g.va, 0);
-    ok("playoff VA sums to 448.83", close(flatPO, 448.83, 0.01), flatPO.toFixed(2));
+    // 448.83 before assists were repriced on κ_FG (6de74a3); the price
+    // contraction lowers every above-median passer, LeBron included.
+    ok("playoff VA sums to 442.43", close(flatPO, 442.43, 0.01), flatPO.toFixed(2));
   }
 
   console.log("\nTIER 5 — leverage generalizes to other bracket shapes");
@@ -365,10 +367,15 @@ function verify({ players, seasons }) {
     const c = baselineCoverage(lgaForSeason("1971-72"));
     ok("1971-72 is correctly refused (no rebound split)",
       !c.complete && c.missing.includes("D Rebounds"), c.missing.join(", "));
+    // κ_FG (laFGPTSperMake, the assist price) is baked from 1980-81 — the
+    // first season the app serves — so earlier seasons also miss Assists.
+    // These two check that it is the ONLY gap: the rebound split and a zero
+    // 3-point line are not what refuses them.
+    const onlyAssists = (c) => c.missing.length === 1 && c.missing[0] === "Assists";
     const c74 = baselineCoverage(lgaForSeason("1973-74"));
-    ok("1973-74 is accepted (rebound split begins)", c74.complete, c74.missing.join(", "));
+    ok("1973-74 prices rebounds (split begins); only κ_FG is missing", onlyAssists(c74), c74.missing.join(", "));
     const c78 = baselineCoverage(lgaForSeason("1978-79"));
-    ok("1978-79 is accepted despite no 3-point line", c78.complete, c78.missing.join(", "));
+    ok("1978-79 is not refused for its missing 3-point line", onlyAssists(c78), c78.missing.join(", "));
   }
 
   console.log(fail ? `\n${fail} FAILURE(S)` : "\nALL PASS");

@@ -1,11 +1,12 @@
 {
-  "name": "playoff-draft-tracker",
+  "name": "value-added-tracker",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/*.test.mjs",
     "legacy": "node --import ./scripts/node/register.mjs scripts/legacy-report.mjs",
     "legacy:verify": "node --import ./scripts/node/register.mjs scripts/legacy-report.mjs --verify",
     "usage:fit": "node scripts/fit-usage-model.mjs",
@@ -16,7 +17,7 @@
   },
   "dependencies": {
     "cheerio": "1.0.0",
-    "next": "14.2.5",
+    "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
@@ -25,5 +26,8 @@
     "playwright-core": "^1.63.0",
     "postcss": "8.4.39",
     "tailwindcss": "3.4.7"
+  },
+  "engines": {
+    "node": ">=20.11"
   }
 }

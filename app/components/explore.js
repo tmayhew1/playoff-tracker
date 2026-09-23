@@ -4,11 +4,18 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
-import { PlayerExplorer } from "./player-explorer";
 import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
+import dynamic from "next/dynamic";
+
+// By Season is the default mode; By Player's code loads when it's first
+// opened (see app/page.js for the same treatment of the other tabs).
+const PlayerExplorer = dynamic(
+  () => import("./player-explorer").then((m) => m.PlayerExplorer),
+  { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
+);
 
 
 export const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };

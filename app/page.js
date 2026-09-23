@@ -2,16 +2,25 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HISTORY } from "./historical";
-import { CollegeView } from "./components/college-view";
-import { DRatingView } from "./components/drating-view";
+import dynamic from "next/dynamic";
 import { ExploreView } from "./components/explore";
-import { HistoryView } from "./components/history";
-import { InfoView } from "./components/info-view";
-import { LegacyView } from "./components/legacy-view";
-import { ShotZonesView } from "./components/shot-zones-view";
-import { UsageView } from "./components/usage-view";
 import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider } from "./lib/va-mode";
+
+// Explore is the landing tab and ships in the page bundle. Every other tab's
+// code loads the first time that tab is opened, so a visit that never leaves
+// Explore doesn't download it.
+const TabLoading = () => (
+  <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div>
+);
+const lazyView = (load) => dynamic(load, { loading: TabLoading });
+const CollegeView = lazyView(() => import("./components/college-view").then((m) => m.CollegeView));
+const DRatingView = lazyView(() => import("./components/drating-view").then((m) => m.DRatingView));
+const HistoryView = lazyView(() => import("./components/history").then((m) => m.HistoryView));
+const InfoView = lazyView(() => import("./components/info-view").then((m) => m.InfoView));
+const LegacyView = lazyView(() => import("./components/legacy-view").then((m) => m.LegacyView));
+const ShotZonesView = lazyView(() => import("./components/shot-zones-view").then((m) => m.ShotZonesView));
+const UsageView = lazyView(() => import("./components/usage-view").then((m) => m.UsageView));
 
 
 export default function PlayoffTracker() {
