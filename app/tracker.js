@@ -23,6 +23,7 @@ const InfoView = lazyView(() => import("./components/info-view").then((m) => m.I
 const LegacyView = lazyView(() => import("./components/legacy-view").then((m) => m.LegacyView));
 const ShotZonesView = lazyView(() => import("./components/shot-zones-view").then((m) => m.ShotZonesView));
 const UsageView = lazyView(() => import("./components/usage-view").then((m) => m.UsageView));
+const DraftView = lazyView(() => import("./components/draft-view").then((m) => m.DraftView));
 
 
 // `initial` is the link this page was opened from, parsed on the server
@@ -40,6 +41,7 @@ const SEASONS = Object.keys(HISTORY);
 const TABS = [
   ["explore", "Explore"],
   ...SEASONS.map((s) => [s, s]),
+  ["draft", "Draft"],
   ["legacy", "Legacy"],
   ["college", "College"],
   ["drating", "D Rating"],
@@ -127,7 +129,7 @@ function Tracker({ initial }) {
         {SEASONS.includes(tab) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
     </ShareProvider>
