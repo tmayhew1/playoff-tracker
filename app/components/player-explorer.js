@@ -4,7 +4,9 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
-import { CompareChipLabel, ComparePanel, MultiComparePicker } from "./compare";
+import { CompareChipLabel, ComparePanel } from "./compare";
+import { MultiComparePicker } from "./compare-picker";
+import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
@@ -120,7 +122,10 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
       setSelectedKey(keyOf(found));
       // Only ask for a season the player actually has in this scope; anything
       // else would leave PlayerDetail's pending request permanently unmet.
-      setNavSeason(found.seasons.some((s) => s.season === pendingPlayer.season) ? pendingPlayer.season : null);
+      const hasSeason = found.seasons.some((s) => s.season === pendingPlayer.season);
+      setNavSeason(hasSeason ? pendingPlayer.season : null);
+      // A shared link can also name the opened season's comparison.
+      setNavCompare(hasSeason ? pendingPlayer.compare || null : null);
       // A crossing that names a RUN (a By Season compare panel's chip pointing
       // at a pooled side) ticks those seasons instead of opening a row — same
       // rule, applied to the whole set.
@@ -145,6 +150,9 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     () => (index && selectedKey ? index.find((p) => keyOf(p) === selectedKey) || null : null),
     [index, selectedKey]
   );
+  // The open player for the page's link; while a navigation is still waiting
+  // on the index, its target.
+  useShareReport({ p: player?.slug || pendingPlayer?.slug || null });
 
   // Cross-season/-player pools that power the per-category "league context"
   // dropdown. Each player-season row is tagged with the owner's name + slug so
@@ -408,6 +416,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // held as { season, compare } so only that row's breakdown picks it up.
   const [rowCompare, setRowCompare] = useState(null);
   const clearRowCompare = useCallback(() => setRowCompare(null), []);
+  // The open season and its comparison, for the page's link — or, while a
+  // navigation is still waiting to land, the season and comparison it names.
+  const [rowVs, setRowVs] = useState(null);
+  useShareReport(openSeason
+    ? { ps: openSeason, vs: rowVs || (rowCompare?.season === openSeason ? rowCompare.compare : null) }
+    : { ps: pendingSeason || null, vs: pendingSeason ? pendingCompare || null : null });
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
@@ -1029,7 +1043,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 />
               )}
             </div>
-            {sOpen && (scope === "playoffs" ? (
+            {sOpen && <CompareSlotProvider value={setRowVs}>{scope === "playoffs" ? (
               <PlayerSeasonDrill
                 s={s}
                 indexPlayer={player}
@@ -1049,7 +1063,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 pendingCompare={rowCompare?.season === s.season ? rowCompare.compare : null}
                 onCompareHandled={clearRowCompare}
               />
-            ))}
+            )}</CompareSlotProvider>}
           </div>
         );
       })}

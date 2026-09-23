@@ -27,14 +27,13 @@ export const metadata = {
   description: "Value Added across every NBA season",
 };
 
-// Pin the scale so iOS Safari doesn't auto-zoom when a sub-16px input
-// (the player-search fields) gains focus — the app's layout is fixed-width
-// and never wants that jump.
+// No maximumScale/userScalable lock: pinch-zoom stays available on phones,
+// where the dense stat tables most need it. iOS Safari's auto-zoom on focusing
+// a sub-16px input is handled in globals.css instead, by giving text inputs
+// 16px on touch screens.
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({ children }) {

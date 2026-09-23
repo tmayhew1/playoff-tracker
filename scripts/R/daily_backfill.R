@@ -22,6 +22,8 @@
 #                         keeps a single run polite + bounded)
 #   DAILY_FORCE_CURRENT   "true" to re-bake the current season even if a file
 #                         already exists (default "true")
+#   DAILY_OFFSEASON_REFRESH "true" to keep re-scraping the just-finished season
+#                         in July-September (default "false"; see in_offseason)
 
 source(file.path(dirname(sub("^--file=", "",
   grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "scrape_common.R"))
@@ -46,6 +48,15 @@ current_season_for <- function(d = Sys.Date()) {
   m <- as.integer(format(d, "%m"))
   start <- if (m >= 10) y else y - 1L
   make_season(start)
+}
+
+# July through September: the Finals are over and the next season hasn't
+# started, so the "current" season (which current_season_for still points at
+# until October) can't change. Re-scraping it daily there costs ~100 throttled
+# basketball-reference fetches for nothing, and every extra page is another
+# chance at a rate-limited miss.
+in_offseason <- function(d = Sys.Date()) {
+  as.integer(format(d, "%m")) %in% 7:9
 }
 
 # A season counts as "present" only when BOTH its leaderboard AND its
@@ -98,6 +109,7 @@ main <- function() {
                        if (length(present)) present[1] else current)
   max_backfill <- as.integer(env_or("DAILY_MAX_BACKFILL", "6"))
   force_current <- tolower(env_or("DAILY_FORCE_CURRENT", "true")) == "true"
+  offseason_refresh <- tolower(env_or("DAILY_OFFSEASON_REFRESH", "false")) == "true"
 
   message(sprintf("Daily backfill | current season=%s | covered=%s..%s | min=%s",
                   current,
@@ -123,8 +135,15 @@ main <- function() {
                     remaining_gaps, max_backfill))
   }
 
+  # Offseason with the season already baked: skip every forced refresh of it.
+  # The range passes below still run, so a missing season is still filled.
+  settled <- in_offseason() && (current %in% present_set) && !offseason_refresh
+  if (settled) {
+    message(sprintf("Offseason - %s is final; skipping its forced refreshes", current))
+  }
+
   # 2. Refresh the current season (new games finalize daily).
-  if (force_current || !(current %in% present_set)) {
+  if (!settled && (force_current || !(current %in% present_set))) {
     message(sprintf("Refreshing current season %s", current))
     bake_season(current)
   }
@@ -132,8 +151,10 @@ main <- function() {
   # 3. Defensive ratings (the D-Rating category behind VA+): refresh the
   # current season and fill any missing past seasons (present ones are
   # skipped without --force, so the range pass is cheap).
-  message(sprintf("Refreshing defensive ratings %s", current))
-  run(DEF_R, c(current, current, "--force"))
+  if (!settled) {
+    message(sprintf("Refreshing defensive ratings %s", current))
+    run(DEF_R, c(current, current, "--force"))
+  }
   run(DEF_R, c(min_season, current))
 
   # 3b. On-court defensive ratings from basketball-reference's on-off pages —
@@ -142,8 +163,10 @@ main <- function() {
   # the range pass costs nothing once a season is present. run() already
   # treats a failed script as non-fatal, so a bad day keeps yesterday's
   # numbers.
-  message(sprintf("Refreshing on-court defensive ratings %s", current))
-  run(ONOFF_DEF_R, c(current, current, "--force"))
+  if (!settled) {
+    message(sprintf("Refreshing on-court defensive ratings %s", current))
+    run(ONOFF_DEF_R, c(current, current, "--force"))
+  }
   run(ONOFF_DEF_R, c(min_season, current))
 
   # 4. Consistency pass: rebuild league averages from the regular-season
@@ -160,11 +183,14 @@ main <- function() {
   # lands on top of freshly rebuilt baselines, not the other way around
   # (rebuild_lga() also preserves zoneFG on its own if the order ever
   # changes, but this keeps the pipeline's data flow easy to follow).
-  message(sprintf("Refreshing shooting splits %s", current))
-  run(SHOOTING_R, c(current, current, "--force"))
+  if (!settled) {
+    message(sprintf("Refreshing shooting splits %s", current))
+    run(SHOOTING_R, c(current, current, "--force"))
+  }
   run(SHOOTING_R, c(min_season, current))
 
-  message(sprintf("Done. Backfilled %d past season(s); refreshed %s.", filled, current))
+  message(sprintf("Done. Backfilled %d past season(s); %s %s.", filled,
+                  if (settled) "left final" else "refreshed", current))
 }
 
 main()

@@ -45,8 +45,8 @@ const VAModeContext = createContext(null);
 
 const DEFAULT = { usgAdj: false, setUsgAdj: () => {}, lgaFor: (s, scope) => lgaForSeason(s, false, scope) };
 
-export function VAModeProvider({ children }) {
-  const [usgAdj, setUsgAdj] = useState(false);
+export function VAModeProvider({ children, initialUsgAdj = false }) {
+  const [usgAdj, setUsgAdj] = useState(initialUsgAdj);
   const lgaFor = useCallback((season, scope = "rs") => lgaForSeason(season, usgAdj, scope), [usgAdj]);
   const value = useMemo(() => ({ usgAdj, setUsgAdj, lgaFor }), [usgAdj, lgaFor]);
   return <VAModeContext.Provider value={value}>{children}</VAModeContext.Provider>;

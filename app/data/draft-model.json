@@ -1,0 +1,43 @@
+{
+  "n": 10,
+  "k": 0.055991,
+  "h": 0.797039,
+  "fit": {
+    "seasons": "1980-81..2025-26",
+    "seasonCount": 46,
+    "series": 678,
+    "method": "logistic on (strength gap, home court), leave-one-season-out",
+    "heldOut": {
+      "model": {
+        "logLoss": 0.5535,
+        "brier": 0.186,
+        "accuracy": 0.7316
+      },
+      "homeCourtOnly": {
+        "logLoss": 0.58,
+        "brier": 0.1955,
+        "accuracy": 0.7345
+      },
+      "strengthOnly": {
+        "logLoss": 0.6077,
+        "brier": 0.2105,
+        "accuracy": 0.6726
+      },
+      "coinFlip": {
+        "logLoss": 0.6931,
+        "brier": 0.25,
+        "accuracy": 0.5
+      }
+    },
+    "rosterSizes": {
+      "5": 0.5556,
+      "6": 0.5569,
+      "7": 0.557,
+      "8": 0.5565,
+      "10": 0.5535,
+      "12": 0.5591
+    },
+    "caveat": "past rosters are the players who appeared in those playoffs"
+  },
+  "generatedAt": "2026-09-23T05:42:22.338Z"
+}

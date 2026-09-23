@@ -1,0 +1,42 @@
+name: CI
+
+# The checks a contributor runs locally, on every pull request: the Value Added
+# unit tests, the Legacy verification suite, and a production build (which also
+# runs Next's lint and type checks). The bake workflows commit with
+# [skip ci], so their daily data commits don't queue a run each.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No lockfile is committed (.gitignore), so `npm ci` has nothing to pin
+      # against; package.json already pins exact versions for the runtime deps.
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Legacy verification
+        run: npm run legacy:verify
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
