@@ -11,6 +11,7 @@
     "legacy:verify": "node --import ./scripts/node/register.mjs scripts/legacy-report.mjs --verify",
     "usage:fit": "node scripts/fit-usage-model.mjs",
     "fit:draft": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fit-draft-model.mjs",
+    "bake:nights": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-nights.mjs",
     "bake:playoff-averages": "node scripts/bake-playoff-averages.mjs",
     "rebake:va": "node scripts/rebake-leaderboard-va.mjs",
     "fetch:history": "Rscript scripts/R/fetch_historical.R",

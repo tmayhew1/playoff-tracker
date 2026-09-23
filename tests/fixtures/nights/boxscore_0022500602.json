@@ -1,0 +1,91 @@
+{
+ "game": {
+  "gameId": "0022500602",
+  "gameStatus": 3,
+  "gameStatusText": "Final",
+  "homeTeam": {
+   "teamTricode": "OKC",
+   "score": 109,
+   "players": [
+    {
+     "personId": 1628983,
+     "name": "Shai Gilgeous-Alexander",
+     "starter": "1",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT35M",
+      "points": 36,
+      "reboundsDefensive": 4,
+      "reboundsOffensive": 1,
+      "assists": 6,
+      "steals": 3,
+      "blocks": 1,
+      "turnovers": 1,
+      "fieldGoalsMade": 13,
+      "fieldGoalsAttempted": 22,
+      "threePointersMade": 2,
+      "threePointersAttempted": 5,
+      "freeThrowsMade": 8,
+      "freeThrowsAttempted": 9,
+      "plusMinusPoints": 7
+     }
+    }
+   ]
+  },
+  "awayTeam": {
+   "teamTricode": "SAS",
+   "score": 104,
+   "players": [
+    {
+     "personId": 1641705,
+     "name": "Victor Wembanyama",
+     "starter": "1",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT33M",
+      "points": 26,
+      "reboundsDefensive": 13,
+      "reboundsOffensive": 2,
+      "assists": 3,
+      "steals": 1,
+      "blocks": 6,
+      "turnovers": 3,
+      "fieldGoalsMade": 10,
+      "fieldGoalsAttempted": 21,
+      "threePointersMade": 3,
+      "threePointersAttempted": 9,
+      "freeThrowsMade": 3,
+      "freeThrowsAttempted": 4,
+      "plusMinusPoints": -5
+     }
+    },
+    {
+     "personId": 2,
+     "name": "Two Way Rookie",
+     "starter": "0",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT04M",
+      "points": 2,
+      "reboundsDefensive": 0,
+      "reboundsOffensive": 0,
+      "assists": 0,
+      "steals": 0,
+      "blocks": 0,
+      "turnovers": 1,
+      "fieldGoalsMade": 1,
+      "fieldGoalsAttempted": 2,
+      "threePointersMade": 0,
+      "threePointersAttempted": 1,
+      "freeThrowsMade": 0,
+      "freeThrowsAttempted": 0,
+      "plusMinusPoints": -3
+     }
+    }
+   ]
+  }
+ }
+}

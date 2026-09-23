@@ -68,12 +68,26 @@ jobs:
       - name: Re-fit usage-adjusted baselines
         run: node scripts/fit-usage-model.mjs
 
+      # Node 22, as in CI: the bake imports app/*.js modules, which need
+      # Node's module-syntax detection (the package isn't "type": "module").
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Last night's box scores for the Explore tab's "Last night" card, from
+      # the NBA's live CDN. Independent of the R bake, and never fatal to it:
+      # a CDN hiccup costs one card a day, and the next run looks back three
+      # nights, so it catches up.
+      - name: Bake last night's games
+        continue-on-error: true
+        run: node --import ./scripts/node/register.mjs scripts/bake-nights.mjs
+
       # Every bake restamps fetchedAt/generatedAt, so an offseason run whose
       # data didn't move still dirties six files. Committing that redeploys,
       # which changes the build id — busting every build-scoped API cache and
       # making BuildWatch reload every open tab — for nothing. When the only
       # changed lines in tracked files are those stamps, drop them. New files
-      # (a backfilled season) are untracked and unaffected.
+      # (a backfilled season, a new night) are untracked and unaffected.
       - name: Discard timestamp-only changes
         run: |
           real=$(git diff -U0 -- app/data | grep -E '^[+-][^+-]' | grep -vE '^[+-] *"(fetchedAt|generatedAt)": ' || true)
@@ -86,4 +100,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Daily historical backfill (R) [skip ci]"
-          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/playoff-league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/playoff-league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json app/data/nights/*.json"

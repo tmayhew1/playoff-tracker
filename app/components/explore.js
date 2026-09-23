@@ -10,6 +10,7 @@ import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
+import { LastNight } from "./last-night";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -296,6 +297,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
 
   return (
     <div>
+      <LastNight onOpenPlayer={navigatePlayerToSeason} />
       <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>

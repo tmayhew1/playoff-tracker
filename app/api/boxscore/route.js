@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { mapPlayer } from "../_lib/nba-box";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -104,16 +105,6 @@ async function fetchJson(url, timeoutMs = 5000) {
   }
 }
 
-// Parse ISO 8601 duration like "PT38M12.00S" to total minutes (as float)
-function parseMinutes(iso) {
-  if (!iso) return 0;
-  const m = /PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/.exec(iso);
-  if (!m) return 0;
-  const mins = parseInt(m[1] || "0", 10);
-  const secs = parseFloat(m[2] || "0");
-  return mins + secs / 60;
-}
-
 const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (a) => ESPN_TO_NBA[a] || a;
 const splitMade = (v) => {
@@ -215,33 +206,6 @@ async function fetchEspnBox(eventId) {
     home: { tri: b.tri, score: 0, players: b.players },
     away: { tri: a.tri, score: 0, players: a.players },
     fetchedAt: new Date().toISOString(),
-  };
-}
-
-function mapPlayer(p) {
-  const s = p.statistics || {};
-  const mp = parseMinutes(s.minutesCalculated || s.minutes);
-  return {
-    name: p.name || `${p.firstName || ""} ${p.familyName || ""}`.trim(),
-    starter: String(p.starter) === "1" || p.starter === true,
-    // NBA returns oncourt as a string ("1"/"0"), so a plain !! coerces "0" to true.
-    oncourt: String(p.oncourt) === "1" || p.oncourt === true,
-    mp,
-    pts: s.points ?? 0,
-    reb: (s.reboundsDefensive ?? 0) + (s.reboundsOffensive ?? 0),
-    drb: s.reboundsDefensive ?? 0,
-    orb: s.reboundsOffensive ?? 0,
-    ast: s.assists ?? 0,
-    stl: s.steals ?? 0,
-    blk: s.blocks ?? 0,
-    tov: s.turnovers ?? 0,
-    fgm: s.fieldGoalsMade ?? 0,
-    fga: s.fieldGoalsAttempted ?? 0,
-    tpm: s.threePointersMade ?? 0,
-    tpa: s.threePointersAttempted ?? 0,
-    ftm: s.freeThrowsMade ?? 0,
-    fta: s.freeThrowsAttempted ?? 0,
-    plusMinus: s.plusMinusPoints ?? 0,
   };
 }
 
