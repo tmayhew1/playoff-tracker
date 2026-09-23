@@ -63,6 +63,20 @@ jobs:
       - name: Re-fit usage-adjusted baselines
         run: node scripts/fit-usage-model.mjs
 
+      # Every bake restamps fetchedAt/generatedAt, so an offseason run whose
+      # data didn't move still dirties six files. Committing that redeploys,
+      # which changes the build id — busting every build-scoped API cache and
+      # making BuildWatch reload every open tab — for nothing. When the only
+      # changed lines in tracked files are those stamps, drop them. New files
+      # (a backfilled season) are untracked and unaffected.
+      - name: Discard timestamp-only changes
+        run: |
+          real=$(git diff -U0 -- app/data | grep -E '^[+-][^+-]' | grep -vE '^[+-] *"(fetchedAt|generatedAt)": ' || true)
+          if [ -z "$real" ]; then
+            echo "Only timestamps changed; discarding."
+            git checkout -- app/data
+          fi
+
       - name: Commit baked JSON
         uses: stefanzweifel/git-auto-commit-action@v5
         with:

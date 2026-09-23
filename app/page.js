@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { HISTORY } from "./historical";
 import { CollegeView } from "./components/college-view";
 import { DRatingView } from "./components/drating-view";
@@ -23,9 +23,45 @@ export default function PlayoffTracker() {
 }
 
 
+const SEASONS = Object.keys(HISTORY);
+const TABS = [
+  ["explore", "Explore"],
+  ...SEASONS.map((s) => [s, s]),
+  ["legacy", "Legacy"],
+  ["college", "College"],
+  ["drating", "D Rating"],
+  ["usage", "Usage"],
+  ["shotzones", "Shot Zones"],
+  ["info", "Info"],
+];
+const TAB_IDS = new Set(TABS.map(([id]) => id));
+
+
 function Tracker() {
-  const [tab, setTab] = useState("explore");
-  const seasons = Object.keys(HISTORY);
+  const [tab, setTabState] = useState("explore");
+
+  // The tab rides the URL hash so a reload keeps it — BuildWatch reloads an
+  // open tab whenever a new deployment lands, which otherwise dropped the
+  // reader back on Explore — and so a view can be linked to directly.
+  // replaceState rather than a hash assignment: switching tabs shouldn't
+  // stack up history entries. Read after mount to keep hydration clean.
+  useEffect(() => {
+    const read = () => {
+      const h = decodeURIComponent(window.location.hash.slice(1));
+      setTabState(TAB_IDS.has(h) ? h : "explore");
+    };
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+  const setTab = useCallback((id) => {
+    setTabState(id);
+    try {
+      window.history.replaceState(null, "", id === "explore" ? window.location.pathname + window.location.search : `#${id}`);
+    } catch {
+      // sandboxed frames can refuse history writes — the tab still switches
+    }
+  }, []);
 
   // A cross-tab jump: Legacy hands over a player-season and which half of it
   // was being read, and Explore opens its leaderboard there. Held here because
@@ -37,7 +73,7 @@ function Tracker() {
     setExploreJump(target);
     setTab("explore");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [setTab]);
   const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
   return (
@@ -55,63 +91,21 @@ function Tracker() {
         </header>
 
         <div className="flex border-b-2 border-stone-900 mb-5 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setTab("explore")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "explore" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Explore
-          </button>
-          {seasons.map((s) => (
+          {TABS.map(([id, label]) => (
             <button
-              key={s}
-              onClick={() => setTab(s)}
-              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === s ? "bg-stone-900 text-white" : "text-stone-500"}`}
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === id ? "bg-stone-900 text-white" : "text-stone-500"}`}
             >
-              {s}
+              {label}
             </button>
           ))}
-          <button
-            onClick={() => setTab("legacy")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "legacy" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Legacy
-          </button>
-          <button
-            onClick={() => setTab("college")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "college" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            College
-          </button>
-          <button
-            onClick={() => setTab("drating")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "drating" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            D Rating
-          </button>
-          <button
-            onClick={() => setTab("usage")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "usage" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Usage
-          </button>
-          <button
-            onClick={() => setTab("shotzones")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "shotzones" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Shot Zones
-          </button>
-          <button
-            onClick={() => setTab("info")}
-            className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === "info" ? "bg-stone-900 text-white" : "text-stone-500"}`}
-          >
-            Info
-          </button>
         </div>
 
         {/* A season tab has no selectors of its own, so the switch sits at the
             top of the page. Explore renders its own copy below the By
             Season/By Player and scope rows — see ExploreView. */}
-        {seasons.includes(tab) && <VABaselineToggle />}
+        {SEASONS.includes(tab) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
