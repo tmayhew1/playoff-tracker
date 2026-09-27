@@ -265,6 +265,23 @@ main <- function() {
     res <- fetch_season(season, year, need_rs, need_po)
     if (is.null(res)) { failed <- failed + 1; next }
 
+    # A forced refresh that couldn't reach every team page would swap a full
+    # set for a partial one: the missing team's players (and its teamOn entry)
+    # silently vanish, then come back the next day it loads — the flip-flop
+    # the daily commits showed. Judged by team count rather than res$misses so
+    # a page that loaded without its table (a block page) counts too. Team
+    # sets only grow within a season, so fewer teams than on disk is a loss.
+    if (need_rs && length(res$rs_team) < length(entry$teamOn)) {
+      message(sprintf("  keeping %s rs on-off - %d teams now vs %d on disk (%d unreachable)",
+                      season, length(res$rs_team), length(entry$teamOn), res$misses))
+      need_rs <- FALSE
+    }
+    if (need_po && length(res$po_team) < length(entry$teamPoOn)) {
+      message(sprintf("  keeping %s po on-off - %d teams now vs %d on disk (%d unreachable)",
+                      season, length(res$po_team), length(entry$teamPoOn), res$misses))
+      need_po <- FALSE
+    }
+
     got <- character(0)
     if (need_rs) {
       if (plausible(res$rs, 200) && length(res$rs_team) >= 20) {

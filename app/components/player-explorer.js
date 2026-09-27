@@ -4,7 +4,10 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
-import { CompareChipLabel, ComparePanel, MultiComparePicker } from "./compare";
+import { CompareChipLabel, ComparePanel } from "./compare";
+import { MultiComparePicker } from "./compare-picker";
+import { CompareSlotProvider, useShareReport } from "../lib/share-state";
+import { Sparkline } from "./ui/sparkline";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
@@ -120,7 +123,10 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
       setSelectedKey(keyOf(found));
       // Only ask for a season the player actually has in this scope; anything
       // else would leave PlayerDetail's pending request permanently unmet.
-      setNavSeason(found.seasons.some((s) => s.season === pendingPlayer.season) ? pendingPlayer.season : null);
+      const hasSeason = found.seasons.some((s) => s.season === pendingPlayer.season);
+      setNavSeason(hasSeason ? pendingPlayer.season : null);
+      // A shared link can also name the opened season's comparison.
+      setNavCompare(hasSeason ? pendingPlayer.compare || null : null);
       // A crossing that names a RUN (a By Season compare panel's chip pointing
       // at a pooled side) ticks those seasons instead of opening a row — same
       // rule, applied to the whole set.
@@ -145,6 +151,9 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     () => (index && selectedKey ? index.find((p) => keyOf(p) === selectedKey) || null : null),
     [index, selectedKey]
   );
+  // The open player for the page's link; while a navigation is still waiting
+  // on the index, its target.
+  useShareReport({ p: player?.slug || pendingPlayer?.slug || null });
 
   // Cross-season/-player pools that power the per-category "league context"
   // dropdown. Each player-season row is tagged with the owner's name + slug so
@@ -193,14 +202,24 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
       ) : matches.length === 0 ? (
         <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
       ) : (
-        matches.map((p) => (
+        matches.map((p) => {
+          // The career at a glance: VA season by season in this scope, oldest
+          // first, in the color of the team he had his best season with (the
+          // index lists teams best-season first; "2TM" isn't a team).
+          const byYear = [...p.seasons].sort((a, b) => a.season.localeCompare(b.season)).map((x) => x.va);
+          const lead = p.teams.find((t) => !/^(TOT|\dTM)$/.test(t)) || p.teams[0];
+          return (
           <button
             key={keyOf(p)}
             onClick={() => selectPlayer(keyOf(p))}
-            className="w-full flex items-baseline justify-between gap-2 px-2 py-2 border-b border-stone-100 text-left hover:bg-stone-50"
+            // Wraps rather than squeezes: the name and its sparkline stay whole,
+            // and when the details don't fit beside them they drop to a second
+            // line, right-aligned, instead of crushing the name.
+            className="w-full flex flex-wrap items-baseline gap-x-2 gap-y-0.5 px-2 py-2 border-b border-stone-100 text-left hover:bg-stone-50"
           >
             <span className="text-sm font-semibold text-stone-800">{p.name}</span>
-            <span className="text-[10px] uppercase tracking-wider text-stone-400 shrink-0">
+            <Sparkline values={byYear} highlight={byYear.indexOf(Math.max(...byYear))} color={teamColor(lead)} width={48} height={16} className="shrink-0 self-center" />
+            <span className="ml-auto text-right text-[10px] uppercase tracking-wider text-stone-400">
               {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} ·{" "}
               {p.teams.map((t, ti) => (
                 <React.Fragment key={t}>
@@ -211,7 +230,8 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
               · best <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
             </span>
           </button>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -408,6 +428,12 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // held as { season, compare } so only that row's breakdown picks it up.
   const [rowCompare, setRowCompare] = useState(null);
   const clearRowCompare = useCallback(() => setRowCompare(null), []);
+  // The open season and its comparison, for the page's link — or, while a
+  // navigation is still waiting to land, the season and comparison it names.
+  const [rowVs, setRowVs] = useState(null);
+  useShareReport(openSeason
+    ? { ps: openSeason, vs: rowVs || (rowCompare?.season === openSeason ? rowCompare.compare : null) }
+    : { ps: pendingSeason || null, vs: pendingSeason ? pendingCompare || null : null });
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
@@ -1029,7 +1055,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 />
               )}
             </div>
-            {sOpen && (scope === "playoffs" ? (
+            {sOpen && <CompareSlotProvider value={setRowVs}>{scope === "playoffs" ? (
               <PlayerSeasonDrill
                 s={s}
                 indexPlayer={player}
@@ -1049,7 +1075,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 pendingCompare={rowCompare?.season === s.season ? rowCompare.compare : null}
                 onCompareHandled={clearRowCompare}
               />
-            ))}
+            )}</CompareSlotProvider>}
           </div>
         );
       })}

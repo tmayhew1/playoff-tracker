@@ -29,3 +29,15 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;              /* Safari + Chrome */
 }
+
+/* iOS Safari zooms the page in when a text field under 16px gains focus. The
+   search boxes here are 10-14px to fit their toolbars, so on touch screens
+   they take 16px instead — this is what lets the viewport leave pinch-zoom
+   enabled (see app/layout.js). */
+@media (pointer: coarse) {
+  input[type="text"],
+  input[type="search"],
+  input:not([type]) {
+    font-size: 16px;
+  }
+}

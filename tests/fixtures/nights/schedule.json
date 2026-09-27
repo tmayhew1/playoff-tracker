@@ -1,0 +1,78 @@
+{
+ "leagueSchedule": {
+  "seasonYear": "2025-26",
+  "gameDates": [
+   {
+    "gameDate": "01/15/2026 00:00:00",
+    "games": [
+     {
+      "gameId": "0022500601",
+      "gameCode": "20260115/DENNYK",
+      "gameStatus": 3,
+      "gameStatusText": "Final",
+      "homeTeam": {
+       "teamTricode": "NYK",
+       "score": 118
+      },
+      "awayTeam": {
+       "teamTricode": "DEN",
+       "score": 121
+      }
+     },
+     {
+      "gameId": "0022500602",
+      "gameCode": "20260115/SASOKC",
+      "gameStatus": 3,
+      "gameStatusText": "Final",
+      "homeTeam": {
+       "teamTricode": "OKC",
+       "score": 109
+      },
+      "awayTeam": {
+       "teamTricode": "SAS",
+       "score": 104
+      }
+     }
+    ]
+   },
+   {
+    "gameDate": "01/16/2026 00:00:00",
+    "games": [
+     {
+      "gameId": "0022500611",
+      "gameCode": "20260116/MEMLAL",
+      "gameStatus": 2,
+      "gameStatusText": "Q3 5:12",
+      "homeTeam": {
+       "teamTricode": "LAL",
+       "score": 80
+      },
+      "awayTeam": {
+       "teamTricode": "MEM",
+       "score": 77
+      }
+     }
+    ]
+   },
+   {
+    "gameDate": "10/05/2025 00:00:00",
+    "games": [
+     {
+      "gameId": "0012500001",
+      "gameCode": "20251005/BOSDEN",
+      "gameStatus": 3,
+      "gameStatusText": "Final",
+      "homeTeam": {
+       "teamTricode": "DEN",
+       "score": 99
+      },
+      "awayTeam": {
+       "teamTricode": "BOS",
+       "score": 95
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

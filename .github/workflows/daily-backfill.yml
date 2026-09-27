@@ -23,6 +23,10 @@ on:
         description: "Re-bake the current season even if unchanged"
         required: false
         default: "true"
+      offseason_refresh:
+        description: "Re-scrape the finished season in Jul-Sep anyway (e.g. after a BR correction)"
+        required: false
+        default: "false"
 
 # Avoid overlapping runs racing on the same commit.
 concurrency:
@@ -53,6 +57,7 @@ jobs:
           DAILY_MIN_SEASON: ${{ inputs.min_season }}
           DAILY_MAX_BACKFILL: ${{ inputs.max_backfill || '6' }}
           DAILY_FORCE_CURRENT: ${{ inputs.force_current || 'true' }}
+          DAILY_OFFSEASON_REFRESH: ${{ inputs.offseason_refresh || 'false' }}
         run: Rscript scripts/R/daily_backfill.R
 
       # The USG-ADJ scoring baselines (app/data/usage-model.json) are fit from
@@ -63,8 +68,36 @@ jobs:
       - name: Re-fit usage-adjusted baselines
         run: node scripts/fit-usage-model.mjs
 
+      # Node 22, as in CI: the bake imports app/*.js modules, which need
+      # Node's module-syntax detection (the package isn't "type": "module").
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Last night's box scores for the Explore tab's "Last night" card, from
+      # the NBA's live CDN. Independent of the R bake, and never fatal to it:
+      # a CDN hiccup costs one card a day, and the next run looks back three
+      # nights, so it catches up.
+      - name: Bake last night's games
+        continue-on-error: true
+        run: node --import ./scripts/node/register.mjs scripts/bake-nights.mjs
+
+      # Every bake restamps fetchedAt/generatedAt, so an offseason run whose
+      # data didn't move still dirties six files. Committing that redeploys,
+      # which changes the build id — busting every build-scoped API cache and
+      # making BuildWatch reload every open tab — for nothing. When the only
+      # changed lines in tracked files are those stamps, drop them. New files
+      # (a backfilled season, a new night) are untracked and unaffected.
+      - name: Discard timestamp-only changes
+        run: |
+          real=$(git diff -U0 -- app/data | grep -E '^[+-][^+-]' | grep -vE '^[+-] *"(fetchedAt|generatedAt)": ' || true)
+          if [ -z "$real" ]; then
+            echo "Only timestamps changed; discarding."
+            git checkout -- app/data
+          fi
+
       - name: Commit baked JSON
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Daily historical backfill (R) [skip ci]"
-          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/playoff-league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/playoff-league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json app/data/nights/*.json"

@@ -9,6 +9,7 @@ import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
+import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
@@ -352,6 +353,21 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     }
     onNavHandled?.();
   }, [pendingNav, season, scope, poPlayers, dataSeason, rsPlayers, rsSeason, combinedPlayers, onNavHandled]);
+
+  // The open row, and what it's compared with, for the page's link
+  // (lib/share-state.js). While a navigation is still waiting on rows, the
+  // link keeps naming its target, so a slow load or a reload mid-way doesn't
+  // drop the player from the address bar.
+  const [rowVs, setRowVs] = useState(null);
+  const openSlug = useMemo(() => {
+    if (!expanded) return null;
+    const src = scope === "regular" ? rsPlayers : scope === "combined" ? combinedPlayers : poPlayers;
+    return src?.find((p) => `${p.team}:${p.name}` === expanded)?.slug || null;
+  }, [expanded, scope, rsPlayers, combinedPlayers, poPlayers]);
+  const waiting = pendingNav?.season === season ? pendingNav : null;
+  useShareReport(openSlug
+    ? { p: openSlug, vs: rowVs || navCompare?.compare || null }
+    : { p: waiting?.slug || null, vs: waiting?.compare || null });
 
   // The header is abbreviated for space — it shares one line with the USG-ADJ
   // and VA/VA+ chips, and "Regular Season" is the one scope wide enough to wrap
@@ -797,7 +813,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 />
               )}
             </div>
-            {isOpen && (scope === "playoffs" ? (
+            {isOpen && <CompareSlotProvider value={setRowVs}>{scope === "playoffs" ? (
               <VABreakdown
                 p={p}
                 lga={poLga}
@@ -836,7 +852,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 pendingCompare={navCompare?.rowKey === rowKey ? navCompare.compare : null}
                 onCompareHandled={clearNavCompare}
               />
-            ))}
+            )}</CompareSlotProvider>}
           </div>
         );
       });

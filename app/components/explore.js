@@ -4,11 +4,20 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
-import { PlayerExplorer } from "./player-explorer";
 import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
+import dynamic from "next/dynamic";
+import { useShareReport } from "../lib/share-state";
+import { LastNight } from "./last-night";
+
+// By Season is the default mode; By Player's code loads when it's first
+// opened (see app/page.js for the same treatment of the other tabs).
+const PlayerExplorer = dynamic(
+  () => import("./player-explorer").then((m) => m.PlayerExplorer),
+  { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
+);
 
 
 export const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
@@ -116,21 +125,28 @@ export function exploreSeasonList() {
 // filtered to that player's team. Same shape the in-tab "Go →" navigations
 // already use, plus the scope, since a Legacy season has two halves and the
 // caller knows which one was tapped.
-export function ExploreView({ jump = null, onJumpHandled = null }) {
+//
+// `initial` is an opening link's Explore state (lib/share-params.js), read
+// once on mount: the view, scope and season it names, and the player — and
+// the comparison — to open, handed to the leaderboard / By Player as the
+// same pending navigation their own in-page jumps use.
+export function ExploreView({ jump = null, onJumpHandled = null, initial = null, onInitHandled = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
   // until the fetch resolves so the picker isn't empty on first paint.
   const FALLBACK = useMemo(() => exploreSeasonList(), []);
-  const [seasons, setSeasons] = useState(FALLBACK);
-  const [season, setSeason] = useState(FALLBACK[0]);
+  const [linked] = useState(initial);
+  const [seasons, setSeasons] = useState(() => (linked?.season && !FALLBACK.includes(linked.season)
+    ? [...FALLBACK, linked.season].sort((a, b) => b.localeCompare(a)) : FALLBACK));
+  const [season, setSeason] = useState(linked?.season || FALLBACK[0]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [mode, setMode] = useState("season"); // "season" | "player"
+  const [mode, setMode] = useState(linked?.view === "player" ? "player" : "season"); // "season" | "player"
   // Which games count: regular season, playoffs, or both summed. Applies to
   // both By Season and By Player.
-  const [scope, setScope] = useState("combined"); // "regular" | "playoffs" | "combined"
+  const [scope, setScope] = useState(linked?.scope || "combined"); // "regular" | "playoffs" | "combined"
   // A pending navigation into By Season, applied by the leaderboard once that
   // season's rows have loaded. Two shapes:
   //   { season, team, name, slug } — a player-season, from a compare panel's
@@ -141,7 +157,9 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
   // A player-season target may also carry `compare: { season, name, slug }` —
   // the compare panel's career-year gate asking the row it opens to land
   // already comparing against that player-season.
-  const [seasonNav, setSeasonNav] = useState(null);
+  const linkedCompare = linked?.vs ? { slug: linked.vs.slug, season: linked.vs.season, name: null } : null;
+  const [seasonNav, setSeasonNav] = useState(() => (linked?.view !== "player" && linked?.p && linked?.season
+    ? { season: linked.season, team: null, name: null, slug: linked.p, compare: linkedCompare } : null));
   // Called by a By Season compare panel (via context.onNavigateToPlayer) when
   // the user taps the compared player's chip: switch the leaderboard to that
   // player's season and hand the target down for the leaderboard to open.
@@ -191,7 +209,10 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
   // The mirror image of navigateSeasonToTeam: a pending navigation into By
   // Player — { name, slug, season } — applied by the player explorer once its
   // index for the current scope has loaded.
-  const [playerNav, setPlayerNav] = useState(null);
+  const [playerNav, setPlayerNav] = useState(() => (linked?.view === "player" && linked?.p
+    ? { slug: linked.p, name: null, season: linked.ps || null, compare: linked.ps ? linkedCompare : null } : null));
+  // Taken: let the tracker drop it, so a later return to Explore starts fresh.
+  useEffect(() => { if (linked) onInitHandled?.(); }, [linked, onInitHandled]);
   // Called from By Season when the user arms the Player header and taps a name:
   // cross over to By Player for that player, with the leaderboard's season
   // already drilled in. Scope rides along untouched (same selector both modes).
@@ -224,11 +245,12 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
         setSeasons(d.seasons);
         // Switch the default to the newest entry the route reports, but
         // only if the user hasn't already navigated somewhere else.
-        setSeason((cur) => (cur === FALLBACK[0] ? d.seasons[0] : cur));
+        // A linked season is a choice too.
+        setSeason((cur) => (cur === FALLBACK[0] && !linked?.season ? d.seasons[0] : cur));
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [FALLBACK]);
+  }, [FALLBACK, linked]);
 
   useEffect(() => {
     // Series box scores only exist for the playoffs; the other scopes render
@@ -265,6 +287,8 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
     return out;
   }, [data]);
 
+  useShareReport({ view: mode, scope, season: mode === "season" ? season : null });
+
   const tabCls = (active) =>
     `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
 
@@ -273,6 +297,7 @@ export function ExploreView({ jump = null, onJumpHandled = null }) {
 
   return (
     <div>
+      <LastNight onOpenPlayer={navigatePlayerToSeason} />
       <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>

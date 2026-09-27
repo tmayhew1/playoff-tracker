@@ -477,13 +477,16 @@ playoff_lgas <- function(lgas = load_league_averages(), pos = load_playoff_leagu
 }
 
 # --- JSON output (matches JSON.stringify(obj, null, 2) + "\n") --------------
-# auto_unbox keeps scalars scalar; digits=NA keeps full numeric precision;
-# named lists preserve key order; prettify gives stable 2-space indentation.
+# auto_unbox keeps scalars scalar; named lists preserve key order; prettify
+# gives stable 2-space indentation.
 write_json_pretty <- function(obj, path) {
-  # digits=17 is round-trip safe for IEEE doubles (preserves the exact value;
-  # the string repr can differ from JS's shortest form, but parses identically).
+  # digits=NA prints 15 significant digits. The previous digits=17 was exact
+  # to the last bit but printed a one-decimal rating like 112.1 as
+  # 112.09999999999999 — ~21k such values across app/data, shipped to every
+  # client in def-ratings.json. 15 digits is far below anything the app
+  # displays or compares (the tests allow 1e-6), and prints 112.1 as 112.1.
   js <- jsonlite::toJSON(obj, auto_unbox = TRUE, null = "null",
-                         na = "null", digits = 17)
+                         na = "null", digits = NA)
   js <- jsonlite::prettify(js, indent = 2)
   js <- sub("[\r\n]+$", "", js)  # prettify already appends a newline; normalize
   con <- file(path, open = "wb")

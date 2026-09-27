@@ -1,0 +1,139 @@
+{
+ "game": {
+  "gameId": "0022500601",
+  "gameStatus": 3,
+  "gameStatusText": "Final",
+  "homeTeam": {
+   "teamTricode": "NYK",
+   "score": 118,
+   "players": [
+    {
+     "personId": 1628973,
+     "name": "Jalen Brunson",
+     "starter": "1",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT38M",
+      "points": 34,
+      "reboundsDefensive": 3,
+      "reboundsOffensive": 0,
+      "assists": 8,
+      "steals": 1,
+      "blocks": 0,
+      "turnovers": 3,
+      "fieldGoalsMade": 12,
+      "fieldGoalsAttempted": 24,
+      "threePointersMade": 4,
+      "threePointersAttempted": 9,
+      "freeThrowsMade": 6,
+      "freeThrowsAttempted": 7,
+      "plusMinusPoints": -4
+     }
+    },
+    {
+     "personId": 1626157,
+     "name": "Karl-Anthony Towns",
+     "starter": "1",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT36M",
+      "points": 22,
+      "reboundsDefensive": 11,
+      "reboundsOffensive": 3,
+      "assists": 3,
+      "steals": 0,
+      "blocks": 1,
+      "turnovers": 2,
+      "fieldGoalsMade": 8,
+      "fieldGoalsAttempted": 17,
+      "threePointersMade": 2,
+      "threePointersAttempted": 6,
+      "freeThrowsMade": 4,
+      "freeThrowsAttempted": 4,
+      "plusMinusPoints": -2
+     }
+    },
+    {
+     "personId": 1,
+     "name": "Deep Bench Guy",
+     "starter": "0",
+     "oncourt": "0",
+     "played": "0",
+     "statistics": {
+      "minutesCalculated": "PT00M",
+      "points": 0,
+      "reboundsDefensive": 0,
+      "reboundsOffensive": 0,
+      "assists": 0,
+      "steals": 0,
+      "blocks": 0,
+      "turnovers": 0,
+      "fieldGoalsMade": 0,
+      "fieldGoalsAttempted": 0,
+      "threePointersMade": 0,
+      "threePointersAttempted": 0,
+      "freeThrowsMade": 0,
+      "freeThrowsAttempted": 0,
+      "plusMinusPoints": 0
+     }
+    }
+   ]
+  },
+  "awayTeam": {
+   "teamTricode": "DEN",
+   "score": 121,
+   "players": [
+    {
+     "personId": 203999,
+     "name": "Nikola Joki\u0107",
+     "starter": "1",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT37M",
+      "points": 31,
+      "reboundsDefensive": 12,
+      "reboundsOffensive": 4,
+      "assists": 14,
+      "steals": 2,
+      "blocks": 1,
+      "turnovers": 4,
+      "fieldGoalsMade": 12,
+      "fieldGoalsAttempted": 19,
+      "threePointersMade": 2,
+      "threePointersAttempted": 4,
+      "freeThrowsMade": 5,
+      "freeThrowsAttempted": 6,
+      "plusMinusPoints": 9
+     }
+    },
+    {
+     "personId": 1627750,
+     "name": "Jamal Murray",
+     "starter": "1",
+     "oncourt": "0",
+     "played": "1",
+     "statistics": {
+      "minutesCalculated": "PT35M",
+      "points": 24,
+      "reboundsDefensive": 4,
+      "reboundsOffensive": 0,
+      "assists": 6,
+      "steals": 1,
+      "blocks": 0,
+      "turnovers": 2,
+      "fieldGoalsMade": 9,
+      "fieldGoalsAttempted": 20,
+      "threePointersMade": 3,
+      "threePointersAttempted": 8,
+      "freeThrowsMade": 3,
+      "freeThrowsAttempted": 3,
+      "plusMinusPoints": 5
+     }
+    }
+   ]
+  }
+ }
+}

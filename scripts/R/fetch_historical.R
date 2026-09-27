@@ -136,6 +136,11 @@ fetch_regular_season_totals <- function(end_year) {
   if (is.null(table)) stop("totals table not found")
 
   by_key <- list(); order_keys <- character(0)
+  # A traded player's per-team rows follow his aggregate row in the order he
+  # played for them, so the last one seen is where he finished the season.
+  # Kept as lastTeam on the aggregate row: the draft assistant needs each
+  # playoff team's end-of-season roster before any playoff box score exists.
+  last_team <- list()
   for (tr in xml2::xml_find_all(table, ".//tbody/tr")) {
     cls <- xml2::xml_attr(tr, "class")
     if (!is.na(cls) && grepl("thead", cls)) next
@@ -165,10 +170,15 @@ fetch_regular_season_totals <- function(end_year) {
     )
     key <- if (!is.na(slug)) slug else name
     is_aggregate <- grepl("^(TOT|[0-9]TM)$", team)
+    if (!is_aggregate) last_team[[key]] <- to_nba(team)
     if (is.null(by_key[[key]])) { order_keys <- c(order_keys, key); by_key[[key]] <- row }
     else if (is_aggregate) by_key[[key]] <- row
   }
   if (length(by_key) == 0) stop("totals table found but parsed 0 player rows")
+  for (key in order_keys) {
+    r <- by_key[[key]]
+    if (grepl("^(TOT|[0-9]TM)$", r$team) && !is.null(last_team[[key]])) by_key[[key]]$lastTeam <- last_team[[key]]
+  }
   unname(by_key[order_keys])
 }
 
@@ -197,9 +207,34 @@ main <- function(season) {
   lga <- blend_playoff_lga(lga, load_playoff_league_averages()[[season]])
   message(sprintf("Baking %s from basketball-reference...", season))
 
+  # Regular-season totals are fetched first, and written even when there are
+  # no playoff games yet. They used to be written only at the end of a
+  # playoff bake, so a season's regular-season file didn't exist until its
+  # playoffs began -- nothing for the season in progress, and nothing for the
+  # draft assistant to rate the bracket with on draft day.
+  rs <- tryCatch(fetch_regular_season_totals(end_year),
+                 error = function(e) { message(sprintf("  regular-season totals failed: %s - skipping reference file", conditionMessage(e))); NULL })
+  rs_path <- file.path(DATA_DIR, sprintf("regular-season-%s.json", season))
+  write_rs <- function() {
+    if (is.null(rs)) return(invisible(FALSE))
+    dir.create(DATA_DIR, showWarnings = FALSE, recursive = TRUE)
+    write_json_pretty(list(season = season, players = rs,
+                           source = "basketball-reference", fetchedAt = iso_now()), rs_path)
+    message(sprintf("  %d regular-season players -> %s", length(rs), rs_path))
+    invisible(TRUE)
+  }
+
   urls <- sort(fetch_playoff_game_urls(end_year))
   message(sprintf("  %d playoff game URLs", length(urls)))
-  if (length(urls) == 0) stop("no playoff games discovered")
+  if (length(urls) == 0) {
+    # Before the playoffs: the regular season is the whole bake. Anything
+    # else (no games AND no totals) is still a failure.
+    if (isTRUE(write_rs())) {
+      message("  no playoff games yet - wrote the regular season only")
+      return(invisible(NULL))
+    }
+    stop("no playoff games discovered")
+  }
 
   message("Fetching box scores...")
   games <- list()
@@ -348,16 +383,6 @@ main <- function(season) {
     fetchedAt = iso_now()
   )
 
-  # --- regular-season totals (best-effort) ---
-  regular_out <- NULL
-  rs <- tryCatch(fetch_regular_season_totals(end_year),
-                 error = function(e) { message(sprintf("  regular-season totals failed: %s - skipping reference file", conditionMessage(e))); NULL })
-  if (!is.null(rs)) {
-    message(sprintf("  %d regular-season players", length(rs)))
-    regular_out <- list(season = season, players = rs,
-                        source = "basketball-reference", fetchedAt = iso_now())
-  }
-
   dir.create(DATA_DIR, showWarnings = FALSE, recursive = TRUE)
   history_path     <- file.path(DATA_DIR, sprintf("history-%s.json", season))
   leaderboard_path <- file.path(DATA_DIR, sprintf("leaderboard-%s.json", season))
@@ -366,11 +391,7 @@ main <- function(season) {
   message(sprintf("Wrote %d series, %d players", length(history_series), length(players)))
   message(sprintf("  -> %s", history_path))
   message(sprintf("  -> %s", leaderboard_path))
-  if (!is.null(regular_out)) {
-    rs_path <- file.path(DATA_DIR, sprintf("regular-season-%s.json", season))
-    write_json_pretty(regular_out, rs_path)
-    message(sprintf("  -> %s", rs_path))
-  }
+  write_rs()
 }
 
 # Only run when invoked as a script (not when sourced for tests).
