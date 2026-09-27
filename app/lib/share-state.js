@@ -30,6 +30,12 @@ const sameValue = (a, b) => (a === b) || (a && b && typeof a === "object" && JSO
 
 export const ShareProvider = ShareContext.Provider;
 
+// The merged state itself, for UI that adapts to what's open (Explore's
+// action dock) rather than reporting into it.
+const ShareStateContext = createContext({});
+export const ShareStateProvider = ShareStateContext.Provider;
+export const useShareState = () => useContext(ShareStateContext);
+
 // Report this component's part of the link while it is mounted; its keys go
 // back to null when it unmounts, so a view that closes stops describing
 // itself. `value` is compared by content, so an inline object is fine.

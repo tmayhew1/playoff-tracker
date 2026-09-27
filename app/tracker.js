@@ -7,7 +7,7 @@ import { ExploreView } from "./components/explore";
 import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 import { shareQuery } from "./lib/share-params";
-import { ShareProvider, useShareStore } from "./lib/share-state";
+import { ShareProvider, ShareStateProvider, useShareStore } from "./lib/share-state";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
 // code loads the first time that tab is opened, so a visit that never leaves
@@ -93,6 +93,7 @@ function Tracker({ initial }) {
 
   return (
     <ShareProvider value={report}>
+    <ShareStateProvider value={share}>
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4 text-center">
@@ -132,6 +133,7 @@ function Tracker({ initial }) {
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
+    </ShareStateProvider>
     </ShareProvider>
   );
 }

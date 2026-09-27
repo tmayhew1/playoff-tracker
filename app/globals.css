@@ -41,3 +41,66 @@ body {
     font-size: 16px;
   }
 }
+
+/* ---- Courtside: the Explore tab's design language ------------------------
+   Cards with soft depth, press feedback, and a little entrance motion. Kept
+   as a handful of named classes (cs-*) rather than repeated utility strings,
+   so the look lives in one place. Every animation stands down for readers
+   who ask for reduced motion. */
+.cs-card {
+  background: #fff;
+  border: 1px solid rgba(28, 25, 23, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 14px 32px -20px rgba(28, 25, 23, 0.28);
+}
+.cs-press {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.cs-press:active { transform: scale(0.97); }
+
+@keyframes cs-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.cs-rise { animation: cs-rise 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes cs-fade { from { opacity: 0; } to { opacity: 1; } }
+.cs-fade { animation: cs-fade 0.2s ease both; }
+
+@keyframes cs-sheet {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.cs-sheet { animation: cs-sheet 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes cs-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.cs-skeleton {
+  background: linear-gradient(90deg, #ebe8e3 25%, #f5f3ef 37%, #ebe8e3 63%);
+  background-size: 400% 100%;
+  animation: cs-shimmer 1.4s ease infinite;
+  border-radius: 10px;
+}
+
+/* Horizontal rails (last night's cards, the season picker): swipe, snap,
+   and don't drag the page sideways with them. */
+.cs-rail {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.cs-rail::-webkit-scrollbar { display: none; }
+.cs-rail > * { scroll-snap-align: start; flex-shrink: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-rise, .cs-fade, .cs-sheet, .cs-skeleton { animation: none; }
+  .cs-press:active { transform: none; }
+}
+
+/* Shown from 380px up. A Tailwind min-[380px]: variant would read better,
+   but arbitrary width variants are off in this project: the custom `tilt`
+   screen (tailwind.config.js) is a raw media query, which disables them. */
+.cs-wide-only { display: none; }
+@media (min-width: 380px) { .cs-wide-only { display: block; } }

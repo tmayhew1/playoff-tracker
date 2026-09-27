@@ -10,6 +10,7 @@ import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamCol
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
+import { PlayerAvatar } from "./ui/avatar";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
@@ -103,7 +104,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       // Show once the card's top has scrolled above the viewport, and hide
       // again once its bottom rises past one header's height (so the overlay
       // releases as the leaderboard scrolls off, like a sticky would).
-      const show = r.top < 0 && r.bottom > h;
+      // Keyed to the header's own top, not the card's: the card can open with
+      // other content above the header (a podium, a player hero), and the
+      // overlay mustn't double a header that's still on screen.
+      const top = headerFlowRef.current ? headerFlowRef.current.getBoundingClientRect().top : r.top;
+      const show = top < 0 && r.bottom > h;
       const geom = { left: Math.round(r.left), width: Math.round(r.width) };
       const sameGeom = (prev, next) => prev && prev.left === next.left && prev.width === next.width;
       setFixedBar((prev) => {
@@ -365,6 +370,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     return src?.find((p) => `${p.team}:${p.name}` === expanded)?.slug || null;
   }, [expanded, scope, rsPlayers, combinedPlayers, poPlayers]);
   const waiting = pendingNav?.season === season ? pendingNav : null;
+  // Whether the pinned "Show top 10" bar is on screen, so Explore's floating
+  // action dock can step up out of its way.
+  useShareReport({ boardPinned: !!(showAll && fixedFooter) });
   useShareReport(openSlug
     ? { p: openSlug, vs: rowVs || navCompare?.compare || null }
     : { p: waiting?.slug || null, vs: waiting?.compare || null });
@@ -461,8 +469,8 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // in flow inside the card and again in the fixed overlay while pinned.
   const headerBlock = (
     <>
-      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        <span>{title}</span>
+      <div className="px-3 pt-3 pb-2 border-b border-stone-100 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <span className="text-[17px] leading-none font-black text-stone-900" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>{title}</span>
         {/* Chip group stays glued together and right-aligned (ml-auto); when
             the title + all three chips can't share one line it wraps to its
             own line as a unit instead of the chips compressing (which used to
@@ -534,7 +542,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
           Regular-season totals aren’t baked for {season} yet — showing playoff stats only.
         </div>
       )}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1.5 px-1.5 sm:px-2 border-b border-stone-100 bg-stone-50/60">
         <span className="w-5 sm:w-6 text-right">#</span>
         <span className="w-8 sm:w-10">Team</span>
         {/* Arming step for the cross-over into By Player: tap Player here
@@ -619,7 +627,18 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
 
   return (
     <>
-    <div ref={setCardEl} className="mb-4 border border-stone-300 bg-white">
+    <div ref={setCardEl} className="mb-4 cs-card overflow-hidden">
+      {!teamFilter && minGames == null && sortedAll.length >= 3 && (
+        <Podium
+          top={sortedAll.slice(0, 3)}
+          vaOf={vaOf}
+          metric={metric}
+          onOpen={(p) => {
+            setExpanded(`${p.team}:${p.name}`);
+            setPendingScrollName(p.name);
+          }}
+        />
+      )}
       <div ref={headerFlowRef}>{headerBlock}</div>
       {(() => {
         // Defensive strip (VA view only): a thin underline segment spanning
@@ -654,7 +673,6 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         const rowKey = `${p.team}:${p.name}`;
         const isOpen = expanded === rowKey;
         const tc = teamColor(p.team);
-        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
         const rowVa = vaOf(p);
         const barColor = rowVa >= 0
           ? withAlpha(tc, 0.16)
@@ -737,10 +755,10 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   e.stopPropagation();
                   setTeamFilter(teamFilter === p.team ? null : p.team);
                 }}
-                style={badgeStyle}
-                className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
+                className="cs-press w-8 sm:w-10 flex justify-center"
                 aria-label={`Filter by ${p.team}`}
-              >{p.team}</button>
+                title={`${p.team} — tap to show only ${p.team}`}
+              ><PlayerAvatar name={p.name} team={p.team} size={26} ring={teamFilter === p.team} /></button>
               {/* Armed, the name crosses over to By Player with this season
                   drilled in; unarmed it falls through (no stopPropagation) so
                   the tap bubbles to the row and expands the breakdown, exactly
@@ -771,8 +789,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                     armed chevron sits outside it so a long name can't eat
                     the one mark that says the tap goes somewhere. */}
                 <span className={`min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1] ${nameArmed && canOpenPlayer ? "underline decoration-dotted" : ""}`}>
-                  {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:text-inherit sm:shrink-0">{first}</span>}
-                  <span className={lastCls}>{last}</span>
+                  {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:text-inherit sm:shrink-0">{first}<span className="font-bold sm:hidden" style={{ color: tc }}> · {p.team}</span></span>}
+                  <span className={`${lastCls} font-semibold text-stone-900`}>{last}</span>
+                  <span className="hidden sm:inline text-[9px] font-bold" style={{ color: tc }}>{p.team}</span>
                 </span>
                 {nameArmed && canOpenPlayer && <span className="text-[8px] ml-0.5 shrink-0" aria-hidden>›</span>}
               </button>
@@ -866,9 +885,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           ref={footerFlowRef}
           onClick={() => setShowAll((s) => !s)}
-          className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
+          className="w-full text-center py-3 text-[12px] font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-50 border-t border-stone-100"
         >
-          {showAll ? "Show top 10" : `Show all (${all.length})`}
+          {showAll ? "Show top 10" : `Show all ${all.length} players ›`}
         </button>
       )}
     </div>
@@ -876,7 +895,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         while scrolled into the leaderboard, aligned to the card's width. */}
     {fixedBar && (
       <div
-        className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm"
+        className="fixed top-0 z-30 bg-white/95 backdrop-blur border-x border-b border-stone-200 rounded-b-2xl shadow-[0_10px_24px_-14px_rgba(0,0,0,0.35)] overflow-hidden"
         style={{ left: fixedBar.left, width: fixedBar.width }}
       >
         {headerBlock}
@@ -889,7 +908,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       <button
         type="button"
         onClick={collapseFromPinnedBar}
-        className="fixed bottom-0 z-30 bg-white border-x border-t border-stone-300 text-center py-4 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900"
+        className="fixed bottom-0 z-30 bg-white/95 backdrop-blur border-x border-t border-stone-200 rounded-t-2xl text-center py-4 text-[12px] font-semibold text-stone-600 hover:text-stone-900"
         style={{
           left: fixedFooter.left,
           width: fixedFooter.width,
@@ -901,5 +920,45 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       </button>
     )}
     </>
+  );
+}
+
+
+// The season's top three, podium-style, above the board: the leader in the
+// middle and raised. Tapping one opens his row below.
+function Podium({ top, vaOf, metric, onOpen }) {
+  const order = [top[1], top[0], top[2]];
+  const place = [2, 1, 3];
+  return (
+    <div className="grid grid-cols-3 gap-2 px-3 pt-4 pb-3 items-end bg-gradient-to-b from-stone-50 to-white border-b border-stone-100">
+      {order.map((p, i) => {
+        const c = teamColor(p.team);
+        const first = place[i] === 1;
+        const va = vaOf(p);
+        const { first: fn, last } = splitName(p.name);
+        return (
+          <button
+            key={`${p.team}:${p.name}`}
+            type="button"
+            onClick={() => onOpen(p)}
+            className="cs-press cs-rise flex flex-col items-center text-center min-w-0 rounded-2xl px-1 pt-2 pb-2.5"
+            style={{
+              animationDelay: `${[80, 0, 160][i]}ms`,
+              background: first ? `linear-gradient(180deg, ${withAlpha(c, 0.14)}, ${withAlpha(c, 0.03)})` : undefined,
+            }}
+            aria-label={`${place[i]}. ${p.name}, ${va.toFixed(1)} ${metric === "vaPlus" ? "VA+" : "VA"} — open his row`}
+          >
+            <span className="relative mb-1.5">
+              <PlayerAvatar name={p.name} team={p.team} size={first ? 56 : 44} />
+              <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 rounded-full text-[10px] font-black ring-2 ring-white ${first ? "bg-amber-400 text-amber-950" : "bg-stone-800 text-white"}`}>{place[i]}</span>
+            </span>
+            <span className="text-[9px] text-stone-500 truncate max-w-full leading-tight">{fn}</span>
+            <span className={`font-bold text-stone-900 truncate max-w-full leading-tight ${first ? "text-[14px]" : "text-[12px]"}`}>{last}</span>
+            <span className={`mt-1 font-black tabular-nums tracking-tight ${first ? "text-[20px]" : "text-[16px]"}`} style={{ color: va >= 0 ? c : "#dc2626" }}>{va.toFixed(1)}</span>
+            <span className="text-[9px] text-stone-400 tabular-nums">{(va / Math.max(1, p.gp)).toFixed(2)}/G · {p.team}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }

@@ -7,6 +7,8 @@ import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { CompareChipLabel, ComparePanel } from "./compare";
 import { MultiComparePicker } from "./compare-picker";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
+import { PlayerAvatar } from "./ui/avatar";
+import { Sparkline } from "./ui/sparkline";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
@@ -190,36 +192,50 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search a player…"
+        placeholder="Filter players by name…"
         autoFocus
-        className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-3"
+        className="w-full text-[15px] text-stone-900 bg-white border border-stone-200 rounded-2xl px-4 py-3 mb-3 outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-200/60 transition"
       />
       {query.trim().length < 2 ? (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">
+        <div className="text-[12px] text-stone-400 py-8 text-center">
           Type a name to see their {scope === "playoffs" ? "playoff runs" : scope === "regular" ? "regular seasons" : "combined seasons"} ranked by Value Added.
         </div>
       ) : matches.length === 0 ? (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
+        <div className="text-[12px] text-stone-400 py-8 text-center">No players match “{query.trim()}”.</div>
       ) : (
-        matches.map((p) => (
-          <button
-            key={keyOf(p)}
-            onClick={() => selectPlayer(keyOf(p))}
-            className="w-full flex items-baseline justify-between gap-2 px-2 py-2 border-b border-stone-100 text-left hover:bg-stone-50"
-          >
-            <span className="text-sm font-semibold text-stone-800">{p.name}</span>
-            <span className="text-[10px] uppercase tracking-wider text-stone-400 shrink-0">
-              {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} ·{" "}
-              {p.teams.map((t, ti) => (
-                <React.Fragment key={t}>
-                  {ti > 0 && "/"}
-                  <span className="font-semibold" style={{ color: teamColor(t) }}>{t}</span>
-                </React.Fragment>
-              ))}{" "}
-              · best <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
-            </span>
-          </button>
-        ))
+        <div className="cs-card p-1.5">
+          {matches.map((p, i) => {
+            const byYear = [...p.seasons].sort((a, b) => a.season.localeCompare(b.season)).map((x) => x.va);
+            const lead = p.teams.find((t) => !/^(TOT|\dTM)$/.test(t)) || p.teams[0];
+            return (
+              <button
+                key={keyOf(p)}
+                onClick={() => selectPlayer(keyOf(p))}
+                className="cs-press cs-rise w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left hover:bg-stone-50"
+                style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
+              >
+                <PlayerAvatar name={p.name} team={lead} size={36} />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[14px] font-semibold text-stone-900 truncate">{p.name}</span>
+                  <span className="block text-[11px] text-stone-500 truncate">
+                    {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} ·{" "}
+                    {p.teams.filter((t) => !/^(TOT|\dTM)$/.test(t)).slice(0, 4).map((t, ti) => (
+                      <React.Fragment key={t}>
+                        {ti > 0 && " · "}
+                        <span className="font-semibold" style={{ color: teamColor(t) }}>{t}</span>
+                      </React.Fragment>
+                    ))}{p.teams.filter((t) => !/^(TOT|\dTM)$/.test(t)).length > 4 ? ` +${p.teams.filter((t) => !/^(TOT|\dTM)$/.test(t)).length - 4}` : ""}
+                  </span>
+                </span>
+                <Sparkline values={byYear} highlight={byYear.indexOf(Math.max(...byYear))} color={teamColor(lead)} width={52} height={22} className="cs-wide-only shrink-0" />
+                <span className="text-right shrink-0">
+                  <span className="block text-[13px] font-bold tabular-nums text-stone-900">{p.bestVa.toFixed(1)}</span>
+                  <span className="block text-[10px] text-stone-400">best</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -349,11 +365,10 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       // bottom rises to within one header's height, so the bar goes away with
       // the thing it heads rather than hanging over what follows.
       const show = head.getBoundingClientRect().top < 0 && r.bottom > h;
-      // The bar is inset px-2, so it is laid out eight pixels wider on each
-      // side than the table it heads: the padding gives it a white margin
-      // inside the page's own gutter while its CONTENTS still line up column
-      // for column with the rows scrolling underneath.
-      const geom = { left: Math.round(r.left) - 8, width: Math.round(r.width) + 16 };
+      // The table sits in a card inset px-2, and the bar is inset px-2 too,
+      // so laid out at the card's own width its CONTENTS line up column for
+      // column with the rows scrolling underneath.
+      const geom = { left: Math.round(r.left), width: Math.round(r.width) };
       setFixedBar((prev) => {
         if (!show) return prev === null ? prev : null;
         return prev && prev.left === geom.left && prev.width === geom.width ? prev : geom;
@@ -868,10 +883,19 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     <div ref={setCardEl}>
       <button
         onClick={onBack}
-        className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
+        className="cs-press inline-flex items-center gap-1 px-3 py-1.5 mb-3 rounded-full bg-white border border-stone-200 text-[12px] font-semibold text-stone-600 hover:text-stone-900"
       >
-        ‹ Back to search
+        ‹ All players
       </button>
+      <PlayerHero
+        player={player}
+        vaOf={vaOf}
+        metric={metric}
+        runNoun={runNoun}
+        openSeason={openSeason}
+        onOpenSeason={(season) => { setOpenSeason(season); setPendingScroll(season); }}
+      />
+      <div className="cs-card overflow-hidden px-2 pt-3 mb-3">
       <div ref={headerFlowRef}>{headerBlock}</div>
       {shown.map((s, i) => {
         const rank = sortedAll.indexOf(s) + 1;
@@ -1067,6 +1091,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           </div>
         );
       })}
+      </div>
       {picking && multiContext && aggA && (
         <MultiComparePicker
           context={multiContext}
@@ -1187,7 +1212,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         border for its edge. */}
     {fixedBar && (
       <div
-        className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm px-2 pt-2"
+        className="fixed top-0 z-30 bg-white/95 backdrop-blur border-x border-b border-stone-200 rounded-b-2xl shadow-[0_10px_24px_-14px_rgba(0,0,0,0.35)] px-2 pt-2"
         style={{ left: fixedBar.left, width: fixedBar.width }}
       >
         {headerBlock}
@@ -1303,5 +1328,96 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true,
       onPrev={onPrev}
       onNext={onNext}
     />
+  );
+}
+
+
+// The top of a player's page: who he is at a glance — avatar, teams, the
+// career in three numbers — and his career as a bar per season, colored by
+// the team he played it for. Tapping a bar opens that season's row below.
+function PlayerHero({ player, vaOf, metric, runNoun, openSeason, onOpenSeason }) {
+  const seasons = [...player.seasons].sort((a, b) => a.season.localeCompare(b.season));
+  const isTeam = (t) => t && !/^(TOT|\dTM)$/.test(t);
+  const latestTeam = [...seasons].reverse().map((s) => s.team).find(isTeam) || player.teams[0];
+  const teams = [];
+  for (const s of seasons) if (isTeam(s.team) && !teams.includes(s.team)) teams.push(s.team);
+  const vals = seasons.map((s) => vaOf(s));
+  const career = vals.reduce((a, v) => a + v, 0);
+  const bestI = vals.indexOf(Math.max(...vals));
+  const peak = seasons.filter((s) => s.gp >= 10).reduce((m, s) => Math.max(m, vaOf(s) / s.gp), -Infinity);
+  const max = Math.max(...vals.map(Math.abs), 1);
+  const hasNeg = vals.some((v) => v < 0);
+  const H = 64;
+  const label = metric === "vaPlus" ? "VA+" : "VA";
+  const c = teamColor(latestTeam);
+  const yrs = `${seasons[0]?.season.slice(0, 4)}–${String(Number(seasons[seasons.length - 1]?.season.slice(0, 4)) + 1)}`;
+  const tile = (k, v, sub) => (
+    <div className="flex-1 min-w-0 rounded-xl bg-stone-50 px-2.5 py-2">
+      <div className="text-[10px] font-semibold text-stone-500">{k}</div>
+      <div className="text-[18px] font-black tabular-nums text-stone-900 leading-tight truncate">{v}</div>
+      {sub && <div className="text-[10px] text-stone-400 truncate">{sub}</div>}
+    </div>
+  );
+  return (
+    <div className="cs-card cs-rise overflow-hidden mb-4">
+      <div className="relative px-4 pt-4 pb-3" style={{ background: `linear-gradient(135deg, ${withAlpha(c, 0.16)}, ${withAlpha(c, 0.02)} 60%)` }}>
+        <div className="flex items-center gap-3.5">
+          <PlayerAvatar name={player.name} team={latestTeam} size={68} />
+          <div className="min-w-0">
+            <div className="text-[24px] leading-tight font-black text-stone-900 truncate" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>{player.name}</div>
+            <div className="flex flex-wrap items-center gap-1 mt-1">
+              {teams.map((t) => (
+                <span key={t} className="px-1.5 py-0.5 rounded-md text-[10px] font-bold" style={{ backgroundColor: withAlpha(teamColor(t), 0.14), color: teamColor(t) }}>{t}</span>
+              ))}
+              <span className="text-[11px] text-stone-500 ml-0.5">{yrs}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 px-3 pt-3">
+        {tile(`Career ${label}`, career.toFixed(1), `${seasons.length} ${runNoun.includes("run") ? "run" : "season"}${seasons.length === 1 ? "" : "s"}`)}
+        {tile("Best season", vals[bestI]?.toFixed(1), seasons[bestI]?.season)}
+        {tile(`Peak ${label}/G`, Number.isFinite(peak) ? peak.toFixed(2) : "–", "10+ games")}
+      </div>
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-end gap-[3px]" style={{ height: hasNeg ? H + 18 : H }} role="group" aria-label={`${label} by season — tap a bar to open that season`}>
+          {seasons.map((s, i) => {
+            const v = vals[i];
+            const h = Math.max(2, (Math.abs(v) / max) * H);
+            const on = openSeason === s.season;
+            const tc = isTeam(s.team) ? teamColor(s.team) : "#a8a29e";
+            return (
+              <button
+                key={s.season}
+                type="button"
+                onClick={() => onOpenSeason(s.season)}
+                title={`${s.season} · ${s.team} · ${v.toFixed(1)} ${label}`}
+                aria-label={`${s.season}, ${v.toFixed(1)} ${label} — open this season`}
+                className="group flex-1 min-w-[4px] h-full flex flex-col justify-end items-stretch"
+                style={hasNeg ? { justifyContent: "flex-start", paddingTop: 0 } : undefined}
+              >
+                {hasNeg ? (
+                  <span className="flex flex-col h-full">
+                    <span className="flex-1 flex items-end" style={{ flexBasis: H }}>
+                      {v >= 0 && <span className="w-full rounded-t-[3px] transition-opacity" style={{ height: h, background: tc, opacity: on || i === bestI ? 1 : 0.55 }} />}
+                    </span>
+                    <span className="h-[18px]">
+                      {v < 0 && <span className="block w-full rounded-b-[3px]" style={{ height: Math.min(18, h), background: "#dc2626", opacity: 0.6 }} />}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="w-full rounded-t-[3px] transition-all duration-200 group-hover:opacity-100" style={{ height: h, background: tc, opacity: on || i === bestI ? 1 : 0.55, outline: on ? `2px solid ${tc}` : undefined, outlineOffset: 1 }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex justify-between mt-1 text-[10px] text-stone-400 tabular-nums">
+          <span>{seasons[0]?.season}</span>
+          <span>{label} by season · tap a bar</span>
+          <span>{seasons[seasons.length - 1]?.season}</span>
+        </div>
+      </div>
+    </div>
   );
 }

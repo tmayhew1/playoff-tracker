@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
-import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
+import { CommandPalette, loadPlayerIndex } from "./command-palette";
+import { Segmented } from "./ui/segmented";
+import { useShareState } from "../lib/share-state";
+import { useVAMode } from "../lib/va-mode";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -24,30 +28,30 @@ export const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Fin
 
 
 export function ExploreSeriesRow({ s, lga, season }) {
-  const teamCell = (code, isWinner) => {
+  // Series score from the games themselves, so a best-of-5 reads 3–2.
+  const wins = Object.fromEntries(s.teams.map((t) => [t, 0]));
+  for (const g of s.games) {
+    const w = g.home.score > g.away.score ? g.home.tri : g.away.tri;
+    if (w in wins) wins[w]++;
+  }
+  const side = (code) => {
     const c = teamColor(code);
-    const style = isWinner
-      ? { backgroundColor: withAlpha(c, 0.14), borderColor: c }
-      : { backgroundColor: "#ffffff", borderColor: withAlpha(c, 0.35) };
+    const won = s.winner === code;
     return (
-      <div
-        style={style}
-        className={`flex-1 px-2 py-1.5 border ${isWinner ? "border-2" : ""}`}
-      >
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c }} />
-          <span className="text-sm font-semibold" style={{ color: isWinner ? c : "#1c1917" }}>{code}</span>
-          {isWinner && <span className="ml-auto text-[10px]" style={{ color: c }}>✓</span>}
-        </div>
+      <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+        style={won ? { background: `linear-gradient(90deg, ${withAlpha(c, 0.16)}, ${withAlpha(c, 0.02)})` } : undefined}>
+        <span className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+          style={{ background: c, boxShadow: `0 0 0 2px #fff, 0 0 0 3px ${withAlpha(c, 0.35)}` }}>{code}</span>
+        <span className={`flex-1 text-[12px] ${won ? "font-semibold text-stone-700" : "text-stone-400"}`}>{s.round === "r4" ? (won ? "Champion" : "Runner-up") : (won ? "Advanced" : "Out")}</span>
+        <span className={`text-[22px] font-black tabular-nums ${won ? "" : "text-stone-300"}`} style={won ? { color: c } : undefined}>{wins[code]}</span>
       </div>
     );
   };
   return (
-    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
-      <div className="flex gap-1.5 items-stretch">
-        {teamCell(s.teams[0], s.winner === s.teams[0])}
-        <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
-        {teamCell(s.teams[1], s.winner === s.teams[1])}
+    <div className="cs-card mb-3 p-2">
+      <div className="flex flex-col gap-0.5">
+        {side(s.teams[0])}
+        {side(s.teams[1])}
       </div>
       {s.games.length > 0 ? (
         <>
@@ -86,16 +90,17 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
   const [open, setOpen] = useState(false);
   if (series.length === 0) return null;
   return (
-    <div className="mb-3">
+    <div className="mb-2">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
+        aria-expanded={open}
+        className="cs-press w-full flex items-center justify-between px-4 py-3 mb-2 rounded-2xl bg-white/70 border border-stone-200 text-left hover:bg-white"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {ROUND_LABELS[roundKey] || roundKey}
-        </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
+        <h3 className="text-[14px] font-bold text-stone-900">{ROUND_LABELS[roundKey] || roundKey}</h3>
+        <span className="flex items-center gap-2 text-[12px] text-stone-500">
+          {series.length} series
+          <span className={`transition-transform duration-200 ${open ? "rotate-90" : ""}`} aria-hidden>›</span>
+        </span>
       </button>
       {open && series.map((s, i) => (
         <ExploreSeriesRow key={i} s={s} lga={lga} season={season} />
@@ -289,27 +294,58 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
 
   useShareReport({ view: mode, scope, season: mode === "season" ? season : null });
 
-  const tabCls = (active) =>
-    `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
-
-  const scopeCls = (active) =>
-    `flex-1 text-[9px] uppercase tracking-[0.15em] px-2 py-1.5 border ${active ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
+  const { usgAdj, setUsgAdj } = useVAMode();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  // "/" or ⌘K / Ctrl-K opens search from anywhere on Explore, unless the
+  // reader is already typing in a field.
+  useEffect(() => {
+    const onKey = (e) => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "") || e.target?.isContentEditable;
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
+        e.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div>
+      <ExploreHero onSearch={openPalette} />
       <LastNight onOpenPlayer={navigatePlayerToSeason} />
-      <div className="mb-2 flex gap-2">
-        <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
-        <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
+
+      <div className="cs-card p-2 mb-4 flex flex-col gap-2">
+        <Segmented
+          ariaLabel="Explore by"
+          value={mode}
+          onChange={setMode}
+          options={[{ value: "season", label: "Season leaders" }, { value: "player", label: "Player careers" }]}
+          className="w-full"
+        />
+        <Segmented
+          ariaLabel="Which games count"
+          size="sm"
+          value={scope}
+          onChange={setScope}
+          options={[{ value: "combined", label: "All games" }, { value: "regular", label: "Regular season" }, { value: "playoffs", label: "Playoffs" }]}
+          className="w-full"
+        />
+        <div className="flex items-center gap-2 pl-2">
+          {/* Prices the games the other two choose — the league-median
+              minute, or possessions used (lib/va-mode.js). */}
+          <span className="text-[11px] text-stone-500 flex-1">Scoring baseline</span>
+          <Segmented
+            ariaLabel="Scoring baseline"
+            size="sm"
+            value={usgAdj ? "usg" : "lg"}
+            onChange={(v) => setUsgAdj(v === "usg")}
+            options={[{ value: "lg", label: "Lg avg" }, { value: "usg", label: "Usg-adj" }]}
+            className="ml-auto"
+          />
+        </div>
       </div>
-      <div className="mb-2 flex gap-1.5">
-        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
-        <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
-        <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
-      </div>
-      {/* Last of the three page-level choices, under the two that pick WHICH
-          games are counted — this one only prices them. */}
-      <VABaselineToggle />
 
       {mode === "player" ? (
         <PlayerExplorer
@@ -320,29 +356,18 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
         />
       ) : (
         <>
-          <div className="mb-4 p-3 bg-white border border-stone-300">
-            <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
-            <select
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
-            >
-              {seasons.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-            <div className="text-[10px] text-stone-400 mt-1 italic">Box scores via ESPN and Basketball-Reference.</div>
-          </div>
+          <SeasonRail seasons={seasons} season={season} onChange={setSeason} />
 
           {scope !== "playoffs" ? (
             <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
           ) : (
             <>
-              {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
+              {loading && <BoardSkeleton label={`Loading the ${season} playoffs`} />}
               {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
               {!loading && !error && data && (
                 <>
                   <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+                  <h2 className="mt-6 mb-2 px-1 text-[20px] font-black text-stone-900" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>The bracket</h2>
                   {(["r1", "r2", "r3", "r4"]).map((rk) => (
                     <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={poLga} season={season} />
                   ))}
@@ -355,6 +380,169 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
           )}
         </>
       )}
+      <ActionDock mode={mode} season={season} onSearch={openPalette}
+        onOpenCareer={(slug) => navigatePlayerToSeason({ slug, name: null, season })} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)}
+        onPick={({ slug, name }) => navigatePlayerToSeason({ slug, name, season: null })} />
     </div>
+  );
+}
+
+
+const display = { fontFamily: "var(--font-playfair), Georgia, serif" };
+
+// The top of Explore: its name, and the way in for anyone who already knows
+// who they're looking for. The index starts loading on first touch, so the
+// palette usually opens with it already there.
+function ExploreHero({ onSearch }) {
+  const [count, setCount] = useState(null);
+  const warm = () => { loadPlayerIndex().then((p) => setCount(p.length)).catch(() => {}); };
+  return (
+    <div className="mb-4">
+      <div className="flex items-end justify-between px-1 mb-2">
+        <h2 className="text-[28px] leading-none font-black text-stone-900 tracking-tight" style={display}>Explore</h2>
+        <span className="text-[11px] text-stone-500">Every box score since 1980-81</span>
+      </div>
+      <button
+        type="button"
+        onClick={onSearch}
+        onPointerEnter={warm}
+        onFocus={warm}
+        onTouchStart={warm}
+        className="cs-press cs-card w-full flex items-center gap-3 px-4 py-3 text-left hover:shadow-md"
+        aria-label="Search players"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#57534e" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+        </svg>
+        <span className="flex-1 text-[15px] text-stone-400">Search {count ? `${count.toLocaleString("en-US")} players` : "players"}…</span>
+        <kbd className="hidden sm:inline text-[11px] font-sans font-semibold text-stone-400 border border-stone-200 rounded-md px-1.5 py-0.5">/</kbd>
+      </button>
+    </div>
+  );
+}
+
+// Seasons as a swipeable rail of chips, newest first, with the chosen one
+// kept in view. Decades get a small marker so a long swipe back stays oriented.
+function SeasonRail({ seasons, season, onChange }) {
+  const railRef = useRef(null);
+  useEffect(() => {
+    const rail = railRef.current;
+    const el = rail?.querySelector(`[data-season="${season}"]`);
+    if (!rail || !el) return;
+    // Scroll the rail only — scrollIntoView would move the page as well.
+    const left = el.offsetLeft - rail.clientWidth / 2 + el.offsetWidth / 2;
+    rail.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [season, seasons]);
+  return (
+    <div className="mb-3">
+      {/* Bleeds to the screen edges (-mx-4 against the page's px-4) so the
+          next chip peeks in; the padding keeps the first one on the grid. */}
+      <div ref={railRef} className="cs-rail gap-1.5 py-2 -mx-4 px-4 scroll-px-4" role="radiogroup" aria-label="Season">
+        {seasons.map((s, i) => {
+          const on = s === season;
+          const decade = i === 0 || s.slice(2, 3) !== seasons[i - 1].slice(2, 3);
+          return (
+            <button
+              key={s}
+              data-season={s}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => onChange(s)}
+              className={`cs-press relative px-3.5 py-2 rounded-full text-[13px] font-semibold tabular-nums whitespace-nowrap border ${on ? "bg-stone-900 text-white border-stone-900 shadow-[0_6px_16px_-8px_rgba(0,0,0,0.6)]" : "bg-white text-stone-600 border-stone-200 hover:border-stone-400"}`}
+            >
+              {decade && i > 0 && <span className="absolute -top-1.5 left-2 text-[8px] font-bold text-stone-400 bg-[#f5f5f4] px-0.5">{s.slice(0, 3)}0s</span>}
+              {s}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BoardSkeleton({ label }) {
+  return (
+    <div className="cs-card p-3 mb-4" role="status" aria-label={label}>
+      <div className="cs-skeleton h-4 w-1/3 mb-4" />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-center gap-3 py-2">
+          <span className="cs-skeleton w-8 h-8 rounded-full" />
+          <span className="cs-skeleton h-3 flex-1" style={{ maxWidth: `${70 - i * 7}%` }} />
+          <span className="cs-skeleton h-3 w-12" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Floating actions that follow what's on screen: with a player open, share
+// him or jump between his season and his career; scrolled deep, search and
+// back to the top. It steps up out of the way of the leaderboard's own
+// pinned "Show top 10" bar when that's showing.
+function ActionDock({ mode, season, onSearch, onOpenCareer }) {
+  const share = useShareState();
+  const [deep, setDeep] = useState(false);
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    const onScroll = () => setDeep(window.scrollY > 700);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 1600);
+    return () => clearTimeout(t);
+  }, [toast]);
+  const player = share.p || null;
+  if ((!player && !deep) || typeof document === "undefined") return null;
+
+  const doShare = async () => {
+    const url = window.location.href;
+    if (navigator.share && window.matchMedia?.("(pointer: coarse)").matches) {
+      try { await navigator.share({ title: "Value Added Tracker", url }); return; } catch (e) { if (e?.name === "AbortError") return; }
+    }
+    try { await navigator.clipboard.writeText(url); setToast("Link copied"); } catch { window.prompt("Copy this link:", url); }
+  };
+  const btn = "cs-press flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-[12px] font-semibold whitespace-nowrap";
+  const Icon = ({ d }) => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
+  );
+  // Portaled to <body>: anything animated above it on the page is its own
+  // stacking context, which would trap the dock's z-index beneath later
+  // content. Centered by a full-width flex row rather than a translate, which
+  // the entrance animation (it ends on transform: none) would undo.
+  return createPortal(
+    <div
+      className="fixed inset-x-0 z-40 flex justify-center pointer-events-none transition-[bottom] duration-300"
+      style={{ bottom: `calc(${share.boardPinned ? 64 : 16}px + env(safe-area-inset-bottom))` }}
+    >
+      <div className="cs-sheet relative pointer-events-auto">
+      {toast && <div className="cs-fade absolute -top-9 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-stone-900 text-white text-[11px] font-semibold whitespace-nowrap">{toast}</div>}
+      <div className="flex items-center gap-1 p-1 rounded-full bg-stone-900 text-white ring-1 ring-white/10 shadow-[0_14px_36px_-12px_rgba(0,0,0,0.65)]">
+        {player && mode === "season" && (
+          <button type="button" className={`${btn} bg-white text-stone-900`} onClick={() => onOpenCareer(player)} aria-label="Open this player's career">
+            <Icon d="M3 17l6-6 4 4 8-8M14 7h7v7" />Career
+          </button>
+        )}
+        {player && (
+          <button type="button" className={`${btn} hover:bg-white/10`} onClick={doShare} aria-label="Share a link to this view">
+            <Icon d="M12 15V3M8.5 6.5 12 3l3.5 3.5M5 11v9h14v-9" />Share
+          </button>
+        )}
+        <button type="button" className={`${btn} hover:bg-white/10`} onClick={onSearch} aria-label="Search players">
+          <Icon d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14zM20 20l-3.5-3.5" />Search
+        </button>
+        {deep && (
+          <button type="button" className={`${btn} hover:bg-white/10 px-3`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Back to top">
+            <Icon d="M12 19V5M5 12l7-7 7 7" />
+          </button>
+        )}
+      </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
