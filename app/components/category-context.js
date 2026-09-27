@@ -727,8 +727,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // league baseline, so bar heights compare across columns (FT's +0.44 really
   // is two-thirds of the rim's −0.66). It spans the widest zone's 2.5th–97.5th
   // percentile of the field rather than its extremes, so one outlier season
-  // can't flatten every other bar to a sliver; a bar past the edge is capped
-  // and flagged. Each column also gets a density heatmap of the whole field
+  // can't flatten every other bar to a sliver — widened to fit the card's own
+  // player when one of his bars runs past it, so his bars always fit whole.
+  // Each column also gets a density heatmap of the whole field
   // on that same scale — HEAT_BINS cells from −lim (bottom) to +lim (top),
   // with values past the edge piled into the end cells, then blurred across
   // neighbouring cells so a thin field reads as a soft spread rather than
@@ -740,8 +741,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     if (!segData) return null;
     const q = (vals, f) => (vals.length ? vals[Math.min(vals.length - 1, Math.floor(f * vals.length))] : 0);
     let lim = 0;
-    for (const s of segData) lim = Math.max(lim, Math.abs(q(s.vals, 0.025)), Math.abs(q(s.vals, 0.975)));
-    if (!(lim > 0)) lim = Math.max(0.1, ...segData.map((s) => Math.abs(s.selfV)));
+    for (const s of segData) lim = Math.max(lim, Math.abs(q(s.vals, 0.025)), Math.abs(q(s.vals, 0.975)), Math.abs(s.selfV));
+    if (!(lim > 0)) lim = 0.1;
     const bins = segData.map((s) => {
       const b = new Array(HEAT_BINS).fill(0);
       for (const v of s.vals) {
@@ -1116,7 +1117,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               // Collapse a value that rounds to zero to a clean +0.00 so a
               // sliver-negative zone doesn't read as a red "-0.00".
               const selfShown = Math.abs(seg.selfV) < 0.005 ? 0 : seg.selfV;
-              const over = Math.abs(selfShown) > lim;
               const barH = Math.min(50, (Math.abs(selfShown) / lim) * 50);
               // Value-added color band: green above +0.05, red below −0.05,
               // grey in the neutral middle.
@@ -1157,14 +1157,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       className={`absolute left-1/2 -translate-x-1/2 w-2.5 ${barFill} ${selfShown >= 0 ? "rounded-t-sm" : "rounded-b-sm"}`}
                       style={selfShown >= 0 ? { bottom: "50%", height: `${barH}%` } : { top: "50%", height: `${barH}%` }}
                     />
-                    {/* Past the scale: the bar stops at the edge with an
-                        arrow inside its tip, so it can't run into the FG%
-                        above or the value below. */}
-                    {over && (
-                      <span className={`absolute left-1/2 -translate-x-1/2 text-[6px] leading-none text-white ${selfShown >= 0 ? "top-0.5" : "bottom-0.5"}`} title="beyond the chart's scale">
-                        {selfShown >= 0 ? "▲" : "▼"}
-                      </span>
-                    )}
                   </div>
                   <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
                   <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
