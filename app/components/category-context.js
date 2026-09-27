@@ -719,9 +719,42 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       // show — never shot from here, no rating — so it reads "–" rather than a
       // misleading 0%).
       const head = seg.head(selfRow, lga, seasonKey);
-      return { ...seg, selfV, min, max, med, head };
+      return { ...seg, selfV, min, max, med, head, vals };
     });
   }, [SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+
+  // One value-added scale shared by every bar in the split row, centred on the
+  // league baseline, so bar heights compare across columns (FT's +0.44 really
+  // is two-thirds of the rim's −0.66). It spans the widest zone's 2.5th–97.5th
+  // percentile of the field rather than its extremes, so one outlier season
+  // can't flatten every other bar to a sliver — widened to fit the card's own
+  // player when one of his bars runs past it, so his bars always fit whole.
+  // Each column also gets a density heatmap of the whole field
+  // on that same scale — HEAT_BINS cells from −lim (bottom) to +lim (top),
+  // with values past the edge piled into the end cells, then blurred across
+  // neighbouring cells so a thin field reads as a soft spread rather than
+  // isolated blocks — shaded against the densest cell in the row so columns
+  // compare there too.
+  const HEAT_BINS = 48;
+  const HEAT_KERNEL = [1, 3, 6, 7, 6, 3, 1];
+  const barScale = useMemo(() => {
+    if (!segData) return null;
+    const q = (vals, f) => (vals.length ? vals[Math.min(vals.length - 1, Math.floor(f * vals.length))] : 0);
+    let lim = 0;
+    for (const s of segData) lim = Math.max(lim, Math.abs(q(s.vals, 0.025)), Math.abs(q(s.vals, 0.975)), Math.abs(s.selfV));
+    if (!(lim > 0)) lim = 0.1;
+    const bins = segData.map((s) => {
+      const b = new Array(HEAT_BINS).fill(0);
+      for (const v of s.vals) {
+        const i = Math.floor(((v + lim) / (2 * lim)) * HEAT_BINS);
+        b[Math.max(0, Math.min(HEAT_BINS - 1, i))] += 1;
+      }
+      const r = HEAT_KERNEL.length >> 1;
+      return b.map((_, i) => HEAT_KERNEL.reduce((acc, k, j) => acc + k * (b[i + j - r] || 0), 0));
+    });
+    const peak = Math.max(1, ...bins.flat());
+    return { lim, bins, peak };
+  }, [segData]);
 
   // Scatter plot — the split row's form for the three two-stat groups. A
   // Passing card's two bars are really one relationship (the creator's
@@ -1077,17 +1110,18 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               maxWidth: segData.length < 4 ? `${segData.length * 28}%` : undefined,
             }}
           >
-            {segData.map((seg) => {
-              const span = seg.max - seg.min;
-              const clamp = (v) => Math.max(0, Math.min(100, span > 0 ? ((v - seg.min) / span) * 100 : 50));
-              const selfPos = clamp(seg.selfV);
-              const medPos = clamp(seg.med);
+            {segData.map((seg, segIdx) => {
+              const { lim } = barScale;
+              // Height on the shared scale, as a percent of the whole strip.
+              const medPos = Math.max(0, Math.min(100, 50 + (seg.med / lim) * 50));
               // Collapse a value that rounds to zero to a clean +0.00 so a
               // sliver-negative zone doesn't read as a red "-0.00".
               const selfShown = Math.abs(seg.selfV) < 0.005 ? 0 : seg.selfV;
+              const barH = Math.min(50, (Math.abs(selfShown) / lim) * 50);
               // Value-added color band: green above +0.05, red below −0.05,
               // grey in the neutral middle.
               const vaColor = selfShown > 0.05 ? "text-green-600" : selfShown < -0.05 ? "text-red-600" : "text-stone-400";
+              const barFill = selfShown > 0.05 ? "bg-green-600" : selfShown < -0.05 ? "bg-red-600" : "bg-stone-400";
               const isSel = selectedSeg === seg.key;
               return (
                 <div
@@ -1105,12 +1139,24 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       Per 36 / Per G toggle, falling back to the /G toggle's
                       season total under Per G) otherwise. */}
                   <span className="text-[10px] font-bold text-stone-800 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
-                  {/* Value-added strip: low (bottom, light) → high (top, dark),
-                      dot = player, tick = field median. The my-2 gutters give
-                      the dot room to sit at an extreme without being clipped. */}
-                  <div className="relative w-2 h-20 my-2 rounded-full bg-gradient-to-t from-stone-200 to-stone-400 mx-auto">
-                    <div className="absolute inset-x-0 h-px bg-stone-500/60" style={{ bottom: `${medPos}%` }} title="median" />
-                    <div className="absolute left-1/2 w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-white -translate-x-1/2 translate-y-1/2" style={{ bottom: `${selfPos}%` }} />
+                  {/* Value-added bar on the row's shared scale: zero (league
+                      average) across the middle, green up / red down to the
+                      player's value, over a grey heatmap of where the rest of
+                      the field landed at this distance, with a short tick at
+                      the field median. -mx-0.5 bridges the grid gap so the
+                      zero line runs unbroken across the row. */}
+                  <div className="relative self-stretch -mx-0.5 h-24 my-1.5">
+                    <svg className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-6 h-full" viewBox={`0 0 1 ${HEAT_BINS}`} preserveAspectRatio="none" aria-hidden="true">
+                      {barScale.bins[segIdx].map((c, i) => c > 0 && (
+                        <rect key={i} x="0" y={HEAT_BINS - 1 - i} width="1" height="1.02" className="fill-stone-500" fillOpacity={0.55 * Math.sqrt(c / barScale.peak)} />
+                      ))}
+                    </svg>
+                    <div className="absolute inset-x-0 top-1/2 h-px bg-stone-400" title="league average" />
+                    <div className="absolute left-1/2 -translate-x-1/2 w-6 h-px bg-stone-600/70 translate-y-1/2" style={{ bottom: `${medPos}%` }} title="field median" />
+                    <div
+                      className={`absolute left-1/2 -translate-x-1/2 w-2.5 ${barFill} ${selfShown >= 0 ? "rounded-t-sm" : "rounded-b-sm"}`}
+                      style={selfShown >= 0 ? { bottom: "50%", height: `${barH}%` } : { top: "50%", height: `${barH}%` }}
+                    />
                   </div>
                   <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
                   <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
@@ -1129,7 +1175,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
               ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
-              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (dot = player, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
+              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (zero line = league average, grey shading = where the field landed, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
           </div>
         </div>
       )}
