@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  allNbaTeams, leagueContext, poolTeams, projectPlayer, simulateAwards, AWARD_MIN_GAMES,
+  allNbaTeams, leagueContext, poolTeams, projectPlayer, projectRookie, simulateAwards, AWARD_MIN_GAMES,
 } from "../app/lib/projection-model.js";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { parseShareParams } from "../app/lib/share-params.js";
@@ -201,4 +201,53 @@ test("the fitted pooling is real but partial, and usage pools hardest", () => {
   // On held-out 2025-26 it improved the usage rate for players on new teams.
   const r = PROJ.backtest.rates.usg;
   assert.ok(r.movedPooled < r.movedSolo);
+});
+
+const RK = PROJ.params.rookie;
+
+test("rookies: the college translation beats calling everyone an average rookie", { skip: !RK && "no past college seasons baked" }, () => {
+  const b = RK.backtest;
+  assert.ok(b.players >= 30, `${b.players} rookies in the backtest`);
+  assert.ok(b.mae < b.maeNaive, `${b.mae} vs ${b.maeNaive}`);
+  assert.ok(b.corr > 0.3);
+  // Translations regress: a college outlier arrives a smaller NBA outlier.
+  for (const [k, [, slope]] of Object.entries(RK.rate)) assert.ok(slope > 0 && slope < 1.2, `${k} slope ${slope}`);
+});
+
+test("rookies: a projected college line is a consistent NBA line", { skip: !RK && "no past college seasons baked" }, () => {
+  const college = read(`college-${PROJ.collegeSeason}.json`).players.filter((r) => r.mp > 0);
+  const cctx = leagueContext(college);
+  const boozer = college.find((r) => r.name === "Cameron Boozer");
+  const p = projectRookie(boozer, cctx, RK, PROJ.ctx);
+  const r = p.row;
+  assert.ok(r.g >= 1 && r.g <= 82 && p.mpg >= 4 && p.mpg <= 36);
+  assert.ok(r.tpm <= r.tpa && r.fgm <= r.fga && r.ftm <= r.fta);
+  assert.ok(Math.abs(r.pts - (2 * (r.fgm - r.tpm) + 3 * r.tpm + r.ftm)) < 1e-6);
+  // The best college player in the class projects above a bench-level rookie.
+  const walkOn = college.filter((x) => x.mp > 300).sort((a, b) => a.va - b.va)[0];
+  const w = projectRookie(walkOn, cctx, RK, PROJ.ctx);
+  assert.ok(valueAdd(r, lgaForSeason(PROJ.base)) > valueAdd(w.row, lgaForSeason(PROJ.base)));
+});
+
+test("rookies on live rosters are projected from college; others stay unprojected", { skip: !RK && "no past college seasons baked" }, async () => {
+  const TEAMS = ["ATL","BOS","BKN","CHA","CHI","CLE","DAL","DEN","DET","GS","HOU","IND","LAC","LAL","MEM","MIA","MIL","MIN","NO","NY","OKC","ORL","PHI","PHX","POR","SAC","SA","TOR","UTAH","WSH"];
+  const rosters = { CHI: ["Cameron Boozer", "Overseas Signee"] };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    const body = u.endsWith("/teams")
+      ? { sports: [{ leagues: [{ teams: TEAMS.map((abbreviation, i) => ({ team: { id: String(i + 1), abbreviation } })) }] }] }
+      : { athletes: (rosters[TEAMS[Number(u.match(/teams\/(\d+)\/roster/)[1]) - 1]] || ["Filler Player"]).map((fullName) => ({ fullName })) };
+    return new Response(JSON.stringify(body), { status: 200 });
+  };
+  try {
+    const { GET } = await import("../app/api/projections/route.js");
+    const d = await (await GET()).json();
+    const b = d.players.find((p) => p.name === "Cameron Boozer");
+    assert.ok(b && b.rookie && b.team === "CHI" && b.last.college);
+    assert.ok(b.pool && b.solo, "rookies take part in the team context");
+    assert.deepEqual(d.unprojected.CHI, ["Overseas Signee"]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

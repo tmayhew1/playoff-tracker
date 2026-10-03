@@ -29,9 +29,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
+import { normalizeName } from "../app/lib/format.js";
 import {
   MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS, TIME_HISTORY,
-  expand, leagueContext, nextSeason, poolTeams, posGroup, projectPlayer, timeFeatures, timeUnits,
+  collegeUnits, expand, leagueContext, nextSeason, poolTeams, posGroup, projectPlayer, projectRookie,
+  rookieTimeFeatures, timeFeatures, timeUnits,
   scheduleLength, simulateAwards, allNbaTeams, tierOf,
 } from "../app/lib/projection-model.js";
 
@@ -419,6 +421,97 @@ function fitPool(lastTarget, params) {
   return { ...pool, gain };
 }
 
+// --- 5. Rookies: college → NBA ----------------------------------------------
+// Every baked college season before BASE, paired by name with the players
+// whose first NBA season is the next one. A name that appears twice on either
+// side is dropped rather than guessed at.
+const COLLEGE = fs.readdirSync(DATA).map((f) => f.match(/^college-(\d{4}-\d{2})\.json$/)?.[1]).filter(Boolean).sort();
+const collegeBy = Object.fromEntries(COLLEGE.map((x) => {
+  const d = read(`college-${x}.json`);
+  const rows = (d.players || []).filter((r) => r.mp > 0);
+  return [x, { rows, ctx: leagueContext(rows) }];
+}));
+
+function rookiePairs(cSeason) {
+  const nba = nextSeason(cSeason);
+  if (!rowsBy[nba]) return [];
+  const firstYear = [...careers.values()].filter((c) => c[0].season === nba).map((c) => c[0]);
+  const count = (xs, f) => xs.reduce((m, x) => m.set(f(x), (m.get(f(x)) || 0) + 1), new Map());
+  const cc = count(collegeBy[cSeason].rows, (r) => normalizeName(r.name));
+  const nc = count(firstYear, (r) => normalizeName(r.row.name));
+  const byName = new Map(collegeBy[cSeason].rows.map((r) => [normalizeName(r.name), r]));
+  return firstYear.flatMap((a) => {
+    const n = normalizeName(a.row.name);
+    if (cc.get(n) !== 1 || nc.get(n) !== 1) return [];
+    return [{ cSeason, nba, name: a.row.name, college: byName.get(n), cctx: collegeBy[cSeason].ctx, actual: a.row, nctx: ctxBy[nba] }];
+  });
+}
+
+const RK_K = [0, 100, 250, 500, 1000], RK_KP = [0, 50, 100, 200];
+function fitRookie(pairs) {
+  const fitWith = (K, Kp) => {
+    const rate = {}, pct = {};
+    let err = 0;
+    for (const k of RATE_KEYS) {
+      const use = pairs.filter((x) => x.actual.mp >= 200);
+      const xs = use.map((x) => [1, Math.log(Math.max(0.05, collegeUnits(x.college, x.cctx, K, Kp).idx[k]))]);
+      const ys = use.map((x) => Math.log(Math.max(0.05, expand(x.actual)[k] / x.actual.mp / x.nctx.rate[k])));
+      const B = wls(xs, ys, use.map((x) => x.actual.mp), 1e-3);
+      rate[k] = B.map((v) => round(v, 4));
+      // Error in index units, so every K is judged on the same scale.
+      const w = use.reduce((a, x) => a + x.actual.mp, 0);
+      err += use.reduce((a, x, i) => a + x.actual.mp * (Math.exp(B[0] + B[1] * xs[i][1]) - Math.exp(ys[i])) ** 2, 0) / w;
+    }
+    for (const { key, made, att } of PCT_KEYS) {
+      const use = pairs.filter((x) => x.actual[att] >= 20);
+      const B = wls(use.map((x) => [1, collegeUnits(x.college, x.cctx, K, Kp).pct[key]]),
+        use.map((x) => x.actual[made] / x.actual[att] - x.nctx.pct[key]), use.map((x) => x.actual[att]), 1e-3);
+      pct[key] = B.map((v) => round(v, 4));
+    }
+    return { rate, pct, err };
+  };
+  let best = null;
+  for (const K of RK_K) for (const Kp of RK_KP) {
+    const f = fitWith(K, Kp);
+    if (!best || f.err < best.err) best = { ...f, K, Kp };
+  }
+  const X = pairs.map((x) => rookieTimeFeatures(collegeUnits(x.college, x.cctx, best.K, best.Kp)));
+  const mpg = wls(X, pairs.map((x) => x.actual.mp / x.actual.g), pairs.map((x) => x.actual.g), 1e-3).map((v) => round(v, 4));
+  const avail = wls(X, pairs.map((x) => Math.min(1, x.actual.g / scheduleLength(x.nba))), pairs.map(() => 1), 1e-3).map((v) => round(v, 4));
+  return { K: best.K, Kp: best.Kp, rate: best.rate, pct: best.pct, mpg, avail, pairs: pairs.length };
+}
+
+// Leave one draft class out: each class projected by a model fit on the
+// others, priced against the league of the season before (what's known on
+// draft night), beside "every rookie is the average rookie".
+function rookieBacktest(pairsByClass) {
+  const classes = Object.keys(pairsByClass);
+  const res = [];
+  for (const c of classes) {
+    const train = classes.filter((x) => x !== c).flatMap((x) => pairsByClass[x]);
+    if (train.length < 50) continue;
+    const rk = fitRookie(train);
+    const prevNba = c; // the college season and the NBA season before the rookie year coincide
+    const lga = lgaForSeason(prevNba), lgaT = lgaForSeason(nextSeason(c));
+    const meanVa = train.reduce((a, x) => a + valueAdd(x.actual, lgaForSeason(x.nba)), 0) / train.length;
+    for (const x of pairsByClass[c]) {
+      const proj = projectRookie(x.college, x.cctx, rk, ctxBy[prevNba]);
+      res.push({ cls: c, name: x.name, proj: valueAdd(proj.row, lga), projG: proj.g, actual: valueAdd(x.actual, lgaT), mp: x.actual.mp, naive: meanVa });
+    }
+  }
+  const rot = res.filter((r) => r.mp >= 500);
+  if (rot.length < 10) return { players: rot.length };
+  return {
+    classes: classes.length,
+    players: rot.length,
+    corr: round(corr(rot.map((r) => r.proj), rot.map((r) => r.actual)), 3),
+    mae: round(mae(rot.map((r) => r.proj), rot.map((r) => r.actual)), 1),
+    maeNaive: round(mae(rot.map((r) => r.naive), rot.map((r) => r.actual)), 1),
+    examples: [...res].sort((a, b) => b.actual - a.actual).slice(0, 8)
+      .map((r) => ({ name: r.name, cls: r.cls, proj: round(r.proj, 0), actual: round(r.actual, 0), g: r.projG })),
+  };
+}
+
 // --- Run ------------------------------------------------------------------------
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 const t0 = Date.now();
@@ -533,6 +626,14 @@ for (const season of SEASONS.filter((x) => x >= "2005-06")) {
 
 const mvp = fitMvp();
 
+// Rookies, if any past college seasons are baked.
+const pairsByClass = Object.fromEntries(COLLEGE.filter((x) => x < BASE).map((x) => [x, rookiePairs(x)]).filter(([, p]) => p.length));
+const allPairs = Object.values(pairsByClass).flat();
+if (allPairs.length >= 50) {
+  params.rookie = fitRookie(allPairs);
+  params.rookie.backtest = rookieBacktest(pairsByClass);
+}
+
 // The projection itself: everyone who played in either of the last two
 // seasons, rebuilt against BASE's league.
 const players = [];
@@ -570,6 +671,10 @@ const bySlug = Object.fromEntries(players.map((p) => [p.slug, p]));
 
 fs.writeFileSync(OUT, JSON.stringify({
   season: TARGET, base: BASE, fittedAt: new Date().toISOString().slice(0, 10),
+  // The league a projection is rebuilt against — the route needs it to
+  // project rookies on the fly.
+  ctx: { rate: ctxBy[BASE].rate, pct: ctxBy[BASE].pct },
+  collegeSeason: COLLEGE.includes(BASE) ? BASE : null,
   params,
   fitErr: Object.fromEntries(Object.entries(fitErr).map(([k, v]) => [k, Number(v.toPrecision(4))])),
   mvp, backtest,
@@ -583,6 +688,7 @@ console.log("pcts ", Object.fromEntries(PCT_KEYS.map(({ key }) => [key, `${param
 console.log("time ", JSON.stringify(params.time));
 console.log("gap  ", JSON.stringify(params.gap));
 console.log("pool ", JSON.stringify(params.pool));
+console.log("rookie", JSON.stringify(params.rookie || "no past college seasons baked"));
 console.log("aging tpa", aging.rate.tpa);
 console.log("backtest", backtest);
 console.log("mvp", mvp);

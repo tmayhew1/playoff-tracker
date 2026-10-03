@@ -515,3 +515,62 @@ export function poolTeams(players, pool) {
   }
   return out.map((r) => (r.pool.usg ? rebuildPts(r) : r));
 }
+
+
+// --- Rookies: translating a college season -----------------------------------
+// A rookie has no NBA seasons to read, so the projection starts from the last
+// college season instead (data/college-<season>.json) and translates it, piece
+// by piece, with relationships fit on past draft classes — each class's final
+// college season against its NBA rookie year (scripts/fit-projection-model.mjs):
+//
+//   rates        log NBA index = a + b · log college index, per stat. Both
+//                indexes are on their own league's per-minute rate, and the
+//                college one is first shrunk toward 1 by K phantom minutes,
+//                so a freshman's 300-minute sample can't promise the moon.
+//                b < 1 is the translation's own regression: college outliers
+//                arrive as smaller NBA outliers.
+//   percentages  NBA gap to the league = a + b · college gap (shrunk the same
+//                way, by attempts)
+//   time         minutes and availability on college quality (VA per 40)
+//                and college minutes per game
+//
+// Rookies with no college season in the data — internationals, G League,
+// players who sat out a year — still can't be projected.
+
+const lnIdx = (x) => Math.log(Math.max(0.05, x));
+
+// College per-minute indexes and percentage gaps for one season row.
+export function collegeUnits(c, cctx, K = 0, Kp = 0) {
+  const r = expand(c), mp = r.mp || 0;
+  const idx = Object.fromEntries(RATE_KEYS.map((k) => {
+    const raw = mp > 0 && cctx.rate[k] > 0 ? (r[k] / mp) / cctx.rate[k] : 1;
+    return [k, (mp * raw + K) / (mp + K)];
+  }));
+  const pct = Object.fromEntries(PCT_KEYS.map(({ key, made, att }) => {
+    const a = r[att] || 0;
+    const gap = a > 0 ? r[made] / a - cctx.pct[key] : 0;
+    return [key, (a * gap) / (a + Kp)];
+  }));
+  const gp = c.gp || c.g || 0;
+  return { idx, pct, mpg: gp > 0 ? mp / gp : 0, q: mp > 0 ? ((c.va || 0) / mp) * 40 : 0 };
+}
+
+export const rookieTimeFeatures = (u) => [1, u.q, u.mpg];
+
+// One rookie's projected season from a college row. `rk` is params.rookie.
+export function projectRookie(c, cctx, rk, target) {
+  const u = collegeUnits(c, cctx, rk.K, rk.Kp);
+  const idx = Object.fromEntries(RATE_KEYS.map((k) => [k, Math.exp(rk.rate[k][0] + rk.rate[k][1] * lnIdx(u.idx[k]))]));
+  const pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
+    [key, Math.min(0.99, Math.max(0, target.pct[key] + rk.pct[key][0] + rk.pct[key][1] * u.pct[key]))]));
+  const x = rookieTimeFeatures(u);
+  const dot = (b) => x.reduce((s, v, i) => s + v * b[i], 0);
+  const out = {
+    exp: 0, rookie: true, idx, pct,
+    mpg: Math.min(36, Math.max(4, dot(rk.mpg))),
+    avail: Math.min(0.98, Math.max(0.05, dot(rk.avail))),
+  };
+  out.g = Math.max(1, Math.round(out.avail * 82));
+  out.row = rebuildRow(out, target, out.g);
+  return out;
+}

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { normalizeName } from "../../lib/format";
 import { withTeamContext } from "../_lib/team-context";
+import { projectRookies } from "../_lib/rookies";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -16,8 +17,9 @@ export const revalidate = 21600;
 // the current rosters are read from ESPN at request time and joined to the
 // projection by name. A player on no roster — retired, unsigned, overseas —
 // comes back with `team: null`; a roster player the projection has never
-// seen (a rookie, a returnee from abroad) is listed under `unprojected`, since
-// with no NBA seasons there is nothing to project from.
+// seen is projected from their last college season when the college data has
+// them (_lib/rookies.js), and otherwise listed under `unprojected` — an
+// international or a G League player has nothing here to project from.
 //
 // When ESPN can't be reached the response says so (`rosters: "baked"`) and
 // every player keeps their last team, so the page still renders.
@@ -103,6 +105,10 @@ export async function GET() {
     const j = joinRosters(baked.players, rosters);
     unprojected = j.unprojected;
     players = baked.players.map((p) => ({ ...p, team: j.teamOf.get(p.slug) || null }));
+    // Rookies join before the team context, so they take their share too.
+    const r = await projectRookies(unprojected, baked);
+    players = [...players, ...r.rookies];
+    unprojected = r.unprojected;
   } else {
     players = baked.players.map((p) => ({ ...p, team: MULTI.test(p.team) ? null : p.team }));
   }
