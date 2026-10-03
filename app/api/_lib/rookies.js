@@ -28,16 +28,33 @@ export async function projectRookies(unprojected, baked) {
     const n = normalizeName(r.name);
     seen.set(n, seen.has(n) ? null : r); // null marks a name that isn't unique
   }
+  // Years in college, from the three seasons before (each read only if baked).
+  const prior = [];
+  for (let y = Number(baked.collegeSeason.slice(0, 4)), i = 1; i <= 3; i++) {
+    const s = `${y - i}-${String((y - i + 1) % 100).padStart(2, "0")}`;
+    try {
+      const d = JSON.parse(await readFile(join(process.cwd(), "app", "data", `college-${s}.json`), "utf8"));
+      prior.push(new Set((d.players || []).map((r) => normalizeName(r.name))));
+    } catch {
+      break;
+    }
+  }
+  const yearsOf = (n) => {
+    let y = 1;
+    for (const set of prior) { if (!set.has(n)) break; y++; }
+    return y;
+  };
   const lga = lgaForSeason(baked.base);
   const rookies = [], left = {};
   for (const [team, names] of Object.entries(unprojected)) {
     for (const name of names) {
-      const c = seen.get(normalizeName(name));
+      const n = normalizeName(name), c = seen.get(n);
       if (!c) { (left[team] ||= []).push(name); continue; }
-      const proj = projectRookie(c, cctx, rk, baked.ctx);
+      const years = yearsOf(n);
+      const proj = projectRookie(c, cctx, rk, baked.ctx, years);
       const row = Object.fromEntries(Object.entries(proj.row).map(([k, v]) => [k, k === "g" ? v : round1(v)]));
       rookies.push({
-        slug: `ncaa-${c.slug}`, name, team, pos: "G", exp: 0, rookie: true,
+        slug: `ncaa-${c.slug}`, name, team, pos: "G", exp: 0, rookie: true, collegeYears: years,
         mpg: round1(proj.mpg), row, va: round1(valueAdd(proj.row, lga)),
         // The college line, in the shape the page reads a last season in.
         last: {

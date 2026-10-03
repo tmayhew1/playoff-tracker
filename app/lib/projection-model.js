@@ -533,8 +533,13 @@ export function poolTeams(players, pool) {
 //                arrive as smaller NBA outliers.
 //   percentages  NBA gap to the league = a + b · college gap + c · quality
 //                (the gap shrunk the same way, by attempts)
-//   time         minutes and availability on college quality (VA per 40)
-//                and college minutes per game
+//   time         minutes and availability on college quality (VA per 40),
+//                college minutes per game and years in college
+//
+// Every piece also reads YEARS IN COLLEGE (counted from the baked college
+// seasons a player appears in), the data's only stand-in for age, and
+// production per year — a freshman's 20 VA per 40 and a fifth-year senior's
+// are different prospects.
 //
 // Rookies with no college season in the data — internationals, G League,
 // players who sat out a year — still can't be projected.
@@ -542,7 +547,7 @@ export function poolTeams(players, pool) {
 const lnIdx = (x) => Math.log(Math.max(0.05, x));
 
 // College per-minute indexes and percentage gaps for one season row.
-export function collegeUnits(c, cctx, K = 0, Kp = 0) {
+export function collegeUnits(c, cctx, K = 0, Kp = 0, years = 1) {
   const r = expand(c), mp = r.mp || 0;
   const idx = Object.fromEntries(RATE_KEYS.map((k) => {
     const raw = mp > 0 && cctx.rate[k] > 0 ? (r[k] / mp) / cctx.rate[k] : 1;
@@ -551,21 +556,27 @@ export function collegeUnits(c, cctx, K = 0, Kp = 0) {
   const pct = Object.fromEntries(PCT_KEYS.map(({ key, made, att }) => {
     const a = r[att] || 0;
     const gap = a > 0 ? r[made] / a - cctx.pct[key] : 0;
-    return [key, (a * gap) / (a + Kp)];
+    return [key, a + Kp > 0 ? (a * gap) / (a + Kp) : 0];
   }));
   const gp = c.gp || c.g || 0;
-  return { idx, pct, mpg: gp > 0 ? mp / gp : 0, q: mp > 0 ? ((c.va || 0) / mp) * 40 : 0 };
+  // Quality — VA per 40, shrunk toward zero (an average player) by the same
+  // phantom minutes, so a 10-minute walk-on with one good night isn't a star.
+  return { idx, pct, mpg: gp > 0 ? mp / gp : 0, q: mp + K > 0 ? ((c.va || 0) / (mp + Math.max(K, 100))) * 40 : 0, yrs: Math.min(4, Math.max(1, years)) };
 }
 
-export const rookieTimeFeatures = (u) => [1, u.q, u.mpg];
+// Years in college stand in for age, which the data doesn't have: the same
+// production means far more from a freshman than from a fifth-year senior.
+// `young` is production per year in school — the freshman-star signal.
+export const rookieTimeFeatures = (u) => [1, u.q / 10, u.mpg, u.yrs, u.q / 10 / u.yrs];
+export const rookieRateFeatures = (u, base) => [1, base, u.q / 10, u.yrs, u.q / 10 / u.yrs];
 
 // One rookie's projected season from a college row. `rk` is params.rookie.
-export function projectRookie(c, cctx, rk, target) {
-  const u = collegeUnits(c, cctx, rk.K, rk.Kp);
-  const q = u.q / 10; // college VA per 40, scaled so its coefficient reads per 10
-  const idx = Object.fromEntries(RATE_KEYS.map((k) => [k, Math.exp(rk.rate[k][0] + rk.rate[k][1] * lnIdx(u.idx[k]) + (rk.rate[k][2] ?? 0) * q)]));
+export function projectRookie(c, cctx, rk, target, years = 1) {
+  const u = collegeUnits(c, cctx, rk.K, rk.Kp, years);
+  const dotB = (b, x) => x.reduce((s, v, i) => s + v * (b[i] ?? 0), 0);
+  const idx = Object.fromEntries(RATE_KEYS.map((k) => [k, Math.exp(dotB(rk.rate[k], rookieRateFeatures(u, lnIdx(u.idx[k]))))]));
   const pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
-    [key, Math.min(0.99, Math.max(0, target.pct[key] + rk.pct[key][0] + rk.pct[key][1] * u.pct[key] + (rk.pct[key][2] ?? 0) * q))]));
+    [key, Math.min(0.99, Math.max(0, target.pct[key] + dotB(rk.pct[key], rookieRateFeatures(u, u.pct[key]))))]));
   const x = rookieTimeFeatures(u);
   const dot = (b) => x.reduce((s, v, i) => s + v * b[i], 0);
   const out = {
