@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { valueAddParts, valueAddByCategory, lgaForSeason, combinedLga, VA_CATEGORY_KEYS } from "../../scoring";
 import { combineRows } from "./player-rows";
 import { SCOPE_LABEL } from "../../lib/share-params";
+import { withTeamContext } from "./team-context";
 
 // The numbers behind a shared link's preview (app/page.js generateMetadata and
 // /api/og). Scored exactly as the page scores them: each scope against its own
@@ -96,13 +97,14 @@ async function projectedSeasonCard({ season, usgAdj, top }) {
   const proj = await readData(`projection-${season}.json`);
   if (!proj?.players?.length) return null;
   const lga = lgaForSeason(proj.base, usgAdj);
-  const rows = proj.players.map((p) => ({ p, va: valueAddParts(p.row, lga).va })).sort((a, b) => b.va - a.va);
+  const placed = withTeamContext(proj.players.map((p) => ({ ...p, team: /^(TOT|\dTM)$/.test(p.team) ? null : p.team })), proj);
+  const rows = placed.map((p) => ({ p, va: valueAddParts(p.row, lga).va })).sort((a, b) => b.va - a.va);
   return {
     season, scope: "regular", usgAdj, projected: true,
     scopeLabel: "Look Ahead · Projected",
     of: rows.length,
     leaders: rows.slice(0, top).map(({ p, va }) => ({
-      name: p.name, team: /^(TOT|\dTM)$/.test(p.team) ? "" : p.team, gp: p.row.g, va, vaPerG: va / p.row.g,
+      name: p.name, team: p.team || "", gp: p.row.g, va, vaPerG: va / p.row.g,
     })),
   };
 }

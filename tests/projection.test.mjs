@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  allNbaTeams, leagueContext, projectPlayer, simulateAwards, AWARD_MIN_GAMES,
+  allNbaTeams, leagueContext, poolTeams, projectPlayer, simulateAwards, AWARD_MIN_GAMES,
 } from "../app/lib/projection-model.js";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { parseShareParams } from "../app/lib/share-params.js";
@@ -111,6 +111,8 @@ test("the route falls back to the baked teams when rosters can't be fetched", as
     const d = await (await GET()).json();
     assert.equal(d.rosters, "baked");
     assert.equal(d.players.length, PROJ.players.length);
+    // Every row comes back pooled, with the projection-alone kept beside it.
+    assert.ok(d.players.every((p) => p.solo && p.pool && Number.isFinite(p.va)));
     // A traded player's "2TM" isn't a team to file anyone under.
     assert.ok(d.players.every((p) => p.team === null || !/^(TOT|\dTM)$/.test(p.team)));
   } finally {
@@ -153,4 +155,50 @@ test("live rosters move players to their current team, by name", async () => {
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+// A league of 30 identical teams, one of them with two extra high-usage
+// players (the 76ers question): ten rotation players each, same minutes.
+function league({ stackedUsage = 1 } = {}) {
+  const line = (u) => ({ g: 70, mp: 70 * 24, fga: 70 * 10 * u, fgm: 70 * 4.7 * u, tpa: 70 * 3.5 * u, tpm: 70 * 1.3 * u, fta: 70 * 2.5 * u, ftm: 70 * 2 * u, tov: 70 * 1.4 * u, ast: 70 * 2.5, drb: 70 * 3.5, orb: 70 * 1, stl: 70, blk: 35, pts: 0 });
+  const players = [];
+  for (let t = 0; t < 30; t++) {
+    for (let k = 0; k < 10; k++) {
+      const hot = t === 0 && k < 2;
+      players.push({ team: `T${t}`, row: line(hot ? stackedUsage : 1), hot, k });
+    }
+  }
+  return players;
+}
+
+test("team context: no teammates, no effect; β = 0 changes nothing", () => {
+  const ps = league({ stackedUsage: 2 });
+  const zero = poolTeams(ps, { min: 0, usg: 0, ast: 0, drb: 0, orb: 0 });
+  ps.forEach((p, i) => assert.equal(zero[i].fga, p.row.fga));
+  // A balanced league is at its own median: everyone's multiplier is 1.
+  const even = poolTeams(league(), PROJ.params.pool);
+  assert.ok(even.every((r) => Math.abs(r.fga - league()[0].row.fga) < 1e-9));
+});
+
+test("team context: a roster crowded with usage gives some of it back", () => {
+  const ps = league({ stackedUsage: 2 });
+  const out = poolTeams(ps, { min: 0, usg: 0.6, ast: 0, drb: 0, orb: 0, usgDelta: 1 });
+  const star = out[0], role = out[5], elsewhere = out[15];
+  assert.ok(star.fga < ps[0].row.fga, "the stacked stars shoot less");
+  assert.ok(role.fga < ps[5].row.fga, "so do their teammates");
+  assert.equal(elsewhere.fga, ps[15].row.fga, "other teams untouched");
+  // With δ, the heavier user cedes a smaller share than the role player.
+  assert.ok(star.fga / ps[0].row.fga > role.fga / ps[5].row.fga);
+  // Makes follow attempts; points are rebuilt from them.
+  assert.ok(Math.abs(star.fgm / star.fga - ps[0].row.fgm / ps[0].row.fga) < 1e-9);
+  assert.ok(Math.abs(star.pts - (2 * (star.fgm - star.tpm) + 3 * star.tpm + star.ftm)) < 1e-9);
+});
+
+test("the fitted pooling is real but partial, and usage pools hardest", () => {
+  const p = PROJ.params.pool;
+  for (const k of ["min", "usg", "ast", "drb", "orb"]) assert.ok(p[k] >= 0 && p[k] < 1, k);
+  assert.ok(p.usg >= p.drb && p.usg >= p.orb);
+  // On held-out 2025-26 it improved the usage rate for players on new teams.
+  const r = PROJ.backtest.rates.usg;
+  assert.ok(r.movedPooled < r.movedSolo);
 });

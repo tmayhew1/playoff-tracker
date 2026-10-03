@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { normalizeName } from "../../lib/format";
+import { withTeamContext } from "../_lib/team-context";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -105,6 +106,7 @@ export async function GET() {
   } else {
     players = baked.players.map((p) => ({ ...p, team: MULTI.test(p.team) ? null : p.team }));
   }
+  players = withTeamContext(players, baked);
   return Response.json(
     { ...baked, players, unprojected, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString() },
     { headers: { "Cache-Control": "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400" } },

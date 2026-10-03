@@ -284,7 +284,7 @@ export function LookAhead() {
 
       {/* Teams */}
       <div className="mb-4 border border-stone-300 bg-white">
-        <SectionHead title="Projected Roster Strength" note="Top eight players’ projected VA, per game · tap a team to filter the leaders" />
+        <SectionHead title="Projected Roster Strength" note="Top eight players’ projected VA per game, after the team context · tap a team to filter the leaders" />
         {teams.map((t, i) => {
           const tc = teamColor(t.team);
           return (
@@ -362,10 +362,27 @@ function ProjectedLine({ p, sim, lga }) {
         {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last time
         {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
+        <TeamContext p={p} lga={lga} />
         {sim && <> · 80% of simulated seasons land between <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}</span> and <span className="font-semibold text-stone-700">{Math.round(sim.vaHi)}</span> VA</>}
         {sim && sim.allNba > 0.005 && <> · All-NBA {pct(sim.allNba)}</>}
       </div>
     </div>
+  );
+}
+
+
+// What sharing a roster did to the projection: each pooled resource's
+// multiplier, shown when it moved by at least 1%, and the VA it cost or added.
+const CONTEXT_LABEL = { min: "minutes", usg: "shots & turnovers", ast: "assists", drb: "def. rebounds", orb: "off. rebounds" };
+function TeamContext({ p, lga }) {
+  if (!p.pool || !p.solo) return null;
+  const moved = Object.entries(p.pool).filter(([, f]) => Math.abs(f - 1) >= 0.01);
+  if (!moved.length) return null;
+  const dva = p.vaShown - valueAdd(p.solo, lga);
+  return (
+    <> · team context on {p.team}: {moved.map(([k, f], i) => (
+      <span key={k}>{i ? ", " : ""}{CONTEXT_LABEL[k]} {f < 1 ? "−" : "+"}{Math.round(Math.abs(f - 1) * 100)}%</span>
+    ))} (<span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{dva >= 0 ? "+" : ""}{fmt1(dva)} VA</span> vs. projected alone)</>
   );
 }
 
@@ -376,6 +393,7 @@ function Method({ data }) {
     <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
       <p><span className="font-semibold text-stone-800">The line.</span> Each player’s box score is projected in pieces — per-minute shot attempts, assists, steals, blocks, turnovers and rebounds; 2P%, 3P% and FT%; minutes per game; and games played — and rebuilt into a season line. Points come from the projected shots and percentages, never on their own.</p>
       <p><span className="font-semibold text-stone-800">The time series.</span> Every rate and percentage is a weighted average of the last three seasons (each counting a fitted fraction of the one after it, and weighted by its minutes or attempts), shrunk toward the player’s position by a fitted number of phantom minutes or attempts, then aged along a curve fit by career stage. Minutes and games are a regression on the last five seasons, which treats a season lost to injury (under half the schedule at starter minutes) as an injury rather than as the new normal: the healthy seasons around it stand in for it, and a fitted adjustment prices in the risk of getting hurt again. Repeated lost seasons count against a player. Every constant was fit on {data.base === "2025-26" ? "1985-86 through 2025-26" : `seasons through ${data.base}`}, judged on how well it predicted the next season.</p>
+      <p><span className="font-semibold text-stone-800">The team context.</span> A team only has so much to share — 240 minutes a night, one shot or turnover per possession, assists off its own baskets, and its share of the rebounds. So once players are placed on their current rosters, each of those is pooled: a roster projected to play more minutes than a typical team, or to use possessions, assist or rebound at a hotter rate per minute, has every player’s share scaled back toward the league’s norm (and a thin roster’s scaled up). How hard each resource pools was fit on how players actually did on the rosters they played for since 1995-96 — usage pools the most, and a team’s heaviest user gives up the least of it, while rebounds pool only lightly. On held-out 2025-26, it cut the usage error for players on new teams by about 5% and the assist error by 3%.</p>
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
       <p><span className="font-semibold text-stone-800">The awards.</span> MVP voting is modelled as a logit on season VA, fit on all {m.seasons} winners since 1980-81 (team strength, VA per game and games played were tested and added nothing out of sample). Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — applies the 65-game rule, and draws a ballot. All-NBA is the top fifteen of that ballot.</p>
       <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Rookies aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>

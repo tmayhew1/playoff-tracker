@@ -31,7 +31,7 @@ import { fileURLToPath } from "node:url";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import {
   MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS, TIME_HISTORY,
-  expand, leagueContext, nextSeason, posGroup, projectPlayer, timeFeatures, timeUnits,
+  expand, leagueContext, nextSeason, poolTeams, posGroup, projectPlayer, timeFeatures, timeUnits,
   scheduleLength, simulateAwards, allNbaTeams, tierOf,
 } from "../app/lib/projection-model.js";
 
@@ -279,14 +279,6 @@ function fitGap(targets, actualUnits, params) {
   };
 }
 
-// --- Projections priced as VA -------------------------------------------------
-// A projection is priced against the league it was made in (the season just
-// played) — what a forecaster in the summer actually knows.
-function projectedVA(proj, prevSeason) {
-  const lga = lgaForSeason(prevSeason);
-  return { va: valueAdd(proj.row, lga), g: proj.g };
-}
-
 // --- 3. The MVP model ------------------------------------------------------------
 // Every MVP since 1980-81, by Basketball-Reference slug.
 const MVPS = {
@@ -352,6 +344,81 @@ function fitMvp() {
   };
 }
 
+// --- 4. Team context: how hard each shared resource pools -------------------
+// A season's projections, every player on the roster they actually played for:
+// everyone with an earlier appearance (censored careers included — they were
+// on those rosters too), projected as of the summer before. A traded player's
+// "2TM" row has no single team, so it counts toward no pool and is scored
+// unpooled.
+const MULTI_TEAM = /^(TOT|\dTM)$/;
+function seasonProjections(season, params) {
+  const prev = SEASONS[SEASONS.indexOf(season) - 1];
+  const out = [];
+  for (const [slug, car] of careers) {
+    const i = car.findIndex((c) => c.season === season);
+    if (i < 1) continue;
+    const missed = missedBefore(car, i);
+    const proj = projectPlayer(car.slice(Math.max(0, i - TIME_HISTORY), i), i, params, ctxBy[prev], missed);
+    const prevTeam = car[i - 1].row.team;
+    out.push({
+      slug, name: car[i].row.name, proj, actual: car[i], prevSeason: prev,
+      team: MULTI_TEAM.test(car[i].row.team) ? null : car[i].row.team,
+      moved: !MULTI_TEAM.test(prevTeam) && !MULTI_TEAM.test(car[i].row.team) && prevTeam !== car[i].row.team,
+    });
+  }
+  return out;
+}
+
+const POOL_FIRST = "1995-96";
+const BETA_GRID = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1, 1.2];
+const DELTA_GRID = [0, 0.25, 0.5, 1];
+const usageRow = (r) => (r.fga || 0) + 0.475 * (r.fta || 0) + (r.tov || 0);
+
+// β per resource, by grid search on the error it is responsible for: minutes
+// per game (weighted by games), then each per-minute rate as an index on the
+// league's (weighted by minutes). Minutes are fit first because the others
+// are measured on the minutes it sets.
+function fitPool(lastTarget, params) {
+  const seasons = SEASONS.filter((x) => x >= POOL_FIRST && x <= lastTarget)
+    .map((x) => ({ season: x, ctx: ctxBy[x], rows: seasonProjections(x, params) }));
+  const per = { usg: usageRow, ast: (r) => r.ast, drb: (r) => r.drb, orb: (r) => r.orb };
+  const lg = Object.fromEntries(seasons.map(({ season, rows }) => {
+    const all = rowsBy[season];
+    const mp = all.reduce((a, r) => a + r.mp, 0);
+    return [season, Object.fromEntries(Object.entries(per).map(([k, f]) => [k, all.reduce((a, r) => a + f(r), 0) / mp]))];
+  }));
+  const err = (pool, key) => {
+    let se = 0, w = 0;
+    for (const { season, rows } of seasons) {
+      const pooled = poolTeams(rows.map((r) => ({ team: r.team, row: r.proj.row })), pool);
+      rows.forEach((r, i) => {
+        const a = r.actual.row, q = pooled[i];
+        if (key === "min") {
+          se += a.g * (q.mp / q.g - a.mp / a.g) ** 2; w += a.g;
+        } else if (a.mp >= 200 && q.mp > 0) {
+          se += a.mp * ((per[key](q) / q.mp - per[key](a) / a.mp) / lg[season][key]) ** 2; w += a.mp;
+        }
+      });
+    }
+    return se / w;
+  };
+  const pool = { min: 0, usg: 0, ast: 0, drb: 0, orb: 0, usgDelta: 0 };
+  const gain = {};
+  for (const key of ["min", "usg", "ast", "drb", "orb"]) {
+    const base = err({ ...pool, [key]: 0 }, key);
+    let best = { e: base, b: 0, d: 0 };
+    for (const b of BETA_GRID) for (const d of key === "usg" ? DELTA_GRID : [0]) {
+      const e = err({ ...pool, [key]: b, ...(key === "usg" ? { usgDelta: d } : {}) }, key);
+      if (e < best.e) best = { e, b, d };
+    }
+    pool[key] = best.b;
+    if (key === "usg") pool.usgDelta = best.d;
+    // How much of that resource's error pooling removed, against none.
+    gain[key] = round(1 - best.e / base, 4);
+  }
+  return { ...pool, gain };
+}
+
 // --- Run ------------------------------------------------------------------------
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 const t0 = Date.now();
@@ -360,24 +427,21 @@ const t0 = Date.now();
 const prevOfHoldout = SEASONS[SEASONS.indexOf(HOLDOUT) - 1];
 const btAging = fitAging(prevOfHoldout);
 const { params: btParams } = fitParams(targetsUpTo(prevOfHoldout), btAging);
-const holdoutTargets = [];
-for (const [slug, car] of careers) {
-  const i = car.findIndex((c) => c.season === HOLDOUT);
-  if (i < 1) continue;
-  holdoutTargets.push({ slug, name: car[i].row.name, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: car[i], missed: missedBefore(car, i) });
-}
+btParams.pool = fitPool(prevOfHoldout, btParams);
+// Every 2025-26 player, projected from what was known in the summer of 2025
+// and placed on the roster they played for — pooled, and not, so the backtest
+// can say what the team context is worth.
 const lgaHold = lgaForSeason(HOLDOUT), lgaPrev = lgaForSeason(prevOfHoldout);
-const bt = holdoutTargets.map((t) => {
-  const proj = projectPlayer(t.history, t.exp, btParams, ctxBy[prevOfHoldout], t.missed);
-  const last = t.history.at(-1).row;
-  const lastVa = valueAdd(last, lgaForSeason(t.history.at(-1).season));
+const holdRows = seasonProjections(HOLDOUT, btParams);
+const holdPooled = poolTeams(holdRows.map((r) => ({ team: r.team, row: r.proj.row })), btParams.pool);
+const bt = holdRows.map((t, i) => {
+  const last = t.proj && careers.get(t.slug).find((c, j, a) => a[j + 1]?.season === HOLDOUT);
   return {
-    slug: t.slug, name: t.name,
-    proj: valueAdd(proj.row, lgaPrev), projG: proj.g,
+    slug: t.slug, name: t.name, moved: t.moved,
+    proj: valueAdd(holdPooled[i], lgaPrev), solo: valueAdd(t.proj.row, lgaPrev), projG: t.proj.g,
     actual: valueAdd(t.actual.row, lgaHold), actualG: t.actual.row.g, actualMp: t.actual.row.mp,
-    // "Same as last year": the last season's VA per game over that
-    // season's games — the forecast to beat.
-    naive: lastVa,
+    // "Same as last year": the last season's VA — the forecast to beat.
+    naive: valueAdd(last.row, lgaForSeason(last.season)),
   };
 });
 const corr = (xs, ys) => {
@@ -396,10 +460,47 @@ const backtest = {
   minMinutes: 500,
   corr: round(corr(rot.map((b) => b.proj), rot.map((b) => b.actual)), 3),
   corrNaive: round(corr(rot.map((b) => b.naive), rot.map((b) => b.actual)), 3),
+  corrSolo: round(corr(rot.map((b) => b.solo), rot.map((b) => b.actual)), 3),
   mae: round(mae(rot.map((b) => b.proj), rot.map((b) => b.actual)), 1),
   maeNaive: round(mae(rot.map((b) => b.naive), rot.map((b) => b.actual)), 1),
+  maeSolo: round(mae(rot.map((b) => b.solo), rot.map((b) => b.actual)), 1),
+  // The players the team context matters most for: on a new team this year.
+  moved: (() => {
+    const m = rot.filter((b) => b.moved);
+    return {
+      players: m.length,
+      mae: round(mae(m.map((b) => b.proj), m.map((b) => b.actual)), 1),
+      maeSolo: round(mae(m.map((b) => b.solo), m.map((b) => b.actual)), 1),
+      bias: round(m.reduce((a, b) => a + b.actual - b.proj, 0) / m.length, 1),
+      biasSolo: round(m.reduce((a, b) => a + b.actual - b.solo, 0) / m.length, 1),
+    };
+  })(),
   // Mean miss (actual − projected) over the 50 best projections — the
   // number that says whether the top of the board is set too low or too high.
+  // The rates the team context acts on, per minute as a share of the
+  // league's: RMS error pooled vs solo, all rotation players and the movers.
+  rates: (() => {
+    const per = { usg: usageRow, ast: (r) => r.ast, drb: (r) => r.drb, orb: (r) => r.orb };
+    const all = rowsBy[HOLDOUT], lmp = all.reduce((a, r) => a + r.mp, 0);
+    const out = {};
+    for (const [k, f] of Object.entries(per)) {
+      const lg = all.reduce((a, r) => a + f(r), 0) / lmp;
+      const rms = (rowOf, only) => {
+        let se = 0, w = 0;
+        holdRows.forEach((t, i) => {
+          const a = t.actual.row, q = rowOf(i);
+          if (a.mp < 500 || (only && !t.moved)) return;
+          se += a.mp * ((f(q) / q.mp - f(a) / a.mp) / lg) ** 2; w += a.mp;
+        });
+        return round(Math.sqrt(se / w), 4);
+      };
+      out[k] = {
+        pooled: rms((i) => holdPooled[i]), solo: rms((i) => holdRows[i].proj.row),
+        movedPooled: rms((i) => holdPooled[i], true), movedSolo: rms((i) => holdRows[i].proj.row, true),
+      };
+    }
+    return out;
+  })(),
   biasTop50: round([...bt].sort((a, b) => b.proj - a.proj).slice(0, 50).reduce((a, b) => a + b.actual - b.proj, 0) / 50, 1),
   biasTop50Naive: round([...bt].sort((a, b) => b.naive - a.naive).slice(0, 50).reduce((a, b) => a + b.actual - b.naive, 0) / 50, 1),
   top25Hit: [...top("proj")].filter((s) => actualTop.has(s)).length,
@@ -411,19 +512,23 @@ const backtest = {
 // The real fit, through BASE.
 const aging = fitAging(BASE);
 const { params, fitErr } = fitParams(targetsUpTo(BASE), aging);
+params.pool = fitPool(BASE, params);
 
 // Residual pool for the simulation: every projection's miss since 2005-06,
-// as (ΔVA/G, actual games / projected games), by projected-minutes tier.
+// as (ΔVA/G, actual games / projected games), by projected-minutes tier —
+// measured after the team context, the same projection the page shows.
 const pool = MPG_TIERS.map(() => []);
-for (const t of targetsUpTo(BASE)) {
-  if (t.actual.season < "2005-06") continue;
-  const proj = projectPlayer(t.history, t.exp, params, t.ctxPrev, t.missed);
-  const { va, g } = projectedVA(proj, t.prevSeason);
-  const ar = t.actual.row;
-  // Schedule-normalised, so a 66-game season's games read as a share of 82.
-  const ag = (ar.g * 82) / scheduleLength(t.actual.season);
-  const dv = valueAdd(ar, lgaForSeason(t.actual.season)) / ar.g - va / g;
-  pool[tierOf(proj.mpg)].push([round(dv, 2), round(Math.min(82 / g, ag / g), 3)]);
+for (const season of SEASONS.filter((x) => x >= "2005-06")) {
+  const rows = seasonProjections(season, params);
+  const pooled = poolTeams(rows.map((r) => ({ team: r.team, row: r.proj.row })), params.pool);
+  const lgaP = lgaForSeason(rows[0].prevSeason), lgaT = lgaForSeason(season);
+  rows.forEach((r, i) => {
+    const q = pooled[i], ar = r.actual.row;
+    // Schedule-normalised, so a 66-game season's games read as a share of 82.
+    const ag = (ar.g * 82) / scheduleLength(season);
+    const dv = valueAdd(ar, lgaT) / ar.g - valueAdd(q, lgaP) / q.g;
+    pool[tierOf(q.mp / q.g)].push([round(dv, 2), round(Math.min(82 / q.g, ag / q.g), 3)]);
+  });
 }
 
 const mvp = fitMvp();
@@ -457,7 +562,10 @@ players.sort((a, b) => b.va - a.va);
 
 // A preview of the awards (the page re-runs this against live rosters), so
 // the fit log shows what the page will.
-const sim = simulateAwards(players.map((p) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg })), mvp.model, pool, { sims: 2000 });
+// Pooled on the baked teams (the page pools on live rosters).
+const previewRows = poolTeams(players.map((p) => ({ team: MULTI_TEAM.test(p.team) ? null : p.team, row: p.row })), params.pool);
+const preview = players.map((p, i) => ({ ...p, va: valueAdd(previewRows[i], lgaBase), g: previewRows[i].g, mpg: previewRows[i].mp / previewRows[i].g }));
+const sim = simulateAwards(preview.map((p) => ({ key: p.slug, g: p.g, va: p.va, mpg: p.mpg })), mvp.model, pool, { sims: 2000 });
 const bySlug = Object.fromEntries(players.map((p) => [p.slug, p]));
 
 fs.writeFileSync(OUT, JSON.stringify({
@@ -474,11 +582,12 @@ console.log("rates", Object.fromEntries(RATE_KEYS.map((k) => [k, `${params.rate[
 console.log("pcts ", Object.fromEntries(PCT_KEYS.map(({ key }) => [key, `${params.pct[key].w}/${params.pct[key].K}`])));
 console.log("time ", JSON.stringify(params.time));
 console.log("gap  ", JSON.stringify(params.gap));
+console.log("pool ", JSON.stringify(params.pool));
 console.log("aging tpa", aging.rate.tpa);
 console.log("backtest", backtest);
 console.log("mvp", mvp);
 console.log("pool sizes", pool.map((p) => p.length));
-console.log("top projected", players.slice(0, 15).map((p) => `${p.name} ${p.team} ${p.va} (${p.row.g}g)`));
+console.log("top projected (pooled, baked teams)", [...preview].sort((a, b) => b.va - a.va).slice(0, 15).map((p) => `${p.name} ${p.team} ${p.va.toFixed(0)} (${p.g}g)`));
 console.log("mvp odds", sim.filter((r) => r.mvp > 0.01).sort((a, b) => b.mvp - a.mvp).map((r) => `${bySlug[r.key].name} ${(r.mvp * 100).toFixed(1)}%`));
 console.log("all-nba", allNbaTeams(sim).map((t) => t.map((r) => `${bySlug[r.key].name} ${(r.allNba * 100).toFixed(0)}%`)));
 console.log(`wrote ${path.relative(ROOT, OUT)} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);

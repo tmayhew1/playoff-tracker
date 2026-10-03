@@ -393,3 +393,125 @@ export function allNbaTeams(results) {
     .sort((a, b) => b.allNba - a.allNba || b.first - a.first).slice(0, 15);
   return [ranked.slice(0, 5), ranked.slice(5, 10), ranked.slice(10, 15)];
 }
+
+
+// --- Team context: pooling the shared resources ------------------------------
+// Each projection above is one player's history, read alone. But a team only
+// has so much to go around: 240 minutes a night, one ball per possession to
+// shoot or turn over, one assist per made basket at most, and a share of the
+// misses to rebound. Put two players who each used 30% of their old teams'
+// possessions on one roster, and they can't both keep doing it.
+//
+// So once every player is on a roster, each shared resource is pooled:
+//
+//   minutes     the roster's projected minutes
+//   usage       shot attempts (FGA, FTA) and turnovers — possessions used
+//   assists
+//   rebounds    defensive and offensive, separately
+//
+// For each, the roster's projected level T — total minutes, or for the others
+// the total per roster minute, i.e. how concentrated it is — is compared with
+// a typical team's (the median over the league's rosters, measured the same
+// way), and every player's share is scaled by
+//
+//   (T / median) ^ −β
+//
+// β = 1 would force every team to the same total; β = 0 ignores teammates
+// entirely. β is fit per resource (scripts/fit-projection-model.mjs) on how
+// players actually did on the rosters they actually played for.
+//
+// Usage can also bend with the player: with δ > 0 a high-usage player gives up
+// a smaller share than a role player beside them — the ball finds the star.
+//
+// Makes scale with attempts (percentages are unchanged), and points are
+// rebuilt from them, so a projection that loses shots loses the points with
+// them.
+
+export const POOL_KEYS = ["min", "usg", "ast", "drb", "orb"];
+const MIN_TEAMS = 20; // a median needs a league; fewer rosters and pooling is skipped
+
+const usageOf = (r) => (r.fga || 0) + 0.475 * (r.fta || 0) + (r.tov || 0);
+const poolTotal = {
+  min: (r) => r.mp || 0,
+  usg: usageOf,
+  ast: (r) => r.ast || 0,
+  drb: (r) => r.drb || 0,
+  orb: (r) => r.orb || 0,
+};
+
+const median = (xs) => {
+  const v = [...xs].sort((a, b) => a - b);
+  const m = v.length >> 1;
+  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+};
+
+function scaleKeys(r, keys, f) {
+  const o = { ...r };
+  for (const k of keys) if (typeof o[k] === "number") o[k] *= f;
+  return o;
+}
+const rebuildPts = (r) => ({ ...r, pts: 2 * ((r.fgm || 0) - (r.tpm || 0)) + 3 * (r.tpm || 0) + (r.ftm || 0) });
+const COUNTS = ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"];
+const POOL_STATS = {
+  usg: ["fga", "fgm", "tpa", "tpm", "fta", "ftm", "tov"],
+  ast: ["ast"], drb: ["drb"], orb: ["orb"],
+};
+
+// `players` are { team, row } (row: projected season totals). Returns rows in
+// the same order, each with `pool` — the multiplier each resource applied.
+// Players without a team are passed through untouched, and only count toward
+// no one's pool.
+export function poolTeams(players, pool) {
+  const out = players.map((p) => ({ ...p.row, pool: {} }));
+  const teams = [...new Set(players.map((p) => p.team).filter(Boolean))];
+  if (!pool || teams.length < MIN_TEAMS) return out;
+  const members = Object.fromEntries(teams.map((t) => [t, []]));
+  players.forEach((p, i) => { if (p.team) members[p.team].push(i); });
+  // Minutes pool on the roster's total; the per-minute resources on its
+  // CONCENTRATION — the total per roster minute — so a deep roster isn't
+  // mistaken for a crowded one.
+  const ratio = (key) => {
+    const tot = Object.fromEntries(teams.map((t) => {
+      const x = members[t].reduce((s, i) => s + poolTotal[key](out[i]), 0);
+      const m = members[t].reduce((s, i) => s + out[i].mp, 0);
+      return [t, key === "min" ? x : m > 0 ? x / m : 0];
+    }));
+    const med = median(Object.values(tot));
+    return Object.fromEntries(teams.map((t) => [t, med > 0 && tot[t] > 0 ? tot[t] / med : 1]));
+  };
+
+  // Minutes first: they carry every count with them, rates unchanged.
+  if (pool.min) {
+    const R = ratio("min");
+    players.forEach((p, i) => {
+      if (!p.team) return;
+      const f = R[p.team] ** -pool.min;
+      out[i] = { ...scaleKeys(out[i], COUNTS, f), pool: { ...out[i].pool, min: f } };
+    });
+  }
+  // Then each per-minute resource, measured on the minutes just set.
+  for (const key of ["usg", "ast", "drb", "orb"]) {
+    const beta = pool[key];
+    if (!beta) continue;
+    const R = ratio(key);
+    // Usage bends with the player's own load (δ): a player's usage per minute
+    // over the team's, raised to −δ, so the heavier user cedes less.
+    const delta = key === "usg" ? pool.usgDelta || 0 : 0;
+    const teamRate = {};
+    if (delta) for (const t of teams) {
+      const m = members[t].reduce((s, i) => s + out[i].mp, 0);
+      teamRate[t] = m > 0 ? members[t].reduce((s, i) => s + usageOf(out[i]), 0) / m : 0;
+    }
+    players.forEach((p, i) => {
+      if (!p.team) return;
+      let b = beta;
+      if (delta && teamRate[p.team] > 0 && out[i].mp > 0) {
+        const rel = usageOf(out[i]) / out[i].mp / teamRate[p.team];
+        b = beta * Math.max(0.25, Math.min(2, rel)) ** -delta;
+      }
+      const f = R[p.team] ** -b;
+      out[i] = { ...scaleKeys(out[i], POOL_STATS[key], f), pool: { ...out[i].pool, [key]: f } };
+    });
+  }
+  return out.map((r) => (r.pool.usg ? rebuildPts(r) : r));
+}
