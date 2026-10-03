@@ -142,7 +142,7 @@ export function LookAhead() {
         <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every returning player’s 2026-27 regular season, projected from their last three — then the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
         <div className="text-[10px] text-stone-500 mt-1.5 leading-snug">
           {data.rosters === "live"
-            ? <>Rosters live from ESPN. Rookies are projected from their draft slot and last college season; undrafted rookies with no college season here aren’t.</>
+            ? <>Rosters live from ESPN. Rookies are projected from their draft slot (undrafted ones from college); undrafted rookies with no college season here aren’t.</>
             : <>Live rosters unavailable — players shown on their last {data.base} team; offseason moves aren’t reflected.</>}
         </div>
         <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
@@ -364,9 +364,9 @@ function ProjectedLine({ p, sim, lga }) {
       </div>
       <div className="mt-1.5 text-[9px] text-stone-500 leading-snug">
         {p.rookie
-          ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {L
-              ? <>projected from the draft slot and {L.g} games at {L.team} (college VA isn’t on the NBA scale, so it isn’t compared)</>
-              : <>projected from the draft slot alone — no college season in the data</>}</>
+          ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {p.model === "pick"
+              ? <>projected from the draft slot{L ? <> (the {L.team} line is shown for reference)</> : null}</>
+              : <>projected from {L.g} games at {L.team} — undrafted, so there’s no pick to go on, and college stats alone predict little</>}</>
           : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last time</>}
         {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
@@ -405,7 +405,7 @@ function Method({ data }) {
       {data.params?.rookie && (() => {
         const b = data.params.rookie.backtest || {}, L = b.lottery || {};
         return (
-          <p><span className="font-semibold text-stone-800">The rookies.</span> A rookie is projected from draft night: the pick, which is the strongest public signal of the role a rookie walks into, and — when there is one — the last college season, translated stat by stat with how productive it was, adjusted for years in college (a freshman’s numbers and a senior’s are different prospects). Drafted players with no college season are projected from the pick alone. College stats on their own were tried first and couldn’t beat calling every rookie an average one: they say how well a rookie plays per minute, not whether the minutes come.{b.players ? ` Projecting each rookie class from a fit on the others, it correlated ${b.corr.toFixed(2)} with what ${b.players} rookies actually did, missing by ${Math.round(b.mae)} VA on average against ${Math.round(b.maeNaive)} for “average rookie”${L.players >= 10 ? `; for lottery picks, ${Math.round(L.mae)} against ${Math.round(L.maeNaive)}` : ""}.` : ""}</p>
+          <p><span className="font-semibold text-stone-800">The rookies.</span> A drafted rookie is projected from the pick — the strongest public signal of the role a rookie walks into — with every piece of the line (minutes, games, each per-minute rate and percentage) fit on how past rookies at that slot played. The college season was tested on top of it, translated stat by stat and adjusted for years in college, and it made the projections worse: the pick already carries what scouts saw in that season. College stats are used only for undrafted rookies, where there is no pick — and there they predict little.{b.players ? ` Projecting each rookie class from a fit on the others, it correlated ${b.corr.toFixed(2)} with what ${b.players} rookies actually did, missing by ${Math.round(b.mae)} VA on average against ${Math.round(b.maeNaive)} for “every rookie is average”${L.players >= 10 ? `; for lottery picks, ${Math.round(L.mae)} against ${Math.round(L.maeNaive)}` : ""}. Rookie seasons are the least predictable on the page, and their simulated ranges are drawn from rookie misses to match.` : ""}</p>
         );
       })()}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>

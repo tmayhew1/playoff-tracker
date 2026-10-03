@@ -532,11 +532,16 @@ function fitRookie(samples) {
   };
 }
 
-// Which model a rookie gets: college + pick when the college season (and its
-// years) are known, the pick alone when drafted, nothing otherwise.
-const rookieSrc = (x, rk) => (usesCollege(x) && rk.college
-  ? { college: x.college, cctx: x.cctx, years: x.years, pick: x.pick }
-  : x.pick < UNDRAFTED_PICK ? { college: null, pick: x.pick } : null);
+// Which model a rookie gets. A DRAFTED rookie gets the pick alone: with all
+// ten college seasons baked, adding the college translation on top of the
+// pick made lottery projections worse, not better (average miss 153.6 vs
+// 145.9 for the pick alone, against 150.8 for "average rookie") — the pick
+// already carries what the college season says, and the translation adds
+// noise. An UNDRAFTED rookie has no pick, so the college + pick model (at
+// pick 61) is all there is; one with no college season either isn't projected.
+const rookieSrc = (x, rk) => (x.pick < UNDRAFTED_PICK
+  ? { college: null, pick: x.pick }
+  : usesCollege(x) && rk.college ? { college: x.college, cctx: x.cctx, years: x.years, pick: x.pick } : null);
 
 // Leave one rookie class out: each class projected by models fit on the
 // others, priced against the league of the season before (draft night), beside

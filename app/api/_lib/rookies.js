@@ -5,11 +5,11 @@ import { lgaForSeason, valueAdd } from "../../scoring";
 import { normalizeName } from "../../lib/format";
 
 // Rookies on the live rosters, projected from draft night (lib/projection-model.js
-// projectRookie, fit in scripts/fit-projection-model.mjs): the pick, from this
-// year's draft (data/draft-picks.json), and the last college season when the
-// college file has the name exactly once. College + pick when both are known,
-// the pick alone for a drafted international; an undrafted rookie with no
-// college season stays in `unprojected`.
+// projectRookie, fit in scripts/fit-projection-model.mjs): a drafted rookie
+// from the pick in this year's draft (data/draft-picks.json), an undrafted one
+// from the last college season (matched when the college file has the name
+// exactly once). An undrafted rookie with no college season stays in
+// `unprojected`.
 
 const round1 = (x) => Math.round(x * 10) / 10;
 
@@ -49,18 +49,21 @@ export async function projectRookies(unprojected, baked) {
     for (const name of names) {
       const n = normalizeName(name), c = seen.get(n) || null;
       const pick = pickOf.get(n) ?? UNDRAFTED_PICK;
-      const src = c && rk.college ? { college: c, cctx, years: yearsOf(n), pick }
-        : pick < UNDRAFTED_PICK && rk.pickOnly ? { college: null, pick } : null;
+      // Same rule as the fit (scripts/fit-projection-model.mjs rookieSrc):
+      // drafted → the pick alone, which beat pick + college on held-out
+      // lottery picks; undrafted → the college model; neither → unprojected.
+      const src = pick < UNDRAFTED_PICK && rk.pickOnly ? { college: null, pick }
+        : c && rk.college ? { college: c, cctx, years: yearsOf(n), pick } : null;
       if (!src) { (left[team] ||= []).push(name); continue; }
       const years = src.years ?? null;
       const proj = projectRookie(src, rk, baked.ctx);
       const row = Object.fromEntries(Object.entries(proj.row).map(([k, v]) => [k, k === "g" ? v : round1(v)]));
       rookies.push({
         slug: c ? `ncaa-${c.slug}` : `pick-${baked.draftYear}-${pick}`, name, team, pos: "G", exp: 0, rookie: true,
-        collegeYears: years, pick: pick < UNDRAFTED_PICK ? pick : null,
+        collegeYears: years, pick: pick < UNDRAFTED_PICK ? pick : null, model: src.college ? "college" : "pick",
         mpg: round1(proj.mpg), row, va: round1(valueAdd(proj.row, lga)),
-        // The college line, in the shape the page reads a last season in
-        // (none for a pick-only projection).
+        // The college line, in the shape the page reads a last season in —
+        // shown for reference even when the projection used the pick alone.
         last: c && {
           season: baked.collegeSeason, team: c.school, college: true,
           g: c.gp, mp: c.mp, pts: c.pts, ast: c.ast, drb: c.drb, orb: c.orb, stl: c.stl, blk: c.blk,

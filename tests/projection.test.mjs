@@ -214,6 +214,7 @@ test("rookies: draft night beats calling everyone an average rookie", { skip: NO
   assert.ok(b.players >= 100, `${b.players} rookies in the backtest`);
   assert.ok(b.mae < b.maeNaive, `${b.mae} vs ${b.maeNaive}`);
   assert.ok(b.lottery.mae < b.lottery.maeNaive, `lottery ${b.lottery.mae} vs ${b.lottery.maeNaive}`);
+  assert.ok(b.corr > 0.3);
   // An earlier pick means more minutes, in both models.
   for (const m of [RK.pickOnly, RK.college].filter(Boolean)) assert.ok(m.mpg.at(-1) < 0, "log pick lowers minutes");
 });
@@ -236,7 +237,7 @@ test("rookies: a projected line is a consistent NBA line, and the top pick out-p
   assert.ok(a.mpg > z.mpg, `${first.name} ${a.mpg} min vs ${last.name} ${z.mpg}`);
 });
 
-test("rookies on live rosters: college + pick, pick alone, or unprojected", { skip: NO_RK || (!thisDraft.length && "this year's draft not baked") }, async () => {
+test("rookies on live rosters: the pick, college if undrafted, or unprojected", { skip: NO_RK || (!thisDraft.length && "this year's draft not baked") }, async () => {
   // Matched the way the route matches: normalized ("Mikel Brown Jr." is the
   // college file's "Mikel Brown").
   const college = new Set(read(`college-${PROJ.collegeSeason}.json`).players.map((r) => normalizeName(r.name)));
@@ -256,7 +257,8 @@ test("rookies on live rosters: college + pick, pick alone, or unprojected", { sk
     const { GET } = await import("../app/api/projections/route.js");
     const d = await (await GET()).json();
     const a = d.players.find((p) => p.name === withCollege.name);
-    assert.ok(a && a.rookie && a.team === "CHI" && a.pick === withCollege.pick && a.last?.college);
+    // Drafted: projected from the pick, the college line kept for reference.
+    assert.ok(a && a.rookie && a.team === "CHI" && a.pick === withCollege.pick && a.model === "pick" && a.last?.college);
     assert.ok(a.pool && a.solo, "rookies take part in the team context");
     if (noCollege) {
       const b = d.players.find((p) => p.name === noCollege.name);

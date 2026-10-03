@@ -545,9 +545,13 @@ export function poolTeams(players, pool) {
 //                  freshman's 20 VA per 40 and a senior's are different
 //                  prospects, so production per year enters too.
 //
-// A drafted rookie with no college season (an international, a G League
-// pick) gets the pick-only model — the same pieces on log pick alone. An
-// undrafted rookie with no college season still can't be projected.
+// Which model a rookie gets (scripts/fit-projection-model.mjs rookieSrc): a
+// DRAFTED rookie gets the pick-only model — the same pieces on log pick
+// alone. With ten classes baked, adding the college translation on top of the
+// pick made held-out lottery projections worse (the pick already carries what
+// that season said), so college stats are used only for UNDRAFTED rookies,
+// where they predict little but are all there is. An undrafted rookie with no
+// college season isn't projected.
 
 export const UNDRAFTED_PICK = 61;
 export const logPick = (pick) => Math.log(pick > 0 ? Math.min(pick, UNDRAFTED_PICK) : UNDRAFTED_PICK);
