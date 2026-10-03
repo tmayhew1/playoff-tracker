@@ -13,6 +13,7 @@ import {
 } from "../app/lib/projection-model.js";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { parseShareParams } from "../app/lib/share-params.js";
+import { normalizeName } from "../app/lib/format.js";
 
 const DATA = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "app", "data");
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
@@ -204,34 +205,45 @@ test("the fitted pooling is real but partial, and usage pools hardest", () => {
 });
 
 const RK = PROJ.params.rookie;
+const DRAFT = fs.existsSync(path.join(DATA, "draft-picks.json")) ? read("draft-picks.json").years : {};
+const thisDraft = DRAFT[PROJ.draftYear] || [];
+const NO_RK = !RK && "no rookie model fit (drafts or college seasons not baked)";
 
-test("rookies: the college translation beats calling everyone an average rookie", { skip: !RK && "no past college seasons baked" }, () => {
+test("rookies: draft night beats calling everyone an average rookie", { skip: NO_RK }, () => {
   const b = RK.backtest;
-  assert.ok(b.players >= 30, `${b.players} rookies in the backtest`);
+  assert.ok(b.players >= 100, `${b.players} rookies in the backtest`);
   assert.ok(b.mae < b.maeNaive, `${b.mae} vs ${b.maeNaive}`);
-  assert.ok(b.corr > 0.3);
-  // More of a stat in college means more of it in the NBA, for every stat.
-  for (const [k, [, slope]] of Object.entries(RK.rate)) assert.ok(slope > 0, `${k} slope ${slope}`);
+  assert.ok(b.lottery.mae < b.lottery.maeNaive, `lottery ${b.lottery.mae} vs ${b.lottery.maeNaive}`);
+  // An earlier pick means more minutes, in both models.
+  for (const m of [RK.pickOnly, RK.college].filter(Boolean)) assert.ok(m.mpg.at(-1) < 0, "log pick lowers minutes");
 });
 
-test("rookies: a projected college line is a consistent NBA line", { skip: !RK && "no past college seasons baked" }, () => {
-  const college = read(`college-${PROJ.collegeSeason}.json`).players.filter((r) => r.mp > 0);
-  const cctx = leagueContext(college);
-  const boozer = college.find((r) => r.name === "Cameron Boozer");
-  const p = projectRookie(boozer, cctx, RK, PROJ.ctx);
-  const r = p.row;
-  assert.ok(r.g >= 1 && r.g <= 82 && p.mpg >= 4 && p.mpg <= 36);
-  assert.ok(r.tpm <= r.tpa && r.fgm <= r.fga && r.ftm <= r.fta);
-  assert.ok(Math.abs(r.pts - (2 * (r.fgm - r.tpm) + 3 * r.tpm + r.ftm)) < 1e-6);
-  // The best college player in the class projects above a bench-level rookie.
-  const walkOn = college.filter((x) => x.mp > 300).sort((a, b) => a.va - b.va)[0];
-  const w = projectRookie(walkOn, cctx, RK, PROJ.ctx);
-  assert.ok(valueAdd(r, lgaForSeason(PROJ.base)) > valueAdd(w.row, lgaForSeason(PROJ.base)));
+test("rookies: a projected line is a consistent NBA line, and the top pick out-projects the last", { skip: NO_RK }, () => {
+  const college = PROJ.collegeSeason ? read(`college-${PROJ.collegeSeason}.json`).players.filter((r) => r.mp > 0) : [];
+  const cctx = college.length ? leagueContext(college) : null;
+  const lineOf = (d) => {
+    const c = college.find((r) => r.name === d.name);
+    return projectRookie(c && RK.college ? { college: c, cctx, years: 1, pick: d.pick } : { college: null, pick: d.pick }, RK, PROJ.ctx);
+  };
+  const first = thisDraft.find((d) => d.pick === 1), last = thisDraft.find((d) => d.pick === 60) || thisDraft.at(-1);
+  const a = lineOf(first), z = lineOf(last);
+  for (const p of [a, z]) {
+    const r = p.row;
+    assert.ok(r.g >= 1 && r.g <= 82 && p.mpg >= 4 && p.mpg <= 36);
+    assert.ok(r.tpm <= r.tpa && r.fgm <= r.fga && r.ftm <= r.fta);
+    assert.ok(Math.abs(r.pts - (2 * (r.fgm - r.tpm) + 3 * r.tpm + r.ftm)) < 1e-6);
+  }
+  assert.ok(a.mpg > z.mpg, `${first.name} ${a.mpg} min vs ${last.name} ${z.mpg}`);
 });
 
-test("rookies on live rosters are projected from college; others stay unprojected", { skip: !RK && "no past college seasons baked" }, async () => {
+test("rookies on live rosters: college + pick, pick alone, or unprojected", { skip: NO_RK || (!thisDraft.length && "this year's draft not baked") }, async () => {
+  // Matched the way the route matches: normalized ("Mikel Brown Jr." is the
+  // college file's "Mikel Brown").
+  const college = new Set(read(`college-${PROJ.collegeSeason}.json`).players.map((r) => normalizeName(r.name)));
+  const withCollege = thisDraft.find((d) => d.pick <= 10 && college.has(normalizeName(d.name)));
+  const noCollege = thisDraft.find((d) => !college.has(normalizeName(d.name)));
   const TEAMS = ["ATL","BOS","BKN","CHA","CHI","CLE","DAL","DEN","DET","GS","HOU","IND","LAC","LAL","MEM","MIA","MIL","MIN","NO","NY","OKC","ORL","PHI","PHX","POR","SAC","SA","TOR","UTAH","WSH"];
-  const rosters = { CHI: ["Cameron Boozer", "Overseas Signee"] };
+  const rosters = { CHI: [withCollege.name, ...(noCollege ? [noCollege.name] : []), "Undrafted Overseas Signee"] };
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
     const u = String(url);
@@ -243,10 +255,14 @@ test("rookies on live rosters are projected from college; others stay unprojecte
   try {
     const { GET } = await import("../app/api/projections/route.js");
     const d = await (await GET()).json();
-    const b = d.players.find((p) => p.name === "Cameron Boozer");
-    assert.ok(b && b.rookie && b.team === "CHI" && b.last.college);
-    assert.ok(b.pool && b.solo, "rookies take part in the team context");
-    assert.deepEqual(d.unprojected.CHI, ["Overseas Signee"]);
+    const a = d.players.find((p) => p.name === withCollege.name);
+    assert.ok(a && a.rookie && a.team === "CHI" && a.pick === withCollege.pick && a.last?.college);
+    assert.ok(a.pool && a.solo, "rookies take part in the team context");
+    if (noCollege) {
+      const b = d.players.find((p) => p.name === noCollege.name);
+      assert.ok(b && b.rookie && b.pick === noCollege.pick && !b.last, "a drafted rookie with no college season gets the pick-only model");
+    }
+    assert.deepEqual(d.unprojected.CHI, ["Undrafted Overseas Signee"]);
   } finally {
     globalThis.fetch = realFetch;
   }

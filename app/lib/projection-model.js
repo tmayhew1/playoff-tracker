@@ -332,8 +332,9 @@ export const tierOf = (mpg) => {
   return t;
 };
 
-// The season, simulated. `players` are { key, g, va, mpg } — projected games,
-// total VA under the awards' baseline, and minutes (which pick the tier). `pool[tier]` holds real backtest
+// The season, simulated. `players` are { key, g, va, mpg, pool? } — projected
+// games, total VA under the awards' baseline, minutes (which pick the tier),
+// and optionally the player's own residual pool. `pool[tier]` holds real backtest
 // misses as [ΔVA/G, actual games / projected games] pairs: each simulated
 // player draws one whole pair, so a bad year's per-game drop and its missed
 // games stay as correlated as they really were.
@@ -345,7 +346,9 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
   const n = players.length;
   const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, rankSum: 0, ranked: 0, vas: [] }));
   const vpg = players.map((p) => (p.g > 0 ? p.va / p.g : 0));
-  const tierPool = players.map((p) => pool[tierOf(p.mpg ?? 0)] || pool[0] || [[0, 1]]);
+  // A player can bring a pool of its own — a rookie draws from the misses
+  // rookie projections have made, which run wider than a veteran's.
+  const tierPool = players.map((p) => (p.pool?.length ? p.pool : pool[tierOf(p.mpg ?? 0)] || pool[0] || [[0, 1]]));
   const simVa = new Float64Array(n), simG = new Float64Array(n);
   for (let s = 0; s < sims; s++) {
     for (let i = 0; i < n; i++) {
@@ -517,33 +520,37 @@ export function poolTeams(players, pool) {
 }
 
 
-// --- Rookies: translating a college season -----------------------------------
-// A rookie has no NBA seasons to read, so the projection starts from the last
-// college season instead (data/college-<season>.json) and translates it, piece
-// by piece, with relationships fit on past draft classes — each class's final
-// college season against its NBA rookie year (scripts/fit-projection-model.mjs):
+// --- Rookies: draft slot and the last college season --------------------------
+// A rookie has no NBA seasons to read, so the projection starts from what is
+// known on draft night, with relationships fit on past draft classes against
+// their NBA rookie years (scripts/fit-projection-model.mjs):
 //
-//   rates        log NBA index = a + b · log college index + c · quality, per
-//                stat, quality being college VA per 40 — a top prospect keeps
-//                more of a college rate than a fringe one with the same rate. Both
-//                indexes are on their own league's per-minute rate, and the
-//                college one is first shrunk toward 1 by K phantom minutes,
-//                so a freshman's 300-minute sample can't promise the moon.
-//                b < 1 is the translation's own regression: college outliers
-//                arrive as smaller NBA outliers.
-//   percentages  NBA gap to the league = a + b · college gap + c · quality
-//                (the gap shrunk the same way, by attempts)
-//   time         minutes and availability on college quality (VA per 40),
-//                college minutes per game and years in college
+//   DRAFT SLOT   (data/draft-picks.json; undrafted reads as pick 61) — the
+//                strongest public signal of the role a rookie walks into.
+//                College stats alone were tried first and couldn't beat
+//                "every rookie is an average rookie": they say how well a
+//                rookie plays per minute, not whether the minutes come.
+//   COLLEGE      the last college season (data/college-<season>.json), when
+//                there is one:
+//     rates        log NBA index = a + b · log college index + quality terms
+//                  + c · log pick, per stat. Both indexes are on their own
+//                  league's per-minute rate; the college one is first shrunk
+//                  toward 1 by K phantom minutes.
+//     percentages  NBA gap to the league = a + b · college gap + … (the gap
+//                  shrunk the same way, by attempts)
+//     time         minutes and availability on pick, college quality (VA per
+//                  40, shrunk), college minutes and years in college
+//     years        years in college (counted from the baked college seasons a
+//                  player appears in) are the only stand-in for age: a
+//                  freshman's 20 VA per 40 and a senior's are different
+//                  prospects, so production per year enters too.
 //
-// Every piece also reads YEARS IN COLLEGE (counted from the baked college
-// seasons a player appears in), the data's only stand-in for age, and
-// production per year — a freshman's 20 VA per 40 and a fifth-year senior's
-// are different prospects.
-//
-// Rookies with no college season in the data — internationals, G League,
-// players who sat out a year — still can't be projected.
+// A drafted rookie with no college season (an international, a G League
+// pick) gets the pick-only model — the same pieces on log pick alone. An
+// undrafted rookie with no college season still can't be projected.
 
+export const UNDRAFTED_PICK = 61;
+export const logPick = (pick) => Math.log(pick > 0 ? Math.min(pick, UNDRAFTED_PICK) : UNDRAFTED_PICK);
 const lnIdx = (x) => Math.log(Math.max(0.05, x));
 
 // College per-minute indexes and percentage gaps for one season row.
@@ -561,28 +568,35 @@ export function collegeUnits(c, cctx, K = 0, Kp = 0, years = 1) {
   const gp = c.gp || c.g || 0;
   // Quality — VA per 40, shrunk toward zero (an average player) by the same
   // phantom minutes, so a 10-minute walk-on with one good night isn't a star.
-  return { idx, pct, mpg: gp > 0 ? mp / gp : 0, q: mp + K > 0 ? ((c.va || 0) / (mp + Math.max(K, 100))) * 40 : 0, yrs: Math.min(4, Math.max(1, years)) };
+  return { idx, pct, mpg: gp > 0 ? mp / gp : 0, q: ((c.va || 0) / (mp + Math.max(K, 100))) * 40, yrs: Math.min(4, Math.max(1, years)) };
 }
 
-// Years in college stand in for age, which the data doesn't have: the same
-// production means far more from a freshman than from a fifth-year senior.
-// `young` is production per year in school — the freshman-star signal.
-export const rookieTimeFeatures = (u) => [1, u.q / 10, u.mpg, u.yrs, u.q / 10 / u.yrs];
-export const rookieRateFeatures = (u, base) => [1, base, u.q / 10, u.yrs, u.q / 10 / u.yrs];
+// Feature rows. `u` is collegeUnits (null for the pick-only model), `base` the
+// college value of the stat being translated.
+export const rookieRateFeatures = (u, base, pick) => (u
+  ? [1, base, u.q / 10, u.yrs, u.q / 10 / u.yrs, logPick(pick)]
+  : [1, logPick(pick)]);
+export const rookieTimeFeatures = (u, pick) => (u
+  ? [1, u.q / 10, u.mpg, u.yrs, u.q / 10 / u.yrs, logPick(pick)]
+  : [1, logPick(pick)]);
 
-// One rookie's projected season from a college row. `rk` is params.rookie.
-export function projectRookie(c, cctx, rk, target, years = 1) {
-  const u = collegeUnits(c, cctx, rk.K, rk.Kp, years);
-  const dotB = (b, x) => x.reduce((s, v, i) => s + v * (b[i] ?? 0), 0);
-  const idx = Object.fromEntries(RATE_KEYS.map((k) => [k, Math.exp(dotB(rk.rate[k], rookieRateFeatures(u, lnIdx(u.idx[k]))))]));
+// One rookie's projected season. `src` is { college, cctx, years, pick }
+// (college null for the pick-only model); `rk` is params.rookie.
+export function projectRookie(src, rk, target) {
+  const { college: c, cctx, years = 1, pick } = src;
+  const m = c ? rk.college : rk.pickOnly;
+  if (!m) return null;
+  const u = c ? collegeUnits(c, cctx, m.K, m.Kp, years) : null;
+  const dot = (b, x) => x.reduce((acc, v, i) => acc + v * (b[i] ?? 0), 0);
+  const idx = Object.fromEntries(RATE_KEYS.map((k) =>
+    [k, Math.exp(dot(m.rate[k], rookieRateFeatures(u, u ? lnIdx(u.idx[k]) : 0, pick)))]));
   const pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
-    [key, Math.min(0.99, Math.max(0, target.pct[key] + dotB(rk.pct[key], rookieRateFeatures(u, u.pct[key]))))]));
-  const x = rookieTimeFeatures(u);
-  const dot = (b) => x.reduce((s, v, i) => s + v * b[i], 0);
+    [key, Math.min(0.99, Math.max(0, target.pct[key] + dot(m.pct[key], rookieRateFeatures(u, u ? u.pct[key] : 0, pick))))]));
+  const x = rookieTimeFeatures(u, pick);
   const out = {
     exp: 0, rookie: true, idx, pct,
-    mpg: Math.min(36, Math.max(4, dot(rk.mpg))),
-    avail: Math.min(0.98, Math.max(0.05, dot(rk.avail))),
+    mpg: Math.min(36, Math.max(4, dot(m.mpg, x))),
+    avail: Math.min(0.98, Math.max(0.05, dot(m.avail, x))),
   };
   out.g = Math.max(1, Math.round(out.avail * 82));
   out.row = rebuildRow(out, target, out.g);

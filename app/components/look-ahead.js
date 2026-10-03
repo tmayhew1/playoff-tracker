@@ -99,7 +99,8 @@ export function LookAhead() {
   const awards = useMemo(() => {
     if (!data) return null;
     const field = [...players].sort((a, b) => b.va - a.va).slice(0, SIM_FIELD);
-    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg })),
+    const rookiePool = data.params?.rookie?.pool;
+    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg, pool: p.rookie ? rookiePool : null })),
       data.mvp.model, data.pool, { sims: SIMS });
     return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
   }, [data, players]);
@@ -141,7 +142,7 @@ export function LookAhead() {
         <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every returning player’s 2026-27 regular season, projected from their last three — then the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
         <div className="text-[10px] text-stone-500 mt-1.5 leading-snug">
           {data.rosters === "live"
-            ? <>Rosters live from ESPN. Rookies are projected from their last college season; internationals and others with no college or NBA seasons here aren’t.</>
+            ? <>Rosters live from ESPN. Rookies are projected from their draft slot and last college season; undrafted rookies with no college season here aren’t.</>
             : <>Live rosters unavailable — players shown on their last {data.base} team; offseason moves aren’t reflected.</>}
         </div>
         <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
@@ -335,8 +336,8 @@ function ProjectedLine({ p, sim, lga }) {
     ["STL", r.stl / g], ["BLK", r.blk / g], ["TOV", r.tov / g],
     ["FG%", r.fga > 0 ? (100 * r.fgm) / r.fga : NaN], ["3P%", r.tpa > 0 ? (100 * r.tpm) / r.tpa : NaN], ["FT%", r.fta > 0 ? (100 * r.ftm) / r.fta : NaN],
   ];
-  const proj = line(p.row, p.row.g), last = line(L, L.g);
-  const lastVa = valueAdd(L, lga);
+  const proj = line(p.row, p.row.g), last = L ? line(L, L.g) : null;
+  const lastVa = L ? valueAdd(L, lga) : null;
   return (
     <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
       <div className="overflow-x-auto no-scrollbar">
@@ -352,16 +353,20 @@ function ProjectedLine({ p, sim, lga }) {
               <td className="text-left pr-1 whitespace-nowrap">’27 proj</td>
               {proj.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
             </tr>
-            <tr className="text-stone-500">
-              <td className="text-left pr-1 whitespace-nowrap">’{L.season.slice(5)} {L.college ? <span title={L.team}>NCAA</span> : L.team}</td>
-              {last.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
-            </tr>
+            {L && (
+              <tr className="text-stone-500">
+                <td className="text-left pr-1 whitespace-nowrap">’{L.season.slice(5)} {L.college ? <span title={L.team}>NCAA</span> : L.team}</td>
+                {last.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
       <div className="mt-1.5 text-[9px] text-stone-500 leading-snug">
         {p.rookie
-          ? <>Rookie · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, translated from {L.g} games at {L.team} (college VA isn’t on the NBA scale, so it isn’t compared)</>
+          ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {L
+              ? <>projected from the draft slot and {L.g} games at {L.team} (college VA isn’t on the NBA scale, so it isn’t compared)</>
+              : <>projected from the draft slot alone — no college season in the data</>}</>
           : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last time</>}
         {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
@@ -398,14 +403,14 @@ function Method({ data }) {
       <p><span className="font-semibold text-stone-800">The time series.</span> Every rate and percentage is a weighted average of the last three seasons (each counting a fitted fraction of the one after it, and weighted by its minutes or attempts), shrunk toward the player’s position by a fitted number of phantom minutes or attempts, then aged along a curve fit by career stage. Minutes and games are a regression on the last five seasons, which treats a season lost to injury (under half the schedule at starter minutes) as an injury rather than as the new normal: the healthy seasons around it stand in for it, and a fitted adjustment prices in the risk of getting hurt again. Repeated lost seasons count against a player. Every constant was fit on {data.base === "2025-26" ? "1985-86 through 2025-26" : `seasons through ${data.base}`}, judged on how well it predicted the next season.</p>
       <p><span className="font-semibold text-stone-800">The team context.</span> A team only has so much to share — 240 minutes a night, one shot or turnover per possession, assists off its own baskets, and its share of the rebounds. So once players are placed on their current rosters, each of those is pooled: a roster projected to play more minutes than a typical team, or to use possessions, assist or rebound at a hotter rate per minute, has every player’s share scaled back toward the league’s norm (and a thin roster’s scaled up). How hard each resource pools was fit on how players actually did on the rosters they played for since 1995-96 — usage pools the most, and a team’s heaviest user gives up the least of it, while rebounds pool only lightly. On held-out 2025-26, it cut the usage error for players on new teams by about 5% and the assist error by 3%.</p>
       {data.params?.rookie && (() => {
-        const rk = data.params.rookie, b = rk.backtest || {};
+        const b = data.params.rookie.backtest || {}, L = b.lottery || {};
         return (
-          <p><span className="font-semibold text-stone-800">The rookies.</span> A rookie’s last college season is translated stat by stat — each per-minute rate and shooting percentage, measured against its own league, mapped onto the NBA by relationships fit on {rk.pairs} past rookies’ college-to-NBA jumps (small college samples are shrunk toward average first), and minutes and games from college quality and playing time.{b.players ? ` Projecting each draft class from a fit on the others, it correlated ${b.corr.toFixed(2)} with what ${b.players} rookies actually did, missing by ${Math.round(b.mae)} VA on average against ${Math.round(b.maeNaive)} for calling everyone an average rookie.` : ""} Draft position isn’t in the data, and it would help.</p>
+          <p><span className="font-semibold text-stone-800">The rookies.</span> A rookie is projected from draft night: the pick, which is the strongest public signal of the role a rookie walks into, and — when there is one — the last college season, translated stat by stat with how productive it was, adjusted for years in college (a freshman’s numbers and a senior’s are different prospects). Drafted players with no college season are projected from the pick alone. College stats on their own were tried first and couldn’t beat calling every rookie an average one: they say how well a rookie plays per minute, not whether the minutes come.{b.players ? ` Projecting each rookie class from a fit on the others, it correlated ${b.corr.toFixed(2)} with what ${b.players} rookies actually did, missing by ${Math.round(b.mae)} VA on average against ${Math.round(b.maeNaive)} for “average rookie”${L.players >= 10 ? `; for lottery picks, ${Math.round(L.mae)} against ${Math.round(L.maeNaive)}` : ""}.` : ""}</p>
         );
       })()}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
       <p><span className="font-semibold text-stone-800">The awards.</span> MVP voting is modelled as a logit on season VA, fit on all {m.seasons} winners since 1980-81 (team strength, VA per game and games played were tested and added nothing out of sample). Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — applies the 65-game rule, and draws a ballot. All-NBA is the top fifteen of that ballot.</p>
-      <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Rookies with no college season in the data (internationals, G League) aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
+      <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Undrafted rookies with no college season in the data aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
       <p className="text-[9px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
     </div>
   );
