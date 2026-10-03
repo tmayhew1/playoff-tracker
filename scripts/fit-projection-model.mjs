@@ -454,18 +454,18 @@ function fitRookie(pairs) {
     let err = 0;
     for (const k of RATE_KEYS) {
       const use = pairs.filter((x) => x.actual.mp >= 200);
-      const xs = use.map((x) => [1, Math.log(Math.max(0.05, collegeUnits(x.college, x.cctx, K, Kp).idx[k]))]);
+      const xs = use.map((x) => { const u = collegeUnits(x.college, x.cctx, K, Kp); return [1, Math.log(Math.max(0.05, u.idx[k])), u.q / 10]; });
       const ys = use.map((x) => Math.log(Math.max(0.05, expand(x.actual)[k] / x.actual.mp / x.nctx.rate[k])));
       const B = wls(xs, ys, use.map((x) => x.actual.mp), 1e-3);
       rate[k] = B.map((v) => round(v, 4));
       // Error in index units, so every K is judged on the same scale.
       const w = use.reduce((a, x) => a + x.actual.mp, 0);
-      err += use.reduce((a, x, i) => a + x.actual.mp * (Math.exp(B[0] + B[1] * xs[i][1]) - Math.exp(ys[i])) ** 2, 0) / w;
+      err += use.reduce((a, x, i) => a + x.actual.mp * (Math.exp(B[0] + B[1] * xs[i][1] + B[2] * xs[i][2]) - Math.exp(ys[i])) ** 2, 0) / w;
     }
     for (const { key, made, att } of PCT_KEYS) {
-      const use = pairs.filter((x) => x.actual[att] >= 20);
-      const B = wls(use.map((x) => [1, collegeUnits(x.college, x.cctx, K, Kp).pct[key]]),
-        use.map((x) => x.actual[made] / x.actual[att] - x.nctx.pct[key]), use.map((x) => x.actual[att]), 1e-3);
+      const use = pairs.map((x) => ({ x, a: expand(x.actual) })).filter(({ a }) => a[att] >= 20);
+      const B = wls(use.map(({ x }) => { const u = collegeUnits(x.college, x.cctx, K, Kp); return [1, u.pct[key], u.q / 10]; }),
+        use.map(({ x, a }) => a[made] / a[att] - x.nctx.pct[key]), use.map(({ a }) => a[att]), 1e-3);
       pct[key] = B.map((v) => round(v, 4));
     }
     return { rate, pct, err };

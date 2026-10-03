@@ -523,14 +523,16 @@ export function poolTeams(players, pool) {
 // by piece, with relationships fit on past draft classes — each class's final
 // college season against its NBA rookie year (scripts/fit-projection-model.mjs):
 //
-//   rates        log NBA index = a + b · log college index, per stat. Both
+//   rates        log NBA index = a + b · log college index + c · quality, per
+//                stat, quality being college VA per 40 — a top prospect keeps
+//                more of a college rate than a fringe one with the same rate. Both
 //                indexes are on their own league's per-minute rate, and the
 //                college one is first shrunk toward 1 by K phantom minutes,
 //                so a freshman's 300-minute sample can't promise the moon.
 //                b < 1 is the translation's own regression: college outliers
 //                arrive as smaller NBA outliers.
-//   percentages  NBA gap to the league = a + b · college gap (shrunk the same
-//                way, by attempts)
+//   percentages  NBA gap to the league = a + b · college gap + c · quality
+//                (the gap shrunk the same way, by attempts)
 //   time         minutes and availability on college quality (VA per 40)
 //                and college minutes per game
 //
@@ -560,9 +562,10 @@ export const rookieTimeFeatures = (u) => [1, u.q, u.mpg];
 // One rookie's projected season from a college row. `rk` is params.rookie.
 export function projectRookie(c, cctx, rk, target) {
   const u = collegeUnits(c, cctx, rk.K, rk.Kp);
-  const idx = Object.fromEntries(RATE_KEYS.map((k) => [k, Math.exp(rk.rate[k][0] + rk.rate[k][1] * lnIdx(u.idx[k]))]));
+  const q = u.q / 10; // college VA per 40, scaled so its coefficient reads per 10
+  const idx = Object.fromEntries(RATE_KEYS.map((k) => [k, Math.exp(rk.rate[k][0] + rk.rate[k][1] * lnIdx(u.idx[k]) + (rk.rate[k][2] ?? 0) * q)]));
   const pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
-    [key, Math.min(0.99, Math.max(0, target.pct[key] + rk.pct[key][0] + rk.pct[key][1] * u.pct[key]))]));
+    [key, Math.min(0.99, Math.max(0, target.pct[key] + rk.pct[key][0] + rk.pct[key][1] * u.pct[key] + (rk.pct[key][2] ?? 0) * q))]));
   const x = rookieTimeFeatures(u);
   const dot = (b) => x.reduce((s, v, i) => s + v * b[i], 0);
   const out = {
