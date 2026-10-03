@@ -1,0 +1,208 @@
+<title>De-sloppification</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,900;1,700&display=swap">
+<style>
+/* Layout: one narrow reading column like the app itself; each entry is a ruled row — text, screenshot, then the reply box. */
+:root {
+  --bg: #f5f5f4; --surface: #ffffff; --fg: #1c1917; --muted: #78716c; --rule: #d6d3d1;
+  --accent: #3b0764; --accent-fg: #ffffff; --gold: #f5b81c; --keep: #166534; --cut: #b91c1c; --mark: #fef3c7;
+  --display: "Playfair Display", Georgia, serif;
+  --body: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161412; --surface: #1f1c1a; --fg: #ece9e6; --muted: #a8a29e; --rule: #3a3532;
+  --accent: #c4a5f5; --accent-fg: #1a0b2e; --gold: #f5c544; --keep: #4ade80; --cut: #f87171; --mark: #3b2f12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #161412; --surface: #1f1c1a; --fg: #ece9e6; --muted: #a8a29e; --rule: #3a3532;
+  --accent: #c4a5f5; --accent-fg: #1a0b2e; --gold: #f5c544; --keep: #4ade80; --cut: #f87171; --mark: #3b2f12; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5 }
+.wrap { max-width: 44rem; margin: 0 auto; padding-inline: 16px; padding-block: 28px 80px }
+header h1 { font-family: var(--display); font-weight: 900; font-size: 2.1rem; line-height: 1; margin: 0 0 .5rem; letter-spacing: -.01em; text-wrap: balance }
+.eyebrow, .label { font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted) }
+.lede { color: var(--muted); max-width: 60ch; margin: .25rem 0 1rem }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 2px solid var(--fg); padding-block: 10px; display: flex; flex-direction: column; gap: 8px }
+.progress { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; font-size: .82rem }
+.meter { flex: 1; height: 6px; background: var(--rule) } .meter > i { display: block; height: 100%; background: var(--accent); width: 0 }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none } .chips::-webkit-scrollbar { display: none }
+.chip { flex: none; font: 600 .66rem/1 var(--body); letter-spacing: .14em; text-transform: uppercase; padding: 7px 10px; border: 1px solid var(--rule); background: var(--surface); color: var(--muted); cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.chip b { font-weight: 500; opacity: .7; margin-left: 4px }
+.status { font-size: .78rem; color: var(--muted); min-height: 1.2em }
+h2.group { font-family: var(--display); font-style: italic; font-weight: 700; font-size: 1.35rem; margin: 2.2rem 0 .2rem }
+.entry { padding-block: 18px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px }
+.meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: .74rem; color: var(--muted) }
+.id { font: 700 .8rem var(--mono); color: var(--fg) }
+.where { min-width: 0 } .where span + span::before { content: "›"; margin: 0 5px; opacity: .6 }
+.src { font-family: var(--mono); font-size: .7rem; word-break: break-all }
+.pill { font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; border: 1px solid var(--rule); padding: 2px 6px }
+.state-replace .pill.state { color: var(--accent); border-color: var(--accent) }
+.state-keep .pill.state { color: var(--keep); border-color: var(--keep) }
+.state-delete .pill.state { color: var(--cut); border-color: var(--cut) }
+blockquote { margin: 0; padding: 10px 12px; background: var(--surface); border-left: 3px solid var(--gold); font-size: .95rem; overflow-wrap: anywhere }
+.state-delete blockquote { text-decoration: line-through; opacity: .6 }
+details summary { cursor: pointer; font-size: .74rem; color: var(--muted); width: fit-content }
+details ul { margin: 6px 0 0; padding-left: 18px; font-size: .82rem; color: var(--muted); display: grid; gap: 4px }
+details img { display: block; margin-top: 8px; border: 1px solid var(--rule); max-width: 100%; height: auto }
+.reply { display: grid; gap: 6px }
+textarea { width: 100%; min-height: 3.2rem; resize: vertical; font: inherit; font-size: .92rem; padding: 8px 10px; background: var(--surface); color: var(--fg); border: 1px solid var(--rule) }
+textarea:focus-visible, .chip:focus-visible, .act:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.act { font: 600 .66rem/1 var(--body); letter-spacing: .14em; text-transform: uppercase; padding: 8px 11px; border: 1px solid var(--rule); background: var(--surface); color: var(--fg); cursor: pointer }
+.act.keep[aria-pressed="true"] { background: var(--keep); border-color: var(--keep); color: var(--bg) }
+.act.del[aria-pressed="true"] { background: var(--cut); border-color: var(--cut); color: var(--bg) }
+.saved { font-size: .72rem; color: var(--muted); margin-left: auto }
+.empty { padding: 2rem 0; color: var(--muted); font-style: italic }
+.readonly .reply { display: none }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Trey’s NBA Box Score · Value Added Tracker</div>
+    <h1>De-sloppification</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="bar">
+    <div class="progress"><span id="count">0 of 0 answered</span><div class="meter"><i id="meter"></i></div></div>
+    <div class="chips" id="chips" role="toolbar" aria-label="Filter by tab"></div>
+    <div class="status" id="status">Connecting…</div>
+  </div>
+
+  <main id="list"></main>
+</div>
+
+<script>
+const ENTRIES = /*__DATA__*/[];
+const edits = {};          // id -> {action, text}
+let db = null, canWrite = true;
+let filter = "All", onlyOpen = false;
+
+const $ = (s, el = document) => el.querySelector(s);
+const status = (t) => { $("#status").textContent = t; };
+
+const tabs = ["All", ...new Set(ENTRIES.map((e) => e.tab))];
+const reached = ENTRIES.filter((e) => e.lines !== null).length;
+const tips = ENTRIES.filter((e) => e.id.startsWith("H")).length;
+$("#lede").textContent = `${ENTRIES.length} pieces of running text. ${reached} were captured on screen by clicking through every tab at phone width (430px): anything that wraps, plus anything of eight words or more. ${ENTRIES.length - reached - tips} more only appear in states the crawl couldn’t reach, such as errors and empty results, and ${tips} are hover tooltips; those are listed from the source, with «guillemets» marking the parts filled in at runtime. For each one, type the replacement or mark it Keep or Delete. Answers save as you go.`;
+
+function renderChips() {
+  const c = $("#chips");
+  c.textContent = "";
+  const mk = (label, n, pressed, on) => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed", pressed);
+    b.textContent = label;
+    if (n != null) { const s = document.createElement("b"); s.textContent = n; b.append(s); }
+    b.onclick = on; c.append(b);
+  };
+  mk("Unanswered only", null, onlyOpen, () => { onlyOpen = !onlyOpen; renderChips(); renderList(); });
+  for (const t of tabs) mk(t, t === "All" ? ENTRIES.length : ENTRIES.filter((e) => e.tab === t).length, filter === t, () => { filter = t; renderChips(); renderList(); });
+}
+
+function stateOf(id) { const e = edits[id]; return e?.action || null; }
+
+function renderProgress() {
+  const n = ENTRIES.filter((e) => stateOf(e.id)).length;
+  $("#count").textContent = `${n} of ${ENTRIES.length} answered`;
+  $("#meter").style.width = (100 * n / Math.max(1, ENTRIES.length)) + "%";
+}
+
+function paint(row, e) {
+  const st = stateOf(e.id);
+  row.className = "entry" + (st ? " state-" + st : "");
+  const pill = $(".pill.state", row);
+  pill.hidden = !st;
+  pill.textContent = st === "replace" ? "Replacement given" : st === "keep" ? "Keep" : st === "delete" ? "Delete" : "";
+  $(".keep", row).setAttribute("aria-pressed", st === "keep");
+  $(".del", row).setAttribute("aria-pressed", st === "delete");
+  const ta = $("textarea", row);
+  if (document.activeElement !== ta) ta.value = edits[e.id]?.action === "replace" ? edits[e.id].text : "";
+}
+
+const timers = {};
+async function save(id, body, row) {
+  edits[id] = body; renderProgress();
+  const e = ENTRIES.find((x) => x.id === id); paint(row, e);
+  if (!db || !canWrite) return;
+  const out = $(".saved", row);
+  out.textContent = "Saving…";
+  try {
+    if (!body.action) await db.doc("edits/" + id).delete();
+    else await db.doc("edits/" + id).set({ ...body, current: e.text, src: e.src || "", at: new Date().toISOString() });
+    out.textContent = "Saved";
+  } catch (err) {
+    if (err?.code === "invalid_argument") { canWrite = false; document.body.classList.add("readonly"); status("You can read this page but not save answers to it."); }
+    out.textContent = "Not saved — " + (err?.message || "try again");
+  }
+}
+
+function renderList() {
+  const list = $("#list");
+  list.textContent = "";
+  let lastTab = null, shown = 0;
+  for (const e of ENTRIES) {
+    if (filter !== "All" && e.tab !== filter) continue;
+    if (onlyOpen && stateOf(e.id)) continue;
+    if (e.tab !== lastTab) {
+      const h = document.createElement("h2"); h.className = "group"; h.textContent = e.tab; list.append(h); lastTab = e.tab;
+    }
+    shown++;
+    const row = document.createElement("article");
+    row.id = e.id;
+    row.innerHTML = `
+      <div class="meta"><span class="id"></span><span class="where"></span><span class="pill lines"></span><span class="pill state"></span></div>
+      <blockquote></blockquote>
+      <div class="meta"><span class="src"></span></div>
+      <details class="var"><summary></summary><ul></ul></details>
+      <details class="shot"><summary>Screenshot</summary><img alt="" loading="lazy"></details>
+      <div class="reply">
+        <label class="label" for="ta-${e.id}">Replace with</label>
+        <textarea id="ta-${e.id}" placeholder="Type the new wording…"></textarea>
+        <div class="acts"><button type="button" class="act keep">Keep as is</button><button type="button" class="act del">Delete it</button><span class="saved"></span></div>
+      </div>`;
+    $(".id", row).textContent = e.id;
+    const where = $(".where", row);
+    for (const p of (e.path.length ? e.path : ["landing view"])) { const s = document.createElement("span"); s.textContent = p; where.append(s); }
+    const lp = $(".pill.lines", row);
+    if (e.lines == null) lp.hidden = true; else lp.textContent = e.lines > 1 ? `${e.lines} lines` : "1 line at 430px";
+    $("blockquote", row).textContent = e.text;
+    $(".src", row).textContent = (e.src || "source not matched") + (e.also.length ? `  ·  also on ${e.also.join(", ")}` : "");
+    if (e.img) { const img = $("img", row); img.src = e.img; img.alt = `Screenshot of ${e.id} highlighted in context`; } else $("details.shot", row).remove();
+    if (e.nvar) {
+      $("details.var summary", row).textContent = `${e.nvar} other version${e.nvar === 1 ? "" : "s"} of this text (same source line)`;
+      const ul = $("details.var ul", row);
+      for (const v of e.variants) { const li = document.createElement("li"); li.textContent = v; ul.append(li); }
+      if (e.nvar > e.variants.length) { const li = document.createElement("li"); li.textContent = `…and ${e.nvar - e.variants.length} more`; ul.append(li); }
+    } else $("details.var", row).remove();
+    const ta = $("textarea", row);
+    ta.oninput = () => {
+      clearTimeout(timers[e.id]);
+      timers[e.id] = setTimeout(() => save(e.id, ta.value.trim() ? { action: "replace", text: ta.value } : { action: null }, row), 900);
+    };
+    $(".keep", row).onclick = () => save(e.id, stateOf(e.id) === "keep" ? { action: null } : { action: "keep", text: "" }, row);
+    $(".del", row).onclick = () => save(e.id, stateOf(e.id) === "delete" ? { action: null } : { action: "delete", text: "" }, row);
+    paint(row, e);
+    list.append(row);
+  }
+  if (!shown) { const p = document.createElement("p"); p.className = "empty"; p.textContent = onlyOpen ? "Everything in this view has an answer." : "Nothing here."; list.append(p); }
+}
+
+renderChips(); renderList(); renderProgress();
+
+(async () => {
+  try {
+    db = await window.claude?.use?.("db");
+    const user = await window.claude?.use?.("user");
+    if (user && (await user.can("data.write")) === false) { canWrite = false; document.body.classList.add("readonly"); }
+  } catch { db = null; }
+  if (!db) { status("Answers can’t be saved in this view. Open the page on claude.ai while signed in."); return; }
+  status(canWrite ? "Answers save automatically." : "You can read this page but not save answers to it.");
+  db.collection("edits").onSnapshot((snap) => {
+    for (const k of Object.keys(edits)) delete edits[k];
+    for (const d of snap.docs) { const v = d.data(); if (v?.action) edits[d.id] = { action: v.action, text: v.text || "" }; }
+    renderProgress();
+    for (const e of ENTRIES) { const row = document.getElementById(e.id); if (row) paint(row, e); }
+  }, (err) => status("Live updates stopped — reload the page. (" + (err?.code || "error") + ")"));
+})();
+</script>
