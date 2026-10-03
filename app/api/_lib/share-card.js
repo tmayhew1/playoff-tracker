@@ -77,13 +77,32 @@ export async function playerSeasonCard({ slug, season, scope, usgAdj = false }) 
 export async function seasonCard({ season, scope, usgAdj = false, top = 5 }) {
   if (!season) return null;
   const rows = await seasonRows(season, scope, usgAdj);
-  if (!rows?.length) return null;
+  if (!rows?.length) return projectedSeasonCard({ season, usgAdj, top });
   return {
     season, scope, usgAdj,
     scopeLabel: SCOPE_LABEL[scope],
     of: rows.length,
     leaders: rows.slice(0, top).map(({ row, va }) => ({
       name: row.name, team: row.team, gp: row.gp || 0, va, vaPerG: row.gp ? va / row.gp : 0,
+    })),
+  };
+}
+
+// The Look Ahead's card (a season with no games yet, only a projection —
+// scripts/fit-projection-model.mjs): its projected leaders, priced the way the
+// page prices them, against the last season played. Teams are the baked ones;
+// the page's live rosters aren't fetched for a preview.
+async function projectedSeasonCard({ season, usgAdj, top }) {
+  const proj = await readData(`projection-${season}.json`);
+  if (!proj?.players?.length) return null;
+  const lga = lgaForSeason(proj.base, usgAdj);
+  const rows = proj.players.map((p) => ({ p, va: valueAddParts(p.row, lga).va })).sort((a, b) => b.va - a.va);
+  return {
+    season, scope: "regular", usgAdj, projected: true,
+    scopeLabel: "Look Ahead · Projected",
+    of: rows.length,
+    leaders: rows.slice(0, top).map(({ p, va }) => ({
+      name: p.name, team: /^(TOT|\dTM)$/.test(p.team) ? "" : p.team, gp: p.row.g, va, vaPerG: va / p.row.g,
     })),
   };
 }
@@ -141,7 +160,7 @@ export async function shareSummary(st) {
     if (!s) return null;
     return {
       kind: "season", s,
-      title: `${s.season} ${s.scopeLabel} — Value Added leaders`,
+      title: s.projected ? `${s.season} Look Ahead — projected Value Added leaders` : `${s.season} ${s.scopeLabel} — Value Added leaders`,
       description: s.leaders.slice(0, 3).map((l, i) => `${i + 1}. ${l.name} ${sign(l.va)}`).join(" · ") + base,
     };
   }

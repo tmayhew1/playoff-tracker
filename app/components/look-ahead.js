@@ -1,0 +1,384 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { valueAdd } from "../scoring";
+import { fetchBakedJson } from "../lib/fetch-cache";
+import { GOLD, splitName, teamColor, withAlpha } from "../lib/format";
+import { useSeasonLga, useVAMode } from "../lib/va-mode";
+import { allNbaTeams, simulateAwards, teamStrength } from "../lib/projection-model";
+
+// The 2026-27 Look Ahead, Explore's projected season (lib/projection-model.js
+// for the model, scripts/fit-projection-model.mjs for the fit, and
+// /api/projections for the live rosters it is placed on).
+//
+// The awards are simulated here rather than baked, because they depend on
+// who is on a roster: a player the live rosters don't list (retired,
+// unsigned) is out of the running. Seeded, so every visit sees the same odds.
+
+export const LOOK_AHEAD_SEASON = "2026-27";
+
+const SIMS = 2000;
+// Only the top of the board is simulated: past this the projection is so far
+// from fifteenth that a draw never gets there.
+const SIM_FIELD = 200;
+const PAGE = 25;
+
+const pct = (x) => (x >= 0.995 ? ">99%" : x > 0 && x < 0.005 ? "<1%" : `${Math.round(x * 100)}%`);
+const fmt1 = (x) => (Number.isFinite(x) ? x.toFixed(1) : "–");
+
+function TeamChip({ team, onClick, active = false }) {
+  if (!team) {
+    return <span className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border border-stone-200 text-stone-400 shrink-0">FA</span>;
+  }
+  const tc = teamColor(team);
+  const style = { backgroundColor: withAlpha(tc, active ? 0.3 : 0.14), color: tc, borderColor: withAlpha(tc, active ? 0.8 : 0.4) };
+  const Tag = onClick ? "button" : "span";
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      style={style}
+      className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border shrink-0 hover:brightness-95"
+      aria-label={onClick ? `Filter by ${team}` : undefined}
+    >{team}</Tag>
+  );
+}
+
+function Name({ name }) {
+  const { first, last } = splitName(name);
+  return (
+    <span className="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1]">
+      {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:shrink-0">{first}</span>}
+      <span className="truncate text-[10px]">{last}</span>
+    </span>
+  );
+}
+
+function SectionHead({ title, note }) {
+  return (
+    <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
+      <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{title}</div>
+      {note && <div className="text-[9px] italic text-stone-400 mt-0.5">{note}</div>}
+    </div>
+  );
+}
+
+export function LookAhead() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [team, setTeam] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  const [showAll, setShowAll] = useState(false);
+  const [showMethod, setShowMethod] = useState(false);
+  const { usgAdj } = useVAMode();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchBakedJson("/api/projections")
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // The table follows the LG AVG / USG-ADJ switch, priced against the last
+  // season played. The awards don't: the MVP model was fit on plain VA.
+  const lga = useSeasonLga(data?.base || "2025-26");
+  const players = useMemo(() => {
+    if (!data) return [];
+    // A player on no current roster stays in the data (the live join can miss
+    // a name) but leaves the board and the awards; listed separately below.
+    const live = data.rosters === "live";
+    return data.players
+      .filter((p) => !live || p.team)
+      .map((p) => ({ ...p, vaShown: valueAdd(p.row, lga) }))
+      .sort((a, b) => b.vaShown - a.vaShown);
+  }, [data, lga]);
+  const offRoster = useMemo(() => (data?.rosters === "live"
+    ? data.players.filter((p) => !p.team && p.va > 150).sort((a, b) => b.va - a.va) : []), [data]);
+
+  const awards = useMemo(() => {
+    if (!data) return null;
+    const field = [...players].sort((a, b) => b.va - a.va).slice(0, SIM_FIELD);
+    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg })),
+      data.mvp.model, data.pool, { sims: SIMS });
+    return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
+  }, [data, players]);
+
+  const teams = useMemo(() => {
+    const by = {};
+    for (const p of players) if (p.team) (by[p.team] ||= []).push(p);
+    return Object.entries(by).map(([t, list]) => ({
+      team: t,
+      strength: teamStrength(list.map((p) => p.vaShown)),
+      top: list.slice(0, 3),
+      n: list.length,
+    })).sort((a, b) => b.strength - a.strength);
+  }, [players]);
+
+  if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the projection — {error}</div>;
+  if (!data || !awards) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Projecting 2026-27…</div>;
+
+  const pBySlug = Object.fromEntries(players.map((p) => [p.slug, p]));
+  const mvpList = awards.res.filter((r) => r.mvp > 0).sort((a, b) => b.mvp - a.mvp).slice(0, 10);
+  const maxMvp = mvpList[0]?.mvp || 1;
+  const allNba = allNbaTeams(awards.res);
+  const bt = data.backtest;
+
+  const rows = team ? players.filter((p) => p.team === team) : players;
+  const visible = showAll || team ? rows : rows.slice(0, PAGE);
+  const maxAbs = Math.max(1, ...rows.map((p) => Math.abs(p.vaShown)));
+  const rankOf = new Map(players.map((p, i) => [p.slug, i + 1]));
+  const maxStrength = Math.max(1e-9, ...teams.map((t) => t.strength));
+
+  return (
+    <div>
+      {/* Masthead */}
+      <div className="mb-4 p-3 bg-white border border-stone-300">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">2026-27 · Look Ahead</div>
+          <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border" style={{ color: GOLD, borderColor: withAlpha(GOLD, 0.5), backgroundColor: withAlpha(GOLD, 0.08) }}>Projected</span>
+        </div>
+        <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every returning player’s 2026-27 regular season, projected from their last three — then the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
+        <div className="text-[10px] text-stone-500 mt-1.5 leading-snug">
+          {data.rosters === "live"
+            ? <>Rosters live from ESPN. Rookies and players with no NBA seasons aren’t projected.</>
+            : <>Live rosters unavailable — players shown on their last {data.base} team; offseason moves aren’t reflected.</>}
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+          {[
+            ["VA correlation", bt.corr.toFixed(2), bt.corrNaive.toFixed(2)],
+            ["Avg miss (VA)", Math.round(bt.mae), Math.round(bt.maeNaive)],
+            ["Top-25 hits", bt.top25Hit, bt.top25HitNaive],
+          ].map(([label, model, naive]) => (
+            <div key={label} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
+              <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
+              <div className="text-sm font-bold tabular-nums text-stone-900">{model}</div>
+              <div className="text-[8px] text-stone-400 tabular-nums">vs {naive} naive</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-[9px] italic text-stone-400 mt-1">
+          Backtest: {bt.season} projected from data through the season before, {bt.players} players with {bt.minMinutes}+ min. “Naive” repeats each player’s previous season.
+        </div>
+      </div>
+
+      {/* MVP */}
+      <div className="mb-4 border border-stone-300 bg-white">
+        <SectionHead title="MVP Odds" note={`Share of ${SIMS.toLocaleString()} simulated seasons won · 65-game rule applied${usgAdj ? " · priced on LG AVG" : ""}`} />
+        {mvpList.map((r, i) => {
+          const p = pBySlug[r.key];
+          if (!p) return null;
+          const tc = p.team ? teamColor(p.team) : "#78716c";
+          return (
+            <div key={r.key} className="relative overflow-hidden border-b border-stone-100 last:border-0">
+              <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(r.mvp / maxMvp) * 100}%`, backgroundColor: withAlpha(tc, 0.16) }} aria-hidden />
+              <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
+                <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
+                <TeamChip team={p.team} />
+                <span className="flex-1 min-w-0 text-stone-800"><Name name={p.name} /></span>
+                <span className="w-14 text-right tabular-nums text-stone-500">{Math.round(p.va)} VA</span>
+                <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.mvp)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* All-NBA */}
+      <div className="mb-4 border border-stone-300 bg-white">
+        <SectionHead title="Preseason All-NBA" note="The fifteen likeliest selections, by share of simulations · positionless, as voted since 2023-24" />
+        {allNba.map((tm, ti) => (
+          <div key={ti} className="border-b border-stone-200 last:border-0">
+            <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-700">{["First", "Second", "Third"][ti]} Team</div>
+            {tm.map((r) => {
+              const p = pBySlug[r.key];
+              if (!p) return null;
+              return (
+                <div key={r.key} className="flex items-center gap-1.5 sm:gap-2 text-[10px] py-1 px-1.5 sm:px-2">
+                  <span className="w-5 sm:w-6" />
+                  <TeamChip team={p.team} />
+                  <span className="flex-1 min-w-0 text-stone-800"><Name name={p.name} /></span>
+                  <span className="w-16 text-right tabular-nums text-stone-500">{p.row.g} G proj</span>
+                  <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.allNba)}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Projected leaders */}
+      <div className="mb-4 border border-stone-300 bg-white">
+        <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200 flex items-center justify-between gap-2">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Projected Leaders</div>
+          <select
+            value={team || ""}
+            onChange={(e) => { setTeam(e.target.value || null); setExpanded(null); }}
+            className="text-[10px] font-semibold text-stone-700 bg-white border border-stone-300 px-1.5 py-0.5"
+            aria-label="Filter by team"
+          >
+            <option value="">All teams</option>
+            {[...teams].sort((a, b) => a.team.localeCompare(b.team)).map((t) => <option key={t.team} value={t.team}>{t.team}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+          <span className="w-5 sm:w-6 text-right">#</span>
+          <span className="w-8 sm:w-10">Team</span>
+          <span className="flex-1">Player</span>
+          <span className="w-6 text-right">G</span>
+          <span className="w-12 text-right">VA</span>
+          <span className="w-10 text-right">VA/G</span>
+        </div>
+        {visible.map((p) => {
+          const tc = p.team ? teamColor(p.team) : "#78716c";
+          const isOpen = expanded === p.slug;
+          const sim = awards.bySlug[p.slug];
+          return (
+            <div key={p.slug} className="border-b border-stone-100 last:border-0">
+              <div className="relative overflow-hidden">
+                <div
+                  className="absolute inset-y-0 left-0 pointer-events-none"
+                  style={{ width: `${(Math.abs(p.vaShown) / maxAbs) * 100}%`, backgroundColor: p.vaShown >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.1) }}
+                  aria-hidden
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
+                  onClick={() => setExpanded(isOpen ? null : p.slug)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(isOpen ? null : p.slug); }
+                  }}
+                  className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+                >
+                  <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rankOf.get(p.slug)}</span>
+                  <TeamChip team={p.team} active={team === p.team} onClick={p.team ? (e) => { e.stopPropagation(); setTeam(team === p.team ? null : p.team); setExpanded(null); } : undefined} />
+                  <span className="flex-1 min-w-0 flex items-center text-stone-800">
+                    <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+                    <Name name={p.name} />
+                  </span>
+                  <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>
+                  <span className={`w-12 text-right tabular-nums font-bold ${p.vaShown < 0 ? "text-red-600" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
+                  <span className="w-10 text-right tabular-nums text-stone-700">{(p.vaShown / p.row.g).toFixed(2)}</span>
+                </div>
+              </div>
+              {isOpen && <ProjectedLine p={p} sim={sim} lga={lga} />}
+            </div>
+          );
+        })}
+        {!team && rows.length > PAGE && (
+          <button
+            type="button"
+            onClick={() => setShowAll((s) => !s)}
+            className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
+          >{showAll ? `Show top ${PAGE}` : `Show all ${rows.length}`}</button>
+        )}
+        {team && data.unprojected?.[team]?.length > 0 && (
+          <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
+            <span className="uppercase tracking-wider text-stone-400">Not projected (no NBA seasons): </span>
+            {data.unprojected[team].join(", ")}
+          </div>
+        )}
+      </div>
+
+      {/* Teams */}
+      <div className="mb-4 border border-stone-300 bg-white">
+        <SectionHead title="Projected Roster Strength" note="Top eight players’ projected VA, per game · tap a team to filter the leaders" />
+        {teams.map((t, i) => {
+          const tc = teamColor(t.team);
+          return (
+            <button
+              key={t.team}
+              type="button"
+              onClick={() => { setTeam(team === t.team ? null : t.team); setExpanded(null); }}
+              className="relative w-full overflow-hidden border-b border-stone-100 last:border-0 text-left"
+            >
+              <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${Math.max(0, t.strength / maxStrength) * 100}%`, backgroundColor: withAlpha(tc, team === t.team ? 0.3 : 0.16) }} aria-hidden />
+              <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
+                <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
+                <TeamChip team={t.team} active={team === t.team} />
+                <span className="flex-1 min-w-0 truncate text-stone-600">{t.top.map((p) => splitName(p.name).last).join(" · ")}</span>
+                <span className="w-12 text-right tabular-nums font-bold text-stone-900">{t.strength.toFixed(1)}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {offRoster.length > 0 && (
+        <div className="mb-4 px-3 py-2 bg-white border border-stone-300 text-[9px] text-stone-500 leading-snug">
+          <span className="uppercase tracking-wider text-stone-400">Projected, but on no current roster: </span>
+          {offRoster.slice(0, 20).map((p) => p.name).join(", ")}{offRoster.length > 20 ? `, +${offRoster.length - 20} more` : ""}
+        </div>
+      )}
+
+      {/* Method */}
+      <div className="mb-4 border border-stone-300 bg-white">
+        <button type="button" onClick={() => setShowMethod((s) => !s)} className="w-full px-3 py-2 text-left text-[10px] uppercase tracking-[0.3em] text-stone-500 flex items-center gap-2">
+          <span className="text-stone-400 text-[10px]">{showMethod ? "▾" : "▸"}</span> How this works
+        </button>
+        {showMethod && <Method data={data} />}
+      </div>
+    </div>
+  );
+}
+
+
+// The expanded row: the projected per-game line beside the season it grew
+// from, and the 80% range of the simulated VA.
+function ProjectedLine({ p, sim, lga }) {
+  const L = p.last;
+  const line = (r, g) => [
+    ["MIN", r.mp / g], ["PTS", r.pts / g], ["REB", (r.drb + r.orb) / g], ["AST", r.ast / g],
+    ["STL", r.stl / g], ["BLK", r.blk / g], ["TOV", r.tov / g],
+    ["FG%", r.fga > 0 ? (100 * r.fgm) / r.fga : NaN], ["3P%", r.tpa > 0 ? (100 * r.tpm) / r.tpa : NaN], ["FT%", r.fta > 0 ? (100 * r.ftm) / r.fta : NaN],
+  ];
+  const proj = line(p.row, p.row.g), last = line(L, L.g);
+  const lastVa = valueAdd(L, lga);
+  return (
+    <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
+      <div className="overflow-x-auto no-scrollbar">
+        <table className="w-full text-[9px] tabular-nums">
+          <thead>
+            <tr className="text-stone-400 uppercase tracking-wider">
+              <th className="text-left font-normal pr-1"></th>
+              {proj.map(([k]) => <th key={k} className="text-right font-normal px-1">{k}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="font-bold text-stone-900">
+              <td className="text-left pr-1 whitespace-nowrap">’27 proj</td>
+              {proj.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
+            </tr>
+            <tr className="text-stone-500">
+              <td className="text-left pr-1 whitespace-nowrap">’{L.season.slice(5)} {L.team}</td>
+              {last.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-1.5 text-[9px] text-stone-500 leading-snug">
+        {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last time
+        {p.missedLast && <> · missed {"2025-26"} — projected from earlier seasons</>}
+        {sim && <> · 80% of simulated seasons land between <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}</span> and <span className="font-semibold text-stone-700">{Math.round(sim.vaHi)}</span> VA</>}
+        {sim && sim.allNba > 0.005 && <> · All-NBA {pct(sim.allNba)}</>}
+      </div>
+    </div>
+  );
+}
+
+
+function Method({ data }) {
+  const m = data.mvp;
+  return (
+    <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
+      <p><span className="font-semibold text-stone-800">The line.</span> Each player’s box score is projected in pieces — per-minute shot attempts, assists, steals, blocks, turnovers and rebounds; 2P%, 3P% and FT%; minutes per game; and games played — and rebuilt into a season line. Points come from the projected shots and percentages, never on their own.</p>
+      <p><span className="font-semibold text-stone-800">The time series.</span> Every rate and percentage is a weighted average of the last three seasons (each counting a fitted fraction of the one after it, and weighted by its minutes or attempts), shrunk toward the player’s position by a fitted number of phantom minutes or attempts, then aged along a curve fit by career stage. Minutes and games are a regression on the same history. Every constant was fit on {data.base === "2025-26" ? "1985-86 through 2025-26" : `seasons through ${data.base}`}, judged on how well it predicted the next season.</p>
+      <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
+      <p><span className="font-semibold text-stone-800">The awards.</span> MVP voting is modelled as a logit on season VA, fit on all {m.seasons} winners since 1980-81 (team strength, VA per game and games played were tested and added nothing out of sample). Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — applies the 65-game rule, and draws a ballot. All-NBA is the top fifteen of that ballot.</p>
+      <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Rookies aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
+      <p className="text-[9px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
+    </div>
+  );
+}
