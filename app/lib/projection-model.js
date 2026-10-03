@@ -142,16 +142,18 @@ const ageFactor = (table, exp) => {
 // The projection. `history` is the player's seasons (oldest first, ≥1),
 // `exp` how many seasons the player has played before the one projected,
 // `params` the fitted constants (data/projection-model.json `params`),
-// `target` the league context the result is rebuilt against.
+// `target` the league context the result is rebuilt against, `missed` the
+// number of whole seasons sat out just before the one projected.
 //
 // Returns per-game numbers and the season totals they imply — a row with the
 // same keys a baked regular-season row has, so lib/va and scoring.js price it
 // exactly as they price a real season.
-export function projectPlayer(history, exp, params, target) {
+export function projectPlayer(history, exp, params, target, missed = 0) {
   const recent = recentUnits(history); // newest first
   if (!recent.length) return null;
   const pos = recent[0].pos;
-  const out = { exp };
+  const out = { exp, missed };
+  const gap = missed > 0 ? params.gap : null;
 
   // Rates — an index on the league's.
   const idx = {};
@@ -161,7 +163,7 @@ export function projectPlayer(history, exp, params, target) {
     recent.forEach((u, i) => { const wt = w ** i * u.mp; num += wt * u.idx[k]; den += wt; });
     const prior = target.pos[pos]?.rate[k] ?? 1;
     const x = (num + K * prior) / (den + K);
-    idx[k] = Math.max(0, x * (ageFactor(params.aging.rate[k], exp) ?? 1));
+    idx[k] = Math.max(0, x * (ageFactor(params.aging.rate[k], exp) ?? 1) * (gap?.rate[k] ?? 1));
   }
 
   // Percentages — a difference from the league's.
@@ -175,7 +177,7 @@ export function projectPlayer(history, exp, params, target) {
       den += w ** i * p.att;
     });
     const prior = target.pos[pos]?.pct[key] ?? 0;
-    const d = (num + K * prior) / (den + K) + (ageFactor(params.aging.pct[key], exp) ?? 0);
+    const d = (num + K * prior) / (den + K) + (ageFactor(params.aging.pct[key], exp) ?? 0) + (gap?.pct[key] ?? 0);
     pct[key] = Math.min(0.99, Math.max(0, target.pct[key] + d));
   }
 
@@ -184,7 +186,7 @@ export function projectPlayer(history, exp, params, target) {
   // Fit by least squares in the fit script. (A shrink-then-age estimator was
   // tried first; for minutes it double-counted regression to the mean and
   // projected every star several minutes and a dozen games short.)
-  const tf = timeFeatures(timeUnits(history));
+  const tf = timeFeatures(timeUnits(history), missed);
   const e = Math.min(Math.max(exp, 1), MAX_EXP);
   const dot = (b, x) => x.reduce((acc, v, i) => acc + v * b.coef[i], 0) + (b.e[e] ?? 0);
   out.mpg = Math.min(40, Math.max(4, dot(params.time.mpg, tf.mpg)));
@@ -222,7 +224,16 @@ export const timeUnits = (history) => history.slice(-TIME_HISTORY).map(unitsOf).
 // players unchanged. History buys less than it seems it should: such
 // comebacks average ~52 games against ~46 for the chronically hurt, because a
 // quarter of them get hurt again.
-export function timeFeatures(units) {
+//
+// A season missed ENTIRELY is a different thing again, and leaves no row to
+// read: the history just ends a year early. So it arrives as `missed` and
+// enters as its own flag, and scaled by the minutes the player had been
+// playing — a starter has more to lose. Real returners from a full lost year
+// (Wall, Simmons, Bynum, Yao — and Murray, Porziņģis, Leonard, Durant) came
+// back to 47 games at 21.5 minutes on average where their last healthy
+// season pointed to 64 at 29; the fit learns that gap rather than assuming it.
+// The rates take a fitted "rust" factor for the same year (params.gap).
+export function timeFeatures(units, missed = 0) {
   const [last, ...prior] = units;
   const lostLast = isLostSeason(last) ? 1 : 0;
   const healthy = prior.filter((u) => !isLostSeason(u));
@@ -231,12 +242,13 @@ export function timeFeatures(units) {
   const mH = g > 0 ? healthy.reduce((s, u) => s + u.g * u.mpg, 0) / g : last.mpg;
   const aEff = lostLast ? aH : last.avail, mEff = lostLast ? mH : last.mpg;
   const lostBefore = prior.filter(isLostSeason).length;
+  const gone = missed > 0 ? 1 : 0;
   return {
     lostLast,
-    avail: [aEff, aH, lostLast, lostBefore, mEff / 36],
+    avail: [aEff, aH, lostLast, lostBefore, mEff / 36, gone, (gone * mEff) / 36],
     // Squared, because minutes regress along a curve: a 36-minute player
     // keeps more of them than a straight line through the bench allows.
-    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff],
+    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff, gone, gone * mEff],
   };
 }
 

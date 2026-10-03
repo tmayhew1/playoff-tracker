@@ -19,13 +19,14 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
 const PROJ = read("projection-2026-27.json");
 
 test("the bake is what the model computes from the baked seasons", () => {
-  const seasons = ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26"];
+  const seasons = ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"];
   const rows = Object.fromEntries(seasons.map((s) => [s, read(`regular-season-${s}.json`).players]));
   const ctx = Object.fromEntries(seasons.map((s) => [s, leagueContext(rows[s].filter((r) => r.g > 0 && r.mp > 0))]));
-  for (const slug of ["jokicni01", "gilgesh01", "wembavi01", "tatumja01"]) {
+  for (const slug of ["jokicni01", "gilgesh01", "wembavi01", "tatumja01", "halibty01"]) {
     const baked = PROJ.players.find((p) => p.slug === slug);
-    const history = seasons.map((s) => ({ season: s, row: rows[s].find((r) => r.slug === slug), ctx: ctx[s] })).filter((h) => h.row);
-    const proj = projectPlayer(history, baked.exp, PROJ.params, ctx["2025-26"]);
+    const history = seasons.map((s) => ({ season: s, row: rows[s].find((r) => r.slug === slug), ctx: ctx[s] })).filter((h) => h.row).slice(-5); // the last five appearances
+    const missed = history.at(-1).season === "2025-26" ? 0 : 1;
+    const proj = projectPlayer(history, baked.exp, PROJ.params, ctx["2025-26"], missed);
     assert.equal(proj.g, baked.row.g, slug);
     assert.ok(Math.abs(proj.row.pts - baked.row.pts) < 0.06, `${slug} pts`);
     assert.ok(Math.abs(valueAdd(proj.row, lgaForSeason("2025-26")) - baked.va) < 0.06, `${slug} va`);
@@ -41,6 +42,21 @@ test("a lost season reads as an injury, not as who the player is", () => {
   assert.ok(p("tatumja01").row.g > p("kesslwa01").row.g + 3, `${p("tatumja01").row.g} vs ${p("kesslwa01").row.g}`);
   // And it's the healthy years' minutes, not the lost year's, that carry over.
   assert.ok(p("tatumja01").mpg > p("kesslwa01").mpg + 5);
+});
+
+test("a season missed entirely isn't invisible", () => {
+  // Haliburton tore an Achilles in the 2025 Finals and missed all of 2025-26:
+  // the data has no row for that year, so the history just ends at 2024-25.
+  const hali = PROJ.players.find((x) => x.slug === "halibty01");
+  assert.equal(hali.missedLast, true);
+  // Projected from 2024-25 as if nothing happened: 69 games at 32.7
+  // minutes; full-season returners have come back well short of that.
+  assert.ok(hali.row.g < 65, `${hali.row.g} games`);
+  assert.ok(hali.va < hali.last.va, `${hali.va} vs ${hali.last.va}`);
+  // The rust adjustment was fit, and moves rates down rather than up.
+  const r = PROJ.params.gap.rate;
+  assert.ok(PROJ.params.gap.n > 50);
+  assert.ok(Object.values(r).reduce((a, b) => a + b, 0) / Object.keys(r).length < 1.02);
 });
 
 test("a projected line is internally consistent", () => {

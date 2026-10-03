@@ -60,6 +60,9 @@ for (const s of SEASONS) for (const row of rowsBy[s]) {
 }
 const censored = new Set(rowsBy[SEASONS[0]].map((r) => r.slug));
 
+// Whole seasons sat out between a player's appearance i-1 and appearance i.
+const missedBefore = (car, i) => SEASONS.indexOf(car[i].season) - SEASONS.indexOf(car[i - 1].season) - 1;
+
 // Every (history → next season) pair the fit can learn from.
 function targetsUpTo(lastTarget) {
   const out = [];
@@ -71,7 +74,7 @@ function targetsUpTo(lastTarget) {
       // The projection is made in the summer before the target: its history is
       // what came before, its league is the season just played.
       const prev = SEASONS[SEASONS.indexOf(t.season) - 1];
-      out.push({ slug, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: t, ctxPrev: ctxBy[prev], prevSeason: prev });
+      out.push({ slug, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: t, ctxPrev: ctxBy[prev], prevSeason: prev, missed: missedBefore(car, i) });
     }
   }
   return out;
@@ -173,7 +176,7 @@ function wls(X, y, wt, ridge = 1e-6) {
 function fitTime(targets) {
   const rows = targets.map((t) => {
     const r = t.actual.row;
-    return { f: timeFeatures(timeUnits(t.history)), e: Math.min(t.exp, MAX_EXP), g: r.g, mpg: r.mp / r.g, avail: Math.min(1, r.g / scheduleLength(t.actual.season)) };
+    return { f: timeFeatures(timeUnits(t.history), t.missed), e: Math.min(t.exp, MAX_EXP), g: r.g, mpg: r.mp / r.g, avail: Math.min(1, r.g / scheduleLength(t.actual.season)) };
   });
   const withStage = (x, e) => [...x, ...Array.from({ length: MAX_EXP }, (_, i) => (e === i + 1 ? 1 : 0))];
   const fit = (key, wt) => {
@@ -196,6 +199,7 @@ function fitParams(targets, aging) {
     rate: Object.fromEntries(RATE_KEYS.map((k) => [k, { w: 0.6, K: 1000 }])),
     pct: Object.fromEntries(PCT_KEYS.map(({ key }) => [key, { w: 0.6, K: 200 }])),
     aging,
+    gap: null,
   };
   const { time, err: timeErr } = fitTime(targets);
   params.time = time;
@@ -212,7 +216,7 @@ function fitParams(targets, aging) {
     let se = 0, wt = 0;
     targets.forEach((t, j) => {
       const a = actualUnits[j];
-      const p = projectPlayer(t.history, t.exp, params, t.ctxPrev);
+      const p = projectPlayer(t.history, t.exp, params, t.ctxPrev, t.missed);
       if (piece === "rate") {
         if (a.mp < 200 || !Number.isFinite(a.idx[key])) return;
         se += a.mp * (p.idx[key] - a.idx[key]) ** 2; wt += a.mp;
@@ -239,7 +243,40 @@ function fitParams(targets, aging) {
   for (const k of RATE_KEYS) fitErr[k] = search(params.rate[k], cross(W_GRID, K_RATE, (w, K) => ({ w, K })), "rate", k);
   for (const { key } of PCT_KEYS) fitErr[key] = search(params.pct[key], cross(W_GRID, K_PCT[key], (w, K) => ({ w, K })), "pct", key);
   Object.assign(fitErr, timeErr);
+  params.gap = fitGap(targets, actualUnits, params);
   return { params, fitErr };
+}
+
+// Rust: what a whole season away does to a player's per-minute rates and
+// shooting, over and above the projection that ignores it. A minutes-weighted
+// ratio (rates) or attempt-weighted difference (percentages) between what the
+// returners did and what was projected for them, shrunk toward no effect by
+// RUST_K phantom minutes / RUST_KP attempts — the sample is a few hundred
+// player-seasons, and not every absence was an injury.
+const RUST_K = 5000, RUST_KP = 500;
+function fitGap(targets, actualUnits, params) {
+  const rate = Object.fromEntries(RATE_KEYS.map((k) => [k, { a: 0, p: 0 }]));
+  const pct = Object.fromEntries(PCT_KEYS.map(({ key }) => [key, { d: 0, w: 0 }]));
+  let n = 0;
+  targets.forEach((t, j) => {
+    if (!(t.missed > 0)) return;
+    const a = actualUnits[j];
+    if (a.mp < 200) return;
+    n++;
+    const p = projectPlayer(t.history, t.exp, { ...params, gap: null }, t.ctxPrev, t.missed);
+    for (const k of RATE_KEYS) if (Number.isFinite(a.idx[k])) { rate[k].a += a.mp * a.idx[k]; rate[k].p += a.mp * p.idx[k]; }
+    for (const { key } of PCT_KEYS) {
+      const x = a.pct[key];
+      if (x.att < 20) continue;
+      pct[key].d += x.att * (x.d - (p.pct[key] - t.ctxPrev.pct[key]));
+      pct[key].w += x.att;
+    }
+  });
+  return {
+    n,
+    rate: Object.fromEntries(RATE_KEYS.map((k) => [k, round((rate[k].a + RUST_K) / (rate[k].p + RUST_K), 4)])),
+    pct: Object.fromEntries(PCT_KEYS.map(({ key }) => [key, round(pct[key].d / (pct[key].w + RUST_KP), 4)])),
+  };
 }
 
 // --- Projections priced as VA -------------------------------------------------
@@ -327,11 +364,11 @@ const holdoutTargets = [];
 for (const [slug, car] of careers) {
   const i = car.findIndex((c) => c.season === HOLDOUT);
   if (i < 1) continue;
-  holdoutTargets.push({ slug, name: car[i].row.name, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: car[i] });
+  holdoutTargets.push({ slug, name: car[i].row.name, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: car[i], missed: missedBefore(car, i) });
 }
 const lgaHold = lgaForSeason(HOLDOUT), lgaPrev = lgaForSeason(prevOfHoldout);
 const bt = holdoutTargets.map((t) => {
-  const proj = projectPlayer(t.history, t.exp, btParams, ctxBy[prevOfHoldout]);
+  const proj = projectPlayer(t.history, t.exp, btParams, ctxBy[prevOfHoldout], t.missed);
   const last = t.history.at(-1).row;
   const lastVa = valueAdd(last, lgaForSeason(t.history.at(-1).season));
   return {
@@ -380,7 +417,7 @@ const { params, fitErr } = fitParams(targetsUpTo(BASE), aging);
 const pool = MPG_TIERS.map(() => []);
 for (const t of targetsUpTo(BASE)) {
   if (t.actual.season < "2005-06") continue;
-  const proj = projectPlayer(t.history, t.exp, params, t.ctxPrev);
+  const proj = projectPlayer(t.history, t.exp, params, t.ctxPrev, t.missed);
   const { va, g } = projectedVA(proj, t.prevSeason);
   const ar = t.actual.row;
   // Schedule-normalised, so a 66-game season's games read as a share of 82.
@@ -398,7 +435,8 @@ const lgaBase = lgaForSeason(BASE);
 for (const [slug, car] of careers) {
   const last = car.at(-1);
   if (last.season !== BASE && last.season !== SEASONS.at(-2)) continue;
-  const proj = projectPlayer(car.slice(-TIME_HISTORY), car.length, params, ctxBy[BASE]);
+  const missed = SEASONS.length - 1 - SEASONS.indexOf(last.season);
+  const proj = projectPlayer(car.slice(-TIME_HISTORY), car.length, params, ctxBy[BASE], missed);
   const lastLga = lgaForSeason(last.season);
   players.push({
     slug, name: last.row.name, team: last.row.team, pos: posGroup(last.row.pos), exp: car.length,
@@ -435,6 +473,7 @@ console.log(`fit ${SEASONS[0]}..${BASE} → ${TARGET} in ${((Date.now() - t0) / 
 console.log("rates", Object.fromEntries(RATE_KEYS.map((k) => [k, `${params.rate[k].w}/${params.rate[k].K}`])));
 console.log("pcts ", Object.fromEntries(PCT_KEYS.map(({ key }) => [key, `${params.pct[key].w}/${params.pct[key].K}`])));
 console.log("time ", JSON.stringify(params.time));
+console.log("gap  ", JSON.stringify(params.gap));
 console.log("aging tpa", aging.rate.tpa);
 console.log("backtest", backtest);
 console.log("mvp", mvp);

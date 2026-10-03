@@ -360,7 +360,7 @@ function ProjectedLine({ p, sim, lga }) {
       </div>
       <div className="mt-1.5 text-[9px] text-stone-500 leading-snug">
         {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last time
-        {p.missedLast && <> · missed {"2025-26"} — projected from earlier seasons</>}
+        {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
         {sim && <> · 80% of simulated seasons land between <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}</span> and <span className="font-semibold text-stone-700">{Math.round(sim.vaHi)}</span> VA</>}
         {sim && sim.allNba > 0.005 && <> · All-NBA {pct(sim.allNba)}</>}
