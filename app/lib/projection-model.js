@@ -48,6 +48,14 @@ export const PCT_KEYS = [
   { key: "ft", made: "ftm", att: "fta" },
 ];
 export const HISTORY_SEASONS = 3;
+// Playing time looks further back: one bad year shouldn't erase four good ones.
+export const TIME_HISTORY = 5;
+
+// A LOST season: under half the schedule while still playing starter minutes
+// when on the floor — an injury, not a benching. (A bench player's 20 games
+// at 9 minutes is a role, and stays an ordinary season.)
+export const LOST_AVAIL = 0.5, LOST_MPG = 20;
+export const isLostSeason = (u) => u.avail < LOST_AVAIL && u.mpg >= LOST_MPG;
 export const MAX_EXP = 16;
 
 // Games on each season's schedule. The lockout and bubble years were short,
@@ -172,16 +180,16 @@ export function projectPlayer(history, exp, params, target) {
   }
 
   // Playing time — a regression, not a shrinkage: next season's minutes and
-  // availability on the decayed history of both, with an intercept per career
-  // stage. Fit by least squares in the fit script. (A shrink-then-age estimator
-  // was tried first; for minutes it double-counted regression to the mean —
-  // the aging curve already holds most of it — and projected every star
-  // several minutes and a dozen games short.)
-  const { mw, aw } = playingTimeHistory(recent, params.time.w);
+  // availability on the features below, with an intercept per career stage.
+  // Fit by least squares in the fit script. (A shrink-then-age estimator was
+  // tried first; for minutes it double-counted regression to the mean and
+  // projected every star several minutes and a dozen games short.)
+  const tf = timeFeatures(timeUnits(history));
   const e = Math.min(Math.max(exp, 1), MAX_EXP);
-  const { mpg: bm, avail: ba } = params.time;
-  out.mpg = Math.min(40, Math.max(4, bm.m * mw + bm.a * aw + (bm.e[e] ?? 0)));
-  out.avail = Math.min(0.98, Math.max(0.05, ba.m * (mw / 36) + ba.a * aw + (ba.e[e] ?? 0)));
+  const dot = (b, x) => x.reduce((acc, v, i) => acc + v * b.coef[i], 0) + (b.e[e] ?? 0);
+  out.mpg = Math.min(40, Math.max(4, dot(params.time.mpg, tf.mpg)));
+  out.avail = Math.min(0.98, Math.max(0.05, dot(params.time.avail, tf.avail)));
+  out.lostLast = tf.lostLast;
 
   out.g = Math.max(1, Math.round(out.avail * 82));
   out.idx = idx;
@@ -190,19 +198,47 @@ export function projectPlayer(history, exp, params, target) {
   return out;
 }
 
-// The two playing-time regressors: minutes per game (decayed, weighted by
-// games) and availability (decayed, one vote per season). Shared with the fit.
-export function playingTimeHistory(recent, w) {
-  let mn = 0, md = 0, an = 0, ad = 0;
-  recent.forEach((u, i) => {
-    mn += w ** i * u.g * u.mpg; md += w ** i * u.g;
-    an += w ** i * u.avail; ad += w ** i;
-  });
-  return { mw: md > 0 ? mn / md : 0, aw: ad > 0 ? an / ad : 0 };
-}
-
 // History rows in the projection's units, newest first — exported for the fit.
 export const recentUnits = (history) => history.slice(-HISTORY_SEASONS).map(unitsOf).reverse();
+export const timeUnits = (history) => history.slice(-TIME_HISTORY).map(unitsOf).reverse();
+
+// The playing-time regressors, from up to TIME_HISTORY seasons (newest first).
+//
+// The question they answer is the one a lost season raises: was it a one-off,
+// or who this player is? So the HEALTHY history — every season in the window
+// that wasn't lost — is measured on its own, and when the last season was
+// lost, that history stands in for it:
+//
+//   availability   last season (or the healthy mean, if it was lost),
+//                  the healthy mean, a lost-last flag, the number of earlier
+//                  lost seasons (chronic), and minutes per game
+//   minutes        last season's (or the healthy mean's) and its square,
+//                  the healthy mean, the lost-last flag, and availability
+//
+// Judged on the ten seasons after 2015-16, held out of the fit: a starter
+// back from a near-total lost season after years of health was projected 12
+// games short on average by the plain last-seasons regression and is about
+// even now, and their minutes 2.7 short and now 0.8 — with the error over all
+// players unchanged. History buys less than it seems it should: such
+// comebacks average ~52 games against ~46 for the chronically hurt, because a
+// quarter of them get hurt again.
+export function timeFeatures(units) {
+  const [last, ...prior] = units;
+  const lostLast = isLostSeason(last) ? 1 : 0;
+  const healthy = prior.filter((u) => !isLostSeason(u));
+  const g = healthy.reduce((s, u) => s + u.g, 0);
+  const aH = healthy.length ? healthy.reduce((s, u) => s + u.avail, 0) / healthy.length : last.avail;
+  const mH = g > 0 ? healthy.reduce((s, u) => s + u.g * u.mpg, 0) / g : last.mpg;
+  const aEff = lostLast ? aH : last.avail, mEff = lostLast ? mH : last.mpg;
+  const lostBefore = prior.filter(isLostSeason).length;
+  return {
+    lostLast,
+    avail: [aEff, aH, lostLast, lostBefore, mEff / 36],
+    // Squared, because minutes regress along a curve: a 36-minute player
+    // keeps more of them than a straight line through the bench allows.
+    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff],
+  };
+}
 
 // Season totals for a projection at `g` games, rebuilt against `target`.
 export function rebuildRow(proj, target, g) {

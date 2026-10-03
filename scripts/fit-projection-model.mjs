@@ -30,8 +30,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import {
-  HISTORY_SEASONS, MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS,
-  expand, leagueContext, nextSeason, playingTimeHistory, posGroup, projectPlayer, recentUnits,
+  MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS, TIME_HISTORY,
+  expand, leagueContext, nextSeason, posGroup, projectPlayer, timeFeatures, timeUnits,
   scheduleLength, simulateAwards, allNbaTeams, tierOf,
 } from "../app/lib/projection-model.js";
 
@@ -71,7 +71,7 @@ function targetsUpTo(lastTarget) {
       // The projection is made in the summer before the target: its history is
       // what came before, its league is the season just played.
       const prev = SEASONS[SEASONS.indexOf(t.season) - 1];
-      out.push({ slug, history: car.slice(Math.max(0, i - HISTORY_SEASONS), i), exp: i, actual: t, ctxPrev: ctxBy[prev], prevSeason: prev });
+      out.push({ slug, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: t, ctxPrev: ctxBy[prev], prevSeason: prev });
     }
   }
   return out;
@@ -142,8 +142,6 @@ function fitAging(lastTarget) {
 const W_GRID = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 const K_RATE = [0, 100, 250, 500, 1000, 1500, 2500, 4000];
 const K_PCT = { fg2: [0, 50, 100, 200, 400, 800], tp: [0, 50, 100, 200, 400, 800, 1200], ft: [0, 50, 100, 200, 400, 800] };
-const W_TIME = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
-
 // Weighted least squares, by the normal equations (a little ridge keeps the
 // sparse late-career intercepts from wandering).
 function wls(X, y, wt, ridge = 1e-6) {
@@ -170,32 +168,27 @@ function wls(X, y, wt, ridge = 1e-6) {
 }
 
 // Playing time: next season's minutes per game and availability, each
-// regressed on the decayed history of both plus an intercept per career
-// stage. The decay w is shared and chosen by the same weighted error.
+// regressed on lib/projection-model.js timeFeatures plus an intercept per
+// career stage.
 function fitTime(targets) {
   const rows = targets.map((t) => {
     const r = t.actual.row;
-    return { recent: recentUnits(t.history), e: Math.min(t.exp, MAX_EXP), g: r.g, mpg: r.mp / r.g, avail: Math.min(1, r.g / scheduleLength(t.actual.season)) };
+    return { f: timeFeatures(timeUnits(t.history)), e: Math.min(t.exp, MAX_EXP), g: r.g, mpg: r.mp / r.g, avail: Math.min(1, r.g / scheduleLength(t.actual.season)) };
   });
-  let best = null;
-  for (const w of W_TIME) {
-    const X = rows.map((r) => {
-      const { mw, aw } = playingTimeHistory(r.recent, w);
-      const x = [mw, aw];
-      for (let e = 1; e <= MAX_EXP; e++) x.push(r.e === e ? 1 : 0);
-      return x;
-    });
-    const bm = wls(X, rows.map((r) => r.mpg), rows.map((r) => r.g));
-    const Xa = X.map((x) => [x[0] / 36, ...x.slice(1)]);
-    const ba = wls(Xa, rows.map((r) => r.avail), rows.map(() => 1));
-    const err = (B, XX, key, wts) => XX.reduce((a, x, n) => a + wts[n] * (x.reduce((s, v, i) => s + v * B[i], 0) - rows[n][key]) ** 2, 0) / wts.reduce((a, b) => a + b, 0);
-    const em = err(bm, X, "mpg", rows.map((r) => r.g)), ea = err(ba, Xa, "avail", rows.map(() => 1));
-    // Minutes and availability errors on one scale: availability in games.
-    const score = em + ea * 82 * 82 / 100;
-    if (!best || score < best.score) best = { score, w, bm, ba, em, ea };
-  }
-  const pack = (B) => ({ m: round(B[0], 5), a: round(B[1], 5), e: Object.fromEntries(Array.from({ length: MAX_EXP }, (_, i) => [i + 1, round(B[i + 2], 5)])) });
-  return { time: { w: best.w, mpg: pack(best.bm), avail: pack(best.ba) }, err: { mpg: best.em, avail: best.ea } };
+  const withStage = (x, e) => [...x, ...Array.from({ length: MAX_EXP }, (_, i) => (e === i + 1 ? 1 : 0))];
+  const fit = (key, wt) => {
+    const X = rows.map((r) => withStage(r.f[key], r.e));
+    const B = wls(X, rows.map((r) => r[key]), rows.map(wt));
+    const n = rows[0].f[key].length;
+    const err = X.reduce((a, x, i) => a + wt(rows[i]) * (x.reduce((s, v, j) => s + v * B[j], 0) - rows[i][key]) ** 2, 0)
+      / rows.reduce((a, r) => a + wt(r), 0);
+    return {
+      packed: { coef: B.slice(0, n).map((v) => round(v, 5)), e: Object.fromEntries(Array.from({ length: MAX_EXP }, (_, i) => [i + 1, round(B[n + i], 5)])) },
+      err,
+    };
+  };
+  const m = fit("mpg", (r) => r.g), a = fit("avail", () => 1);
+  return { time: { mpg: m.packed, avail: a.packed }, err: { mpg: m.err, avail: a.err } };
 }
 
 function fitParams(targets, aging) {
@@ -334,7 +327,7 @@ const holdoutTargets = [];
 for (const [slug, car] of careers) {
   const i = car.findIndex((c) => c.season === HOLDOUT);
   if (i < 1) continue;
-  holdoutTargets.push({ slug, name: car[i].row.name, history: car.slice(Math.max(0, i - HISTORY_SEASONS), i), exp: i, actual: car[i] });
+  holdoutTargets.push({ slug, name: car[i].row.name, history: car.slice(Math.max(0, i - TIME_HISTORY), i), exp: i, actual: car[i] });
 }
 const lgaHold = lgaForSeason(HOLDOUT), lgaPrev = lgaForSeason(prevOfHoldout);
 const bt = holdoutTargets.map((t) => {
@@ -405,12 +398,13 @@ const lgaBase = lgaForSeason(BASE);
 for (const [slug, car] of careers) {
   const last = car.at(-1);
   if (last.season !== BASE && last.season !== SEASONS.at(-2)) continue;
-  const proj = projectPlayer(car.slice(-HISTORY_SEASONS), car.length, params, ctxBy[BASE]);
+  const proj = projectPlayer(car.slice(-TIME_HISTORY), car.length, params, ctxBy[BASE]);
   const lastLga = lgaForSeason(last.season);
   players.push({
     slug, name: last.row.name, team: last.row.team, pos: posGroup(last.row.pos), exp: car.length,
     missedLast: last.season !== BASE,
     mpg: round(proj.mpg, 1),
+    lostLast: !!proj.lostLast,
     row: Object.fromEntries(Object.entries(proj.row).map(([k, v]) => [k, round(v, k === "g" ? 0 : 1)])),
     va: round(valueAdd(proj.row, lgaBase), 1),
     last: {

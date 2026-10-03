@@ -19,10 +19,10 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
 const PROJ = read("projection-2026-27.json");
 
 test("the bake is what the model computes from the baked seasons", () => {
-  const seasons = ["2023-24", "2024-25", "2025-26"];
+  const seasons = ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26"];
   const rows = Object.fromEntries(seasons.map((s) => [s, read(`regular-season-${s}.json`).players]));
   const ctx = Object.fromEntries(seasons.map((s) => [s, leagueContext(rows[s].filter((r) => r.g > 0 && r.mp > 0))]));
-  for (const slug of ["jokicni01", "gilgesh01", "wembavi01"]) {
+  for (const slug of ["jokicni01", "gilgesh01", "wembavi01", "tatumja01"]) {
     const baked = PROJ.players.find((p) => p.slug === slug);
     const history = seasons.map((s) => ({ season: s, row: rows[s].find((r) => r.slug === slug), ctx: ctx[s] })).filter((h) => h.row);
     const proj = projectPlayer(history, baked.exp, PROJ.params, ctx["2025-26"]);
@@ -30,6 +30,17 @@ test("the bake is what the model computes from the baked seasons", () => {
     assert.ok(Math.abs(proj.row.pts - baked.row.pts) < 0.06, `${slug} pts`);
     assert.ok(Math.abs(valueAdd(proj.row, lgaForSeason("2025-26")) - baked.va) < 0.06, `${slug} va`);
   }
+});
+
+test("a lost season reads as an injury, not as who the player is", () => {
+  const p = (slug) => PROJ.players.find((x) => x.slug === slug);
+  // Tatum: 72-76 games for years, then 16 back from an Achilles tear.
+  // Kessler: 74, 64, 58, then 5. Same lost last season, different histories.
+  assert.equal(p("tatumja01").lostLast, true);
+  assert.equal(p("kesslwa01").lostLast, true);
+  assert.ok(p("tatumja01").row.g > p("kesslwa01").row.g + 3, `${p("tatumja01").row.g} vs ${p("kesslwa01").row.g}`);
+  // And it's the healthy years' minutes, not the lost year's, that carry over.
+  assert.ok(p("tatumja01").mpg > p("kesslwa01").mpg + 5);
 });
 
 test("a projected line is internally consistent", () => {
