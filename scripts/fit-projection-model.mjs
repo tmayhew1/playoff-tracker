@@ -178,7 +178,7 @@ function wls(X, y, wt, ridge = 1e-6) {
 function fitTime(targets) {
   const rows = targets.map((t) => {
     const r = t.actual.row;
-    return { f: timeFeatures(timeUnits(t.history), t.missed), e: Math.min(t.exp, MAX_EXP), g: r.g, mpg: r.mp / r.g, avail: Math.min(1, r.g / scheduleLength(t.actual.season)) };
+    return { f: timeFeatures(timeUnits(t.history), t.missed, t.exp), e: Math.min(t.exp, MAX_EXP), g: r.g, mpg: r.mp / r.g, avail: Math.min(1, r.g / scheduleLength(t.actual.season)) };
   });
   const withStage = (x, e) => [...x, ...Array.from({ length: MAX_EXP }, (_, i) => (e === i + 1 ? 1 : 0))];
   const fit = (key, wt) => {

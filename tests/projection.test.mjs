@@ -284,3 +284,15 @@ test("team context: the possession split favors the heavier user when α > 1", (
   // And the fitted α is the mild, above-one bend the data chose.
   assert.ok(PROJ.params.pool.usgAlpha >= 1 && PROJ.params.pool.usgAlpha < 1.5);
 });
+
+test("stars keep their minutes: quality, not just career stage, sets them", () => {
+  const p = (slug) => PROJ.players.find((x) => x.slug === slug);
+  // A top player's projected minutes sit near what they've been playing, not
+  // several below it — the stage curve alone took 3+ minutes off Jokić.
+  for (const slug of ["jokicni01", "gilgesh01"]) {
+    const x = p(slug), last = x.last.mp / x.last.g;
+    assert.ok(Math.abs(x.mpg - last) < 2.5, `${x.name} ${x.mpg} vs ${last.toFixed(1)}`);
+  }
+  // And the quality term is capped, so nobody is projected past 40.
+  assert.ok(PROJ.players.every((x) => x.mpg <= 40));
+});

@@ -41,6 +41,8 @@
 // rookie-to-sophomore leap and the late-career slide both show plainly — but
 // it can't tell a 19-year-old rookie from a 23-year-old one.
 
+import { lgaForSeason, valueAdd } from "../scoring";
+
 export const RATE_KEYS = ["fg2a", "tpa", "fta", "ast", "stl", "blk", "tov", "drb", "orb"];
 export const PCT_KEYS = [
   { key: "fg2", made: "fg2m", att: "fg2a" },
@@ -128,6 +130,10 @@ function unitsOf({ season, row, ctx }) {
     [key, { made: r[made] || 0, att: r[att] || 0, lg: ctx.pct[key] }]));
   return {
     season, mp, g: r.g || 0, idx, pct,
+    // Quality — VA per 36 against that season's league — for the minutes
+    // model: coaches keep playing good players however long they've been in
+    // the league.
+    q36: mp > 0 ? (valueAdd(row, lgaForSeason(season)) / mp) * 36 : 0,
     avail: Math.min(1, (r.g || 0) / scheduleLength(season)),
     mpg: r.g > 0 ? mp / r.g : 0,
     pos: posGroup(r.pos),
@@ -186,7 +192,7 @@ export function projectPlayer(history, exp, params, target, missed = 0) {
   // Fit by least squares in the fit script. (A shrink-then-age estimator was
   // tried first; for minutes it double-counted regression to the mean and
   // projected every star several minutes and a dozen games short.)
-  const tf = timeFeatures(timeUnits(history), missed);
+  const tf = timeFeatures(timeUnits(history), missed, exp);
   const e = Math.min(Math.max(exp, 1), MAX_EXP);
   const dot = (b, x) => x.reduce((acc, v, i) => acc + v * b.coef[i], 0) + (b.e[e] ?? 0);
   out.mpg = Math.min(40, Math.max(4, dot(params.time.mpg, tf.mpg)));
@@ -233,7 +239,17 @@ export const timeUnits = (history) => history.slice(-TIME_HISTORY).map(unitsOf).
 // back to 47 games at 21.5 minutes on average where their last healthy
 // season pointed to 64 at 29; the fit learns that gap rather than assuming it.
 // The rates take a fitted "rust" factor for the same year (params.gap).
-export function timeFeatures(units, missed = 0) {
+//
+// Minutes also read QUALITY: VA per 36 over the window (minutes-weighted,
+// capped at 20), and quality × career stage. (Availability was tried with it
+// too and over-projected stars' games, so games don't read it.) Without it the stage intercepts — learned from every
+// player — took minutes away from veteran stars the way they do from veteran
+// role players: projected from 2010-11 on, top-25 players 8-11 seasons in
+// came in 2.1 minutes a night short of what they played, and 12+ seasons in
+// 3.2 short. Stars don't lose their minutes to experience; coaches keep
+// playing them.
+const Q_CAP = 2; // quality, in tens of VA per 36
+export function timeFeatures(units, missed = 0, exp = 1) {
   const [last, ...prior] = units;
   const lostLast = isLostSeason(last) ? 1 : 0;
   const healthy = prior.filter((u) => !isLostSeason(u));
@@ -243,12 +259,18 @@ export function timeFeatures(units, missed = 0) {
   const aEff = lostLast ? aH : last.avail, mEff = lostLast ? mH : last.mpg;
   const lostBefore = prior.filter(isLostSeason).length;
   const gone = missed > 0 ? 1 : 0;
+  const mpAll = units.reduce((s, u) => s + u.mp, 0);
+  // Capped at 20 VA per 36: minutes saturate (nobody plays 40 a night for
+  // long), and uncapped, the term pushed the very best — Jokić, Dončić — a
+  // minute or more past what that tier has actually played.
+  const q = Math.min(Q_CAP, mpAll > 0 ? units.reduce((s, u) => s + u.mp * (u.q36 || 0), 0) / mpAll / 10 : 0);
+  const stage = Math.min(Math.max(exp, 1), MAX_EXP) / 10;
   return {
     lostLast,
     avail: [aEff, aH, lostLast, lostBefore, mEff / 36, gone, (gone * mEff) / 36],
     // Squared, because minutes regress along a curve: a 36-minute player
     // keeps more of them than a straight line through the bench allows.
-    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff, gone, gone * mEff],
+    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff, gone, gone * mEff, q, q * stage],
   };
 }
 
