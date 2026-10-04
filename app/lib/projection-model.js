@@ -516,6 +516,33 @@ export function poolTeams(players, pool) {
       out[i] = { ...scaleKeys(out[i], POOL_STATS[key], f), pool: { ...out[i].pool, [key]: f } };
     });
   }
+  // Last, who takes the team's possessions. The steps above settle HOW MANY a
+  // roster uses; this settles the split. Each player's claim is the usage
+  // volume they'd carry on their own (the solo projection), raised to α:
+  //
+  //   usage_i = team usage · solo_i^α / Σ solo_j^α
+  //
+  // α = 1 is a split in proportion to solo volume; α > 1 lets the heavier
+  // users pull more than their proportion — the star gets the ball. This is
+  // the rank-curve idea (best player X shots, second X^n, …) in the form the
+  // data supported: a pure rank curve fit far worse than the volumes
+  // themselves, and a rank term on top of α added nothing out of sample. α is
+  // fit on per-minute usage (scripts/fit-projection-model.mjs); assists and
+  // rebounds were tested the same way and stay proportional.
+  if (pool.usgAlpha && pool.usgAlpha !== 1) {
+    for (const t of teams) {
+      const idx = members[t];
+      const total = idx.reduce((acc, i) => acc + usageOf(out[i]), 0);
+      const w = idx.map((i) => Math.max(1e-9, usageOf(players[i].row)) ** pool.usgAlpha);
+      const W = w.reduce((a, b) => a + b, 0);
+      idx.forEach((i, k) => {
+        const cur = usageOf(out[i]);
+        if (!(cur > 0) || !(W > 0)) return;
+        const f = (total * w[k]) / W / cur;
+        out[i] = { ...scaleKeys(out[i], POOL_STATS.usg, f), pool: { ...out[i].pool, usg: (out[i].pool.usg ?? 1) * f } };
+      });
+    }
+  }
   return out.map((r) => (r.pool.usg ? rebuildPts(r) : r));
 }
 

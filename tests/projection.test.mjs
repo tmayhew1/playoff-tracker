@@ -269,3 +269,18 @@ test("rookies on live rosters: the pick, college if undrafted, or unprojected", 
     globalThis.fetch = realFetch;
   }
 });
+
+test("team context: the possession split favors the heavier user when α > 1", () => {
+  const ps = league({ stackedUsage: 2 });
+  const base = { min: 0, usg: 0.6, ast: 0, drb: 0, orb: 0, usgDelta: 0 };
+  const flat = poolTeams(ps, { ...base, usgAlpha: 1 });
+  const bent = poolTeams(ps, { ...base, usgAlpha: 1.3 });
+  const usage = (r) => r.fga + 0.475 * r.fta + r.tov;
+  const team = (out) => out.slice(0, 10).reduce((a, r) => a + usage(r), 0);
+  // The split moves possessions; it doesn't create them.
+  assert.ok(Math.abs(team(flat) - team(bent)) < 1e-6);
+  assert.ok(usage(bent[0]) > usage(flat[0]), "the stacked star takes more");
+  assert.ok(usage(bent[5]) < usage(flat[5]), "the role player takes less");
+  // And the fitted α is the mild, above-one bend the data chose.
+  assert.ok(PROJ.params.pool.usgAlpha >= 1 && PROJ.params.pool.usgAlpha < 1.5);
+});

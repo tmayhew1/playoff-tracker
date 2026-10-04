@@ -418,8 +418,22 @@ function fitPool(lastTarget, params) {
     // How much of that resource's error pooling removed, against none.
     gain[key] = round(1 - best.e / base, 4);
   }
+  // Then the split of a roster's possessions (poolTeams usgAlpha), on the
+  // same per-minute usage error. Out of sample (fit through 2014-15, scored
+  // on the eleven seasons after) it cut that error from 13.5% to 12.9%, and
+  // for each team's top two users from 14.5% to 13.5%; a rank curve, and a
+  // rank term on top of α, were tested and lost.
+  const base = err(pool, "usg");
+  let bestA = { e: base, a: 1 };
+  for (const a of ALPHA_GRID) {
+    const e = err({ ...pool, usgAlpha: a }, "usg");
+    if (e < bestA.e) bestA = { e, a };
+  }
+  pool.usgAlpha = bestA.a;
+  gain.usgAlpha = round(1 - bestA.e / base, 4);
   return { ...pool, gain };
 }
+const ALPHA_GRID = [0.9, 1, 1.05, 1.1, 1.15, 1.2, 1.3, 1.4];
 
 // --- 5. Rookies: draft slot and college → NBA --------------------------------
 // Every rookie season whose draft is baked, with the pick and — when the
