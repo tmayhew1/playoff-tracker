@@ -141,23 +141,12 @@ export function LookAhead() {
 
   return (
     <div>
-      {/* Masthead */}
-      <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">2026-27 · Look Ahead</div>
-        <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every roster’s 2026-27 record, every player’s season, and the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
-        <div className="text-[10px] text-stone-500 mt-1.5 leading-snug">
-          {data.rosters === "live"
-            ? <>Rosters live from ESPN. Rookies are projected from their draft slot (undrafted ones from college); undrafted rookies with no college season here aren’t.</>
-            : <>Live rosters unavailable — players shown on their last {data.base} team; offseason moves aren’t reflected.</>}
-        </div>
-      </div>
-
       {/* Teams */}
       <div className="mb-4 border border-stone-300 bg-white">
         <SectionHead
           title="Projected Standings"
           note={data.wins
-            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster`
+            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
             : "Wins model not fit yet"}
         />
         {["E", "W"].map((conf) => {
@@ -446,7 +435,7 @@ function ProjectedLine({ p, sim, lga }) {
           ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {p.model === "pick"
               ? <>projected from the draft slot{L ? <> (the {L.team} line is shown for reference)</> : null}</>
               : <>projected from {L.g} games at {L.team} — undrafted, so there’s no pick to go on, and college stats alone predict little</>}</>
-          : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last time</>}
+          : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last active season</>}
         {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
         <TeamContext p={p} lga={lga} />
