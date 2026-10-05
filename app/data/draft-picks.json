@@ -1,0 +1,4619 @@
+{
+  "years": {
+    "2016": [
+      {
+        "pick": 1,
+        "team": "PHI",
+        "name": "Ben Simmons",
+        "slug": "simmobe01",
+        "college": "LSU"
+      },
+      {
+        "pick": 2,
+        "team": "LAL",
+        "name": "Brandon Ingram",
+        "slug": "ingrabr01",
+        "college": "Duke"
+      },
+      {
+        "pick": 3,
+        "team": "BOS",
+        "name": "Jaylen Brown",
+        "slug": "brownja02",
+        "college": "California"
+      },
+      {
+        "pick": 4,
+        "team": "PHX",
+        "name": "Dragan Bender",
+        "slug": "bendedr01",
+        "college": ""
+      },
+      {
+        "pick": 5,
+        "team": "MIN",
+        "name": "Kris Dunn",
+        "slug": "dunnkr01",
+        "college": "Providence"
+      },
+      {
+        "pick": 6,
+        "team": "NOP",
+        "name": "Buddy Hield",
+        "slug": "hieldbu01",
+        "college": "Oklahoma"
+      },
+      {
+        "pick": 7,
+        "team": "DEN",
+        "name": "Jamal Murray",
+        "slug": "murraja01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 8,
+        "team": "SAC",
+        "name": "Marquese Chriss",
+        "slug": "chrisma01",
+        "college": "Washington"
+      },
+      {
+        "pick": 9,
+        "team": "TOR",
+        "name": "Jakob Poeltl",
+        "slug": "poeltja01",
+        "college": "Utah"
+      },
+      {
+        "pick": 10,
+        "team": "MIL",
+        "name": "Thon Maker",
+        "slug": "makerth01",
+        "college": ""
+      },
+      {
+        "pick": 11,
+        "team": "ORL",
+        "name": "Domantas Sabonis",
+        "slug": "sabondo01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 12,
+        "team": "UTA",
+        "name": "Taurean Prince",
+        "slug": "princta02",
+        "college": "Baylor"
+      },
+      {
+        "pick": 13,
+        "team": "PHX",
+        "name": "Georgios Papagiannis",
+        "slug": "papagge01",
+        "college": ""
+      },
+      {
+        "pick": 14,
+        "team": "CHI",
+        "name": "Denzel Valentine",
+        "slug": "valende01",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 15,
+        "team": "DEN",
+        "name": "Juancho Hernangómez",
+        "slug": "hernaju01",
+        "college": ""
+      },
+      {
+        "pick": 16,
+        "team": "BOS",
+        "name": "Guerschon Yabusele",
+        "slug": "yabusgu01",
+        "college": ""
+      },
+      {
+        "pick": 17,
+        "team": "MEM",
+        "name": "Wade Baldwin",
+        "slug": "baldwwa01",
+        "college": "Vanderbilt"
+      },
+      {
+        "pick": 18,
+        "team": "DET",
+        "name": "Henry Ellenson",
+        "slug": "ellenhe01",
+        "college": "Marquette"
+      },
+      {
+        "pick": 19,
+        "team": "DEN",
+        "name": "Malik Beasley",
+        "slug": "beaslma01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 20,
+        "team": "IND",
+        "name": "Caris LeVert",
+        "slug": "leverca01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 21,
+        "team": "ATL",
+        "name": "DeAndre' Bembry",
+        "slug": "bembrde01",
+        "college": "Saint Joseph's"
+      },
+      {
+        "pick": 22,
+        "team": "CHA",
+        "name": "Malachi Richardson",
+        "slug": "richama01",
+        "college": "Syracuse"
+      },
+      {
+        "pick": 23,
+        "team": "BOS",
+        "name": "Ante Žižić",
+        "slug": "zizican01",
+        "college": ""
+      },
+      {
+        "pick": 24,
+        "team": "PHI",
+        "name": "Timothé Luwawu-Cabarrot",
+        "slug": "luwawti01",
+        "college": ""
+      },
+      {
+        "pick": 25,
+        "team": "LAC",
+        "name": "Brice Johnson",
+        "slug": "johnsbr02",
+        "college": "UNC"
+      },
+      {
+        "pick": 26,
+        "team": "PHI",
+        "name": "Furkan Korkmaz",
+        "slug": "korkmfu01",
+        "college": ""
+      },
+      {
+        "pick": 27,
+        "team": "TOR",
+        "name": "Pascal Siakam",
+        "slug": "siakapa01",
+        "college": "New Mexico State"
+      },
+      {
+        "pick": 28,
+        "team": "PHX",
+        "name": "Skal Labissière",
+        "slug": "labissk01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 29,
+        "team": "SAS",
+        "name": "Dejounte Murray",
+        "slug": "murrade01",
+        "college": "Washington"
+      },
+      {
+        "pick": 30,
+        "team": "GSW",
+        "name": "Damian Jones",
+        "slug": "jonesda03",
+        "college": "Vanderbilt"
+      },
+      {
+        "pick": 31,
+        "team": "BOS",
+        "name": "Deyonta Davis",
+        "slug": "davisde01",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 32,
+        "team": "LAL",
+        "name": "Ivica Zubac",
+        "slug": "zubaciv01",
+        "college": ""
+      },
+      {
+        "pick": 33,
+        "team": "LAC",
+        "name": "Cheick Diallo",
+        "slug": "diallch01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 34,
+        "team": "PHX",
+        "name": "Tyler Ulis",
+        "slug": "ulisty01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 35,
+        "team": "BOS",
+        "name": "Rade Zagorac",
+        "slug": "zagorra01",
+        "college": ""
+      },
+      {
+        "pick": 36,
+        "team": "MIL",
+        "name": "Malcolm Brogdon",
+        "slug": "brogdma01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 37,
+        "team": "HOU",
+        "name": "Chinanu Onuaku",
+        "slug": "onuakch01",
+        "college": "Louisville"
+      },
+      {
+        "pick": 38,
+        "team": "MIL",
+        "name": "Patrick McCaw",
+        "slug": "mccawpa01",
+        "college": "UNLV"
+      },
+      {
+        "pick": 39,
+        "team": "NOP",
+        "name": "David Michineau",
+        "slug": "michida01",
+        "college": ""
+      },
+      {
+        "pick": 40,
+        "team": "NOP",
+        "name": "Diamond Stone",
+        "slug": "stonedi01",
+        "college": "Maryland"
+      },
+      {
+        "pick": 41,
+        "team": "ORL",
+        "name": "Stephen Zimmerman",
+        "slug": "zimmest01",
+        "college": "UNLV"
+      },
+      {
+        "pick": 42,
+        "team": "UTA",
+        "name": "Isaiah Whitehead",
+        "slug": "whiteis01",
+        "college": "Seton Hall"
+      },
+      {
+        "pick": 43,
+        "team": "HOU",
+        "name": "Zhou Qi",
+        "slug": "qizh01",
+        "college": ""
+      },
+      {
+        "pick": 44,
+        "team": "ATL",
+        "name": "Isaïa Cordinier",
+        "slug": "cordiis01",
+        "college": ""
+      },
+      {
+        "pick": 45,
+        "team": "BOS",
+        "name": "Demetrius Jackson",
+        "slug": "jacksde01",
+        "college": "Notre Dame"
+      },
+      {
+        "pick": 46,
+        "team": "DAL",
+        "name": "A.J. Hammons",
+        "slug": "hammoaj01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 47,
+        "team": "ORL",
+        "name": "Jake Layman",
+        "slug": "laymaja01",
+        "college": "Maryland"
+      },
+      {
+        "pick": 48,
+        "team": "CHI",
+        "name": "Paul Zipser",
+        "slug": "zipsepa01",
+        "college": ""
+      },
+      {
+        "pick": 49,
+        "team": "DET",
+        "name": "Michael Gbinije",
+        "slug": "gbinimi01",
+        "college": "Syracuse"
+      },
+      {
+        "pick": 50,
+        "team": "IND",
+        "name": "Georges Niang",
+        "slug": "niangge01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 51,
+        "team": "BOS",
+        "name": "Ben Bentil",
+        "slug": "bentibe01",
+        "college": "Providence"
+      },
+      {
+        "pick": 52,
+        "team": "UTA",
+        "name": "Joel Bolomboy",
+        "slug": "bolomjo01",
+        "college": "Weber State"
+      },
+      {
+        "pick": 53,
+        "team": "DEN",
+        "name": "Petr Cornelie",
+        "slug": "cornepe01",
+        "college": ""
+      },
+      {
+        "pick": 54,
+        "team": "ATL",
+        "name": "Kay Felder",
+        "slug": "feldeka01",
+        "college": "Oakland"
+      },
+      {
+        "pick": 55,
+        "team": "BKN",
+        "name": "Marcus Paige",
+        "slug": "paigema01",
+        "college": "UNC"
+      },
+      {
+        "pick": 56,
+        "team": "DEN",
+        "name": "Daniel Hamilton",
+        "slug": "hamilda02",
+        "college": "UConn"
+      },
+      {
+        "pick": 57,
+        "team": "MEM",
+        "name": "Wang Zhelin",
+        "slug": "sheliwa01",
+        "college": ""
+      },
+      {
+        "pick": 58,
+        "team": "BOS",
+        "name": "Abdel Nader",
+        "slug": "naderab01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 59,
+        "team": "SAC",
+        "name": "Isaiah Cousins",
+        "slug": "cousiis01",
+        "college": "Oklahoma"
+      },
+      {
+        "pick": 60,
+        "team": "UTA",
+        "name": "Tyrone Wallace",
+        "slug": "wallaty01",
+        "college": "California"
+      }
+    ],
+    "2017": [
+      {
+        "pick": 1,
+        "team": "PHI",
+        "name": "Markelle Fultz",
+        "slug": "fultzma01",
+        "college": "Washington"
+      },
+      {
+        "pick": 2,
+        "team": "LAL",
+        "name": "Lonzo Ball",
+        "slug": "balllo01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 3,
+        "team": "BOS",
+        "name": "Jayson Tatum",
+        "slug": "tatumja01",
+        "college": "Duke"
+      },
+      {
+        "pick": 4,
+        "team": "PHX",
+        "name": "Josh Jackson",
+        "slug": "jacksjo02",
+        "college": "Kansas"
+      },
+      {
+        "pick": 5,
+        "team": "SAC",
+        "name": "De'Aaron Fox",
+        "slug": "foxde01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 6,
+        "team": "ORL",
+        "name": "Jonathan Isaac",
+        "slug": "isaacjo01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 7,
+        "team": "MIN",
+        "name": "Lauri Markkanen",
+        "slug": "markkla01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 8,
+        "team": "NYK",
+        "name": "Frank Ntilikina",
+        "slug": "ntilila01",
+        "college": ""
+      },
+      {
+        "pick": 9,
+        "team": "DAL",
+        "name": "Dennis Smith Jr.",
+        "slug": "smithde03",
+        "college": "NC State"
+      },
+      {
+        "pick": 10,
+        "team": "SAC",
+        "name": "Zach Collins",
+        "slug": "colliza01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 11,
+        "team": "CHA",
+        "name": "Malik Monk",
+        "slug": "monkma01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 12,
+        "team": "DET",
+        "name": "Luke Kennard",
+        "slug": "kennalu01",
+        "college": "Duke"
+      },
+      {
+        "pick": 13,
+        "team": "DEN",
+        "name": "Donovan Mitchell",
+        "slug": "mitchdo01",
+        "college": "Louisville"
+      },
+      {
+        "pick": 14,
+        "team": "MIA",
+        "name": "Bam Adebayo",
+        "slug": "adebaba01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 15,
+        "team": "POR",
+        "name": "Justin Jackson",
+        "slug": "jacksju01",
+        "college": "UNC"
+      },
+      {
+        "pick": 16,
+        "team": "CHI",
+        "name": "Justin Patton",
+        "slug": "pattoju01",
+        "college": "Creighton"
+      },
+      {
+        "pick": 17,
+        "team": "MIL",
+        "name": "D.J. Wilson",
+        "slug": "wilsodj01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 18,
+        "team": "IND",
+        "name": "T.J. Leaf",
+        "slug": "leaftj01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 19,
+        "team": "ATL",
+        "name": "John Collins",
+        "slug": "collijo01",
+        "college": "Wake Forest"
+      },
+      {
+        "pick": 20,
+        "team": "POR",
+        "name": "Harry Giles",
+        "slug": "gilesha01",
+        "college": "Duke"
+      },
+      {
+        "pick": 21,
+        "team": "OKC",
+        "name": "Terrance Ferguson",
+        "slug": "fergute01",
+        "college": ""
+      },
+      {
+        "pick": 22,
+        "team": "BKN",
+        "name": "Jarrett Allen",
+        "slug": "allenja01",
+        "college": "Texas"
+      },
+      {
+        "pick": 23,
+        "team": "TOR",
+        "name": "OG Anunoby",
+        "slug": "anunoog01",
+        "college": "Indiana"
+      },
+      {
+        "pick": 24,
+        "team": "UTA",
+        "name": "Tyler Lydon",
+        "slug": "lydonty01",
+        "college": "Syracuse"
+      },
+      {
+        "pick": 25,
+        "team": "ORL",
+        "name": "Anžejs Pasečņiks",
+        "slug": "pasecan01",
+        "college": ""
+      },
+      {
+        "pick": 26,
+        "team": "POR",
+        "name": "Caleb Swanigan",
+        "slug": "swanica01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 27,
+        "team": "BKN",
+        "name": "Kyle Kuzma",
+        "slug": "kuzmaky01",
+        "college": "Utah"
+      },
+      {
+        "pick": 28,
+        "team": "LAL",
+        "name": "Tony Bradley",
+        "slug": "bradlto01",
+        "college": "UNC"
+      },
+      {
+        "pick": 29,
+        "team": "SAS",
+        "name": "Derrick White",
+        "slug": "whitede01",
+        "college": "Colorado"
+      },
+      {
+        "pick": 30,
+        "team": "UTA",
+        "name": "Josh Hart",
+        "slug": "hartjo01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 31,
+        "team": "CHA",
+        "name": "Frank Jackson",
+        "slug": "jacksfr01",
+        "college": "Duke"
+      },
+      {
+        "pick": 32,
+        "team": "PHX",
+        "name": "Davon Reed",
+        "slug": "reedda01",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 33,
+        "team": "ORL",
+        "name": "Wes Iwundu",
+        "slug": "iwundwe01",
+        "college": "Kansas State"
+      },
+      {
+        "pick": 34,
+        "team": "SAC",
+        "name": "Frank Mason III",
+        "slug": "masonfr01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 35,
+        "team": "ORL",
+        "name": "Ivan Rabb",
+        "slug": "rabbiv01",
+        "college": "California"
+      },
+      {
+        "pick": 36,
+        "team": "PHI",
+        "name": "Jonah Bolden",
+        "slug": "boldejo01",
+        "college": ""
+      },
+      {
+        "pick": 37,
+        "team": "BOS",
+        "name": "Semi Ojeleye",
+        "slug": "ojelese01",
+        "college": "SMU"
+      },
+      {
+        "pick": 38,
+        "team": "CHI",
+        "name": "Jordan Bell",
+        "slug": "belljo01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 39,
+        "team": "PHI",
+        "name": "Jawun Evans",
+        "slug": "evansja01",
+        "college": "Oklahoma State"
+      },
+      {
+        "pick": 40,
+        "team": "NOP",
+        "name": "Dwayne Bacon",
+        "slug": "bacondw01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 41,
+        "team": "ATL",
+        "name": "Tyler Dorsey",
+        "slug": "dorsety01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 42,
+        "team": "UTA",
+        "name": "Thomas Bryant",
+        "slug": "bryanth01",
+        "college": "Indiana"
+      },
+      {
+        "pick": 43,
+        "team": "HOU",
+        "name": "Isaiah Hartenstein",
+        "slug": "harteis01",
+        "college": ""
+      },
+      {
+        "pick": 44,
+        "team": "NYK",
+        "name": "Damyean Dotson",
+        "slug": "dotsoda01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 45,
+        "team": "HOU",
+        "name": "Dillon Brooks",
+        "slug": "brookdi01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 46,
+        "team": "PHI",
+        "name": "Sterling Brown",
+        "slug": "brownst02",
+        "college": "SMU"
+      },
+      {
+        "pick": 47,
+        "team": "IND",
+        "name": "Ike Anigbogu",
+        "slug": "anigbik01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 48,
+        "team": "MIL",
+        "name": "Sindarius Thornwell",
+        "slug": "thornsi01",
+        "college": "South Carolina"
+      },
+      {
+        "pick": 49,
+        "team": "DEN",
+        "name": "Vlatko Čančar",
+        "slug": "cancavl01",
+        "college": ""
+      },
+      {
+        "pick": 50,
+        "team": "PHI",
+        "name": "Mathias Lessort",
+        "slug": "lessoma01",
+        "college": ""
+      },
+      {
+        "pick": 51,
+        "team": "DEN",
+        "name": "Monte Morris",
+        "slug": "morrimo01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 52,
+        "team": "NOP",
+        "name": "Edmond Sumner",
+        "slug": "sumneed01",
+        "college": "Xavier"
+      },
+      {
+        "pick": 53,
+        "team": "BOS",
+        "name": "Kadeem Allen",
+        "slug": "allenka01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 54,
+        "team": "PHX",
+        "name": "Alec Peters",
+        "slug": "peteral01",
+        "college": "Valparaiso"
+      },
+      {
+        "pick": 55,
+        "team": "UTA",
+        "name": "Nigel Williams-Goss",
+        "slug": "willini01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 56,
+        "team": "BOS",
+        "name": "Jabari Bird",
+        "slug": "birdja01",
+        "college": "California"
+      },
+      {
+        "pick": 57,
+        "team": "BKN",
+        "name": "Sasha Vezenkov",
+        "slug": "vezenal01",
+        "college": ""
+      },
+      {
+        "pick": 58,
+        "team": "NYK",
+        "name": "Ognjen Jaramaz",
+        "slug": "jaramog01",
+        "college": ""
+      },
+      {
+        "pick": 59,
+        "team": "SAS",
+        "name": "Jaron Blossomgame",
+        "slug": "blossja01",
+        "college": "Clemson"
+      },
+      {
+        "pick": 60,
+        "team": "ATL",
+        "name": "Alpha Kaba",
+        "slug": "kabaal01",
+        "college": ""
+      }
+    ],
+    "2018": [
+      {
+        "pick": 1,
+        "team": "PHX",
+        "name": "Deandre Ayton",
+        "slug": "aytonde01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 2,
+        "team": "SAC",
+        "name": "Marvin Bagley III",
+        "slug": "baglema01",
+        "college": "Duke"
+      },
+      {
+        "pick": 3,
+        "team": "ATL",
+        "name": "Luka Dončić",
+        "slug": "doncilu01",
+        "college": ""
+      },
+      {
+        "pick": 4,
+        "team": "MEM",
+        "name": "Jaren Jackson Jr.",
+        "slug": "jacksja02",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 5,
+        "team": "DAL",
+        "name": "Trae Young",
+        "slug": "youngtr01",
+        "college": "Oklahoma"
+      },
+      {
+        "pick": 6,
+        "team": "ORL",
+        "name": "Mo Bamba",
+        "slug": "bambamo01",
+        "college": "Texas"
+      },
+      {
+        "pick": 7,
+        "team": "CHI",
+        "name": "Wendell Carter Jr.",
+        "slug": "cartewe01",
+        "college": "Duke"
+      },
+      {
+        "pick": 8,
+        "team": "CLE",
+        "name": "Collin Sexton",
+        "slug": "sextoco01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 9,
+        "team": "NYK",
+        "name": "Kevin Knox",
+        "slug": "knoxke01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 10,
+        "team": "PHI",
+        "name": "Mikal Bridges",
+        "slug": "bridgmi01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 11,
+        "team": "CHA",
+        "name": "Shai Gilgeous-Alexander",
+        "slug": "gilgesh01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 12,
+        "team": "LAC",
+        "name": "Miles Bridges",
+        "slug": "bridgmi02",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 13,
+        "team": "LAC",
+        "name": "Jerome Robinson",
+        "slug": "robinje01",
+        "college": "Boston College"
+      },
+      {
+        "pick": 14,
+        "team": "DEN",
+        "name": "Michael Porter Jr.",
+        "slug": "portemi01",
+        "college": "Missouri"
+      },
+      {
+        "pick": 15,
+        "team": "WAS",
+        "name": "Troy Brown Jr.",
+        "slug": "browntr01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 16,
+        "team": "PHX",
+        "name": "Zhaire Smith",
+        "slug": "smithzh01",
+        "college": "Texas Tech"
+      },
+      {
+        "pick": 17,
+        "team": "MIL",
+        "name": "Donte DiVincenzo",
+        "slug": "divindo01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 18,
+        "team": "SAS",
+        "name": "Lonnie Walker IV",
+        "slug": "walkelo01",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 19,
+        "team": "ATL",
+        "name": "Kevin Huerter",
+        "slug": "huertke01",
+        "college": "Maryland"
+      },
+      {
+        "pick": 20,
+        "team": "MIN",
+        "name": "Josh Okogie",
+        "slug": "okogijo01",
+        "college": "Georgia Tech"
+      },
+      {
+        "pick": 21,
+        "team": "UTA",
+        "name": "Grayson Allen",
+        "slug": "allengr01",
+        "college": "Duke"
+      },
+      {
+        "pick": 22,
+        "team": "CHI",
+        "name": "Chandler Hutchison",
+        "slug": "hutchch01",
+        "college": "Boise State"
+      },
+      {
+        "pick": 23,
+        "team": "IND",
+        "name": "Aaron Holiday",
+        "slug": "holidaa01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 24,
+        "team": "POR",
+        "name": "Anfernee Simons",
+        "slug": "simonan01",
+        "college": ""
+      },
+      {
+        "pick": 25,
+        "team": "LAL",
+        "name": "Moritz Wagner",
+        "slug": "wagnemo01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 26,
+        "team": "PHI",
+        "name": "Landry Shamet",
+        "slug": "shamela01",
+        "college": "Wichita State"
+      },
+      {
+        "pick": 27,
+        "team": "BOS",
+        "name": "Robert Williams",
+        "slug": "williro04",
+        "college": "Texas A&M"
+      },
+      {
+        "pick": 28,
+        "team": "GSW",
+        "name": "Jacob Evans",
+        "slug": "evansja02",
+        "college": "Cincinnati"
+      },
+      {
+        "pick": 29,
+        "team": "BKN",
+        "name": "Džanan Musa",
+        "slug": "musadz01",
+        "college": ""
+      },
+      {
+        "pick": 30,
+        "team": "ATL",
+        "name": "Omari Spellman",
+        "slug": "spellom01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 31,
+        "team": "PHX",
+        "name": "Elie Okobo",
+        "slug": "okoboel01",
+        "college": ""
+      },
+      {
+        "pick": 32,
+        "team": "MEM",
+        "name": "Jevon Carter",
+        "slug": "carteje01",
+        "college": "West Virginia"
+      },
+      {
+        "pick": 33,
+        "team": "DAL",
+        "name": "Jalen Brunson",
+        "slug": "brunsja01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 34,
+        "team": "ATL",
+        "name": "Devonte' Graham",
+        "slug": "grahade01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 35,
+        "team": "ORL",
+        "name": "Melvin Frazier",
+        "slug": "frazime01",
+        "college": "Tulane"
+      },
+      {
+        "pick": 36,
+        "team": "NYK",
+        "name": "Mitchell Robinson",
+        "slug": "robinmi01",
+        "college": ""
+      },
+      {
+        "pick": 37,
+        "team": "SAC",
+        "name": "Gary Trent Jr.",
+        "slug": "trentga02",
+        "college": "Duke"
+      },
+      {
+        "pick": 38,
+        "team": "PHI",
+        "name": "Khyri Thomas",
+        "slug": "thomakh01",
+        "college": "Creighton"
+      },
+      {
+        "pick": 39,
+        "team": "PHI",
+        "name": "Isaac Bonga",
+        "slug": "bongais01",
+        "college": ""
+      },
+      {
+        "pick": 40,
+        "team": "BKN",
+        "name": "Rodions Kurucs",
+        "slug": "kurucro01",
+        "college": ""
+      },
+      {
+        "pick": 41,
+        "team": "ORL",
+        "name": "Jarred Vanderbilt",
+        "slug": "vandeja01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 42,
+        "team": "DET",
+        "name": "Bruce Brown",
+        "slug": "brownbr01",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 43,
+        "team": "DEN",
+        "name": "Justin Jackson",
+        "slug": "jacksju02",
+        "college": "Maryland"
+      },
+      {
+        "pick": 44,
+        "team": "WAS",
+        "name": "Issuf Sanon",
+        "slug": "sanonis01",
+        "college": ""
+      },
+      {
+        "pick": 45,
+        "team": "BKN",
+        "name": "Hamidou Diallo",
+        "slug": "diallha01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 46,
+        "team": "HOU",
+        "name": "De'Anthony Melton",
+        "slug": "meltode01",
+        "college": "USC"
+      },
+      {
+        "pick": 47,
+        "team": "LAL",
+        "name": "Svi Mykhailiuk",
+        "slug": "mykhasv01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 48,
+        "team": "MIN",
+        "name": "Keita Bates-Diop",
+        "slug": "bateske01",
+        "college": "Ohio State"
+      },
+      {
+        "pick": 49,
+        "team": "SAS",
+        "name": "Chimezie Metu",
+        "slug": "metuch01",
+        "college": "USC"
+      },
+      {
+        "pick": 50,
+        "team": "IND",
+        "name": "Alize Johnson",
+        "slug": "johnsal02",
+        "college": "Missouri State"
+      },
+      {
+        "pick": 51,
+        "team": "NOP",
+        "name": "Tony Carr",
+        "slug": "carrto01",
+        "college": "Penn State"
+      },
+      {
+        "pick": 52,
+        "team": "UTA",
+        "name": "Vince Edwards",
+        "slug": "edwarvi01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 53,
+        "team": "OKC",
+        "name": "Devon Hall",
+        "slug": "hallde01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 54,
+        "team": "DAL",
+        "name": "Shake Milton",
+        "slug": "miltosh01",
+        "college": "SMU"
+      },
+      {
+        "pick": 55,
+        "team": "CHA",
+        "name": "Arnoldas Kulboka",
+        "slug": "kulboar01",
+        "college": ""
+      },
+      {
+        "pick": 56,
+        "team": "PHI",
+        "name": "Ray Spalding",
+        "slug": "spaldra01",
+        "college": "Louisville"
+      },
+      {
+        "pick": 57,
+        "team": "OKC",
+        "name": "Kevin Hervey",
+        "slug": "herveke01",
+        "college": "UT Arlington"
+      },
+      {
+        "pick": 58,
+        "team": "DEN",
+        "name": "Thomas Welsh",
+        "slug": "welshth01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 59,
+        "team": "PHX",
+        "name": "George King",
+        "slug": "kingge03",
+        "college": "Colorado"
+      },
+      {
+        "pick": 60,
+        "team": "PHI",
+        "name": "Kostas Antetokounmpo",
+        "slug": "antetko01",
+        "college": "Dayton"
+      }
+    ],
+    "2019": [
+      {
+        "pick": 1,
+        "team": "NOP",
+        "name": "Zion Williamson",
+        "slug": "willizi01",
+        "college": "Duke"
+      },
+      {
+        "pick": 2,
+        "team": "MEM",
+        "name": "Ja Morant",
+        "slug": "moranja01",
+        "college": "Murray State"
+      },
+      {
+        "pick": 3,
+        "team": "NYK",
+        "name": "RJ Barrett",
+        "slug": "barrerj01",
+        "college": "Duke"
+      },
+      {
+        "pick": 4,
+        "team": "LAL",
+        "name": "De'Andre Hunter",
+        "slug": "huntede01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 5,
+        "team": "CLE",
+        "name": "Darius Garland",
+        "slug": "garlada01",
+        "college": "Vanderbilt"
+      },
+      {
+        "pick": 6,
+        "team": "PHX",
+        "name": "Jarrett Culver",
+        "slug": "culveja01",
+        "college": "Texas Tech"
+      },
+      {
+        "pick": 7,
+        "team": "CHI",
+        "name": "Coby White",
+        "slug": "whiteco01",
+        "college": "UNC"
+      },
+      {
+        "pick": 8,
+        "team": "ATL",
+        "name": "Jaxson Hayes",
+        "slug": "hayesja02",
+        "college": "Texas"
+      },
+      {
+        "pick": 9,
+        "team": "WAS",
+        "name": "Rui Hachimura",
+        "slug": "hachiru01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 10,
+        "team": "ATL",
+        "name": "Cam Reddish",
+        "slug": "reddica01",
+        "college": "Duke"
+      },
+      {
+        "pick": 11,
+        "team": "MIN",
+        "name": "Cameron Johnson",
+        "slug": "johnsca02",
+        "college": "UNC"
+      },
+      {
+        "pick": 12,
+        "team": "CHA",
+        "name": "P.J. Washington",
+        "slug": "washipj01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 13,
+        "team": "MIA",
+        "name": "Tyler Herro",
+        "slug": "herroty01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 14,
+        "team": "BOS",
+        "name": "Romeo Langford",
+        "slug": "langfro01",
+        "college": "Indiana"
+      },
+      {
+        "pick": 15,
+        "team": "DET",
+        "name": "Sekou Doumbouya",
+        "slug": "doumbse01",
+        "college": ""
+      },
+      {
+        "pick": 16,
+        "team": "ORL",
+        "name": "Chuma Okeke",
+        "slug": "okekech01",
+        "college": "Auburn"
+      },
+      {
+        "pick": 17,
+        "team": "BKN",
+        "name": "Nickeil Alexander-Walker",
+        "slug": "alexani01",
+        "college": "Virginia Tech"
+      },
+      {
+        "pick": 18,
+        "team": "IND",
+        "name": "Goga Bitadze",
+        "slug": "bitadgo01",
+        "college": ""
+      },
+      {
+        "pick": 19,
+        "team": "SAS",
+        "name": "Luka Šamanić",
+        "slug": "samanlu01",
+        "college": ""
+      },
+      {
+        "pick": 20,
+        "team": "BOS",
+        "name": "Matisse Thybulle",
+        "slug": "thybuma01",
+        "college": "Washington"
+      },
+      {
+        "pick": 21,
+        "team": "OKC",
+        "name": "Brandon Clarke",
+        "slug": "clarkbr01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 22,
+        "team": "BOS",
+        "name": "Grant Williams",
+        "slug": "willigr01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 23,
+        "team": "UTA",
+        "name": "Darius Bazley",
+        "slug": "bazleda01",
+        "college": ""
+      },
+      {
+        "pick": 24,
+        "team": "PHI",
+        "name": "Ty Jerome",
+        "slug": "jeromty01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 25,
+        "team": "POR",
+        "name": "Nassir Little",
+        "slug": "littlna01",
+        "college": "UNC"
+      },
+      {
+        "pick": 26,
+        "team": "CLE",
+        "name": "Dylan Windler",
+        "slug": "windldy01",
+        "college": "Belmont"
+      },
+      {
+        "pick": 27,
+        "team": "BKN",
+        "name": "Mfiondu Kabengele",
+        "slug": "kabenmf01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 28,
+        "team": "GSW",
+        "name": "Jordan Poole",
+        "slug": "poolejo01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 29,
+        "team": "SAS",
+        "name": "Keldon Johnson",
+        "slug": "johnske04",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 30,
+        "team": "MIL",
+        "name": "Kevin Porter Jr.",
+        "slug": "porteke02",
+        "college": "USC"
+      },
+      {
+        "pick": 31,
+        "team": "BKN",
+        "name": "Nic Claxton",
+        "slug": "claxtni01",
+        "college": "Georgia"
+      },
+      {
+        "pick": 32,
+        "team": "PHX",
+        "name": "KZ Okpala",
+        "slug": "okpalkz01",
+        "college": "Stanford"
+      },
+      {
+        "pick": 33,
+        "team": "PHI",
+        "name": "Carsen Edwards",
+        "slug": "edwarca01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 34,
+        "team": "PHI",
+        "name": "Bruno Fernando",
+        "slug": "fernabr01",
+        "college": "Maryland"
+      },
+      {
+        "pick": 35,
+        "team": "ATL",
+        "name": "Didi Louzada",
+        "slug": "louzama01",
+        "college": ""
+      },
+      {
+        "pick": 36,
+        "team": "CHA",
+        "name": "Cody Martin",
+        "slug": "martico01",
+        "college": "Nevada"
+      },
+      {
+        "pick": 37,
+        "team": "DAL",
+        "name": "Deividas Sirvydis",
+        "slug": "sirvyde01",
+        "college": ""
+      },
+      {
+        "pick": 38,
+        "team": "CHI",
+        "name": "Daniel Gafford",
+        "slug": "gaffoda01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 39,
+        "team": "NOP",
+        "name": "Alen Smailagić",
+        "slug": "smailal01",
+        "college": ""
+      },
+      {
+        "pick": 40,
+        "team": "SAC",
+        "name": "Justin James",
+        "slug": "jamesju01",
+        "college": "Wyoming"
+      },
+      {
+        "pick": 41,
+        "team": "GSW",
+        "name": "Eric Paschall",
+        "slug": "pascher01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 42,
+        "team": "PHI",
+        "name": "Admiral Schofield",
+        "slug": "schofad01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 43,
+        "team": "MIN",
+        "name": "Jaylen Nowell",
+        "slug": "nowelja01",
+        "college": "Washington"
+      },
+      {
+        "pick": 44,
+        "team": "MIA",
+        "name": "Bol Bol",
+        "slug": "bolbo01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 45,
+        "team": "DET",
+        "name": "Isaiah Roby",
+        "slug": "robyis01",
+        "college": "Nebraska"
+      },
+      {
+        "pick": 46,
+        "team": "ORL",
+        "name": "Talen Horton-Tucker",
+        "slug": "hortota01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 47,
+        "team": "SAC",
+        "name": "Ignas Brazdeikis",
+        "slug": "brazdig01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 48,
+        "team": "LAC",
+        "name": "Terance Mann",
+        "slug": "mannte01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 49,
+        "team": "SAS",
+        "name": "Quinndary Weatherspoon",
+        "slug": "weathqu01",
+        "college": "Mississippi State"
+      },
+      {
+        "pick": 50,
+        "team": "IND",
+        "name": "Jarrell Brantley",
+        "slug": "brantja01",
+        "college": "College of Charleston"
+      },
+      {
+        "pick": 51,
+        "team": "BOS",
+        "name": "Tremont Waters",
+        "slug": "watertr01",
+        "college": "LSU"
+      },
+      {
+        "pick": 52,
+        "team": "CHA",
+        "name": "Jalen McDaniels",
+        "slug": "mcdanja01",
+        "college": "San Diego State"
+      },
+      {
+        "pick": 53,
+        "team": "UTA",
+        "name": "Justin Wright-Foreman",
+        "slug": "wrighju02",
+        "college": "Hofstra"
+      },
+      {
+        "pick": 54,
+        "team": "PHI",
+        "name": "Marial Shayok",
+        "slug": "shayoma01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 55,
+        "team": "NYK",
+        "name": "Kyle Guy",
+        "slug": "guyky01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 56,
+        "team": "LAC",
+        "name": "Jaylen Hands",
+        "slug": "handsja01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 57,
+        "team": "NOP",
+        "name": "Jordan Bone",
+        "slug": "bonejo01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 58,
+        "team": "GSW",
+        "name": "Miye Oni",
+        "slug": "onimi01",
+        "college": "Yale"
+      },
+      {
+        "pick": 59,
+        "team": "TOR",
+        "name": "Dewan Hernandez",
+        "slug": "hernade01",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 60,
+        "team": "SAC",
+        "name": "Vanja Marinković",
+        "slug": "marinva01",
+        "college": ""
+      }
+    ],
+    "2020": [
+      {
+        "pick": 1,
+        "team": "MIN",
+        "name": "Anthony Edwards",
+        "slug": "edwaran01",
+        "college": "Georgia"
+      },
+      {
+        "pick": 2,
+        "team": "GSW",
+        "name": "James Wiseman",
+        "slug": "wisemja01",
+        "college": "Memphis"
+      },
+      {
+        "pick": 3,
+        "team": "CHA",
+        "name": "LaMelo Ball",
+        "slug": "ballla01",
+        "college": ""
+      },
+      {
+        "pick": 4,
+        "team": "CHI",
+        "name": "Patrick Williams",
+        "slug": "willipa01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 5,
+        "team": "CLE",
+        "name": "Isaac Okoro",
+        "slug": "okorois01",
+        "college": "Auburn"
+      },
+      {
+        "pick": 6,
+        "team": "ATL",
+        "name": "Onyeka Okongwu",
+        "slug": "okongon01",
+        "college": "USC"
+      },
+      {
+        "pick": 7,
+        "team": "DET",
+        "name": "Killian Hayes",
+        "slug": "hayeski01",
+        "college": ""
+      },
+      {
+        "pick": 8,
+        "team": "NYK",
+        "name": "Obi Toppin",
+        "slug": "toppiob01",
+        "college": "Dayton"
+      },
+      {
+        "pick": 9,
+        "team": "WAS",
+        "name": "Deni Avdija",
+        "slug": "avdijde01",
+        "college": ""
+      },
+      {
+        "pick": 10,
+        "team": "PHX",
+        "name": "Jalen Smith",
+        "slug": "smithja04",
+        "college": "Maryland"
+      },
+      {
+        "pick": 11,
+        "team": "SAS",
+        "name": "Devin Vassell",
+        "slug": "vassede01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 12,
+        "team": "SAC",
+        "name": "Tyrese Haliburton",
+        "slug": "halibty01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 13,
+        "team": "NOP",
+        "name": "Kira Lewis Jr.",
+        "slug": "lewiski01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 14,
+        "team": "BOS",
+        "name": "Aaron Nesmith",
+        "slug": "nesmiaa01",
+        "college": "Vanderbilt"
+      },
+      {
+        "pick": 15,
+        "team": "ORL",
+        "name": "Cole Anthony",
+        "slug": "anthoco01",
+        "college": "UNC"
+      },
+      {
+        "pick": 16,
+        "team": "POR",
+        "name": "Isaiah Stewart",
+        "slug": "stewais01",
+        "college": "Washington"
+      },
+      {
+        "pick": 17,
+        "team": "MIN",
+        "name": "Aleksej Pokusevski",
+        "slug": "pokusal01",
+        "college": ""
+      },
+      {
+        "pick": 18,
+        "team": "DAL",
+        "name": "Josh Green",
+        "slug": "greenjo02",
+        "college": "Arizona"
+      },
+      {
+        "pick": 19,
+        "team": "BKN",
+        "name": "Saddiq Bey",
+        "slug": "beysa01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 20,
+        "team": "MIA",
+        "name": "Precious Achiuwa",
+        "slug": "achiupr01",
+        "college": "Memphis"
+      },
+      {
+        "pick": 21,
+        "team": "PHI",
+        "name": "Tyrese Maxey",
+        "slug": "maxeyty01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 22,
+        "team": "DEN",
+        "name": "Zeke Nnaji",
+        "slug": "nnajize01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 23,
+        "team": "NYK",
+        "name": "Leandro Bolmaro",
+        "slug": "bolmale01",
+        "college": ""
+      },
+      {
+        "pick": 24,
+        "team": "MIL",
+        "name": "R.J. Hampton",
+        "slug": "hamptrj01",
+        "college": ""
+      },
+      {
+        "pick": 25,
+        "team": "OKC",
+        "name": "Immanuel Quickley",
+        "slug": "quickim01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 26,
+        "team": "BOS",
+        "name": "Payton Pritchard",
+        "slug": "pritcpa01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 27,
+        "team": "UTA",
+        "name": "Udoka Azubuike",
+        "slug": "azubuud01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 28,
+        "team": "LAL",
+        "name": "Jaden McDaniels",
+        "slug": "mcdanja02",
+        "college": "Washington"
+      },
+      {
+        "pick": 29,
+        "team": "TOR",
+        "name": "Malachi Flynn",
+        "slug": "flynnma01",
+        "college": "San Diego State"
+      },
+      {
+        "pick": 30,
+        "team": "BOS",
+        "name": "Desmond Bane",
+        "slug": "banede01",
+        "college": "TCU"
+      },
+      {
+        "pick": 31,
+        "team": "DAL",
+        "name": "Tyrell Terry",
+        "slug": "terryty01",
+        "college": "Stanford"
+      },
+      {
+        "pick": 32,
+        "team": "CHA",
+        "name": "Vernon Carey Jr.",
+        "slug": "careyve01",
+        "college": "Duke"
+      },
+      {
+        "pick": 33,
+        "team": "MIN",
+        "name": "Daniel Oturu",
+        "slug": "oturuda01",
+        "college": "Minnesota"
+      },
+      {
+        "pick": 34,
+        "team": "PHI",
+        "name": "Théo Maledon",
+        "slug": "maledth01",
+        "college": ""
+      },
+      {
+        "pick": 35,
+        "team": "SAC",
+        "name": "Xavier Tillman Sr.",
+        "slug": "tillmxa01",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 36,
+        "team": "PHI",
+        "name": "Tyler Bey",
+        "slug": "beyty01",
+        "college": "Colorado"
+      },
+      {
+        "pick": 37,
+        "team": "WAS",
+        "name": "Vít Krejčí",
+        "slug": "krejcvi01",
+        "college": ""
+      },
+      {
+        "pick": 38,
+        "team": "UTA",
+        "name": "Saben Lee",
+        "slug": "leesa01",
+        "college": "Vanderbilt"
+      },
+      {
+        "pick": 39,
+        "team": "NOP",
+        "name": "Elijah Hughes",
+        "slug": "hugheel01",
+        "college": "Syracuse"
+      },
+      {
+        "pick": 40,
+        "team": "MEM",
+        "name": "Robert Woodard II",
+        "slug": "woodaro01",
+        "college": "Mississippi State"
+      },
+      {
+        "pick": 41,
+        "team": "SAS",
+        "name": "Tre Jones",
+        "slug": "jonestr01",
+        "college": "Duke"
+      },
+      {
+        "pick": 42,
+        "team": "NOP",
+        "name": "Nick Richards",
+        "slug": "richani01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 43,
+        "team": "SAC",
+        "name": "Jahmi'us Ramsey",
+        "slug": "ramseja01",
+        "college": "Texas Tech"
+      },
+      {
+        "pick": 44,
+        "team": "CHI",
+        "name": "Marko Simonovic",
+        "slug": "simonma01",
+        "college": ""
+      },
+      {
+        "pick": 45,
+        "team": "MIL",
+        "name": "Jordan Nwora",
+        "slug": "nworajo01",
+        "college": "Louisville"
+      },
+      {
+        "pick": 46,
+        "team": "POR",
+        "name": "CJ Elleby",
+        "slug": "ellebcj01",
+        "college": "Washington State"
+      },
+      {
+        "pick": 47,
+        "team": "BOS",
+        "name": "Yam Madar",
+        "slug": "madarya01",
+        "college": ""
+      },
+      {
+        "pick": 48,
+        "team": "GSW",
+        "name": "Nico Mannion",
+        "slug": "mannini01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 49,
+        "team": "PHI",
+        "name": "Isaiah Joe",
+        "slug": "joeis01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 50,
+        "team": "ATL",
+        "name": "Skylar Mays",
+        "slug": "mayssk01",
+        "college": "LSU"
+      },
+      {
+        "pick": 51,
+        "team": "GSW",
+        "name": "Justinian Jessup",
+        "slug": "jessuju01",
+        "college": "Boise State"
+      },
+      {
+        "pick": 52,
+        "team": "SAC",
+        "name": "KJ Martin",
+        "slug": "martike04",
+        "college": ""
+      },
+      {
+        "pick": 53,
+        "team": "OKC",
+        "name": "Cassius Winston",
+        "slug": "winstca01",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 54,
+        "team": "IND",
+        "name": "Cassius Stanley",
+        "slug": "stanlca01",
+        "college": "Duke"
+      },
+      {
+        "pick": 55,
+        "team": "BKN",
+        "name": "Jay Scrubb",
+        "slug": "scrubja01",
+        "college": "John A. Logan College"
+      },
+      {
+        "pick": 56,
+        "team": "CHA",
+        "name": "Grant Riller",
+        "slug": "rillegr01",
+        "college": "College of Charleston"
+      },
+      {
+        "pick": 57,
+        "team": "LAC",
+        "name": "Reggie Perry",
+        "slug": "perryre01",
+        "college": "Mississippi State"
+      },
+      {
+        "pick": 58,
+        "team": "PHI",
+        "name": "Paul Reed",
+        "slug": "reedpa01",
+        "college": "DePaul"
+      },
+      {
+        "pick": 59,
+        "team": "TOR",
+        "name": "Jalen Harris",
+        "slug": "harrija01",
+        "college": "Nevada"
+      },
+      {
+        "pick": 60,
+        "team": "NOP",
+        "name": "Sam Merrill",
+        "slug": "merrisa01",
+        "college": "Utah State University"
+      }
+    ],
+    "2021": [
+      {
+        "pick": 1,
+        "team": "DET",
+        "name": "Cade Cunningham",
+        "slug": "cunnica01",
+        "college": "Oklahoma State"
+      },
+      {
+        "pick": 2,
+        "team": "HOU",
+        "name": "Jalen Green",
+        "slug": "greenja05",
+        "college": ""
+      },
+      {
+        "pick": 3,
+        "team": "CLE",
+        "name": "Evan Mobley",
+        "slug": "mobleev01",
+        "college": "USC"
+      },
+      {
+        "pick": 4,
+        "team": "TOR",
+        "name": "Scottie Barnes",
+        "slug": "barnesc01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 5,
+        "team": "ORL",
+        "name": "Jalen Suggs",
+        "slug": "suggsja01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 6,
+        "team": "OKC",
+        "name": "Josh Giddey",
+        "slug": "giddejo01",
+        "college": ""
+      },
+      {
+        "pick": 7,
+        "team": "GSW",
+        "name": "Jonathan Kuminga",
+        "slug": "kuminjo01",
+        "college": ""
+      },
+      {
+        "pick": 8,
+        "team": "ORL",
+        "name": "Franz Wagner",
+        "slug": "wagnefr01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 9,
+        "team": "SAC",
+        "name": "Davion Mitchell",
+        "slug": "mitchda01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 10,
+        "team": "NOP",
+        "name": "Ziaire Williams",
+        "slug": "willizi02",
+        "college": "Stanford"
+      },
+      {
+        "pick": 11,
+        "team": "CHA",
+        "name": "James Bouknight",
+        "slug": "bouknja01",
+        "college": "UConn"
+      },
+      {
+        "pick": 12,
+        "team": "SAS",
+        "name": "Joshua Primo",
+        "slug": "primojo01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 13,
+        "team": "IND",
+        "name": "Chris Duarte",
+        "slug": "duartch01",
+        "college": "Oregon"
+      },
+      {
+        "pick": 14,
+        "team": "GSW",
+        "name": "Moses Moody",
+        "slug": "moodymo01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 15,
+        "team": "WAS",
+        "name": "Corey Kispert",
+        "slug": "kispeco01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 16,
+        "team": "OKC",
+        "name": "Alperen Şengün",
+        "slug": "sengual01",
+        "college": ""
+      },
+      {
+        "pick": 17,
+        "team": "MEM",
+        "name": "Trey Murphy III",
+        "slug": "murphtr02",
+        "college": "Virginia"
+      },
+      {
+        "pick": 18,
+        "team": "OKC",
+        "name": "Tre Mann",
+        "slug": "manntr01",
+        "college": "Florida"
+      },
+      {
+        "pick": 19,
+        "team": "NYK",
+        "name": "Kai Jones",
+        "slug": "joneska01",
+        "college": "Texas"
+      },
+      {
+        "pick": 20,
+        "team": "ATL",
+        "name": "Jalen Johnson",
+        "slug": "johnsja05",
+        "college": "Duke"
+      },
+      {
+        "pick": 21,
+        "team": "NYK",
+        "name": "Keon Johnson",
+        "slug": "johnske07",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 22,
+        "team": "LAL",
+        "name": "Isaiah Jackson",
+        "slug": "jacksis01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 23,
+        "team": "HOU",
+        "name": "Usman Garuba",
+        "slug": "garubus01",
+        "college": ""
+      },
+      {
+        "pick": 24,
+        "team": "HOU",
+        "name": "Josh Christopher",
+        "slug": "chrisjo01",
+        "college": "Arizona State"
+      },
+      {
+        "pick": 25,
+        "team": "LAC",
+        "name": "Quentin Grimes",
+        "slug": "grimequ01",
+        "college": "Houston"
+      },
+      {
+        "pick": 26,
+        "team": "DEN",
+        "name": "Bones Hyland",
+        "slug": "hylanbo01",
+        "college": "VCU"
+      },
+      {
+        "pick": 27,
+        "team": "BKN",
+        "name": "Cam Thomas",
+        "slug": "thomaca02",
+        "college": "LSU"
+      },
+      {
+        "pick": 28,
+        "team": "PHI",
+        "name": "Jaden Springer",
+        "slug": "sprinja01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 29,
+        "team": "PHX",
+        "name": "Day'Ron Sharpe",
+        "slug": "sharpda01",
+        "college": "UNC"
+      },
+      {
+        "pick": 30,
+        "team": "UTA",
+        "name": "Santi Aldama",
+        "slug": "aldamsa01",
+        "college": "Loyola (MD)"
+      },
+      {
+        "pick": 31,
+        "team": "MIL",
+        "name": "Isaiah Todd",
+        "slug": "toddis01",
+        "college": ""
+      },
+      {
+        "pick": 32,
+        "team": "NYK",
+        "name": "Jeremiah Robinson-Earl",
+        "slug": "robinje02",
+        "college": "Villanova"
+      },
+      {
+        "pick": 33,
+        "team": "ORL",
+        "name": "Jason Preston",
+        "slug": "prestja01",
+        "college": "Ohio University"
+      },
+      {
+        "pick": 34,
+        "team": "OKC",
+        "name": "Rokas Jokubaitis",
+        "slug": "jokubro01",
+        "college": ""
+      },
+      {
+        "pick": 35,
+        "team": "NOP",
+        "name": "Herbert Jones",
+        "slug": "joneshe01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 36,
+        "team": "OKC",
+        "name": "Miles McBride",
+        "slug": "mcbrimi01",
+        "college": "West Virginia"
+      },
+      {
+        "pick": 37,
+        "team": "DET",
+        "name": "JT Thor",
+        "slug": "thorjt01",
+        "college": "Auburn"
+      },
+      {
+        "pick": 38,
+        "team": "CHI",
+        "name": "Ayo Dosunmu",
+        "slug": "dosunay01",
+        "college": "Illinois"
+      },
+      {
+        "pick": 39,
+        "team": "SAC",
+        "name": "Neemias Queta",
+        "slug": "quetane01",
+        "college": "Utah State University"
+      },
+      {
+        "pick": 40,
+        "team": "NOP",
+        "name": "Jared Butler",
+        "slug": "butleja02",
+        "college": "Baylor"
+      },
+      {
+        "pick": 41,
+        "team": "SAS",
+        "name": "Joe Wieskamp",
+        "slug": "wieskjo01",
+        "college": "Iowa"
+      },
+      {
+        "pick": 42,
+        "team": "DET",
+        "name": "Isaiah Livers",
+        "slug": "liveris01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 43,
+        "team": "NOP",
+        "name": "Greg Brown III",
+        "slug": "browngr01",
+        "college": "Texas"
+      },
+      {
+        "pick": 44,
+        "team": "BKN",
+        "name": "Kessler Edwards",
+        "slug": "edwarke02",
+        "college": "Pepperdine"
+      },
+      {
+        "pick": 45,
+        "team": "BOS",
+        "name": "Juhann Begarin",
+        "slug": "begarju01",
+        "college": ""
+      },
+      {
+        "pick": 46,
+        "team": "TOR",
+        "name": "Dalano Banton",
+        "slug": "bantoda01",
+        "college": "Nebraska"
+      },
+      {
+        "pick": 47,
+        "team": "TOR",
+        "name": "David Johnson",
+        "slug": "johnsda08",
+        "college": "Louisville"
+      },
+      {
+        "pick": 48,
+        "team": "ATL",
+        "name": "Sharife Cooper",
+        "slug": "coopesh01",
+        "college": "Auburn"
+      },
+      {
+        "pick": 49,
+        "team": "BKN",
+        "name": "Marcus Zegarowski",
+        "slug": "zegarma01",
+        "college": "Creighton"
+      },
+      {
+        "pick": 50,
+        "team": "PHI",
+        "name": "Filip Petrušev",
+        "slug": "petrufi01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 51,
+        "team": "MEM",
+        "name": "Brandon Boston Jr.",
+        "slug": "bostobr01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 52,
+        "team": "DET",
+        "name": "Luka Garza",
+        "slug": "garzalu01",
+        "college": "Iowa"
+      },
+      {
+        "pick": 53,
+        "team": "PHI",
+        "name": "Charles Bassey",
+        "slug": "bassech01",
+        "college": "Western Kentucky"
+      },
+      {
+        "pick": 54,
+        "team": "IND",
+        "name": "Sandro Mamukelashvili",
+        "slug": "mamuksa01",
+        "college": "Seton Hall"
+      },
+      {
+        "pick": 55,
+        "team": "OKC",
+        "name": "Aaron Wiggins",
+        "slug": "wiggiaa01",
+        "college": "Maryland"
+      },
+      {
+        "pick": 56,
+        "team": "CHA",
+        "name": "Scottie Lewis",
+        "slug": "lewissc01",
+        "college": "Florida"
+      },
+      {
+        "pick": 57,
+        "team": "CHA",
+        "name": "Balša Koprivica",
+        "slug": "kopriba01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 58,
+        "team": "NYK",
+        "name": "Jericho Sims",
+        "slug": "simsje01",
+        "college": "Texas"
+      },
+      {
+        "pick": 59,
+        "team": "BKN",
+        "name": "RaiQuan Gray",
+        "slug": "grayra01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 60,
+        "team": "IND",
+        "name": "Georgios Kalaitzakis",
+        "slug": "kalaige01",
+        "college": ""
+      }
+    ],
+    "2022": [
+      {
+        "pick": 1,
+        "team": "ORL",
+        "name": "Paolo Banchero",
+        "slug": "banchpa01",
+        "college": "Duke"
+      },
+      {
+        "pick": 2,
+        "team": "OKC",
+        "name": "Chet Holmgren",
+        "slug": "holmgch01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 3,
+        "team": "HOU",
+        "name": "Jabari Smith Jr.",
+        "slug": "smithja05",
+        "college": "Auburn"
+      },
+      {
+        "pick": 4,
+        "team": "SAC",
+        "name": "Keegan Murray",
+        "slug": "murrake02",
+        "college": "Iowa"
+      },
+      {
+        "pick": 5,
+        "team": "DET",
+        "name": "Jaden Ivey",
+        "slug": "iveyja01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 6,
+        "team": "IND",
+        "name": "Bennedict Mathurin",
+        "slug": "mathube01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 7,
+        "team": "POR",
+        "name": "Shaedon Sharpe",
+        "slug": "sharpsh01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 8,
+        "team": "NOP",
+        "name": "Dyson Daniels",
+        "slug": "daniedy01",
+        "college": ""
+      },
+      {
+        "pick": 9,
+        "team": "SAS",
+        "name": "Jeremy Sochan",
+        "slug": "sochaje01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 10,
+        "team": "WAS",
+        "name": "Johnny Davis",
+        "slug": "davisjo06",
+        "college": "Wisconsin"
+      },
+      {
+        "pick": 11,
+        "team": "NYK",
+        "name": "Ousmane Dieng",
+        "slug": "diengou01",
+        "college": ""
+      },
+      {
+        "pick": 12,
+        "team": "OKC",
+        "name": "Jalen Williams",
+        "slug": "willija06",
+        "college": "Santa Clara"
+      },
+      {
+        "pick": 13,
+        "team": "CHA",
+        "name": "Jalen Duren",
+        "slug": "durenja01",
+        "college": "Memphis"
+      },
+      {
+        "pick": 14,
+        "team": "CLE",
+        "name": "Ochai Agbaji",
+        "slug": "agbajoc01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 15,
+        "team": "CHA",
+        "name": "Mark Williams",
+        "slug": "willima07",
+        "college": "Duke"
+      },
+      {
+        "pick": 16,
+        "team": "ATL",
+        "name": "AJ Griffin",
+        "slug": "griffaj01",
+        "college": "Duke"
+      },
+      {
+        "pick": 17,
+        "team": "HOU",
+        "name": "Tari Eason",
+        "slug": "easonta01",
+        "college": "LSU"
+      },
+      {
+        "pick": 18,
+        "team": "CHI",
+        "name": "Dalen Terry",
+        "slug": "terryda01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 19,
+        "team": "MIN",
+        "name": "Jake LaRavia",
+        "slug": "laravja01",
+        "college": "Wake Forest"
+      },
+      {
+        "pick": 20,
+        "team": "SAS",
+        "name": "Malaki Branham",
+        "slug": "branhma01",
+        "college": "Ohio State"
+      },
+      {
+        "pick": 21,
+        "team": "DEN",
+        "name": "Christian Braun",
+        "slug": "braunch01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 22,
+        "team": "MEM",
+        "name": "Walker Kessler",
+        "slug": "kesslwa01",
+        "college": "Auburn"
+      },
+      {
+        "pick": 23,
+        "team": "PHI",
+        "name": "David Roddy",
+        "slug": "roddyda01",
+        "college": "Colorado State"
+      },
+      {
+        "pick": 24,
+        "team": "MIL",
+        "name": "MarJon Beauchamp",
+        "slug": "beaucma01",
+        "college": ""
+      },
+      {
+        "pick": 25,
+        "team": "SAS",
+        "name": "Blake Wesley",
+        "slug": "weslebl01",
+        "college": "Notre Dame"
+      },
+      {
+        "pick": 26,
+        "team": "DAL",
+        "name": "Wendell Moore Jr.",
+        "slug": "moorewe01",
+        "college": "Duke"
+      },
+      {
+        "pick": 27,
+        "team": "MIA",
+        "name": "Nikola Jović",
+        "slug": "jovicni01",
+        "college": ""
+      },
+      {
+        "pick": 28,
+        "team": "GSW",
+        "name": "Patrick Baldwin Jr.",
+        "slug": "baldwpa01",
+        "college": "UW-Milwaukee"
+      },
+      {
+        "pick": 29,
+        "team": "MEM",
+        "name": "TyTy Washington Jr.",
+        "slug": "washity02",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 30,
+        "team": "OKC",
+        "name": "Peyton Watson",
+        "slug": "watsope01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 31,
+        "team": "IND",
+        "name": "Andrew Nembhard",
+        "slug": "nembhan01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 32,
+        "team": "ORL",
+        "name": "Caleb Houstan",
+        "slug": "houstca01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 33,
+        "team": "TOR",
+        "name": "Christian Koloko",
+        "slug": "kolokch01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 34,
+        "team": "OKC",
+        "name": "Jaylin Williams",
+        "slug": "willija07",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 35,
+        "team": "LAL",
+        "name": "Max Christie",
+        "slug": "chrisma02",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 36,
+        "team": "POR",
+        "name": "Gabriele Procida",
+        "slug": "prociga01",
+        "college": ""
+      },
+      {
+        "pick": 37,
+        "team": "SAC",
+        "name": "Jaden Hardy",
+        "slug": "hardyja02",
+        "college": ""
+      },
+      {
+        "pick": 38,
+        "team": "SAS",
+        "name": "Kennedy Chandler",
+        "slug": "chandke01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 39,
+        "team": "CLE",
+        "name": "Khalifa Diop",
+        "slug": "diopkh01",
+        "college": ""
+      },
+      {
+        "pick": 40,
+        "team": "MIN",
+        "name": "Bryce McGowens",
+        "slug": "mcgowbr01",
+        "college": "Nebraska"
+      },
+      {
+        "pick": 41,
+        "team": "NOP",
+        "name": "E.J. Liddell",
+        "slug": "liddeej01",
+        "college": "Ohio State"
+      },
+      {
+        "pick": 42,
+        "team": "NYK",
+        "name": "Trevor Keels",
+        "slug": "keelstr01",
+        "college": "Duke"
+      },
+      {
+        "pick": 43,
+        "team": "LAC",
+        "name": "Moussa Diabaté",
+        "slug": "diabamo01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 44,
+        "team": "ATL",
+        "name": "Ryan Rollins",
+        "slug": "rolliry01",
+        "college": "Toledo"
+      },
+      {
+        "pick": 45,
+        "team": "CHA",
+        "name": "Josh Minott",
+        "slug": "minotjo01",
+        "college": "Memphis"
+      },
+      {
+        "pick": 46,
+        "team": "DET",
+        "name": "Ismael Kamagate",
+        "slug": "kamagis01",
+        "college": ""
+      },
+      {
+        "pick": 47,
+        "team": "MEM",
+        "name": "Vince Williams Jr.",
+        "slug": "willivi01",
+        "college": "VCU"
+      },
+      {
+        "pick": 48,
+        "team": "MIN",
+        "name": "Kendall Brown",
+        "slug": "brownke03",
+        "college": "Baylor"
+      },
+      {
+        "pick": 49,
+        "team": "CLE",
+        "name": "Isaiah Mobley",
+        "slug": "mobleis01",
+        "college": "USC"
+      },
+      {
+        "pick": 50,
+        "team": "MIN",
+        "name": "Matteo Spagnolo",
+        "slug": "spagnma01",
+        "college": ""
+      },
+      {
+        "pick": 51,
+        "team": "GSW",
+        "name": "Tyrese Martin",
+        "slug": "martity01",
+        "college": "UConn"
+      },
+      {
+        "pick": 52,
+        "team": "NOP",
+        "name": "Karlo Matković",
+        "slug": "matkoka01",
+        "college": ""
+      },
+      {
+        "pick": 53,
+        "team": "BOS",
+        "name": "JD Davison",
+        "slug": "davisjd01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 54,
+        "team": "WAS",
+        "name": "Yannick Nzosa",
+        "slug": "nzosaya01",
+        "college": ""
+      },
+      {
+        "pick": 55,
+        "team": "GSW",
+        "name": "Gui Santos",
+        "slug": "santogu01",
+        "college": ""
+      },
+      {
+        "pick": 56,
+        "team": "CLE",
+        "name": "Luke Travers",
+        "slug": "travelu01",
+        "college": ""
+      },
+      {
+        "pick": 57,
+        "team": "POR",
+        "name": "Jabari Walker",
+        "slug": "walkeja01",
+        "college": "Colorado"
+      },
+      {
+        "pick": 58,
+        "team": "IND",
+        "name": "Hugo Besson",
+        "slug": "bessohu01",
+        "college": ""
+      }
+    ],
+    "2023": [
+      {
+        "pick": 1,
+        "team": "SAS",
+        "name": "Victor Wembanyama",
+        "slug": "wembavi01",
+        "college": ""
+      },
+      {
+        "pick": 2,
+        "team": "CHA",
+        "name": "Brandon Miller",
+        "slug": "millebr02",
+        "college": "Alabama"
+      },
+      {
+        "pick": 3,
+        "team": "POR",
+        "name": "Scoot Henderson",
+        "slug": "hendesc01",
+        "college": ""
+      },
+      {
+        "pick": 4,
+        "team": "HOU",
+        "name": "Amen Thompson",
+        "slug": "thompam01",
+        "college": ""
+      },
+      {
+        "pick": 5,
+        "team": "DET",
+        "name": "Ausar Thompson",
+        "slug": "thompau01",
+        "college": ""
+      },
+      {
+        "pick": 6,
+        "team": "ORL",
+        "name": "Anthony Black",
+        "slug": "blackan01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 7,
+        "team": "IND",
+        "name": "Bilal Coulibaly",
+        "slug": "coulibi01",
+        "college": ""
+      },
+      {
+        "pick": 8,
+        "team": "WAS",
+        "name": "Jarace Walker",
+        "slug": "walkeja02",
+        "college": "Houston"
+      },
+      {
+        "pick": 9,
+        "team": "UTA",
+        "name": "Taylor Hendricks",
+        "slug": "hendrta01",
+        "college": "Central Florida"
+      },
+      {
+        "pick": 10,
+        "team": "DAL",
+        "name": "Cason Wallace",
+        "slug": "wallaca01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 11,
+        "team": "ORL",
+        "name": "Jett Howard",
+        "slug": "howarje01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 12,
+        "team": "OKC",
+        "name": "Dereck Lively II",
+        "slug": "livelde01",
+        "college": "Duke"
+      },
+      {
+        "pick": 13,
+        "team": "TOR",
+        "name": "Gradey Dick",
+        "slug": "dickgr01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 14,
+        "team": "NOP",
+        "name": "Jordan Hawkins",
+        "slug": "hawkijo01",
+        "college": "UConn"
+      },
+      {
+        "pick": 15,
+        "team": "ATL",
+        "name": "Kobe Bufkin",
+        "slug": "bufkiko01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 16,
+        "team": "UTA",
+        "name": "Keyonte George",
+        "slug": "georgke01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 17,
+        "team": "LAL",
+        "name": "Jalen Hood-Schifino",
+        "slug": "hoodsja01",
+        "college": "Indiana"
+      },
+      {
+        "pick": 18,
+        "team": "MIA",
+        "name": "Jaime Jaquez Jr.",
+        "slug": "jaqueja01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 19,
+        "team": "GSW",
+        "name": "Brandin Podziemski",
+        "slug": "podzibr01",
+        "college": "Santa Clara"
+      },
+      {
+        "pick": 20,
+        "team": "HOU",
+        "name": "Cam Whitmore",
+        "slug": "whitmca01",
+        "college": "Villanova"
+      },
+      {
+        "pick": 21,
+        "team": "BKN",
+        "name": "Noah Clowney",
+        "slug": "clownno01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 22,
+        "team": "BKN",
+        "name": "Dariq Whitehead",
+        "slug": "whiteda01",
+        "college": "Duke"
+      },
+      {
+        "pick": 23,
+        "team": "POR",
+        "name": "Kris Murray",
+        "slug": "murrakr01",
+        "college": "Iowa"
+      },
+      {
+        "pick": 24,
+        "team": "SAC",
+        "name": "Olivier-Maxence Prosper",
+        "slug": "prospol01",
+        "college": "Marquette"
+      },
+      {
+        "pick": 25,
+        "team": "MEM",
+        "name": "Marcus Sasser",
+        "slug": "sassema01",
+        "college": "Houston"
+      },
+      {
+        "pick": 26,
+        "team": "IND",
+        "name": "Ben Sheppard",
+        "slug": "sheppbe01",
+        "college": "Belmont"
+      },
+      {
+        "pick": 27,
+        "team": "CHA",
+        "name": "Nick Smith Jr.",
+        "slug": "smithni01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 28,
+        "team": "UTA",
+        "name": "Brice Sensabaugh",
+        "slug": "sensabr01",
+        "college": "Ohio State"
+      },
+      {
+        "pick": 29,
+        "team": "IND",
+        "name": "Julian Strawther",
+        "slug": "strawju01",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 30,
+        "team": "LAC",
+        "name": "Kobe Brown",
+        "slug": "brownko01",
+        "college": "Missouri"
+      },
+      {
+        "pick": 31,
+        "team": "DET",
+        "name": "James Nnaji",
+        "slug": "nnajija01",
+        "college": ""
+      },
+      {
+        "pick": 32,
+        "team": "IND",
+        "name": "Jalen Pickett",
+        "slug": "pickeja02",
+        "college": "Penn State"
+      },
+      {
+        "pick": 33,
+        "team": "SAS",
+        "name": "Leonard Miller",
+        "slug": "millele01",
+        "college": ""
+      },
+      {
+        "pick": 34,
+        "team": "CHA",
+        "name": "Colby Jones",
+        "slug": "jonesco02",
+        "college": "Xavier"
+      },
+      {
+        "pick": 35,
+        "team": "BOS",
+        "name": "Julian Phillips",
+        "slug": "phillju01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 36,
+        "team": "ORL",
+        "name": "Andre Jackson Jr.",
+        "slug": "jacksan01",
+        "college": "UConn"
+      },
+      {
+        "pick": 37,
+        "team": "OKC",
+        "name": "Hunter Tyson",
+        "slug": "tysonhu01",
+        "college": "Clemson"
+      },
+      {
+        "pick": 38,
+        "team": "SAC",
+        "name": "Jordan Walsh",
+        "slug": "walshjo01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 39,
+        "team": "CHA",
+        "name": "Mouhamed Gueye",
+        "slug": "gueyemo02",
+        "college": "Washington State"
+      },
+      {
+        "pick": 40,
+        "team": "DEN",
+        "name": "Maxwell Lewis",
+        "slug": "lewisma05",
+        "college": "Pepperdine"
+      },
+      {
+        "pick": 41,
+        "team": "CHA",
+        "name": "Amari Bailey",
+        "slug": "baileam01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 42,
+        "team": "WAS",
+        "name": "Tristan Vukcevic",
+        "slug": "vukcetr01",
+        "college": ""
+      },
+      {
+        "pick": 43,
+        "team": "POR",
+        "name": "Rayan Rupert",
+        "slug": "ruperra01",
+        "college": ""
+      },
+      {
+        "pick": 44,
+        "team": "SAS",
+        "name": "Sidy Cissoko",
+        "slug": "cissosi01",
+        "college": ""
+      },
+      {
+        "pick": 45,
+        "team": "MEM",
+        "name": "GG Jackson II",
+        "slug": "jacksgg01",
+        "college": "South Carolina"
+      },
+      {
+        "pick": 46,
+        "team": "ATL",
+        "name": "Seth Lundy",
+        "slug": "lundyse01",
+        "college": "Penn State"
+      },
+      {
+        "pick": 47,
+        "team": "LAL",
+        "name": "Mojave King",
+        "slug": "kingmo01",
+        "college": ""
+      },
+      {
+        "pick": 48,
+        "team": "LAC",
+        "name": "Jordan Miller",
+        "slug": "millejo02",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 49,
+        "team": "CLE",
+        "name": "Emoni Bates",
+        "slug": "batesem01",
+        "college": "Eastern Michigan"
+      },
+      {
+        "pick": 50,
+        "team": "OKC",
+        "name": "Keyontae Johnson",
+        "slug": "johnske08",
+        "college": "Kansas State"
+      },
+      {
+        "pick": 51,
+        "team": "BKN",
+        "name": "Jalen Wilson",
+        "slug": "wilsoja03",
+        "college": "Kansas"
+      },
+      {
+        "pick": 52,
+        "team": "PHX",
+        "name": "Toumani Camara",
+        "slug": "camarto01",
+        "college": "Dayton"
+      },
+      {
+        "pick": 53,
+        "team": "MIN",
+        "name": "Jaylen Clark",
+        "slug": "clarkja02",
+        "college": "UCLA"
+      },
+      {
+        "pick": 54,
+        "team": "SAC",
+        "name": "Jalen Slawson",
+        "slug": "slawsja01",
+        "college": "Furman University"
+      },
+      {
+        "pick": 55,
+        "team": "IND",
+        "name": "Isaiah Wong",
+        "slug": "wongis01",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 56,
+        "team": "MEM",
+        "name": "Tarik Biberovic",
+        "slug": "biberta01",
+        "college": ""
+      },
+      {
+        "pick": 57,
+        "team": "WAS",
+        "name": "Trayce Jackson-Davis",
+        "slug": "jackstr02",
+        "college": "Indiana"
+      },
+      {
+        "pick": 58,
+        "team": "MIL",
+        "name": "Chris Livingston",
+        "slug": "livinch01",
+        "college": "Kentucky"
+      }
+    ],
+    "2024": [
+      {
+        "pick": 1,
+        "team": "ATL",
+        "name": "Zaccharie Risacher",
+        "slug": "risacza01",
+        "college": ""
+      },
+      {
+        "pick": 2,
+        "team": "WAS",
+        "name": "Alex Sarr",
+        "slug": "sarral01",
+        "college": ""
+      },
+      {
+        "pick": 3,
+        "team": "HOU",
+        "name": "Reed Sheppard",
+        "slug": "sheppre01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 4,
+        "team": "SAS",
+        "name": "Stephon Castle",
+        "slug": "castlst01",
+        "college": "UConn"
+      },
+      {
+        "pick": 5,
+        "team": "DET",
+        "name": "Ron Holland",
+        "slug": "hollaro01",
+        "college": ""
+      },
+      {
+        "pick": 6,
+        "team": "CHA",
+        "name": "Tidjane Salaün",
+        "slug": "salauti01",
+        "college": ""
+      },
+      {
+        "pick": 7,
+        "team": "POR",
+        "name": "Donovan Clingan",
+        "slug": "clingdo01",
+        "college": "UConn"
+      },
+      {
+        "pick": 8,
+        "team": "SAS",
+        "name": "Rob Dillingham",
+        "slug": "dilliro01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 9,
+        "team": "MEM",
+        "name": "Zach Edey",
+        "slug": "edeyza01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 10,
+        "team": "UTA",
+        "name": "Cody Williams",
+        "slug": "willico04",
+        "college": "Colorado"
+      },
+      {
+        "pick": 11,
+        "team": "CHI",
+        "name": "Matas Buzelis",
+        "slug": "buzelma01",
+        "college": ""
+      },
+      {
+        "pick": 12,
+        "team": "OKC",
+        "name": "Nikola Topić",
+        "slug": "topicni01",
+        "college": ""
+      },
+      {
+        "pick": 13,
+        "team": "SAC",
+        "name": "Devin Carter",
+        "slug": "cartede02",
+        "college": "Providence"
+      },
+      {
+        "pick": 14,
+        "team": "POR",
+        "name": "Bub Carrington",
+        "slug": "carrica01",
+        "college": "Pitt"
+      },
+      {
+        "pick": 15,
+        "team": "MIA",
+        "name": "Kel'el Ware",
+        "slug": "wareke01",
+        "college": "Indiana"
+      },
+      {
+        "pick": 16,
+        "team": "PHI",
+        "name": "Jared McCain",
+        "slug": "mccaija01",
+        "college": "Duke"
+      },
+      {
+        "pick": 17,
+        "team": "LAL",
+        "name": "Dalton Knecht",
+        "slug": "knechda01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 18,
+        "team": "ORL",
+        "name": "Tristan Da Silva",
+        "slug": "dasiltr01",
+        "college": "Colorado"
+      },
+      {
+        "pick": 19,
+        "team": "TOR",
+        "name": "Ja'Kobe Walter",
+        "slug": "walteja01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 20,
+        "team": "CLE",
+        "name": "Jaylon Tyson",
+        "slug": "tysonja01",
+        "college": "California"
+      },
+      {
+        "pick": 21,
+        "team": "NOP",
+        "name": "Yves Missi",
+        "slug": "missiyv01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 22,
+        "team": "PHX",
+        "name": "DaRon Holmes",
+        "slug": "holmeda01",
+        "college": "Dayton"
+      },
+      {
+        "pick": 23,
+        "team": "MIL",
+        "name": "AJ Johnson",
+        "slug": "johnsaj01",
+        "college": ""
+      },
+      {
+        "pick": 24,
+        "team": "NYK",
+        "name": "Kyshawn George",
+        "slug": "georgky01",
+        "college": "Miami (FL)"
+      },
+      {
+        "pick": 25,
+        "team": "NYK",
+        "name": "Pacôme Dadiet",
+        "slug": "dadiepa01",
+        "college": ""
+      },
+      {
+        "pick": 26,
+        "team": "WAS",
+        "name": "Dillon Jones",
+        "slug": "jonesdi01",
+        "college": "Weber State"
+      },
+      {
+        "pick": 27,
+        "team": "MIN",
+        "name": "Terrence Shannon Jr.",
+        "slug": "shannte01",
+        "college": "Illinois"
+      },
+      {
+        "pick": 28,
+        "team": "DEN",
+        "name": "Ryan Dunn",
+        "slug": "dunnry01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 29,
+        "team": "UTA",
+        "name": "Isaiah Collier",
+        "slug": "colliis01",
+        "college": "USC"
+      },
+      {
+        "pick": 30,
+        "team": "BOS",
+        "name": "Baylor Scheierman",
+        "slug": "scheiba01",
+        "college": "Creighton"
+      },
+      {
+        "pick": 31,
+        "team": "TOR",
+        "name": "Jonathan Mogbo",
+        "slug": "mogbojo01",
+        "college": "San Francisco"
+      },
+      {
+        "pick": 32,
+        "team": "UTA",
+        "name": "Kyle Filipowski",
+        "slug": "filipky01",
+        "college": "Duke"
+      },
+      {
+        "pick": 33,
+        "team": "MIL",
+        "name": "Tyler Smith",
+        "slug": "smithty02",
+        "college": ""
+      },
+      {
+        "pick": 34,
+        "team": "POR",
+        "name": "Tyler Kolek",
+        "slug": "kolekty01",
+        "college": "Marquette"
+      },
+      {
+        "pick": 35,
+        "team": "SAS",
+        "name": "Johnny Furphy",
+        "slug": "furphjo01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 36,
+        "team": "IND",
+        "name": "Juan Nunez",
+        "slug": "nunezju01",
+        "college": ""
+      },
+      {
+        "pick": 37,
+        "team": "MIN",
+        "name": "Bobi Klintman",
+        "slug": "klintbo01",
+        "college": ""
+      },
+      {
+        "pick": 38,
+        "team": "NYK",
+        "name": "Ajay Mitchell",
+        "slug": "mitchaj01",
+        "college": "UC Santa Barbara"
+      },
+      {
+        "pick": 39,
+        "team": "MEM",
+        "name": "Jaylen Wells",
+        "slug": "wellsja01",
+        "college": "Washington State"
+      },
+      {
+        "pick": 40,
+        "team": "POR",
+        "name": "Oso Ighodaro",
+        "slug": "ighodos01",
+        "college": "Marquette"
+      },
+      {
+        "pick": 41,
+        "team": "PHI",
+        "name": "Adem Bona",
+        "slug": "bonaad01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 42,
+        "team": "CHA",
+        "name": "KJ Simpson",
+        "slug": "simpskj01",
+        "college": "Colorado"
+      },
+      {
+        "pick": 43,
+        "team": "MIA",
+        "name": "Nikola Djurisic",
+        "slug": "djurini01",
+        "college": ""
+      },
+      {
+        "pick": 44,
+        "team": "HOU",
+        "name": "Pelle Larsson",
+        "slug": "larsspe01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 45,
+        "team": "SAC",
+        "name": "Jamal Shead",
+        "slug": "sheadja01",
+        "college": "Houston"
+      },
+      {
+        "pick": 46,
+        "team": "LAC",
+        "name": "Cam Christie",
+        "slug": "chrisca02",
+        "college": "Minnesota"
+      },
+      {
+        "pick": 47,
+        "team": "ORL",
+        "name": "Antonio Reeves",
+        "slug": "reevean01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 48,
+        "team": "SAS",
+        "name": "Harrison Ingram",
+        "slug": "ingraha01",
+        "college": "UNC"
+      },
+      {
+        "pick": 49,
+        "team": "IND",
+        "name": "Tristen Newton",
+        "slug": "newtotr01",
+        "college": "UConn"
+      },
+      {
+        "pick": 50,
+        "team": "IND",
+        "name": "Enrique Freeman",
+        "slug": "freemen01",
+        "college": "University of Akron"
+      },
+      {
+        "pick": 51,
+        "team": "NYK",
+        "name": "Melvin Ajinça",
+        "slug": "ajincme01",
+        "college": ""
+      },
+      {
+        "pick": 52,
+        "team": "GSW",
+        "name": "Quinten Post",
+        "slug": "postqu01",
+        "college": "Boston College"
+      },
+      {
+        "pick": 53,
+        "team": "DET",
+        "name": "Cam Spencer",
+        "slug": "spencca01",
+        "college": "UConn"
+      },
+      {
+        "pick": 54,
+        "team": "BOS",
+        "name": "Anton Watson",
+        "slug": "watsoan02",
+        "college": "Gonzaga"
+      },
+      {
+        "pick": 55,
+        "team": "LAL",
+        "name": "Bronny James",
+        "slug": "jamesbr02",
+        "college": "USC"
+      },
+      {
+        "pick": 56,
+        "team": "PHX",
+        "name": "Kevin McCullar Jr.",
+        "slug": "mcculke01",
+        "college": "Kansas"
+      },
+      {
+        "pick": 57,
+        "team": "MEM",
+        "name": "Ulrich Chomche",
+        "slug": "chomcul01",
+        "college": ""
+      },
+      {
+        "pick": 58,
+        "team": "DAL",
+        "name": "Ariel Hukporti",
+        "slug": "hukpoar01",
+        "college": ""
+      },
+      {
+        "pick": 59,
+        "team": "PHI",
+        "name": "",
+        "slug": null,
+        "college": ""
+      },
+      {
+        "pick": 60,
+        "team": "PHX",
+        "name": "",
+        "slug": null,
+        "college": ""
+      }
+    ],
+    "2025": [
+      {
+        "pick": 1,
+        "team": "DAL",
+        "name": "Cooper Flagg",
+        "slug": "flaggco01",
+        "college": "Duke"
+      },
+      {
+        "pick": 2,
+        "team": "SAS",
+        "name": "Dylan Harper",
+        "slug": "harpedy01",
+        "college": "Rutgers University"
+      },
+      {
+        "pick": 3,
+        "team": "PHI",
+        "name": "VJ Edgecombe",
+        "slug": "edgecvj01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 4,
+        "team": "CHA",
+        "name": "Kon Knueppel",
+        "slug": "knuepko01",
+        "college": "Duke"
+      },
+      {
+        "pick": 5,
+        "team": "UTA",
+        "name": "Ace Bailey",
+        "slug": "baileac01",
+        "college": "Rutgers University"
+      },
+      {
+        "pick": 6,
+        "team": "WAS",
+        "name": "Tre Johnson",
+        "slug": "johnstr03",
+        "college": "Texas"
+      },
+      {
+        "pick": 7,
+        "team": "NOP",
+        "name": "Jeremiah Fears",
+        "slug": "fearsje01",
+        "college": "Oklahoma"
+      },
+      {
+        "pick": 8,
+        "team": "BKN",
+        "name": "Egor Dëmin",
+        "slug": "demineg01",
+        "college": "BYU"
+      },
+      {
+        "pick": 9,
+        "team": "TOR",
+        "name": "Collin Murray-Boyles",
+        "slug": "murraco01",
+        "college": "South Carolina"
+      },
+      {
+        "pick": 10,
+        "team": "HOU",
+        "name": "Khaman Maluach",
+        "slug": "maluakh01",
+        "college": "Duke"
+      },
+      {
+        "pick": 11,
+        "team": "POR",
+        "name": "Cedric Coward",
+        "slug": "cowarce01",
+        "college": "Washington State"
+      },
+      {
+        "pick": 12,
+        "team": "CHI",
+        "name": "Noa Essengue",
+        "slug": "essenno01",
+        "college": ""
+      },
+      {
+        "pick": 13,
+        "team": "ATL",
+        "name": "Derik Queen",
+        "slug": "queende01",
+        "college": "Maryland"
+      },
+      {
+        "pick": 14,
+        "team": "SAS",
+        "name": "Carter Bryant",
+        "slug": "bryanca01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 15,
+        "team": "OKC",
+        "name": "Thomas Sorber",
+        "slug": "sorbeth01",
+        "college": "Georgetown"
+      },
+      {
+        "pick": 16,
+        "team": "MEM",
+        "name": "Yang Hansen",
+        "slug": "yangha01",
+        "college": ""
+      },
+      {
+        "pick": 17,
+        "team": "MIN",
+        "name": "Joan Beringer",
+        "slug": "berinjo01",
+        "college": ""
+      },
+      {
+        "pick": 18,
+        "team": "WAS",
+        "name": "Walter Clayton",
+        "slug": "claytwa01",
+        "college": "Florida"
+      },
+      {
+        "pick": 19,
+        "team": "BKN",
+        "name": "Nolan Traoré",
+        "slug": "traorno01",
+        "college": ""
+      },
+      {
+        "pick": 20,
+        "team": "MIA",
+        "name": "Kasparas Jakučionis",
+        "slug": "jakucka01",
+        "college": "Illinois"
+      },
+      {
+        "pick": 21,
+        "team": "UTA",
+        "name": "Will Riley",
+        "slug": "rileywi01",
+        "college": "Illinois"
+      },
+      {
+        "pick": 22,
+        "team": "ATL",
+        "name": "Drake Powell",
+        "slug": "poweldr01",
+        "college": "UNC"
+      },
+      {
+        "pick": 23,
+        "team": "IND",
+        "name": "Asa Newell",
+        "slug": "newelas01",
+        "college": "Georgia"
+      },
+      {
+        "pick": 24,
+        "team": "OKC",
+        "name": "Nique Clifford",
+        "slug": "cliffni01",
+        "college": "Colorado State"
+      },
+      {
+        "pick": 25,
+        "team": "ORL",
+        "name": "Jase Richardson",
+        "slug": "richaja02",
+        "college": "Michigan State"
+      },
+      {
+        "pick": 26,
+        "team": "BKN",
+        "name": "Ben Saraf",
+        "slug": "sarafbe01",
+        "college": ""
+      },
+      {
+        "pick": 27,
+        "team": "BKN",
+        "name": "Danny Wolf",
+        "slug": "wolfda01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 28,
+        "team": "BOS",
+        "name": "Hugo González",
+        "slug": "gonzahu01",
+        "college": ""
+      },
+      {
+        "pick": 29,
+        "team": "PHX",
+        "name": "Liam McNeeley",
+        "slug": "mcneeli01",
+        "college": "UConn"
+      },
+      {
+        "pick": 30,
+        "team": "LAC",
+        "name": "Yanic Konan Niederhäuser",
+        "slug": "konanya01",
+        "college": "Penn State"
+      },
+      {
+        "pick": 31,
+        "team": "MIN",
+        "name": "Rasheer Fleming",
+        "slug": "flemira01",
+        "college": "Saint Joseph's"
+      },
+      {
+        "pick": 32,
+        "team": "BOS",
+        "name": "Noah Penda",
+        "slug": "pendano01",
+        "college": ""
+      },
+      {
+        "pick": 33,
+        "team": "CHA",
+        "name": "Sion James",
+        "slug": "jamessi01",
+        "college": "Duke"
+      },
+      {
+        "pick": 34,
+        "team": "CHA",
+        "name": "Ryan Kalkbrenner",
+        "slug": "kalkbry01",
+        "college": "Creighton"
+      },
+      {
+        "pick": 35,
+        "team": "PHI",
+        "name": "Johni Broome",
+        "slug": "broomjo01",
+        "college": "Auburn"
+      },
+      {
+        "pick": 36,
+        "team": "BKN",
+        "name": "Adou Thiero",
+        "slug": "thierad01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 37,
+        "team": "DET",
+        "name": "Chaz Lanier",
+        "slug": "laniech01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 38,
+        "team": "SAS",
+        "name": "Kam Jones",
+        "slug": "joneska03",
+        "college": "Marquette"
+      },
+      {
+        "pick": 39,
+        "team": "TOR",
+        "name": "Alijah Martin",
+        "slug": "martial01",
+        "college": "Florida"
+      },
+      {
+        "pick": 40,
+        "team": "WAS",
+        "name": "Micah Peavy",
+        "slug": "peavymi01",
+        "college": "Georgetown"
+      },
+      {
+        "pick": 41,
+        "team": "GSW",
+        "name": "Koby Brea",
+        "slug": "breako01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 42,
+        "team": "SAC",
+        "name": "Maxime Raynaud",
+        "slug": "raynama01",
+        "college": "Stanford"
+      },
+      {
+        "pick": 43,
+        "team": "UTA",
+        "name": "Jamir Watkins",
+        "slug": "watkija01",
+        "college": "Florida State"
+      },
+      {
+        "pick": 44,
+        "team": "OKC",
+        "name": "Brooks Barnhizer",
+        "slug": "barnhbr01",
+        "college": "Northwestern"
+      },
+      {
+        "pick": 45,
+        "team": "CHI",
+        "name": "Rocco Zikarsky",
+        "slug": "zikarro01",
+        "college": ""
+      },
+      {
+        "pick": 46,
+        "team": "ORL",
+        "name": "Amari Williams",
+        "slug": "william01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 47,
+        "team": "MIL",
+        "name": "Bogoljub Markovic",
+        "slug": "markobo01",
+        "college": ""
+      },
+      {
+        "pick": 48,
+        "team": "MEM",
+        "name": "Javon Small",
+        "slug": "smallja01",
+        "college": "West Virginia"
+      },
+      {
+        "pick": 49,
+        "team": "CLE",
+        "name": "Tyrese Proctor",
+        "slug": "proctty01",
+        "college": "Duke"
+      },
+      {
+        "pick": 50,
+        "team": "NYK",
+        "name": "Kobe Sanders",
+        "slug": "sandeko01",
+        "college": "Nevada"
+      },
+      {
+        "pick": 51,
+        "team": "LAC",
+        "name": "Mohamed Diawara",
+        "slug": "diawamo01",
+        "college": ""
+      },
+      {
+        "pick": 52,
+        "team": "PHX",
+        "name": "Alex Toohey",
+        "slug": "tooheal01",
+        "college": ""
+      },
+      {
+        "pick": 53,
+        "team": "UTA",
+        "name": "John Tonje",
+        "slug": "tonjejo01",
+        "college": "Wisconsin"
+      },
+      {
+        "pick": 54,
+        "team": "IND",
+        "name": "Taelon Peter",
+        "slug": "peterta01",
+        "college": "Liberty"
+      },
+      {
+        "pick": 55,
+        "team": "LAL",
+        "name": "Lachlan Olbrich",
+        "slug": "olbrila01",
+        "college": ""
+      },
+      {
+        "pick": 56,
+        "team": "MEM",
+        "name": "Will Richard",
+        "slug": "richawi02",
+        "college": "Florida"
+      },
+      {
+        "pick": 57,
+        "team": "ORL",
+        "name": "Max Shulga",
+        "slug": "shulgma01",
+        "college": "VCU"
+      },
+      {
+        "pick": 58,
+        "team": "CLE",
+        "name": "Saliou Niang",
+        "slug": "niangsa01",
+        "college": ""
+      },
+      {
+        "pick": 59,
+        "team": "HOU",
+        "name": "Jahmai Mashack",
+        "slug": "mashaja01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 60,
+        "team": "NYK",
+        "name": "",
+        "slug": null,
+        "college": ""
+      }
+    ],
+    "2026": [
+      {
+        "pick": 1,
+        "team": "WAS",
+        "name": "AJ Dybantsa",
+        "slug": "dybanaj01",
+        "college": "BYU"
+      },
+      {
+        "pick": 2,
+        "team": "UTA",
+        "name": "Darryn Peterson",
+        "slug": "peterda02",
+        "college": "Kansas"
+      },
+      {
+        "pick": 3,
+        "team": "MEM",
+        "name": "Cameron Boozer",
+        "slug": "boozeca02",
+        "college": "Duke"
+      },
+      {
+        "pick": 4,
+        "team": "CHI",
+        "name": "Caleb Wilson",
+        "slug": "wilsoca01",
+        "college": "UNC"
+      },
+      {
+        "pick": 5,
+        "team": "LAC",
+        "name": "Keaton Wagler",
+        "slug": "wagleke01",
+        "college": "Illinois"
+      },
+      {
+        "pick": 6,
+        "team": "BKN",
+        "name": "Mikel Brown Jr.",
+        "slug": "brownmi02",
+        "college": "Louisville"
+      },
+      {
+        "pick": 7,
+        "team": "SAC",
+        "name": "Darius Acuff Jr.",
+        "slug": "acuffda01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 8,
+        "team": "ATL",
+        "name": "Kingston Flemings",
+        "slug": "flemiki01",
+        "college": "Houston"
+      },
+      {
+        "pick": 9,
+        "team": "DAL",
+        "name": "Morez Johnson Jr.",
+        "slug": "johnsmo01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 10,
+        "team": "MIL",
+        "name": "Brayden Burries",
+        "slug": "burribr01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 11,
+        "team": "GSW",
+        "name": "Yaxel Lendeborg",
+        "slug": "lendeya01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 12,
+        "team": "OKC",
+        "name": "Aday Mara",
+        "slug": "maraad01",
+        "college": "Michigan"
+      },
+      {
+        "pick": 13,
+        "team": "MIA",
+        "name": "Nate Ament",
+        "slug": "amentna01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 14,
+        "team": "CHA",
+        "name": "Hannes Steinbach",
+        "slug": "steinha02",
+        "college": "Washington"
+      },
+      {
+        "pick": 15,
+        "team": "CHI",
+        "name": "Dailyn Swain",
+        "slug": "swainda01",
+        "college": "Texas"
+      },
+      {
+        "pick": 16,
+        "team": "MEM",
+        "name": "Bennett Stirtz",
+        "slug": "stirtbe01",
+        "college": "Iowa"
+      },
+      {
+        "pick": 17,
+        "team": "OKC",
+        "name": "Ebuka Okorie",
+        "slug": "okorieb01",
+        "college": "Stanford"
+      },
+      {
+        "pick": 18,
+        "team": "CHA",
+        "name": "Christian Anderson Jr.",
+        "slug": "anderch02",
+        "college": "Texas Tech"
+      },
+      {
+        "pick": 19,
+        "team": "TOR",
+        "name": "Allen Graves",
+        "slug": "graveal01",
+        "college": "Santa Clara"
+      },
+      {
+        "pick": 20,
+        "team": "SAS",
+        "name": "Jayden Quaintance",
+        "slug": "quainja01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 21,
+        "team": "DET",
+        "name": "Karim López",
+        "slug": "lopezka01",
+        "college": ""
+      },
+      {
+        "pick": 22,
+        "team": "PHI",
+        "name": "Labaron Philon Jr.",
+        "slug": "philola01",
+        "college": "Alabama"
+      },
+      {
+        "pick": 23,
+        "team": "ATL",
+        "name": "Zuby Ejiofor",
+        "slug": "ejiofzu01",
+        "college": "St. John's"
+      },
+      {
+        "pick": 24,
+        "team": "NYK",
+        "name": "Cameron Carr",
+        "slug": "carrca01",
+        "college": "Baylor"
+      },
+      {
+        "pick": 25,
+        "team": "LAL",
+        "name": "Sergio de Larrea",
+        "slug": "delarse01",
+        "college": ""
+      },
+      {
+        "pick": 26,
+        "team": "DEN",
+        "name": "Tarris Reed Jr.",
+        "slug": "reedjta01",
+        "college": "UConn"
+      },
+      {
+        "pick": 27,
+        "team": "BOS",
+        "name": "Chris Cenac Jr.",
+        "slug": "cenacch01",
+        "college": "Houston"
+      },
+      {
+        "pick": 28,
+        "team": "MIN",
+        "name": "Joshua Jefferson",
+        "slug": "jeffejo01",
+        "college": "Iowa State"
+      },
+      {
+        "pick": 29,
+        "team": "CLE",
+        "name": "Alex Karaban",
+        "slug": "karabal01",
+        "college": "UConn"
+      },
+      {
+        "pick": 30,
+        "team": "DAL",
+        "name": "Koa Peat",
+        "slug": "peatko01",
+        "college": "Arizona"
+      },
+      {
+        "pick": 31,
+        "team": "NYK",
+        "name": "Bruce Thornton",
+        "slug": "thornbr01",
+        "college": "Ohio State"
+      },
+      {
+        "pick": 32,
+        "team": "MEM",
+        "name": "Richie Saunders",
+        "slug": "saundri01",
+        "college": "BYU"
+      },
+      {
+        "pick": 33,
+        "team": "BKN",
+        "name": "Isaiah Evans",
+        "slug": "evansis01",
+        "college": "Duke"
+      },
+      {
+        "pick": 34,
+        "team": "SAC",
+        "name": "Meleek Thomas",
+        "slug": "thomame01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 35,
+        "team": "SAS",
+        "name": "Trevon Brazile",
+        "slug": "brazitr01",
+        "college": "Arkansas"
+      },
+      {
+        "pick": 36,
+        "team": "LAC",
+        "name": "Baba Miller",
+        "slug": "milleba01",
+        "college": "Cincinnati"
+      },
+      {
+        "pick": 37,
+        "team": "OKC",
+        "name": "Ryan Conwell",
+        "slug": "conwery01",
+        "college": "Louisville"
+      },
+      {
+        "pick": 38,
+        "team": "CHI",
+        "name": "Braden Smith",
+        "slug": "smithbr01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 39,
+        "team": "HOU",
+        "name": "Jack Kayil",
+        "slug": "kayilja01",
+        "college": ""
+      },
+      {
+        "pick": 40,
+        "team": "BOS",
+        "name": "Dillon Mitchell",
+        "slug": "mitchdi01",
+        "college": "St. John's"
+      },
+      {
+        "pick": 41,
+        "team": "MIA",
+        "name": "Otega Oweh",
+        "slug": "owehot01",
+        "college": "Kentucky"
+      },
+      {
+        "pick": 42,
+        "team": "SAS",
+        "name": "Ja'Kobi Gillespie",
+        "slug": "gilleja02",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 43,
+        "team": "BKN",
+        "name": "Tyler Bilodeau",
+        "slug": "bilodty01",
+        "college": "UCLA"
+      },
+      {
+        "pick": 44,
+        "team": "SAS",
+        "name": "Maliq Brown",
+        "slug": "brownma05",
+        "college": "Duke"
+      },
+      {
+        "pick": 45,
+        "team": "SAC",
+        "name": "Emanuel Sharp",
+        "slug": "sharpem01",
+        "college": "Houston"
+      },
+      {
+        "pick": 46,
+        "team": "ORL",
+        "name": "Felix Okpara",
+        "slug": "okparfe01",
+        "college": "Tennessee"
+      },
+      {
+        "pick": 47,
+        "team": "PHX",
+        "name": "Tyler Nickel",
+        "slug": "nickety01",
+        "college": "Vanderbilt"
+      },
+      {
+        "pick": 48,
+        "team": "DAL",
+        "name": "Tobi Lawal",
+        "slug": "lawalto01",
+        "college": "Virginia Tech"
+      },
+      {
+        "pick": 49,
+        "team": "DEN",
+        "name": "Bryce Hopkins",
+        "slug": "hopkibr01",
+        "college": "St. John's"
+      },
+      {
+        "pick": 50,
+        "team": "TOR",
+        "name": "Jaden Bradley",
+        "slug": "bradlja02",
+        "college": "Arizona"
+      },
+      {
+        "pick": 51,
+        "team": "WAS",
+        "name": "Izaiyah Nelson",
+        "slug": "nelsoiz01",
+        "college": "South Florida"
+      },
+      {
+        "pick": 52,
+        "team": "LAC",
+        "name": "Henri Veesaar",
+        "slug": "veesahe01",
+        "college": "UNC"
+      },
+      {
+        "pick": 53,
+        "team": "HOU",
+        "name": "Ugonna Onyenso",
+        "slug": "onyenug01",
+        "college": "Virginia"
+      },
+      {
+        "pick": 54,
+        "team": "GSW",
+        "name": "Lajae Jones",
+        "slug": "jonesla03",
+        "college": "Florida State"
+      },
+      {
+        "pick": 55,
+        "team": "NYK",
+        "name": "Nick Martinelli",
+        "slug": "martini01",
+        "college": "Northwestern"
+      },
+      {
+        "pick": 56,
+        "team": "CHI",
+        "name": "Vsevolod Ishchenko",
+        "slug": "ishchvs01",
+        "college": ""
+      },
+      {
+        "pick": 57,
+        "team": "ATL",
+        "name": "Narcisse Ngoy",
+        "slug": "ngoyna01",
+        "college": ""
+      },
+      {
+        "pick": 58,
+        "team": "NOP",
+        "name": "Jaron Pierre Jr.",
+        "slug": "pierrja01",
+        "college": "SMU"
+      },
+      {
+        "pick": 59,
+        "team": "MIN",
+        "name": "Trey Kaufman-Renn",
+        "slug": "kaufmtr01",
+        "college": "Purdue"
+      },
+      {
+        "pick": 60,
+        "team": "WAS",
+        "name": "Malique Lewis",
+        "slug": "lewisma06",
+        "college": ""
+      }
+    ]
+  },
+  "source": "basketball-reference.com"
+}
