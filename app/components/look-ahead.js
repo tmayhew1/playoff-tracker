@@ -68,6 +68,7 @@ export function LookAhead() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [team, setTeam] = useState(null);
+  const [openTeam, setOpenTeam] = useState(null); // the standings row dropped open
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showMethod, setShowMethod] = useState(false);
@@ -119,7 +120,7 @@ export function LookAhead() {
     const proj = data.wins ? projectWins(data.wins, Object.fromEntries(Object.entries(by).map(([t, list]) =>
       [t, { vaPlus: list.map((p) => vaPlus(p.va, p.dpm, p.row.mp)), lastPct: lastPct(t) }]))) : {};
     return Object.entries(by).map(([t, list]) => {
-      const top = [...list].sort((a, b) => vaPlus(b.va, b.dpm, b.row.mp) - vaPlus(a.va, a.dpm, a.row.mp)).slice(0, 3);
+      const top = [...list].sort((a, b) => vaPlus(b.va, b.dpm, b.row.mp) - vaPlus(a.va, a.dpm, a.row.mp)).slice(0, 5);
       return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: rec[t] || null, top };
     }).sort((a, b) => b.wins - a.wins);
   }, [data, players]);
@@ -146,28 +147,86 @@ export function LookAhead() {
           <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">2026-27 · Look Ahead</div>
           <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border" style={{ color: GOLD, borderColor: withAlpha(GOLD, 0.5), backgroundColor: withAlpha(GOLD, 0.08) }}>Projected</span>
         </div>
-        <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every returning player’s 2026-27 regular season, projected from their last three — then the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
+        <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every roster’s 2026-27 record, every player’s season, and the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
         <div className="text-[10px] text-stone-500 mt-1.5 leading-snug">
           {data.rosters === "live"
             ? <>Rosters live from ESPN. Rookies are projected from their draft slot (undrafted ones from college); undrafted rookies with no college season here aren’t.</>
             : <>Live rosters unavailable — players shown on their last {data.base} team; offseason moves aren’t reflected.</>}
         </div>
-        <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
-          {[
-            ["VA correlation", bt.corr.toFixed(2), bt.corrNaive.toFixed(2)],
-            ["Avg miss (VA)", Math.round(bt.mae), Math.round(bt.maeNaive)],
-            ["Top-25 hits", bt.top25Hit, bt.top25HitNaive],
-          ].map(([label, model, naive]) => (
-            <div key={label} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
-              <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
-              <div className="text-sm font-bold tabular-nums text-stone-900">{model}</div>
-              <div className="text-[8px] text-stone-400 tabular-nums">vs {naive} naive</div>
+      </div>
+
+      {/* Teams */}
+      <div className="mb-4 border border-stone-300 bg-white">
+        <SectionHead
+          title="Projected Standings"
+          note={data.wins
+            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster`
+            : "Wins model not fit yet"}
+        />
+        {["E", "W"].map((conf) => {
+          const list = teams.filter((t) => t.conf === conf);
+          if (!list.length) return null;
+          const maxW = Math.max(1, ...teams.map((t) => t.wins));
+          return (
+            <div key={conf} className="border-b border-stone-200 last:border-0">
+              <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[9px] uppercase tracking-[0.2em]">
+                <span className="font-bold text-stone-700">{conf === "E" ? "East" : "West"}</span>
+                <span className="text-stone-400 tracking-wider">Proj · Last</span>
+              </div>
+              {list.map((t, i) => {
+                const tc = teamColor(t.team), w = Math.round(t.wins), isOpen = openTeam === t.team;
+                const roster = isOpen ? players.filter((p) => p.team === t.team) : [];
+                const rosterMax = Math.max(1, ...roster.map((p) => Math.abs(p.vaShown)));
+                return (
+                  <div key={t.team} className={i === 5 || i === 9 ? "border-b border-dashed border-stone-300" : "border-b border-stone-100"}>
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      onClick={() => { setOpenTeam(isOpen ? null : t.team); setExpanded(null); }}
+                      className="relative w-full overflow-hidden text-left"
+                    >
+                      <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(t.wins / maxW) * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
+                      <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
+                        <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
+                        <TeamChip team={t.team} active={isOpen} />
+                        <span className="flex-1 min-w-0 text-stone-600 leading-snug">
+                          <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+                          {t.top.map((p) => splitName(p.name).last).join(" · ")}
+                        </span>
+                        <span className="w-12 text-right tabular-nums font-bold text-stone-900 shrink-0">{w}–{82 - w}</span>
+                        <span className="w-10 text-right tabular-nums text-stone-400 shrink-0">{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="bg-stone-50/60 border-t border-stone-200 pl-2 sm:pl-4">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+                          <span className="w-5 sm:w-6 text-right">#</span>
+                          <span className="w-8 sm:w-10">Team</span>
+                          <span className="flex-1">Player</span>
+                          <span className="w-6 text-right">G</span>
+                          <span className="w-12 text-right">VA</span>
+                          <span className="w-10 text-right">VA/G</span>
+                        </div>
+                        {roster.map((p) => (
+                          <LeaderRow
+                            key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={rosterMax} lga={lga} sim={awards.bySlug[p.slug]}
+                            isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
+                          />
+                        ))}
+                        {data.unprojected?.[t.team]?.length > 0 && (
+                          <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
+                            <span className="uppercase tracking-wider text-stone-400">Not projected: </span>
+                            {data.unprojected[t.team].join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-        <div className="text-[9px] italic text-stone-400 mt-1">
-          Backtest: {bt.season} projected from data through the season before, {bt.players} players with {bt.minMinutes}+ min. “Naive” repeats each player’s previous season.
-        </div>
+          );
+        })}
       </div>
 
       {/* MVP */}
@@ -237,45 +296,13 @@ export function LookAhead() {
           <span className="w-12 text-right">VA</span>
           <span className="w-10 text-right">VA/G</span>
         </div>
-        {visible.map((p) => {
-          const tc = p.team ? teamColor(p.team) : "#78716c";
-          const isOpen = expanded === p.slug;
-          const sim = awards.bySlug[p.slug];
-          return (
-            <div key={p.slug} className="border-b border-stone-100 last:border-0">
-              <div className="relative overflow-hidden">
-                <div
-                  className="absolute inset-y-0 left-0 pointer-events-none"
-                  style={{ width: `${(Math.abs(p.vaShown) / maxAbs) * 100}%`, backgroundColor: p.vaShown >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.1) }}
-                  aria-hidden
-                />
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={isOpen}
-                  aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
-                  onClick={() => setExpanded(isOpen ? null : p.slug)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(isOpen ? null : p.slug); }
-                  }}
-                  className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
-                >
-                  <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rankOf.get(p.slug)}</span>
-                  <TeamChip team={p.team} active={team === p.team} onClick={p.team ? (e) => { e.stopPropagation(); setTeam(team === p.team ? null : p.team); setExpanded(null); } : undefined} />
-                  <span className="flex-1 min-w-0 flex items-center text-stone-800">
-                    <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                    <Name name={p.name} />
-                    {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
-                  </span>
-                  <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>
-                  <span className={`w-12 text-right tabular-nums font-bold ${p.vaShown < 0 ? "text-red-600" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
-                  <span className="w-10 text-right tabular-nums text-stone-700">{(p.vaShown / p.row.g).toFixed(2)}</span>
-                </div>
-              </div>
-              {isOpen && <ProjectedLine p={p} sim={sim} lga={lga} />}
-            </div>
-          );
-        })}
+        {visible.map((p) => (
+          <LeaderRow
+            key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={maxAbs} lga={lga} sim={awards.bySlug[p.slug]}
+            isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
+            activeTeam={team} onTeam={(t) => { setTeam(team === t ? null : t); setExpanded(null); }}
+          />
+        ))}
         {!team && rows.length > PAGE && (
           <button
             type="button"
@@ -291,55 +318,33 @@ export function LookAhead() {
         )}
       </div>
 
-      {/* Teams */}
-      <div className="mb-4 border border-stone-300 bg-white">
-        <SectionHead
-          title="Projected Standings"
-          note={data.wins
-            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team to filter the leaders`
-            : "Wins model not fit yet"}
-        />
-        {["E", "W"].map((conf) => {
-          const list = teams.filter((t) => t.conf === conf);
-          if (!list.length) return null;
-          const maxW = Math.max(1, ...teams.map((t) => t.wins));
-          return (
-            <div key={conf} className="border-b border-stone-200 last:border-0">
-              <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[9px] uppercase tracking-[0.2em]">
-                <span className="font-bold text-stone-700">{conf === "E" ? "East" : "West"}</span>
-                <span className="text-stone-400 tracking-wider">Proj · Last</span>
-              </div>
-              {list.map((t, i) => {
-                const tc = teamColor(t.team), w = Math.round(t.wins);
-                return (
-                  <button
-                    key={t.team}
-                    type="button"
-                    onClick={() => { setTeam(team === t.team ? null : t.team); setExpanded(null); }}
-                    className={`relative w-full overflow-hidden text-left ${i === 5 || i === 9 ? "border-b border-dashed border-stone-300" : "border-b border-stone-100"}`}
-                  >
-                    <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(t.wins / maxW) * 100}%`, backgroundColor: withAlpha(tc, team === t.team ? 0.3 : 0.16) }} aria-hidden />
-                    <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
-                      <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
-                      <TeamChip team={t.team} active={team === t.team} />
-                      <span className="flex-1 min-w-0 truncate text-stone-600">{t.top.map((p) => splitName(p.name).last).join(" · ")}</span>
-                      <span className="w-12 text-right tabular-nums font-bold text-stone-900">{w}–{82 - w}</span>
-                      <span className="w-10 text-right tabular-nums text-stone-400">{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-
       {offRoster.length > 0 && (
         <div className="mb-4 px-3 py-2 bg-white border border-stone-300 text-[9px] text-stone-500 leading-snug">
           <span className="uppercase tracking-wider text-stone-400">Projected, but on no current roster: </span>
           {offRoster.slice(0, 20).map((p) => p.name).join(", ")}{offRoster.length > 20 ? `, +${offRoster.length - 20} more` : ""}
         </div>
       )}
+
+      {/* Accuracy */}
+      <div className="mb-4 p-3 bg-white border border-stone-300">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">How accurate</div>
+        <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+          {[
+            ["VA correlation", bt.corr.toFixed(2), bt.corrNaive.toFixed(2)],
+            ["Avg miss (VA)", Math.round(bt.mae), Math.round(bt.maeNaive)],
+            ["Top-25 hits", bt.top25Hit, bt.top25HitNaive],
+          ].map(([label, model, naive]) => (
+            <div key={label} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
+              <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
+              <div className="text-sm font-bold tabular-nums text-stone-900">{model}</div>
+              <div className="text-[8px] text-stone-400 tabular-nums">vs {naive} naive</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-[9px] italic text-stone-400 mt-1">
+          Backtest: {bt.season} projected from data through the season before, {bt.players} players with {bt.minMinutes}+ min. “Naive” repeats each player’s previous season.
+        </div>
+      </div>
 
       {/* Method */}
       <div className="mb-4 border border-stone-300 bg-white">
@@ -348,6 +353,46 @@ export function LookAhead() {
         </button>
         {showMethod && <Method data={data} />}
       </div>
+    </div>
+  );
+}
+
+
+// One projected player: the bar, the line, and — tapped — the projected
+// season beside the one it grew from. Shared by the leaders table and the
+// roster each standings row drops open.
+function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null }) {
+  const tc = p.team ? teamColor(p.team) : "#78716c";
+  return (
+    <div className="border-b border-stone-100 last:border-0">
+      <div className="relative overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 pointer-events-none"
+          style={{ width: `${(Math.abs(p.vaShown) / maxAbs) * 100}%`, backgroundColor: p.vaShown >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.1) }}
+          aria-hidden
+        />
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={isOpen}
+          aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
+          onClick={onToggle}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+          className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+        >
+          <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
+          <TeamChip team={p.team} active={activeTeam === p.team} onClick={onTeam && p.team ? (e) => { e.stopPropagation(); onTeam(p.team); } : undefined} />
+          <span className="flex-1 min-w-0 flex items-center text-stone-800">
+            <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+            <Name name={p.name} />
+            {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
+          </span>
+          <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>
+          <span className={`w-12 text-right tabular-nums font-bold ${p.vaShown < 0 ? "text-red-600" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
+          <span className="w-10 text-right tabular-nums text-stone-700">{(p.vaShown / p.row.g).toFixed(2)}</span>
+        </div>
+      </div>
+      {isOpen && <ProjectedLine p={p} sim={sim} lga={lga} />}
     </div>
   );
 }
