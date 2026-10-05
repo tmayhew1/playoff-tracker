@@ -300,6 +300,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   }, [data]);
 
   useShareReport({ view: mode, scope, season: mode === "season" ? season : null });
+  const lookAhead = season === LOOK_AHEAD_SEASON;
 
   const tabCls = (active) =>
     `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
@@ -334,24 +335,25 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
         />
       ) : (
         <>
-          <div className="mb-4 p-3 bg-white border border-stone-300">
+          {/* On the Look Ahead the whole card turns the banner's gold, so the
+              projected season reads as a different kind of page at a glance. */}
+          <div className={`mb-4 p-3 border ${lookAhead ? "bg-amber-50 border-amber-400" : "bg-white border-stone-300"}`}>
             <div className="flex items-center justify-between gap-2 mb-1">
-              <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block">Season</label>
-              {/* Same amber as the Look Ahead banner below, so the two read as one thing. */}
-              {season === LOOK_AHEAD_SEASON && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">Projected</span>
+              <label className={`text-[10px] uppercase tracking-[0.3em] block ${lookAhead ? "text-amber-800" : "text-stone-500"}`}>Season</label>
+              {lookAhead && (
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 border border-amber-400 bg-amber-100 text-amber-800">Projected</span>
               )}
             </div>
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value)}
-              className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5"
+              className={`w-full text-sm font-bold bg-white border px-2 py-1.5 ${lookAhead ? "text-amber-900 border-amber-400" : "text-stone-900 border-stone-300"}`}
             >
               {seasons.map((s) => (
                 <option key={s} value={s}>{s === LOOK_AHEAD_SEASON ? `${s} · Look Ahead` : s}</option>
               ))}
             </select>
-            <div className="text-[10px] text-stone-400 mt-1 italic">
+            <div className={`text-[10px] mt-1 italic ${lookAhead ? "text-amber-700" : "text-stone-400"}`}>
               {season === LOOK_AHEAD_SEASON
                 ? "Projected from regular seasons via Basketball-Reference; rosters via ESPN."
                 : "Box scores via ESPN and Basketball-Reference."}
