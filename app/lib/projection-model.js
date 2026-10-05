@@ -664,3 +664,41 @@ export function projectRookie(src, rk, target) {
   out.row = rebuildRow(out, target, out.g);
   return out;
 }
+
+
+// --- Team wins ---------------------------------------------------------------
+// A team's projected record from its roster, fit in
+// scripts/fit-projection-model.mjs on every season since 1990-91 — each past
+// roster projected from what was known the summer before, against the record
+// it actually posted:
+//
+//   win% = .500 + a · (S − S̄) + b · (last season's win% − .500)
+//   S    = Σ_k ρ^k · VA+_k / 82
+//
+// VA+_k is the team's k-th best player by projected VA+ (VA with projected
+// defense), after the team context. A gentle geometric decay (ρ) beat a sum
+// of everyone, a top-N sum and a free weight per rank; VA+ beat plain VA and
+// USG-ADJ VA; and splitting offense from defense got them weighted alike, so
+// one number does. S̄ is the league's mean S that season, so the league
+// averages .500. Last season's record carries what rosters can't —
+// coaching, system, health — and a version scaled by roster continuity did
+// no better than the plain one.
+
+export const vaPlus = (va, dpm, mp) => va + (dpm || 0) * (mp || 0);
+
+export function winScore(vaPlusValues, rho) {
+  return [...vaPlusValues].sort((a, b) => b - a).reduce((s, v, k) => s + v * rho ** k, 0) / 82;
+}
+
+// { team: { vaPlus: [...], lastPct } } → { team: { winPct, wins } }
+export function projectWins(model, teams) {
+  const names = Object.keys(teams);
+  if (!names.length) return {};
+  const score = Object.fromEntries(names.map((t) => [t, winScore(teams[t].vaPlus, model.rho)]));
+  const mean = names.reduce((s, t) => s + score[t], 0) / names.length;
+  return Object.fromEntries(names.map((t) => {
+    const last = teams[t].lastPct ?? 0.5;
+    const pct = Math.min(0.95, Math.max(0.05, 0.5 + model.a * (score[t] - mean) + model.b * (last - 0.5)));
+    return [t, { winPct: pct, wins: pct * 82 }];
+  }));
+}

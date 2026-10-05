@@ -30,10 +30,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { normalizeName } from "../app/lib/format.js";
+import { defVAInfo } from "../app/lib/defense-math.js";
 import {
   MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS, TIME_HISTORY,
   collegeUnits, expand, leagueContext, nextSeason, poolTeams, posGroup, projectPlayer, projectRookie,
   rookieRateFeatures, rookieTimeFeatures, timeFeatures, timeUnits, UNDRAFTED_PICK,
+  projectWins, vaPlus,
   scheduleLength, simulateAwards, allNbaTeams, tierOf,
 } from "../app/lib/projection-model.js";
 
@@ -601,6 +603,94 @@ function rookieBacktest(samples) {
   };
 }
 
+// --- 6. Defense and team wins -------------------------------------------------
+// Defensive VA per minute for every player-season (lib/defense-math.js, the
+// VA+ term), and its projection: the last three seasons, each worth `w` of the
+// next, minutes-weighted and shrunk toward zero (league average) by K phantom
+// minutes — fit on next-season defense.
+const DEFS = fs.existsSync(path.join(DATA, "def-ratings.json")) ? read("def-ratings.json") : {};
+const dpmOf = new Map(); // `${slug}|${season}` -> defensive VA per minute
+for (const [slug, car] of careers) for (const c of car) {
+  const d = defVAInfo(c.row, c.row.mp, lgaForSeason(c.season), DEFS, c.season, "rs")?.dva ?? 0;
+  dpmOf.set(`${slug}|${c.season}`, c.row.mp > 0 ? d / c.row.mp : 0);
+}
+const projectDpm = (slug, hist, { w, K }) => {
+  let n = 0, d = 0;
+  hist.slice(-3).reverse().forEach((u, i) => { n += w ** i * u.row.mp * (dpmOf.get(`${slug}|${u.season}`) || 0); d += w ** i * u.row.mp; });
+  return n / (d + K);
+};
+function fitDefense(lastTarget) {
+  let best = null;
+  for (const w of [0.4, 0.6, 0.8, 1]) for (const K of [0, 500, 1000, 2000, 4000]) {
+    let se = 0, wt = 0;
+    for (const [slug, car] of careers) for (let i = 1; i < car.length; i++) {
+      const t = car[i];
+      if (t.season < "1990-91" || t.season > lastTarget || t.row.mp < 300) continue;
+      se += t.row.mp * (projectDpm(slug, car.slice(Math.max(0, i - 3), i), { w, K }) - dpmOf.get(`${slug}|${t.season}`)) ** 2;
+      wt += t.row.mp;
+    }
+    if (!best || se / wt < best.e) best = { e: se / wt, w, K };
+  }
+  return { w: best.w, K: best.K };
+}
+
+// Every season's rosters as projected the summer before (team context
+// applied), each player valued at VA+, with the record the team posted.
+const RECORDS = fs.existsSync(path.join(DATA, "team-records.json")) ? read("team-records.json").seasons || {} : {};
+const pctOf = (season, team) => { const r = RECORDS[season]?.[team]; return r ? r.w / (r.w + r.l) : null; };
+function teamSeasons(first, last, params, defense) {
+  const out = [];
+  for (const T of SEASONS.filter((x) => x >= first && x <= last && RECORDS[x])) {
+    const rows = seasonProjections(T, params);
+    const pooled = poolTeams(rows.map((r) => ({ team: r.team, row: r.proj.row })), params.pool);
+    const lga = lgaForSeason(rows[0].prevSeason);
+    const by = {};
+    rows.forEach((r, i) => {
+      if (!r.team) return;
+      const car = careers.get(r.slug), k = car.findIndex((c) => c.season === T);
+      const dpm = projectDpm(r.slug, car.slice(Math.max(0, k - 3), k), defense);
+      (by[r.team] ||= []).push(vaPlus(valueAdd(pooled[i], lga), dpm, pooled[i].mp));
+    });
+    const teams = Object.fromEntries(Object.entries(by).filter(([t]) => pctOf(T, t) != null)
+      .map(([t, v]) => [t, { vaPlus: v, lastPct: pctOf(rows[0].prevSeason, t) ?? 0.5, actual: pctOf(T, t) }]));
+    out.push({ season: T, teams });
+  }
+  return out;
+}
+
+// a and b by least squares on season-centred scores, ρ by grid; judged
+// leave-one-season-out in wins, beside "last season's record" alone.
+function fitWins(seasons) {
+  const rows = (rho) => seasons.flatMap(({ season, teams }) => {
+    const names = Object.keys(teams);
+    const sc = Object.fromEntries(names.map((t) => [t, teams[t].vaPlus.slice().sort((a, b) => b - a).reduce((s, v, k) => s + v * rho ** k, 0) / 82]));
+    const mean = names.reduce((s, t) => s + sc[t], 0) / names.length;
+    return names.map((t) => ({ season, x: [sc[t] - mean, teams[t].lastPct - 0.5], y: teams[t].actual - 0.5 }));
+  });
+  const solve = (rs) => wls(rs.map((r) => r.x), rs.map((r) => r.y), rs.map(() => 1), 1e-9);
+  const loso = (rs, cols) => {
+    let se = 0;
+    for (const s of seasons) {
+      const tr = rs.filter((r) => r.season !== s.season), B = solve(tr.map((r) => ({ ...r, x: cols(r.x) })));
+      for (const r of rs) if (r.season === s.season) se += ((cols(r.x).reduce((a, v, j) => a + v * B[j], 0) - r.y) * 82) ** 2;
+    }
+    return Math.sqrt(se / rs.length);
+  };
+  let best = null;
+  for (const rho of [0.8, 0.85, 0.9, 0.95, 1]) {
+    const rs = rows(rho), e = loso(rs, (x) => x);
+    if (!best || e < best.e) best = { e, rho, rs };
+  }
+  const [a, b] = solve(best.rs);
+  return {
+    rho: best.rho, a: round(a, 5), b: round(b, 4),
+    rmseWins: round(best.e, 2),
+    rmseLastRecord: round(loso(best.rs, (x) => [x[1]]), 2),
+    rmseConstant: round(Math.sqrt(best.rs.reduce((s, r) => s + (r.y * 82) ** 2, 0) / best.rs.length), 2),
+    teamSeasons: best.rs.length,
+  };
+}
+
 // --- Run ------------------------------------------------------------------------
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 const t0 = Date.now();
@@ -715,6 +805,23 @@ for (const season of SEASONS.filter((x) => x >= "2005-06")) {
 
 const mvp = fitMvp();
 
+// Defense, and the wins model on top of it (when records are baked). The
+// holdout is the season just played, projected from a fit through the one
+// before — the same discipline as the player backtest.
+const defense = fitDefense(BASE);
+let wins = null;
+if (Object.keys(RECORDS).length) {
+  const prevBase = SEASONS[SEASONS.indexOf(BASE) - 1];
+  const held = fitWins(teamSeasons("1990-91", prevBase, btParams, fitDefense(prevBase)));
+  const ts = teamSeasons(HOLDOUT, HOLDOUT, btParams, fitDefense(prevBase))[0];
+  const pred = projectWins(held, ts.teams);
+  const errs = Object.entries(ts.teams).map(([t, x]) => (pred[t].winPct - x.actual) * 82);
+  wins = {
+    ...fitWins(teamSeasons("1990-91", BASE, params, defense)),
+    holdout: { season: HOLDOUT, rmseWins: round(Math.sqrt(errs.reduce((s, e) => s + e * e, 0) / errs.length), 2), teams: errs.length },
+  };
+}
+
 // Rookies, once past drafts are baked.
 const samples = rookieSamples();
 if (samples.length >= 200) {
@@ -739,6 +846,8 @@ for (const [slug, car] of careers) {
     missedLast: last.season !== BASE,
     mpg: round(proj.mpg, 1),
     lostLast: !!proj.lostLast,
+    // Projected defensive VA per minute (VA+ = VA + dpm × minutes).
+    dpm: round(projectDpm(slug, car.slice(-3), defense), 4),
     row: Object.fromEntries(Object.entries(proj.row).map(([k, v]) => [k, round(v, k === "g" ? 0 : 1)])),
     va: round(valueAdd(proj.row, lgaBase), 1),
     last: {
@@ -767,6 +876,9 @@ fs.writeFileSync(OUT, JSON.stringify({
   collegeSeason: COLLEGE.includes(BASE) ? BASE : null,
   // The incoming class's draft, for the route to look picks up by name.
   draftYear: TARGET.slice(0, 4),
+  // The wins model, and the record each team is coming off.
+  wins, defense,
+  lastRecords: RECORDS[BASE] ? Object.fromEntries(Object.entries(RECORDS[BASE]).map(([t, r]) => [t, { w: r.w, l: r.l }])) : null,
   params,
   fitErr: Object.fromEntries(Object.entries(fitErr).map(([k, v]) => [k, Number(v.toPrecision(4))])),
   mvp, backtest,
@@ -780,6 +892,7 @@ console.log("pcts ", Object.fromEntries(PCT_KEYS.map(({ key }) => [key, `${param
 console.log("time ", JSON.stringify(params.time));
 console.log("gap  ", JSON.stringify(params.gap));
 console.log("pool ", JSON.stringify(params.pool));
+console.log("wins ", JSON.stringify(wins), "defense", JSON.stringify(defense));
 console.log("rookie", JSON.stringify(params.rookie || "no past college seasons baked"));
 console.log("aging tpa", aging.rate.tpa);
 console.log("backtest", backtest);

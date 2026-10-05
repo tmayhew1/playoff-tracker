@@ -5,7 +5,8 @@ import { valueAdd } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, splitName, teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
-import { allNbaTeams, simulateAwards, teamStrength } from "../lib/projection-model";
+import { allNbaTeams, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
+import { TEAM_CONF } from "../teams";
 
 // The 2026-27 Look Ahead, Explore's projected season (lib/projection-model.js
 // for the model, scripts/fit-projection-model.mjs for the fit, and
@@ -105,16 +106,23 @@ export function LookAhead() {
     return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
   }, [data, players]);
 
+  // Projected standings (lib/projection-model.js projectWins): each roster's
+  // VA+ — VA after the team context plus projected defense — best to worst,
+  // and the record the team is coming off. Priced on LG AVG, which the wins
+  // model was fit on, whatever the switch says.
   const teams = useMemo(() => {
+    if (!data) return [];
     const by = {};
     for (const p of players) if (p.team) (by[p.team] ||= []).push(p);
-    return Object.entries(by).map(([t, list]) => ({
-      team: t,
-      strength: teamStrength(list.map((p) => p.vaShown)),
-      top: list.slice(0, 3),
-      n: list.length,
-    })).sort((a, b) => b.strength - a.strength);
-  }, [players]);
+    const rec = data.lastRecords || {};
+    const lastPct = (t) => (rec[t] ? rec[t].w / (rec[t].w + rec[t].l) : 0.5);
+    const proj = data.wins ? projectWins(data.wins, Object.fromEntries(Object.entries(by).map(([t, list]) =>
+      [t, { vaPlus: list.map((p) => vaPlus(p.va, p.dpm, p.row.mp)), lastPct: lastPct(t) }]))) : {};
+    return Object.entries(by).map(([t, list]) => {
+      const top = [...list].sort((a, b) => vaPlus(b.va, b.dpm, b.row.mp) - vaPlus(a.va, a.dpm, a.row.mp)).slice(0, 3);
+      return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: rec[t] || null, top };
+    }).sort((a, b) => b.wins - a.wins);
+  }, [data, players]);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the projection — {error}</div>;
   if (!data || !awards) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Projecting 2026-27…</div>;
@@ -129,7 +137,6 @@ export function LookAhead() {
   const visible = showAll || team ? rows : rows.slice(0, PAGE);
   const maxAbs = Math.max(1, ...rows.map((p) => Math.abs(p.vaShown)));
   const rankOf = new Map(players.map((p, i) => [p.slug, i + 1]));
-  const maxStrength = Math.max(1e-9, ...teams.map((t) => t.strength));
 
   return (
     <div>
@@ -286,24 +293,43 @@ export function LookAhead() {
 
       {/* Teams */}
       <div className="mb-4 border border-stone-300 bg-white">
-        <SectionHead title="Projected Roster Strength" note="Top eight players’ projected VA per game, after the team context · tap a team to filter the leaders" />
-        {teams.map((t, i) => {
-          const tc = teamColor(t.team);
+        <SectionHead
+          title="Projected Standings"
+          note={data.wins
+            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team to filter the leaders`
+            : "Wins model not fit yet"}
+        />
+        {["E", "W"].map((conf) => {
+          const list = teams.filter((t) => t.conf === conf);
+          if (!list.length) return null;
+          const maxW = Math.max(1, ...teams.map((t) => t.wins));
           return (
-            <button
-              key={t.team}
-              type="button"
-              onClick={() => { setTeam(team === t.team ? null : t.team); setExpanded(null); }}
-              className="relative w-full overflow-hidden border-b border-stone-100 last:border-0 text-left"
-            >
-              <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${Math.max(0, t.strength / maxStrength) * 100}%`, backgroundColor: withAlpha(tc, team === t.team ? 0.3 : 0.16) }} aria-hidden />
-              <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
-                <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
-                <TeamChip team={t.team} active={team === t.team} />
-                <span className="flex-1 min-w-0 truncate text-stone-600">{t.top.map((p) => splitName(p.name).last).join(" · ")}</span>
-                <span className="w-12 text-right tabular-nums font-bold text-stone-900">{t.strength.toFixed(1)}</span>
+            <div key={conf} className="border-b border-stone-200 last:border-0">
+              <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[9px] uppercase tracking-[0.2em]">
+                <span className="font-bold text-stone-700">{conf === "E" ? "East" : "West"}</span>
+                <span className="text-stone-400 tracking-wider">Proj · Last</span>
               </div>
-            </button>
+              {list.map((t, i) => {
+                const tc = teamColor(t.team), w = Math.round(t.wins);
+                return (
+                  <button
+                    key={t.team}
+                    type="button"
+                    onClick={() => { setTeam(team === t.team ? null : t.team); setExpanded(null); }}
+                    className={`relative w-full overflow-hidden text-left ${i === 5 || i === 9 ? "border-b border-dashed border-stone-300" : "border-b border-stone-100"}`}
+                  >
+                    <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(t.wins / maxW) * 100}%`, backgroundColor: withAlpha(tc, team === t.team ? 0.3 : 0.16) }} aria-hidden />
+                    <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
+                      <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
+                      <TeamChip team={t.team} active={team === t.team} />
+                      <span className="flex-1 min-w-0 truncate text-stone-600">{t.top.map((p) => splitName(p.name).last).join(" · ")}</span>
+                      <span className="w-12 text-right tabular-nums font-bold text-stone-900">{w}–{82 - w}</span>
+                      <span className="w-10 text-right tabular-nums text-stone-400">{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           );
         })}
       </div>
@@ -371,6 +397,7 @@ function ProjectedLine({ p, sim, lga }) {
         {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
         <TeamContext p={p} lga={lga} />
+        {p.dpm != null && p.row.mp > 0 && <> · projected defense {p.dpm * p.row.mp >= 0 ? "+" : "−"}{fmt1(Math.abs(p.dpm * p.row.mp))} VA (VA+ {fmt1(vaPlus(p.va, p.dpm, p.row.mp))})</>}
         {sim && <> · 80% of simulated seasons land between <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}</span> and <span className="font-semibold text-stone-700">{Math.round(sim.vaHi)}</span> VA</>}
         {sim && sim.allNba > 0.005 && <> · All-NBA {pct(sim.allNba)}</>}
       </div>
@@ -408,6 +435,9 @@ function Method({ data }) {
           <p><span className="font-semibold text-stone-800">The rookies.</span> A drafted rookie is projected from the pick — the strongest public signal of the role a rookie walks into — with every piece of the line (minutes, games, each per-minute rate and percentage) fit on how past rookies at that slot played. The college season was tested on top of it, translated stat by stat and adjusted for years in college, and it made the projections worse: the pick already carries what scouts saw in that season. College stats are used only for undrafted rookies, where there is no pick — and there they predict little.{b.players ? ` Projecting each rookie class from a fit on the others, it correlated ${b.corr.toFixed(2)} with what ${b.players} rookies actually did, missing by ${Math.round(b.mae)} VA on average against ${Math.round(b.maeNaive)} for “every rookie is average”${L.players >= 10 ? `; for lottery picks, ${Math.round(L.mae)} against ${Math.round(L.maeNaive)}` : ""}. Rookie seasons are the least predictable on the page, and their simulated ranges are drawn from rookie misses to match.` : ""}</p>
         );
       })()}
+      {data.wins && (
+        <p><span className="font-semibold text-stone-800">The standings.</span> A team’s wins come from its players’ projected VA+ — VA after the team context, plus a projection of each player’s defense — taken best to worst with each player counting {Math.round(data.wins.rho * 100)}% of the one ahead, and from the record it’s coming off, which carries coaching, system and health that rosters can’t. It was fit on every season since 1990-91, each roster projected from what was known the summer before: it misses by {data.wins.rmseWins.toFixed(1)} wins on average, against {data.wins.rmseLastRecord.toFixed(1)} for last season’s record alone and {data.wins.rmseConstant.toFixed(1)} for calling every team 41–41. VA+ beat plain VA and USG-ADJ VA, the gentle decay beat a top-eight sum and a free weight per rank, and offense and defense, fit separately, came out weighted alike. The dashed lines mark the sixth and tenth seeds.</p>
+      )}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
       <p><span className="font-semibold text-stone-800">The awards.</span> MVP voting is modelled as a logit on season VA, fit on all {m.seasons} winners since 1980-81 (team strength, VA per game and games played were tested and added nothing out of sample). Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — applies the 65-game rule, and draws a ballot. All-NBA is the top fifteen of that ballot.</p>
       <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Undrafted rookies with no college season in the data aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>

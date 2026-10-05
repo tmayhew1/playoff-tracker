@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  allNbaTeams, leagueContext, poolTeams, projectPlayer, projectRookie, simulateAwards, AWARD_MIN_GAMES,
+  allNbaTeams, leagueContext, poolTeams, projectPlayer, projectRookie, projectWins, simulateAwards, vaPlus, AWARD_MIN_GAMES,
 } from "../app/lib/projection-model.js";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { parseShareParams } from "../app/lib/share-params.js";
@@ -295,4 +295,24 @@ test("stars keep their minutes: quality, not just career stage, sets them", () =
   }
   // And the quality term is capped, so nobody is projected past 40.
   assert.ok(PROJ.players.every((x) => x.mpg <= 40));
+});
+
+test("wins: the league still adds up, and the model beats last season's record", { skip: !PROJ.wins && "team records not baked" }, () => {
+  const W = PROJ.wins;
+  assert.ok(W.rmseWins < W.rmseLastRecord && W.rmseLastRecord < W.rmseConstant, JSON.stringify(W));
+  assert.ok(W.a > 0 && W.b > 0 && W.rho > 0 && W.rho <= 1);
+  // Thirty teams, last records all .500: the projections average 41 wins.
+  const teams = Object.fromEntries(Array.from({ length: 30 }, (_, i) => [`T${i}`, { vaPlus: [300 + 20 * i, 200, 100, 50, 0, -20], lastPct: 0.5 }]));
+  const out = projectWins(W, teams);
+  const total = Object.values(out).reduce((a, x) => a + x.wins, 0);
+  assert.ok(Math.abs(total - 30 * 41) < 1e-6, `total ${total}`);
+  // A better best player means more wins; a better record coming in, too.
+  assert.ok(out.T29.wins > out.T0.wins);
+  const better = projectWins(W, { ...teams, T0: { ...teams.T0, lastPct: 0.7 } });
+  assert.ok(better.T0.wins > out.T0.wins);
+});
+
+test("wins: projected defense is baked for every returning player", () => {
+  assert.ok(PROJ.players.every((p) => Number.isFinite(p.dpm)));
+  assert.ok(vaPlus(100, 0.1, 1000) === 200);
 });
