@@ -335,7 +335,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
       ) : (
         <>
           <div className="mb-4 p-3 bg-white border border-stone-300">
-            <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Season</label>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block">Season</label>
+              {/* Same amber as the Look Ahead banner below, so the two read as one thing. */}
+              {season === LOOK_AHEAD_SEASON && (
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">Projected</span>
+              )}
+            </div>
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value)}

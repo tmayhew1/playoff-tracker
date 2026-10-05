@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { valueAdd } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, splitName, teamColor, withAlpha } from "../lib/format";
+import { splitName, teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
 import { allNbaTeams, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { TEAM_CONF } from "../teams";
@@ -143,10 +143,7 @@ export function LookAhead() {
     <div>
       {/* Masthead */}
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">2026-27 · Look Ahead</div>
-          <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 border" style={{ color: GOLD, borderColor: withAlpha(GOLD, 0.5), backgroundColor: withAlpha(GOLD, 0.08) }}>Projected</span>
-        </div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">2026-27 · Look Ahead</div>
         <div className="text-sm font-bold text-stone-900 mt-1 leading-snug">Every roster’s 2026-27 record, every player’s season, and the MVP and All-NBA races simulated {SIMS.toLocaleString()} times.</div>
         <div className="text-[10px] text-stone-500 mt-1.5 leading-snug">
           {data.rosters === "live"
