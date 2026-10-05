@@ -249,6 +249,7 @@ export const timeUnits = (history) => history.slice(-TIME_HISTORY).map(unitsOf).
 // 3.2 short. Stars don't lose their minutes to experience; coaches keep
 // playing them.
 const Q_CAP = 2; // quality, in tens of VA per 36
+const ROTATION_MPG = 20;
 export function timeFeatures(units, missed = 0, exp = 1) {
   const [last, ...prior] = units;
   const lostLast = isLostSeason(last) ? 1 : 0;
@@ -265,12 +266,20 @@ export function timeFeatures(units, missed = 0, exp = 1) {
   // minute or more past what that tier has actually played.
   const q = Math.min(Q_CAP, mpAll > 0 ? units.reduce((s, u) => s + u.mp * (u.q36 || 0), 0) / mpAll / 10 : 0);
   const stage = Math.min(Math.max(exp, 1), MAX_EXP) / 10;
+  const rotation = Math.max(0, mEff - ROTATION_MPG); // minutes past a rotation role
   return {
     lostLast,
-    avail: [aEff, aH, lostLast, lostBefore, mEff / 36, gone, (gone * mEff) / 36],
+    // gone × minutes past 20: a season away costs a rotation player or a
+    // starter less than the straight line through every returner says — the
+    // penalty bends flat past a rotation role. The missed-season terms are fit mostly
+    // on fringe returners (seven in ten were under 20 minutes), who often never
+    // get the role back; a starter's team hands it straight back. Without this
+    // bend, starters back from a full lost year were projected ~8 games short
+    // of what they played (Leonard, Murray, Durant, Wall among them).
+    avail: [aEff, aH, lostLast, lostBefore, mEff / 36, gone, (gone * mEff) / 36, (gone * rotation) / 36],
     // Squared, because minutes regress along a curve: a 36-minute player
     // keeps more of them than a straight line through the bench allows.
-    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff, gone, gone * mEff, q, q * stage],
+    mpg: [mEff, (mEff * mEff) / 36, mH, lostLast, aEff, gone, gone * mEff, q, q * stage, gone * rotation],
   };
 }
 
