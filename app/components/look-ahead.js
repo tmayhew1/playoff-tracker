@@ -172,8 +172,8 @@ export function LookAhead() {
               </div>
               {list.map((t, i) => {
                 const tc = teamColor(t.team), w = Math.round(t.wins), isOpen = openTeam === t.team;
-                const roster = isOpen ? players.filter((p) => p.team === t.team) : [];
-                const rosterMax = Math.max(1, ...roster.map((p) => Math.abs(p.vaShown)));
+                const roster = isOpen ? players.filter((p) => p.team === t.team).sort((a, b) => vaPlusShown(b) - vaPlusShown(a)) : [];
+                const rosterMax = Math.max(1, ...roster.map((p) => Math.abs(vaPlusShown(p))));
                 return (
                   <div key={t.team} className={i === 5 || i === 9 ? "border-b border-dashed border-stone-300" : "border-b border-stone-100"}>
                     <button
@@ -198,14 +198,15 @@ export function LookAhead() {
                       <div className="bg-stone-50/60 border-t border-stone-200 pl-2 sm:pl-4">
                         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
                           <span className="w-5 sm:w-6 text-right">#</span>
-                          <span className="w-8 sm:w-10">Team</span>
                           <span className="flex-1">Player</span>
                           <span className="w-6 text-right">G</span>
                           <span className="w-12 text-right">VA</span>
-                          <span className="w-10 text-right">VA/G</span>
+                          <span className="w-12 text-right">VA+</span>
+                          <span className="w-10 text-right">VA+/G</span>
                         </div>
                         {roster.map((p) => (
                           <LeaderRow
+                            withVaPlus
                             key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={rosterMax} lga={lga} sim={awards.bySlug[p.slug]}
                             isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
                           />
@@ -355,17 +356,26 @@ export function LookAhead() {
 }
 
 
+// VA+ on the scale the page is showing: the shown VA (LG AVG or USG-ADJ)
+// plus projected defense.
+const vaPlusShown = (p) => vaPlus(p.vaShown, p.dpm, p.row.mp);
+
 // One projected player: the bar, the line, and — tapped — the projected
 // season beside the one it grew from. Shared by the leaders table and the
 // roster each standings row drops open.
-function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null }) {
+function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null, withVaPlus = false }) {
   const tc = p.team ? teamColor(p.team) : "#78716c";
+  // In a team's roster the bar and the order are VA+ — VA plus projected
+  // defense, the number the standings are built from — and the team chip,
+  // the same on every row, gives its room to the VA+ column.
+  const vp = vaPlusShown(p);
+  const barVal = withVaPlus ? vp : p.vaShown;
   return (
     <div className="border-b border-stone-100 last:border-0">
       <div className="relative overflow-hidden">
         <div
           className="absolute inset-y-0 left-0 pointer-events-none"
-          style={{ width: `${(Math.abs(p.vaShown) / maxAbs) * 100}%`, backgroundColor: p.vaShown >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.1) }}
+          style={{ width: `${(Math.abs(barVal) / maxAbs) * 100}%`, backgroundColor: barVal >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.1) }}
           aria-hidden
         />
         <div
@@ -378,15 +388,16 @@ function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = n
           className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
         >
           <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
-          <TeamChip team={p.team} active={activeTeam === p.team} onClick={onTeam && p.team ? (e) => { e.stopPropagation(); onTeam(p.team); } : undefined} />
+          {!withVaPlus && <TeamChip team={p.team} active={activeTeam === p.team} onClick={onTeam && p.team ? (e) => { e.stopPropagation(); onTeam(p.team); } : undefined} />}
           <span className="flex-1 min-w-0 flex items-center text-stone-800">
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
             <Name name={p.name} />
             {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
           </span>
           <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>
-          <span className={`w-12 text-right tabular-nums font-bold ${p.vaShown < 0 ? "text-red-600" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
-          <span className="w-10 text-right tabular-nums text-stone-700">{(p.vaShown / p.row.g).toFixed(2)}</span>
+          <span className={`w-12 text-right tabular-nums ${withVaPlus ? "text-stone-600" : "font-bold"} ${p.vaShown < 0 ? "text-red-600" : withVaPlus ? "" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
+          {withVaPlus && <span className={`w-12 text-right tabular-nums font-bold ${vp < 0 ? "text-red-600" : "text-stone-900"}`}>{fmt1(vp)}</span>}
+          <span className="w-10 text-right tabular-nums text-stone-700">{((withVaPlus ? vp : p.vaShown) / p.row.g).toFixed(2)}</span>
         </div>
       </div>
       {isOpen && <ProjectedLine p={p} sim={sim} lga={lga} />}
