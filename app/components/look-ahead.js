@@ -149,7 +149,7 @@ export function LookAhead() {
             ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
             : "Wins model not fit yet"}
         />
-        {["E", "W"].map((conf) => {
+        {["W", "E"].map((conf) => {
           const list = teams.filter((t) => t.conf === conf);
           if (!list.length) return null;
           const maxW = Math.max(1, ...teams.map((t) => t.wins));
@@ -175,9 +175,13 @@ export function LookAhead() {
                       <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
                         <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
                         <TeamChip team={t.team} active={isOpen} />
-                        <span className="flex-1 min-w-0 text-stone-600 leading-snug">
-                          <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                          {t.top.map((p) => splitName(p.name).last).join(" · ")}
+                        {/* Always two lines tall — a short list (the Hornets') sits centred in
+                            the same height as a long one, and a long one stops at two. */}
+                        <span className="flex-1 min-w-0 min-h-[2.75em] flex items-center text-stone-600 leading-snug">
+                          <span className="line-clamp-2">
+                            <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+                            {t.top.map((p) => splitName(p.name).last).join(" · ")}
+                          </span>
                         </span>
                         <span className="w-12 text-right tabular-nums font-bold text-stone-900 shrink-0">{w}–{82 - w}</span>
                         <span className="w-10 text-right tabular-nums text-stone-400 shrink-0">{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
