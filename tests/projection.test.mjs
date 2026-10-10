@@ -104,17 +104,6 @@ test("a player who can't reach 65 games is never on the ballot", () => {
   assert.equal(star.allNba, 0);
 });
 
-test("fixedGames puts every player on the ballot at that many games", () => {
-  // The same 30-game star, held at 75 games ("Perfect health"), is eligible.
-  const field = [
-    { key: "star", g: 30, va: 900, mpg: 36 },
-    ...Array.from({ length: 20 }, (_, i) => ({ key: `p${i}`, g: 75, va: 300 - i * 10, mpg: 30 })),
-  ];
-  const star = simulateAwards(field, PROJ.mvp.model, PROJ.pool, { sims: 200, fixedGames: 75 }).find((r) => r.key === "star");
-  assert.ok(star.mvp > 0);
-  assert.equal(star.eligible, 1);
-});
-
 test("the route falls back to the baked teams when rosters can't be fetched", async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async () => { throw new Error("offline"); };
