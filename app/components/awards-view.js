@@ -231,14 +231,15 @@ function MipRow({ r, withSeason, isWinner, width, gap, isOpen, onToggle, onGo })
 
 // The Look Ahead's expanded row, with the season it grew from on top: last
 // active season, this season's expected line, this season's actual. Games and
-// VA lead so the gap the board ranks on is in the line itself. An actual
+// VA per game (the per-game line's VA, headed just "VA") lead, so the gap the
+// board ranks on is in the line itself. An actual
 // cell turns green or red when it beats or trails expected by a tenth or more
 // (turnovers count the other way).
 function Lines({ r, onGo }) {
   const lines = [
-    { key: "prev", label: `${yy(r.lastSeason)} ${r.lastTeam}`, g: r.lastG, va: r.lastVa, stats: r.lastLine, cls: "text-stone-400" },
-    { key: "exp", label: `${yy(r.season)} expected`, g: r.projG, va: r.proj, stats: r.eLine, cls: "text-stone-500" },
-    { key: "act", label: `${yy(r.season)} actual`, g: r.g, va: r.actual, stats: r.aLine, cls: "font-bold text-stone-900" },
+    { key: "prev", label: `${yy(r.lastSeason)} ${r.lastTeam}`, g: r.lastG, va: r.lastG ? r.lastVa / r.lastG : null, stats: r.lastLine, cls: "text-stone-400" },
+    { key: "exp", label: `${yy(r.season)} expected`, g: r.projG, va: r.projPg, stats: r.eLine, cls: "text-stone-500" },
+    { key: "act", label: `${yy(r.season)} actual`, g: r.g, va: r.actualPg, stats: r.aLine, cls: "font-bold text-stone-900" },
   ];
   const tone = (k, e, a) => {
     if (e == null || a == null || Math.abs(a - e) < 0.1) return "";
@@ -261,7 +262,7 @@ function Lines({ r, onGo }) {
               <tr key={l.key} className={l.cls}>
                 <td className="text-left pr-1 whitespace-nowrap">{l.label}</td>
                 <td className={`text-right px-1 ${l.key === "act" ? tone("G", r.projG, r.g) : ""}`}>{l.g}</td>
-                <td className={`text-right px-1 ${l.key === "act" ? tone("VA", r.proj, r.actual) : ""}`}>{num(l.va)}</td>
+                <td className={`text-right px-1 ${l.key === "act" ? tone("VA", r.projPg, r.actualPg) : ""}`}>{f1(l.va)}</td>
                 {l.stats.map((v, j) => (
                   <td key={j} className={`text-right px-1 ${l.key === "act" ? tone(STAT_KEYS[j], r.eLine[j], v) : ""}`}>{f1(v)}</td>
                 ))}
