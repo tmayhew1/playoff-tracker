@@ -372,7 +372,10 @@ export const tierOf = (mpg) => {
 //
 // Returns per player: P(MVP), P(All-NBA), P(1st team), mean finish, and the
 // 10th/90th percentile of the simulated VA.
-export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82 } = {}) {
+// `fixedGames` holds every player at that many games instead of drawing the
+// games missed (the Look Ahead's "Perfect health" what-if); per-game VA is
+// still drawn.
+export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82, fixedGames = null } = {}) {
   const rand = rng(seed);
   const n = players.length;
   const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, rankSum: 0, ranked: 0, vas: [] }));
@@ -385,7 +388,7 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
     for (let i = 0; i < n; i++) {
       const tp = tierPool[i];
       const [dv, gr] = tp[Math.floor(rand() * tp.length)];
-      const g = Math.min(schedule, Math.max(0, Math.round(players[i].g * gr)));
+      const g = fixedGames ?? Math.min(schedule, Math.max(0, Math.round(players[i].g * gr)));
       simG[i] = g;
       simVa[i] = (vpg[i] + dv) * g;
       tally[i].vas.push(simVa[i]);
