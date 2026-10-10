@@ -10,9 +10,11 @@ import { Name, TeamChip } from "./player-chips";
 // /api/awards). A player card's award box opens a sub-page at that player
 // (lib/award-nav.js → `focus`).
 //
-//   MVP  the Look Ahead's MVP model on each season's actual VA
-//   MIP  each returning player's actual VA beside the summer-before
-//        projection, ranked by a model on the per-game ratio
+//   MVP      a logit on each season's VA+, fit on every winner
+//   MIP      each returning player's actual VA beside the summer-before
+//            projection, ranked by a model on the per-game ratio
+//   All-NBA  each player's chance of a place, from season VA+
+//   All-Star the same, against each season's All-Star roster
 
 const STAT_KEYS = ["MIN", "PTS", "REB", "AST", "STL", "BLK", "TOV", "FG%", "3P%", "FT%"];
 // "mip" is the model's order; tapping Over/G or Over sorts by that instead,
@@ -24,11 +26,13 @@ const num = (x, d = 0) => `${x < 0 ? "−" : ""}${Math.abs(x).toLocaleString(und
 const signed = (x, d = 0) => `${x > 0 ? "+" : ""}${num(x, d)}`;
 const f1 = (x) => (x == null ? "–" : x.toFixed(1));
 const yy = (s) => `’${s.slice(5)}`;
+// A player's share of the real vote: blank for none, "<1%" for a stray ballot.
+const voteCell = (v) => (!v ? "" : v < 0.005 ? "<1%" : `${Math.round(v * 100)}%`);
 
-const SUBS = [["mvp", "MVP"], ["mip", "MIP"]];
+const SUBS = [["mvp", "MVP"], ["mip", "MIP"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
 
 export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHandled = null }) {
-  const [data, setData] = useState(null);
+  const [boards, setBoards] = useState({});
   const [error, setError] = useState(null);
   const [sub, setSub] = useState(focus?.award || "mvp");
   // A card's Go → lands here: switch to its award; the board opens the player.
@@ -40,28 +44,32 @@ export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHand
     onFocusHandled?.();
   }, [focus, onFocusHandled]);
 
+  // Each sub-page's board loads the first time it's opened.
   useEffect(() => {
+    if (boards[sub]) return;
     let cancelled = false;
-    fetchBakedJson("/api/awards")
-      .then((d) => { if (!cancelled) setData(d); })
+    setError(null);
+    fetchBakedJson(`/api/awards?award=${sub}`)
+      .then((d) => { if (!cancelled) setBoards((b) => ({ ...b, [sub]: d })); })
       .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
-  }, []);
+  }, [sub, boards]);
+  const data = boards[sub];
 
   const subCls = (active) =>
-    `flex-1 text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
+    `text-[10px] font-bold uppercase tracking-[0.15em] px-1 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   const mine = target?.award === sub ? target : null;
   return (
     <div>
-      <div className="mb-3 flex gap-2" role="tablist" aria-label="Award">
+      <div className="mb-3 grid grid-cols-4 gap-1.5" role="tablist" aria-label="Award">
         {SUBS.map(([k, label]) => (
           <button key={k} type="button" role="tab" aria-selected={sub === k} onClick={() => setSub(k)} className={subCls(sub === k)}>{label}</button>
         ))}
       </div>
       {error ? <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the awards — {error}</div>
         : !data ? <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading awards…</div>
-        : sub === "mvp" ? <MvpBoard data={data.mvp} focus={mine} onGo={onGoToLeaderboard} />
-        : <MipBoard data={data.mip} focus={mine} onGo={onGoToLeaderboard} />}
+        : sub === "mip" ? <MipBoard data={data} focus={mine} onGo={onGoToLeaderboard} />
+        : <PickBoard key={sub} award={sub} data={data} focus={mine} onGo={onGoToLeaderboard} />}
     </div>
   );
 }
@@ -163,6 +171,7 @@ function MipBoard({ data, focus = null, onGo = null }) {
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
           <button type="button" onClick={() => tapSort("mip")} aria-pressed={sort === "mip"} className={`w-10 ${sortCls("mip")}`}>MIP%{sort === "mip" ? " ▾" : ""}</button>
+          <span className="w-8 text-right">Vote</span>
           <button type="button" onClick={() => tapSort("pg")} aria-pressed={sort === "pg"} className={`w-12 ${sortCls("pg")}`}>Over/G{sort === "pg" ? " ▾" : ""}</button>
           <button type="button" onClick={() => tapSort("tot")} aria-pressed={sort === "tot"} className={`w-11 ${sortCls("tot")}`}>Over{sort === "tot" ? " ▾" : ""}</button>
         </div>
@@ -220,6 +229,7 @@ function MipRow({ r, withSeason, isWinner, width, gap, isOpen, onToggle, onGo })
             {withSeason && <span className="ml-1 shrink-0 text-[9px] tabular-nums text-stone-400">{r.season}</span>}
           </span>
           <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.mip)}</span>
+          <span className="w-8 text-right tabular-nums text-stone-500">{voteCell(r.vote)}</span>
           <span className={`w-12 text-right tabular-nums ${overPg < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(overPg, 2)}</span>
           <span className={`w-11 text-right tabular-nums ${over < 0 ? "text-red-600" : "text-stone-500"}`}>{signed(over)}</span>
         </div>
@@ -302,53 +312,80 @@ function MipMethod({ model }) {
 }
 
 
-// --- MVP --------------------------------------------------------------------------
+// --- MVP, All-NBA, All-Star -------------------------------------------------------
 
-function MvpBoard({ data, focus = null, onGo = null }) {
+// What differs between the three boards that rank players by one season's VA+.
+const PICK = {
+  mvp: {
+    title: "Most Valuable", col: "MVP%", vote: true,
+    note: (m, ruled) => `The ${m.field} best by VA+${ruled ? `, ${m.minGames}+ games` : ""}, and anyone who drew a vote · ranked by MVP odds`,
+    meta: (S, list) => (S.winner ? `MVP: ${S.winner.name} · ranked #${S.winner.rank} of ${list.length}` : null),
+    tag: () => "MVP",
+    tiles: (bt) => [["#1", bt.top1], ["Top 3", bt.top3], ["Top 5", bt.top5], ["Median", `#${bt.medianRank}`]],
+    tilesNote: (bt) => `Where the real MVP ranked, ${bt.seasons} seasons, each scored by a model fit on the others.`,
+  },
+  allnba: {
+    title: "All-NBA", col: "Odds",
+    note: (m, ruled) => `Chance of an All-NBA place, from season VA+${ruled ? ` · ${m.minGames}+ games, or picked anyway` : ""} · picks tagged by team`,
+    meta: (S, list) => `${S.places} places · ${list.filter((r) => r.pick).length} picked`,
+    tag: (pick) => pick,
+    tiles: (bt) => [["Hit rate", `${Math.round(bt.rate * 100)}%`], ["Picks", `${bt.hits}/${bt.places}`], ["Seasons", bt.seasons]],
+    tilesNote: () => "Of each season’s likeliest players (as many as there were places), the share actually picked, each season scored by a model fit on the others.",
+  },
+  allstar: {
+    title: "All-Star", col: "Odds",
+    note: () => "Chance of an All-Star selection, from season VA+ · selections tagged",
+    meta: (S) => (S.partial ? `${S.places} places assumed · roster only partly known (tournament format)` : `${S.places} selected`),
+    tag: () => "★",
+    tiles: (bt) => [["Hit rate", `${Math.round(bt.rate * 100)}%`], ["Picks", `${bt.hits}/${bt.places}`], ["Seasons", bt.seasons]],
+    tilesNote: () => "Of each season’s likeliest players (as many as were selected), the share actually selected, each season scored by a model fit on the others. 1998-99 had no game; 2024-25 on, the tournament-format rosters are only partly known and aren’t scored.",
+  },
+};
+
+function PickBoard({ award, data, focus = null, onGo = null }) {
+  const cfg = PICK[award];
   const seasons = useMemo(() => Object.keys(data.seasons).sort(), [data]);
   const [season, setSeason] = useState(focus?.season || null);
   const [open, setOpen] = useState(null);
   useEffect(() => { if (focus) setSeason(focus.season); }, [focus]);
-  const cur = season || seasons.at(-1);
+  const cur = season && data.seasons[season] ? season : seasons.at(-1);
   const S = data.seasons[cur];
   const F = data.fields;
-  const list = S.rows.map((a, k) => ({ ...Object.fromEntries(F.map((f, j) => [f, a[j]])), rank: k + 1 }));
+  const list = S.rows.map((a, k) => ({ ...Object.fromEntries(F.map((f, j) => [f, a[j]])), rank: S.ranks ? S.ranks[k] : k + 1 }));
   useFocusRow(focus, list.map((r) => r.slug), setOpen);
-  const max = Math.max(1e-9, ...list.map((r) => r.mvp));
+  const max = Math.max(1e-9, ...list.map((r) => r.p));
   const pick = (s) => { setSeason(s); setOpen(null); };
   const m = data.model, bt = m.backtest;
-  const ruled = cur >= m.ruleSince;
+  const meta = cfg.meta(S, list);
 
   return (
     <div>
       <SeasonPicker seasons={seasons} cur={cur} onPick={pick}>
-        {S.winner
-          ? <span className="inline-block px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">MVP: {S.winner.name} · ranked #{S.winner.rank} of {list.length}</span>
+        {meta ? <span className="inline-block px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">{meta}</span>
           : <span className="italic text-stone-400">Not yet awarded</span>}
       </SeasonPicker>
 
       <div className="mb-4 border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Most Valuable · {cur}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">
-            The {m.field} best by VA{ruled ? `, ${m.minGames}+ games` : ""} · ranked by MVP odds · tap a player for the season line
-          </div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {cur}</div>
+          <div className="text-[9px] italic text-stone-400 mt-0.5">{cfg.note(m, cur >= m.ruleSince)} · tap a player for the season line</div>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
-          <span className="w-10 text-right text-stone-900 font-semibold">MVP% ▾</span>
-          <span className="w-12 text-right">VA</span>
-          <span className="w-10 text-right">VA/G</span>
+          <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
+          {cfg.vote && <span className="w-8 text-right">Vote</span>}
+          <span className="w-11 text-right">VA+</span>
           <span className="w-6 text-right">G</span>
         </div>
-        {list.map((r) => {
-          const tc = teamColor(r.team), isOpen = open === r.slug, isWinner = r.slug === S.winner?.slug;
+        {list.map((r, k) => {
+          const tc = teamColor(r.team), isOpen = open === r.slug, picked = !!r.pick;
+          const gap = k > 0 && r.rank > list[k - 1].rank + 1;
           return (
-            <div key={r.slug} id={`award-row-${r.slug}`} className="border-b border-stone-100 last:border-0">
-              <div className={`relative overflow-hidden ${isWinner ? "bg-amber-50" : ""}`}>
-                <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(r.mvp / max) * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
+            <div key={r.slug} id={`award-row-${r.slug}`} className={`border-b border-stone-100 last:border-0 ${gap ? "border-t border-dashed border-t-stone-300" : ""}`}>
+              <div className={`relative overflow-hidden ${picked ? "bg-amber-50" : ""}`}>
+                <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(r.p / max) * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
                 <div
                   role="button" tabIndex={0} aria-expanded={isOpen}
                   aria-label={`${r.name} — ${isOpen ? "hide" : "show"} season line`}
@@ -361,11 +398,11 @@ function MvpBoard({ data, focus = null, onGo = null }) {
                   <span className="flex-1 min-w-0 flex items-center text-stone-800">
                     <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
                     <Name name={r.name} />
-                    {isWinner && <WinnerTag award="MVP" />}
+                    {picked && <WinnerTag award={cfg.tag(r.pick)} />}
                   </span>
-                  <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.mvp)}</span>
-                  <span className="w-12 text-right tabular-nums text-stone-700">{num(r.va)}</span>
-                  <span className="w-10 text-right tabular-nums text-stone-500">{num(r.vaPg, 2)}</span>
+                  <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.p)}</span>
+                  {cfg.vote && <span className="w-8 text-right tabular-nums text-stone-500">{voteCell(r.vote)}</span>}
+                  <span className={`w-11 text-right tabular-nums ${r.vaPlus < 0 ? "text-red-600" : "text-stone-700"}`}>{num(r.vaPlus)}</span>
                   <span className="w-6 text-right tabular-nums text-stone-500">{r.g}</span>
                 </div>
               </div>
@@ -377,15 +414,15 @@ function MvpBoard({ data, focus = null, onGo = null }) {
                         <tr className="text-stone-400 uppercase tracking-wider">
                           <th className="text-left font-normal pr-1"></th>
                           <th className="text-right font-normal px-1">G</th>
-                          <th className="text-right font-normal px-1">VA</th>
-                          {STAT_KEYS.map((k) => <th key={k} className="text-right font-normal px-1">{k}</th>)}
+                          <th className="text-right font-normal px-1">VA+</th>
+                          {STAT_KEYS.map((key) => <th key={key} className="text-right font-normal px-1">{key}</th>)}
                         </tr>
                       </thead>
                       <tbody>
                         <tr className="font-bold text-stone-900">
                           <td className="text-left pr-1 whitespace-nowrap">{yy(cur)} {r.team}</td>
                           <td className="text-right px-1">{r.g}</td>
-                          <td className="text-right px-1">{num(r.va)}</td>
+                          <td className="text-right px-1">{f1(r.vaPlusPg)}</td>
                           {r.line.map((v, j) => <td key={j} className="text-right px-1">{f1(v)}</td>)}
                         </tr>
                       </tbody>
@@ -403,25 +440,26 @@ function MvpBoard({ data, focus = null, onGo = null }) {
       </div>
 
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Against the real award</div>
-        <div className="mt-2 grid grid-cols-4 gap-1.5 text-center">
-          {[["#1", bt.top1], ["Top 3", bt.top3], ["Top 5", bt.top5], ["Median", `#${bt.medianRank}`]].map(([k, v]) => (
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Against the real {award === "mvp" ? "award" : "picks"}</div>
+        <div className={`mt-2 grid gap-1.5 text-center ${cfg.tiles(bt).length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+          {cfg.tiles(bt).map(([k, v]) => (
             <div key={k} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
               <div className="text-[8px] uppercase tracking-wider text-stone-400">{k}</div>
               <div className="text-sm font-bold tabular-nums text-stone-900">{v}</div>
             </div>
           ))}
         </div>
-        <div className="text-[9px] italic text-stone-400 mt-1">Where the real winner ranked, {bt.seasons} seasons, each scored by a model fit on the others.</div>
+        <div className="text-[9px] italic text-stone-400 mt-1">{cfg.tilesNote(bt)}</div>
       </div>
 
-      <MvpMethod model={m} />
+      <PickMethod award={award} model={m} />
     </div>
   );
 }
 
-function MvpMethod({ model }) {
+function PickMethod({ award, model }) {
   const [show, setShow] = useState(false);
+  const bt = model.backtest;
   return (
     <div className="mb-4 border border-stone-300 bg-white">
       <button type="button" onClick={() => setShow((s) => !s)} className="w-full px-3 py-2 text-left text-[10px] uppercase tracking-[0.3em] text-stone-500 flex items-center gap-2">
@@ -429,9 +467,19 @@ function MvpMethod({ model }) {
       </button>
       {show && (
         <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
-          <p><span className="font-semibold text-stone-800">MVP %.</span> Each player’s chance of winning that season’s award, from the Look Ahead’s MVP model: a logistic model on season VA (scaled to 82 games, so the lockout years read the same), fit on all {model.backtest.seasons} winners since 1980-81. Team strength, VA per game and games played were tested for the Look Ahead and added nothing out of sample.</p>
-          <p><span className="font-semibold text-stone-800">Who’s counted.</span> Each season’s {model.field} best players by VA; from {model.ruleSince} on, only those who played {model.minGames} games, the league’s eligibility rule.</p>
-          <p><span className="font-semibold text-stone-800">Blind spots.</span> VA is box-score offense first, so the model leans toward scorers, and voters’ stories (team record, narrative, voter fatigue) aren’t in it. On average it gave the real winner {Math.round(model.backtest.meanWinnerP * 100)}% before the vote.</p>
+          {award === "mvp" ? (
+            <>
+              <p><span className="font-semibold text-stone-800">MVP %.</span> Each player’s chance of winning that season’s award: a logistic model on season VA+ (VA plus the D-rating term, scaled to 82 games so the lockout years read the same), fit on all {bt.seasons} winners since 1980-81. VA+ beat plain VA, which the Look Ahead uses. Vote is each player’s share of the real ballot (Basketball-Reference). Fitting to the vote shares instead of the winner left the order unchanged and made the odds less sure of who wins, so they’re shown rather than fit.</p>
+              <p><span className="font-semibold text-stone-800">Who’s counted.</span> Each season’s {model.field} best by VA+, plus anyone who drew a vote; from {model.ruleSince} on, only those who played {model.minGames} games, the league’s eligibility rule.</p>
+              <p><span className="font-semibold text-stone-800">Blind spots.</span> Voters’ stories (team record, narrative, fatigue) aren’t in it. On average it gave the real winner {Math.round(bt.meanWinnerP * 100)}% before the vote.</p>
+            </>
+          ) : (
+            <>
+              <p><span className="font-semibold text-stone-800">Odds.</span> Each player’s chance of {award === "allnba" ? "an All-NBA place" : "an All-Star selection"}: a logistic model on season VA+ (per 82 games), with each season’s odds scaled to add up to its real number of places{award === "allnba" ? " (10 before 1988-89, 15 since)" : " (that season’s roster; 24 where it isn’t fully known)"}. Fit on {bt.seasons} seasons of real {award === "allnba" ? "teams" : "rosters"} from Basketball-Reference. VA+ beat plain VA, VA per game, games played and combinations of them{award === "allnba" ? "; filling places by position (two guards, two forwards, a center per team before 2023-24) added nothing" : ""}.</p>
+              <p><span className="font-semibold text-stone-800">Who’s counted.</span> Each season’s {model.pool} best by VA+, plus anyone picked from outside them{award === "allnba" ? `; from ${model.ruleSince} on, only those who played ${model.minGames} games` : ""}.</p>
+              <p><span className="font-semibold text-stone-800">Blind spots.</span> {award === "allstar" ? "All-Stars are chosen in February from half a season, by fans, players and coaches, a conference at a time; this reads the whole season. Injury replacements count as selections." : "Voters weigh team success and reputation, which VA+ doesn’t see."}</p>
+            </>
+          )}
         </div>
       )}
     </div>
