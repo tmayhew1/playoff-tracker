@@ -24,6 +24,7 @@ const LegacyView = lazyView(() => import("./components/legacy-view").then((m) =>
 const ShotZonesView = lazyView(() => import("./components/shot-zones-view").then((m) => m.ShotZonesView));
 const UsageView = lazyView(() => import("./components/usage-view").then((m) => m.UsageView));
 const DraftView = lazyView(() => import("./components/draft-view").then((m) => m.DraftView));
+const MipView = lazyView(() => import("./components/mip-view").then((m) => m.MipView));
 
 
 // `initial` is the link this page was opened from, parsed on the server
@@ -43,6 +44,7 @@ const TABS = [
   ...SEASONS.map((s) => [s, s]),
   ["draft", "Draft"],
   ["legacy", "Legacy"],
+  ["mip", "MIP"],
   ["college", "College"],
   ["drating", "D Rating"],
   ["usage", "Usage"],
@@ -78,7 +80,7 @@ function Tracker({ initial }) {
     }
   }, [query]);
 
-  // A cross-tab jump: Legacy hands over a player-season and which half of it
+  // A cross-tab jump: Legacy (and MIP) hand over a player-season and which half of it
   // was being read, and Explore opens its leaderboard there. Held here because
   // the two tabs are siblings — Explore unmounts while Legacy is showing, so
   // it picks the target up on mount.
@@ -129,7 +131,7 @@ function Tracker({ initial }) {
         {SEASONS.includes(tab) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "mip" ? <MipView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
     </ShareProvider>
