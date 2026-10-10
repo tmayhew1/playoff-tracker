@@ -265,9 +265,9 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   }, [FALLBACK, linked]);
 
   useEffect(() => {
-    // Series box scores only exist for the playoffs; the other scopes render
-    // just the leaderboard.
-    if (mode !== "season" || scope !== "playoffs" || season === LOOK_AHEAD_SEASON) return;
+    // Series box scores only exist for the playoffs, so they show under the
+    // Playoffs and Combined scopes; Regular Season renders just the leaderboard.
+    if (mode !== "season" || scope === "regular" || season === LOOK_AHEAD_SEASON) return;
     let cancelled = false;
     setData(null);
     setError(null);
@@ -372,15 +372,22 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
 
           {season === LOOK_AHEAD_SEASON ? (
             <LookAhead />
-          ) : scope !== "playoffs" ? (
+          ) : scope === "regular" ? (
             <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
           ) : (
             <>
+              {/* Combined keeps its leaderboard up while the series load; the
+                  bracket below it is the same one the Playoffs scope shows. */}
+              {scope === "combined" && (
+                <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+              )}
               {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
               {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
               {!loading && !error && data && (
                 <>
-                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+                  {scope === "playoffs" && (
+                    <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+                  )}
                   {(["r1", "r2", "r3", "r4"]).map((rk) => (
                     <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={poLga} season={season} />
                   ))}
