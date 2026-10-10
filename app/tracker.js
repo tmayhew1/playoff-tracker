@@ -8,6 +8,7 @@ import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 import { shareQuery } from "./lib/share-params";
 import { ShareProvider, useShareStore } from "./lib/share-state";
+import { AwardNavProvider } from "./lib/award-nav";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
 // code loads the first time that tab is opened, so a visit that never leaves
@@ -24,7 +25,7 @@ const LegacyView = lazyView(() => import("./components/legacy-view").then((m) =>
 const ShotZonesView = lazyView(() => import("./components/shot-zones-view").then((m) => m.ShotZonesView));
 const UsageView = lazyView(() => import("./components/usage-view").then((m) => m.UsageView));
 const DraftView = lazyView(() => import("./components/draft-view").then((m) => m.DraftView));
-const MipView = lazyView(() => import("./components/mip-view").then((m) => m.MipView));
+const AwardsView = lazyView(() => import("./components/awards-view").then((m) => m.AwardsView));
 
 
 // `initial` is the link this page was opened from, parsed on the server
@@ -44,7 +45,7 @@ const TABS = [
   ...SEASONS.map((s) => [s, s]),
   ["draft", "Draft"],
   ["legacy", "Legacy"],
-  ["mip", "MIP"],
+  ["awards", "Awards"],
   ["college", "College"],
   ["drating", "D Rating"],
   ["usage", "Usage"],
@@ -93,8 +94,20 @@ function Tracker({ initial }) {
   }, [setTab]);
   const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
+  // The other direction: a player card's award box (award-boxes.js) opens the
+  // Awards tab on that award, season and player.
+  const [awardFocus, setAwardFocus] = useState(null);
+  const goToAward = useCallback((target) => {
+    if (!target?.season || !target?.award) return;
+    setAwardFocus(target);
+    setTab("awards");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [setTab]);
+  const clearAwardFocus = useCallback(() => setAwardFocus(null), []);
+
   return (
     <ShareProvider value={report}>
+    <AwardNavProvider value={goToAward}>
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4 text-center">
@@ -131,9 +144,10 @@ function Tracker({ initial }) {
         {SEASONS.includes(tab) && <VABaselineToggle />}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "mip" ? <MipView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
       </div>
     </div>
+    </AwardNavProvider>
     </ShareProvider>
   );
 }

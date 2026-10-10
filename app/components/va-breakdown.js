@@ -14,6 +14,7 @@ import { GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catVATot
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 import { useCompareReport } from "../lib/share-state";
 import { CategoryContext } from "./category-context";
+import { AwardBoxes } from "./award-boxes";
 
 
 export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
@@ -797,6 +798,9 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
 
   return (
     <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
+      {/* Award odds lead an NBA regular-season card (the awards are regular
+          season); a playoff or college card has none. */}
+      {baseline === "NBA" && <AwardBoxes slug={aRow.slug} season={aRow.season} />}
       {compare && context ? (
         // Comparison toggle row: the gold vs-chip left (where Basic/By
         // Category lives) and Values/Percentiles right (where Per 36/Per G

@@ -1,10 +1,22 @@
 #!/usr/bin/env node
-// Bake the MIP tab (app/components/mip-view.js): every regular season since
-// 1981-82, each returning player's actual VA beside what the Look Ahead model
-// (app/lib/projection-model.js) would have projected for them the summer
-// before, and a Most Improved Player model fit on every winner since 1985-86.
+// Bake the Awards tab (app/components/awards-view.js) and the award odds the
+// player cards show (app/components/award-boxes.js):
 //
-//   npm run bake:mip            (after npm run fit:projections)
+//   app/data/awards.json       the MVP and MIP boards, every season
+//   app/data/award-odds.json   each player-season's MVP % and MIP %, by slug
+//
+//   npm run bake:awards         (after npm run fit:projections)
+//
+// --- MVP --------------------------------------------------------------------------
+// The Look Ahead's MVP model: a conditional logit on season VA, on an 82-game
+// footing, over each season's FIELD best players (from 2023-24 on, only those
+// who meet the 65-game rule), fit here on every winner since 1980-81.
+//
+// --- MIP --------------------------------------------------------------------------
+// Every regular season since 1981-82, each returning player's actual VA beside
+// what the Look Ahead model (app/lib/projection-model.js) would have projected
+// for them the summer before, and a Most Improved Player model fit on every
+// winner since 1985-86.
 //
 // The projection is the shipped one: the baked constants in
 // projection-<next>.json, each player projected from the seasons before the
@@ -29,7 +41,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
-import { TIME_HISTORY, leagueContext, nextSeason, poolTeams, projectPlayer } from "../app/lib/projection-model.js";
+import { AWARD_MIN_GAMES, TIME_HISTORY, leagueContext, nextSeason, poolTeams, projectPlayer, scheduleLength } from "../app/lib/projection-model.js";
+import { AWARD_RULE_SINCE, MIP_WINNERS, MVP_WINNERS } from "../app/lib/awards.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
@@ -37,26 +50,15 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
 
 const SEASONS = fs.readdirSync(DATA).map((f) => f.match(/^regular-season-(\d{4}-\d{2})\.json$/)?.[1]).filter(Boolean).sort();
 const PROJ = read(`projection-${nextSeason(SEASONS.at(-1))}.json`);
-const OUT = path.join(DATA, "mip.json");
+const OUT = path.join(DATA, "awards.json");
+const ODDS_OUT = path.join(DATA, "award-odds.json");
 
-// Most Improved Player, by basketball-reference id (nba.com/news/history-most-improved-player-award-winners).
-const WINNERS = {
-  "1985-86": "roberal01", "1986-87": "ellisda01", "1987-88": "duckwke01", "1988-89": "johnske02",
-  "1989-90": "seikaro01", "1990-91": "skilesc01", "1991-92": "ellispe01", "1992-93": "abdulma02",
-  "1993-94": "macledo01", "1994-95": "barroda01", "1995-96": "muresgh01", "1996-97": "austiis01",
-  "1997-98": "hendeal01", "1998-99": "armstda01", "1999-00": "roseja01", "2000-01": "mcgratr01",
-  "2001-02": "onealje01", "2002-03": "arenagi01", "2003-04": "randoza01", "2004-05": "simmobo01",
-  "2005-06": "diawbo01", "2006-07": "ellismo01", "2007-08": "turkohe01", "2008-09": "grangda01",
-  "2009-10": "brookaa01", "2010-11": "loveke01", "2011-12": "anderry01", "2012-13": "georgpa01",
-  "2013-14": "dragigo01", "2014-15": "butleji01", "2015-16": "mccolcj01", "2016-17": "antetgi01",
-  "2017-18": "oladivi01", "2018-19": "siakapa01", "2019-20": "ingrabr01", "2020-21": "randlju01",
-  "2021-22": "moranja01", "2022-23": "markkla01", "2023-24": "maxeyty01", "2024-25": "daniedy01",
-  "2025-26": "alexani01",
-};
+const WINNERS = MIP_WINNERS;
 const FLOOR_GRID = [2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 50];
 const RIDGE = 0.01;
 const TOP = 25;     // rows kept per season and sort
 const ALL_TIME = 50;
+const MVP_FIELD = 30;
 
 // --- Load ----------------------------------------------------------------------
 const rowsBy = {}, ctxBy = {};
@@ -226,10 +228,76 @@ for (const [season, rs] of Object.entries(bySeason)) {
 const every = Object.values(bySeason).flat();
 const allTime = Object.fromEntries(Object.keys(SORTS).map((k) => [k, ranked(every, k).slice(0, ALL_TIME).map((r, i) => [ref(r), i + 1])]));
 
-fs.writeFileSync(OUT, JSON.stringify({
-  bakedAt: new Date().toISOString().slice(0, 10),
+const mip = {
   model: { floor: FLOOR, beta: rnd(BETA, 4), floorGrid: FLOOR_GRID, backtest },
   fields: FIELDS, rows, seasons, allTime,
-}));
-console.log(`${OUT}: ${rows.length} rows, ${Object.keys(seasons).length} seasons, ${(fs.statSync(OUT).size / 1024).toFixed(0)} KB`);
-console.log("model", { floor: FLOOR, beta: rnd(BETA, 3), ...backtest });
+};
+
+// --- MVP ------------------------------------------------------------------------
+// One season's candidates: the MVP_FIELD best by VA, scaled to 82 games so the
+// lockout years read on the same scale.
+const mvpBy = {};
+for (const season of SEASONS) {
+  const lga = lgaForSeason(season), f = 82 / scheduleLength(season);
+  const eligible = (r) => season < AWARD_RULE_SINCE || r.g >= AWARD_MIN_GAMES;
+  mvpBy[season] = rowsBy[season].filter((r) => r.slug && eligible(r))
+    .map((r) => { const va = valueAdd(r, lga); return { slug: r.slug, name: r.name, team: r.team, g: r.g, va, x: (va * f) / 100, line: line(r) }; })
+    .sort((a, b) => b.x - a.x).slice(0, MVP_FIELD);
+}
+const mvpFields = Object.entries(MVP_WINNERS).filter(([s]) => mvpBy[s]).map(([season, slug]) => {
+  const pool = mvpBy[season], win = pool.findIndex((r) => r.slug === slug);
+  if (win < 0) throw new Error(`MVP ${season} (${slug}) is outside the field`);
+  return { season, pool, win };
+});
+const mvpX = (r) => r.x;
+const mvpLoso = (() => {
+  const rk = [];
+  let ll = 0;
+  for (const f of mvpFields) {
+    const b = fitBeta(mvpFields.filter((o) => o !== f), mvpX);
+    const u = f.pool.map((r) => b * r.x), m = Math.max(...u);
+    ll += u[f.win] - m - Math.log(sum(u.map((v) => Math.exp(v - m))));
+    rk.push(1 + u.filter((v) => v > u[f.win]).length);
+  }
+  rk.sort((a, b) => a - b);
+  return { seasons: rk.length, top1: rk.filter((r) => r === 1).length, top3: rk.filter((r) => r <= 3).length,
+    top5: rk.filter((r) => r <= 5).length, medianRank: rk[rk.length >> 1], meanWinnerP: rnd(Math.exp(ll / rk.length), 3) };
+})();
+const MVP_BETA = fitBeta(mvpFields, mvpX);
+const MVP_FIELDS = ["name", "team", "slug", "g", "va", "vaPg", "mvp", "line"];
+const mvpSeasons = {};
+for (const [season, pool] of Object.entries(mvpBy)) {
+  const m = Math.max(...pool.map((r) => MVP_BETA * r.x)), z = sum(pool.map((r) => Math.exp(MVP_BETA * r.x - m)));
+  for (const r of pool) r.mvp = Math.exp(MVP_BETA * r.x - m) / z;
+  const w = MVP_WINNERS[season];
+  mvpSeasons[season] = {
+    winner: w ? { slug: w, name: pool.find((r) => r.slug === w).name, rank: pool.findIndex((r) => r.slug === w) + 1 } : null,
+    rows: [...pool].sort((a, b) => b.mvp - a.mvp)
+      .map((r) => [r.name, r.team, r.slug, r.g, Math.round(r.va), rnd(r.va / r.g, 2), rnd(r.mvp, 4), r.line]),
+  };
+}
+const mvp = { model: { beta: rnd(MVP_BETA, 4), field: MVP_FIELD, ruleSince: AWARD_RULE_SINCE, minGames: AWARD_MIN_GAMES, backtest: mvpLoso }, fields: MVP_FIELDS, seasons: mvpSeasons };
+
+// --- Card odds --------------------------------------------------------------------
+// season -> slug -> [MVP %, MVP rank, MIP %, MIP rank]: the boards' own rounded
+// odds, as percentages, so a card and its board always show the same number;
+// players under 0.5% for MIP and off the board are left out to keep it small.
+// A rank is only given where the Awards board lists the player (the MVP field,
+// the MIP top TOP and the winner), so the card's Go → always lands on a row.
+const odds = {};
+const put = (season, slug, k, v) => { ((odds[season] ||= {})[slug] ||= [null, null, null, null])[k] = v; };
+for (const [season, S] of Object.entries(mvpSeasons)) S.rows.forEach((r, i) => { put(season, r[2], 0, rnd(r[6] * 100, 2)); put(season, r[2], 1, i + 1); });
+for (const [season, rs] of Object.entries(bySeason)) {
+  const listed = new Map(seasons[season].mip.map(([i, rank]) => [rows[i][FIELDS.indexOf("slug")], rank]));
+  for (const r of rs) if (r.mip != null && (r.mip >= 0.005 || listed.has(r.slug))) {
+    put(season, r.slug, 2, rnd(rnd(r.mip, 4) * 100, 2));
+    if (listed.has(r.slug)) put(season, r.slug, 3, listed.get(r.slug));
+  }
+}
+
+const bakedAt = new Date().toISOString().slice(0, 10);
+fs.writeFileSync(OUT, JSON.stringify({ bakedAt, mvp, mip }));
+fs.writeFileSync(ODDS_OUT, JSON.stringify({ bakedAt, odds }));
+console.log(`${OUT}: ${(fs.statSync(OUT).size / 1024).toFixed(0)} KB · ${ODDS_OUT}: ${(fs.statSync(ODDS_OUT).size / 1024).toFixed(0)} KB`);
+console.log("MIP", { floor: FLOOR, beta: rnd(BETA, 3), ...backtest });
+console.log("MVP", { beta: rnd(MVP_BETA, 3), ...mvpLoso });
