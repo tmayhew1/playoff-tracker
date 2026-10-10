@@ -23,6 +23,20 @@ const SIMS = 2000;
 // from fifteenth that a draw never gets there.
 const SIM_FIELD = 200;
 const PAGE = 25;
+// "Perfect health": every player plays this many games, at the projected
+// minutes and rates.
+const HEALTHY_GAMES = 75;
+
+// A season line moved to `g` games at the same per-game rates. VA scales with
+// it exactly — every term is a per-minute rate times minutes — so the baked
+// VA scales by the same factor rather than being repriced.
+const COUNTS = ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"];
+function atGames(p, g) {
+  const k = p.row.g > 0 ? g / p.row.g : 0;
+  if (k === 1 || !k) return p;
+  const scale = (r) => (r ? { ...r, g, ...Object.fromEntries(COUNTS.map((c) => [c, r[c] * k])) } : r);
+  return { ...p, row: scale(p.row), solo: scale(p.solo), va: p.va * k, soloVa: p.soloVa != null ? p.soloVa * k : p.soloVa };
+}
 
 const pct = (x) => (x >= 0.995 ? ">99%" : x > 0 && x < 0.005 ? "<1%" : `${Math.round(x * 100)}%`);
 const fmt1 = (x) => (Number.isFinite(x) ? x.toFixed(1) : "–");
@@ -72,6 +86,7 @@ export function LookAhead() {
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showMethod, setShowMethod] = useState(false);
+  const [healthy, setHealthy] = useState(false); // "Perfect health": everyone at HEALTHY_GAMES
   const { usgAdj } = useVAMode();
 
   useEffect(() => {
@@ -92,9 +107,10 @@ export function LookAhead() {
     const live = data.rosters === "live";
     return data.players
       .filter((p) => !live || p.team)
+      .map((p) => (healthy ? atGames(p, HEALTHY_GAMES) : p))
       .map((p) => ({ ...p, vaShown: valueAdd(p.row, lga) }))
       .sort((a, b) => b.vaShown - a.vaShown);
-  }, [data, lga]);
+  }, [data, lga, healthy]);
   const offRoster = useMemo(() => (data?.rosters === "live"
     ? data.players.filter((p) => !p.team && p.va > 150).sort((a, b) => b.va - a.va) : []), [data]);
 
@@ -103,9 +119,9 @@ export function LookAhead() {
     const field = [...players].sort((a, b) => b.va - a.va).slice(0, SIM_FIELD);
     const rookiePool = data.params?.rookie?.pool;
     const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg, pool: p.rookie ? rookiePool : null })),
-      data.mvp.model, data.pool, { sims: SIMS });
+      data.mvp.model, data.pool, { sims: SIMS, fixedGames: healthy ? HEALTHY_GAMES : null });
     return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
-  }, [data, players]);
+  }, [data, players, healthy]);
 
   // Projected standings (lib/projection-model.js projectWins): each roster's
   // VA+ — VA after the team context plus projected defense — best to worst,
@@ -141,6 +157,24 @@ export function LookAhead() {
 
   return (
     <div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={healthy}
+        onClick={() => setHealthy((h) => !h)}
+        className={`mb-4 w-full flex items-center justify-between gap-2 px-3 py-2 border text-left ${healthy ? "bg-emerald-50 border-emerald-400" : "bg-white border-stone-300 hover:bg-stone-50"}`}
+      >
+        <span>
+          <span className={`block text-[10px] font-bold uppercase tracking-[0.2em] ${healthy ? "text-emerald-800" : "text-stone-700"}`}>Perfect health</span>
+          <span className={`block text-[9px] italic ${healthy ? "text-emerald-700" : "text-stone-400"}`}>
+            {healthy ? `Every player at ${HEALTHY_GAMES} games, at the same projected minutes and rates` : `Set every player to ${HEALTHY_GAMES} games`}
+          </span>
+        </span>
+        <span className={`relative w-8 h-4 shrink-0 rounded-full transition-colors ${healthy ? "bg-emerald-600" : "bg-stone-300"}`} aria-hidden>
+          <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${healthy ? "left-[18px]" : "left-0.5"}`} />
+        </span>
+      </button>
+
       {/* Teams */}
       <div className="mb-4 border border-stone-300 bg-white">
         <SectionHead
@@ -222,7 +256,7 @@ export function LookAhead() {
 
       {/* MVP */}
       <div className="mb-4 border border-stone-300 bg-white">
-        <SectionHead title="MVP Odds" note={`Share of ${SIMS.toLocaleString()} simulated seasons won · 65-game rule applied${usgAdj ? " · priced on LG AVG" : ""}`} />
+        <SectionHead title="MVP Odds" note={`Share of ${SIMS.toLocaleString()} simulated seasons won · ${healthy ? `every player at ${HEALTHY_GAMES} games` : "65-game rule applied"}${usgAdj ? " · priced on LG AVG" : ""}`} />
         {mvpList.map((r, i) => {
           const p = pBySlug[r.key];
           if (!p) return null;
