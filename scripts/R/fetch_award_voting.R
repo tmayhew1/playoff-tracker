@@ -12,7 +12,8 @@
 #                               "share": 0.913 }, ... ],
 #                    "mip": [...], "dpoy": [...], "roy": [...], "smoy": [...] },
 #       "allNba":  { "1st": ["gilgesh01", ...], "2nd": [...], "3rd": [...] },
-#       "allStar": ["...", ...] } } }
+#       "allStar": ["...", ...],
+#       "allStarPartial": true } } }      (only when the roster parsed short)
 #
 # The Awards tab (scripts/bake-awards.mjs) fits each award's odds to these: the
 # voting shares for MVP and MIP, and the selections for All-NBA and All-Star.
@@ -109,8 +110,14 @@ main <- function(years) {
     if (!is.null(all_nba[[season]])) entry$allNba <- all_nba[[season]]
     stars <- fetch_all_star(y)
     if (length(stars)) {
-      if (length(stars) < 20) stop(sprintf("only %d All-Stars parsed for %s", length(stars), season))
       entry$allStar <- stars
+      # From 2025 the game is a mini-tournament and the page's tables no longer
+      # list every selection, so a short roster is kept but flagged: the
+      # All-Star model fits only on complete seasons.
+      if (length(stars) < 20) {
+        message(sprintf("  only %d All-Stars parsed for %s - flagged partial", length(stars), season))
+        entry$allStarPartial <- TRUE
+      }
     }
     have[[season]] <- entry
     message(sprintf("  %s · All-NBA %d · All-Stars %d",
