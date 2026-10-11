@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { useAwardNav } from "../lib/award-nav";
 
-// A player card's award row: one small box per award (MVP, MIP, All-NBA,
-// All-Star) with this player-season's odds, and Go → into that award's page in
+// A player card's award row: one small box per award (MVP, MIP — or ROY for a
+// rookie — All-NBA, All-Star) with this player-season's odds, and Go → into that award's page in
 // the Awards tab when the board lists them. Odds come from /api/awards/odds (scripts/bake-awards.mjs); a season the
 // bake doesn't cover shows no row at all.
 
@@ -16,6 +16,8 @@ const AWARDS = [
   { key: "allnba", label: "All-NBA", pct: 4, rank: 5 },
   { key: "allstar", label: "All-Star", pct: 6, rank: 7 },
 ];
+// A rookie can't be Most Improved, so his card shows Rookie of the Year there.
+const ROY = { key: "roy", label: "ROY", pct: 8, rank: 9 };
 const fmt = (p) => (p == null ? "–" : p >= 99.5 ? ">99%" : p < 0.5 ? "<1%" : `${Math.round(p)}%`);
 
 export function AwardBoxes({ slug, season }) {
@@ -30,7 +32,7 @@ export function AwardBoxes({ slug, season }) {
   const mine = odds[season][slug] || [];
   return (
     <div className="grid grid-cols-4 gap-1 mb-2">
-      {AWARDS.map((a) => {
+      {AWARDS.map((a) => (a.key === "mip" && mine[ROY.pct] != null ? ROY : a)).map((a) => {
         const p = mine[a.pct], rank = mine[a.rank];
         const go = goToAward && rank != null ? () => goToAward({ award: a.key, season, slug }) : null;
         const Tag = go ? "button" : "div";

@@ -13,6 +13,7 @@ import { Name, TeamChip } from "./player-chips";
 //   MVP      a logit on each season's VA+, fit on every winner
 //   MIP      each returning player's actual VA beside the summer-before
 //            projection, ranked by a model on the per-game ratio
+//   ROY      every first-year player, from VA+ and minutes per game
 //   All-NBA  each player's chance of a place, from season VA+
 //   All-Star the same, against each season's All-Star roster
 
@@ -29,7 +30,7 @@ const yy = (s) => `’${s.slice(5)}`;
 // A player's share of the real vote: blank for none, "<1%" for a stray ballot.
 const voteCell = (v) => (!v ? "" : v < 0.005 ? "<1%" : `${Math.round(v * 100)}%`);
 
-const SUBS = [["mvp", "MVP"], ["mip", "MIP"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
+const SUBS = [["mvp", "MVP"], ["mip", "MIP"], ["roy", "ROY"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
 
 export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHandled = null }) {
   const [boards, setBoards] = useState({});
@@ -57,11 +58,11 @@ export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHand
   const data = boards[sub];
 
   const subCls = (active) =>
-    `text-[10px] font-bold uppercase tracking-[0.15em] px-1 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
+    `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   const mine = target?.award === sub ? target : null;
   return (
     <div>
-      <div className="mb-3 grid grid-cols-4 gap-1.5" role="tablist" aria-label="Award">
+      <div className="mb-3 grid grid-cols-5 gap-1" role="tablist" aria-label="Award">
         {SUBS.map(([k, label]) => (
           <button key={k} type="button" role="tab" aria-selected={sub === k} onClick={() => setSub(k)} className={subCls(sub === k)}>{label}</button>
         ))}
@@ -112,7 +113,6 @@ const WinnerTag = ({ award }) => (
 );
 
 function MipBoard({ data, focus = null, onGo = null }) {
-  const [view, setView] = useState("season"); // "season" | "all"
   const [season, setSeason] = useState(focus?.season || null);
   const [sort, setSort] = useState("mip");
   const [open, setOpen] = useState(null);
@@ -128,43 +128,32 @@ function MipBoard({ data, focus = null, onGo = null }) {
   // Arriving from a card: that season, by MIP odds, the player opened.
   useEffect(() => {
     if (!focus) return;
-    setView("season"); setSort("mip"); setSeason(focus.season);
+    setSort("mip"); setSeason(focus.season);
   }, [focus]);
   const S = data.seasons[cur];
-  const list = (view === "all" ? data.allTime[sort] : S[sort]).map(([i, rank]) => ({ ...row(i), rank, i }));
-  useFocusRow(focus, view === "season" ? list.map((r) => r.slug) : [], (slug) => setOpen(list.find((r) => r.slug === slug)?.i ?? null));
+  const list = S[sort].map(([i, rank]) => ({ ...row(i), rank, i }));
+  useFocusRow(focus, list.map((r) => r.slug), (slug) => setOpen(list.find((r) => r.slug === slug)?.i ?? null));
   const valOf = (r) => (sort === "mip" ? r.mip || 0 : sort === "pg" ? r.actualPg - r.projPg : r.actual - r.proj);
   const maxVal = Math.max(1e-9, ...list.map(valOf));
-  const winSlug = view === "season" ? S.winner?.slug : null;
+  const winSlug = S.winner?.slug;
   const pick = (s) => { setSeason(s); setOpen(null); };
   const tapSort = (m) => setSort(sort === m ? "mip" : m);
 
-  const tabCls = (active) =>
-    `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   const sortCls = (m) => `text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort === m ? "text-stone-900 font-semibold" : ""}`;
   const bt = data.model.backtest;
 
   return (
     <div>
-      <div className="mb-2 flex gap-2">
-        <button type="button" onClick={() => { setView("season"); setOpen(null); }} className={tabCls(view === "season")}>By Season</button>
-        <button type="button" onClick={() => { setView("all"); setOpen(null); }} className={tabCls(view === "all")}>All-Time</button>
-      </div>
-
-      {view === "season" && (
-        <SeasonPicker seasons={seasons} cur={cur} onPick={pick}>
-          {S.winner
-            ? <span className="inline-block px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">MIP: {S.winner.name} · ranked #{S.winner[sort] ?? "–"} of {sort === "tot" ? S.players : S.qualified}</span>
-            : <span className="italic text-stone-400">{S.players} returning players · before the award existed</span>}
-        </SeasonPicker>
-      )}
+      <SeasonPicker seasons={seasons} cur={cur} onPick={pick}>
+        {S.winner
+          ? <span className="inline-block px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">MIP: {S.winner.name} · ranked #{S.winner[sort] ?? "–"} of {sort === "tot" ? S.players : S.qualified}</span>
+          : <span className="italic text-stone-400">{S.players} returning players · before the award existed</span>}
+      </SeasonPicker>
 
       <div className="mb-4 border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{view === "all" ? "All-Time Top 50" : `Most Improved · ${cur}`}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">
-            {SORT_NOTE[sort]}{view === "all" && sort === "mip" ? " · biggest per-game ratios; MIP % is within each season" : ""} · tap a player for the expected line beside the actual
-          </div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Most Improved · {cur}</div>
+          <div className="text-[9px] italic text-stone-400 mt-0.5">{SORT_NOTE[sort]} · tap a player for the expected line beside the actual</div>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
@@ -177,9 +166,9 @@ function MipBoard({ data, focus = null, onGo = null }) {
         </div>
         {list.map((r, k) => (
           <MipRow
-            key={r.i} r={r} withSeason={view === "all"} isWinner={r.slug === winSlug}
+            key={r.i} r={r} isWinner={r.slug === winSlug}
             width={Math.max(0, valOf(r)) / maxVal}
-            gap={view === "season" && k === 25}
+            gap={k === 25}
             isOpen={open === r.i} onToggle={() => setOpen(open === r.i ? null : r.i)}
             onGo={onGo}
           />
@@ -204,11 +193,11 @@ function MipBoard({ data, focus = null, onGo = null }) {
   );
 }
 
-function MipRow({ r, withSeason, isWinner, width, gap, isOpen, onToggle, onGo }) {
+function MipRow({ r, isWinner, width, gap, isOpen, onToggle, onGo }) {
   const tc = teamColor(r.team);
   const over = r.actual - r.proj, overPg = r.actualPg - r.projPg;
   return (
-    <div id={withSeason ? undefined : `award-row-${r.slug}`} className={`border-b border-stone-100 last:border-0 ${gap ? "border-t border-dashed border-t-stone-300" : ""}`}>
+    <div id={`award-row-${r.slug}`} className={`border-b border-stone-100 last:border-0 ${gap ? "border-t border-dashed border-t-stone-300" : ""}`}>
       <div className={`relative overflow-hidden ${isWinner ? "bg-amber-50" : ""}`}>
         <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${width * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
         <div
@@ -226,7 +215,6 @@ function MipRow({ r, withSeason, isWinner, width, gap, isOpen, onToggle, onGo })
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
             <Name name={r.name} />
             {isWinner && <WinnerTag award="MIP" />}
-            {withSeason && <span className="ml-1 shrink-0 text-[9px] tabular-nums text-stone-400">{r.season}</span>}
           </span>
           <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.mip)}</span>
           <span className="w-8 text-right tabular-nums text-stone-500">{voteCell(r.vote)}</span>
@@ -324,6 +312,14 @@ const PICK = {
     tiles: (bt) => [["#1", bt.top1], ["Top 3", bt.top3], ["Top 5", bt.top5], ["Median", `#${bt.medianRank}`]],
     tilesNote: (bt) => `Where the real MVP ranked, ${bt.seasons} seasons, each scored by a model fit on the others.`,
   },
+  roy: {
+    title: "Rookie of the Year", col: "ROY%", vote: true, minutes: true,
+    note: () => "Every player in his first NBA season · ranked by ROY odds, from VA+ and minutes per game",
+    meta: (S) => (S.winner ? `ROY: ${S.winner.name} · ranked #${S.winner.rank} of ${S.rookies}` : `${S.rookies} rookies`),
+    tag: () => "ROY",
+    tiles: (bt) => [["#1", bt.top1], ["Top 3", bt.top3], ["Top 5", bt.top5], ["Median", `#${bt.medianRank}`]],
+    tilesNote: (bt) => `Where the real Rookie of the Year ranked, ${bt.seasons} seasons, each scored by a model fit on the others.`,
+  },
   allnba: {
     title: "All-NBA", col: "Odds",
     note: (m, ruled) => `Chance of an All-NBA place, from season VA+${ruled ? ` · ${m.minGames}+ games, or picked anyway` : ""} · picks tagged by team`,
@@ -377,7 +373,7 @@ function PickBoard({ award, data, focus = null, onGo = null }) {
           <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
           {cfg.vote && <span className="w-8 text-right">Vote</span>}
           <span className="w-11 text-right">VA+</span>
-          <span className="w-6 text-right">G</span>
+          <span className={`${cfg.minutes ? "w-8" : "w-6"} text-right`}>{cfg.minutes ? "MIN" : "G"}</span>
         </div>
         {list.map((r, k) => {
           const tc = teamColor(r.team), isOpen = open === r.slug, picked = !!r.pick;
@@ -403,7 +399,9 @@ function PickBoard({ award, data, focus = null, onGo = null }) {
                   <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.p)}</span>
                   {cfg.vote && <span className="w-8 text-right tabular-nums text-stone-500">{voteCell(r.vote)}</span>}
                   <span className={`w-11 text-right tabular-nums ${r.vaPlus < 0 ? "text-red-600" : "text-stone-700"}`}>{num(r.vaPlus)}</span>
-                  <span className="w-6 text-right tabular-nums text-stone-500">{r.g}</span>
+                  {cfg.minutes
+                    ? <span className="w-8 text-right tabular-nums text-stone-500">{f1(r.line[0])}</span>
+                    : <span className="w-6 text-right tabular-nums text-stone-500">{r.g}</span>}
                 </div>
               </div>
               {isOpen && (
@@ -440,7 +438,7 @@ function PickBoard({ award, data, focus = null, onGo = null }) {
       </div>
 
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Against the real {award === "mvp" ? "award" : "picks"}</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Against the real {award === "mvp" || award === "roy" ? "award" : "picks"}</div>
         <div className={`mt-2 grid gap-1.5 text-center ${cfg.tiles(bt).length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
           {cfg.tiles(bt).map(([k, v]) => (
             <div key={k} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
@@ -467,7 +465,13 @@ function PickMethod({ award, model }) {
       </button>
       {show && (
         <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
-          {award === "mvp" ? (
+          {award === "roy" ? (
+            <>
+              <p><span className="font-semibold text-stone-800">ROY %.</span> Each rookie’s chance of winning that season’s award: a logistic model on two numbers, season VA+ (per 82 games) and minutes per game, fit on the top vote-getter of every Rookie of the Year ballot since 1981-82 (co-winners share the weight). Minutes carry the role a rookie was handed, which voters weigh: with them the model ranks the real winner first in {bt.top1} of {bt.seasons} seasons, against 30 for VA+ alone. Points per game, games played and plain VA added nothing beside them. Vote is each rookie’s share of the real ballot.</p>
+              <p><span className="font-semibold text-stone-800">Who’s counted.</span> Every player in his first NBA season. 1980-81 is where the data starts, so it can’t tell rookies from veterans and has no board.</p>
+              <p><span className="font-semibold text-stone-800">Blind spots.</span> Draft slot and preseason hype aren’t in it. On average it gave the real winner {Math.round(bt.meanWinnerP * 100)}% before the vote.</p>
+            </>
+          ) : award === "mvp" ? (
             <>
               <p><span className="font-semibold text-stone-800">MVP %.</span> Each player’s chance of winning that season’s award: a logistic model on season VA+ (VA plus the D-rating term, scaled to 82 games so the lockout years read the same), fit on all {bt.seasons} winners since 1980-81. VA+ beat plain VA, which the Look Ahead uses. Vote is each player’s share of the real ballot (Basketball-Reference). Fitting to the vote shares instead of the winner left the order unchanged and made the odds less sure of who wins, so they’re shown rather than fit.</p>
               <p><span className="font-semibold text-stone-800">Who’s counted.</span> Each season’s {model.field} best by VA+, plus anyone who drew a vote; from {model.ruleSince} on, only those who played {model.minGames} games, the league’s eligibility rule.</p>

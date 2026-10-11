@@ -2,8 +2,8 @@
 // Bake the Awards tab (app/components/awards-view.js) and the award odds the
 // player cards show (app/components/award-boxes.js):
 //
-//   app/data/awards.json       the MVP, MIP, All-NBA and All-Star boards
-//   app/data/award-odds.json   each player-season's odds for all four, by slug
+//   app/data/awards.json       the MVP, MIP, ROY, All-NBA and All-Star boards
+//   app/data/award-odds.json   each player-season's odds for all five, by slug
 //
 //   npm run bake:awards         (after npm run fit:projections, and with
 //                                app/data/award-voting.json baked by
@@ -18,6 +18,16 @@
 // instead of the winner was tested too: with one input the order can't change,
 // and the odds came out flatter and less calibrated to who wins, so the vote
 // share is shown on the board rather than fit.
+//
+// --- ROY ----------------------------------------------------------------------------
+// A conditional logit on two numbers, season VA+ (per 82 games) and minutes per
+// game, over every player in his first NBA season, fit on the top vote-getter
+// of each Rookie of the Year ballot since 1981-82 (co-winners share the
+// weight). 1980-81 is where the data starts, so it can't tell rookies from
+// veterans and has no board. Minutes carry the role a rookie was given, which
+// voters weigh: held out a season at a time the pair ranked the real winner
+// first in 37 of 45 seasons, against 30 for VA+ alone; points per game, games
+// played and plain VA added nothing beside them.
 //
 // --- All-NBA and All-Star -----------------------------------------------------------
 // Each player's chance of being selected: a logistic on season VA+ (per 82
@@ -76,7 +86,6 @@ const WINNERS = MIP_WINNERS;
 const FLOOR_GRID = [2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 50];
 const RIDGE = 0.01;
 const TOP = 25;     // rows kept per season and sort
-const ALL_TIME = 50;
 const MVP_FIELD = 30;
 
 // --- Load ----------------------------------------------------------------------
@@ -246,12 +255,10 @@ for (const [season, rs] of Object.entries(bySeason)) {
   }
   seasons[season] = S;
 }
-const every = Object.values(bySeason).flat();
-const allTime = Object.fromEntries(Object.keys(SORTS).map((k) => [k, ranked(every, k).slice(0, ALL_TIME).map((r, i) => [ref(r), i + 1])]));
 
 const mip = {
   model: { floor: FLOOR, beta: rnd(BETA, 4), floorGrid: FLOOR_GRID, backtest },
-  fields: FIELDS, rows, seasons, allTime,
+  fields: FIELDS, rows, seasons,
 };
 
 // --- Season VA+ for every player ---------------------------------------------------
@@ -308,6 +315,87 @@ for (const [season, pool] of Object.entries(mvpBy)) {
   };
 }
 const mvp = { model: { beta: rnd(MVP_BETA, 4), field: MVP_FIELD, ruleSince: AWARD_RULE_SINCE, minGames: AWARD_MIN_GAMES, backtest: mvpLoso }, fields: PICK_FIELDS, seasons: mvpSeasons };
+
+// --- ROY ----------------------------------------------------------------------------
+const roySeen = new Set(), royBy = {};
+for (const season of SEASONS) {
+  const rookies = plusBy[season].filter((r) => !roySeen.has(r.slug));
+  for (const r of plusBy[season]) roySeen.add(r.slug);
+  if (season !== SEASONS[0]) royBy[season] = rookies.map((r) => ({ ...r, mpg: r.line[0] / 10 }));
+}
+const royX = (r) => [r.x, r.mpg];
+// Several slopes by Newton's method on the conditional log-likelihood, each
+// season's target spread over its co-winners.
+function fitMulti(F, x) {
+  const k = x(F[0].pool[0]).length;
+  const X = F.map((f) => f.pool.map(x));
+  const ll = (b) => sum(F.map((f, n) => {
+    const u = X[n].map((v) => sum(v.map((c, j) => c * b[j]))), m = Math.max(...u), lz = m + Math.log(sum(u.map((v) => Math.exp(v - m))));
+    return sum(u.map((v, i) => f.t[i] * (v - lz)));
+  })) - RIDGE * sum(b.map((v) => v * v));
+  let b = Array(k).fill(0), cur = ll(b);
+  for (let it = 0; it < 100; it++) {
+    const g = b.map((v) => -2 * RIDGE * v), H = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => (i === j ? -2 * RIDGE : 0)));
+    F.forEach((f, n) => {
+      const u = X[n].map((v) => sum(v.map((c, j) => c * b[j]))), m = Math.max(...u), w = u.map((v) => Math.exp(v - m)), z = sum(w);
+      const mu = Array.from({ length: k }, (_, j) => sum(X[n].map((v, i) => (w[i] / z) * v[j])));
+      for (let j = 0; j < k; j++) {
+        g[j] += sum(X[n].map((v, i) => f.t[i] * v[j])) - mu[j];
+        for (let l = 0; l < k; l++) H[j][l] -= sum(X[n].map((v, i) => (w[i] / z) * (v[j] - mu[j]) * (v[l] - mu[l])));
+      }
+    });
+    const A = H.map((r, i) => [...r, g[i]]);
+    for (let i = 0; i < k; i++) for (let r = 0; r < k; r++) if (r !== i) { const q = A[r][i] / A[i][i]; for (let c = i; c <= k; c++) A[r][c] -= q * A[i][c]; }
+    const step = A.map((r, i) => r[k] / r[i]);
+    let t = 1, nb, nl;
+    do { nb = b.map((v, j) => v - t * step[j]); nl = ll(nb); t /= 2; } while (nl < cur && t > 1e-6);
+    const done = Math.abs(nl - cur) < 1e-12;
+    b = nb; cur = nl;
+    if (done) break;
+  }
+  return b;
+}
+const royWinners = (season) => {
+  const v = VOTES[season]?.voting?.roy || [];
+  const top = Math.max(0, ...v.map((e) => e.share ?? 0));
+  return top > 0 ? new Set(v.filter((e) => (e.share ?? 0) === top).map((e) => e.slug)) : new Set();
+};
+const royFields = Object.entries(royBy).map(([season, pool]) => {
+  const w = royWinners(season);
+  const t = pool.map((r) => (w.has(r.slug) ? 1 / w.size : 0));
+  return { season, pool, t, w };
+}).filter((f) => f.w.size && sum(f.t) > 0.99);
+const royLoso = (() => {
+  const rk = [];
+  let ll = 0;
+  for (const f of royFields) {
+    const b = fitMulti(royFields.filter((o) => o !== f), royX);
+    const u = f.pool.map((r) => sum(royX(r).map((c, j) => c * b[j]))), m = Math.max(...u), lz = m + Math.log(sum(u.map((v) => Math.exp(v - m))));
+    const wi = f.t.findIndex((t) => t > 0);
+    ll += u[wi] - lz;
+    rk.push(1 + u.filter((v) => v > u[wi]).length);
+  }
+  rk.sort((a, b) => a - b);
+  return { seasons: rk.length, top1: rk.filter((r) => r === 1).length, top3: rk.filter((r) => r <= 3).length,
+    top5: rk.filter((r) => r <= 5).length, medianRank: rk[rk.length >> 1], meanWinnerP: rnd(Math.exp(ll / rk.length), 3) };
+})();
+const ROY_BETA = fitMulti(royFields, royX);
+const ROY_SHOWN = 30;
+const roySeasons = {};
+for (const [season, pool] of Object.entries(royBy)) {
+  const u = pool.map((r) => sum(royX(r).map((c, j) => c * ROY_BETA[j]))), m = Math.max(...u), z = sum(u.map((v) => Math.exp(v - m)));
+  const votes = voteShare(season, "roy"), w = royWinners(season);
+  const ranked = pool.map((r, i) => ({ r, p: Math.exp(u[i] - m) / z })).sort((a, b) => b.p - a.p);
+  const shown = ranked.filter((e, i) => i < ROY_SHOWN || w.has(e.r.slug));
+  const names = [...w].map((s) => pool.find((r) => r.slug === s)?.name).filter(Boolean);
+  roySeasons[season] = {
+    rookies: pool.length,
+    winner: names.length ? { slugs: [...w], name: names.join(" & "), rank: Math.min(...[...w].map((s) => ranked.findIndex((e) => e.r.slug === s) + 1)) } : null,
+    rows: shown.map(({ r, p }) => pickRow(r, p, votes.get(r.slug) || 0, w.has(r.slug) ? "ROY" : null)),
+    ranks: shown.map((e) => ranked.indexOf(e) + 1),
+  };
+}
+const roy = { model: { beta: ROY_BETA.map((b) => rnd(b, 4)), inputs: ["VA+ per 82 games / 100", "minutes per game / 10"], backtest: royLoso }, fields: PICK_FIELDS, seasons: roySeasons };
 
 // --- All-NBA and All-Star -------------------------------------------------------------
 const SEL_POOL = 80, SEL_SHOWN = 30;
@@ -390,12 +478,12 @@ const allstar = selectionBoard("allstar");
 
 // --- Card odds --------------------------------------------------------------------
 // season -> slug -> [MVP %, MVP rank, MIP %, MIP rank, All-NBA %, rank,
-// All-Star %, rank]: the boards' own rounded odds, as percentages, so a card
+// All-Star %, rank, ROY %, rank]: the boards' own rounded odds, as percentages, so a card
 // and its board always show the same number. A rank is only given where the
 // Awards board lists the player, so the card's Go → always lands on a row;
 // players under 0.5% and off every board are left out to keep it small.
 const odds = {};
-const put = (season, slug, k, v) => { ((odds[season] ||= {})[slug] ||= Array(8).fill(null))[k] = v; };
+const put = (season, slug, k, v) => { ((odds[season] ||= {})[slug] ||= Array(10).fill(null))[k] = v; };
 const pctOf = (p) => rnd(rnd(p, 4) * 100, 2);
 const P = PICK_FIELDS.indexOf("p"), SLUG = PICK_FIELDS.indexOf("slug");
 for (const [season, S] of Object.entries(mvpSeasons)) S.rows.forEach((r, i) => { put(season, r[SLUG], 0, pctOf(r[P])); put(season, r[SLUG], 1, i + 1); });
@@ -406,14 +494,15 @@ for (const [season, rs] of Object.entries(bySeason)) {
     if (listed.has(r.slug)) put(season, r.slug, 3, listed.get(r.slug));
   }
 }
-for (const [k, board] of [[4, allnba], [6, allstar]]) {
+for (const [k, board] of [[4, allnba], [6, allstar], [8, roy]]) {
   for (const [season, S] of Object.entries(board.seasons)) S.rows.forEach((r, i) => { put(season, r[SLUG], k, pctOf(r[P])); put(season, r[SLUG], k + 1, S.ranks[i]); });
 }
 
 const bakedAt = new Date().toISOString().slice(0, 10);
-fs.writeFileSync(OUT, JSON.stringify({ bakedAt, mvp, mip, allnba, allstar }));
+fs.writeFileSync(OUT, JSON.stringify({ bakedAt, mvp, mip, roy, allnba, allstar }));
 fs.writeFileSync(ODDS_OUT, JSON.stringify({ bakedAt, odds }));
 console.log(`${OUT}: ${(fs.statSync(OUT).size / 1024).toFixed(0)} KB · ${ODDS_OUT}: ${(fs.statSync(ODDS_OUT).size / 1024).toFixed(0)} KB`);
 console.log("MIP", { floor: FLOOR, beta: rnd(BETA, 3), ...backtest });
 console.log("MVP", { beta: rnd(MVP_BETA, 3), ...mvpLoso });
+console.log("ROY", { beta: roy.model.beta, ...royLoso });
 console.log("All-NBA", allnba.model.backtest, "All-Star", allstar.model.backtest);

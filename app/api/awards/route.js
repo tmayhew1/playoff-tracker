@@ -5,9 +5,9 @@ export const runtime = "nodejs";
 export const revalidate = 86400;
 
 // Serves the baked Awards tab (scripts/bake-awards.mjs), one award at a time —
-// ?award=mvp|mip|allnba|allstar — so a sub-page loads only its own board.
+// ?award=mvp|mip|roy|allnba|allstar — so a sub-page loads only its own board.
 // Immutable within a deployment.
-const AWARDS = new Set(["mvp", "mip", "allnba", "allstar"]);
+const AWARDS = new Set(["mvp", "mip", "roy", "allnba", "allstar"]);
 let cache = null;
 
 export async function GET(request) {
