@@ -14,6 +14,7 @@ import {
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { parseShareParams } from "../app/lib/share-params.js";
 import { normalizeName } from "../app/lib/format.js";
+import { applyInjury, gamesMissed, mergeInjuries, parseEspnInjuries, withInjuries } from "../app/lib/injuries.js";
 
 const DATA = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "app", "data");
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
@@ -111,7 +112,11 @@ test("the route falls back to the baked teams when rosters can't be fetched", as
     const { GET } = await import("../app/api/projections/route.js");
     const d = await (await GET()).json();
     assert.equal(d.rosters, "baked");
-    assert.equal(d.players.length, PROJ.players.length);
+    // Everyone but the reported out-for-the-season, who are named instead.
+    const out = Object.values(d.injuredOut).flat().length;
+    assert.ok(out > 0);
+    assert.equal(d.players.length + out, PROJ.players.length);
+    assert.equal(d.injuries, "reported");
     // Every row comes back pooled, with the projection-alone kept beside it.
     assert.ok(d.players.every((p) => p.solo && p.pool && Number.isFinite(p.va)));
     // A traded player's "2TM" isn't a team to file anyone under.
@@ -119,6 +124,63 @@ test("the route falls back to the baked teams when rosters can't be fetched", as
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+const SEASON = { seasonStart: "2026-10-20", seasonEnd: "2027-04-11", schedule: 82 };
+
+test("injuries: games missed run with the calendar", () => {
+  assert.equal(gamesMissed("2026-10-01", SEASON), 0);
+  assert.equal(gamesMissed("2027-05-01", SEASON), 82);
+  const mid = gamesMissed("2027-01-15", SEASON);
+  assert.ok(mid > 35 && mid < 47, `${mid}`);
+});
+
+test("injuries: the per-game line stays, the season shrinks", () => {
+  const row = { g: 70, mp: 2240, pts: 1400, ast: 350, stl: 70, blk: 35, tov: 140, drb: 420, orb: 70, fgm: 520, fga: 1100, tpm: 140, tpa: 380, ftm: 220, fta: 270 };
+  const r = applyInjury(row, 41);
+  assert.equal(r.g, 35); // the same 70-of-82 availability over the 41 left
+  assert.ok(Math.abs(r.mp / r.g - row.mp / row.g) < 0.1);
+  assert.ok(Math.abs(r.pts / r.g - row.pts / row.g) < 0.1);
+  assert.equal(applyInjury(row, 82).g, 0);
+  assert.equal(applyInjury(row, 0), row);
+});
+
+test("injuries: DiVincenzo is projected for the end of the season only", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error("offline"); };
+  try {
+    const { GET } = await import("../app/api/projections/route.js");
+    const d = await (await GET()).json();
+    const healthy = PROJ.players.find((p) => p.name === "Donte DiVincenzo");
+    const dd = d.players.find((p) => p.name === "Donte DiVincenzo");
+    assert.ok(dd.injury && dd.injury.missed > 50, JSON.stringify(dd.injury));
+    assert.ok(dd.row.g < healthy.row.g / 2, `${dd.row.g} vs ${healthy.row.g}`);
+    assert.equal(dd.injury.healthyG, healthy.row.g);
+    // Out for the season: off the board, named under the team.
+    assert.ok(!d.players.some((p) => p.name === "Ariel Hukporti"));
+    assert.ok(Object.values(d.injuredOut).flat().some((x) => x.name === "Ariel Hukporti"));
+    // Every injured player loses games against the healthy projection.
+    assert.ok(d.players.filter((p) => p.injury).every((p) => p.row.g < p.injury.healthyG));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("injuries: ESPN's feed is read, and the newer report wins", () => {
+  const feed = { injuries: [{ displayName: "Team", injuries: [
+    { status: "Out", date: "2026-10-15T18:00Z", athlete: { displayName: "Donte DiVincenzo" }, details: { type: "Achilles", side: "Right", returnDate: "2027-02-01" } },
+    { status: "Out", date: "2026-10-01T18:00Z", athlete: { displayName: "Brandon Ingram" }, details: { type: "Achilles", returnDate: "2026-11-01" } },
+    { status: "Out", date: "2026-10-15T18:00Z", athlete: { displayName: "Some Center" }, details: { type: "Knee", fantasyStatus: { abbreviation: "OFS" } } },
+    { status: "Day-To-Day", date: "2026-10-15T18:00Z", athlete: { displayName: "Tyrese Haliburton" }, details: { type: "Ankle" } },
+  ] }] };
+  const live = parseEspnInjuries(feed);
+  assert.equal(live.length, 3); // day-to-day isn't an absence to plan around
+  assert.equal(live.find((e) => e.name === "Some Center").out, "season");
+  const merged = mergeInjuries(read("injuries.json"), live);
+  assert.equal(merged.get(normalizeName("Donte DiVincenzo")).return, "2027-02-01"); // newer than the list
+  assert.equal(merged.get(normalizeName("Brandon Ingram")).return, "2026-12-01"); // older than the list
+  const [p] = withInjuries([{ name: "Some Center", row: { g: 60, mp: 1500 }, va: 100 }], merged, SEASON);
+  assert.equal(p.row.g, 0);
 });
 
 test("a Look Ahead link parses", () => {
