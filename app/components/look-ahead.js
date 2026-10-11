@@ -191,7 +191,7 @@ export function LookAhead() {
                         </div>
                         {roster.map((p) => (
                           <LeaderRow
-                            withVaPlus
+                            withVaPlus starter={t.top.includes(p)}
                             key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={rosterMax} lga={lga} sim={awards.bySlug[p.slug]}
                             isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
                           />
@@ -432,11 +432,12 @@ const vaPlusShown = (p) => vaPlus(p.vaShown, p.dpm, p.row.mp);
 // One projected player: the bar, the line, and — tapped — the projected
 // season beside the one it grew from. Shared by the leaders table and the
 // roster each standings row drops open.
-function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null, withVaPlus = false }) {
+function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null, withVaPlus = false, starter = false }) {
   const tc = p.team ? teamColor(p.team) : "#78716c";
   // In a team's roster the bar and the order are VA+ — VA plus projected
   // defense, the number the standings are built from — and the team chip,
-  // the same on every row, gives its room to the VA+ column.
+  // the same on every row, gives its room to the VA+ column; the five named on
+// the standings row (`starter`) are in bold.
   const vp = vaPlusShown(p);
   const barVal = withVaPlus ? vp : p.vaShown;
   return (
@@ -460,7 +461,7 @@ function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = n
           {!withVaPlus && <TeamChip team={p.team} active={activeTeam === p.team} onClick={onTeam && p.team ? (e) => { e.stopPropagation(); onTeam(p.team); } : undefined} />}
           <span className="flex-1 min-w-0 flex items-center text-stone-800">
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-            <Name name={p.name} />
+            {starter ? <span className="font-bold min-w-0"><Name name={p.name} /></span> : <Name name={p.name} />}
             {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
             {p.injury && <span title={`${p.injury.injury} — out ${p.injury.missed} games`} className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
           </span>
