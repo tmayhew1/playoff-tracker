@@ -237,6 +237,23 @@ test("rookies: a projected line is a consistent NBA line, and the top pick out-p
   assert.ok(a.mpg > z.mpg, `${first.name} ${a.mpg} min vs ${last.name} ${z.mpg}`);
 });
 
+test("rookies: the pick sets the minutes, the college season the shape of the line", { skip: (NO_RK || !RK.profile) && "no profile model fit" }, () => {
+  const college = read(`college-${PROJ.collegeSeason}.json`).players.filter((r) => r.mp > 0);
+  const cctx = leagueContext(college);
+  // Two made-up college seasons with the same minutes: one a rim protector,
+  // one a passer, each drafted 5th.
+  const base = { gp: 30, mp: 900, pts: 400, fgm: 150, fga: 320, tpm: 20, tpa: 60, ftm: 80, fta: 110, drb: 150, orb: 50, ast: 60, stl: 25, blk: 25, tov: 50 };
+  const big = projectRookie({ college: { ...base, blk: 90, ast: 30 }, cctx, pick: 5 }, RK, PROJ.ctx);
+  const passer = projectRookie({ college: { ...base, blk: 8, ast: 180 }, cctx, pick: 5 }, RK, PROJ.ctx);
+  const pickOnly = projectRookie({ college: null, pick: 5 }, RK, PROJ.ctx);
+  assert.equal(big.model, "profile");
+  assert.equal(pickOnly.model, "pick");
+  assert.equal(big.mpg, pickOnly.mpg);
+  assert.equal(big.row.g, pickOnly.row.g);
+  assert.ok(big.row.blk > 2 * passer.row.blk, `${big.row.blk} vs ${passer.row.blk} blocks`);
+  assert.ok(passer.row.ast > 2 * big.row.ast, `${passer.row.ast} vs ${big.row.ast} assists`);
+});
+
 test("rookies on live rosters: the pick, college if undrafted, or unprojected", { skip: NO_RK || (!thisDraft.length && "this year's draft not baked") }, async () => {
   // Matched the way the route matches: normalized ("Mikel Brown Jr." is the
   // college file's "Mikel Brown").
@@ -257,8 +274,9 @@ test("rookies on live rosters: the pick, college if undrafted, or unprojected", 
     const { GET } = await import("../app/api/projections/route.js");
     const d = await (await GET()).json();
     const a = d.players.find((p) => p.name === withCollege.name);
-    // Drafted: projected from the pick, the college line kept for reference.
-    assert.ok(a && a.rookie && a.team === "CHI" && a.pick === withCollege.pick && a.model === "pick" && a.last?.college);
+    // Drafted with a college season: minutes from the pick, stats from the
+    // pick and college (the profile model), the college line shown beside it.
+    assert.ok(a && a.rookie && a.team === "CHI" && a.pick === withCollege.pick && a.model === "profile" && a.last?.college);
     assert.ok(a.pool && a.solo, "rookies take part in the team context");
     if (noCollege) {
       const b = d.players.find((p) => p.name === noCollege.name);

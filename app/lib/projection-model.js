@@ -603,13 +603,21 @@ export function poolTeams(players, pool) {
 //                  freshman's 20 VA per 40 and a senior's are different
 //                  prospects, so production per year enters too.
 //
-// Which model a rookie gets (scripts/fit-projection-model.mjs rookieSrc): a
-// DRAFTED rookie gets the pick-only model — the same pieces on log pick
-// alone. With ten classes baked, adding the college translation on top of the
-// pick made held-out lottery projections worse (the pick already carries what
-// that season said), so college stats are used only for UNDRAFTED rookies,
-// where they predict little but are all there is. An undrafted rookie with no
-// college season isn't projected.
+// Which model a rookie gets (scripts/fit-projection-model.mjs rookieSrc):
+//   DRAFTED, with a college season — the PROFILE model: minutes and
+//     availability from the pick alone (the pick-only model's), each rate
+//     and percentage from the pick plus that stat's college index or gap,
+//     each with its own shrinkage. The pick sets how much a rookie plays; the
+//     college season says what they do with it — a shot-blocker blocks shots.
+//     Held out by class, it cut the per-minute miss on blocks, threes,
+//     assists and offensive boards by about 40% against the pick alone and
+//     lifted the VA correlation, at about the same average VA miss. (The full college model — on
+//     minutes and quality too — made lottery picks worse: college production
+//     says little about whether the minutes come.)
+//   DRAFTED, no college season (an international) — the pick-only model, the
+//     same pieces on log pick alone.
+//   UNDRAFTED — the college model at pick 61, where college stats predict
+//     little but are all there is; with no college season, not projected.
 
 export const UNDRAFTED_PICK = 61;
 export const logPick = (pick) => Math.log(pick > 0 ? Math.min(pick, UNDRAFTED_PICK) : UNDRAFTED_PICK);
@@ -642,21 +650,43 @@ export const rookieTimeFeatures = (u, pick) => (u
   ? [1, u.q / 10, u.mpg, u.yrs, u.q / 10 / u.yrs, logPick(pick)]
   : [1, logPick(pick)]);
 
+// The profile model's rows: one stat's college index (log) or gap, and the pick.
+export const rookieProfileFeatures = (base, pick) => [1, base, logPick(pick)];
+
+// Which model `src` gets — "profile", "pick" or "college" — or null.
+export function rookieModelOf(src, rk) {
+  const drafted = src.pick < UNDRAFTED_PICK;
+  if (drafted && src.college && rk.profile && rk.pickOnly) return "profile";
+  if (drafted) return rk.pickOnly ? "pick" : null;
+  return src.college && rk.college ? "college" : null;
+}
+
 // One rookie's projected season. `src` is { college, cctx, years, pick }
-// (college null for the pick-only model); `rk` is params.rookie.
+// (college null when there's no college season); `rk` is params.rookie.
 export function projectRookie(src, rk, target) {
   const { college: c, cctx, years = 1, pick } = src;
-  const m = c ? rk.college : rk.pickOnly;
-  if (!m) return null;
-  const u = c ? collegeUnits(c, cctx, m.K, m.Kp, years) : null;
+  const kind = rookieModelOf(src, rk);
+  if (!kind) return null;
   const dot = (b, x) => x.reduce((acc, v, i) => acc + v * (b[i] ?? 0), 0);
-  const idx = Object.fromEntries(RATE_KEYS.map((k) =>
-    [k, Math.exp(dot(m.rate[k], rookieRateFeatures(u, u ? lnIdx(u.idx[k]) : 0, pick)))]));
-  const pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
-    [key, Math.min(0.99, Math.max(0, target.pct[key] + dot(m.pct[key], rookieRateFeatures(u, u ? u.pct[key] : 0, pick))))]));
-  const x = rookieTimeFeatures(u, pick);
+  let idx, pct, m = kind === "college" ? rk.college : rk.pickOnly, x;
+  if (kind === "profile") {
+    // Each stat shrunk by its own phantom minutes (rates) or attempts (percentages).
+    const p = rk.profile;
+    idx = Object.fromEntries(RATE_KEYS.map((k) =>
+      [k, Math.exp(dot(p.rate[k], rookieProfileFeatures(lnIdx(collegeUnits(c, cctx, p.K[k], 0).idx[k]), pick)))]));
+    pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
+      [key, Math.min(0.99, Math.max(0, target.pct[key] + dot(p.pct[key], rookieProfileFeatures(collegeUnits(c, cctx, 0, p.Kp[key]).pct[key], pick))))]));
+    x = rookieTimeFeatures(null, pick);
+  } else {
+    const u = kind === "college" ? collegeUnits(c, cctx, m.K, m.Kp, years) : null;
+    idx = Object.fromEntries(RATE_KEYS.map((k) =>
+      [k, Math.exp(dot(m.rate[k], rookieRateFeatures(u, u ? lnIdx(u.idx[k]) : 0, pick)))]));
+    pct = Object.fromEntries(PCT_KEYS.map(({ key }) =>
+      [key, Math.min(0.99, Math.max(0, target.pct[key] + dot(m.pct[key], rookieRateFeatures(u, u ? u.pct[key] : 0, pick))))]));
+    x = rookieTimeFeatures(u, pick);
+  }
   const out = {
-    exp: 0, rookie: true, idx, pct,
+    exp: 0, rookie: true, model: kind, idx, pct,
     mpg: Math.min(36, Math.max(4, dot(m.mpg, x))),
     avail: Math.min(0.98, Math.max(0.05, dot(m.avail, x))),
   };

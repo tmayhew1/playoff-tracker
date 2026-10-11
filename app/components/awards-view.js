@@ -146,7 +146,7 @@ function MipBoard({ data, focus = null, onGo = null }) {
     <div>
       <SeasonPicker seasons={seasons} cur={cur} onPick={pick}>
         {S.winner
-          ? <span className="inline-block px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">MIP: {S.winner.name} · ranked #{S.winner[sort] ?? "–"} of {sort === "tot" ? S.players : S.qualified}</span>
+          ? <span className="inline-block px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">MIP: {S.winner.name} · ranked #{S.winner[sort] ?? "–"} of {sort === "tot" ? S.players : sort === "mip" ? S.eligible ?? S.qualified : S.qualified}</span>
           : <span className="italic text-stone-400">{S.players} returning players · before the award existed</span>}
       </SeasonPicker>
 
@@ -291,7 +291,7 @@ function MipMethod({ model }) {
         <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
           <p><span className="font-semibold text-stone-800">Expected.</span> The Look Ahead model’s projection from the summer before: the last three seasons’ per-minute rates and percentages, shrunk toward position and aged, plus projected minutes and games, placed on the roster the player actually played for. It’s priced against the previous season’s league, the way the Look Ahead backtest is. Actual is the season’s VA against that season’s league.</p>
           <p><span className="font-semibold text-stone-800">MIP %.</span> Each player’s chance of winning that season’s award, from one number: the per-game ratio (actual VA/G + {model.floor}) ÷ (expected VA/G + {model.floor}), put through a logistic model fit on all {model.backtest.seasons} winners. VA is measured against an average player, so most role players are expected at or below zero; the +{model.floor} floor keeps the ratio meaningful for them, and the model chose it. Going from 0 to 8 VA/G scores ×1.40 while a star going from 17 to 26 scores ×1.24, so a role player’s leap counts for more than a star’s. The ratio beat the total gain, the per-game gain, a blend of the two, and either gain with the player’s starting level beside it.</p>
-          <p><span className="font-semibold text-stone-800">Who’s counted.</span> MIP % and Over/G rank players who played at least half as many games as that season’s leader in games played. Over ranks everyone. Rookies have no prior season and aren’t listed.</p>
+          <p><span className="font-semibold text-stone-800">Who’s counted.</span> MIP % and Over/G rank players who played at least half as many games as that season’s leader in games played, and MIP % only those who finished above zero VA: a player still below average isn’t the most improved, however far below expectation they started. Over ranks everyone. Rookies have no prior season and aren’t listed.</p>
           <p><span className="font-semibold text-stone-800">Blind spots.</span> The projection’s constants were fit on these same seasons, so it is a little kinder to the model than a true out-of-sample run. VA is box-score offense first, so a defensive leap (Dyson Daniels, 2024-25) ranks lower than it deserves, and a winner whose projection was already high (Julius Randle, 2020-21) is the model’s biggest miss.</p>
         </div>
       )}
