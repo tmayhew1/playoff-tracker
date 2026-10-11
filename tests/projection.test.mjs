@@ -112,6 +112,11 @@ test("ROY goes only to rookies and All-Star fills its places", () => {
   assert.ok(Math.abs(roy - 1) < 1e-9, `ROY odds sum to ${roy}`);
   assert.ok(Math.abs(allStar - 24) < 1e-9, `All-Star odds sum to ${allStar}`);
   res.forEach((r, i) => { if (!field[i].rookie) assert.equal(r.roy, 0); });
+  const split = simulateAwards(field.map((p, i) => ({ ...p, conf: i % 2 ? "E" : "W" })), PROJ.mvp.model, PROJ.pool, { sims: 300, allStar: { beta: 0.56, places: 24 } });
+  for (const c of [1, 0]) {
+    const sum = split.filter((_, i) => i % 2 === c).reduce((s, r) => s + r.allStarConf, 0);
+    assert.ok(Math.abs(sum - 12) < 1e-9, `12 a conference, got ${sum}`);
+  }
 });
 
 test("the range can be reported on another baseline than the ballot", () => {

@@ -381,13 +381,15 @@ export const tierOf = (mpg) => {
 //            ROY board's two inputs. No games rule: it doesn't apply to ROY.
 //   allStar  { beta, places } — every player's b·VA/100 plus logistic noise,
 //            top `places` selected: the selection logit, one draw at a time.
+//            From the same draw, half the places per conference among
+//            players with a `conf` (the real roster's 12 East, 12 West).
 //
-// which add P(ROY) and P(All-Star) to each result.
+// which add P(ROY), P(All-Star) and P(All-Star by conference) to each result.
 const logisticNoise = (u) => { const v = Math.min(1 - 1e-12, Math.max(1e-12, u)); return Math.log(v / (1 - v)); };
 export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82, roy = null, allStar = null } = {}) {
   const rand = rng(seed);
   const n = players.length;
-  const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, roy: 0, allStar: 0, rankSum: 0, ranked: 0, vas: [] }));
+  const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, roy: 0, allStar: 0, allStarConf: 0, rankSum: 0, ranked: 0, vas: [] }));
   const rookies = roy ? players.map((p, i) => (p.rookie ? i : -1)).filter((i) => i >= 0) : [];
   const vpg = players.map((p) => (p.g > 0 ? p.va / p.g : 0));
   // The range can be reported on another baseline than the ballot's (VA where
@@ -433,6 +435,13 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       for (let i = 0; i < n; i++) if (simG[i] > 0) sel.push([allStar.beta * (simVa[i] / 100) + logisticNoise(rand()), i]);
       sel.sort((x, y) => y[0] - x[0]);
       for (let r = 0; r < Math.min(allStar.places, sel.length); r++) tally[sel[r][1]].allStar++;
+      const left = {};
+      for (const [, i] of sel) {
+        const c = players[i].conf;
+        if (!c) continue;
+        left[c] ??= allStar.places / 2;
+        if (left[c] > 0) { left[c]--; tally[i].allStarConf++; }
+      }
     }
   }
   return players.map((p, i) => {
@@ -446,6 +455,7 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       first: t.first / sims,
       roy: t.roy / sims,
       allStar: t.allStar / sims,
+      allStarConf: t.allStarConf / sims,
       meanRank: t.ranked ? t.rankSum / t.ranked : null,
       eligible: t.ranked / sims,
       vaLo: q(0.1), vaHi: q(0.9),

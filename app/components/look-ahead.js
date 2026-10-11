@@ -95,7 +95,7 @@ export function LookAhead() {
     const byBallot = [...players].sort((a, b) => ballotVa(b) - ballotVa(a));
     const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie)];
     const rookiePool = data.params?.rookie?.pool;
-    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: ballotVa(p), rangeVa: p.va, mpg: p.mpg, rookie: !!p.rookie, pool: p.rookie ? rookiePool : null })),
+    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: ballotVa(p), rangeVa: p.va, mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null })),
       am ? { a: am.mvp.beta } : data.mvp.model, data.pool,
       { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null });
     return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
@@ -309,7 +309,8 @@ const BOARD = {
   mvp: { title: "Most Valuable", col: "MVP%", odds: (r) => r.mvp, note: "The likeliest winners · 65-game rule applied" },
   roy: { title: "Rookie of the Year", col: "ROY%", odds: (r) => r.roy, rookies: true, minutes: true, note: "Every projected rookie · from VA+ and minutes per game" },
   allnba: { title: "All-NBA", col: "Odds", odds: (r) => r.allNba, note: "The fifteen likeliest, five a team · positionless, as voted since 2023-24 · 65-game rule applied" },
-  allstar: { title: "All-Star", col: "Odds", odds: (r) => r.allStar, cut: ALL_STAR_PLACES, note: `Chance of a selection · ${ALL_STAR_PLACES} places` },
+  allstar: { title: "All-Star", col: "Odds", odds: (r, split) => (split ? r.allStarConf : r.allStar), cut: ALL_STAR_PLACES,
+    note: (split) => (split ? `Chance of a selection · ${ALL_STAR_PLACES / 2} East, ${ALL_STAR_PLACES / 2} West` : `Chance of a selection · ${ALL_STAR_PLACES} places, either conference`) },
 };
 const BOARD_SHOWN = 30;
 const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleString()}`;
@@ -317,9 +318,11 @@ const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleSt
 function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
   const [sub, setSub] = useState("mvp");
   const [open, setOpen] = useState(null);
+  // All-Star: 12 a conference, as the roster is picked, or the 24 likeliest league-wide.
+  const [split, setSplit] = useState(true);
   const subs = hasModels ? AWARD_SUBS : AWARD_SUBS.filter(([k]) => k === "mvp" || k === "allnba");
   const cfg = BOARD[sub];
-  const entries = awards.res.map((r) => ({ r, p: pBySlug[r.key], odds: cfg.odds(r) || 0 }))
+  const entries = awards.res.map((r) => ({ r, p: pBySlug[r.key], odds: cfg.odds(r, split) || 0 }))
     .filter((e) => e.p && (!cfg.rookies || e.p.rookie));
   const vpOf = (p) => vaPlus(p.va, p.dpm, p.row.mp);
   // All-NBA keeps its three teams on top; everyone else goes by odds.
@@ -327,15 +330,22 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
   const onTeams = new Set(teams ? teams.flat().map((r) => r.key) : []);
   const ranked = entries.filter((e) => !onTeams.has(e.r.key))
     .sort((a, b) => b.odds - a.odds || vpOf(b.p) - vpOf(a.p));
+  const bySplit = sub === "allstar" && split;
   const groups = teams
     ? [...teams.map((tm, ti) => ({ head: `${["First", "Second", "Third"][ti]} Team`, rows: tm.map((r) => entries.find((e) => e.r.key === r.key)).filter(Boolean) })),
       { head: "Next in line", rows: ranked.slice(0, BOARD_SHOWN - onTeams.size) }]
-    : [{ rows: ranked.slice(0, BOARD_SHOWN) }];
+    : bySplit
+    ? [["E", "East"], ["W", "West"]].map(([c, head]) => ({
+      head, restart: true, cut: ALL_STAR_PLACES / 2,
+      rows: ranked.filter((e) => TEAM_CONF[e.p.team] === c).slice(0, BOARD_SHOWN / 2),
+    }))
+    : [{ rows: ranked.slice(0, BOARD_SHOWN), cut: cfg.cut }];
   const max = Math.max(1e-9, ...groups.flatMap((g) => g.rows.map((e) => e.odds)));
   const lead = groups[0].rows[0];
   const meta = !lead ? null
     : sub === "mvp" || sub === "roy" ? `Favorite: ${lead.p.name} · ${pct(lead.odds)}`
     : sub === "allnba" ? `First team: ${teams[0].map((r) => splitName(pBySlug[r.key]?.name || "").last).join(", ")}`
+    : bySplit ? groups.map((g) => (g.rows[0] ? `${g.head}: ${g.rows[0].p.name} ${pct(g.rows[0].odds)}` : null)).filter(Boolean).join(" · ")
     : `${ALL_STAR_PLACES} places · ${lead.p.name} likeliest at ${pct(lead.odds)}`;
   const subCls = (active) =>
     `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
@@ -350,7 +360,15 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
       <div className="border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
           <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">{cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
+          <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
+          {sub === "allstar" && (
+            <div className="mt-1.5 inline-flex border border-stone-300" role="group" aria-label="All-Star places">
+              {[[true, `${ALL_STAR_PLACES / 2} East / ${ALL_STAR_PLACES / 2} West`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
+                <button key={label} type="button" aria-pressed={split === v} onClick={() => { setSplit(v); setOpen(null); }}
+                  className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 ${split === v ? "bg-stone-900 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}>{label}</button>
+              ))}
+            </div>
+          )}
           {meta && <div className="mt-1.5"><span className="inline-block text-[10px] px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">{meta}</span></div>}
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
@@ -364,10 +382,11 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
         {groups.map((g, gi) => (
           <div key={gi} className={gi ? "border-t border-dashed border-stone-300" : ""}>
             {g.head && <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-700">{g.head}</div>}
-            {g.rows.map((e) => {
+            {g.rows.map((e, k) => {
+              if (g.restart && k === 0) rank = 0;
               rank++;
               const { p, r, odds } = e, tc = p.team ? teamColor(p.team) : "#78716c", isOpen = open === r.key, vp = vpOf(p);
-              const cut = cfg.cut && rank === cfg.cut + 1;
+              const cut = g.cut && k === g.cut;
               return (
                 <div key={r.key} className={`border-b border-stone-100 last:border-0 ${cut ? "border-t border-dashed border-t-stone-300" : ""}`}>
                   <div className="relative overflow-hidden">
