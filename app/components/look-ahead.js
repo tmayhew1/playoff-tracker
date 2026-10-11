@@ -486,7 +486,6 @@ function ProjectedLine({ p, sim, lga }) {
     ["FG%", r.fga > 0 ? (100 * r.fgm) / r.fga : NaN], ["3P%", r.tpa > 0 ? (100 * r.tpm) / r.tpa : NaN], ["FT%", r.fta > 0 ? (100 * r.ftm) / r.fta : NaN],
   ];
   const proj = line(p.row, p.row.g), last = L ? line(L, L.g) : null;
-  const lastVa = L ? valueAdd(L, lga) : null;
   return (
     <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
       <div className="overflow-x-auto no-scrollbar">
@@ -511,7 +510,7 @@ function ProjectedLine({ p, sim, lga }) {
           </tbody>
         </table>
       </div>
-      <Cards p={p} sim={sim} lga={lga} lastVa={lastVa} />
+      <Cards p={p} sim={sim} lga={lga} />
     </div>
   );
 }
@@ -521,10 +520,10 @@ function ProjectedLine({ p, sim, lga }) {
 // card is about and a few words on what it did to the projection. The long
 // version of each lives in the card's tooltip. Each card is a player row tall
 // and grows to fill its line, content centred, so the rows run edge to edge.
-function Card({ tag, tagClass = "", tagStyle, title, children }) {
+function Card({ tag, tagClass = "", tagStyle, title, tight = false, children }) {
   return (
-    <span title={title} className="flex-auto flex items-center justify-center gap-1.5 min-h-8 border border-stone-200 bg-white px-2 py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap">
-      <span style={tagStyle} className={`text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border ${tagClass}`}>{tag}</span>
+    <span title={title} className={`flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
+      <span style={tagStyle} className={`text-[9px] font-bold uppercase px-1 py-0.5 border ${tight ? "tracking-normal" : "tracking-wider"} ${tagClass}`}>{tag}</span>
       <span>{children}</span>
     </span>
   );
@@ -541,7 +540,7 @@ const shortDate = (s) => new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", 
 const CONTEXT_LABEL = { min: "MIN", usg: "USG", ast: "AST", drb: "DRB", orb: "ORB" };
 const CONTEXT_LONG = { min: "minutes", usg: "shots & turnovers", ast: "assists", drb: "def. rebounds", orb: "off. rebounds" };
 
-function Cards({ p, sim, lga, lastVa }) {
+function Cards({ p, sim, lga }) {
   const L = p.last, inj = p.injury;
   // What sharing a roster did: each pooled resource that moved by at least
   // 1%, and the VA it cost or added against the player projected alone.
@@ -560,11 +559,6 @@ function Cards({ p, sim, lga, lastVa }) {
           : p.model === "pick" ? "Projected from the draft slot"
           : `Projected from ${L.g} games at ${L.team} — undrafted, so there’s no pick to go on`}>
           {p.pick ? `No. ${p.pick} pick` : "Undrafted"}
-        </Card>
-      )}
-      {!p.rookie && L && (
-        <Card tag={`’${L.season.slice(5)}`} tagClass={TAG.stone} title={`${fmt1(lastVa)} VA in ${L.g} games last active season`}>
-          {(lastVa / L.g).toFixed(2)} VA/G · {L.g} G
         </Card>
       )}
       {inj && (
@@ -589,14 +583,44 @@ function Cards({ p, sim, lga, lastVa }) {
           <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span> · VA+/G {pg(vpTot)}
         </Card>
       )}
-      {sim && (
-        <Card tag="80%" tagClass={TAG.stone} title={`80% of simulated seasons land between ${Math.round(sim.vaLo)} and ${Math.round(sim.vaHi)} VA, shown over the ${g} projected games`}>
-          <span className="font-semibold text-stone-700">{pg(sim.vaLo)}–{pg(sim.vaHi)}</span> VA/G
-        </Card>
-      )}
-      {sim && [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]]
-        .filter(([, x]) => x > 0.005).map(([k, x]) => <Card key={k} tag={k} tagClass={TAG.amber}>{pct(x)}</Card>)}
+      {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
+      {sim && (() => {
+        const odds = [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
+        return odds.length > 0 && (
+          <div className="basis-full flex gap-1">
+            {odds.map(([k, x]) => <Card key={k} tight tag={k} tagClass={TAG.amber}>{pct(x)}</Card>)}
+          </div>
+        );
+      })()}
     </div>
+  );
+}
+
+
+// The simulated season's VA/G as a histogram, its middle 60% — 20th to 80th
+// percentile — drawn in the team's colour with the two ends named either side.
+function Spread({ sim, g, tc }) {
+  const { lo, hi, counts } = sim.hist, w = (hi - lo) / counts.length;
+  const top = Math.max(1e-9, ...counts);
+  const end = (label, x) => (
+    <span className="flex flex-col items-center leading-none shrink-0">
+      <span className="text-[7px] uppercase tracking-wider text-stone-400">{label}</span>
+      <span className="mt-0.5 font-semibold text-stone-700">{(x / g).toFixed(2)}</span>
+    </span>
+  );
+  return (
+    <span title={`60% of simulated seasons land between ${(sim.va20 / g).toFixed(2)} and ${(sim.va80 / g).toFixed(2)} VA/G (20th to 80th percentile, ${Math.round(sim.va20)}–${Math.round(sim.va80)} VA over the ${g} projected games)`}
+      className="basis-full flex items-center gap-2 min-h-8 border border-stone-200 bg-white px-2 py-1 text-[10px] tabular-nums">
+      {end("20th", sim.va20)}
+      <span className="flex-1 flex items-end gap-px h-5" aria-hidden>
+        {counts.map((c, i) => {
+          const mid = lo + (i + 0.5) * w, inside = mid >= sim.va20 && mid <= sim.va80;
+          return <span key={i} className="flex-1" style={{ height: `${Math.max(4, (c / top) * 100)}%`, backgroundColor: withAlpha(inside ? tc : "#a8a29e", inside ? 0.7 : 0.35) }} />;
+        })}
+      </span>
+      {end("80th", sim.va80)}
+      <span className="text-stone-400 shrink-0">VA/G</span>
+    </span>
   );
 }
 

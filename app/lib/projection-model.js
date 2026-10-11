@@ -370,8 +370,9 @@ export const tierOf = (mpg) => {
 // player draws one whole pair, so a bad year's per-game drop and its missed
 // games stay as correlated as they really were.
 //
-// Returns per player: P(MVP), P(All-NBA), P(1st team), mean finish, and the
-// 10th/90th percentile of the simulated VA (of `rangeVa` when a player has it).
+// Returns per player: P(MVP), P(All-NBA), P(1st team), mean finish, the
+// 10th/90th and 20th/80th percentiles of the simulated VA (of `rangeVa` when a
+// player has it), and its histogram.
 //
 // Two more awards ride along when their models are passed — the Awards tab's
 // own fits (scripts/bake-awards.mjs), drawn the same way as the MVP ballot:
@@ -386,6 +387,17 @@ export const tierOf = (mpg) => {
 //
 // which add P(ROY), P(All-Star) and P(All-Star by conference) to each result.
 const logisticNoise = (u) => { const v = Math.min(1 - 1e-12, Math.max(1e-12, u)); return Math.log(v / (1 - v)); };
+// The simulated VA's shape, for the page's histogram: HIST_BINS even bins
+// from lo to hi (the 2nd to 98th percentile, so a stray tail can't flatten
+// the rest), each holding the share of draws inside it.
+const HIST_BINS = 20;
+function histogram(sorted, lo, hi) {
+  const counts = Array(HIST_BINS).fill(0), w = (hi - lo) / HIST_BINS;
+  if (!(w > 0)) return { lo, hi, counts };
+  for (const x of sorted) if (x >= lo && x <= hi) counts[Math.min(HIST_BINS - 1, Math.floor((x - lo) / w))]++;
+  return { lo, hi, counts: counts.map((c) => c / sorted.length) };
+}
+
 export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82, roy = null, allStar = null } = {}) {
   const rand = rng(seed);
   const n = players.length;
@@ -459,6 +471,8 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       meanRank: t.ranked ? t.rankSum / t.ranked : null,
       eligible: t.ranked / sims,
       vaLo: q(0.1), vaHi: q(0.9),
+      va20: q(0.2), va80: q(0.8),
+      hist: histogram(v, q(0.02), q(0.98)),
     };
   });
 }
