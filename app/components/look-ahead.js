@@ -542,14 +542,15 @@ const CONTEXT_LONG = { min: "minutes", usg: "shots & turnovers", ast: "assists",
 
 function Cards({ p, sim, lga }) {
   const L = p.last, inj = p.injury;
-  // What sharing a roster did: each pooled resource that moved by at least
-  // 1%, and the VA it cost or added against the player projected alone.
-  const moved = p.pool && p.solo ? Object.entries(p.pool).filter(([, f]) => Math.abs(f - 1) >= 0.01) : [];
+  // What sharing a roster did: every pooled resource, biggest move first, and
+  // the VA it cost or added against the player projected alone.
+  const moved = p.pool && p.solo ? Object.entries(p.pool).sort(([, a], [, b]) => Math.abs(b - 1) - Math.abs(a - 1)) : [];
   const dva = moved.length ? p.vaShown - valueAdd(p.solo, lga) : null;
+  const ctxPct = (f) => { const x = (f - 1) * 100; return `${signed(x, Math.abs(x) < 1 && x !== 0 ? 1 : 0)}%`; };
   const def = p.dpm != null && p.row.mp > 0 ? p.dpm * p.row.mp : null;
   const tc = p.team ? teamColor(p.team) : "#78716c";
   // Every VA on a card is per game, like the VA/G column; totals are in the tooltips.
-  const g = p.row.g, pg = (x) => (x / g).toFixed(2);
+  const g = p.row.g;
   const vpTot = def != null ? vaPlus(p.va, p.dpm, p.row.mp) : null;
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
@@ -568,21 +569,23 @@ function Cards({ p, sim, lga }) {
       )}
       {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">From earlier seasons</Card>}
       {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">Healthy-season minutes</Card>}
-      {moved.length > 0 && (
-        <Card tag={p.team} tagStyle={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${signed((f - 1) * 100, 0)}%`).join(", ")}`}>
-          {moved.map(([k, f]) => `${signed((f - 1) * 100, 0)}% ${CONTEXT_LABEL[k]}`).join(", ")}
-        </Card>
-      )}
-      {dva != null && (
-        <Card tag={dva >= 0 ? "▲" : "▼"} tagClass={dva >= 0 ? "border-emerald-300 text-emerald-700 bg-emerald-50" : TAG.red} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
-          <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva / g, 2)} VA/G</span> {dva >= 0 ? "better" : "worse"} situation
-        </Card>
-      )}
-      {def != null && (
-        <Card tag="DEF" tagClass={TAG.stone} title={`Projected defense ${signed(def)} VA over the season, for VA+ ${fmt1(vpTot)}`}>
-          <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span> · VA+/G {pg(vpTot)}
-        </Card>
-      )}
+      {/* The team context on the left, two cards tall — the team centred, its
+          resources listed down (scrolling when there are more than fit) — with
+          what it did, and the defense, stacked beside it. */}
+      {moved.length > 0 ? (
+        <div className="basis-full grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-1">
+          <div title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${ctxPct(f)}`).join(", ")}`}
+            className={`${def != null ? "row-span-2 h-[4.25rem]" : "h-8"} flex flex-col items-center gap-0.5 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums`}>
+            <span style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border">{p.team}</span>
+            {/* Three lines fit whole; the top of a fourth peeks in, so it reads as scrollable. */}
+            <span className="w-full flex-1 min-h-0 overflow-y-auto no-scrollbar leading-[1.2] text-center">
+              {moved.map(([k, f]) => <span key={k} className="block whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
+            </span>
+          </div>
+          <Situation dva={dva} g={g} />
+          {def != null && <Defense def={def} g={g} vpTot={vpTot} />}
+        </div>
+      ) : def != null && <Defense def={def} g={g} vpTot={vpTot} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
       {sim && (() => {
         const odds = [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
@@ -596,6 +599,24 @@ function Cards({ p, sim, lga }) {
   );
 }
 
+
+// What the roster did to the player, against them projected alone. The arrow
+// stays small and uncoloured: the number carries it.
+function Situation({ dva, g }) {
+  return (
+    <Card tag={dva >= 0 ? "▲" : "▼"} tagClass={`${TAG.stone} !text-[7px] !px-0.5 !py-0 leading-none`} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
+      <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva / g, 2)} VA/G</span> {dva >= 0 ? "better" : "worse"} situation
+    </Card>
+  );
+}
+
+function Defense({ def, g, vpTot }) {
+  return (
+    <Card tag="DEF" tagClass={TAG.stone} title={`Projected defense ${signed(def)} VA over the season, for VA+ ${fmt1(vpTot)}`}>
+      <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span> · VA+/G {(vpTot / g).toFixed(2)}
+    </Card>
+  );
+}
 
 // The simulated season's VA/G as a histogram, its middle 60% — 20th to 80th
 // percentile — drawn in the team's colour with the two ends named either side.
