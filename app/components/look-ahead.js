@@ -6,7 +6,7 @@ import { fetchBakedJson } from "../lib/fetch-cache";
 import { splitName, teamColor, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
-import { allNbaTeams, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
+import { allNbaTeams, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { TEAM_CONF } from "../teams";
 
 // The 2026-27 Look Ahead, Explore's projected season (lib/projection-model.js
@@ -30,6 +30,19 @@ const ALL_STAR_PLACES = 24;
 const pct = (x) => (x >= 0.995 ? ">99%" : x > 0 && x < 0.005 ? "<1%" : `${Math.round(x * 100)}%`);
 const fmt1 = (x) => (Number.isFinite(x) ? x.toFixed(1) : "–");
 const fmtDate = (s) => new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+const POS_ORDER = { G: 0, F: 1, C: 2 };
+// How many characters of surnames and dots a standings row's line holds at
+// phone width, before the line would cut off.
+const LINEUP_LINE = 28;
+// A standings row's five surnames as two lines: three over two when the first
+// three fit, otherwise two over three.
+function lineupRows(top) {
+  const names = top.map((p) => splitName(p.name).last);
+  const width = (xs) => xs.join(" · ").length;
+  const k = names.length > 3 && width(names.slice(0, 3)) <= LINEUP_LINE ? 3 : 2;
+  return [names.slice(0, k), names.slice(k)].filter((r) => r.length);
+}
 
 function InjuredOut({ list }) {
   if (!list?.length) return null;
@@ -114,8 +127,10 @@ export function LookAhead() {
     const proj = data.wins ? projectWins(data.wins, Object.fromEntries(Object.entries(by).map(([t, list]) =>
       [t, { vaPlus: list.map((p) => vaPlus(p.va, p.dpm, p.row.mp)), lastPct: lastPct(t) }]))) : {};
     return Object.entries(by).map(([t, list]) => {
-      // The row's five names: the projected rotation, most total minutes first.
-      const top = [...list].sort((a, b) => b.row.mp - a.row.mp).slice(0, 5);
+      // The row's five names: the five with the most projected minutes, laid
+      // out like a lineup — guards, then forwards, then centers.
+      const top = [...list].sort((a, b) => b.row.mp - a.row.mp).slice(0, 5)
+        .sort((a, b) => POS_ORDER[posGroup(a.pos)] - POS_ORDER[posGroup(b.pos)]);
       return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: rec[t] || null, top };
     }).sort((a, b) => b.wins - a.wins);
   }, [data, players]);
@@ -167,12 +182,17 @@ export function LookAhead() {
                       <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
                         <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
                         <TeamChip team={t.team} active={isOpen} />
-                        {/* Always two lines tall — a short list (the Hornets') sits centred in
-                            the same height as a long one, and a long one stops at two. */}
+                        {/* Always two lines: three names over two, the perimeter players
+                            on top — or two over three, the guards on top, when three
+                            surnames won't fit on one line. */}
                         <span className="flex-1 min-w-0 min-h-[2.75em] flex items-center text-stone-600 leading-snug">
-                          <span className="line-clamp-2">
-                            <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                            {t.top.map((p) => splitName(p.name).last).join(" · ")}
+                          <span className="min-w-0">
+                            {lineupRows(t.top).map((row, r) => (
+                              <span key={r} className="block truncate">
+                                {r === 0 && <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>}
+                                {row.join(" · ")}
+                              </span>
+                            ))}
                           </span>
                         </span>
                         <span className="w-12 text-right tabular-nums font-bold text-stone-900 shrink-0">{w}–{82 - w}</span>
