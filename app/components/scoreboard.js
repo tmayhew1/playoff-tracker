@@ -11,14 +11,13 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
   const hasRealProjection = !readOnly && Math.abs(realProj - total) > 0.001;
   const hasWhatIf = !readOnly && (whatIfTotal || 0) > 0.001;
   return (
-    <div className={`relative flex-1 p-3 border-2 ${owner === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
-      {/* The leader's badge sits centered on the card's top edge. */}
-      {leading && !tied && (
-        <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] leading-none font-bold uppercase tracking-wider bg-stone-900 text-white px-1.5 py-1 whitespace-nowrap">{readOnly ? "WINNER" : "LEAD"}</span>
-      )}
-      <div className="flex items-center gap-1.5 mb-1">
-        <span className={`w-2 h-2 rounded-full ${ownerDot(owner)}`}></span>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{owner}</span>
+    <div className={`flex-1 p-3 border-2 ${owner === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${ownerDot(owner)}`}></span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{owner}</span>
+        </div>
+        {leading && !tied && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{readOnly ? "WINNER" : "LEAD"}</span>}
       </div>
       <div className={`text-4xl font-black tabular-nums ${ownerColor(owner)}`}>{total}</div>
       <div className="text-[10px] text-stone-500 uppercase tracking-wider mt-0.5">{breakdown.length} win{breakdown.length === 1 ? "" : "s"}{readOnly ? "" : " · locked"}</div>
