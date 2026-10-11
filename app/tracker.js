@@ -8,6 +8,7 @@ import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
 import { shareQuery } from "./lib/share-params";
 import { ShareProvider, useShareStore } from "./lib/share-state";
+import { AwardNavProvider } from "./lib/award-nav";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
 // code loads the first time that tab is opened, so a visit that never leaves
@@ -24,6 +25,7 @@ const LegacyView = lazyView(() => import("./components/legacy-view").then((m) =>
 const ShotZonesView = lazyView(() => import("./components/shot-zones-view").then((m) => m.ShotZonesView));
 const UsageView = lazyView(() => import("./components/usage-view").then((m) => m.UsageView));
 const DraftView = lazyView(() => import("./components/draft-view").then((m) => m.DraftView));
+const AwardsView = lazyView(() => import("./components/awards-view").then((m) => m.AwardsView));
 
 
 // `initial` is the link this page was opened from, parsed on the server
@@ -40,9 +42,10 @@ export function PlayoffTracker({ initial = null }) {
 const SEASONS = Object.keys(HISTORY);
 const TABS = [
   ["explore", "Explore"],
-  ...SEASONS.map((s) => [s, s]),
+  ["tvs", "Trey vs Spencer"],
   ["draft", "Draft"],
   ["legacy", "Legacy"],
+  ["awards", "Awards"],
   ["college", "College"],
   ["drating", "D Rating"],
   ["usage", "Usage"],
@@ -50,10 +53,14 @@ const TABS = [
   ["info", "Info"],
 ];
 const TAB_IDS = new Set(TABS.map(([id]) => id));
+// Trey vs Spencer holds every draft season under one tab; a link still names
+// the season itself (?tab=2025-26), so links from before the merge open it.
+const tabFromLink = (t) => (SEASONS.includes(t) ? "tvs" : TAB_IDS.has(t) ? t : "explore");
 
 
 function Tracker({ initial }) {
-  const [tab, setTab] = useState(() => (TAB_IDS.has(initial?.tab) ? initial.tab : "explore"));
+  const [tab, setTab] = useState(() => tabFromLink(initial?.tab));
+  const [tvsSeason, setTvsSeason] = useState(() => (SEASONS.includes(initial?.tab) ? initial.tab : SEASONS[0]));
   // Explore's part of the opening link, handed over once: ExploreView starts
   // from it on its first mount and clears it, so coming back to Explore later
   // resumes normally instead of re-opening the link.
@@ -67,7 +74,7 @@ function Tracker({ initial }) {
   // replaceState, so navigating inside the page doesn't stack history entries.
   const { state: share, report } = useShareStore();
   const { usgAdj } = useVAMode();
-  const query = shareQuery({ ...share, tab, usg: usgAdj });
+  const query = shareQuery({ ...share, tab: tab === "tvs" ? tvsSeason : tab, usg: usgAdj });
   useEffect(() => {
     try {
       if (window.location.search !== query) {
@@ -78,7 +85,7 @@ function Tracker({ initial }) {
     }
   }, [query]);
 
-  // A cross-tab jump: Legacy hands over a player-season and which half of it
+  // A cross-tab jump: Legacy (and MIP) hand over a player-season and which half of it
   // was being read, and Explore opens its leaderboard there. Held here because
   // the two tabs are siblings — Explore unmounts while Legacy is showing, so
   // it picks the target up on mount.
@@ -91,8 +98,20 @@ function Tracker({ initial }) {
   }, [setTab]);
   const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
+  // The other direction: a player card's award box (award-boxes.js) opens the
+  // Awards tab on that award, season and player.
+  const [awardFocus, setAwardFocus] = useState(null);
+  const goToAward = useCallback((target) => {
+    if (!target?.season || !target?.award) return;
+    setAwardFocus(target);
+    setTab("awards");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [setTab]);
+  const clearAwardFocus = useCallback(() => setAwardFocus(null), []);
+
   return (
     <ShareProvider value={report}>
+    <AwardNavProvider value={goToAward}>
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4 text-center">
@@ -123,15 +142,33 @@ function Tracker({ initial }) {
         <ShareButton query={query} />
         </div>
 
-        {/* A season tab has no selectors of its own, so the switch sits at the
-            top of the page. Explore renders its own copy below the By
-            Season/By Player and scope rows — see ExploreView. */}
-        {SEASONS.includes(tab) && <VABaselineToggle />}
+        {/* Trey vs Spencer: which draft season, then the baseline switch (a
+            season page has no selectors of its own). Explore renders its own
+            copy of the switch below the By Season/By Player and scope rows —
+            see ExploreView. */}
+        {tab === "tvs" && (
+          <>
+            <div className="mb-2 flex gap-1.5" role="tablist" aria-label="Draft season">
+              {SEASONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="tab"
+                  aria-selected={tvsSeason === s}
+                  onClick={() => setTvsSeason(s)}
+                  className={`flex-1 text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-2 border ${tvsSeason === s ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`}
+                >{s}</button>
+              ))}
+            </div>
+            <VABaselineToggle />
+          </>
+        )}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tab} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
       </div>
     </div>
+    </AwardNavProvider>
     </ShareProvider>
   );
 }

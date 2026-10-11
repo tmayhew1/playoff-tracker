@@ -1,0 +1,62 @@
+name: Bake NBA award voting (R)
+
+# Scrapes Basketball-Reference's award voting, All-NBA teams and All-Star
+# rosters into app/data/award-voting.json, which the Awards tab's models are
+# fit to (scripts/bake-awards.mjs). Voting is fixed once announced, so this
+# runs on demand — or when the scraper itself changes (which is also how it
+# first runs: a manual trigger needs the workflow on the default branch). Two
+# pages a season plus one for every All-NBA team, so 46 seasons take a few
+# minutes. The bake is idempotent, so a re-run commits nothing.
+on:
+  push:
+    paths:
+      - "scripts/R/fetch_award_voting.R"
+      - ".github/workflows/bake-award-voting.yml"
+  workflow_dispatch:
+    inputs:
+      first:
+        description: "First season, by end year (1981 = 1980-81)"
+        required: true
+        default: "1981"
+      last:
+        description: "Last season, by end year"
+        required: true
+        default: "2026"
+
+concurrency:
+  group: bake-award-voting
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("httr", "xml2", "jsonlite"))'
+
+      - name: Bake award voting
+        run: Rscript scripts/R/fetch_award_voting.R "${{ inputs.first || '1981' }}" "${{ inputs.last || '2026' }}"
+
+      - name: Catch up with the branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin "${{ github.ref_name }}"
+
+      - name: Commit baked JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake NBA award voting ${{ inputs.first || '1981' }}-${{ inputs.last || '2026' }} [skip ci]"
+          file_pattern: "app/data/award-voting.json"

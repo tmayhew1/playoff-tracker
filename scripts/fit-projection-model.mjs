@@ -30,6 +30,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { normalizeName } from "../app/lib/format.js";
+import { MVP_WINNERS } from "../app/lib/awards.js";
 import { defVAInfo } from "../app/lib/defense-math.js";
 import {
   MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS, TIME_HISTORY,
@@ -284,21 +285,8 @@ function fitGap(targets, actualUnits, params) {
 }
 
 // --- 3. The MVP model ------------------------------------------------------------
-// Every MVP since 1980-81, by Basketball-Reference slug.
-const MVPS = {
-  "1980-81": "ervinju01", "1981-82": "malonmo01", "1982-83": "malonmo01", "1983-84": "birdla01",
-  "1984-85": "birdla01", "1985-86": "birdla01", "1986-87": "johnsma02", "1987-88": "jordami01",
-  "1988-89": "johnsma02", "1989-90": "johnsma02", "1990-91": "jordami01", "1991-92": "jordami01",
-  "1992-93": "barklch01", "1993-94": "olajuha01", "1994-95": "robinda01", "1995-96": "jordami01",
-  "1996-97": "malonka01", "1997-98": "jordami01", "1998-99": "malonka01", "1999-00": "onealsh01",
-  "2000-01": "iversal01", "2001-02": "duncati01", "2002-03": "duncati01", "2003-04": "garneke01",
-  "2004-05": "nashst01", "2005-06": "nashst01", "2006-07": "nowitdi01", "2007-08": "bryanko01",
-  "2008-09": "jamesle01", "2009-10": "jamesle01", "2010-11": "rosede01", "2011-12": "jamesle01",
-  "2012-13": "jamesle01", "2013-14": "duranke01", "2014-15": "curryst01", "2015-16": "curryst01",
-  "2016-17": "westbru01", "2017-18": "hardeja01", "2018-19": "antetgi01", "2019-20": "antetgi01",
-  "2020-21": "jokicni01", "2021-22": "jokicni01", "2022-23": "embiijo01", "2023-24": "jokicni01",
-  "2024-25": "gilgesh01",
-};
+// Every MVP since 1980-81 (lib/awards.js), up to the last season baked.
+const MVPS = Object.fromEntries(Object.entries(MVP_WINNERS).filter(([s]) => SEASONS.includes(s)));
 const FIELD = 30;
 
 // One season's candidates: the FIELD best by VA, put on an 82-game footing so

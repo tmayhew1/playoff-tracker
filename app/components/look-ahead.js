@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { valueAdd } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { splitName, teamColor, withAlpha } from "../lib/format";
+import { Name, TeamChip } from "./player-chips";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
 import { allNbaTeams, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { TEAM_CONF } from "../teams";
@@ -26,34 +27,6 @@ const PAGE = 25;
 
 const pct = (x) => (x >= 0.995 ? ">99%" : x > 0 && x < 0.005 ? "<1%" : `${Math.round(x * 100)}%`);
 const fmt1 = (x) => (Number.isFinite(x) ? x.toFixed(1) : "–");
-
-function TeamChip({ team, onClick, active = false }) {
-  if (!team) {
-    return <span className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border border-stone-200 text-stone-400 shrink-0">FA</span>;
-  }
-  const tc = teamColor(team);
-  const style = { backgroundColor: withAlpha(tc, active ? 0.3 : 0.14), color: tc, borderColor: withAlpha(tc, active ? 0.8 : 0.4) };
-  const Tag = onClick ? "button" : "span";
-  return (
-    <Tag
-      type={onClick ? "button" : undefined}
-      onClick={onClick}
-      style={style}
-      className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border shrink-0 hover:brightness-95"
-      aria-label={onClick ? `Filter by ${team}` : undefined}
-    >{team}</Tag>
-  );
-}
-
-function Name({ name }) {
-  const { first, last } = splitName(name);
-  return (
-    <span className="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1]">
-      {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:shrink-0">{first}</span>}
-      <span className="truncate text-[10px]">{last}</span>
-    </span>
-  );
-}
 
 function SectionHead({ title, note }) {
   return (
