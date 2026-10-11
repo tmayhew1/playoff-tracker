@@ -25,9 +25,13 @@
 // of each Rookie of the Year ballot since 1981-82 (co-winners share the
 // weight). 1980-81 is where the data starts, so it can't tell rookies from
 // veterans and has no board. Minutes carry the role a rookie was given, which
-// voters weigh: held out a season at a time the pair ranked the real winner
-// first in 37 of 45 seasons, against 30 for VA+ alone; points per game, games
-// played and plain VA added nothing beside them.
+// voters weigh. They're scaled down for a rookie who played fewer than half as
+// many games as the season's leader, or a 4-game call-up at 43 minutes a game
+// tops the board (Zavier Simpson, 2021-22). Held out a season at a time this
+// ranked the real winner first in 40 of 45 seasons (mean winner odds 57%),
+// against 37 (50%) for raw minutes per game and 30 for VA+ alone; any cutoff
+// from a quarter to two-thirds of the leader's games did about as well.
+// Points per game, games played and plain VA added nothing beside them.
 //
 // --- All-NBA and All-Star -----------------------------------------------------------
 // Each player's chance of being selected: a logistic on season VA+ (per 82
@@ -321,7 +325,8 @@ const roySeen = new Set(), royBy = {};
 for (const season of SEASONS) {
   const rookies = plusBy[season].filter((r) => !roySeen.has(r.slug));
   for (const r of plusBy[season]) roySeen.add(r.slug);
-  if (season !== SEASONS[0]) royBy[season] = rookies.map((r) => ({ ...r, mpg: r.line[0] / 10 }));
+  const half = Math.max(...plusBy[season].map((r) => r.g)) / 2;
+  if (season !== SEASONS[0]) royBy[season] = rookies.map((r) => ({ ...r, mpg: (r.line[0] / 10) * Math.min(1, r.g / half) }));
 }
 const royX = (r) => [r.x, r.mpg];
 // Several slopes by Newton's method on the conditional log-likelihood, each
@@ -395,7 +400,7 @@ for (const [season, pool] of Object.entries(royBy)) {
     ranks: shown.map((e) => ranked.indexOf(e) + 1),
   };
 }
-const roy = { model: { beta: ROY_BETA.map((b) => rnd(b, 4)), inputs: ["VA+ per 82 games / 100", "minutes per game / 10"], backtest: royLoso }, fields: PICK_FIELDS, seasons: roySeasons };
+const roy = { model: { beta: ROY_BETA.map((b) => rnd(b, 4)), inputs: ["VA+ per 82 games / 100", "minutes per game / 10, scaled by games under half the leader's"], backtest: royLoso }, fields: PICK_FIELDS, seasons: roySeasons };
 
 // --- All-NBA and All-Star -------------------------------------------------------------
 const SEL_POOL = 80, SEL_SHOWN = 30;

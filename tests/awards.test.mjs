@@ -104,4 +104,7 @@ test("each season's ROY odds are best first, and every winner is a rookie on the
   }
   assert.ok(!ROY.seasons["1980-81"], "the first season can't tell rookies apart");
   assert.ok(ROY.model.backtest.top1 >= 30);
+  // Minutes per game is scaled by games played, so a short call-up with a big
+  // minutes average can't top the board (Zavier Simpson, 4 games, 2021-22).
+  for (const [season, S] of Object.entries(ROY.seasons)) assert.ok(S.rows[0][col(ROY, "g")] >= 20, `${season} ${S.rows[0][0]}`);
 });
