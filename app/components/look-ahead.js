@@ -597,8 +597,8 @@ function Cards({ p, sim, lga }) {
               assumes {inj.missed} G missed{inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}
             </Card>
           )}
-          {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">From earlier seasons</Card>}
-          {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">Healthy-season minutes</Card>}
+          {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">from prior years</Card>}
+          {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">healthy-year min</Card>}
         </div>
       )}
     </div>
