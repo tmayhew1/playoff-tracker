@@ -103,7 +103,7 @@ function SeasonPicker({ seasons, cur, onPick, children }) {
         <button type="button" aria-label="Next season" disabled={i >= seasons.length - 1} onClick={() => onPick(seasons[i + 1])}
           className="w-9 border border-stone-300 bg-white text-stone-700 disabled:text-stone-300">›</button>
       </div>
-      <div className="text-[10px] mt-1.5 text-stone-500">{children}</div>
+      <div className="text-[10px] mt-1.5 text-stone-500 text-center">{children}</div>
     </div>
   );
 }
