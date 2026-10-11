@@ -4,6 +4,7 @@ import { valueAddParts, valueAddByCategory, lgaForSeason, combinedLga, VA_CATEGO
 import { combineRows } from "./player-rows";
 import { SCOPE_LABEL } from "../../lib/share-params";
 import { withTeamContext } from "./team-context";
+import { mergeInjuries, withInjuries } from "../../lib/injuries";
 
 // The numbers behind a shared link's preview (app/page.js generateMetadata and
 // /api/og). Scored exactly as the page scores them: each scope against its own
@@ -92,12 +93,15 @@ export async function seasonCard({ season, scope, usgAdj = false, top = 5 }) {
 // The Look Ahead's card (a season with no games yet, only a projection —
 // scripts/fit-projection-model.mjs): its projected leaders, priced the way the
 // page prices them, against the last season played. Teams are the baked ones;
-// the page's live rosters aren't fetched for a preview.
+// the page's live rosters aren't fetched for a preview, nor the live injury
+// feed — the reported injuries (data/injuries.json) are applied.
 async function projectedSeasonCard({ season, usgAdj, top }) {
-  const proj = await readData(`projection-${season}.json`);
+  const [proj, inj] = await Promise.all([readData(`projection-${season}.json`), readData("injuries.json")]);
   if (!proj?.players?.length) return null;
   const lga = lgaForSeason(proj.base, usgAdj);
-  const placed = withTeamContext(proj.players.map((p) => ({ ...p, team: /^(TOT|\dTM)$/.test(p.team) ? null : p.team })), proj);
+  let players = proj.players.map((p) => ({ ...p, team: /^(TOT|\dTM)$/.test(p.team) ? null : p.team }));
+  if (inj?.season === season) players = withInjuries(players, mergeInjuries(inj, []), inj).filter((p) => p.row.g > 0);
+  const placed = withTeamContext(players, proj);
   const rows = placed.map((p) => ({ p, va: valueAddParts(p.row, lga).va })).sort((a, b) => b.va - a.va);
   return {
     season, scope: "regular", usgAdj, projected: true,

@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { normalizeName } from "../../lib/format";
 import { withTeamContext } from "../_lib/team-context";
 import { projectRookies } from "../_lib/rookies";
+import { mergeInjuries, parseEspnInjuries, withInjuries } from "../../lib/injuries";
+import { lgaForSeason, valueAdd } from "../../scoring";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -23,6 +25,11 @@ export const revalidate = 21600;
 //
 // When ESPN can't be reached the response says so (`rosters: "baked"`) and
 // every player keeps their last team, so the page still renders.
+//
+// Injuries (lib/injuries.js) are placed before the team context, so the
+// minutes an injured player gives up go to the teammates: ESPN's injury feed
+// read live, merged with the reported list in data/injuries.json. A player out
+// for the season leaves the board and is listed under `injuredOut`.
 
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
@@ -92,6 +99,23 @@ function joinRosters(players, rosters) {
   return { teamOf, unprojected };
 }
 
+// ESPN's injury listings, parsed, or null when the feed can't be read.
+async function liveInjuries() {
+  try {
+    return parseEspnInjuries(await fetchJson(`${ESPN}/injuries`));
+  } catch {
+    return null;
+  }
+}
+
+async function readInjuries() {
+  try {
+    return JSON.parse(await readFile(join(process.cwd(), "app", "data", "injuries.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   let baked;
   try {
@@ -99,7 +123,8 @@ export async function GET() {
   } catch {
     return Response.json({ error: "projection not baked — run npm run fit:projections" }, { status: 500 });
   }
-  const rosters = await liveRosters();
+  const [rosters, reported, live] = await Promise.all([liveRosters(), readInjuries(), liveInjuries()]);
+  const curated = reported?.season === baked.season ? reported : null;
   let players, unprojected = {};
   if (rosters) {
     const j = joinRosters(baked.players, rosters);
@@ -112,9 +137,24 @@ export async function GET() {
   } else {
     players = baked.players.map((p) => ({ ...p, team: MULTI.test(p.team) ? null : p.team }));
   }
+  const injuredOut = {};
+  if (curated || live) {
+    const season = { seasonStart: curated?.seasonStart, seasonEnd: curated?.seasonEnd, schedule: 82 };
+    const lga = lgaForSeason(baked.base);
+    players = withInjuries(players, mergeInjuries(curated, live || []), season, (row) => valueAdd(row, lga));
+    // Out for the season: off the board, named under the team.
+    for (const p of players) {
+      if (p.row.g > 0) continue;
+      (injuredOut[p.team || "FA"] ||= []).push({ name: p.name, injury: p.injury.injury, note: p.injury.note });
+    }
+    players = players.filter((p) => p.row.g > 0);
+  }
   players = withTeamContext(players, baked);
   return Response.json(
-    { ...baked, players, unprojected, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString() },
+    {
+      ...baked, players, unprojected, injuredOut, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString(),
+      injuries: live ? "live" : curated ? "reported" : "none", injuriesAsOf: curated?.players?.reduce((m, e) => (e.asOf > m ? e.asOf : m), "") || null,
+    },
     { headers: { "Cache-Control": "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400" } },
   );
 }

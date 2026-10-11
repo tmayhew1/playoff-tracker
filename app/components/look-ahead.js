@@ -27,6 +27,17 @@ const PAGE = 25;
 
 const pct = (x) => (x >= 0.995 ? ">99%" : x > 0 && x < 0.005 ? "<1%" : `${Math.round(x * 100)}%`);
 const fmt1 = (x) => (Number.isFinite(x) ? x.toFixed(1) : "–");
+const fmtDate = (s) => new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+function InjuredOut({ list }) {
+  if (!list?.length) return null;
+  return (
+    <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
+      <span className="uppercase tracking-wider text-red-400">Out for the season: </span>
+      {list.map((x) => `${x.name} (${x.injury})`).join(", ")}
+    </div>
+  );
+}
 
 function SectionHead({ title, note }) {
   return (
@@ -120,7 +131,7 @@ export function LookAhead() {
         <SectionHead
           title="Projected Standings"
           note={data.wins
-            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
+            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.injuries && data.injuries !== "none" ? " · known injuries taken out" : ""}${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
             : "Wins model not fit yet"}
         />
         {["W", "E"].map((conf) => {
@@ -178,6 +189,7 @@ export function LookAhead() {
                             isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
                           />
                         ))}
+                        <InjuredOut list={data.injuredOut?.[t.team]} />
                         {data.unprojected?.[t.team]?.length > 0 && (
                           <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
                             <span className="uppercase tracking-wider text-stone-400">Not projected: </span>
@@ -275,6 +287,7 @@ export function LookAhead() {
             className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
           >{showAll ? `Show top ${PAGE}` : `Show all ${rows.length}`}</button>
         )}
+        {team && <InjuredOut list={data.injuredOut?.[team]} />}
         {team && data.unprojected?.[team]?.length > 0 && (
           <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
             <span className="uppercase tracking-wider text-stone-400">Not projected (no NBA seasons): </span>
@@ -360,6 +373,7 @@ function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = n
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
             <Name name={p.name} />
             {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
+            {p.injury && <span title={`${p.injury.injury} — out ${p.injury.missed} games`} className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
           </span>
           <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>
           <span className={`w-12 text-right tabular-nums ${withVaPlus ? "text-stone-600" : "font-bold"} ${p.vaShown < 0 ? "text-red-600" : withVaPlus ? "" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
@@ -418,6 +432,7 @@ function ProjectedLine({ p, sim, lga }) {
           : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last active season</>}
         {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
         {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
+        {p.injury && <> · <span className="text-red-700">injured: {p.injury.injury}{p.injury.return ? `, expected back ~${fmtDate(p.injury.return)}` : ""}</span> — projected to miss the first {p.injury.missed} games, so {p.row.g} of a healthy {p.injury.healthyG} ({fmt1(p.injury.healthyVa)} VA){p.injury.note ? ` · ${p.injury.note}` : ""}{p.injury.asOf ? ` (as of ${fmtDate(p.injury.asOf)})` : ""}</>}
         <TeamContext p={p} lga={lga} />
         {p.dpm != null && p.row.mp > 0 && <> · projected defense {p.dpm * p.row.mp >= 0 ? "+" : "−"}{fmt1(Math.abs(p.dpm * p.row.mp))} VA (VA+ {fmt1(vaPlus(p.va, p.dpm, p.row.mp))})</>}
         {sim && <> · 80% of simulated seasons land between <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}</span> and <span className="font-semibold text-stone-700">{Math.round(sim.vaHi)}</span> VA</>}
@@ -462,6 +477,7 @@ function Method({ data }) {
       )}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
       <p><span className="font-semibold text-stone-800">The awards.</span> MVP voting is modelled as a logit on season VA, fit on all {m.seasons} winners since 1980-81 (team strength, VA per game and games played were tested and added nothing out of sample). Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — applies the 65-game rule, and draws a ballot. All-NBA is the top fifteen of that ballot.</p>
+      <p><span className="font-semibold text-stone-800">Injuries.</span> A player already reported out is projected for the games left after the expected return: the projected availability applied to what remains of the schedule, at the same per-game line, so someone out until March keeps their rate but loses most of their total. The minutes they give up go to their teammates in the team context. Return dates come from {data.injuries === "live" ? "ESPN’s injury report, read live, and " : ""}reporting collected {data.injuriesAsOf ? `as of ${fmtDate(data.injuriesAsOf)}` : "before the season"} (the newer of the two wins), taking the middle of a reported range; day-to-day listings are left to the projected availability. A player out for the season is off the board and named under their team.</p>
       <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Undrafted rookies with no college season in the data aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
       <p className="text-[9px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
     </div>
