@@ -422,39 +422,87 @@ function ProjectedLine({ p, sim, lga }) {
           </tbody>
         </table>
       </div>
-      <div className="mt-1.5 text-[9px] text-stone-500 leading-snug">
-        {p.rookie
-          ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {p.model === "profile"
-              ? <>minutes and games from the draft slot, each stat from the slot and their {L.g} games at {L.team}</>
-              : p.model === "pick"
-              ? <>projected from the draft slot{L ? <> (the {L.team} line is shown for reference)</> : null}</>
-              : <>projected from {L.g} games at {L.team} — undrafted, so there’s no pick to go on, and college stats alone predict little</>}</>
-          : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last active season</>}
-        {p.missedLast && <> · missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown</>}
-        {p.lostLast && <> · last season cut short by injury — minutes and games projected from the healthy seasons before it</>}
-        {p.injury && <> · <span className="text-red-700">injured: {p.injury.injury}{p.injury.return ? `, expected back ~${fmtDate(p.injury.return)}` : ""}</span> — projected to miss the first {p.injury.missed} games, so {p.row.g} of a healthy {p.injury.healthyG} ({fmt1(p.injury.healthyVa)} VA){p.injury.note ? ` · ${p.injury.note}` : ""}{p.injury.asOf ? ` (as of ${fmtDate(p.injury.asOf)})` : ""}</>}
-        <TeamContext p={p} lga={lga} />
-        {p.dpm != null && p.row.mp > 0 && <> · projected defense {p.dpm * p.row.mp >= 0 ? "+" : "−"}{fmt1(Math.abs(p.dpm * p.row.mp))} VA (VA+ {fmt1(vaPlus(p.va, p.dpm, p.row.mp))})</>}
-        {sim && <> · 80% of simulated seasons land between <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}</span> and <span className="font-semibold text-stone-700">{Math.round(sim.vaHi)}</span> VA</>}
-        {sim && sim.allNba > 0.005 && <> · All-NBA {pct(sim.allNba)}</>}
-      </div>
+      <Cards p={p} sim={sim} lga={lga} lastVa={lastVa} />
     </div>
   );
 }
 
 
-// What sharing a roster did to the projection: each pooled resource's
-// multiplier, shown when it moved by at least 1%, and the VA it cost or added.
-const CONTEXT_LABEL = { min: "minutes", usg: "shots & turnovers", ast: "assists", drb: "def. rebounds", orb: "off. rebounds" };
-function TeamContext({ p, lga }) {
-  if (!p.pool || !p.solo) return null;
-  const moved = Object.entries(p.pool).filter(([, f]) => Math.abs(f - 1) >= 0.01);
-  if (!moved.length) return null;
-  const dva = p.vaShown - valueAdd(p.solo, lga);
+// The notes under the line, one short card each: a tag that says what the
+// card is about and a few words on what it did to the projection. The long
+// version of each lives in the card's tooltip.
+function Card({ tag, tagClass = "", tagStyle, title, children }) {
   return (
-    <> · team context on {p.team}: {moved.map(([k, f], i) => (
-      <span key={k}>{i ? ", " : ""}{CONTEXT_LABEL[k]} {f < 1 ? "−" : "+"}{Math.round(Math.abs(f - 1) * 100)}%</span>
-    ))} (<span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{dva >= 0 ? "+" : ""}{fmt1(dva)} VA</span> vs. projected alone)</>
+    <span title={title} className="inline-flex items-center gap-1 border border-stone-200 bg-white px-1 py-0.5 text-[9px] text-stone-600 tabular-nums whitespace-nowrap">
+      <span style={tagStyle} className={`text-[8px] font-bold uppercase tracking-wider px-1 border ${tagClass}`}>{tag}</span>
+      {children}
+    </span>
+  );
+}
+
+const TAG = {
+  red: "border-red-300 text-red-700 bg-red-50",
+  amber: "border-amber-400 text-amber-700 bg-amber-50",
+  stone: "border-stone-300 text-stone-600 bg-stone-50",
+};
+const signed = (x, d = 1) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(d)}`;
+const shortDate = (s) => new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+const CONTEXT_LABEL = { min: "MIN", usg: "USG", ast: "AST", drb: "DRB", orb: "ORB" };
+const CONTEXT_LONG = { min: "minutes", usg: "shots & turnovers", ast: "assists", drb: "def. rebounds", orb: "off. rebounds" };
+
+function Cards({ p, sim, lga, lastVa }) {
+  const L = p.last, inj = p.injury;
+  // What sharing a roster did: each pooled resource that moved by at least
+  // 1%, and the VA it cost or added against the player projected alone.
+  const moved = p.pool && p.solo ? Object.entries(p.pool).filter(([, f]) => Math.abs(f - 1) >= 0.01) : [];
+  const dva = moved.length ? p.vaShown - valueAdd(p.solo, lga) : null;
+  const def = p.dpm != null && p.row.mp > 0 ? p.dpm * p.row.mp : null;
+  const tc = p.team ? teamColor(p.team) : "#78716c";
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {p.rookie && (
+        <Card tag="R" tagClass={TAG.amber} title={p.model === "profile"
+          ? `Minutes and games from the draft slot, each stat from the slot and ${L.g} games at ${L.team}`
+          : p.model === "pick" ? "Projected from the draft slot"
+          : `Projected from ${L.g} games at ${L.team} — undrafted, so there’s no pick to go on`}>
+          {p.pick ? `No. ${p.pick} pick` : "Undrafted"}
+        </Card>
+      )}
+      {!p.rookie && L && (
+        <Card tag={`’${L.season.slice(5)}`} tagClass={TAG.stone} title={`${fmt1(lastVa)} VA in ${L.g} games last active season`}>
+          {fmt1(lastVa)} VA · {L.g} G
+        </Card>
+      )}
+      {inj && (
+        <Card tag="INJ" tagClass={TAG.red} title={`${inj.injury} — ${p.row.g} of a healthy ${inj.healthyG} games (${fmt1(inj.healthyVa)} VA)${inj.note ? ` · ${inj.note}` : ""}${inj.asOf ? ` (as of ${fmtDate(inj.asOf)})` : ""}`}>
+          {inj.missed} G missed{inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}
+        </Card>
+      )}
+      {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">From earlier seasons</Card>}
+      {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">Healthy-season minutes</Card>}
+      {moved.length > 0 && (
+        <Card tag={p.team} tagStyle={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${signed((f - 1) * 100, 0)}%`).join(", ")}`}>
+          {moved.map(([k, f]) => `${signed((f - 1) * 100, 0)}% ${CONTEXT_LABEL[k]}`).join(", ")}
+        </Card>
+      )}
+      {dva != null && (
+        <Card tag={dva >= 0 ? "▲" : "▼"} tagClass={dva >= 0 ? "border-emerald-300 text-emerald-700 bg-emerald-50" : TAG.red} title="VA on this roster vs. the same player projected alone">
+          <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva)} VA</span> {dva >= 0 ? "better" : "worse"} situation
+        </Card>
+      )}
+      {def != null && (
+        <Card tag="DEF" tagClass={TAG.stone} title={`Projected defense ${signed(def)} VA, for VA+ ${fmt1(vaPlus(p.va, p.dpm, p.row.mp))}`}>
+          <span className={def < 0 ? "text-red-600" : ""}>{signed(def)}</span> · VA+ {fmt1(vaPlus(p.va, p.dpm, p.row.mp))}
+        </Card>
+      )}
+      {sim && (
+        <Card tag="80%" tagClass={TAG.stone} title="80% of simulated seasons land in this range">
+          <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}–{Math.round(sim.vaHi)}</span> VA
+        </Card>
+      )}
+      {sim && sim.allNba > 0.005 && <Card tag="All-NBA" tagClass={TAG.amber}>{pct(sim.allNba)}</Card>}
+    </div>
   );
 }
 
