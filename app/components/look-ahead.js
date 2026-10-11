@@ -93,7 +93,8 @@ export function LookAhead() {
     const proj = data.wins ? projectWins(data.wins, Object.fromEntries(Object.entries(by).map(([t, list]) =>
       [t, { vaPlus: list.map((p) => vaPlus(p.va, p.dpm, p.row.mp)), lastPct: lastPct(t) }]))) : {};
     return Object.entries(by).map(([t, list]) => {
-      const top = [...list].sort((a, b) => vaPlus(b.va, b.dpm, b.row.mp) - vaPlus(a.va, a.dpm, a.row.mp)).slice(0, 5);
+      // The row's five names: the projected rotation, most total minutes first.
+      const top = [...list].sort((a, b) => b.row.mp - a.row.mp).slice(0, 5);
       return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: rec[t] || null, top };
     }).sort((a, b) => b.wins - a.wins);
   }, [data, players]);
