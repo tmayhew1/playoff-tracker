@@ -610,10 +610,11 @@ function Situation({ dva, g }) {
   );
 }
 
+// VA+ per game, with the defense that takes VA there beside it.
 function Defense({ def, g, vpTot }) {
   return (
-    <Card tag="DEF" tagClass={TAG.stone} title={`Projected defense ${signed(def)} VA over the season, for VA+ ${fmt1(vpTot)}`}>
-      <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span> · VA+/G {(vpTot / g).toFixed(2)}
+    <Card tag="VA+" tagClass={TAG.stone} title={`VA+ per game: VA plus projected defense (${signed(def)} VA over the season, ${fmt1(vpTot)} VA+)`}>
+      <span className="font-semibold text-stone-700">{(vpTot / g).toFixed(1)}</span> (Def: <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span>)
     </Card>
   );
 }
