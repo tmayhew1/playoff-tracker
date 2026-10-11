@@ -554,24 +554,9 @@ function Cards({ p, sim, lga }) {
   const vpTot = def != null ? vaPlus(p.va, p.dpm, p.row.mp) : null;
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
-      {p.rookie && (
-        <Card tag="R" tagClass={TAG.amber} title={p.model === "profile"
-          ? `Minutes and games from the draft slot, each stat from the slot and ${L.g} games at ${L.team}`
-          : p.model === "pick" ? "Projected from the draft slot"
-          : `Projected from ${L.g} games at ${L.team} — undrafted, so there’s no pick to go on`}>
-          {p.pick ? `No. ${p.pick} pick` : "Undrafted"}
-        </Card>
-      )}
-      {inj && (
-        <Card tag="INJ" tagClass={TAG.red} title={`${inj.injury} — ${p.row.g} of a healthy ${inj.healthyG} games (${fmt1(inj.healthyVa)} VA)${inj.note ? ` · ${inj.note}` : ""}${inj.asOf ? ` (as of ${fmtDate(inj.asOf)})` : ""}`}>
-          {inj.missed} G missed{inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}
-        </Card>
-      )}
-      {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">From earlier seasons</Card>}
-      {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">Healthy-season minutes</Card>}
       {/* The team context on the left, two cards tall — the team centred, its
           resources listed down (scrolling when there are more than fit) — with
-          what it did, and the defense, stacked beside it. */}
+          VA+ and what the roster did stacked beside it. */}
       {moved.length > 0 ? (
         <div className="basis-full grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-1">
           <div title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${ctxPct(f)}`).join(", ")}`}
@@ -582,8 +567,8 @@ function Cards({ p, sim, lga }) {
               {moved.map(([k, f]) => <span key={k} className="block snap-start whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
             </span>
           </div>
-          <Situation dva={dva} g={g} />
           {def != null && <Defense def={def} g={g} vpTot={vpTot} />}
+          <Situation dva={dva} g={g} />
         </div>
       ) : def != null && <Defense def={def} g={g} vpTot={vpTot} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
@@ -595,6 +580,27 @@ function Cards({ p, sim, lga }) {
           </div>
         );
       })()}
+      {/* Who the player is coming in as — rookie, injured, back from a lost
+          season — together on one row at the bottom, wrapping only if they must. */}
+      {(p.rookie || inj || p.missedLast || p.lostLast) && (
+        <div className="basis-full flex flex-wrap gap-1">
+          {p.rookie && (
+            <Card tag="R" tagClass={TAG.amber} title={p.model === "profile"
+              ? `Minutes and games from the draft slot, each stat from the slot and ${L.g} games at ${L.team}`
+              : p.model === "pick" ? "Projected from the draft slot"
+              : `Projected from ${L.g} games at ${L.team} — undrafted, so there’s no pick to go on`}>
+              {p.pick ? `No. ${p.pick} pick` : "Undrafted"}
+            </Card>
+          )}
+          {inj && (
+            <Card tag="INJ" tagClass={TAG.red} title={`${inj.injury} — ${p.row.g} of a healthy ${inj.healthyG} games (${fmt1(inj.healthyVa)} VA)${inj.note ? ` · ${inj.note}` : ""}${inj.asOf ? ` (as of ${fmtDate(inj.asOf)})` : ""}`}>
+              assumes {inj.missed} G missed{inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}
+            </Card>
+          )}
+          {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">From earlier seasons</Card>}
+          {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">Healthy-season minutes</Card>}
+        </div>
+      )}
     </div>
   );
 }
