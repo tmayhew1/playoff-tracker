@@ -575,11 +575,11 @@ function Cards({ p, sim, lga }) {
       {moved.length > 0 ? (
         <div className="basis-full grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-1">
           <div title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${ctxPct(f)}`).join(", ")}`}
-            className={`${def != null ? "row-span-2 h-[4.25rem]" : "h-8"} flex flex-col items-center gap-0.5 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums`}>
+            className={`${def != null ? "row-span-2 h-[4.25rem]" : "h-8"} flex flex-col items-center justify-center gap-1 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums`}>
             <span style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border">{p.team}</span>
-            {/* Three lines fit whole; the top of a fourth peeks in, so it reads as scrollable. */}
-            <span className="w-full flex-1 min-h-0 overflow-y-auto no-scrollbar leading-[1.2] text-center">
-              {moved.map(([k, f]) => <span key={k} className="block whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
+            {/* Exactly three lines tall, the rest a scroll away, snapping a line at a time. */}
+            <span className="w-full h-[3.6em] overflow-y-auto no-scrollbar snap-y snap-mandatory leading-[1.2] text-center">
+              {moved.map(([k, f]) => <span key={k} className="block snap-start whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
             </span>
           </div>
           <Situation dva={dva} g={g} />
