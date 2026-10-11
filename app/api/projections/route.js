@@ -108,6 +108,17 @@ async function liveInjuries() {
   }
 }
 
+// The Awards tab's fits (scripts/bake-awards.mjs) — the Look Ahead simulates
+// the same MVP, ROY and All-Star models on the projected season.
+async function readAwardModels() {
+  try {
+    const a = JSON.parse(await readFile(join(process.cwd(), "app", "data", "awards.json"), "utf8"));
+    return { mvp: { beta: a.mvp.model.beta }, roy: { beta: a.roy.model.beta }, allstar: { beta: a.allstar.model.beta } };
+  } catch {
+    return null;
+  }
+}
+
 async function readInjuries() {
   try {
     return JSON.parse(await readFile(join(process.cwd(), "app", "data", "injuries.json"), "utf8"));
@@ -123,7 +134,7 @@ export async function GET() {
   } catch {
     return Response.json({ error: "projection not baked — run npm run fit:projections" }, { status: 500 });
   }
-  const [rosters, reported, live] = await Promise.all([liveRosters(), readInjuries(), liveInjuries()]);
+  const [rosters, reported, live, awardModels] = await Promise.all([liveRosters(), readInjuries(), liveInjuries(), readAwardModels()]);
   const curated = reported?.season === baked.season ? reported : null;
   let players, unprojected = {};
   if (rosters) {
@@ -152,7 +163,7 @@ export async function GET() {
   players = withTeamContext(players, baked);
   return Response.json(
     {
-      ...baked, players, unprojected, injuredOut, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString(),
+      ...baked, players, unprojected, injuredOut, awardModels, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString(),
       injuries: live ? "live" : curated ? "reported" : "none", injuriesAsOf: curated?.players?.reduce((m, e) => (e.asOf > m ? e.asOf : m), "") || null,
     },
     { headers: { "Cache-Control": "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400" } },

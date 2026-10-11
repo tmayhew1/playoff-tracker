@@ -24,6 +24,8 @@ const SIMS = 2000;
 // from fifteenth that a draw never gets there.
 const SIM_FIELD = 200;
 const PAGE = 25;
+// The All-Star roster: 24, as the Awards tab assumes for the tournament years.
+const ALL_STAR_PLACES = 24;
 
 const pct = (x) => (x >= 0.995 ? ">99%" : x > 0 && x < 0.005 ? "<1%" : `${Math.round(x * 100)}%`);
 const fmt1 = (x) => (Number.isFinite(x) ? x.toFixed(1) : "–");
@@ -82,12 +84,20 @@ export function LookAhead() {
   const offRoster = useMemo(() => (data?.rosters === "live"
     ? data.players.filter((p) => !p.team && p.va > 150).sort((a, b) => b.va - a.va) : []), [data]);
 
+  // The season simulated on the Awards tab's own models (scripts/bake-awards.mjs,
+  // served with the projection as `awardModels`): the ballot reads VA+, as
+  // theirs do, and every rookie is in the field so ROY has its whole class.
+  // Without them, the MVP model fit with the projection, on plain VA.
   const awards = useMemo(() => {
     if (!data) return null;
-    const field = [...players].sort((a, b) => b.va - a.va).slice(0, SIM_FIELD);
+    const am = data.awardModels;
+    const ballotVa = (p) => (am ? vaPlus(p.va, p.dpm, p.row.mp) : p.va);
+    const byBallot = [...players].sort((a, b) => ballotVa(b) - ballotVa(a));
+    const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie)];
     const rookiePool = data.params?.rookie?.pool;
-    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg, pool: p.rookie ? rookiePool : null })),
-      data.mvp.model, data.pool, { sims: SIMS });
+    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: ballotVa(p), rangeVa: p.va, mpg: p.mpg, rookie: !!p.rookie, pool: p.rookie ? rookiePool : null })),
+      am ? { a: am.mvp.beta } : data.mvp.model, data.pool,
+      { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null });
     return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
   }, [data, players]);
 
@@ -114,9 +124,6 @@ export function LookAhead() {
   if (!data || !awards) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Projecting 2026-27…</div>;
 
   const pBySlug = Object.fromEntries(players.map((p) => [p.slug, p]));
-  const mvpList = awards.res.filter((r) => r.mvp > 0).sort((a, b) => b.mvp - a.mvp).slice(0, 10);
-  const maxMvp = mvpList[0]?.mvp || 1;
-  const allNba = allNbaTeams(awards.res);
   const bt = data.backtest;
 
   const rows = team ? players.filter((p) => p.team === team) : players;
@@ -206,50 +213,7 @@ export function LookAhead() {
         })}
       </div>
 
-      {/* MVP */}
-      <div className="mb-4 border border-stone-300 bg-white">
-        <SectionHead title="MVP Odds" note={`Share of ${SIMS.toLocaleString()} simulated seasons won · 65-game rule applied${usgAdj ? " · priced on LG AVG" : ""}`} />
-        {mvpList.map((r, i) => {
-          const p = pBySlug[r.key];
-          if (!p) return null;
-          const tc = p.team ? teamColor(p.team) : "#78716c";
-          return (
-            <div key={r.key} className="relative overflow-hidden border-b border-stone-100 last:border-0">
-              <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(r.mvp / maxMvp) * 100}%`, backgroundColor: withAlpha(tc, 0.16) }} aria-hidden />
-              <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
-                <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
-                <TeamChip team={p.team} />
-                <span className="flex-1 min-w-0 text-stone-800"><Name name={p.name} /></span>
-                <span className="w-14 text-right tabular-nums text-stone-500">{Math.round(p.va)} VA</span>
-                <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.mvp)}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* All-NBA */}
-      <div className="mb-4 border border-stone-300 bg-white">
-        <SectionHead title="Preseason All-NBA" note="The fifteen likeliest selections, by share of simulations · positionless, as voted since 2023-24" />
-        {allNba.map((tm, ti) => (
-          <div key={ti} className="border-b border-stone-200 last:border-0">
-            <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-700">{["First", "Second", "Third"][ti]} Team</div>
-            {tm.map((r) => {
-              const p = pBySlug[r.key];
-              if (!p) return null;
-              return (
-                <div key={r.key} className="flex items-center gap-1.5 sm:gap-2 text-[10px] py-1 px-1.5 sm:px-2">
-                  <span className="w-5 sm:w-6" />
-                  <TeamChip team={p.team} />
-                  <span className="flex-1 min-w-0 text-stone-800"><Name name={p.name} /></span>
-                  <span className="w-16 text-right tabular-nums text-stone-500">{p.row.g} G proj</span>
-                  <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.allNba)}</span>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+      <AwardsBoard awards={awards} pBySlug={pBySlug} lga={lga} hasModels={!!data.awardModels} usgAdj={usgAdj} />
 
       {/* Projected leaders */}
       <div className="mb-4 border border-stone-300 bg-white">
@@ -330,6 +294,112 @@ export function LookAhead() {
           <span className="text-stone-400 text-[10px]">{showMethod ? "▾" : "▸"}</span> How this works
         </button>
         {showMethod && <Method data={data} />}
+      </div>
+    </div>
+  );
+}
+
+
+// The projected awards, laid out like the Awards tab's boards: one sub-page per
+// award, each player's odds beside their projected VA+ and games (minutes for
+// ROY), tap a player for the projected line. MIP has no board here — it's
+// scored against the projection itself, so there's nothing to look ahead with.
+const AWARD_SUBS = [["mvp", "MVP"], ["roy", "ROY"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
+const BOARD = {
+  mvp: { title: "Most Valuable", col: "MVP%", odds: (r) => r.mvp, note: "The likeliest winners · 65-game rule applied" },
+  roy: { title: "Rookie of the Year", col: "ROY%", odds: (r) => r.roy, rookies: true, minutes: true, note: "Every projected rookie · from VA+ and minutes per game" },
+  allnba: { title: "All-NBA", col: "Odds", odds: (r) => r.allNba, note: "The fifteen likeliest, five a team · positionless, as voted since 2023-24 · 65-game rule applied" },
+  allstar: { title: "All-Star", col: "Odds", odds: (r) => r.allStar, cut: ALL_STAR_PLACES, note: `Chance of a selection · ${ALL_STAR_PLACES} places` },
+};
+const BOARD_SHOWN = 30;
+const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleString()}`;
+
+function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
+  const [sub, setSub] = useState("mvp");
+  const [open, setOpen] = useState(null);
+  const subs = hasModels ? AWARD_SUBS : AWARD_SUBS.filter(([k]) => k === "mvp" || k === "allnba");
+  const cfg = BOARD[sub];
+  const entries = awards.res.map((r) => ({ r, p: pBySlug[r.key], odds: cfg.odds(r) || 0 }))
+    .filter((e) => e.p && (!cfg.rookies || e.p.rookie));
+  const vpOf = (p) => vaPlus(p.va, p.dpm, p.row.mp);
+  // All-NBA keeps its three teams on top; everyone else goes by odds.
+  const teams = sub === "allnba" ? allNbaTeams(awards.res) : null;
+  const onTeams = new Set(teams ? teams.flat().map((r) => r.key) : []);
+  const ranked = entries.filter((e) => !onTeams.has(e.r.key))
+    .sort((a, b) => b.odds - a.odds || vpOf(b.p) - vpOf(a.p));
+  const groups = teams
+    ? [...teams.map((tm, ti) => ({ head: `${["First", "Second", "Third"][ti]} Team`, rows: tm.map((r) => entries.find((e) => e.r.key === r.key)).filter(Boolean) })),
+      { head: "Next in line", rows: ranked.slice(0, BOARD_SHOWN - onTeams.size) }]
+    : [{ rows: ranked.slice(0, BOARD_SHOWN) }];
+  const max = Math.max(1e-9, ...groups.flatMap((g) => g.rows.map((e) => e.odds)));
+  const lead = groups[0].rows[0];
+  const meta = !lead ? null
+    : sub === "mvp" || sub === "roy" ? `Favorite: ${lead.p.name} · ${pct(lead.odds)}`
+    : sub === "allnba" ? `First team: ${teams[0].map((r) => splitName(pBySlug[r.key]?.name || "").last).join(", ")}`
+    : `${ALL_STAR_PLACES} places · ${lead.p.name} likeliest at ${pct(lead.odds)}`;
+  const subCls = (active) =>
+    `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
+  let rank = 0;
+  return (
+    <div className="mb-4">
+      <div className={`mb-2 grid gap-1 ${subs.length === 4 ? "grid-cols-4" : "grid-cols-2"}`} role="tablist" aria-label="Award">
+        {subs.map(([k, label]) => (
+          <button key={k} type="button" role="tab" aria-selected={sub === k} onClick={() => { setSub(k); setOpen(null); }} className={subCls(sub === k)}>{label}</button>
+        ))}
+      </div>
+      <div className="border border-stone-300 bg-white">
+        <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
+          <div className="text-[9px] italic text-stone-400 mt-0.5">{cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
+          {meta && <div className="mt-1.5"><span className="inline-block text-[10px] px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">{meta}</span></div>}
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+          <span className="w-5 sm:w-6 text-right">#</span>
+          <span className="w-8 sm:w-10">Team</span>
+          <span className="flex-1">Player</span>
+          <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
+          <span className="w-11 text-right">VA+</span>
+          <span className={`${cfg.minutes ? "w-8" : "w-6"} text-right`}>{cfg.minutes ? "MIN" : "G"}</span>
+        </div>
+        {groups.map((g, gi) => (
+          <div key={gi} className={gi ? "border-t border-dashed border-stone-300" : ""}>
+            {g.head && <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-700">{g.head}</div>}
+            {g.rows.map((e) => {
+              rank++;
+              const { p, r, odds } = e, tc = p.team ? teamColor(p.team) : "#78716c", isOpen = open === r.key, vp = vpOf(p);
+              const cut = cfg.cut && rank === cfg.cut + 1;
+              return (
+                <div key={r.key} className={`border-b border-stone-100 last:border-0 ${cut ? "border-t border-dashed border-t-stone-300" : ""}`}>
+                  <div className="relative overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(odds / max) * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
+                    <div
+                      role="button" tabIndex={0} aria-expanded={isOpen}
+                      aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
+                      onClick={() => setOpen(isOpen ? null : r.key)}
+                      onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpen(isOpen ? null : r.key); } }}
+                      className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
+                    >
+                      <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
+                      <TeamChip team={p.team} active={isOpen} />
+                      <span className="flex-1 min-w-0 flex items-center text-stone-800">
+                        <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+                        <Name name={p.name} />
+                        {p.injury && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
+                      </span>
+                      <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(odds)}</span>
+                      <span className={`w-11 text-right tabular-nums ${vp < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtInt(vp)}</span>
+                      {cfg.minutes
+                        ? <span className="w-8 text-right tabular-nums text-stone-500">{fmt1(p.mpg)}</span>
+                        : <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>}
+                    </div>
+                  </div>
+                  {isOpen && <ProjectedLine p={p} sim={r} lga={lga} />}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        {!groups.some((g) => g.rows.length) && <div className="px-3 py-3 text-[10px] italic text-stone-400">No projected {sub === "roy" ? "rookies" : "players"} yet.</div>}
       </div>
     </div>
   );
@@ -504,7 +574,8 @@ function Cards({ p, sim, lga, lastVa }) {
           <span className="font-semibold text-stone-700">{pg(sim.vaLo)}–{pg(sim.vaHi)}</span> VA/G
         </Card>
       )}
-      {sim && sim.allNba > 0.005 && <Card tag="All-NBA" tagClass={TAG.amber}>{pct(sim.allNba)}</Card>}
+      {sim && [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]]
+        .filter(([, x]) => x > 0.005).map(([k, x]) => <Card key={k} tag={k} tagClass={TAG.amber}>{pct(x)}</Card>)}
     </div>
   );
 }
@@ -527,7 +598,7 @@ function Method({ data }) {
         <p><span className="font-semibold text-stone-800">The standings.</span> A team’s wins come from its players’ projected VA+ — VA after the team context, plus a projection of each player’s defense — taken best to worst with each player counting {Math.round(data.wins.rho * 100)}% of the one ahead, and from the record it’s coming off, which carries coaching, system and health that rosters can’t. It was fit on every season since 1990-91, each roster projected from what was known the summer before: it misses by {data.wins.rmseWins.toFixed(1)} wins on average, against {data.wins.rmseLastRecord.toFixed(1)} for last season’s record alone and {data.wins.rmseConstant.toFixed(1)} for calling every team 41–41. VA+ beat plain VA and USG-ADJ VA, the gentle decay beat a top-eight sum and a free weight per rank, and offense and defense, fit separately, came out weighted alike. The dashed lines mark the sixth and tenth seeds.</p>
       )}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
-      <p><span className="font-semibold text-stone-800">The awards.</span> MVP voting is modelled as a logit on season VA, fit on all {m.seasons} winners since 1980-81 (team strength, VA per game and games played were tested and added nothing out of sample). Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — applies the 65-game rule, and draws a ballot. All-NBA is the top fifteen of that ballot.</p>
+      <p><span className="font-semibold text-stone-800">The awards.</span> The same models as the Awards tab, run on the projected season. Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — and then draws each ballot from the player’s VA+: MVP from a logit on VA+, fit on {data.awardModels ? "every winner since 1980-81" : `all ${m.seasons} winners since 1980-81 (on plain VA)`}, with the 65-game rule; All-NBA as the top fifteen of that ballot{data.awardModels ? <>; Rookie of the Year among the projected rookies from VA+ and minutes per game; and All-Star as the {ALL_STAR_PLACES} likeliest selections from a logit on VA+, each fit on the real picks</> : ""}. Most Improved has no board here: it is scored against this projection, so there is nothing to look ahead with.</p>
       <p><span className="font-semibold text-stone-800">Injuries.</span> A player already reported out is projected for the games left after the expected return: the projected availability applied to what remains of the schedule, at the same per-game line, so someone out until March keeps their rate but loses most of their total. The minutes they give up go to their teammates in the team context. Return dates come from {data.injuries === "live" ? "ESPN’s injury report, read live, and " : ""}reporting collected {data.injuriesAsOf ? `as of ${fmtDate(data.injuriesAsOf)}` : "before the season"} (the newer of the two wins), taking the middle of a reported range; day-to-day listings are left to the projected availability. A player out for the season is off the board and named under their team.</p>
       <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Undrafted rookies with no college season in the data aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
       <p className="text-[9px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
