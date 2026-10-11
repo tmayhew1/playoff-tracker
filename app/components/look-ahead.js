@@ -172,9 +172,7 @@ export function LookAhead() {
                         <span className="flex-1 min-w-0 min-h-[2.75em] flex items-center text-stone-600 leading-snug">
                           <span className="line-clamp-2">
                             <span className="text-stone-400 mr-1" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                            {t.top.map((p, k) => (
-                              <span key={p.slug}><span className="font-bold text-stone-800">{splitName(p.name).last}</span>{k < t.top.length - 1 ? "\u00a0· " : ""}</span>
-                            ))}
+                            {t.top.map((p) => splitName(p.name).last).join(" · ")}
                           </span>
                         </span>
                         <span className="w-12 text-right tabular-nums font-bold text-stone-900 shrink-0">{w}–{82 - w}</span>
