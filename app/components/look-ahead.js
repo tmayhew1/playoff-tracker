@@ -541,9 +541,9 @@ function ProjectedLine({ p, sim, lga }) {
 // card is about and a few words on what it did to the projection. The long
 // version of each lives in the card's tooltip. Each card is a player row tall
 // and grows to fill its line, content centred, so the rows run edge to edge.
-function Card({ tag, tagClass = "", tagStyle, title, tight = false, children }) {
+function Card({ tag, tagClass = "", tagStyle, title, tight = false, className = "", children }) {
   return (
-    <span title={title} className={`flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
+    <span title={title} className={`${className} flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
       <span style={tagStyle} className={`text-[9px] font-bold uppercase px-1 py-0.5 border ${tight ? "tracking-normal" : "tracking-wider"} ${tagClass}`}>{tag}</span>
       <span>{children}</span>
     </span>
@@ -581,7 +581,7 @@ function Cards({ p, sim, lga }) {
       {moved.length > 0 ? (
         <div className="basis-full grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-1">
           <div title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${ctxPct(f)}`).join(", ")}`}
-            className={`${def != null ? "row-span-2 h-[4.25rem]" : "h-8"} flex flex-col items-center justify-center gap-1 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums`}>
+            className="row-span-2 h-[4.25rem] flex flex-col items-center justify-center gap-1 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums">
             <span style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border">{p.team}</span>
             {/* Exactly three lines tall, the rest a scroll away, snapping a line at a time. */}
             <span className="w-full h-[3.6em] overflow-y-auto no-scrollbar snap-y snap-mandatory leading-[1.2] text-center">
@@ -589,7 +589,8 @@ function Cards({ p, sim, lga }) {
             </span>
           </div>
           {def != null && <Defense def={def} g={g} vpTot={vpTot} />}
-          <Situation dva={dva} g={g} />
+          {/* No projected defense (a rookie): the situation fills both rows. */}
+          <Situation dva={dva} g={g} className={def != null ? "" : "row-span-2"} />
         </div>
       ) : def != null && <Defense def={def} g={g} vpTot={vpTot} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
@@ -629,9 +630,9 @@ function Cards({ p, sim, lga }) {
 
 // What the roster did to the player, against them projected alone. The arrow
 // stays small and uncoloured: the number carries it.
-function Situation({ dva, g }) {
+function Situation({ dva, g, className = "" }) {
   return (
-    <Card tag={dva >= 0 ? "▲" : "▼"} tagClass={`${TAG.stone} !text-[7px] !px-0.5 !py-0 leading-none`} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
+    <Card className={className} tag={dva >= 0 ? "▲" : "▼"} tagClass={`${TAG.stone} !text-[7px] !px-0.5 !py-0 leading-none`} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
       <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva / g, 2)} VA/G</span> {dva >= 0 ? "better" : "worse"} situation
     </Card>
   );
