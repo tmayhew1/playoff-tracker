@@ -519,12 +519,13 @@ function ProjectedLine({ p, sim, lga }) {
 
 // The notes under the line, one short card each: a tag that says what the
 // card is about and a few words on what it did to the projection. The long
-// version of each lives in the card's tooltip.
+// version of each lives in the card's tooltip. Each card is a player row tall
+// and grows to fill its line, content centred, so the rows run edge to edge.
 function Card({ tag, tagClass = "", tagStyle, title, children }) {
   return (
-    <span title={title} className="inline-flex items-center gap-1 border border-stone-200 bg-white px-1 py-0.5 text-[9px] text-stone-600 tabular-nums whitespace-nowrap">
-      <span style={tagStyle} className={`text-[8px] font-bold uppercase tracking-wider px-1 border ${tagClass}`}>{tag}</span>
-      {children}
+    <span title={title} className="flex-auto flex items-center justify-center gap-1.5 min-h-8 border border-stone-200 bg-white px-2 py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap">
+      <span style={tagStyle} className={`text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border ${tagClass}`}>{tag}</span>
+      <span>{children}</span>
     </span>
   );
 }
