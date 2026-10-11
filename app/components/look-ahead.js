@@ -409,7 +409,9 @@ function ProjectedLine({ p, sim, lga }) {
       </div>
       <div className="mt-1.5 text-[9px] text-stone-500 leading-snug">
         {p.rookie
-          ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {p.model === "pick"
+          ? <>Rookie{p.pick ? ` · No. ${p.pick} pick` : " · undrafted"} · {p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, {p.model === "profile"
+              ? <>minutes and games from the draft slot, each stat from the slot and their {L.g} games at {L.team}</>
+              : p.model === "pick"
               ? <>projected from the draft slot{L ? <> (the {L.team} line is shown for reference)</> : null}</>
               : <>projected from {L.g} games at {L.team} — undrafted, so there’s no pick to go on, and college stats alone predict little</>}</>
           : <>{p.row.g} games at {fmt1(p.mpg)} min · {fmt1(p.vaShown)} VA, from {fmt1(lastVa)} in {L.g} games last active season</>}

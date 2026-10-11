@@ -40,6 +40,19 @@ test("every winner is on the board at their rank, and the backtest counts them a
   assert.ok(top1 <= top5 && top5 <= top10 && top10 <= winners.length);
 });
 
+test("MIP odds only go to players who finished above zero VA", () => {
+  const at = (k) => MIP.fields.indexOf(k);
+  for (const [season, S] of Object.entries(MIP.seasons)) {
+    for (const [i] of S.mip) {
+      const r = MIP.rows[i];
+      if (r[at("slug")] === S.winner?.slug) continue;
+      assert.ok(r[at("actual")] > 0, `${season} ${r[0]} at ${r[at("actual")]} VA`);
+    }
+  }
+  // Reggie Bullock, 2023-24: -2.4 VA/G, far above a -5.8 projection — not listed.
+  assert.ok(!MIP.seasons["2023-24"].mip.some(([i]) => MIP.rows[i][at("slug")] === "bullore01"));
+});
+
 test("the ratio favours a role player's leap over a star's of the same size", () => {
   const { floor } = MIP.model;
   const ratio = (e, a) => (a + floor) / (e + floor);

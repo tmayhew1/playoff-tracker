@@ -60,7 +60,11 @@
 //
 //     (actual VA/G + c) / (expected VA/G + c)
 //
-// over players who played at least half as many games as the season's leader.
+// over players who played at least half as many games as the season's leader
+// and finished the season above zero VA — a player still below average isn't
+// the league's most improved, however far below expectation they started
+// (Reggie Bullock 2023-24: -7.4 to -2.4 VA/G led the board before this rule).
+// Every winner since 1985-86 cleared it.
 // VA is measured against an average player, so expected VA is zero or
 // negative for most role players and a bare ratio is meaningless; the floor c
 // fixes that, and is chosen by leave-one-season-out from FLOOR_GRID. Tested
@@ -140,7 +144,10 @@ for (const season of SEASONS.slice(1)) {
     };
   });
   const maxG = Math.max(...out.map((r) => r.g));
-  for (const r of out) r.qualified = r.g >= maxG / 2;
+  for (const r of out) {
+    r.qualified = r.g >= maxG / 2;
+    r.eligible = r.qualified && r.actual > 0;
+  }
   bySeason[season] = out;
 }
 
@@ -148,7 +155,7 @@ for (const season of SEASONS.slice(1)) {
 const sum = (xs) => xs.reduce((s, x) => s + x, 0);
 const logRatio = (c) => (r) => Math.log(Math.max(0.05, r.a + c) / Math.max(0.05, r.e + c));
 const fields = Object.entries(WINNERS).map(([season, slug]) => {
-  const pool = bySeason[season].filter((r) => r.qualified || r.slug === slug);
+  const pool = bySeason[season].filter((r) => r.eligible || r.slug === slug);
   const win = pool.findIndex((r) => r.slug === slug);
   if (win < 0) throw new Error(`MIP ${season} (${slug}) is not in the data`);
   return { season, pool, win };
@@ -213,9 +220,9 @@ const backtest = {
 // --- Rank every season -----------------------------------------------------------
 for (const rows of Object.values(bySeason)) {
   for (const r of rows) { r.lr = ratioOf(r); r.over = r.actual - r.proj; r.overPg = r.a - r.e; }
-  const Q = rows.filter((r) => r.qualified), m = Math.max(...Q.map((r) => BETA * r.lr));
+  const Q = rows.filter((r) => r.eligible), m = Math.max(...Q.map((r) => BETA * r.lr));
   const z = sum(Q.map((r) => Math.exp(BETA * r.lr - m)));
-  for (const r of rows) r.mip = r.qualified ? Math.exp(BETA * r.lr - m) / z : null;
+  for (const r of rows) r.mip = r.eligible ? Math.exp(BETA * r.lr - m) / z : null;
 }
 
 // Rows are arrays, keyed by FIELDS, so the payload stays small.
@@ -236,7 +243,7 @@ const ref = (r) => {
   return idx.get(k);
 };
 const SORTS = {
-  mip: { pool: (r) => r.qualified, key: (r) => r.lr },
+  mip: { pool: (r) => r.eligible, key: (r) => r.lr },
   pg: { pool: (r) => r.qualified, key: (r) => r.overPg },
   tot: { pool: () => true, key: (r) => r.over },
 };
@@ -244,7 +251,7 @@ const ranked = (rs, sort) => rs.filter(SORTS[sort].pool).sort((a, b) => SORTS[so
 
 const seasons = {};
 for (const [season, rs] of Object.entries(bySeason)) {
-  const S = { players: rs.length, qualified: rs.filter((r) => r.qualified).length, winner: null };
+  const S = { players: rs.length, qualified: rs.filter((r) => r.qualified).length, eligible: rs.filter((r) => r.eligible).length, winner: null };
   const lists = Object.fromEntries(Object.keys(SORTS).map((k) => [k, ranked(rs, k)]));
   for (const [k, L] of Object.entries(lists)) S[k] = L.slice(0, TOP).map((r, i) => [ref(r), i + 1]);
   const w = WINNERS[season];

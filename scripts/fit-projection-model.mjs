@@ -35,7 +35,7 @@ import { defVAInfo } from "../app/lib/defense-math.js";
 import {
   MAX_EXP, MPG_TIERS, PCT_KEYS, RATE_KEYS, TIME_HISTORY,
   collegeUnits, expand, leagueContext, nextSeason, poolTeams, posGroup, projectPlayer, projectRookie,
-  rookieRateFeatures, rookieTimeFeatures, timeFeatures, timeUnits, UNDRAFTED_PICK,
+  rookieModelOf, rookieProfileFeatures, rookieRateFeatures, rookieTimeFeatures, timeFeatures, timeUnits, UNDRAFTED_PICK,
   projectWins, vaPlus,
   scheduleLength, simulateAwards, allNbaTeams, tierOf,
 } from "../app/lib/projection-model.js";
@@ -527,25 +527,71 @@ function fitRookieModel(samples, withCollege) {
   return { K: best.K, Kp: best.Kp, rate: best.rate, pct: best.pct, mpg, avail, n: samples.length };
 }
 
+// The profile model, on drafted rookies with a college season: each rate on
+// the pick and its own college index, each percentage on the pick and its own
+// college gap — every stat with the shrinkage that fits it best. Minutes and
+// availability aren't fit here: they come from the pick-only model.
+const RK_PROFILE_K = [0, 100, 250, 500, 1000, 2000], RK_PROFILE_KP = [0, 50, 100, 200, 400];
+function fitProfileModel(samples) {
+  const rate = {}, pct = {}, K = {}, Kp = {};
+  const use = samples.filter((x) => x.actual.mp >= 200), wt = use.map((x) => x.actual.mp);
+  const w = wt.reduce((a, b) => a + b, 0);
+  const at = (B, x) => x.reduce((t, v, j) => t + v * B[j], 0);
+  for (const k of RATE_KEYS) {
+    const ys = use.map((x) => Math.log(Math.max(0.05, expand(x.actual)[k] / x.actual.mp / x.nctx.rate[k])));
+    let best = null;
+    for (const k0 of RK_PROFILE_K) {
+      const xs = use.map((x) => rookieProfileFeatures(Math.log(Math.max(0.05, collegeUnits(x.college, x.cctx, k0, 0).idx[k])), x.pick));
+      const B = wls(xs, ys, wt, 1e-3);
+      // Duan's smearing, as in fitRookieModel.
+      B[0] += Math.log(use.reduce((acc, x, i) => acc + wt[i] * Math.exp(ys[i] - at(B, xs[i])), 0) / w);
+      const err = use.reduce((acc, x, i) => acc + wt[i] * (Math.exp(at(B, xs[i])) - Math.exp(ys[i])) ** 2, 0) / w;
+      if (!best || err < best.err) best = { err, B, k0 };
+    }
+    rate[k] = best.B.map((v) => round(v, 4));
+    K[k] = best.k0;
+  }
+  for (const { key, made, att } of PCT_KEYS) {
+    const use = samples.map((x) => ({ x, a: expand(x.actual) })).filter(({ a }) => a[att] >= 20);
+    const ys = use.map(({ x, a }) => a[made] / a[att] - x.nctx.pct[key]), wt = use.map(({ a }) => a[att]);
+    let best = null;
+    for (const k0 of RK_PROFILE_KP) {
+      const xs = use.map(({ x }) => rookieProfileFeatures(collegeUnits(x.college, x.cctx, 0, k0).pct[key], x.pick));
+      const B = wls(xs, ys, wt, 1e-3);
+      const err = use.reduce((acc, _, i) => acc + wt[i] * (at(B, xs[i]) - ys[i]) ** 2, 0);
+      if (!best || err < best.err) best = { err, B, k0 };
+    }
+    pct[key] = best.B.map((v) => round(v, 4));
+    Kp[key] = best.k0;
+  }
+  return { rate, pct, K, Kp, n: samples.length };
+}
+
 const usesCollege = (x) => !!(x.college && x.years);
 function fitRookie(samples) {
   const col = samples.filter(usesCollege);
+  const draftedCol = samples.filter((x) => x.pick < UNDRAFTED_PICK && x.college);
   return {
     college: col.length >= 100 ? fitRookieModel(col, true) : null,
     pickOnly: fitRookieModel(samples.filter((x) => x.pick < UNDRAFTED_PICK), false),
+    profile: draftedCol.length >= 100 ? fitProfileModel(draftedCol) : null,
   };
 }
 
-// Which model a rookie gets. A DRAFTED rookie gets the pick alone: with all
-// ten college seasons baked, adding the college translation on top of the
-// pick made lottery projections worse, not better (average miss 153.6 vs
-// 145.9 for the pick alone, against 150.8 for "average rookie") — the pick
-// already carries what the college season says, and the translation adds
-// noise. An UNDRAFTED rookie has no pick, so the college + pick model (at
-// pick 61) is all there is; one with no college season either isn't projected.
-const rookieSrc = (x, rk) => (x.pick < UNDRAFTED_PICK
-  ? { college: null, pick: x.pick }
-  : usesCollege(x) && rk.college ? { college: x.college, cctx: x.cctx, years: x.years, pick: x.pick } : null);
+// Which model a rookie gets (lib/projection-model.js rookieModelOf). A DRAFTED
+// rookie's minutes and games come from the pick alone: the full college
+// translation on top of the pick made lottery projections worse (average miss
+// 153.6 vs 145.9 for the pick alone, against 150.8 for "average rookie") —
+// college production says little about whether the minutes come. But with a
+// college season, each stat's rate comes from the pick AND that stat in
+// college (the profile model), which reads what kind of player the minutes go
+// to. An UNDRAFTED rookie has no pick, so the college + pick model (at pick 61)
+// is all there is; one with no college season either isn't projected.
+const rookieSrc = (x, rk) => {
+  const src = { college: x.college, cctx: x.cctx, years: x.years, pick: x.pick };
+  if (x.pick >= UNDRAFTED_PICK && !usesCollege(x)) return null;
+  return rookieModelOf(src, rk) ? src : null;
+};
 
 // Leave one rookie class out: each class projected by models fit on the
 // others, priced against the league of the season before (draft night), beside
@@ -564,7 +610,7 @@ function rookieBacktest(samples) {
       const src = rookieSrc(x, rk);
       if (!src) continue;
       const proj = projectRookie(src, rk, ctxBy[prev]);
-      res.push({ cls: c, name: x.name, pick: x.pick, model: src.college ? "college" : "pick",
+      res.push({ cls: c, name: x.name, pick: x.pick, model: proj.model,
         proj: valueAdd(proj.row, lga), projG: proj.g, actual: valueAdd(x.actual, lgaT), mp: x.actual.mp, naive: meanVa,
         g: (x.actual.g * 82) / scheduleLength(c) });
     }
@@ -585,7 +631,7 @@ function rookieBacktest(samples) {
     classes: classes.length,
     ...score(rot),
     lottery: score(res.filter((r) => r.pick <= 14)),
-    byModel: { college: score(rot.filter((r) => r.model === "college")), pick: score(rot.filter((r) => r.model === "pick")) },
+    byModel: Object.fromEntries(["profile", "pick", "college"].map((m) => [m, score(rot.filter((r) => r.model === m))])),
     examples: [...res].sort((a, b) => b.actual - a.actual).slice(0, 10)
       .map((r) => ({ name: r.name, cls: r.cls, pick: r.pick, model: r.model, proj: round(r.proj, 0), actual: round(r.actual, 0), g: r.projG })),
   };
