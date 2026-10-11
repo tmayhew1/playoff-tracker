@@ -459,6 +459,9 @@ function Cards({ p, sim, lga, lastVa }) {
   const dva = moved.length ? p.vaShown - valueAdd(p.solo, lga) : null;
   const def = p.dpm != null && p.row.mp > 0 ? p.dpm * p.row.mp : null;
   const tc = p.team ? teamColor(p.team) : "#78716c";
+  // Every VA on a card is per game, like the VA/G column; totals are in the tooltips.
+  const g = p.row.g, pg = (x) => (x / g).toFixed(2);
+  const vpTot = def != null ? vaPlus(p.va, p.dpm, p.row.mp) : null;
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
       {p.rookie && (
@@ -471,7 +474,7 @@ function Cards({ p, sim, lga, lastVa }) {
       )}
       {!p.rookie && L && (
         <Card tag={`’${L.season.slice(5)}`} tagClass={TAG.stone} title={`${fmt1(lastVa)} VA in ${L.g} games last active season`}>
-          {fmt1(lastVa)} VA · {L.g} G
+          {(lastVa / L.g).toFixed(2)} VA/G · {L.g} G
         </Card>
       )}
       {inj && (
@@ -487,18 +490,18 @@ function Cards({ p, sim, lga, lastVa }) {
         </Card>
       )}
       {dva != null && (
-        <Card tag={dva >= 0 ? "▲" : "▼"} tagClass={dva >= 0 ? "border-emerald-300 text-emerald-700 bg-emerald-50" : TAG.red} title="VA on this roster vs. the same player projected alone">
-          <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva)} VA</span> {dva >= 0 ? "better" : "worse"} situation
+        <Card tag={dva >= 0 ? "▲" : "▼"} tagClass={dva >= 0 ? "border-emerald-300 text-emerald-700 bg-emerald-50" : TAG.red} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
+          <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva / g, 2)} VA/G</span> {dva >= 0 ? "better" : "worse"} situation
         </Card>
       )}
       {def != null && (
-        <Card tag="DEF" tagClass={TAG.stone} title={`Projected defense ${signed(def)} VA, for VA+ ${fmt1(vaPlus(p.va, p.dpm, p.row.mp))}`}>
-          <span className={def < 0 ? "text-red-600" : ""}>{signed(def)}</span> · VA+ {fmt1(vaPlus(p.va, p.dpm, p.row.mp))}
+        <Card tag="DEF" tagClass={TAG.stone} title={`Projected defense ${signed(def)} VA over the season, for VA+ ${fmt1(vpTot)}`}>
+          <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span> · VA+/G {pg(vpTot)}
         </Card>
       )}
       {sim && (
-        <Card tag="80%" tagClass={TAG.stone} title="80% of simulated seasons land in this range">
-          <span className="font-semibold text-stone-700">{Math.round(sim.vaLo)}–{Math.round(sim.vaHi)}</span> VA
+        <Card tag="80%" tagClass={TAG.stone} title={`80% of simulated seasons land between ${Math.round(sim.vaLo)} and ${Math.round(sim.vaHi)} VA, shown over the ${g} projected games`}>
+          <span className="font-semibold text-stone-700">{pg(sim.vaLo)}–{pg(sim.vaHi)}</span> VA/G
         </Card>
       )}
       {sim && sim.allNba > 0.005 && <Card tag="All-NBA" tagClass={TAG.amber}>{pct(sim.allNba)}</Card>}
