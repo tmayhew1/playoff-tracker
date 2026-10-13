@@ -564,10 +564,13 @@ const TAG = {
   red: "border-red-300 text-red-700 bg-red-50",
   amber: "border-amber-400 text-amber-700 bg-amber-50",
   stone: "border-stone-300 text-stone-600 bg-stone-50",
+  green: "border-emerald-300 text-emerald-700 bg-emerald-50",
 };
 const signed = (x, d = 1) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(d)}`;
 const shortDate = (s) => new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
+// A season with at least the awards' 65 games counts as a healthy one.
+const HEALTHY_G = 65;
 const CONTEXT_LABEL = { min: "MIN", usg: "USG", ast: "AST", drb: "DRB", orb: "ORB" };
 const CONTEXT_LONG = { min: "minutes", usg: "shots & turnovers", ast: "assists", drb: "def. rebounds", orb: "off. rebounds" };
 
@@ -585,6 +588,8 @@ function Cards({ p, sim, lga }) {
   const tc = p.team ? teamColor(p.team) : "#78716c";
   // Every VA on a card is per game, like the VA/G column; totals are in the tooltips.
   const g = p.row.g;
+  // Every player's status card carries the games the projection expects.
+  const est = `est. ${g} G`;
   const vpTot = def != null ? vaPlus(p.va, p.dpm, p.row.mp) : null;
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
@@ -622,14 +627,14 @@ function Cards({ p, sim, lga }) {
       })()}
       {/* Who the player is coming in as — rookie, injured, back from a lost
           season — together on one row at the bottom, wrapping only if they must. */}
-      {(p.rookie || inj || p.missedLast || p.lostLast) && (
-        <div className="basis-full flex flex-wrap gap-1">
+      {(p.rookie || inj || L) && (
+        <div className="basis-full flex flex-wrap gap-1 [&>*]:px-1.5 [&>*]:gap-1">
           {p.rookie && (
             <Card tag="R" tagClass={TAG.amber} title={p.model === "profile"
               ? `Minutes and games from the draft slot, each stat from the slot and ${L.g} games at ${L.team}`
               : p.model === "pick" ? "Projected from the draft slot"
               : `Projected from ${L.g} games at ${L.team} — undrafted, so there’s no pick to go on`}>
-              {p.pick ? `Rookie, No. ${p.pick} pick-scaled` : "Rookie, undrafted"}
+              {p.pick ? `Rookie, No. ${p.pick} pick-scaled` : "Rookie, undrafted"} · {est}
             </Card>
           )}
           {inj && (
@@ -637,8 +642,13 @@ function Cards({ p, sim, lga }) {
               assumes {inj.missed} G missed{inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}
             </Card>
           )}
-          {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">from prior years</Card>}
-          {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">assumes a healthy year</Card>}
+          {!p.rookie && (p.missedLast
+            ? <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">from prior years · {est}</Card>
+            : p.lostLast
+            ? <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">assumes a healthy year · {est}</Card>
+            : L && L.g >= HEALTHY_G
+            ? <Card tag="Healthy ’26" tagClass={TAG.green} title={`${L.g} games last season`}>{est}</Card>
+            : L && <Card tag={`’26 · ${L.g} G`} tagClass={TAG.stone} title={`${L.g} games last season — not a lost season, so projected from it as usual`}>{est}</Card>)}
         </div>
       )}
     </div>
