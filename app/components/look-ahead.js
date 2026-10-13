@@ -348,7 +348,7 @@ const BOARD = {
   roy: { title: "Rookie of the Year", col: "ROY%", odds: (r) => r.roy, rookies: true, minutes: true, note: "Every projected rookie · from VA+ and minutes per game" },
   allnba: { title: "All-NBA", col: "Odds", odds: (r) => r.allNba, note: "The fifteen likeliest, five a team · positionless, as voted since 2023-24 · 65-game rule applied" },
   allstar: { title: "All-Star", col: "Odds", odds: (r, split) => (split ? r.allStarConf : r.allStar), cut: ALL_STAR_PLACES,
-    note: (split) => (split ? `Chance of a selection · ${ALL_STAR_PLACES / 2} East, ${ALL_STAR_PLACES / 2} West` : `Chance of a selection · ${ALL_STAR_PLACES} places, either conference`) },
+    note: (split) => (split ? `Chance of a selection · ${ALL_STAR_PLACES / 2} West, ${ALL_STAR_PLACES / 2} East` : `Chance of a selection · ${ALL_STAR_PLACES} places, either conference`) },
 };
 const BOARD_SHOWN = 30;
 const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleString()}`;
@@ -371,7 +371,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
     ? [...teams.map((tm, ti) => ({ head: `${["First", "Second", "Third"][ti]} Team`, rows: tm.map((r) => entries.find((e) => e.r.key === r.key)).filter(Boolean) })),
       { head: "Next in line", rows: ranked.slice(0, BOARD_SHOWN - onTeams.size) }]
     : bySplit
-    ? [["E", "East"], ["W", "West"]].map(([c, head]) => ({
+    ? [["W", "West"], ["E", "East"]].map(([c, head]) => ({
       head, restart: true, cut: ALL_STAR_PLACES / 2,
       rows: ranked.filter((e) => TEAM_CONF[e.p.team] === c).slice(0, BOARD_SHOWN / 2),
     }))
@@ -393,7 +393,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
           <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
           {sub === "allstar" && (
             <div className="mt-1.5 flex border border-stone-300" role="group" aria-label="All-Star places">
-              {[[true, `${ALL_STAR_PLACES / 2} East / ${ALL_STAR_PLACES / 2} West`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
+              {[[true, `${ALL_STAR_PLACES / 2} West / ${ALL_STAR_PLACES / 2} East`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
                 <button key={label} type="button" aria-pressed={split === v} onClick={() => { setSplit(v); setOpen(null); }}
                   className={`flex-1 text-[9px] font-bold uppercase tracking-wider px-2 py-1 ${split === v ? "bg-stone-900 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}>{label}</button>
               ))}
