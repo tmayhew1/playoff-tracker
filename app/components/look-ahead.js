@@ -377,12 +377,6 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
     }))
     : [{ rows: ranked.slice(0, BOARD_SHOWN), cut: cfg.cut }];
   const max = Math.max(1e-9, ...groups.flatMap((g) => g.rows.map((e) => e.odds)));
-  const lead = groups[0].rows[0];
-  const meta = !lead ? null
-    : sub === "mvp" || sub === "roy" ? `Favorite: ${lead.p.name} · ${pct(lead.odds)}`
-    : sub === "allnba" ? `First team: ${teams[0].map((r) => splitName(pBySlug[r.key]?.name || "").last).join(", ")}`
-    : bySplit ? groups.map((g) => (g.rows[0] ? `${g.head}: ${g.rows[0].p.name} ${pct(g.rows[0].odds)}` : null)).filter(Boolean).join(" · ")
-    : `${ALL_STAR_PLACES} places · ${lead.p.name} likeliest at ${pct(lead.odds)}`;
   const subCls = (active) =>
     `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   let rank = 0;
@@ -405,7 +399,6 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
               ))}
             </div>
           )}
-          {meta && <div className="mt-1.5"><span className="inline-block text-[10px] px-1.5 py-0.5 border border-amber-400 bg-amber-50 text-amber-800">{meta}</span></div>}
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
