@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { valueAdd } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { splitName, teamColor, withAlpha } from "../lib/format";
@@ -44,6 +44,11 @@ function lineupRows(top) {
   return [names.slice(0, k), names.slice(k)].filter((r) => r.length);
 }
 
+// The Look Ahead's way to its own awards board (LookAhead owns the board's
+// state): goToAward(award, slug) switches the board and opens the player.
+const AwardGo = createContext(null);
+const AWARD_KEY = { MVP: "mvp", ROY: "roy", "All-NBA": "allnba", "All-Star": "allstar" };
+
 function InjuredOut({ list }) {
   if (!list?.length) return null;
   return (
@@ -71,6 +76,16 @@ export function LookAhead() {
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showMethod, setShowMethod] = useState(false);
+  // The awards board's tab and open row live here, so an award card anywhere
+  // on the page can switch the board to that award and open the player on it.
+  const [awardSub, setAwardSub] = useState("mvp");
+  const [awardOpen, setAwardOpen] = useState(null);
+  const goToAward = useCallback((award, slug) => {
+    setAwardSub(award);
+    setAwardOpen(slug);
+    requestAnimationFrame(() => (document.getElementById(`la-award-${slug}`) || document.getElementById("la-awards"))
+      ?.scrollIntoView({ block: "center", behavior: "smooth" }));
+  }, []);
   const { usgAdj } = useVAMode();
 
   useEffect(() => {
@@ -147,6 +162,7 @@ export function LookAhead() {
   const rankOf = new Map(players.map((p, i) => [p.slug, i + 1]));
 
   return (
+    <AwardGo.Provider value={goToAward}>
     <div>
       {/* Teams */}
       <div className="mb-4 border border-stone-300 bg-white">
@@ -233,7 +249,8 @@ export function LookAhead() {
         })}
       </div>
 
-      <AwardsBoard awards={awards} pBySlug={pBySlug} lga={lga} hasModels={!!data.awardModels} usgAdj={usgAdj} />
+      <AwardsBoard awards={awards} pBySlug={pBySlug} lga={lga} hasModels={!!data.awardModels} usgAdj={usgAdj}
+        sub={awardSub} setSub={setAwardSub} open={awardOpen} setOpen={setAwardOpen} />
 
       {/* Projected leaders */}
       <div className="mb-4 border border-stone-300 bg-white">
@@ -316,6 +333,7 @@ export function LookAhead() {
         {showMethod && <Method data={data} />}
       </div>
     </div>
+    </AwardGo.Provider>
   );
 }
 
@@ -335,9 +353,7 @@ const BOARD = {
 const BOARD_SHOWN = 30;
 const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleString()}`;
 
-function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
-  const [sub, setSub] = useState("mvp");
-  const [open, setOpen] = useState(null);
+function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, open, setOpen }) {
   // All-Star: 12 a conference, as the roster is picked, or the 24 likeliest league-wide.
   const [split, setSplit] = useState(true);
   const subs = hasModels ? AWARD_SUBS : AWARD_SUBS.filter(([k]) => k === "mvp" || k === "allnba");
@@ -371,7 +387,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
     `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   let rank = 0;
   return (
-    <div className="mb-4">
+    <div id="la-awards" className="mb-4">
       <div className={`mb-2 grid gap-1 ${subs.length === 4 ? "grid-cols-4" : "grid-cols-2"}`} role="tablist" aria-label="Award">
         {subs.map(([k, label]) => (
           <button key={k} type="button" role="tab" aria-selected={sub === k} onClick={() => { setSub(k); setOpen(null); }} className={subCls(sub === k)}>{label}</button>
@@ -408,7 +424,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj }) {
               const { p, r, odds } = e, tc = p.team ? teamColor(p.team) : "#78716c", isOpen = open === r.key, vp = vpOf(p);
               const cut = g.cut && k === g.cut;
               return (
-                <div key={r.key} className={`border-b border-stone-100 last:border-0 ${cut ? "border-t border-dashed border-t-stone-300" : ""}`}>
+                <div key={r.key} id={`la-award-${r.key}`} className={`border-b border-stone-100 last:border-0 ${cut ? "border-t border-dashed border-t-stone-300" : ""}`}>
                   <div className="relative overflow-hidden">
                     <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(odds / max) * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
                     <div
@@ -541,12 +557,13 @@ function ProjectedLine({ p, sim, lga }) {
 // card is about and a few words on what it did to the projection. The long
 // version of each lives in the card's tooltip. Each card is a player row tall
 // and grows to fill its line, content centred, so the rows run edge to edge.
-function Card({ tag, tagClass = "", tagStyle, title, tight = false, className = "", children }) {
+function Card({ tag, tagClass = "", tagStyle, title, tight = false, className = "", onClick = null, children }) {
+  const Tag = onClick ? "button" : "span";
   return (
-    <span title={title} className={`${className} flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
+    <Tag type={onClick ? "button" : undefined} onClick={onClick || undefined} title={title} className={`${className} ${onClick ? "hover:bg-stone-100 cursor-pointer" : ""} flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
       <span style={tagStyle} className={`text-[9px] font-bold uppercase px-1 py-0.5 border ${tight ? "tracking-normal" : "tracking-wider"} ${tagClass}`}>{tag}</span>
       <span>{children}</span>
-    </span>
+    </Tag>
   );
 }
 
@@ -562,6 +579,7 @@ const CONTEXT_LABEL = { min: "MIN", usg: "USG", ast: "AST", drb: "DRB", orb: "OR
 const CONTEXT_LONG = { min: "minutes", usg: "shots & turnovers", ast: "assists", drb: "def. rebounds", orb: "off. rebounds" };
 
 function Cards({ p, sim, lga }) {
+  const goToAward = useContext(AwardGo);
   const L = p.last, inj = p.injury;
   // What sharing a roster did: every pooled resource, biggest move first, and
   // the VA it cost or added against the player projected alone.
@@ -600,7 +618,12 @@ function Cards({ p, sim, lga }) {
         const odds = [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
         return odds.length > 0 && (
           <div className="basis-full flex gap-1">
-            {odds.map(([k, x]) => <Card key={k} tight tag={k} tagClass={TAG.amber}>{pct(x)}</Card>)}
+            {odds.map(([k, x]) => (
+              <Card key={k} tight tag={k} tagClass={TAG.amber} title={`${k} board`}
+                onClick={goToAward ? () => goToAward(AWARD_KEY[k], p.slug) : null}>
+                {pct(x)} <span className="text-stone-400" aria-hidden>→</span>
+              </Card>
+            ))}
           </div>
         );
       })()}
