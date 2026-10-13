@@ -568,7 +568,9 @@ function Cards({ p, sim, lga }) {
   const moved = p.pool && p.solo ? Object.entries(p.pool).sort(([, a], [, b]) => Math.abs(b - 1) - Math.abs(a - 1)) : [];
   const dva = moved.length ? p.vaShown - valueAdd(p.solo, lga) : null;
   const ctxPct = (f) => { const x = (f - 1) * 100; return `${signed(x, Math.abs(x) < 1 && x !== 0 ? 1 : 0)}%`; };
-  const def = p.dpm != null && p.row.mp > 0 ? p.dpm * p.row.mp : null;
+  // A rookie has no NBA defense to project from, so — as in VA+ and the
+  // standings — they're taken as average: VA+ is their VA, defense zero.
+  const def = p.row.mp > 0 && (p.dpm != null || p.rookie) ? (p.dpm || 0) * p.row.mp : null;
   const tc = p.team ? teamColor(p.team) : "#78716c";
   // Every VA on a card is per game, like the VA/G column; totals are in the tooltips.
   const g = p.row.g;
@@ -588,11 +590,11 @@ function Cards({ p, sim, lga }) {
               {moved.map(([k, f]) => <span key={k} className="block snap-start whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
             </span>
           </div>
-          {def != null && <Defense def={def} g={g} vpTot={vpTot} />}
+          {def != null && <Defense def={def} g={g} vpTot={vpTot} rookie={p.dpm == null} />}
           {/* No projected defense (a rookie): the situation fills both rows. */}
           <Situation dva={dva} g={g} className={def != null ? "" : "row-span-2"} />
         </div>
-      ) : def != null && <Defense def={def} g={g} vpTot={vpTot} />}
+      ) : def != null && <Defense def={def} g={g} vpTot={vpTot} rookie={p.dpm == null} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
       {sim && (() => {
         const odds = [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
@@ -639,10 +641,12 @@ function Situation({ dva, g, className = "" }) {
 }
 
 // VA+ per game, with the defense that takes VA there beside it.
-function Defense({ def, g, vpTot }) {
+function Defense({ def, g, vpTot, rookie = false }) {
   return (
-    <Card tag="VA+" tagClass={TAG.stone} title={`VA+ per game: VA plus projected defense (${signed(def)} VA over the season, ${fmt1(vpTot)} VA+)`}>
-      <span className="font-semibold text-stone-700">{(vpTot / g).toFixed(1)}</span> (Def: <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span>)
+    <Card tag="VA+" tagClass={TAG.stone} title={rookie
+      ? "VA+ per game: a rookie has no NBA defense to project from, so it's taken as average and VA+ is their VA"
+      : `VA+ per game: VA plus projected defense (${signed(def)} VA over the season, ${fmt1(vpTot)} VA+)`}>
+      <span className="font-semibold text-stone-700">{(vpTot / g).toFixed(1)}</span> (Def: {rookie ? "avg" : <span className={def < 0 ? "text-red-600" : ""}>{signed(def / g, 2)}</span>})
     </Card>
   );
 }
