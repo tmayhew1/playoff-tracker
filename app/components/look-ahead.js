@@ -629,7 +629,7 @@ function Cards({ p, sim, lga }) {
               ? `Minutes and games from the draft slot, each stat from the slot and ${L.g} games at ${L.team}`
               : p.model === "pick" ? "Projected from the draft slot"
               : `Projected from ${L.g} games at ${L.team} — undrafted, so there’s no pick to go on`}>
-              {p.pick ? `Rookie, No. ${p.pick} pick-scaled` : "Rookie, undrafted"}
+              {p.pick ? `Rookie, scaled to avg No. ${p.pick} pick` : "Rookie, undrafted"}
             </Card>
           )}
           {inj && (
