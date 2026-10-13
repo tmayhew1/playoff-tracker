@@ -550,11 +550,12 @@ function ProjectedLine({ p, sim, lga }) {
 // card is about and a few words on what it did to the projection. The long
 // version of each lives in the card's tooltip. Each card is a player row tall
 // and grows to fill its line, content centred, so the rows run edge to edge.
-function Card({ tag, tagClass = "", tagStyle, title, tight = false, className = "", onClick = null, children }) {
+function Card({ tag, tagClass = "", tagStyle, tag2 = null, tag2Class = "", title, tight = false, className = "", onClick = null, children }) {
   const Tag = onClick ? "button" : "span";
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick || undefined} title={title} className={`${className} ${onClick ? "hover:bg-stone-100 cursor-pointer" : ""} flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
       <span style={tagStyle} className={`text-[9px] font-bold uppercase px-1 py-0.5 border ${tight ? "tracking-normal" : "tracking-wider"} ${tagClass}`}>{tag}</span>
+      {tag2 && <span className={`-ml-0.5 text-[9px] font-bold uppercase px-1 py-0.5 border tracking-wider ${tag2Class}`}>{tag2}</span>}
       <span>{children}</span>
     </Tag>
   );
@@ -637,18 +638,25 @@ function Cards({ p, sim, lga }) {
               {p.pick ? `Rookie, scaled to avg No. ${p.pick} pick` : "Rookie, undrafted"} · {est}
             </Card>
           )}
-          {inj && (
-            <Card tag="INJ" tagClass={TAG.red} title={`${inj.injury} — ${p.row.g} of a healthy ${inj.healthyG} games (${fmt1(inj.healthyVa)} VA)${inj.note ? ` · ${inj.note}` : ""}${inj.asOf ? ` (as of ${fmtDate(inj.asOf)})` : ""}`}>
-              assumes {inj.missed} G missed{inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}
-            </Card>
-          )}
-          {!p.rookie && (p.missedLast
-            ? <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">from prior years · {est}</Card>
-            : p.lostLast
-            ? <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">assumes a healthy year · {est}</Card>
-            : L && L.g >= HEALTHY_G
-            ? <Card tag="Healthy ’26" tagClass={TAG.green} title={`${L.g} games last season`}>{est}</Card>
-            : L && <Card tag={`’26 · ${L.g} G`} tagClass={TAG.stone} title={`${L.g} games last season — not a lost season, so projected from it as usual`}>{est}</Card>)}
+          {/* Last season's health, with the estimated games; an injury now joins
+              it on the same card. A rookie's injury, with no last season, stands alone. */}
+          {(() => {
+            const injText = inj && `assumes ${inj.missed} G missed${inj.return ? ` · Ret. ${shortDate(inj.return)}` : ""}`;
+            const injTitle = inj && `${inj.injury} — ${p.row.g} of a healthy ${inj.healthyG} games (${fmt1(inj.healthyVa)} VA)${inj.note ? ` · ${inj.note}` : ""}${inj.asOf ? ` (as of ${fmtDate(inj.asOf)})` : ""}`;
+            const health = p.rookie ? null
+              : p.missedLast ? { tag: "Out ’26", cls: TAG.red, text: "from prior years", title: "Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown" }
+              : p.lostLast ? { tag: "Hurt ’26", cls: TAG.red, text: "assumes a healthy year", title: "Last season cut short by injury — minutes and games projected from the healthy seasons before it" }
+              : L && L.g >= HEALTHY_G ? { tag: "Healthy ’26", cls: TAG.green, text: null, title: `${L.g} games last season` }
+              : L ? { tag: `’26 · ${L.g} G`, cls: TAG.stone, text: null, title: `${L.g} games last season — not a lost season, so projected from it as usual` }
+              : null;
+            if (!health) return inj && <Card tag="INJ" tagClass={TAG.red} title={injTitle}>{injText}</Card>;
+            return (
+              <Card tag={health.tag} tagClass={health.cls} tag2={inj ? "INJ" : null} tag2Class={TAG.red}
+                title={inj ? `${health.title} · ${injTitle}` : health.title}>
+                {[inj ? injText : health.text, est].filter(Boolean).join(" · ")}
+              </Card>
+            );
+          })()}
         </div>
       )}
     </div>
