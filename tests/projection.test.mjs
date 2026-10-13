@@ -105,6 +105,27 @@ test("a player who can't reach 65 games is never on the ballot", () => {
   assert.equal(star.allNba, 0);
 });
 
+test("ROY goes only to rookies and All-Star fills its places", () => {
+  const field = PROJ.players.slice(0, 120).map((p, i) => ({ key: p.slug, g: p.row.g, va: p.va, mpg: p.mpg, rookie: i % 10 === 0 }));
+  const res = simulateAwards(field, PROJ.mvp.model, PROJ.pool, { sims: 300, roy: { beta: [0.8, 4.8] }, allStar: { beta: 0.56, places: 24 } });
+  const roy = res.reduce((s, r) => s + r.roy, 0), allStar = res.reduce((s, r) => s + r.allStar, 0);
+  assert.ok(Math.abs(roy - 1) < 1e-9, `ROY odds sum to ${roy}`);
+  assert.ok(Math.abs(allStar - 24) < 1e-9, `All-Star odds sum to ${allStar}`);
+  res.forEach((r, i) => { if (!field[i].rookie) assert.equal(r.roy, 0); });
+  const split = simulateAwards(field.map((p, i) => ({ ...p, conf: i % 2 ? "E" : "W" })), PROJ.mvp.model, PROJ.pool, { sims: 300, allStar: { beta: 0.56, places: 24 } });
+  for (const c of [1, 0]) {
+    const sum = split.filter((_, i) => i % 2 === c).reduce((s, r) => s + r.allStarConf, 0);
+    assert.ok(Math.abs(sum - 12) < 1e-9, `12 a conference, got ${sum}`);
+  }
+});
+
+test("the range can be reported on another baseline than the ballot", () => {
+  const pool = [[[0, 1]], [[0, 1]], [[0, 1]], [[0, 1]]];
+  const [r] = simulateAwards([{ key: "a", g: 70, va: 700, rangeVa: 560, mpg: 34 }], PROJ.mvp.model, pool, { sims: 20 });
+  assert.equal(r.vaLo, 560);
+  assert.equal(r.vaHi, 560);
+});
+
 test("the route falls back to the baked teams when rosters can't be fetched", async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async () => { throw new Error("offline"); };

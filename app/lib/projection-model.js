@@ -370,13 +370,43 @@ export const tierOf = (mpg) => {
 // player draws one whole pair, so a bad year's per-game drop and its missed
 // games stay as correlated as they really were.
 //
-// Returns per player: P(MVP), P(All-NBA), P(1st team), mean finish, and the
-// 10th/90th percentile of the simulated VA.
-export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82 } = {}) {
+// Returns per player: P(MVP), P(All-NBA), P(1st team), mean finish, the
+// 10th/90th and 20th/80th percentiles of the simulated VA (of `rangeVa` when a
+// player has it), and its histogram.
+//
+// Two more awards ride along when their models are passed — the Awards tab's
+// own fits (scripts/bake-awards.mjs), drawn the same way as the MVP ballot:
+//
+//   roy      { beta: [b, c] } — among players flagged `rookie`, a ballot on
+//            b·VA/100 + c·(min/10, scaled by games under half a season), the
+//            ROY board's two inputs. No games rule: it doesn't apply to ROY.
+//   allStar  { beta, places } — every player's b·VA/100 plus logistic noise,
+//            top `places` selected: the selection logit, one draw at a time.
+//            From the same draw, half the places per conference among
+//            players with a `conf` (the real roster's 12 East, 12 West).
+//
+// which add P(ROY), P(All-Star) and P(All-Star by conference) to each result.
+const logisticNoise = (u) => { const v = Math.min(1 - 1e-12, Math.max(1e-12, u)); return Math.log(v / (1 - v)); };
+// The simulated VA's shape, for the page's histogram: HIST_BINS even bins
+// from lo to hi (the 2nd to 98th percentile, so a stray tail can't flatten
+// the rest), each holding the share of draws inside it.
+const HIST_BINS = 20;
+function histogram(sorted, lo, hi) {
+  const counts = Array(HIST_BINS).fill(0), w = (hi - lo) / HIST_BINS;
+  if (!(w > 0)) return { lo, hi, counts };
+  for (const x of sorted) if (x >= lo && x <= hi) counts[Math.min(HIST_BINS - 1, Math.floor((x - lo) / w))]++;
+  return { lo, hi, counts: counts.map((c) => c / sorted.length) };
+}
+
+export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82, roy = null, allStar = null } = {}) {
   const rand = rng(seed);
   const n = players.length;
-  const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, rankSum: 0, ranked: 0, vas: [] }));
+  const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, roy: 0, allStar: 0, allStarConf: 0, rankSum: 0, ranked: 0, vas: [] }));
+  const rookies = roy ? players.map((p, i) => (p.rookie ? i : -1)).filter((i) => i >= 0) : [];
   const vpg = players.map((p) => (p.g > 0 ? p.va / p.g : 0));
+  // The range can be reported on another baseline than the ballot's (VA where
+  // the ballot reads VA+): `rangeVa`, the same miss drawn on top of it.
+  const rpg = players.map((p, i) => (p.rangeVa != null && p.g > 0 ? p.rangeVa / p.g : vpg[i]));
   // A player can bring a pool of its own — a rookie draws from the misses
   // rookie projections have made, which run wider than a veteran's.
   const tierPool = players.map((p) => (p.pool?.length ? p.pool : pool[tierOf(p.mpg ?? 0)] || pool[0] || [[0, 1]]));
@@ -388,7 +418,7 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       const g = Math.min(schedule, Math.max(0, Math.round(players[i].g * gr)));
       simG[i] = g;
       simVa[i] = (vpg[i] + dv) * g;
-      tally[i].vas.push(simVa[i]);
+      tally[i].vas.push((rpg[i] + dv) * g);
     }
     const ballot = [];
     for (let i = 0; i < n; i++) {
@@ -403,6 +433,28 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       tally[i].rankSum += r + 1;
       tally[i].ranked++;
     });
+    if (rookies.length) {
+      let best = -Infinity, win = -1;
+      for (const i of rookies) {
+        if (simG[i] <= 0) continue;
+        const u = roy.beta[0] * (simVa[i] / 100) + roy.beta[1] * ((players[i].mpg ?? 0) / 10) * Math.min(1, simG[i] / (schedule / 2)) + gumbel(rand());
+        if (u > best) { best = u; win = i; }
+      }
+      if (win >= 0) tally[win].roy++;
+    }
+    if (allStar) {
+      const sel = [];
+      for (let i = 0; i < n; i++) if (simG[i] > 0) sel.push([allStar.beta * (simVa[i] / 100) + logisticNoise(rand()), i]);
+      sel.sort((x, y) => y[0] - x[0]);
+      for (let r = 0; r < Math.min(allStar.places, sel.length); r++) tally[sel[r][1]].allStar++;
+      const left = {};
+      for (const [, i] of sel) {
+        const c = players[i].conf;
+        if (!c) continue;
+        left[c] ??= allStar.places / 2;
+        if (left[c] > 0) { left[c]--; tally[i].allStarConf++; }
+      }
+    }
   }
   return players.map((p, i) => {
     const t = tally[i];
@@ -413,9 +465,14 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       mvp: t.mvp / sims,
       allNba: t.allNba / sims,
       first: t.first / sims,
+      roy: t.roy / sims,
+      allStar: t.allStar / sims,
+      allStarConf: t.allStarConf / sims,
       meanRank: t.ranked ? t.rankSum / t.ranked : null,
       eligible: t.ranked / sims,
       vaLo: q(0.1), vaHi: q(0.9),
+      va20: q(0.2), va80: q(0.8),
+      hist: histogram(v, q(0.02), q(0.98)),
     };
   });
 }
