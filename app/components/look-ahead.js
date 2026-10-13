@@ -392,10 +392,10 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
           <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
           <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
           {sub === "allstar" && (
-            <div className="mt-1.5 inline-flex border border-stone-300" role="group" aria-label="All-Star places">
+            <div className="mt-1.5 flex border border-stone-300" role="group" aria-label="All-Star places">
               {[[true, `${ALL_STAR_PLACES / 2} East / ${ALL_STAR_PLACES / 2} West`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
                 <button key={label} type="button" aria-pressed={split === v} onClick={() => { setSplit(v); setOpen(null); }}
-                  className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 ${split === v ? "bg-stone-900 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}>{label}</button>
+                  className={`flex-1 text-[9px] font-bold uppercase tracking-wider px-2 py-1 ${split === v ? "bg-stone-900 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}>{label}</button>
               ))}
             </div>
           )}
