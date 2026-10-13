@@ -645,7 +645,7 @@ function Cards({ p, sim, lga }) {
             </Card>
           )}
           {p.missedLast && <Card tag="Out ’26" tagClass={TAG.red} title="Missed all of 2025-26 — projected from earlier seasons, with the drop full-season returners have historically shown">from prior years</Card>}
-          {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">healthy-year min</Card>}
+          {p.lostLast && <Card tag="Hurt ’26" tagClass={TAG.red} title="Last season cut short by injury — minutes and games projected from the healthy seasons before it">assumes a healthy year</Card>}
         </div>
       )}
     </div>
