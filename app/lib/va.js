@@ -53,6 +53,13 @@ export const VA_GROUPS = [
 
 export const VA_GROUP_BY_KEY = Object.fromEntries(VA_GROUPS.map((g) => [g.key, g]));
 
+// Group a By-Category row belongs to ("3-Pointers" -> "Scoring"). D Rating has
+// no group of its own in VA_GROUPS but rides with Defense everywhere.
+export function groupOfCat(key) {
+  if (key === "D Rating") return "Defense";
+  return VA_GROUPS.find((g) => g.cats.includes(key))?.key || key;
+}
+
 // Representative counting stat shown next to a group's summed VA.
 export const GROUP_STAT = {
   "Scoring": [(r) => r.pts || 0, "PTS"],

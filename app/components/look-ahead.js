@@ -5,6 +5,7 @@ import { valueAdd } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { splitName, teamColor, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
+import { SeasonTiles } from "./season-tiles";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
 import { allNbaTeams, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { TEAM_CONF } from "../teams";
@@ -541,6 +542,8 @@ function ProjectedLine({ p, sim, lga }) {
         </table>
       </div>
       <Cards p={p} sim={sim} lga={lga} />
+      {/* Every season the projection grew from, each a tap from its card. */}
+      <SeasonTiles slug={p.slug} name={p.name} />
     </div>
   );
 }
