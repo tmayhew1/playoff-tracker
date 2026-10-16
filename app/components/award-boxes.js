@@ -18,7 +18,8 @@ const AWARDS = [
 ];
 // A rookie can't be Most Improved, so his card shows Rookie of the Year there.
 const ROY = { key: "roy", label: "ROY", pct: 8, rank: 9 };
-const fmt = (p) => (p == null ? "–" : p >= 99.5 ? ">99%" : p < 0.5 ? "<1%" : `${Math.round(p)}%`);
+// No > or <: a near-lock reads 99%, a long shot 1%, and only a true zero 0%.
+const fmt = (p) => (p == null ? "–" : `${p <= 0 ? 0 : Math.min(99, Math.max(1, Math.round(p)))}%`);
 
 export function AwardBoxes({ slug, season }) {
   const [odds, setOdds] = useState(null);
