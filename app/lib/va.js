@@ -47,7 +47,7 @@ export const CAT_SHORT = {
 export const VA_GROUPS = [
   { key: "Scoring", cats: ["Points", "2-Pointers", "3-Pointers", "Free Throws"] },
   { key: "Passing", cats: ["Assists", "Turnovers"] },
-  { key: "Rebounds", cats: ["D Rebounds", "O Rebounds"] },
+  { key: "Rebounding", cats: ["D Rebounds", "O Rebounds"] },
   { key: "Defense", cats: ["Blocks", "Steals"] },
 ];
 
@@ -64,7 +64,7 @@ export function groupOfCat(key) {
 export const GROUP_STAT = {
   "Scoring": [(r) => r.pts || 0, "PTS"],
   "Passing": [(r) => r.ast || 0, "AST"],
-  "Rebounds": [(r) => (r.drb || 0) + (r.orb || 0), "REB"],
+  "Rebounding": [(r) => (r.drb || 0) + (r.orb || 0), "REB"],
   "Defense": [(r) => (r.stl || 0) + (r.blk || 0), "STK"],
 };
 
@@ -175,7 +175,7 @@ export function samePlayer(a, b) {
 // the rim.
 const TUNNEL_SIDES = {
   "Offense": ["Scoring", "Passing"],
-  "Defense": ["Rebounds", "Defense"],
+  "Defense": ["Rebounding", "Defense"],
 };
 
 const CAT_INDEX = Object.fromEntries(VA_CATEGORY_ORDER.map((k, i) => [k, i]));

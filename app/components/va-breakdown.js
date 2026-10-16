@@ -29,7 +29,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   // each game). Tap again to clear.
   const [selectedCategory, setSelectedCategory] = useState(null);
   // "basic" folds the ten categories into the four Scoring/Passing/
-  // Rebounds/Defense buckets with summed VA; "detail" is the full list.
+  // Rebounding/Defense buckets with summed VA; "detail" is the full list.
   const [viewMode, setViewMode] = useState("basic");
   const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
   // Head-to-head comparison against another player-season from the same scope.
@@ -713,7 +713,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
 export function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
-  // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
+  // "basic" folds the ten categories into Scoring/Passing/Rebounding/Defense.
   const [viewMode, setViewMode] = useState("basic");
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
