@@ -31,7 +31,8 @@ export function AwardBoxes({ slug, season }) {
   if (!odds || !slug || !season || !odds[season]) return null;
   const mine = odds[season][slug] || [];
   return (
-    <div className="grid grid-cols-4 gap-1 mb-2">
+    // A row across the top; turned sideways, a column down the card's left.
+    <div className="grid grid-cols-4 gap-1 mb-2 tilt:grid-cols-1 tilt:w-28 tilt:shrink-0 tilt:mb-0">
       {AWARDS.map((a) => (a.key === "mip" && mine[ROY.pct] != null ? ROY : a)).map((a) => {
         const p = mine[a.pct], rank = mine[a.rank];
         const go = goToAward && rank != null ? () => goToAward({ award: a.key, season, slug }) : null;

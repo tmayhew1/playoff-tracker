@@ -803,10 +803,12 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   const aRow = { ...p, season: p.season || context?.season, name: p.name || context?.self?.name, slug: p.slug || context?.self?.slug || null };
 
   return (
-    <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
+    <div className="px-2 py-2 bg-stone-50 border-t border-stone-100 tilt:flex tilt:items-start tilt:gap-2">
       {/* Award odds lead an NBA regular-season card (the awards are regular
-          season); a playoff or college card has none. */}
+          season); a playoff or college card has none. Sideways they run down
+          the left, the breakdown beside them. */}
       {baseline === "NBA" && <AwardBoxes slug={aRow.slug} season={aRow.season} />}
+      <div className="tilt:flex-1 tilt:min-w-0">
       {compare && context ? (
         // Comparison toggle row: the gold vs-chip left (where Basic/By
         // Category lives) and Values/Percentiles right (where Per 36/Per G
@@ -909,6 +911,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
       </div>
       </>
       )}
+      </div>
     </div>
   );
 }
