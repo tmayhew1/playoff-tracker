@@ -8,7 +8,7 @@ import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
-import { dayLabel, groupByDay } from "../lib/regular-season-games";
+import { dayLabel, groupByDay, groupByMonth, seasonMonths } from "../lib/regular-season-games";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
@@ -163,8 +163,11 @@ export function ExploreMonthSection({ month, lga }) {
 }
 
 
-// Every regular-season game of `season`, by month (/api/regular-season/games).
-// `lga` is the regular-season baseline these box scores are priced against.
+// Every regular-season game of `season`, by month: one
+// /api/regular-season/games request per calendar month, side by side, merged
+// and regrouped here (a game is filed under its own Eastern date, whichever
+// request found it). `lga` is the regular-season baseline these box scores
+// are priced against.
 export function RegularSeasonMonths({ season, lga }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -172,20 +175,31 @@ export function RegularSeasonMonths({ season, lga }) {
     let cancelled = false;
     setData(null);
     setError(null);
-    fetchJsonCached(`/api/regular-season/games?season=${season}`)
-      .then((d) => { if (!cancelled) setData(d); })
-      .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
+    const errors = [];
+    Promise.all(seasonMonths(season).map((m) =>
+      fetchJsonCached(`/api/regular-season/games?season=${season}&month=${m}`)
+        .then((d) => {
+          if (d.errors?.length) errors.push(...d.errors);
+          return d.games || [];
+        })
+        .catch((e) => { errors.push(e.message || "Load failed"); return []; })))
+      .then((lists) => {
+        if (cancelled) return;
+        const games = lists.flat();
+        if (!games.length && errors.length) setError(errors[0]);
+        else setData({ months: groupByMonth(games), partial: errors.length > 0 });
+      });
     return () => { cancelled = true; };
   }, [season]);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
-  if (!data.months?.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
+  if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
   return (
     <>
       {data.months.map((m) => <ExploreMonthSection key={m.key} month={m} lga={lga} />)}
-      {data.errors?.length > 0 && (
-        <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some months didn’t load — try again later</div>
+      {data.partial && (
+        <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
     </>
   );

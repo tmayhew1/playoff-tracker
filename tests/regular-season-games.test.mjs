@@ -73,36 +73,37 @@ test("a season spans October to May, the bubble to August", () => {
   assert.deepEqual(seasonMonths("2019-20").slice(-2), ["202007", "202008"]);
 });
 
-test("/api/regular-season/games asks ESPN month by month", async (t) => {
+const route = (q) => GET(new Request(`http://x/api/regular-season/games${q}`));
+
+test("/api/regular-season/games asks ESPN one day at a time", async (t) => {
   const asked = [];
   t.mock.method(globalThis, "fetch", async (url) => {
     asked.push(url);
-    const events = url.includes("dates=20251101-20251130")
-      ? [ev("10", "2025-11-05T00:00Z", "CLE", 112, "DET", 100)]
-      : url.includes("dates=20260401-20260430")
-        ? [ev("11", "2026-04-12T19:00Z", "SAS", 130, "DEN", 125)]
-        : [];
+    const events = url.endsWith("dates=20260204")
+      ? [ev("10", "2026-02-05T00:00Z", "CLE", 112, "DET", 100), ev("11", "2026-02-05T03:00Z", "LAL", 120, "GS", 118)]
+      : [];
     return new Response(JSON.stringify({ events }), { status: 200 });
   });
-  const res = await GET(new Request("http://x/api/regular-season/games?season=2025-26"));
+  const res = await route("?season=2025-26&month=202602");
   const d = await res.json();
-  assert.equal(asked.length, 8);
-  assert.ok(asked.some((u) => u.includes("dates=20260201-20260228")), "month's last day");
-  assert.deepEqual(d.months.map((m) => [m.label, m.games.length]), [["November", 1], ["April", 1]]);
+  assert.equal(asked.length, 28, "every day of February");
+  assert.ok(asked.every((u) => /scoreboard\?dates=202602\d\d$/.test(u)), "plain one-day queries");
+  assert.deepEqual(d.games.map((g) => [g.gameId, g.date]), [["10", "2026-02-04"], ["11", "2026-02-04"]]);
   assert.deepEqual(d.errors, []);
   assert.match(res.headers.get("Cache-Control"), /s-maxage=604800/);
 });
 
-test("/api/regular-season/games: a lost month is reported, losing all is an error", async (t) => {
-  t.mock.method(globalThis, "fetch", async (url) => (url.includes("dates=202512")
-    ? new Response("", { status: 404 })
-    : new Response(JSON.stringify({ events: [ev("10", "2025-11-05T00:00Z", "CLE", 112, "DET", 100)] }), { status: 200 })));
-  const partial = await GET(new Request("http://x/api/regular-season/games?season=2025-26"));
+test("/api/regular-season/games: a lost day is reported, losing all is an error", async (t) => {
+  t.mock.method(globalThis, "fetch", async (url) => (url.endsWith("dates=20251203")
+    ? new Response("{\"message\": \"nope\"}", { status: 400 })
+    : new Response(JSON.stringify({ events: [ev("10", "2025-12-05T00:00Z", "CLE", 112, "DET", 100)] }), { status: 200 })));
+  const partial = await route("?season=2025-26&month=202512");
   assert.equal(partial.status, 200);
-  assert.deepEqual((await partial.json()).errors, ["202512: HTTP 404"]);
+  assert.deepEqual((await partial.json()).errors, ['20251203: HTTP 400 {"message": "nope"}']);
   assert.match(partial.headers.get("Cache-Control"), /s-maxage=3600/);
 
   t.mock.method(globalThis, "fetch", async () => new Response("", { status: 403 }));
-  assert.equal((await GET(new Request("http://x/api/regular-season/games?season=2025-26"))).status, 500);
-  assert.equal((await GET(new Request("http://x/api/regular-season/games?season=nope"))).status, 400);
+  assert.equal((await route("?season=2025-26&month=202512")).status, 500);
+  assert.equal((await route("?season=nope&month=202512")).status, 400);
+  assert.equal((await route("?season=2025-26&month=202507")).status, 400, "outside the season");
 });

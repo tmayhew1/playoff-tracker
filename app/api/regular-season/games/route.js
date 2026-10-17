@@ -1,15 +1,19 @@
-import { groupByMonth, parseScoreboard, seasonMonths } from "../../../lib/regular-season-games";
+import { parseScoreboard, seasonMonths } from "../../../lib/regular-season-games";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
 export const revalidate = 86400;
 
-// Every finished regular-season game of a season, grouped by month
-// (/api/regular-season/games?season=2025-26) — the regular season's answer to
-// /api/history's rounds. Read live off ESPN's public scoreboard, one query per
-// calendar month run side by side: the NBA blocks server-side requests for
-// past seasons, ESPN does not, and its event ids are what /api/boxscore's
-// ESPN path opens a game's box score with.
+// One calendar month of a season's finished regular-season games
+// (/api/regular-season/games?season=2025-26&month=202511). The Explore month
+// sections ask for each of seasonMonths(season) side by side and group what
+// comes back. Read live off ESPN's public scoreboard: the NBA blocks
+// server-side requests for past seasons, ESPN does not, and its event ids are
+// what /api/boxscore's ESPN path opens a game's box score with.
+//
+// ESPN is asked one day at a time — the scoreboard's plain `dates=YYYYMMDD`
+// form. A date-range query (`dates=A-B`) answers 400 over a regular-season
+// month.
 
 const HEADERS = {
   "User-Agent":
@@ -23,7 +27,9 @@ async function fetchJsonOnce(url, timeoutMs) {
   try {
     const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal, cache: "no-store" });
     if (!res.ok) {
-      const err = new Error(`HTTP ${res.status}`);
+      // ESPN's error body says what it objected to; keep the start of it.
+      const why = (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 120);
+      const err = new Error(`HTTP ${res.status}${why ? ` ${why}` : ""}`);
       err.status = res.status;
       throw err;
     }
@@ -52,37 +58,52 @@ async function fetchJson(url, timeoutMs = 6000) {
   }
 }
 
-function monthUrl(yyyymm) {
+// The month's days as YYYYMMDD, stopping at today: a day not yet played has
+// nothing finished to find.
+function monthDays(yyyymm) {
   const y = Number(yyyymm.slice(0, 4)), m = Number(yyyymm.slice(4));
   const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  return `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard` +
-    `?dates=${yyyymm}01-${yyyymm}${last}&seasontype=2&limit=1000`;
+  const out = [];
+  for (let d = 1; d <= last; d++) {
+    if (Date.UTC(y, m - 1, d) > Date.now()) break;
+    out.push(`${yyyymm}${String(d).padStart(2, "0")}`);
+  }
+  return out;
 }
+
+const dayUrl = (yyyymmdd) =>
+  `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${yyyymmdd}`;
 
 const SEASON_RE = /^\d{4}-\d{2}$/;
 
 export async function GET(req) {
-  const season = new URL(req.url).searchParams.get("season");
+  const params = new URL(req.url).searchParams;
+  const season = params.get("season");
+  const month = params.get("month");
   if (!season || !SEASON_RE.test(season)) {
     return Response.json({ error: "valid season required (e.g. 2024-25)" }, { status: 400 });
   }
+  if (!seasonMonths(season).includes(month)) {
+    return Response.json({ error: `month must be one of ${seasonMonths(season).join(", ")}` }, { status: 400 });
+  }
 
   const errors = [];
-  const results = await Promise.all(seasonMonths(season).map((ym) =>
-    fetchJson(monthUrl(ym))
+  const days = monthDays(month);
+  const results = await Promise.all(days.map((day) =>
+    fetchJson(dayUrl(day))
       .then((d) => parseScoreboard(d?.events))
-      .catch((e) => { errors.push(`${ym}: ${e.message}`); return []; })));
+      .catch((e) => { errors.push(`${day}: ${e.message}`); return []; })));
   const games = results.flat();
   if (!games.length && errors.length) {
-    return Response.json({ error: `espn scoreboard: ${errors.join("; ")}` }, { status: 500 });
+    return Response.json({ error: `espn scoreboard: ${errors.slice(0, 3).join("; ")}` }, { status: 500 });
   }
 
   // A finished season never changes, so it caches for a week; one still being
-  // played (or a fetch that lost a month) is asked again within the hour.
+  // played (or a fetch that lost a day) is asked again within the hour.
   const finished = Date.now() >= Date.UTC(Number(season.slice(0, 4)) + 1, 6, 1);
   const maxAge = errors.length || !finished ? 3600 : 604800;
   return Response.json(
-    { season, months: groupByMonth(games), errors, source: "espn", fetchedAt: new Date().toISOString() },
+    { season, month, games, errors, source: "espn", fetchedAt: new Date().toISOString() },
     { headers: { "Cache-Control": `public, s-maxage=${maxAge}, stale-while-revalidate=${maxAge * 4}` } },
   );
 }
