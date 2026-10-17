@@ -10,7 +10,7 @@ import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { comparePalette, normalizeName, seasonTag, shortName, teamColor } from "../lib/format";
 import { aggregateSnapshots } from "../lib/players";
-import { GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catVATotal } from "../lib/va";
+import { GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catVATotal, groupOfCat } from "../lib/va";
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 import { useCompareReport } from "../lib/share-state";
 import { CategoryContext } from "./category-context";
@@ -29,7 +29,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   // each game). Tap again to clear.
   const [selectedCategory, setSelectedCategory] = useState(null);
   // "basic" folds the ten categories into the four Scoring/Passing/
-  // Rebounds/Defense buckets with summed VA; "detail" is the full list.
+  // Rebounding/Defense buckets with summed VA; "detail" is the full list.
   const [viewMode, setViewMode] = useState("basic");
   const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
   // Head-to-head comparison against another player-season from the same scope.
@@ -612,9 +612,15 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           const ref = refByKey ? refByKey[c.key] : null;
           const refMagPct = ref != null && Number.isFinite(ref) ? (Math.abs(ref) / maxAbs) * 45 : null;
           const refLeftPct = refMagPct != null ? (ref >= 0 ? 50 + refMagPct : 50 - refMagPct) : null;
-          const isCatSel = selectedCategory === c.key;
-          const onCatTap = canSelectCategory && !c.noDrill
-            ? () => setSelectedCategory(isCatSel ? null : c.key)
+          // By Category with league context: any row of a section selects
+          // the whole section (Points/2P/3P/FT -> Scoring scatter), the panel
+          // opening under its last row. Without context, rows stay single.
+          const byGroup = viewMode === "detail" && !!context && atSeasonLevel;
+          const tapKey = byGroup ? groupOfCat(c.key) : c.key;
+          const isCatSel = selectedCategory === tapKey;
+          const sectionEnd = !byGroup || i === activeRows.length - 1 || groupOfCat(activeRows[i + 1].key) !== tapKey;
+          const onCatTap = canSelectCategory && (!c.noDrill || byGroup)
+            ? () => setSelectedCategory(isCatSel ? null : tapKey)
             : undefined;
           // Explicit "+" prefix for positive VA contributions so a row's
           // sign is unambiguous at a glance (negatives already get "-"
@@ -673,8 +679,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 )}
                 <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
-              {context && atSeasonLevel && isCatSel && (
-                <CategoryContext p={pSeries} catKey={c.key} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
+              {context && atSeasonLevel && isCatSel && sectionEnd && (
+                <CategoryContext p={pSeries} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
               {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
             </React.Fragment>
@@ -682,7 +688,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
         })}
       </div>
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show contribution above/below the league baseline ({lga?.usgModel ? "median rates, scoring usage-adjusted" : "median rates"}){context && atSeasonLevel ? " · tap a category for league context" : ""}
+        Bars show contribution above/below the league baseline ({lga?.usgModel ? "median rates, scoring usage-adjusted" : "median rates"}){context && atSeasonLevel ? ` · tap a ${viewMode === "detail" ? "section" : "category"} for league context` : ""}
       </div>
       </>
       )}
@@ -707,7 +713,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
 export function VACategoryBreakdown({ player: p, lga, context = null, baseline = null, showDRating = true, pendingCompare = null, onCompareHandled = null }) {
   const [rateMode, setRateMode] = useState("perG");
   const [openCat, setOpenCat] = useState(null);
-  // "basic" folds the ten categories into Scoring/Passing/Rebounds/Defense.
+  // "basic" folds the ten categories into Scoring/Passing/Rebounding/Defense.
   const [viewMode, setViewMode] = useState("basic");
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
@@ -797,10 +803,12 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   const aRow = { ...p, season: p.season || context?.season, name: p.name || context?.self?.name, slug: p.slug || context?.self?.slug || null };
 
   return (
-    <div className="px-2 py-2 bg-stone-50 border-t border-stone-100">
+    <div className="px-2 py-2 bg-stone-50 border-t border-stone-100 tilt:flex tilt:items-start tilt:gap-2">
       {/* Award odds lead an NBA regular-season card (the awards are regular
-          season); a playoff or college card has none. */}
+          season); a playoff or college card has none. Sideways they run down
+          the left, the breakdown beside them. */}
       {baseline === "NBA" && <AwardBoxes slug={aRow.slug} season={aRow.season} />}
+      <div className="tilt:flex-1 tilt:min-w-0">
       {compare && context ? (
         // Comparison toggle row: the gold vs-chip left (where Basic/By
         // Category lives) and Values/Percentiles right (where Per 36/Per G
@@ -862,14 +870,19 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
           <span className={`tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}> · D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
         </div>
       )}
-      {activeRows.map((c) => {
+      {activeRows.map((c, i) => {
         const pct = (Math.abs(c.value) / maxAbs) * 45;
         const isPos = c.value >= 0;
         const perG = c.value / gp;
-        const catOpen = context && openCat === c.key;
+        // By Category: every row of a section opens that section's context
+        // (any Points/2P/3P/FT row -> the Scoring scatter), highlighted as a
+        // block, with the panel under the section's last row.
+        const tapKey = viewMode === "detail" ? groupOfCat(c.key) : c.key;
+        const catOpen = context && openCat === tapKey;
+        const sectionEnd = viewMode !== "detail" || i === activeRows.length - 1 || groupOfCat(activeRows[i + 1].key) !== tapKey;
         // Whole row is the tap target (same as the playoff breakdown), with
         // the selected row highlighted.
-        const onCatTap = context && !c.noDrill ? () => setOpenCat(catOpen ? null : c.key) : undefined;
+        const onCatTap = context && (!c.noDrill || viewMode === "detail") ? () => setOpenCat(catOpen ? null : tapKey) : undefined;
         return (
           <React.Fragment key={c.key}>
             <div
@@ -888,16 +901,17 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
               <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(perG, 2)}</span>
               <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
             </div>
-            {catOpen && <CategoryContext p={p} catKey={c.key} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope="rs" />}
+            {catOpen && sectionEnd && <CategoryContext p={p} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope="rs" />}
             {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
           </React.Fragment>
         );
       })}
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
-        Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{lga?.usgModel ? ", scoring usage-adjusted" : ""}{context ? " · tap a category for league context" : ""}
+        Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{lga?.usgModel ? ", scoring usage-adjusted" : ""}{context ? ` · tap a ${viewMode === "detail" ? "section" : "category"} for league context` : ""}
       </div>
       </>
       )}
+      </div>
     </div>
   );
 }

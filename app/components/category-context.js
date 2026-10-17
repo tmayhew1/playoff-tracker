@@ -28,7 +28,7 @@ const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
 // takes the vertical; the others follow the order they're listed in.
 const SCATTER_AXES = {
   "Passing": ["Turnovers", "Assists"],
-  "Rebounds": ["D Rebounds", "O Rebounds"],
+  "Rebounding": ["D Rebounds", "O Rebounds"],
   "Defense": ["Blocks", "Steals"],
 };
 
@@ -413,7 +413,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   //               shot-location bake
   //   2-Pointers  its four 2-point distances
   //   Passing     Assists · Turnovers
-  //   Rebounds    D Rebounds · O Rebounds
+  //   Rebounding  D Rebounds · O Rebounds
   //   Defense     Blocks · Steals (· D Rating, when VA+ is the active metric)
   // Each bar is a value-added distribution strip against the same season field
   // the rankings above use, headlined by the player's own rate at that
@@ -759,7 +759,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Scatter plot — the split row's form for the three two-stat groups. A
   // Passing card's two bars are really one relationship (the creator's
   // trade-off: more assists, more turnovers), and a bar apiece can't show it.
-  // So Passing / Rebounds / Defense plot their first two components against
+  // So Passing / Rebounding / Defense plot their first two components against
   // each other instead: every qualified player in the season in grey, the
   // card's player in black, crosshair at the league baseline. Scoring is left
   // on bars — six shot distances (or four scoring categories pre-1996-97)
@@ -1017,7 +1017,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           one value-added bar per component so the reader sees WHERE the value
           comes from: Scoring by shot distance (FT · four 2-point zones · 3PT,
           or its four scoring categories when the season has no shot-location
-          bake), Passing into AST/TOV, Rebounds into DRB/ORB, Defense into
+          bake), Passing into AST/TOV, Rebounding into DRB/ORB, Defense into
           BLK/STL (+ D Rating on VA+). Each bar is a value-added distribution
           strip headlined by the player's own rate. A single category has
           nothing to split — apart from 2-Pointers, which still divides into its

@@ -18,7 +18,8 @@ const AWARDS = [
 ];
 // A rookie can't be Most Improved, so his card shows Rookie of the Year there.
 const ROY = { key: "roy", label: "ROY", pct: 8, rank: 9 };
-const fmt = (p) => (p == null ? "–" : p >= 99.5 ? ">99%" : p < 0.5 ? "<1%" : `${Math.round(p)}%`);
+// No > or <: a near-lock reads 99%, a long shot 1%, and only a true zero 0%.
+const fmt = (p) => (p == null ? "–" : `${p <= 0 ? 0 : Math.min(99, Math.max(1, Math.round(p)))}%`);
 
 export function AwardBoxes({ slug, season }) {
   const [odds, setOdds] = useState(null);
@@ -31,7 +32,8 @@ export function AwardBoxes({ slug, season }) {
   if (!odds || !slug || !season || !odds[season]) return null;
   const mine = odds[season][slug] || [];
   return (
-    <div className="grid grid-cols-4 gap-1 mb-2">
+    // A row across the top; turned sideways, a column down the card's left.
+    <div className="grid grid-cols-4 gap-1 mb-2 tilt:grid-cols-1 tilt:w-28 tilt:shrink-0 tilt:mb-0">
       {AWARDS.map((a) => (a.key === "mip" && mine[ROY.pct] != null ? ROY : a)).map((a) => {
         const p = mine[a.pct], rank = mine[a.rank];
         const go = goToAward && rank != null ? () => goToAward({ award: a.key, season, slug }) : null;
