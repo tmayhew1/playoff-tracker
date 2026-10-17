@@ -119,7 +119,9 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
 }
 
 
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor }) {
+// `boxSrc: "espn"` sends the box-score request straight to ESPN, for games
+// whose id is an ESPN event id (the live NBA CDN only 404s on those).
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -133,7 +135,8 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     setError(null);
     try {
       const dq = liveGame.gameCode ? `&date=${liveGame.gameCode}` : "";
-      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}`, { cache: "no-store" });
+      const sq = boxSrc ? `&src=${boxSrc}` : "";
+      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}${sq}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -143,7 +146,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     } finally {
       setLoading(false);
     }
-  }, [liveGame?.gameId]);
+  }, [liveGame?.gameId, liveGame?.gameCode, boxSrc]);
 
   const isLive = liveGame?.gameStatus === 2;
   const isFinal = liveGame?.gameStatus === 3;
