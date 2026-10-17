@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
 import { MonthAverages } from "./month-averages";
+import { bakedBox, seasonGames } from "../lib/baked-games";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -157,6 +158,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
               teams={{}}
               useTeamColor
               boxSrc="espn"
+              boxLoader={() => bakedBox(season, g)}
             />
           ))}
         </div>
@@ -166,11 +168,13 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
 }
 
 
-// Every regular-season game of `season`, by month: one
-// /api/regular-season/games request per calendar month, side by side, merged
-// and regrouped here (a game is filed under its own Eastern date, whichever
-// request found it). `lga` is the regular-season baseline these box scores
-// are priced against.
+// Every regular-season game of `season`, by month. A baked season
+// (lib/baked-games.js) opens from its static index; months the bake hasn't
+// reached — the season in progress, or a season not baked — are asked of
+// /api/regular-season/games one calendar month per request, side by side.
+// Everything is merged and regrouped here (a game is filed under its own
+// Eastern date, whichever source found it). `lga` is the regular-season
+// baseline these box scores are priced against.
 export function RegularSeasonMonths({ season, lga }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -178,17 +182,10 @@ export function RegularSeasonMonths({ season, lga }) {
     let cancelled = false;
     setData(null);
     setError(null);
-    const errors = [];
-    Promise.all(seasonMonths(season).map((m) =>
-      fetchJsonCached(`/api/regular-season/games?season=${season}&month=${m}`)
-        .then((d) => {
-          if (d.errors?.length) errors.push(...d.errors);
-          return d.games || [];
-        })
-        .catch((e) => { errors.push(e.message || "Load failed"); return []; })))
-      .then((lists) => {
+    seasonGames(season, seasonMonths(season),
+      (m) => fetchJsonCached(`/api/regular-season/games?season=${season}&month=${m}`))
+      .then(({ games, errors }) => {
         if (cancelled) return;
-        const games = lists.flat();
         if (!games.length && errors.length) setError(errors[0]);
         else setData({ months: groupByMonth(games), partial: errors.length > 0 });
       });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS } from "../teams";
 import { LGA } from "../scoring";
 import { VABreakdown } from "./va-breakdown";
@@ -121,19 +121,31 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
 
 // `boxSrc: "espn"` sends the box-score request straight to ESPN, for games
 // whose id is an ESPN event id (the live NBA CDN only 404s on those).
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc }) {
+// `boxLoader`, when given, is asked first and resolves to the box score or
+// null — a baked regular-season game opens from its static file that way,
+// and only a game the bake doesn't hold goes to /api/boxscore.
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [box, setBox] = useState(staticBox || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Read through a ref: callers pass an inline arrow, and a loader that
+  // changes every render must not re-trigger the load effect below.
+  const boxLoaderRef = useRef(boxLoader);
+  boxLoaderRef.current = boxLoader;
 
   const loadBox = useCallback(async () => {
     if (!liveGame?.gameId) return;
     setLoading(true);
     setError(null);
     try {
+      const baked = boxLoaderRef.current ? await boxLoaderRef.current().catch(() => null) : null;
+      if (baked) {
+        setBox(baked);
+        return;
+      }
       const dq = liveGame.gameCode ? `&date=${liveGame.gameCode}` : "";
       const sq = boxSrc ? `&src=${boxSrc}` : "";
       const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}${sq}`, { cache: "no-store" });

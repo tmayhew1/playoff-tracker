@@ -1,0 +1,85 @@
+name: Bake regular-season games
+
+# Backfill of every regular-season game and box score since 1999-00, from
+# ESPN, into public/regular-season-games/<season>/ — what the Explore tab's
+# regular-season months read instead of asking ESPN live on every visit (see
+# scripts/bake-regular-season-games.mjs). Each season is written as soon as
+# it is complete, so a run that hits the time limit still commits every
+# season it finished, and the next run picks up from there. Seasons already
+# baked are skipped (only their missing box scores are retried). The daily
+# backfill workflow keeps the season in progress topped up.
+on:
+  # Push trigger: scoped to the feature branch + pipeline files so the full
+  # bake starts on push without needing a manual dispatch (the automation
+  # token can't dispatch workflows). The bot's data commit is [skip ci].
+  push:
+    branches: ["claude/bake-regular-season-games"]
+    paths:
+      - "scripts/bake-regular-season-games.mjs"
+      - "app/lib/regular-season-games.js"
+      - "app/api/_lib/espn-box.js"
+      - ".github/workflows/bake-regular-season-games.yml"
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "Seasons to bake, space-separated (YYYY-YY); blank = every season not yet baked"
+        required: false
+        default: ""
+      force:
+        description: "Rebake the named seasons even if already baked"
+        required: false
+        default: "false"
+
+concurrency:
+  group: bake-regular-season-games-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22, as in CI: the bake imports app/*.js modules, which need
+      # Node's module-syntax detection (the package isn't "type": "module").
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ~1,500 ESPN requests a season, eight at a time. Left to run out the
+      # clock rather than fail the job: whatever finished is committed below.
+      - name: Bake seasons
+        continue-on-error: true
+        timeout-minutes: 300
+        env:
+          SEASONS: ${{ inputs.seasons }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=""
+          for s in $SEASONS; do args="$args --season $s"; done
+          if [ "$FORCE" = "true" ]; then args="$args --force"; fi
+          node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+            scripts/bake-regular-season-games.mjs $args
+
+      # Half-written files from a run cut off mid-write never reach the commit.
+      - name: Drop temp files
+        if: always()
+        run: find public/regular-season-games -name '*.tmp' -delete 2>/dev/null || true
+
+      - name: Summarize
+        if: always()
+        run: |
+          du -sh public/regular-season-games 2>/dev/null || true
+          for f in public/regular-season-games/*/index.json; do
+            [ -f "$f" ] && node -e 'const d=require("./"+process.argv[1]);console.log(d.season, d.games.length, "games,", d.noBox.length, "without a box,", d.complete ? "complete" : "through " + d.through)' "$f"
+          done
+
+      - name: Commit baked JSON
+        if: always()
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Bake regular-season games [skip ci]"
+          file_pattern: "public/regular-season-games/"

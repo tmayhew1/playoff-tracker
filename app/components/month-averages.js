@@ -3,46 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { VABreakdown } from "./va-breakdown";
 import { MonthlyVAChart } from "./charts";
-import { fetchBakedJson, fetchJsonCached } from "../lib/fetch-cache";
+import { fetchBakedJson } from "../lib/fetch-cache";
+import { loadBoxes } from "../lib/baked-games";
 import { normalizeName, teamColor, withAlpha } from "../lib/format";
-import { groupByDay, monthlyVA, monthTotals } from "../lib/regular-season-games";
-
-// How many day requests run at once while box scores load.
-const CONCURRENCY = 6;
-// /api/regular-season/lines takes up to 20 games per request.
-const PER_REQUEST = 20;
-
-// Box scores for `games`, in their order, each tagged with its game's date:
-// a day's games per /api/regular-season/lines request, CONCURRENCY at once.
-// Requests are cached by URL and split the same way whatever the caller, so
-// a month's table and the season chart share every day they both need. A
-// lost day just leaves its games out.
-async function loadBoxes(games, onProgress, isCancelled) {
-  const requests = [];
-  for (const d of groupByDay(games)) {
-    for (let i = 0; i < d.games.length; i += PER_REQUEST) {
-      requests.push(d.games.slice(i, i + PER_REQUEST).map((g) => g.gameId));
-    }
-  }
-  const byId = new Map();
-  let done = 0, next = 0;
-  onProgress({ done, total: requests.length });
-  const worker = async () => {
-    while (!isCancelled() && next < requests.length) {
-      const ids = requests[next++];
-      try {
-        const d = await fetchJsonCached(`/api/regular-season/lines?ids=${ids.join(",")}`);
-        for (const g of d.games || []) byId.set(g.gameId, g);
-      } catch {
-        // counted below as a game that didn't load
-      }
-      done += 1;
-      if (!isCancelled()) onProgress({ done, total: requests.length });
-    }
-  };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  return games.flatMap((g) => (byId.has(g.gameId) ? [{ ...byId.get(g.gameId), date: g.date }] : []));
-}
+import { monthlyVA, monthTotals } from "../lib/regular-season-games";
 
 // A month's league-wide leaders: every player who played in the month, best
 // Value Added per game first — the regular season's Series Averages. Box
@@ -70,7 +34,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
     if (!open || boxes) return;
     let cancelled = false;
     setError(null);
-    loadBoxes(month.games, setProgress, () => cancelled).then((loaded) => {
+    loadBoxes(season, month.games, setProgress, () => cancelled).then((loaded) => {
       if (cancelled) return;
       if (!loaded.length) setError("Box scores unavailable");
       else setBoxes(loaded);
@@ -83,7 +47,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
     if (!expanded || seasonBoxes || !allMonths?.length) return;
     let cancelled = false;
     const games = allMonths.flatMap((m) => m.games);
-    loadBoxes(games, setSeasonProgress, () => cancelled).then((loaded) => {
+    loadBoxes(season, games, setSeasonProgress, () => cancelled).then((loaded) => {
       if (cancelled) return;
       const byId = new Map(loaded.map((b) => [b.gameId, b]));
       setSeasonBoxes(allMonths.map((m) => ({

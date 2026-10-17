@@ -27,7 +27,7 @@ function parseMin(v) {
   return parseFloat(s) || 0;
 }
 
-function parseBox(data) {
+export function parseBox(data) {
   const teamsBox = data?.boxscore?.players || [];
   if (teamsBox.length < 2) return null;
   const teamOut = (tb) => {
@@ -69,6 +69,18 @@ function parseBox(data) {
   if (!a.players.length && !b.players.length) return null;
   return { a, b };
 }
+
+// The two places ESPN keeps a box score: the site API summary first, the
+// CDN core (gamepackageJSON) for the older events whose summary comes back
+// with empty player blocks. scripts/bake-regular-season-games.mjs walks the
+// same pair with its own retrying fetch.
+export const espnBoxUrls = (eventId) => [
+  `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`,
+  `https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`,
+];
+
+// A fetched ESPN payload (either source) -> { a, b } sides, or null.
+export const parseEspnPayload = (d) => parseBox(d?.boxscore ? d : { boxscore: d?.gamepackageJSON?.boxscore || null });
 
 async function fetchEspn(url, timeoutMs = 8000) {
   const ctrl = new AbortController();

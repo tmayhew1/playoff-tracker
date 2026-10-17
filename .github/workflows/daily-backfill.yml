@@ -82,6 +82,15 @@ jobs:
         continue-on-error: true
         run: node --import ./scripts/node/register.mjs scripts/bake-nights.mjs
 
+      # The season in progress's regular-season games and box scores, through
+      # last night, for the Explore tab's month sections (and a retry of any
+      # box score ESPN was missing). Finished seasons are skipped, so outside
+      # the season this writes nothing. Never fatal: the page asks ESPN live
+      # for any day the bake hasn't reached.
+      - name: Bake regular-season games
+        continue-on-error: true
+        run: node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-regular-season-games.mjs --max-seasons 2
+
       # Every bake restamps fetchedAt/generatedAt, so an offseason run whose
       # data didn't move still dirties six files. Committing that redeploys,
       # which changes the build id — busting every build-scoped API cache and
@@ -100,4 +109,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Daily historical backfill (R) [skip ci]"
-          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/playoff-league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json app/data/nights/*.json"
+          file_pattern: "app/data/history-*.json app/data/leaderboard-*.json app/data/regular-season-*.json app/data/league-averages.json app/data/playoff-league-averages.json app/data/usage-model.json app/data/def-ratings.json app/data/shooting-*.json app/data/nights/*.json public/regular-season-games/"

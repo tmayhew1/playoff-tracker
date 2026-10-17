@@ -173,3 +173,58 @@ export function monthlyVA(months, lga) {
   });
   return out;
 }
+
+// --- Baked seasons ----------------------------------------------------------
+// scripts/bake-regular-season-games.mjs writes every finished regular-season
+// game to public/regular-season-games/<season>/: index.json (the game list
+// /api/regular-season/games would give, for the whole season) and one
+// YYYY-MM.json per month holding that month's box scores. They are static
+// files, so a season opens from the CDN with no ESPN call at all.
+//
+// A month file packs each player line into an array — names once in a table,
+// then the fields in LINE_FIELDS order — which keeps a season to a few MB.
+
+export const BAKED_DIR = "regular-season-games";
+export const LINE_FIELDS = [
+  "name", "starter", "mp", "pts", "reb", "drb", "orb", "ast", "stl", "blk", "tov",
+  "fgm", "fga", "tpm", "tpa", "ftm", "fta", "plusMinus",
+];
+
+// One side's player line -> its packed row; `nameIndex(name)` -> table slot.
+export function packLine(p, nameIndex) {
+  return LINE_FIELDS.map((k) => {
+    if (k === "name") return nameIndex(p.name);
+    if (k === "starter") return p.starter ? 1 : 0;
+    if (k === "mp") return Math.round((p.mp || 0) * 100) / 100;
+    return p[k] || 0;
+  });
+}
+
+export function unpackLine(row, names) {
+  const p = { oncourt: false };
+  LINE_FIELDS.forEach((k, i) => {
+    if (k === "name") p.name = names[row[i]];
+    else if (k === "starter") p.starter = row[i] === 1;
+    else p[k] = row[i];
+  });
+  return p;
+}
+
+// A baked month file -> Map(gameId -> { gameId, home, away }), the shape
+// /api/regular-season/lines answers with.
+export function unpackMonth(file) {
+  const out = new Map();
+  const names = file?.names || [];
+  for (const [gameId, g] of Object.entries(file?.games || {})) {
+    const side = (s) => ({ tri: s.tri, score: s.score ?? 0, players: (s.players || []).map((r) => unpackLine(r, names)) });
+    out.set(gameId, { gameId, home: side(g.home), away: side(g.away) });
+  }
+  return out;
+}
+
+// The last Eastern date a baked index covers: every day up to and including
+// it is in the bake, so only later days need asking live. A complete season
+// covers everything.
+export function bakedThrough(index) {
+  return index?.complete ? "9999-12-31" : (index?.through || "0000-00-00");
+}
