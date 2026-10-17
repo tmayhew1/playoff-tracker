@@ -203,3 +203,65 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
     </div>
   );
 }
+
+
+// A player's Value Added per game in each month of a season, one bar per
+// month, the month being read drawn in full color and the rest pale. Read
+// only: it sets the open month against the rest of his season. `months` is
+// [{ label, vapg, gp, current }], with vapg null for a month he sat out.
+export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game by Month", note = null }) {
+  const vals = months.map((m) => m.vapg).filter((v) => v != null);
+  const W = 320, H = 92;
+  // A negative month's value sits under its bar, so leave room above the
+  // month names for it.
+  const pad = { l: 14, r: 6, t: 14, b: vals.some((v) => v < 0) ? 26 : 16 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  let vMin = Math.min(0, ...vals), vMax = Math.max(0, ...vals);
+  if (vMin === vMax) { vMin -= 1; vMax += 1; }
+  const y = (v) => pad.t + (1 - (v - vMin) / (vMax - vMin)) * innerH;
+  const slot = innerW / Math.max(months.length, 1);
+  const barW = Math.min(26, slot * 0.62);
+  return (
+    <div className="mt-1 mb-3">
+      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
+      {note ? (
+        <div className="py-4 text-[10px] text-stone-500 italic text-center">{note}</div>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" role="img" aria-label={label}>
+          <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#78716c" strokeWidth="1" />
+          <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#78716c" className="tabular-nums">0</text>
+          {months.map((m, i) => {
+            const cx = pad.l + slot * (i + 0.5);
+            const has = m.vapg != null;
+            const neg = has && m.vapg < 0;
+            const base = neg ? "#dc2626" : color;
+            const top = has ? Math.min(y(m.vapg), y(0)) : y(0);
+            const h = has ? Math.max(Math.abs(y(m.vapg) - y(0)), 1) : 0;
+            return (
+              <g key={m.label}>
+                {has && (
+                  <rect
+                    x={cx - barW / 2} y={top} width={barW} height={h}
+                    fill={m.current ? base : withAlpha(base, 0.28)}
+                    stroke={m.current ? "#1c1917" : "none"} strokeWidth="1"
+                  />
+                )}
+                {has && (
+                  <text
+                    x={cx} y={neg ? top + h + 8 : top - 3} fontSize="8" textAnchor="middle"
+                    fill={m.current ? "#1c1917" : "#78716c"} fontWeight={m.current ? 700 : 400} className="tabular-nums"
+                  >{m.vapg.toFixed(1)}</text>
+                )}
+                <text
+                  x={cx} y={H - 4} fontSize="8" textAnchor="middle"
+                  fill={m.current ? "#1c1917" : has ? "#78716c" : "#d6d3d1"} fontWeight={m.current ? 700 : 400}
+                >{m.label}</text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+    </div>
+  );
+}

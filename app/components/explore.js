@@ -7,10 +7,12 @@ import { PlayoffLeaderboard } from "./leaderboard";
 import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
-import { buildScoped } from "../lib/fetch-cache";
+import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
+import { dayLabel, groupByDay, groupByMonth, seasonMonths } from "../lib/regular-season-games";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
+import { MonthAverages } from "./month-averages";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -110,6 +112,99 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
         <ExploreSeriesRow key={i} s={s} lga={lga} season={season} />
       ))}
     </div>
+  );
+}
+
+
+// The regular season's counterpart to the rounds: one collapsible section per
+// month, its league-wide averages first, then a card per day holding that
+// day's games. Same header, same card, same game banner as a round, a series
+// and its games.
+export function ExploreMonthSection({ month, allMonths, lga, season }) {
+  const [open, setOpen] = useState(false);
+  const days = useMemo(() => (open ? groupByDay(month.games) : []), [open, month]);
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
+      >
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+          {month.label}
+        </h3>
+        <span className="text-[10px] uppercase tracking-wider text-stone-400">{month.games.length} games</span>
+      </button>
+      {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} />}
+      {open && days.map((d) => (
+        <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
+          <div className="flex items-baseline justify-between px-0.5">
+            <span className="text-xs font-semibold text-stone-900">{dayLabel(d.date)}</span>
+            <span className="text-[10px] uppercase tracking-wider text-stone-400">{d.games.length} game{d.games.length === 1 ? "" : "s"}</span>
+          </div>
+          {d.games.map((g) => (
+            <LiveGameBanner
+              key={g.gameId}
+              liveGame={{
+                gameId: g.gameId,
+                gameStatus: 3,
+                gameStatusText: "Final",
+                gameDateTimeUTC: g.gameDateTimeUTC,
+                home: g.home,
+                away: g.away,
+              }}
+              lga={lga}
+              teams={{}}
+              useTeamColor
+              boxSrc="espn"
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+// Every regular-season game of `season`, by month: one
+// /api/regular-season/games request per calendar month, side by side, merged
+// and regrouped here (a game is filed under its own Eastern date, whichever
+// request found it). `lga` is the regular-season baseline these box scores
+// are priced against.
+export function RegularSeasonMonths({ season, lga }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    setData(null);
+    setError(null);
+    const errors = [];
+    Promise.all(seasonMonths(season).map((m) =>
+      fetchJsonCached(`/api/regular-season/games?season=${season}&month=${m}`)
+        .then((d) => {
+          if (d.errors?.length) errors.push(...d.errors);
+          return d.games || [];
+        })
+        .catch((e) => { errors.push(e.message || "Load failed"); return []; })))
+      .then((lists) => {
+        if (cancelled) return;
+        const games = lists.flat();
+        if (!games.length && errors.length) setError(errors[0]);
+        else setData({ months: groupByMonth(games), partial: errors.length > 0 });
+      });
+    return () => { cancelled = true; };
+  }, [season]);
+
+  if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
+  if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
+  if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
+  return (
+    <>
+      {data.months.map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season} />)}
+      {data.partial && (
+        <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
+      )}
+    </>
   );
 }
 
@@ -265,8 +360,8 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   }, [FALLBACK, linked]);
 
   useEffect(() => {
-    // Series box scores only exist for the playoffs, so they show under the
-    // Playoffs and Combined scopes; Regular Season renders just the leaderboard.
+    // The playoff series show under the Playoffs and Combined scopes; the
+    // regular season's months load on their own (RegularSeasonMonths).
     if (mode !== "season" || scope === "regular" || season === LOOK_AHEAD_SEASON) return;
     let cancelled = false;
     setData(null);
@@ -373,13 +468,20 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
           {season === LOOK_AHEAD_SEASON ? (
             <LookAhead />
           ) : scope === "regular" ? (
-            <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+            <>
+              <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+              <RegularSeasonMonths season={season} lga={lga} />
+            </>
           ) : (
             <>
-              {/* Combined keeps its leaderboard up while the series load; the
-                  bracket below it is the same one the Playoffs scope shows. */}
+              {/* Combined keeps its leaderboard up while the games load, then
+                  runs in calendar order: the regular season's months, then the
+                  same bracket the Playoffs scope shows. */}
               {scope === "combined" && (
-                <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+                <>
+                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+                  <RegularSeasonMonths season={season} lga={lga} />
+                </>
               )}
               {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
               {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
