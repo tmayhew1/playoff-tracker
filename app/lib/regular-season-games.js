@@ -107,6 +107,12 @@ export function groupByDay(games) {
   return [...days.values()].sort((x, y) => x.date.localeCompare(y.date));
 }
 
+// "2026-01-07" -> "Jan 7".
+export function shortDay(date) {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
 // "2025-10-22" -> "Wed, Oct 22".
 export function dayLabel(date) {
   const [y, m, d] = date.split("-").map(Number);
@@ -118,8 +124,9 @@ export function dayLabel(date) {
 const STAT_KEYS = ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"];
 
 // A month's box scores, in date order, -> one row per player, best Value
-// Added per game first: totals, games played, and each game's own line, VA
-// and opponent in order (the breakdown's per-game chart). Players are keyed by name, so
+// Added per game first: totals, games played, and each game's own line, VA,
+// opponent and date in order (the breakdown's per-game chart). A box carries
+// its game's Eastern `date` when the caller knows it. Players are keyed by name, so
 // one traded mid-month is a single row under his latest team.
 export function monthTotals(boxes, lga) {
   const rows = new Map();
@@ -145,11 +152,24 @@ export function monthTotals(boxes, lga) {
           snap[k] = line[k] || 0;
         }
         r.byGame.push(snap);
-        r.gameContext.push({ opp: other?.tri });
+        r.gameContext.push({ opp: other?.tri, dateLabel: box.date ? shortDay(box.date) : null });
       }
     }
   }
   return [...rows.values()]
     .map((r) => ({ ...r, vapg: r.va / r.gp, mpg: r.mp / r.gp, ppg: r.pts / r.gp, rpg: r.reb / r.gp, apg: r.ast / r.gp }))
     .sort((x, y) => y.vapg - x.vapg);
+}
+
+// The season's months, each with its box scores ({ key, boxes }), -> per
+// player, { vapg, gp } for each month in order, null where he didn't play.
+export function monthlyVA(months, lga) {
+  const out = new Map();
+  months.forEach((m, i) => {
+    for (const r of monthTotals(m.boxes, lga)) {
+      if (!out.has(r.name)) out.set(r.name, months.map(() => null));
+      out.get(r.name)[i] = { vapg: r.vapg, gp: r.gp };
+    }
+  });
+  return out;
 }

@@ -2,21 +2,55 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { VABreakdown } from "./va-breakdown";
+import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson, fetchJsonCached } from "../lib/fetch-cache";
 import { normalizeName, teamColor, withAlpha } from "../lib/format";
-import { groupByDay, monthTotals } from "../lib/regular-season-games";
+import { groupByDay, monthlyVA, monthTotals } from "../lib/regular-season-games";
 
-// How many day requests run at once while a month's box scores load.
+// How many day requests run at once while box scores load.
 const CONCURRENCY = 6;
 // /api/regular-season/lines takes up to 20 games per request.
 const PER_REQUEST = 20;
+
+// Box scores for `games`, in their order, each tagged with its game's date:
+// a day's games per /api/regular-season/lines request, CONCURRENCY at once.
+// Requests are cached by URL and split the same way whatever the caller, so
+// a month's table and the season chart share every day they both need. A
+// lost day just leaves its games out.
+async function loadBoxes(games, onProgress, isCancelled) {
+  const requests = [];
+  for (const d of groupByDay(games)) {
+    for (let i = 0; i < d.games.length; i += PER_REQUEST) {
+      requests.push(d.games.slice(i, i + PER_REQUEST).map((g) => g.gameId));
+    }
+  }
+  const byId = new Map();
+  let done = 0, next = 0;
+  onProgress({ done, total: requests.length });
+  const worker = async () => {
+    while (!isCancelled() && next < requests.length) {
+      const ids = requests[next++];
+      try {
+        const d = await fetchJsonCached(`/api/regular-season/lines?ids=${ids.join(",")}`);
+        for (const g of d.games || []) byId.set(g.gameId, g);
+      } catch {
+        // counted below as a game that didn't load
+      }
+      done += 1;
+      if (!isCancelled()) onProgress({ done, total: requests.length });
+    }
+  };
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return games.flatMap((g) => (byId.has(g.gameId) ? [{ ...byId.get(g.gameId), date: g.date }] : []));
+}
 
 // A month's league-wide leaders: every player who played in the month, best
 // Value Added per game first — the regular season's Series Averages. Box
 // scores load the first time the section is opened, a day's games per request
 // (/api/regular-season/lines), and are priced here against `lga`, so the
-// USG-ADJ switch re-ranks the table without reloading it.
-export function MonthAverages({ month, lga, season }) {
+// USG-ADJ switch re-ranks the table without reloading it. `allMonths` is the
+// whole season, for an open row's VA-by-month chart.
+export function MonthAverages({ month, allMonths, lga, season }) {
   const [open, setOpen] = useState(false);
   const [boxes, setBoxes] = useState(null);
   const [progress, setProgress] = useState(null);
@@ -27,42 +61,54 @@ export function MonthAverages({ month, lga, season }) {
   // players with at least half the month's most games; the chip clears it.
   const [minGames, setMinGames] = useState(undefined);
   const [rsLookup, setRsLookup] = useState(null);
+  // The rest of the season's box scores, by month, for the VA-by-month chart:
+  // loaded the first time a row is opened (the open month's are already in).
+  const [seasonBoxes, setSeasonBoxes] = useState(null);
+  const [seasonProgress, setSeasonProgress] = useState(null);
 
   useEffect(() => {
     if (!open || boxes) return;
     let cancelled = false;
-    const requests = [];
-    for (const d of groupByDay(month.games)) {
-      for (let i = 0; i < d.games.length; i += PER_REQUEST) {
-        requests.push(d.games.slice(i, i + PER_REQUEST).map((g) => g.gameId));
-      }
-    }
-    const byId = new Map();
-    let done = 0, next = 0;
-    setProgress({ done, total: requests.length });
     setError(null);
-    const worker = async () => {
-      while (!cancelled && next < requests.length) {
-        const ids = requests[next++];
-        try {
-          const d = await fetchJsonCached(`/api/regular-season/lines?ids=${ids.join(",")}`);
-          for (const g of d.games || []) byId.set(g.gameId, g);
-        } catch {
-          // a lost day just leaves its games out; the count below says so
-        }
-        done += 1;
-        if (!cancelled) setProgress({ done, total: requests.length });
-      }
-    };
-    Promise.all(Array.from({ length: CONCURRENCY }, worker)).then(() => {
+    loadBoxes(month.games, setProgress, () => cancelled).then((loaded) => {
       if (cancelled) return;
-      const ordered = month.games.map((g) => byId.get(g.gameId)).filter(Boolean);
-      if (!ordered.length) setError("Box scores unavailable");
-      else setBoxes(ordered);
+      if (!loaded.length) setError("Box scores unavailable");
+      else setBoxes(loaded);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    if (!expanded || seasonBoxes || !allMonths?.length) return;
+    let cancelled = false;
+    const games = allMonths.flatMap((m) => m.games);
+    loadBoxes(games, setSeasonProgress, () => cancelled).then((loaded) => {
+      if (cancelled) return;
+      const byId = new Map(loaded.map((b) => [b.gameId, b]));
+      setSeasonBoxes(allMonths.map((m) => ({
+        key: m.key,
+        label: m.label.slice(0, 3),
+        boxes: m.games.flatMap((g) => (byId.has(g.gameId) ? [byId.get(g.gameId)] : [])),
+      })));
+    });
+    return () => { cancelled = true; };
+  }, [expanded, seasonBoxes, allMonths]);
+
+  const byMonth = useMemo(() => (seasonBoxes ? monthlyVA(seasonBoxes, lga) : null), [seasonBoxes, lga]);
+  const monthChart = (name) => (color) => {
+    if (!byMonth) {
+      const note = seasonProgress ? `Loading the season… ${seasonProgress.done} of ${seasonProgress.total} days` : "Loading the season…";
+      return <MonthlyVAChart months={[]} note={note} />;
+    }
+    const series = byMonth.get(name) || seasonBoxes.map(() => null);
+    return (
+      <MonthlyVAChart
+        color={color}
+        months={seasonBoxes.map((m, i) => ({ label: m.label, vapg: series[i]?.vapg ?? null, gp: series[i]?.gp ?? 0, current: m.key === month.key }))}
+      />
+    );
+  };
 
   // Season totals for the breakdown's season-average reference marks.
   useEffect(() => {
@@ -198,6 +244,7 @@ export function MonthAverages({ month, lga, season }) {
                         byGame={p.byGame}
                         gameContext={p.gameContext}
                         breakdownTitle={`${month.label} Breakdown`}
+                        extraChart={monthChart(p.name)}
                         useTeamColor
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => setExpanded(visible[i - 1].name) : undefined}

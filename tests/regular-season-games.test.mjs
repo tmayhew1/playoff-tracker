@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  dayLabel, etDate, groupByDay, groupByMonth, monthTotals, parseScoreboard, seasonMonths,
+  dayLabel, etDate, groupByDay, groupByMonth, monthlyVA, monthTotals, parseScoreboard, seasonMonths,
 } from "../app/lib/regular-season-games.js";
 import { GET } from "../app/api/regular-season/games/route.js";
 import { GET as LINES } from "../app/api/regular-season/lines/route.js";
@@ -119,7 +119,7 @@ const line = (name, mp, pts, extra = {}) => ({
 test("month totals: one row per player, best VA per game first", () => {
   const lga = lgaForSeason("2025-26");
   const boxes = [
-    { gameId: "1", away: { tri: "BOS", players: [line("Star", 36, 40), line("DNP", 0, 0)] }, home: { tri: "NYK", players: [line("Mover", 20, 8)] } },
+    { gameId: "1", date: "2026-01-07", away: { tri: "BOS", players: [line("Star", 36, 40), line("DNP", 0, 0)] }, home: { tri: "NYK", players: [line("Mover", 20, 8)] } },
     { gameId: "2", away: { tri: "BOS", players: [line("Star", 34, 30)] }, home: { tri: "LAL", players: [line("Mover", 24, 12), line("Cameo", 30, 30)] } },
   ];
   const rows = monthTotals(boxes, lga);
@@ -132,10 +132,26 @@ test("month totals: one row per player, best VA per game first", () => {
   assert.ok(Math.abs(star.va - expect) < 1e-9);
   assert.equal(star.games.length, 2);
   assert.equal(star.byGame[1].pts, 30);
-  assert.deepEqual(star.gameContext, [{ opp: "NYK" }, { opp: "LAL" }]);
+  assert.deepEqual(star.gameContext, [{ opp: "NYK", dateLabel: "Jan 7" }, { opp: "LAL", dateLabel: null }]);
   const mover = rows.find((r) => r.name === "Mover");
   assert.equal(mover.team, "LAL", "a traded player sits under his latest team");
   assert.equal(mover.gp, 2);
+});
+
+test("monthly VA: each player's VA per game month by month", () => {
+  const lga = lgaForSeason("2025-26");
+  const box = (tri, ...players) => ({ away: { tri, players }, home: { tri: "XXX", players: [] } });
+  const by = monthlyVA([
+    { key: "2025-11", boxes: [box("BOS", line("Star", 36, 40)), box("BOS", line("Star", 34, 30))] },
+    { key: "2025-12", boxes: [box("BOS", line("Bench", 12, 4))] },
+    { key: "2026-01", boxes: [box("BOS", line("Star", 30, 20))] },
+  ], lga);
+  const star = by.get("Star");
+  assert.equal(star.length, 3);
+  assert.equal(star[0].gp, 2);
+  assert.equal(star[1], null, "a month he sat out");
+  assert.ok(Math.abs(star[2].vapg - valueAddParts(line("Star", 30, 20), lga).va) < 1e-9);
+  assert.deepEqual(by.get("Bench").map((m) => m && m.gp), [null, 1, null]);
 });
 
 // ESPN's game summary, trimmed to what the box parse reads.

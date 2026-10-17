@@ -17,7 +17,7 @@ import { CategoryContext } from "./category-context";
 import { AwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, extraChart = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -124,6 +124,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
     p = pSeries;
   }
   const effectiveGameNumber = selectedGame || gameNumber;
+  // A game that knows its date (a regular-season month's games) is named by
+  // it — "Jan 7" — rather than by its place in the run.
+  const selectedDate = selectedGame ? gameContext?.[selectedGame - 1]?.dateLabel : null;
 
   const mp = p.mp || 0;
   if (mp <= 0) return null;
@@ -370,7 +373,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
               const ctx = gameContext?.[selectedGame - 1];
               const num = ctx?.seriesGameNumber || selectedGame;
               const opp = ctx?.opp;
-              return <span className="italic">{`Game ${num}${opp ? ` vs ${opp}` : ""}`}</span>;
+              return <span className="italic">{`${ctx?.dateLabel || `Game ${num}`}${opp ? ` vs ${opp}` : ""}`}</span>;
             }
             if (canDrillToSeries && selectedSeriesIdx != null) {
               const ctx = gameContext.find((g) => g?.seriesIdx === selectedSeriesIdx);
@@ -427,8 +430,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             )}
             <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{effectiveGameNumber ? gameTileLabel : "Games"}</div>
-                <div className="tabular-nums text-base font-semibold text-stone-700">{effectiveGameNumber || p.gp || 1}</div>
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{selectedDate ? "Date" : effectiveGameNumber ? gameTileLabel : "Games"}</div>
+                <div className="tabular-nums text-base font-semibold text-stone-700">{selectedDate || effectiveGameNumber || p.gp || 1}</div>
                 {compare && atSeasonLevel && (
                   <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{cmpRow.gp || 0}</div>
                 )}
@@ -452,7 +455,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             </div>
           </div>
           {rate && gameSeries && gameSeries.length > 0 && (
-            <div className="sm:order-1 sm:flex-1 flex items-stretch gap-1">
+            <div className="sm:order-1 sm:flex-1">
+            <div className="flex items-stretch gap-1">
               {showNav && inGameNav && (
                 <button
                   type="button"
@@ -491,6 +495,11 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                   ›
                 </button>
               )}
+            </div>
+            {/* A chart the caller draws under the per-game one, in the same
+                accent and clear of its game arrows (Month Averages: VA /
+                game by month). */}
+            {typeof extraChart === "function" ? extraChart(accentColor) : extraChart}
             </div>
           )}
         </div>
