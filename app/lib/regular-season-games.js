@@ -3,6 +3,8 @@
 // Shared by /api/regular-season/games (which parses and groups by month) and
 // the Explore month sections (which split a month into its days).
 
+import { valueAddParts } from "../scoring";
+
 // ESPN NBA abbreviations -> the tricodes the rest of the app uses.
 const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (abbr) => ESPN_TO_NBA[abbr] || abbr;
@@ -111,4 +113,43 @@ export function dayLabel(date) {
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
     weekday: "short", month: "short", day: "numeric", timeZone: "UTC",
   });
+}
+
+const STAT_KEYS = ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"];
+
+// A month's box scores, in date order, -> one row per player, best Value
+// Added per game first: totals, games played, and each game's own line, VA
+// and opponent in order (the breakdown's per-game chart). Players are keyed by name, so
+// one traded mid-month is a single row under his latest team.
+export function monthTotals(boxes, lga) {
+  const rows = new Map();
+  for (const box of boxes) {
+    for (const [side, other] of [[box.away, box.home], [box.home, box.away]]) {
+      for (const line of side?.players || []) {
+        if (!(line.mp > 0)) continue;
+        const { va, efficiency } = valueAddParts(line, lga);
+        let r = rows.get(line.name);
+        if (!r) {
+          r = { name: line.name, gp: 0, va: 0, eff: 0, games: [], byGame: [], gameContext: [] };
+          for (const k of STAT_KEYS) r[k] = 0;
+          rows.set(line.name, r);
+        }
+        r.team = side.tri;
+        r.gp += 1;
+        r.va += va;
+        r.eff += efficiency;
+        r.games.push(va);
+        const snap = { team: side.tri, name: line.name, gp: 1, va, eff: efficiency };
+        for (const k of STAT_KEYS) {
+          r[k] += line[k] || 0;
+          snap[k] = line[k] || 0;
+        }
+        r.byGame.push(snap);
+        r.gameContext.push({ opp: other?.tri });
+      }
+    }
+  }
+  return [...rows.values()]
+    .map((r) => ({ ...r, vapg: r.va / r.gp, mpg: r.mp / r.gp, ppg: r.pts / r.gp, rpg: r.reb / r.gp, apg: r.ast / r.gp }))
+    .sort((x, y) => y.vapg - x.vapg);
 }

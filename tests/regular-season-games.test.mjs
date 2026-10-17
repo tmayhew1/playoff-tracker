@@ -6,9 +6,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  dayLabel, etDate, groupByDay, groupByMonth, parseScoreboard, seasonMonths,
+  dayLabel, etDate, groupByDay, groupByMonth, monthTotals, parseScoreboard, seasonMonths,
 } from "../app/lib/regular-season-games.js";
 import { GET } from "../app/api/regular-season/games/route.js";
+import { GET as LINES } from "../app/api/regular-season/lines/route.js";
+import { lgaForSeason, valueAddParts } from "../app/scoring.js";
 
 // One ESPN scoreboard event, trimmed to the fields the parse reads.
 const ev = (id, date, home, hs, away, as, { type = 2, note = null, completed = true } = {}) => ({
@@ -106,4 +108,66 @@ test("/api/regular-season/games: a lost day is reported, losing all is an error"
   assert.equal((await route("?season=2025-26&month=202512")).status, 500);
   assert.equal((await route("?season=nope&month=202512")).status, 400);
   assert.equal((await route("?season=2025-26&month=202507")).status, 400, "outside the season");
+});
+
+// A stat line in the app's shape.
+const line = (name, mp, pts, extra = {}) => ({
+  name, mp, pts, reb: 0, drb: 0, orb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+  fgm: Math.round(pts / 2), fga: pts, tpm: 0, tpa: 0, ftm: 0, fta: 0, ...extra,
+});
+
+test("month totals: one row per player, best VA per game first", () => {
+  const lga = lgaForSeason("2025-26");
+  const boxes = [
+    { gameId: "1", away: { tri: "BOS", players: [line("Star", 36, 40), line("DNP", 0, 0)] }, home: { tri: "NYK", players: [line("Mover", 20, 8)] } },
+    { gameId: "2", away: { tri: "BOS", players: [line("Star", 34, 30)] }, home: { tri: "LAL", players: [line("Mover", 24, 12), line("Cameo", 30, 30)] } },
+  ];
+  const rows = monthTotals(boxes, lga);
+  assert.deepEqual(rows.map((r) => r.name).sort(), ["Cameo", "Mover", "Star"], "a DNP is left out");
+  for (let i = 1; i < rows.length; i++) assert.ok(rows[i - 1].vapg >= rows[i].vapg, "sorted by VA per game");
+  const star = rows.find((r) => r.name === "Star");
+  assert.equal(star.gp, 2);
+  assert.equal(star.pts, 70);
+  const expect = valueAddParts(line("Star", 36, 40), lga).va + valueAddParts(line("Star", 34, 30), lga).va;
+  assert.ok(Math.abs(star.va - expect) < 1e-9);
+  assert.equal(star.games.length, 2);
+  assert.equal(star.byGame[1].pts, 30);
+  assert.deepEqual(star.gameContext, [{ opp: "NYK" }, { opp: "LAL" }]);
+  const mover = rows.find((r) => r.name === "Mover");
+  assert.equal(mover.team, "LAL", "a traded player sits under his latest team");
+  assert.equal(mover.gp, 2);
+});
+
+// ESPN's game summary, trimmed to what the box parse reads.
+const summary = (away, home) => ({
+  boxscore: {
+    players: [away, home].map(([abbr, name, pts]) => ({
+      team: { abbreviation: abbr },
+      statistics: [{
+        names: ["MIN", "FG", "3PT", "FT", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TO", "PF", "+/-", "PTS"],
+        athletes: [{ athlete: { displayName: name }, starter: true, stats: ["30", "8-15", "2-5", "4-4", "1", "5", "6", "3", "1", "0", "2", "2", "+4", String(pts)] }],
+      }],
+    })),
+  },
+});
+
+test("/api/regular-season/lines answers several games at once", async (t) => {
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (url.includes("event=401000001")) return new Response(JSON.stringify(summary(["NY", "Brunson", 22], ["SA", "Wemby", 30])), { status: 200 });
+    return new Response("", { status: 404 });
+  });
+  const res = await LINES(new Request("http://x/api/regular-season/lines?ids=401000001,401000002"));
+  const d = await res.json();
+  assert.equal(d.games.length, 1);
+  const g = d.games[0];
+  assert.deepEqual([g.gameId, g.away.tri, g.home.tri], ["401000001", "NYK", "SAS"]);
+  assert.deepEqual([g.home.players[0].name, g.home.players[0].pts, g.home.players[0].mp], ["Wemby", 30, 30]);
+  assert.equal(d.errors.length, 1);
+  assert.match(res.headers.get("Cache-Control"), /s-maxage=3600/);
+
+  const lines = (q) => LINES(new Request(`http://x/api/regular-season/lines${q}`));
+  assert.equal((await lines("?ids=401000002")).status, 500);
+  assert.equal((await lines("?ids=abc")).status, 400);
+  assert.equal((await lines("")).status, 400);
+  assert.equal((await lines(`?ids=${Array.from({ length: 21 }, (_, i) => 401000000 + i).join(",")}`)).status, 400);
 });

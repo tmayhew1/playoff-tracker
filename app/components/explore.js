@@ -12,6 +12,7 @@ import { dayLabel, groupByDay, groupByMonth, seasonMonths } from "../lib/regular
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
+import { MonthAverages } from "./month-averages";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -116,9 +117,10 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 
 
 // The regular season's counterpart to the rounds: one collapsible section per
-// month, and inside it a card per day holding that day's games. Same header,
-// same card, same game banner as a round, a series and its games.
-export function ExploreMonthSection({ month, lga }) {
+// month, its league-wide averages first, then a card per day holding that
+// day's games. Same header, same card, same game banner as a round, a series
+// and its games.
+export function ExploreMonthSection({ month, lga, season }) {
   const [open, setOpen] = useState(false);
   const days = useMemo(() => (open ? groupByDay(month.games) : []), [open, month]);
   return (
@@ -133,6 +135,7 @@ export function ExploreMonthSection({ month, lga }) {
         </h3>
         <span className="text-[10px] uppercase tracking-wider text-stone-400">{month.games.length} games</span>
       </button>
+      {open && <MonthAverages month={month} lga={lga} season={season} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">
@@ -197,7 +200,7 @@ export function RegularSeasonMonths({ season, lga }) {
   if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
   return (
     <>
-      {data.months.map((m) => <ExploreMonthSection key={m.key} month={m} lga={lga} />)}
+      {data.months.map((m) => <ExploreMonthSection key={m.key} month={m} lga={lga} season={season} />)}
       {data.partial && (
         <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
