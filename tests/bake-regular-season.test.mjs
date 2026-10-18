@@ -240,3 +240,19 @@ test("a season baked by an older version is rebaked from scratch", async () => {
   assert.deepEqual(fs.readdirSync(dir).sort(), ["2026-01.json", "index.json"], "the stale month is gone");
   assert.equal(unpackMonth(read(out, "2025-26", "2026-01.json")).size, 1, "not appended twice");
 });
+
+test("a finished season reads past a stale unsettled day, and records what it skipped", async () => {
+  const out = tmp();
+  const days = {
+    20071005: [ev("800", "2007-10-05T23:00Z", "NY", 0, "BOS", 0, { type: 1, completed: false, state: "pre" })], // never updated
+    20071106: [ev("801", "2007-11-06T00:30Z", "NJ", 99, "BOS", 90), ev("802", "2007-11-06T03:00Z", "LAL", 101, "UTAH", 99, { completed: false, state: "pre" })],
+    20080420: [ev("803", "2008-04-20T17:00Z", "BOS", 104, "ATL", 81, { type: 3 })],
+  };
+  const log = await bakeSeason("2007-08", { ...espn(days), outDir: out, today: "2026-10-17" });
+  assert.match(log, /\+1 games.*complete/);
+  const index = read(out, "2007-08", "index.json");
+  assert.deepEqual(index.games.map((g) => g.gameId), ["801"]);
+  assert.deepEqual(index.skipped.map((g) => [g.gameId, g.why, g.home, g.away]), [["802", "not final", "LAL 101", "UTA 99"]], "preseason and playoffs aren't listed");
+
+  await assert.rejects(bakeSeason("2008-09", { ...espn({}), outDir: out, today: "2026-10-17" }), /no regular-season games/);
+});

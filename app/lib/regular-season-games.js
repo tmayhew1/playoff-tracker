@@ -49,31 +49,39 @@ export const etDate = (iso) => ET_DAY.format(new Date(iso));
 // seasontype on a date-range query, so preseason, play-in and playoff games
 // come back too and are filtered here by the event's own season type, with
 // the note as the fallback signal on the older events that omit it.
-export function parseScoreboard(events) {
+export function parseScoreboard(events, { onSkip = null } = {}) {
   const out = [];
   for (const ev of events || []) {
     const comp = ev.competitions?.[0];
-    if (!comp || !(comp.status?.type?.completed ?? ev.status?.type?.completed)) continue;
-    const note = (comp.notes?.[0]?.headline || comp.notes?.[0]?.type || "").toString();
-    const type = ev.season?.type ?? comp.season?.type;
-    if (type != null ? type !== 2 : !!note) continue;
-    // The NBA Cup final is the one Cup game that doesn't count toward the
-    // regular season; its earlier knockout rounds do.
-    // (It was the In-Season Tournament in its first year, 2023-24.)
-    if (/cup|in-season tournament/i.test(note) && /championship|\bfinal\b/i.test(note)) continue;
+    if (!comp) continue;
     const cs = comp.competitors || [];
     const h = cs.find((c) => c.homeAway === "home");
     const a = cs.find((c) => c.homeAway === "away");
     const home = toNba(h?.team?.abbreviation);
     const away = toNba(a?.team?.abbreviation);
+    // All-Star and exhibition sides aren't NBA games at all; not reported.
     if (!NBA_TEAMS.has(home) || !NBA_TEAMS.has(away)) continue;
+    const note = (comp.notes?.[0]?.headline || comp.notes?.[0]?.type || "").toString();
+    const type = ev.season?.type ?? comp.season?.type;
     const hScore = Number(h.score), aScore = Number(a.score);
-    if (!Number.isFinite(hScore) || !Number.isFinite(aScore)) continue;
+    const iso = ev.date || comp.date;
+    // `onSkip(game, why)` hears about every NBA-vs-NBA event left out, so a
+    // bake can record what it dropped and why.
+    const skip = (why) => onSkip?.({
+      gameId: String(ev.id), date: iso ? etDate(iso) : null, home: `${home} ${h?.score ?? ""}`.trim(), away: `${away} ${a?.score ?? ""}`.trim(),
+      type: type ?? null, note: note || null, state: comp.status?.type?.state ?? ev.status?.type?.state ?? null,
+    }, why);
+    if (type != null ? type !== 2 : !!note) { skip(type != null ? `season type ${type}` : "note on a typeless event"); continue; }
+    if (!(comp.status?.type?.completed ?? ev.status?.type?.completed)) { skip("not final"); continue; }
+    // The NBA Cup final is the one Cup game that doesn't count toward the
+    // regular season; its earlier knockout rounds do.
+    // (It was the In-Season Tournament in its first year, 2023-24.)
+    if (/cup|in-season tournament/i.test(note) && /championship|\bfinal\b/i.test(note)) { skip("Cup final"); continue; }
+    if (!Number.isFinite(hScore) || !Number.isFinite(aScore)) { skip("no score"); continue; }
     // ESPN carries phantom copies of some early-2000s games, marked final at
     // 0-0 beside the real one. No real game ends 0-0.
-    if (hScore === 0 && aScore === 0) continue;
-    const iso = ev.date || comp.date;
-    if (!iso) continue;
+    if (hScore === 0 && aScore === 0) { skip("0-0"); continue; }
+    if (!iso) { skip("no date"); continue; }
     out.push({
       gameId: String(ev.id),
       gameDateTimeUTC: iso,

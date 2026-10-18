@@ -38,8 +38,10 @@ const CONCURRENCY = 8;
 // Raised whenever a change to what gets kept means seasons baked earlier are
 // wrong; a season baked by an older version is rebaked whole. 2: the Nets
 // ("NJ" on ESPN) kept, phantom 0-0 finals and repeated games dropped, the
-// In-Season Tournament final left out.
-export const BAKE_VERSION = 2;
+// In-Season Tournament final left out. 3: a finished season reads every day
+// (an old event's stale status no longer ends it early), and the index lists
+// what was skipped and why.
+export const BAKE_VERSION = 3;
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -179,6 +181,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   let through = prev?.through || null;
   let complete = false;
   let newGames = [];
+  const skipped = [];
 
   if (retryOnly) {
     const ids = new Set(prev.noBox);
@@ -200,9 +203,15 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
         if (finished) throw new Error(`${season}: scoreboard ${b.d} failed — ${b.error}`);
         break;
       }
-      if (!daySettled(b.events)) break;
+      // An unsettled day only ends the season in progress: in a finished
+      // season it is an old event whose status ESPN never updated.
+      if (!finished && !daySettled(b.events)) break;
       through = b.d;
-      newGames.push(...parseScoreboard(b.events));
+      newGames.push(...parseScoreboard(b.events, {
+        // Postseason events (type 3) are expected on these days; the rest
+        // are worth a look if a season comes up short.
+        onSkip: (g, why) => { if (why !== "season type 3" && why !== "season type 1") skipped.push({ ...g, why }); },
+      }));
     }
     const seen = new Set(games.map((g) => g.gameId));
     newGames = newGames.filter((g) => !seen.has(g.gameId) && seen.add(g.gameId));
@@ -276,6 +285,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
     writeJson(path.join(dir, `${key}.json`), { season, month: key, names: m.names, games: m.games });
   }
   games.sort((x, y) => x.gameDateTimeUTC.localeCompare(y.gameDateTimeUTC) || x.gameId.localeCompare(y.gameId));
+  if (!games.length && finished) throw new Error(`${season}: ESPN listed no regular-season games`);
   if (!games.length && !complete) return `${season}: no games yet`;
   writeJson(indexFile, {
     season,
@@ -284,6 +294,8 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
     complete,
     games,
     noBox: [...noBox].sort(),
+    // NBA-vs-NBA events left out, other than preseason and postseason ones.
+    skipped: retryOnly ? prev.skipped || [] : [...(prev?.skipped || []), ...skipped],
     source: "espn",
     fetchedAt: new Date().toISOString(),
   });
@@ -308,6 +320,7 @@ async function main() {
     try {
       const line = await bakeSeason(s, { force, today });
       console.log(line);
+      if (process.env.GITHUB_ACTIONS && /\+\d+ games/.test(line)) console.log(`::notice title=${s}::${line}`);
       if (!/already baked|not started|, 0 found$/.test(line)) worked += 1;
     } catch (e) {
       failed += 1;
