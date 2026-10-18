@@ -44,7 +44,7 @@ const summary = (away, home) => ({
 
 // A fake ESPN: `days` maps YYYYMMDD -> events; every event has a box score
 // except the ids in `noBox`. Records every URL asked.
-function espn(days, { noBox = [], failDays = [] } = {}) {
+function espn(days, { noBox = [], failDays = [], noMinutes = [], coreToo = true } = {}) {
   const asked = [];
   const getJson = async (url) => {
     asked.push(url);
@@ -57,7 +57,18 @@ function espn(days, { noBox = [], failDays = [] } = {}) {
     if (noBox.includes(id)) throw new Error("HTTP 404");
     const e = Object.values(days).flat().find((x) => x.id === id);
     const [h, a] = e.competitions[0].competitors;
-    return summary(a.team.abbreviation, h.team.abbreviation);
+    const box = summary(a.team.abbreviation, h.team.abbreviation);
+    // The summary for a `noMinutes` game blanks every MIN; the CDN core, when
+    // `coreToo`, has the real box (as ESPN's gamepackageJSON).
+    if (noMinutes.includes(id)) {
+      if (url.includes("summary")) {
+        for (const t of box.boxscore.players) for (const at of t.statistics[0].athletes) if (at.stats.length) at.stats[0] = "";
+        return box;
+      }
+      if (!coreToo) throw new Error("HTTP 404");
+      return { gamepackageJSON: box };
+    }
+    return box;
   };
   return { getJson, asked };
 }
@@ -255,4 +266,21 @@ test("a finished season reads past a stale unsettled day, and records what it sk
   assert.deepEqual(index.skipped.map((g) => [g.gameId, g.why, g.home, g.away]), [["802", "not final", "LAL 101", "UTA 99"]], "preseason and playoffs aren't listed");
 
   await assert.rejects(bakeSeason("2008-09", { ...espn({}), outDir: out, today: "2026-10-17" }), /no regular-season games/);
+});
+
+test("a box score with no minutes falls back to the CDN core, and is listed if it still has none", async () => {
+  const out = tmp();
+  const days = { 20140110: [ev("901", "2014-01-11T00:00Z", "MIA", 102, "CHI", 99), ev("902", "2014-01-11T01:00Z", "NO", 99, "ORL", 90)] };
+  const fixed = espn(days, { noMinutes: ["901"] });
+  await bakeSeason("2013-14", { getJson: fixed.getJson, outDir: out, today: "2026-10-17" });
+  assert.ok(fixed.asked.some((u) => u.includes("cdn.espn.com") && u.includes("901")));
+  const g = unpackMonth(read(out, "2013-14", "2014-01.json")).get("901");
+  assert.equal(g.home.players[0].mp, 36, "minutes from the core");
+  assert.deepEqual(read(out, "2013-14", "index.json").noMinutes, []);
+
+  const out2 = tmp();
+  await bakeSeason("2013-14", { ...espn(days, { noMinutes: ["901"], coreToo: false }), outDir: out2, today: "2026-10-17" });
+  const index = read(out2, "2013-14", "index.json");
+  assert.deepEqual(index.noMinutes.map((x) => x.gameId), ["901"]);
+  assert.match(index.noMinutes[0].labels, /^MIN,FG,3PT/);
 });

@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 import {
   BAKED_DIR, packLine, parseScoreboard, seasonMonths,
 } from "../app/lib/regular-season-games.js";
-import { espnBoxUrls, parseEspnPayload } from "../app/api/_lib/espn-box.js";
+import { boxHasMinutes, espnBoxUrls, parseEspnPayload } from "../app/api/_lib/espn-box.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = process.env.RS_GAMES_OUT || path.join(ROOT, "public", BAKED_DIR);
@@ -40,8 +40,9 @@ const CONCURRENCY = 8;
 // ("NJ" on ESPN) kept, phantom 0-0 finals and repeated games dropped, the
 // In-Season Tournament final left out. 3: a finished season reads every day
 // (an old event's stale status no longer ends it early), and the index lists
-// what was skipped and why.
-export const BAKE_VERSION = 3;
+// what was skipped and why. 4: a box score with no minutes falls back to the
+// CDN core, and any still without them are listed.
+export const BAKE_VERSION = 4;
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -129,17 +130,20 @@ const daySettled = (events) => (events || []).every((ev) => {
   return st.completed || st.state === "post";
 });
 
-// One game's box score from ESPN's summary, falling back to the CDN core.
+// One game's box score from ESPN's summary, falling back to the CDN core
+// when the summary has none, or has one with no minutes in it.
 async function fetchBox(gameId, getJson) {
+  let best = null;
   for (const url of espnBoxUrls(gameId)) {
     try {
       const parsed = parseEspnPayload(await getJson(url));
-      if (parsed) return parsed;
+      if (boxHasMinutes(parsed)) return parsed;
+      best = best || parsed;
     } catch {
       // try the next source
     }
   }
-  return null;
+  return best;
 }
 
 // The month files a season's games go in, read back so a top-up appends.
@@ -182,6 +186,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   let complete = false;
   let newGames = [];
   const skipped = [];
+  const noMinutes = [];
 
   if (retryOnly) {
     const ids = new Set(prev.noBox);
@@ -259,6 +264,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   newGames.forEach((g, i) => {
     const parsed = boxes[i];
     if (!parsed) { noBox.add(g.gameId); return; }
+    if (!boxHasMinutes(parsed)) noMinutes.push({ gameId: g.gameId, date: g.date, labels: parsed.labels });
     const key = monthKey(g);
     const ni = nameIndex(key);
     // ESPN lists the away side first; trust the tricodes over the order.
@@ -296,6 +302,8 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
     noBox: [...noBox].sort(),
     // NBA-vs-NBA events left out, other than preseason and postseason ones.
     skipped: retryOnly ? prev.skipped || [] : [...(prev?.skipped || []), ...skipped],
+    // Games whose box score, from either source, has a side with no minutes.
+    noMinutes: retryOnly ? prev.noMinutes || [] : [...(prev?.noMinutes || []), ...noMinutes],
     source: "espn",
     fetchedAt: new Date().toISOString(),
   });
