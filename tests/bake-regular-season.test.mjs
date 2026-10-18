@@ -353,8 +353,8 @@ test("names fold the same across ESPN and basketball-reference", () => {
   assert.equal(espnSpelling("J.R. Smith", "NYK", spelled, team), "JR Smith");
   assert.equal(espnSpelling("Jamal Smith", "NOP", spelled, team), "Jamal Smith", "two Smiths with the same initial: left alone");
   assert.equal(espnSpelling("Nobody Here", "CHA", spelled, team), "Nobody Here");
-  assert.deepEqual(["BKN", "PHX", "CHA", "CHA", "NOP", "NOP", "BOS"].map((t, i) => brTri(t, ["2014-15", "2014-15", "2013-14", "2014-15", "2012-13", "2013-14", "2014-15"][i])),
-    ["BRK", "PHO", "CHA", "CHO", "NOH", "NOP", "BOS"]);
+  assert.deepEqual(["BKN", "PHX", "CHA", "CHA", "CHA", "NOP", "NOP", "BOS"].map((t, i) => brTri(t, ["2014-15", "2014-15", "1999-00", "2013-14", "2014-15", "2012-13", "2013-14", "2014-15"][i])),
+    ["BRK", "PHO", "CHH", "CHA", "CHO", "NOH", "NOP", "BOS"]);
 });
 
 // A basketball-reference schedule page, trimmed: rows of

@@ -160,7 +160,9 @@ export function brTri(tri, season) {
   const y = Number(season.slice(0, 4));
   if (tri === "BKN") return "BRK";
   if (tri === "PHX") return "PHO";
-  if (tri === "CHA") return y >= 2014 ? "CHO" : "CHA";
+  // Charlotte: the Hornets (CHH) to 2001-02, the Bobcats (CHA), the Hornets
+  // again (CHO) from 2014-15.
+  if (tri === "CHA") return y >= 2014 ? "CHO" : y <= 2001 ? "CHH" : "CHA";
   if (tri === "NOP") return y >= 2013 ? "NOP" : y === 2005 || y === 2006 ? "NOK" : "NOH";
   return tri;
 }
