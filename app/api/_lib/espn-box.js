@@ -69,7 +69,10 @@ export function parseBox(data) {
   if (!a.players.length && !b.players.length) return null;
   // The stat labels ESPN sent, kept for diagnosing a box that parses wrong.
   const labels = (teamsBox[0]?.statistics?.[0]?.names || []).join(",");
-  return { a, b, labels };
+  // The first player's raw stats, likewise.
+  const first = teamsBox[0]?.statistics?.[0]?.athletes?.[0];
+  const sample = first ? JSON.stringify({ stats: first.stats, didNotPlay: first.didNotPlay, active: first.active }).slice(0, 300) : null;
+  return { a, b, labels, sample };
 }
 
 // The two places ESPN keeps a box score: the site API summary first, the

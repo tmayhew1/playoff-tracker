@@ -177,9 +177,11 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
 
   if (!finished && days[0] > yesterday) return `${season}: not started`;
 
-  // A finished season already baked: only the games ESPN had no box for.
+  // A finished season already baked: only the games ESPN had no box for, or
+  // a box with no minutes.
   const retryOnly = prev?.complete;
-  if (retryOnly && !(prev.noBox || []).length) return `${season}: already baked (${prev.games.length} games)`;
+  const retryIds = new Set([...(prev?.noBox || []), ...(prev?.noMinutes || []).map((x) => x.gameId)]);
+  if (retryOnly && !retryIds.size) return `${season}: already baked (${prev.games.length} games)`;
 
   let games = prev?.games ? [...prev.games] : [];
   let through = prev?.through || null;
@@ -189,8 +191,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   const noMinutes = [];
 
   if (retryOnly) {
-    const ids = new Set(prev.noBox);
-    newGames = games.filter((g) => ids.has(g.gameId));
+    newGames = games.filter((g) => retryIds.has(g.gameId));
     complete = true;
   } else {
     const want = days.filter((d) => (!through || d > through) && d <= yesterday);
@@ -264,7 +265,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   newGames.forEach((g, i) => {
     const parsed = boxes[i];
     if (!parsed) { noBox.add(g.gameId); return; }
-    if (!boxHasMinutes(parsed)) noMinutes.push({ gameId: g.gameId, date: g.date, labels: parsed.labels });
+    if (!boxHasMinutes(parsed)) noMinutes.push({ gameId: g.gameId, date: g.date, labels: parsed.labels, sample: parsed.sample });
     const key = monthKey(g);
     const ni = nameIndex(key);
     // ESPN lists the away side first; trust the tricodes over the order.
@@ -277,23 +278,15 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
     months.get(key).games[g.gameId] = { home: side(home, g.home), away: side(away, g.away) };
   });
 
-  // A retry that found nothing changes nothing: leave the files (and their
-  // timestamps) alone, so a daily run doesn't commit — and redeploy — for it.
-  if (retryOnly && newGames.every((g) => noBox.has(g.gameId))) {
-    return `${season}: retried ${newGames.length} missing box scores, 0 found`;
-  }
-
   // Months first, the index last: the index is what the page trusts.
   if (!prev && fs.existsSync(dir)) {
     for (const f of fs.readdirSync(dir)) if (/^\d{4}-\d{2}\.json$/.test(f) && !months.has(f.slice(0, 7))) fs.rmSync(path.join(dir, f));
   }
-  for (const [key, m] of months) {
-    writeJson(path.join(dir, `${key}.json`), { season, month: key, names: m.names, games: m.games });
-  }
   games.sort((x, y) => x.gameDateTimeUTC.localeCompare(y.gameDateTimeUTC) || x.gameId.localeCompare(y.gameId));
   if (!games.length && finished) throw new Error(`${season}: ESPN listed no regular-season games`);
   if (!games.length && !complete) return `${season}: no games yet`;
-  writeJson(indexFile, {
+  const retried = new Set(newGames.map((g) => g.gameId));
+  const index = {
     season,
     version: BAKE_VERSION,
     through,
@@ -303,13 +296,23 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
     // NBA-vs-NBA events left out, other than preseason and postseason ones.
     skipped: retryOnly ? prev.skipped || [] : [...(prev?.skipped || []), ...skipped],
     // Games whose box score, from either source, has a side with no minutes.
-    noMinutes: retryOnly ? prev.noMinutes || [] : [...(prev?.noMinutes || []), ...noMinutes],
+    noMinutes: [...(prev?.noMinutes || []).filter((x) => !retried.has(x.gameId)), ...noMinutes],
     source: "espn",
-    fetchedAt: new Date().toISOString(),
-  });
+  };
   const boxed = newGames.length - newGames.filter((g) => noBox.has(g.gameId)).length;
+  const fixed = newGames.filter((g) => !noBox.has(g.gameId) && !noMinutes.some((x) => x.gameId === g.gameId)).length;
+  // A retry that changed nothing leaves the files (and their timestamps)
+  // alone, so a daily run doesn't commit — and redeploy — for it.
+  const { fetchedAt: _, ...prevIndex } = prev || {};
+  if (retryOnly && JSON.stringify(index) === JSON.stringify(prevIndex)) {
+    return `${season}: retried ${newGames.length} box scores, 0 fixed`;
+  }
+  for (const [key, m] of months) {
+    writeJson(path.join(dir, `${key}.json`), { season, month: key, names: m.names, games: m.games });
+  }
+  writeJson(indexFile, { ...index, fetchedAt: new Date().toISOString() });
   return retryOnly
-    ? `${season}: retried ${newGames.length} missing box scores, ${boxed} found`
+    ? `${season}: retried ${newGames.length} box scores, ${fixed} fixed`
     : `${season}: +${newGames.length} games (${boxed} with box scores) through ${through}${complete ? ", complete" : ""}; ${games.length} total, ${noBox.size} without a box score`;
 }
 
@@ -329,7 +332,7 @@ async function main() {
       const line = await bakeSeason(s, { force, today });
       console.log(line);
       if (process.env.GITHUB_ACTIONS && /\+\d+ games/.test(line)) console.log(`::notice title=${s}::${line}`);
-      if (!/already baked|not started|, 0 found$/.test(line)) worked += 1;
+      if (!/already baked|not started|, 0 fixed$/.test(line)) worked += 1;
     } catch (e) {
       failed += 1;
       worked += 1;

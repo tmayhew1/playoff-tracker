@@ -131,11 +131,11 @@ test("a baked season is left alone, except to retry its missing box scores", asy
   assert.deepEqual(read(out, "2025-26", "index.json").noBox, ["502"]);
 
   const index = fs.readFileSync(path.join(out, "2025-26", "index.json"), "utf8");
-  assert.match(await bakeSeason("2025-26", { ...espn(days, { noBox: ["502"] }), outDir: out, today: "2026-10-17" }), /retried 1 missing box scores, 0 found/);
+  assert.match(await bakeSeason("2025-26", { ...espn(days, { noBox: ["502"] }), outDir: out, today: "2026-10-17" }), /retried 1 box scores, 0 fixed/);
   assert.equal(fs.readFileSync(path.join(out, "2025-26", "index.json"), "utf8"), index, "a fruitless retry writes nothing");
 
   const retry = espn(days);
-  assert.match(await bakeSeason("2025-26", { getJson: retry.getJson, outDir: out, today: "2026-10-17" }), /retried 1 missing box scores, 1 found/);
+  assert.match(await bakeSeason("2025-26", { getJson: retry.getJson, outDir: out, today: "2026-10-17" }), /retried 1 box scores, 1 fixed/);
   assert.ok(!retry.asked.some((u) => u.includes("scoreboard")), "no scoreboard re-read");
   assert.ok(retry.asked.every((u) => u.includes("502")));
   assert.deepEqual(read(out, "2025-26", "index.json").noBox, []);
