@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { allSeasons, BAKE_VERSION, bakeSeason, brTri, espnSpelling, normName, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
+import { allSeasons, BAKE_VERSION, bakeSeason, brTri, espnSpelling, etInstant, normName, parseBrSchedule, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
 import { bakedThrough, unpackMonth } from "../app/lib/regular-season-games.js";
 
 const ev = (id, date, home, hs, away, as, { type = 2, completed = true, state } = {}) => ({
@@ -44,7 +44,7 @@ const summary = (away, home) => ({
 
 // A fake ESPN: `days` maps YYYYMMDD -> events; every event has a box score
 // except the ids in `noBox`. Records every URL asked.
-function espn(days, { noBox = [], failDays = [], noMinutes = [], coreToo = true } = {}) {
+function espn(days, { noBox = [], failDays = [], noMinutes = [], coreToo = true, brPages = {} } = {}) {
   const asked = [];
   const getJson = async (url) => {
     asked.push(url);
@@ -70,7 +70,15 @@ function espn(days, { noBox = [], failDays = [], noMinutes = [], coreToo = true 
     }
     return box;
   };
-  return { getJson, asked };
+  // basketball-reference: `brPages` maps a URL's last path part to its HTML;
+  // anything else is a 404 (a month with no schedule page, a missing box).
+  const getText = async (url) => {
+    asked.push(url);
+    const page = brPages[url.split("/").pop()];
+    if (page == null) throw new Error(`HTTP 404 ${url}`);
+    return page;
+  };
+  return { getJson, getText, asked };
 }
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "rs-bake-"));
@@ -312,7 +320,7 @@ test("an ESPN box with no minutes is read from basketball-reference, in ESPN's s
   };
   const espnStub = espn(days, { noMinutes: ["951", "952"], coreToo: false });
   const log = await bakeSeason("2014-15", { getJson: espnStub.getJson, getText, outDir: out, today: "2026-10-17" });
-  assert.deepEqual(pages.map((u) => u.split("/").pop()), ["201501100BRK.html", "201501100NOP.html"]);
+  assert.deepEqual(pages.filter((u) => u.includes("/boxscores/")).map((u) => u.split("/").pop()), ["201501100BRK.html", "201501100NOP.html"]);
   const index = read(out, "2014-15", "index.json");
   assert.deepEqual(index.fromBbref, ["951"]);
   assert.deepEqual(index.noMinutes.map((x) => [x.gameId, x.brTried]), [["952", true]]);
@@ -347,4 +355,79 @@ test("names fold the same across ESPN and basketball-reference", () => {
   assert.equal(espnSpelling("Nobody Here", "CHA", spelled, team), "Nobody Here");
   assert.deepEqual(["BKN", "PHX", "CHA", "CHA", "NOP", "NOP", "BOS"].map((t, i) => brTri(t, ["2014-15", "2014-15", "2013-14", "2014-15", "2012-13", "2013-14", "2014-15"][i])),
     ["BRK", "PHO", "CHA", "CHO", "NOH", "NOP", "BOS"]);
+});
+
+// A basketball-reference schedule page, trimmed: rows of
+// [box id, time, visitor, visitor pts, home, home pts, notes], "PLAYOFFS" for
+// the break, or [date only] for a game not played yet.
+const brSchedulePage = (rows) => `<table id="schedule"><tbody>${rows.map((r) => (r === "PLAYOFFS"
+  ? `<tr class="thead"><th colspan="10">Playoffs</th></tr>`
+  : `<tr ><th scope="row" data-stat="date_game" ><a href="/boxscores/index.fcgi">Some day</a></th><td data-stat="game_start_time" >${r[1]}</td><td data-stat="visitor_team_name" ><a href="/teams/${r[2]}/2000.html">V</a></td><td data-stat="visitor_pts" >${r[3]}</td><td data-stat="home_team_name" ><a href="/teams/${r[4]}/2000.html">H</a></td><td data-stat="home_pts" >${r[5]}</td><td data-stat="box_score_text" >${r[0] ? `<a href="/boxscores/${r[0]}.html">Box Score</a>` : ""}</td><td data-stat="game_remarks" >${r[6] || ""}</td></tr>`)).join("")}</tbody></table>`;
+
+test("basketball-reference schedule rows and Eastern start times", () => {
+  const rows = parseBrSchedule(brSchedulePage([
+    ["200004180CHI", "8:30p", "PHI", 101, "CHI", 92],
+    ["200004190DET", "7:30p", "CHH", 99, "DET", 104],
+    [null, "7:30p", "BOS", "", "NYK", ""],
+    "PLAYOFFS",
+    ["200004230NYK", "1:00p", "TOR", 88, "NYK", 92],
+  ]));
+  assert.deepEqual(rows.map((r) => [r.gameId, r.date, r.away.tri, r.away.score, r.home.tri, r.home.score]), [
+    ["200004180CHI", "2000-04-18", "PHI", 101, "CHI", 92],
+    ["200004190DET", "2000-04-19", "CHA", 99, "DET", 104],
+  ], "BR's CHH is the app's CHA; unplayed and playoff rows left out");
+  assert.equal(etInstant("2000-04-18", "8:30p"), "2000-04-19T00:30Z", "EDT");
+  assert.equal(etInstant("2000-01-05", "7:30 pm"), "2000-01-06T00:30Z", "EST");
+  assert.equal(etInstant("2000-01-05", ""), "2000-01-05T17:00Z", "no time: noon Eastern");
+});
+
+test("a finished season adds the games only basketball-reference lists, once", async () => {
+  const out = tmp();
+  const days = {
+    20000417: [ev("191", "2000-04-18T00:00Z", "BOS", 100, "NY", 95)],
+    20000418: [ev("192", "2000-04-19T02:30Z", "LAL", 110, "SAC", 104)], // a late tip: Apr 18 local, Apr 18 ET
+    20000419: [ev("193", "2000-04-19T23:30Z", "DET", 104, "CHA", 99)],
+  };
+  const april = brSchedulePage([
+    ["200004170BOS", "7:00p", "NYK", 95, "BOS", 100],
+    ["200004180LAL", "10:30p", "SAC", 104, "LAL", 110],
+    ["200004180CHI", "8:30p", "PHI", 101, "CHI", 92], // only on BR
+    ["200004190DET", "7:30p", "CHH", 99, "DET", 104],
+    ["200004190MIA", "8:00p", "ORL", 99, "MIA", 90, "Play-In Game"],
+    ["200004200ATL", "7:30p", "MIL", 99, "ATL", 90], // after ESPN's last day: never added
+    "PLAYOFFS",
+    ["200004220NYK", "1:00p", "TOR", 88, "NYK", 92],
+  ]);
+  const box = brPage([["PHI", [["Allen Iverson", "44:00", 14]]], ["CHI", [["Elton Brand", "40:00", 11]]]]);
+  const stub = espn(days, { brPages: { "NBA_2000_games-april.html": april, "200004180CHI.html": box } });
+  const log = await bakeSeason("1999-00", { ...stub, outDir: out, today: "2026-10-17" });
+  assert.match(log, /1 from basketball-reference's schedule/);
+  const index = read(out, "1999-00", "index.json");
+  assert.equal(index.brChecked, true);
+  assert.deepEqual(index.brAdded, ["200004180CHI"]);
+  assert.deepEqual(index.fromBbref, ["200004180CHI"]);
+  assert.deepEqual(index.games.map((g) => g.gameId), ["191", "200004180CHI", "192", "193"], "in tip-off order");
+  const g = index.games[1];
+  assert.deepEqual([g.date, g.gameDateTimeUTC, g.home.tri, g.home.score, g.away.tri, g.away.score], ["2000-04-18", "2000-04-19T00:30Z", "CHI", 92, "PHI", 101]);
+  const lines = unpackMonth(read(out, "1999-00", "2000-04.json")).get("200004180CHI");
+  assert.deepEqual([lines.home.players[0].name, lines.away.players[0].pts], ["Elton Brand", 31]);
+
+  const again = espn(days, { brPages: { "NBA_2000_games-april.html": april } });
+  assert.match(await bakeSeason("1999-00", { ...again, outDir: out, today: "2026-10-17" }), /already baked/);
+  assert.equal(again.asked.length, 0, "the schedule is checked once");
+});
+
+test("a season whose schedule check can't be read stays unchecked, and too many gaps are refused", async () => {
+  const out = tmp();
+  const days = { 20000417: [ev("191", "2000-04-18T00:00Z", "BOS", 100, "NY", 95)] };
+  const failing = espn(days);
+  failing.getText = async () => { throw new Error("HTTP 403"); };
+  await bakeSeason("1999-00", { ...failing, outDir: out, today: "2026-10-17" });
+  assert.equal(read(out, "1999-00", "index.json").brChecked, false);
+
+  const many = brSchedulePage(Array.from({ length: 41 }, (_, i) => [`2000041${String(i).padStart(2, "0")}X`.slice(0, 9) + "ATL", "7:00p", "MIL", 90, "ATL", 99]));
+  const out2 = tmp();
+  const log = await bakeSeason("1999-00", { ...espn(days, { brPages: { "NBA_2000_games-april.html": many } }), outDir: out2, today: "2026-10-17" });
+  assert.match(log, /BR errors: schedule: 41 games not matched/);
+  assert.equal(read(out2, "1999-00", "index.json").brAdded.length, 0);
 });

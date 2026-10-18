@@ -219,11 +219,81 @@ async function fetchText(url) {
 // month whichever source each of his games came from.
 async function fetchBrBox(g, season, getText, nameFor) {
   const home = brTri(g.home.tri, season), away = brTri(g.away.tri, season);
-  const html = await getText(BR_URL(`${g.date.replaceAll("-", "")}0${home}`));
+  const brId = /^\d{9}[A-Z]{3}$/.test(g.gameId) ? g.gameId : `${g.date.replaceAll("-", "")}0${home}`;
+  const html = await getText(BR_URL(brId));
   const h = parseBrSide(html, home), a = parseBrSide(html, away);
   if (!h || !a) return null;
   const rename = (ps, tri) => ps.map((p) => ({ ...p, name: nameFor(p.name, tri) }));
   return { a: { tri: g.away.tri, players: rename(a, g.away.tri) }, b: { tri: g.home.tri, players: rename(h, g.home.tri) }, labels: "bbref" };
+}
+
+// --- basketball-reference schedule check ------------------------------------
+// ESPN doesn't have every game (23 of 1999-00's are simply absent). Once a
+// season is over, its schedule is read from basketball-reference — a page a
+// month — and any game ESPN lacks is added, with BR's box score and BR's id.
+
+const BR_TO_NBA = { BRK: "BKN", CHO: "CHA", CHH: "CHA", NOH: "NOP", NOK: "NOP", PHO: "PHX" };
+const MONTH_SLUGS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+
+// "7:30p" on an Eastern date -> an ISO instant; noon Eastern without a time.
+export function etInstant(date, time) {
+  const m = /^(\d{1,2}):(\d{2})\s*([ap])/i.exec(time || "");
+  let h = 12, min = 0;
+  if (m) { h = (Number(m[1]) % 12) + (m[3].toLowerCase() === "p" ? 12 : 0); min = Number(m[2]); }
+  const guess = Date.parse(`${date}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:00Z`);
+  // Eastern is UTC-5 or UTC-4: take the offset that reads back as that wall time.
+  for (const off of [5, 4]) {
+    const t = guess + off * 3600e3;
+    const wall = new Intl.DateTimeFormat("en-GB", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(t));
+    if (wall === `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`) return new Date(t).toISOString().replace(":00.000Z", "Z");
+  }
+  return new Date(guess + 5 * 3600e3).toISOString().replace(":00.000Z", "Z");
+}
+
+// One BR schedule page -> its regular-season games (rows before the
+// "Playoffs" break), each { gameId: BR box id, date, time, home, away, notes }.
+export function parseBrSchedule(html) {
+  const out = [];
+  const tbody = html.slice(html.indexOf("<tbody"), html.indexOf("</tbody>") >= 0 ? html.indexOf("</tbody>") : undefined);
+  for (const row of tbody.split(/<tr\b/).slice(1)) {
+    if (/class="[^"]*thead/.test(row.slice(0, 80))) break; // "Playoffs"
+    const box = /\/boxscores\/(\d{9}[A-Z]{3})\.html/.exec(row);
+    if (!box) continue; // not played yet
+    const teams = [...row.matchAll(/\/teams\/([A-Z]{3})\/\d{4}\.html/g)].map((m) => BR_TO_NBA[m[1]] || m[1]);
+    const cell = {};
+    for (const m of row.matchAll(/data-stat="([a-z_]+)"[^>]*>([\s\S]*?)<\/t[dh]>/g)) cell[m[1]] = decode(m[2]);
+    const id = box[1];
+    if (teams.length < 2) continue;
+    out.push({
+      gameId: id,
+      date: `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}`,
+      time: cell.game_start_time || "",
+      away: { tri: teams[0], score: brNum(cell.visitor_pts) },
+      home: { tri: teams[1], score: brNum(cell.home_pts) },
+      notes: cell.game_remarks || "",
+    });
+  }
+  return out;
+}
+
+// The season's regular-season games on basketball-reference. Throws if a
+// month page that should exist can't be read, so a partial check isn't
+// mistaken for a whole one.
+async function brSchedule(season, getText) {
+  const endYear = Number(season.slice(0, 4)) + 1;
+  const out = [];
+  for (const ym of seasonMonths(season)) {
+    const url = `https://www.basketball-reference.com/leagues/NBA_${endYear}_games-${MONTH_SLUGS[Number(ym.slice(4)) - 1]}.html`;
+    let html;
+    try {
+      html = await getText(url);
+    } catch (e) {
+      if (/HTTP 404/.test(e.message)) continue; // no games that month
+      throw e;
+    }
+    out.push(...parseBrSchedule(html));
+  }
+  return out;
 }
 
 // A name folded for matching across sources: accents and the letters that
@@ -287,7 +357,7 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
   // (A minuteless box already tried at basketball-reference isn't tried
   // again: that's a thousand slow pages a day if BR can't help.)
   const retryIds = new Set([...(prev?.noBox || []), ...(prev?.noMinutes || []).filter((x) => !x.brTried).map((x) => x.gameId)]);
-  if (retryOnly && !retryIds.size) return `${season}: already baked (${prev.games.length} games)`;
+  if (retryOnly && !retryIds.size && prev.brChecked) return `${season}: already baked (${prev.games.length} games)`;
 
   let games = prev?.games ? [...prev.games] : [];
   let through = prev?.through || null;
@@ -297,6 +367,8 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
   const noMinutes = [];
   const fromBr = [];
   const brErrors = [];
+  const brAdded = [];
+  let brChecked = !!prev?.brChecked;
 
   if (retryOnly) {
     newGames = games.filter((g) => retryIds.has(g.gameId));
@@ -333,6 +405,34 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
     complete = finished && through === lastDay;
   }
 
+  // Once over, the season is checked against basketball-reference's
+  // schedule (once): a game ESPN doesn't list is added under BR's id, its box
+  // read from BR below. Cup finals and play-in games aren't regular season.
+  if (finished && !brChecked) {
+    try {
+      // Matched on teams within a day either side: a late West-coast tip is
+      // the next day on ESPN's Eastern calendar.
+      const have = new Set(games.map((g) => `${g.date}|${g.home.tri}|${g.away.tri}`));
+      const seen = (r) => [-1, 0, 1].some((d) => have.has(`${addDays(r.date, d)}|${r.home.tri}|${r.away.tri}`));
+      // Nothing after ESPN's last regular-season day, where play-in and
+      // playoff games start.
+      const lastDate = games.reduce((m, g) => (g.date > m ? g.date : m), "");
+      const missing = (await brSchedule(season, getText))
+        .filter((r) => !seen(r) && r.date <= lastDate && !/cup|tournament|play-?in/i.test(r.notes));
+      // Dozens "missing" means a mismatch (a team code, a date), not a gap.
+      if (missing.length > 40) throw new Error(`${missing.length} games not matched — not added`);
+      for (const r of missing) {
+        const g = { gameId: r.gameId, gameDateTimeUTC: etInstant(r.date, r.time), date: r.date, home: r.home, away: r.away };
+        games.push(g);
+        newGames.push(g);
+        brAdded.push(g.gameId);
+      }
+      brChecked = true;
+    } catch (e) {
+      brErrors.push(`schedule: ${e.message}`);
+    }
+  }
+
   // Box scores for the new games, filed into their month.
   const monthKey = (g) => g.date.slice(0, 7);
   // A fresh bake (first time, --force, or an older version) starts its months
@@ -354,7 +454,8 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
       return idx.get(name);
     };
   };
-  let boxes = await pool(newGames, CONCURRENCY, (g) => fetchBox(g.gameId, getJson));
+  const isBrId = (id) => /^\d{9}[A-Z]{3}$/.test(id);
+  let boxes = await pool(newGames, CONCURRENCY, (g) => (isBrId(g.gameId) ? null : fetchBox(g.gameId, getJson)));
   // ESPN sometimes lists one game twice under two ids; only one has a box.
   // A boxless game that repeats another (same day, sides and score) is the
   // copy, and is dropped rather than kept as a game without a box score.
@@ -371,7 +472,7 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
   }
   // ESPN boxes with no minutes: basketball-reference instead, for a finished
   // season. Names map to the ESPN spelling seen anywhere in the season.
-  if (finished && boxes.some((b) => b && !boxHasMinutes(b))) {
+  if (finished && boxes.some((b) => !b || !boxHasMinutes(b))) {
     const spelled = new Map();
     const espnByTeam = new Map();
     const see = (n, tri) => {
@@ -393,7 +494,7 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
     }
     const nameFor = (n, tri) => espnSpelling(n, tri, spelled, espnByTeam);
     for (let i = 0; i < newGames.length; i++) {
-      if (!boxes[i] || boxHasMinutes(boxes[i])) continue;
+      if (boxes[i] && boxHasMinutes(boxes[i])) continue;
       try {
         const br = await fetchBrBox(newGames[i], season, getText, nameFor);
         if (br) { boxes[i] = br; fromBr.push(newGames[i].gameId); }
@@ -438,6 +539,9 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
     skipped: retryOnly ? prev.skipped || [] : [...(prev?.skipped || []), ...skipped],
     // Games whose box score, from either source, has a side with no minutes.
     noMinutes: [...(prev?.noMinutes || []).filter((x) => !retried.has(x.gameId)), ...noMinutes],
+    // Checked against basketball-reference's schedule; games only BR had.
+    brChecked,
+    brAdded: [...new Set([...(prev?.brAdded || []), ...brAdded])].sort(),
     // Games whose box score came from basketball-reference, not ESPN.
     fromBbref: [...new Set([...(prev?.fromBbref || []).filter((id) => !retried.has(id)), ...fromBr])].sort(),
     source: "espn",
@@ -455,8 +559,8 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
   }
   writeJson(indexFile, { ...index, fetchedAt: new Date().toISOString() });
   return retryOnly
-    ? `${season}: retried ${newGames.length} box scores, ${fixed} fixed${fromBr.length ? ` (${fromBr.length} from basketball-reference)` : ""}${brErrors.length ? `; BR errors: ${brErrors.slice(0, 2).join("; ")}` : ""}`
-    : `${season}: +${newGames.length} games (${boxed} with box scores) through ${through}${complete ? ", complete" : ""}; ${games.length} total, ${noBox.size} without a box score`;
+    ? `${season}: retried ${newGames.length} box scores, ${fixed} fixed${brAdded.length ? `, ${brAdded.length} games added from basketball-reference` : ""}${fromBr.length ? ` (${fromBr.length} from basketball-reference)` : ""}${brErrors.length ? `; BR errors: ${brErrors.slice(0, 2).join("; ")}` : ""}`
+    : `${season}: +${newGames.length} games (${boxed} with box scores) through ${through}${complete ? ", complete" : ""}; ${games.length} total, ${noBox.size} without a box score${brAdded.length ? `; ${brAdded.length} from basketball-reference's schedule` : ""}${brErrors.length ? `; BR errors: ${brErrors.slice(0, 2).join("; ")}` : ""}`;
 }
 
 async function main() {
@@ -474,7 +578,9 @@ async function main() {
     try {
       const line = await bakeSeason(s, { force, today });
       console.log(line);
-      if (process.env.GITHUB_ACTIONS && /\+\d+ games/.test(line)) console.log(`::notice title=${s}::${line}`);
+      if (process.env.GITHUB_ACTIONS && /\+\d+ games|basketball-reference|BR errors/.test(line)) {
+        console.log(`::${/BR errors/.test(line) ? "warning" : "notice"} title=${s}::${line}`);
+      }
       if (!/already baked|not started|, 0 fixed$/.test(line)) worked += 1;
     } catch (e) {
       failed += 1;
