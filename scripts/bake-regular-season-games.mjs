@@ -226,8 +226,13 @@ async function fetchBrBox(g, season, getText, nameFor) {
   return { a: { tri: g.away.tri, players: rename(a) }, b: { tri: g.home.tri, players: rename(h) }, labels: "bbref" };
 }
 
-const normName = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-  .replace(/[^a-z0-9]+/g, " ").replace(/\b(jr|sr|ii|iii|iv)\b/g, "").trim();
+// A name folded for matching across sources: accents and the letters that
+// don't decompose (ı, ł, ø, đ) dropped to plain ones, suffixes and every
+// space and dot gone — "C.J. Miles" and "CJ Miles", "Ömer Aşık" and
+// "Omer Asik" fold the same.
+export const normName = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .replace(/ı/g, "i").replace(/ł/g, "l").replace(/ø/g, "o").replace(/[đð]/g, "d").replace(/ß/g, "ss")
+  .toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b/g, "").replace(/[^a-z0-9]/g, "");
 
 // The month files a season's games go in, read back so a top-up appends.
 function loadMonths(dir, keys) {

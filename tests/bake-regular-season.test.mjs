@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { allSeasons, BAKE_VERSION, bakeSeason, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
+import { allSeasons, BAKE_VERSION, bakeSeason, brTri, normName, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
 import { bakedThrough, unpackMonth } from "../app/lib/regular-season-games.js";
 
 const ev = (id, date, home, hs, away, as, { type = 2, completed = true, state } = {}) => ({
@@ -329,4 +329,14 @@ test("an ESPN box with no minutes is read from basketball-reference, in ESPN's s
   pages.length = 0;
   assert.match(await bakeSeason("2014-15", { getJson: again.getJson, getText, outDir: out, today: "2026-10-17" }), /already baked/);
   assert.equal(pages.length, 0);
+});
+
+test("names fold the same across ESPN and basketball-reference", () => {
+  assert.equal(normName("C.J. Miles"), normName("CJ Miles"));
+  assert.equal(normName("Ömer Aşık"), normName("Omer Asik"));
+  assert.equal(normName("Nikola Mirotić"), normName("Nikola Mirotic"));
+  assert.equal(normName("Gary Trent Jr."), normName("Gary Trent"));
+  assert.notEqual(normName("Marcus Morris"), normName("Markieff Morris"));
+  assert.deepEqual(["BKN", "PHX", "CHA", "CHA", "NOP", "NOP", "BOS"].map((t, i) => brTri(t, ["2014-15", "2014-15", "2013-14", "2014-15", "2012-13", "2013-14", "2014-15"][i])),
+    ["BRK", "PHO", "CHA", "CHO", "NOH", "NOP", "BOS"]);
 });
