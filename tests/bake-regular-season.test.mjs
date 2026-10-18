@@ -284,3 +284,49 @@ test("a box score with no minutes falls back to the CDN core, and is listed if i
   assert.deepEqual(index.noMinutes.map((x) => x.gameId), ["901"]);
   assert.match(index.noMinutes[0].labels, /^MIN,FG,3PT/);
 });
+
+// A basketball-reference box page, trimmed: one basic table per side.
+const brPage = (sides) => sides.map(([tri, rows]) => `<table class="sortable stats_table" id="box-${tri}-game-basic"><thead><tr><th>Starters</th></tr></thead><tbody>${
+  rows.map((r, i) => (r === "RESERVES"
+    ? `<tr class="thead"><th data-stat="player">Reserves</th></tr>`
+    : `<tr ><th scope="row" class="left " data-stat="player" ><a href="/players/x/x.html">${r[0]}</a></th>${r[1] === "DNP"
+      ? `<td class="center " data-stat="reason" colspan="20" >Did Not Play</td>`
+      : `<td class="right " data-stat="mp" >${r[1]}</td><td data-stat="fg" >${r[2]}</td><td data-stat="fga" >${r[2] * 2}</td><td data-stat="fg3" >1</td><td data-stat="fg3a" >3</td><td data-stat="ft" >2</td><td data-stat="fta" >2</td><td data-stat="orb" >1</td><td data-stat="drb" >4</td><td data-stat="trb" >5</td><td data-stat="ast" >3</td><td data-stat="stl" >1</td><td data-stat="blk" >0</td><td data-stat="tov" >2</td><td data-stat="pf" >2</td><td data-stat="pts" >${r[2] * 2 + 3}</td><td data-stat="plus_minus" >+7</td>`}</tr>`)).join("")
+}</tbody><tfoot></tfoot></table>`).join("<!-- ad -->");
+
+test("an ESPN box with no minutes is read from basketball-reference, in ESPN's spelling", async () => {
+  const out = tmp();
+  process.env.BR_DELAY_MS = "0";
+  const days = { 20150110: [
+    ev("951", "2015-01-11T00:00Z", "BKN", 102, "CHA", 99, {}),
+    ev("952", "2015-01-11T01:00Z", "NO", 99, "PHX", 90),
+  ] };
+  const pages = [];
+  const getText = async (url) => {
+    pages.push(url);
+    if (!url.endsWith("201501100BRK.html")) throw new Error("HTTP 404");
+    return brPage([
+      ["CHO", [["Kemba Walker", "38:30", 9], ["Bench Guy", "DNP"]]],
+      ["BRK", [["Brook Lopez", "30:00", 8], "RESERVES", ["Jarrett Jack", "24:00", 5]]],
+    ]);
+  };
+  const espnStub = espn(days, { noMinutes: ["951", "952"], coreToo: false });
+  const log = await bakeSeason("2014-15", { getJson: espnStub.getJson, getText, outDir: out, today: "2026-10-17" });
+  assert.deepEqual(pages.map((u) => u.split("/").pop()), ["201501100BRK.html", "201501100NOP.html"]);
+  const index = read(out, "2014-15", "index.json");
+  assert.deepEqual(index.fromBbref, ["951"]);
+  assert.deepEqual(index.noMinutes.map((x) => [x.gameId, x.brTried]), [["952", true]]);
+  assert.match(log, /\+2 games/);
+
+  const g = unpackMonth(read(out, "2014-15", "2015-01.json")).get("951");
+  assert.deepEqual([g.home.tri, g.home.score, g.away.tri], ["BKN", 102, "CHA"]);
+  assert.deepEqual(g.home.players.map((p) => [p.name, p.starter, p.mp, p.pts, p.plusMinus]), [["Brook Lopez", true, 30, 19, 7], ["Jarrett Jack", false, 24, 13, 7]]);
+  assert.deepEqual(g.away.players.map((p) => [p.name, p.mp]), [["Kemba Walker", 38.5]], "a DNP row is left out");
+  assert.equal(g.away.players[0].reb, 5);
+
+  // Tried at BR once: a later run doesn't crawl it again.
+  const again = espn(days);
+  pages.length = 0;
+  assert.match(await bakeSeason("2014-15", { getJson: again.getJson, getText, outDir: out, today: "2026-10-17" }), /already baked/);
+  assert.equal(pages.length, 0);
+});

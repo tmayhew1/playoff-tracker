@@ -146,6 +146,89 @@ async function fetchBox(gameId, getJson) {
   return best;
 }
 
+// --- basketball-reference fallback -----------------------------------------
+// For ~165 games a season in 2012-13 to 2017-18 ESPN has only an empty box
+// score: every player "--" minutes and zeros. Those games are read from
+// basketball-reference instead, at the R pipeline's pace (one page every
+// ~3s; BR blocks anything much faster).
+
+const BR_DELAY_MS = Number(process.env.BR_DELAY_MS ?? 3100);
+const BR_URL = (brId) => `https://www.basketball-reference.com/boxscores/${brId}.html`;
+
+// The app's tricode -> basketball-reference's, for the season.
+export function brTri(tri, season) {
+  const y = Number(season.slice(0, 4));
+  if (tri === "BKN") return "BRK";
+  if (tri === "PHX") return "PHO";
+  if (tri === "CHA") return y >= 2014 ? "CHO" : "CHA";
+  if (tri === "NOP") return y >= 2013 ? "NOP" : y === 2005 || y === 2006 ? "NOK" : "NOH";
+  return tri;
+}
+
+const decode = (t) => t.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&#x27;|&#39;/g, "'").replace(/&nbsp;/g, " ").trim();
+const brNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const brMin = (v) => {
+  if (!v) return 0;
+  if (v.includes(":")) { const [m, sec] = v.split(":"); return (parseInt(m, 10) || 0) + (parseFloat(sec) || 0) / 60; }
+  return brNum(v);
+};
+
+// One team's basic box table (id box-<TRI>-game-basic) -> its player lines,
+// in the shape the ESPN parse gives. Starters are the rows before "Reserves".
+export function parseBrSide(html, tri) {
+  const start = html.indexOf(`id="box-${tri}-game-basic"`);
+  if (start < 0) return null;
+  const body = html.slice(start, html.indexOf("</table>", start));
+  const tbody = body.slice(body.indexOf("<tbody"), body.indexOf("</tbody>"));
+  const players = [];
+  let starters = true;
+  for (const row of tbody.split(/<tr\b/).slice(1)) {
+    if (/class="[^"]*thead/.test(row.slice(0, 80))) { starters = false; continue; }
+    const cell = {};
+    for (const m of row.matchAll(/data-stat="([a-z0-9_]+)"[^>]*>([\s\S]*?)<\/t[dh]>/g)) cell[m[1]] = decode(m[2]);
+    if (!cell.player || cell.reason) continue;
+    const mp = brMin(cell.mp);
+    if (!(mp > 0)) continue;
+    players.push({
+      name: cell.player, starter: starters, oncourt: false, mp,
+      pts: brNum(cell.pts), reb: brNum(cell.trb), drb: brNum(cell.drb), orb: brNum(cell.orb),
+      ast: brNum(cell.ast), stl: brNum(cell.stl), blk: brNum(cell.blk), tov: brNum(cell.tov),
+      fgm: brNum(cell.fg), fga: brNum(cell.fga), tpm: brNum(cell.fg3), tpa: brNum(cell.fg3a),
+      ftm: brNum(cell.ft), fta: brNum(cell.fta), plusMinus: brNum((cell.plus_minus || "").replace("+", "")),
+    });
+  }
+  return players.length ? players : null;
+}
+
+let lastBr = 0;
+async function fetchText(url) {
+  const wait = BR_DELAY_MS - (Date.now() - lastBr);
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastBr = Date.now();
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, { headers: { ...HEADERS, Accept: "text/html" } });
+    if (res.ok) return await res.text();
+    // BR's rate limit; back off a minute, as the R pipeline does.
+    if ((res.status === 429 || res.status === 503) && attempt < 3) { await new Promise((r) => setTimeout(r, 60000)); continue; }
+    throw new Error(`HTTP ${res.status} ${url}`);
+  }
+}
+
+// A game's box from basketball-reference -> { a: away, b: home }, or null.
+// Names are put in ESPN's spelling (`nameFor`), so a player is one row in a
+// month whichever source each of his games came from.
+async function fetchBrBox(g, season, getText, nameFor) {
+  const home = brTri(g.home.tri, season), away = brTri(g.away.tri, season);
+  const html = await getText(BR_URL(`${g.date.replaceAll("-", "")}0${home}`));
+  const h = parseBrSide(html, home), a = parseBrSide(html, away);
+  if (!h || !a) return null;
+  const rename = (ps) => ps.map((p) => ({ ...p, name: nameFor(p.name) }));
+  return { a: { tri: g.away.tri, players: rename(a) }, b: { tri: g.home.tri, players: rename(h) }, labels: "bbref" };
+}
+
+const normName = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+  .replace(/[^a-z0-9]+/g, " ").replace(/\b(jr|sr|ii|iii|iv)\b/g, "").trim();
+
 // The month files a season's games go in, read back so a top-up appends.
 function loadMonths(dir, keys) {
   const months = new Map();
@@ -165,7 +248,7 @@ function writeJson(file, data) {
 
 // Bake (or top up) one season. Returns a one-line summary. Throws when a past
 // season can't be read in full, so a gap is never written as complete.
-export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR, today = todayEt(), force = false } = {}) {
+export async function bakeSeason(season, { getJson = fetchJson, getText = fetchText, outDir = OUT_DIR, today = todayEt(), force = false } = {}) {
   const dir = path.join(outDir, season);
   const indexFile = path.join(dir, "index.json");
   const stored = readJson(indexFile);
@@ -180,7 +263,9 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   // A finished season already baked: only the games ESPN had no box for, or
   // a box with no minutes.
   const retryOnly = prev?.complete;
-  const retryIds = new Set([...(prev?.noBox || []), ...(prev?.noMinutes || []).map((x) => x.gameId)]);
+  // (A minuteless box already tried at basketball-reference isn't tried
+  // again: that's a thousand slow pages a day if BR can't help.)
+  const retryIds = new Set([...(prev?.noBox || []), ...(prev?.noMinutes || []).filter((x) => !x.brTried).map((x) => x.gameId)]);
   if (retryOnly && !retryIds.size) return `${season}: already baked (${prev.games.length} games)`;
 
   let games = prev?.games ? [...prev.games] : [];
@@ -189,6 +274,8 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   let newGames = [];
   const skipped = [];
   const noMinutes = [];
+  const fromBr = [];
+  const brErrors = [];
 
   if (retryOnly) {
     newGames = games.filter((g) => retryIds.has(g.gameId));
@@ -261,11 +348,29 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
       games = games.filter((g) => !copy.has(g.gameId));
     }
   }
+  // ESPN boxes with no minutes: basketball-reference instead, for a finished
+  // season. Names map to the ESPN spelling seen anywhere in the season.
+  if (finished && boxes.some((b) => b && !boxHasMinutes(b))) {
+    const spelled = new Map();
+    const see = (n) => { const k = normName(n); if (k && !spelled.has(k)) spelled.set(k, n); };
+    for (const b of boxes) if (b && boxHasMinutes(b)) for (const side of [b.a, b.b]) side.players.forEach((p) => see(p.name));
+    if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)) if (/^\d{4}-\d{2}\.json$/.test(f)) (readJson(path.join(dir, f))?.names || []).forEach(see);
+    const nameFor = (n) => spelled.get(normName(n)) || n;
+    for (let i = 0; i < newGames.length; i++) {
+      if (!boxes[i] || boxHasMinutes(boxes[i])) continue;
+      try {
+        const br = await fetchBrBox(newGames[i], season, getText, nameFor);
+        if (br) { boxes[i] = br; fromBr.push(newGames[i].gameId); }
+      } catch (e) {
+        brErrors.push(`${newGames[i].gameId}: ${e.message}`);
+      }
+    }
+  }
   const noBox = new Set(retryOnly ? [] : (prev?.noBox || []));
   newGames.forEach((g, i) => {
     const parsed = boxes[i];
     if (!parsed) { noBox.add(g.gameId); return; }
-    if (!boxHasMinutes(parsed)) noMinutes.push({ gameId: g.gameId, date: g.date, labels: parsed.labels, sample: parsed.sample });
+    if (!boxHasMinutes(parsed)) noMinutes.push({ gameId: g.gameId, date: g.date, labels: parsed.labels, sample: parsed.sample, brTried: finished || undefined });
     const key = monthKey(g);
     const ni = nameIndex(key);
     // ESPN lists the away side first; trust the tricodes over the order.
@@ -297,6 +402,8 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
     skipped: retryOnly ? prev.skipped || [] : [...(prev?.skipped || []), ...skipped],
     // Games whose box score, from either source, has a side with no minutes.
     noMinutes: [...(prev?.noMinutes || []).filter((x) => !retried.has(x.gameId)), ...noMinutes],
+    // Games whose box score came from basketball-reference, not ESPN.
+    fromBbref: [...new Set([...(prev?.fromBbref || []).filter((id) => !retried.has(id)), ...fromBr])].sort(),
     source: "espn",
   };
   const boxed = newGames.length - newGames.filter((g) => noBox.has(g.gameId)).length;
@@ -312,7 +419,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   }
   writeJson(indexFile, { ...index, fetchedAt: new Date().toISOString() });
   return retryOnly
-    ? `${season}: retried ${newGames.length} box scores, ${fixed} fixed`
+    ? `${season}: retried ${newGames.length} box scores, ${fixed} fixed${fromBr.length ? ` (${fromBr.length} from basketball-reference)` : ""}${brErrors.length ? `; BR errors: ${brErrors.slice(0, 2).join("; ")}` : ""}`
     : `${season}: +${newGames.length} games (${boxed} with box scores) through ${through}${complete ? ", complete" : ""}; ${games.length} total, ${noBox.size} without a box score`;
 }
 
