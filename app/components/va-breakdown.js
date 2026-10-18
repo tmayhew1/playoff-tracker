@@ -17,7 +17,7 @@ import { CategoryContext } from "./category-context";
 import { AwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, extraChart = null }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -362,6 +362,13 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           </button>
         )}
         <div className="flex-1 min-w-0">
+      {/* A chart the caller leads the card with, in the card's accent and
+          kept to a phone card's width (Month Averages: VA / game by month). */}
+      {leadChart && (
+        <div className="max-w-sm mx-auto">
+          {typeof leadChart === "function" ? leadChart(accentColor) : leadChart}
+        </div>
+      )}
       <div className="mb-3">
         <div className={`mb-2 flex items-center justify-between gap-2 uppercase tracking-widest text-stone-500 ${(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) ? "text-xs font-semibold text-stone-700" : "text-[9px]"}`}>
           <span>{(() => {
@@ -496,10 +503,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 </button>
               )}
             </div>
-            {/* A chart the caller draws under the per-game one, in the same
-                accent and clear of its game arrows (Month Averages: VA /
-                game by month). */}
-            {typeof extraChart === "function" ? extraChart(accentColor) : extraChart}
             </div>
           )}
         </div>

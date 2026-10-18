@@ -8,7 +8,7 @@ const HEADERS = {
   Accept: "application/json, text/plain, */*",
 };
 
-const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
+const ESPN_TO_NBA = { GS: "GSW", NJ: "NJN", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (a) => ESPN_TO_NBA[a] || a;
 const splitMade = (v) => {
   const [m, a] = String(v || "0-0").split("-");
@@ -27,7 +27,7 @@ function parseMin(v) {
   return parseFloat(s) || 0;
 }
 
-function parseBox(data) {
+export function parseBox(data) {
   const teamsBox = data?.boxscore?.players || [];
   if (teamsBox.length < 2) return null;
   const teamOut = (tb) => {
@@ -67,8 +67,31 @@ function parseBox(data) {
   const a = teamOut(teamsBox[0]);
   const b = teamOut(teamsBox[1]);
   if (!a.players.length && !b.players.length) return null;
-  return { a, b };
+  // The stat labels ESPN sent, kept for diagnosing a box that parses wrong.
+  const labels = (teamsBox[0]?.statistics?.[0]?.names || []).join(",");
+  // The first player's raw stats, likewise.
+  const first = teamsBox[0]?.statistics?.[0]?.athletes?.[0];
+  const sample = first ? JSON.stringify({ stats: first.stats, didNotPlay: first.didNotPlay, active: first.active }).slice(0, 300) : null;
+  return { a, b, labels, sample };
 }
+
+// The two places ESPN keeps a box score: the site API summary first, the
+// CDN core (gamepackageJSON) for the older events whose summary comes back
+// with empty player blocks. scripts/bake-regular-season-games.mjs walks the
+// same pair with its own retrying fetch.
+export const espnBoxUrls = (eventId) => [
+  `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`,
+  `https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`,
+];
+
+// Some ESPN summaries list every player with no minutes (seen across
+// 2012-13 to 2017-18), and a line with no minutes is left out downstream, so
+// such a box is only used when no other source does better.
+export const boxHasMinutes = (parsed) =>
+  !!parsed && [parsed.a, parsed.b].every((side) => side.players.some((p) => p.mp > 0));
+
+// A fetched ESPN payload (either source) -> { a, b } sides, or null.
+export const parseEspnPayload = (d) => parseBox(d?.boxscore ? d : { boxscore: d?.gamepackageJSON?.boxscore || null });
 
 async function fetchEspn(url, timeoutMs = 8000) {
   const ctrl = new AbortController();
@@ -93,11 +116,12 @@ export async function fetchEspnBox(eventId) {
     const summary = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`);
     parsed = parseBox(summary);
   } catch {}
-  if (!parsed) {
+  if (!boxHasMinutes(parsed)) {
     try {
       const core = await fetchEspn(`https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`);
       const box = core?.gamepackageJSON?.boxscore || core?.boxscore || null;
-      if (box) parsed = parseBox({ boxscore: box });
+      const fromCore = box ? parseBox({ boxscore: box }) : null;
+      if (fromCore && (!parsed || boxHasMinutes(fromCore))) parsed = fromCore;
     } catch {}
   }
   if (!parsed) throw new Error("no boxscore players");

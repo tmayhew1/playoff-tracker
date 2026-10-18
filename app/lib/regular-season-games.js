@@ -6,7 +6,8 @@
 import { valueAddParts } from "../scoring";
 
 // ESPN NBA abbreviations -> the tricodes the rest of the app uses.
-const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
+// ESPN keeps the New Jersey Nets as "NJ" (1999-00 to 2011-12).
+const ESPN_TO_NBA = { GS: "GSW", NJ: "NJN", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (abbr) => ESPN_TO_NBA[abbr] || abbr;
 
 // Every franchise tricode ESPN has used since 1999-00, current and relocated.
@@ -48,27 +49,39 @@ export const etDate = (iso) => ET_DAY.format(new Date(iso));
 // seasontype on a date-range query, so preseason, play-in and playoff games
 // come back too and are filtered here by the event's own season type, with
 // the note as the fallback signal on the older events that omit it.
-export function parseScoreboard(events) {
+export function parseScoreboard(events, { onSkip = null } = {}) {
   const out = [];
   for (const ev of events || []) {
     const comp = ev.competitions?.[0];
-    if (!comp || !(comp.status?.type?.completed ?? ev.status?.type?.completed)) continue;
-    const note = (comp.notes?.[0]?.headline || comp.notes?.[0]?.type || "").toString();
-    const type = ev.season?.type ?? comp.season?.type;
-    if (type != null ? type !== 2 : !!note) continue;
-    // The NBA Cup final is the one Cup game that doesn't count toward the
-    // regular season; its earlier knockout rounds do.
-    if (/cup/i.test(note) && /championship|\bfinal\b/i.test(note)) continue;
+    if (!comp) continue;
     const cs = comp.competitors || [];
     const h = cs.find((c) => c.homeAway === "home");
     const a = cs.find((c) => c.homeAway === "away");
     const home = toNba(h?.team?.abbreviation);
     const away = toNba(a?.team?.abbreviation);
+    // All-Star and exhibition sides aren't NBA games at all; not reported.
     if (!NBA_TEAMS.has(home) || !NBA_TEAMS.has(away)) continue;
+    const note = (comp.notes?.[0]?.headline || comp.notes?.[0]?.type || "").toString();
+    const type = ev.season?.type ?? comp.season?.type;
     const hScore = Number(h.score), aScore = Number(a.score);
-    if (!Number.isFinite(hScore) || !Number.isFinite(aScore)) continue;
     const iso = ev.date || comp.date;
-    if (!iso) continue;
+    // `onSkip(game, why)` hears about every NBA-vs-NBA event left out, so a
+    // bake can record what it dropped and why.
+    const skip = (why) => onSkip?.({
+      gameId: String(ev.id), date: iso ? etDate(iso) : null, home: `${home} ${h?.score ?? ""}`.trim(), away: `${away} ${a?.score ?? ""}`.trim(),
+      type: type ?? null, note: note || null, state: comp.status?.type?.state ?? ev.status?.type?.state ?? null,
+    }, why);
+    if (type != null ? type !== 2 : !!note) { skip(type != null ? `season type ${type}` : "note on a typeless event"); continue; }
+    if (!(comp.status?.type?.completed ?? ev.status?.type?.completed)) { skip("not final"); continue; }
+    // The NBA Cup final is the one Cup game that doesn't count toward the
+    // regular season; its earlier knockout rounds do.
+    // (It was the In-Season Tournament in its first year, 2023-24.)
+    if (/cup|in-season tournament/i.test(note) && /championship|\bfinal\b/i.test(note)) { skip("Cup final"); continue; }
+    if (!Number.isFinite(hScore) || !Number.isFinite(aScore)) { skip("no score"); continue; }
+    // ESPN carries phantom copies of some early-2000s games, marked final at
+    // 0-0 beside the real one. No real game ends 0-0.
+    if (hScore === 0 && aScore === 0) { skip("0-0"); continue; }
+    if (!iso) { skip("no date"); continue; }
     out.push({
       gameId: String(ev.id),
       gameDateTimeUTC: iso,
@@ -172,4 +185,59 @@ export function monthlyVA(months, lga) {
     }
   });
   return out;
+}
+
+// --- Baked seasons ----------------------------------------------------------
+// scripts/bake-regular-season-games.mjs writes every finished regular-season
+// game to public/regular-season-games/<season>/: index.json (the game list
+// /api/regular-season/games would give, for the whole season) and one
+// YYYY-MM.json per month holding that month's box scores. They are static
+// files, so a season opens from the CDN with no ESPN call at all.
+//
+// A month file packs each player line into an array — names once in a table,
+// then the fields in LINE_FIELDS order — which keeps a season to a few MB.
+
+export const BAKED_DIR = "regular-season-games";
+export const LINE_FIELDS = [
+  "name", "starter", "mp", "pts", "reb", "drb", "orb", "ast", "stl", "blk", "tov",
+  "fgm", "fga", "tpm", "tpa", "ftm", "fta", "plusMinus",
+];
+
+// One side's player line -> its packed row; `nameIndex(name)` -> table slot.
+export function packLine(p, nameIndex) {
+  return LINE_FIELDS.map((k) => {
+    if (k === "name") return nameIndex(p.name);
+    if (k === "starter") return p.starter ? 1 : 0;
+    if (k === "mp") return Math.round((p.mp || 0) * 100) / 100;
+    return p[k] || 0;
+  });
+}
+
+export function unpackLine(row, names) {
+  const p = { oncourt: false };
+  LINE_FIELDS.forEach((k, i) => {
+    if (k === "name") p.name = names[row[i]];
+    else if (k === "starter") p.starter = row[i] === 1;
+    else p[k] = row[i];
+  });
+  return p;
+}
+
+// A baked month file -> Map(gameId -> { gameId, home, away }), the shape
+// /api/regular-season/lines answers with.
+export function unpackMonth(file) {
+  const out = new Map();
+  const names = file?.names || [];
+  for (const [gameId, g] of Object.entries(file?.games || {})) {
+    const side = (s) => ({ tri: s.tri, score: s.score ?? 0, players: (s.players || []).map((r) => unpackLine(r, names)) });
+    out.set(gameId, { gameId, home: side(g.home), away: side(g.away) });
+  }
+  return out;
+}
+
+// The last Eastern date a baked index covers: every day up to and including
+// it is in the bake, so only later days need asking live. A complete season
+// covers everything.
+export function bakedThrough(index) {
+  return index?.complete ? "9999-12-31" : (index?.through || "0000-00-00");
 }
