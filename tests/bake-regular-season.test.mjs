@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { allSeasons, BAKE_VERSION, bakeSeason, brTri, normName, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
+import { allSeasons, BAKE_VERSION, bakeSeason, brTri, espnSpelling, normName, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
 import { bakedThrough, unpackMonth } from "../app/lib/regular-season-games.js";
 
 const ev = (id, date, home, hs, away, as, { type = 2, completed = true, state } = {}) => ({
@@ -337,6 +337,14 @@ test("names fold the same across ESPN and basketball-reference", () => {
   assert.equal(normName("Nikola Mirotić"), normName("Nikola Mirotic"));
   assert.equal(normName("Gary Trent Jr."), normName("Gary Trent"));
   assert.notEqual(normName("Marcus Morris"), normName("Markieff Morris"));
+  assert.equal(normName("J.R. Smith"), normName("JR Smith"), "JR is a name, not a suffix");
+  assert.notEqual(normName("JR Smith"), normName("Smith"));
+  const spelled = new Map([["JR Smith", "JR Smith"], ["Jeffery Taylor", "Jeffery Taylor"]].map(([k, v]) => [normName(k), v]));
+  const team = new Map([["CHA", new Set(["Jeffery Taylor", "Kemba Walker"])], ["NOP", new Set(["Jason Smith", "Jrue Holiday", "Jordan Smith"])]]);
+  assert.equal(espnSpelling("Jeff Taylor", "CHA", spelled, team), "Jeffery Taylor");
+  assert.equal(espnSpelling("J.R. Smith", "NYK", spelled, team), "JR Smith");
+  assert.equal(espnSpelling("Jamal Smith", "NOP", spelled, team), "Jamal Smith", "two Smiths with the same initial: left alone");
+  assert.equal(espnSpelling("Nobody Here", "CHA", spelled, team), "Nobody Here");
   assert.deepEqual(["BKN", "PHX", "CHA", "CHA", "NOP", "NOP", "BOS"].map((t, i) => brTri(t, ["2014-15", "2014-15", "2013-14", "2014-15", "2012-13", "2013-14", "2014-15"][i])),
     ["BRK", "PHO", "CHA", "CHO", "NOH", "NOP", "BOS"]);
 });

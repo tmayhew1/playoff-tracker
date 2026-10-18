@@ -222,8 +222,8 @@ async function fetchBrBox(g, season, getText, nameFor) {
   const html = await getText(BR_URL(`${g.date.replaceAll("-", "")}0${home}`));
   const h = parseBrSide(html, home), a = parseBrSide(html, away);
   if (!h || !a) return null;
-  const rename = (ps) => ps.map((p) => ({ ...p, name: nameFor(p.name) }));
-  return { a: { tri: g.away.tri, players: rename(a) }, b: { tri: g.home.tri, players: rename(h) }, labels: "bbref" };
+  const rename = (ps, tri) => ps.map((p) => ({ ...p, name: nameFor(p.name, tri) }));
+  return { a: { tri: g.away.tri, players: rename(a, g.away.tri) }, b: { tri: g.home.tri, players: rename(h, g.home.tri) }, labels: "bbref" };
 }
 
 // A name folded for matching across sources: accents and the letters that
@@ -232,7 +232,23 @@ async function fetchBrBox(g, season, getText, nameFor) {
 // "Omer Asik" fold the same.
 export const normName = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
   .replace(/ı/g, "i").replace(/ł/g, "l").replace(/ø/g, "o").replace(/[đð]/g, "d").replace(/ß/g, "ss")
-  .toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b/g, "").replace(/[^a-z0-9]/g, "");
+  .toLowerCase().replace(/[\s,]+(jr|sr|ii|iii|iv)\.?$/, "").replace(/[^a-z0-9]/g, "");
+
+// A last name, folded the same way.
+const lastName = (s) => normName((s || "").replace(/[\s,]+(jr|sr|ii|iii|iv)\.?$/i, "").trim().split(/\s+/).pop());
+
+// BR name -> the ESPN spelling: the same folded name anywhere in the season,
+// or else the one ESPN name on that team with the same last name (Jeff /
+// Jeffery Taylor, Slava / Viacheslav Kravtsov), narrowed by first initial
+// when the team has two. `espnByTeam` is Map(tri -> Set of ESPN names).
+export function espnSpelling(name, tri, spelled, espnByTeam) {
+  const exact = spelled.get(normName(name));
+  if (exact) return exact;
+  const last = lastName(name);
+  let hits = [...(espnByTeam.get(tri) || [])].filter((n) => lastName(n) === last);
+  if (hits.length > 1) hits = hits.filter((n) => normName(n)[0] === normName(name)[0]);
+  return hits.length === 1 ? hits[0] : name;
+}
 
 // The month files a season's games go in, read back so a top-up appends.
 function loadMonths(dir, keys) {
@@ -357,10 +373,25 @@ export async function bakeSeason(season, { getJson = fetchJson, getText = fetchT
   // season. Names map to the ESPN spelling seen anywhere in the season.
   if (finished && boxes.some((b) => b && !boxHasMinutes(b))) {
     const spelled = new Map();
-    const see = (n) => { const k = normName(n); if (k && !spelled.has(k)) spelled.set(k, n); };
-    for (const b of boxes) if (b && boxHasMinutes(b)) for (const side of [b.a, b.b]) side.players.forEach((p) => see(p.name));
-    if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)) if (/^\d{4}-\d{2}\.json$/.test(f)) (readJson(path.join(dir, f))?.names || []).forEach(see);
-    const nameFor = (n) => spelled.get(normName(n)) || n;
+    const espnByTeam = new Map();
+    const see = (n, tri) => {
+      const k = normName(n);
+      if (k && !spelled.has(k)) spelled.set(k, n);
+      if (tri) { if (!espnByTeam.has(tri)) espnByTeam.set(tri, new Set()); espnByTeam.get(tri).add(n); }
+    };
+    for (const b of boxes) if (b && boxHasMinutes(b)) for (const side of [b.a, b.b]) side.players.forEach((p) => see(p.name, side.tri));
+    if (fs.existsSync(dir)) {
+      for (const f of fs.readdirSync(dir)) {
+        if (!/^\d{4}-\d{2}\.json$/.test(f)) continue;
+        const m = readJson(path.join(dir, f));
+        const fromBr = new Set(prev?.fromBbref || []);
+        for (const [id, g] of Object.entries(m?.games || {})) {
+          if (fromBr.has(id)) continue;
+          for (const side of [g.home, g.away]) for (const r of side.players) see(m.names[r[0]], side.tri);
+        }
+      }
+    }
+    const nameFor = (n, tri) => espnSpelling(n, tri, spelled, espnByTeam);
     for (let i = 0; i < newGames.length; i++) {
       if (!boxes[i] || boxHasMinutes(boxes[i])) continue;
       try {
