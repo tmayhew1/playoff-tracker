@@ -4,19 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import { VABreakdown } from "./va-breakdown";
 import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { loadBoxes } from "../lib/baked-games";
+import { monthBoxes, monthRows, peekBoxes, peekMonthly, seasonMonthly } from "../lib/month-tables";
 import { normalizeName, teamColor, withAlpha } from "../lib/format";
-import { monthlyVA, monthTotals } from "../lib/regular-season-games";
 
 // A month's league-wide leaders: every player who played in the month, best
 // Value Added per game first — the regular season's Series Averages. Box
-// scores load the first time the section is opened, a day's games per request
-// (/api/regular-season/lines), and are priced here against `lga`, so the
-// USG-ADJ switch re-ranks the table without reloading it. `allMonths` is the
-// whole season, for an open row's VA-by-month chart.
+// scores and the scored table come from lib/month-tables.js, which for a
+// baked season has usually loaded and scored them already while the page was
+// idle; otherwise they load the first time the section is opened. They are
+// priced against `lga`, so the USG-ADJ switch re-ranks the table without
+// reloading it. `allMonths` is the whole season, for an open row's
+// VA-by-month chart.
 export function MonthAverages({ month, allMonths, lga, season }) {
   const [open, setOpen] = useState(false);
-  const [boxes, setBoxes] = useState(null);
+  const [boxes, setBoxes] = useState(() => peekBoxes(season, month));
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -25,51 +26,46 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   // players with at least half the month's most games; the chip clears it.
   const [minGames, setMinGames] = useState(undefined);
   const [rsLookup, setRsLookup] = useState(null);
-  // The rest of the season's box scores, by month, for the VA-by-month chart:
-  // loaded the first time a row is opened (the open month's are already in).
-  const [seasonBoxes, setSeasonBoxes] = useState(null);
+  // The season's VA per game by month, for an open row's chart: usually
+  // built already (lib/month-tables.js warmSeason); otherwise loaded the first
+  // time a row is opened, and again under a new baseline.
+  const [monthly, setMonthly] = useState(() => peekMonthly(season, allMonths, lga));
   const [seasonProgress, setSeasonProgress] = useState(null);
 
   useEffect(() => {
     if (!open || boxes) return;
     let cancelled = false;
     setError(null);
-    loadBoxes(season, month.games, setProgress, () => cancelled).then((loaded) => {
+    monthBoxes(season, month, (p) => { if (!cancelled) setProgress(p); }).then((loaded) => {
       if (cancelled) return;
       if (!loaded.length) setError("Box scores unavailable");
       else setBoxes(loaded);
-    });
+    }, () => { if (!cancelled) setError("Box scores unavailable"); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
-    if (!expanded || seasonBoxes || !allMonths?.length) return;
+    if (!expanded || !allMonths?.length) return;
+    const hit = peekMonthly(season, allMonths, lga);
+    if (hit) { setMonthly(hit); return; }
     let cancelled = false;
-    const games = allMonths.flatMap((m) => m.games);
-    loadBoxes(season, games, setSeasonProgress, () => cancelled).then((loaded) => {
-      if (cancelled) return;
-      const byId = new Map(loaded.map((b) => [b.gameId, b]));
-      setSeasonBoxes(allMonths.map((m) => ({
-        key: m.key,
-        label: m.label.slice(0, 3),
-        boxes: m.games.flatMap((g) => (byId.has(g.gameId) ? [byId.get(g.gameId)] : [])),
-      })));
-    });
+    setMonthly(null);
+    seasonMonthly(season, allMonths, lga, (p) => { if (!cancelled) setSeasonProgress(p); })
+      .then((m) => { if (!cancelled) setMonthly(m); });
     return () => { cancelled = true; };
-  }, [expanded, seasonBoxes, allMonths]);
+  }, [expanded, allMonths, season, lga]);
 
-  const byMonth = useMemo(() => (seasonBoxes ? monthlyVA(seasonBoxes, lga) : null), [seasonBoxes, lga]);
   const monthChart = (name) => (color) => {
-    if (!byMonth) {
-      const note = seasonProgress ? `Loading the season… ${seasonProgress.done} of ${seasonProgress.total} days` : "Loading the season…";
+    if (!monthly) {
+      const note = seasonProgress ? `Loading the season… ${seasonProgress.done} of ${seasonProgress.total} months` : "Loading the season…";
       return <MonthlyVAChart months={[]} note={note} />;
     }
-    const series = byMonth.get(name) || seasonBoxes.map(() => null);
+    const series = monthly.byName.get(name) || monthly.months.map(() => null);
     return (
       <MonthlyVAChart
         color={color}
-        months={seasonBoxes.map((m, i) => ({ label: m.label, vapg: series[i]?.vapg ?? null, gp: series[i]?.gp ?? 0, current: m.key === month.key }))}
+        months={monthly.months.map((m, i) => ({ label: m.label, vapg: series[i]?.vapg ?? null, gp: series[i]?.gp ?? 0, current: m.key === month.key }))}
       />
     );
   };
@@ -94,7 +90,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
     return () => { cancelled = true; };
   }, [open, season, rsLookup]);
 
-  const rows = useMemo(() => (boxes ? monthTotals(boxes, lga) : null), [boxes, lga]);
+  const rows = useMemo(() => (boxes ? monthRows(season, month, boxes, lga) : null), [boxes, lga, season, month]);
   const qualifier = useMemo(() => (rows?.length ? Math.ceil(Math.max(...rows.map((r) => r.gp)) / 2) : null), [rows]);
   const min = minGames === undefined ? qualifier : minGames;
   const filtered = rows ? (min ? rows.filter((r) => r.gp >= min) : rows) : [];
@@ -112,9 +108,9 @@ export function MonthAverages({ month, allMonths, lga, season }) {
       </button>
       {open && (
         <div className="px-2 pb-2">
-          {!rows && !error && progress && (
+          {!rows && !error && (
             <div className="py-2 text-[10px] text-stone-500 italic text-center">
-              Loading box scores… {progress.done} of {progress.total} days
+              {progress?.total ? `Loading box scores… ${progress.done} of ${progress.total}` : "Loading box scores…"}
             </div>
           )}
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}

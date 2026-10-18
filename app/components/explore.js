@@ -14,6 +14,7 @@ import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
+import { warmSeason } from "../lib/month-tables";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -191,6 +192,10 @@ export function RegularSeasonMonths({ season, lga }) {
       });
     return () => { cancelled = true; };
   }, [season]);
+
+  // With the months listed, load and score a baked season's box scores while
+  // the page is idle, so a month's averages and a player's chart open at once.
+  useEffect(() => (data?.months?.length ? warmSeason(season, data.months, lga) : undefined), [data, season, lga]);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
