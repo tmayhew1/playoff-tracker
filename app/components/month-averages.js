@@ -204,7 +204,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                         byGame={p.byGame}
                         gameContext={p.gameContext}
                         breakdownTitle={`${month.label} Breakdown`}
-                        extraChart={monthChart(p.name)}
+                        leadChart={monthChart(p.name)}
                         useTeamColor
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => setExpanded(visible[i - 1].name) : undefined}
