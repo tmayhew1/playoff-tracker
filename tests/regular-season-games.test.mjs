@@ -38,8 +38,12 @@ test("the parse keeps finished regular-season games only", () => {
     ev("7", "2025-12-10T00:00Z", "OKC", 118, "PHX", 101, { note: "NBA Cup Quarterfinal" }),
     ev("8", "2000-01-05T00:30Z", "SEA", 101, "VAN", 99, { type: null }),
     ev("9", "2000-04-25T00:30Z", "SEA", 101, "UTAH", 99, { type: null, note: "West 1st Round" }),
+    ev("10", "1999-11-03T17:00Z", "CHI", 0, "NY", 0, { type: null }), // ESPN's phantom 0-0 copy
+    ev("11", "2003-11-05T00:30Z", "NJ", 99, "BOS", 90),
+    ev("12", "2023-12-10T01:30Z", "LAL", 123, "IND", 109, { note: "In-Season Tournament Championship" }),
   ]);
-  assert.deepEqual(games.map((g) => g.gameId), ["1", "7", "8"]);
+  assert.deepEqual(games.map((g) => g.gameId), ["1", "7", "8", "11"]);
+  assert.equal(games[3].home.tri, "NJN", "ESPN's NJ is the app's NJN");
   assert.deepEqual(games[0].home, { tri: "NYK", score: 110 });
   assert.deepEqual(games[0].away, { tri: "BOS", score: 104 });
 });

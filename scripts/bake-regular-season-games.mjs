@@ -35,6 +35,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = process.env.RS_GAMES_OUT || path.join(ROOT, "public", BAKED_DIR);
 const FIRST_SEASON = "1999-00";
 const CONCURRENCY = 8;
+// Raised whenever a change to what gets kept means seasons baked earlier are
+// wrong; a season baked by an older version is rebaked whole. 2: the Nets
+// ("NJ" on ESPN) kept, phantom 0-0 finals and repeated games dropped, the
+// In-Season Tournament final left out.
+export const BAKE_VERSION = 2;
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -157,7 +162,8 @@ function writeJson(file, data) {
 export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR, today = todayEt(), force = false } = {}) {
   const dir = path.join(outDir, season);
   const indexFile = path.join(dir, "index.json");
-  const prev = force ? null : readJson(indexFile);
+  const stored = readJson(indexFile);
+  const prev = force || (stored?.version || 1) < BAKE_VERSION ? null : stored;
   const days = seasonDays(season);
   const lastDay = days[days.length - 1];
   const yesterday = addDays(today, -1);
@@ -206,7 +212,10 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
 
   // Box scores for the new games, filed into their month.
   const monthKey = (g) => g.date.slice(0, 7);
-  const months = loadMonths(dir, [...new Set(newGames.map(monthKey))]);
+  // A fresh bake (first time, --force, or an older version) starts its months
+  // empty rather than appending to what an earlier bake wrote.
+  const keys = [...new Set(newGames.map(monthKey))];
+  const months = prev ? loadMonths(dir, keys) : new Map(keys.map((k) => [k, { names: [], games: {} }]));
   const nameIndexes = new Map();
   const nameIndex = (key) => {
     if (!nameIndexes.has(key)) {
@@ -222,7 +231,21 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
       return idx.get(name);
     };
   };
-  const boxes = await pool(newGames, CONCURRENCY, (g) => fetchBox(g.gameId, getJson));
+  let boxes = await pool(newGames, CONCURRENCY, (g) => fetchBox(g.gameId, getJson));
+  // ESPN sometimes lists one game twice under two ids; only one has a box.
+  // A boxless game that repeats another (same day, sides and score) is the
+  // copy, and is dropped rather than kept as a game without a box score.
+  if (!retryOnly) {
+    const sig = (g) => `${g.date}|${g.home.tri}|${g.home.score}|${g.away.tri}|${g.away.score}`;
+    const withBox = new Set(newGames.filter((g, i) => boxes[i]).map(sig));
+    for (const g of games) if (!newGames.includes(g)) withBox.add(sig(g));
+    const copy = new Set(newGames.filter((g, i) => !boxes[i] && withBox.has(sig(g))).map((g) => g.gameId));
+    if (copy.size) {
+      boxes = boxes.filter((b, i) => !copy.has(newGames[i].gameId));
+      newGames = newGames.filter((g) => !copy.has(g.gameId));
+      games = games.filter((g) => !copy.has(g.gameId));
+    }
+  }
   const noBox = new Set(retryOnly ? [] : (prev?.noBox || []));
   newGames.forEach((g, i) => {
     const parsed = boxes[i];
@@ -246,6 +269,9 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   }
 
   // Months first, the index last: the index is what the page trusts.
+  if (!prev && fs.existsSync(dir)) {
+    for (const f of fs.readdirSync(dir)) if (/^\d{4}-\d{2}\.json$/.test(f) && !months.has(f.slice(0, 7))) fs.rmSync(path.join(dir, f));
+  }
   for (const [key, m] of months) {
     writeJson(path.join(dir, `${key}.json`), { season, month: key, names: m.names, games: m.games });
   }
@@ -253,6 +279,7 @@ export async function bakeSeason(season, { getJson = fetchJson, outDir = OUT_DIR
   if (!games.length && !complete) return `${season}: no games yet`;
   writeJson(indexFile, {
     season,
+    version: BAKE_VERSION,
     through,
     complete,
     games,
@@ -286,6 +313,8 @@ async function main() {
       failed += 1;
       worked += 1;
       console.error(e.message);
+      // In a workflow, also as an annotation, readable without the full log.
+      if (process.env.GITHUB_ACTIONS) console.log(`::warning title=${s} not baked::${e.message.replace(/\r?\n/g, " ")}`);
     }
   }
   if (failed) process.exit(1);

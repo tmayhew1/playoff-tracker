@@ -6,7 +6,8 @@
 import { valueAddParts } from "../scoring";
 
 // ESPN NBA abbreviations -> the tricodes the rest of the app uses.
-const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
+// ESPN keeps the New Jersey Nets as "NJ" (1999-00 to 2011-12).
+const ESPN_TO_NBA = { GS: "GSW", NJ: "NJN", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (abbr) => ESPN_TO_NBA[abbr] || abbr;
 
 // Every franchise tricode ESPN has used since 1999-00, current and relocated.
@@ -58,7 +59,8 @@ export function parseScoreboard(events) {
     if (type != null ? type !== 2 : !!note) continue;
     // The NBA Cup final is the one Cup game that doesn't count toward the
     // regular season; its earlier knockout rounds do.
-    if (/cup/i.test(note) && /championship|\bfinal\b/i.test(note)) continue;
+    // (It was the In-Season Tournament in its first year, 2023-24.)
+    if (/cup|in-season tournament/i.test(note) && /championship|\bfinal\b/i.test(note)) continue;
     const cs = comp.competitors || [];
     const h = cs.find((c) => c.homeAway === "home");
     const a = cs.find((c) => c.homeAway === "away");
@@ -67,6 +69,9 @@ export function parseScoreboard(events) {
     if (!NBA_TEAMS.has(home) || !NBA_TEAMS.has(away)) continue;
     const hScore = Number(h.score), aScore = Number(a.score);
     if (!Number.isFinite(hScore) || !Number.isFinite(aScore)) continue;
+    // ESPN carries phantom copies of some early-2000s games, marked final at
+    // 0-0 beside the real one. No real game ends 0-0.
+    if (hScore === 0 && aScore === 0) continue;
     const iso = ev.date || comp.date;
     if (!iso) continue;
     out.push({

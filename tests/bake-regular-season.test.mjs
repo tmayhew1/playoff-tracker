@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { allSeasons, bakeSeason, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
+import { allSeasons, BAKE_VERSION, bakeSeason, seasonDays, seasonOf } from "../scripts/bake-regular-season-games.mjs";
 import { bakedThrough, unpackMonth } from "../app/lib/regular-season-games.js";
 
 const ev = (id, date, home, hs, away, as, { type = 2, completed = true, state } = {}) => ({
@@ -210,4 +210,33 @@ test("the page reads a baked season, and asks live only past it", async (t) => {
   const liveBoxes = await loadBoxes("2024-25", live.games, () => {}, () => false);
   assert.deepEqual(liveBoxes.map((b) => b.gameId), ["999"]);
   assert.ok(asked.includes("/api/regular-season/lines?ids=999"));
+});
+
+test("a game ESPN lists twice keeps the copy with the box score", async () => {
+  const out = tmp();
+  const days = { 20030104: [ev("230104006", "2003-01-04T17:30Z", "DAL", 102, "PHI", 83), ev("400222658", "2003-01-04T18:30Z", "DAL", 102, "PHI", 83)] };
+  const log = await bakeSeason("2002-03", { ...espn(days, { noBox: ["400222658"] }), outDir: out, today: "2026-10-17" });
+  assert.match(log, /\+1 games \(1 with box scores\).*1 total, 0 without/);
+  const index = read(out, "2002-03", "index.json");
+  assert.deepEqual(index.games.map((g) => g.gameId), ["230104006"]);
+  assert.equal(index.version, BAKE_VERSION);
+});
+
+test("a season baked by an older version is rebaked from scratch", async () => {
+  const out = tmp();
+  const days = { 20260110: [ev("501", "2026-01-11T00:00Z", "DEN", 120, "PHX", 110)] };
+  await bakeSeason("2025-26", { ...espn(days), outDir: out, today: "2026-10-17" });
+  const dir = path.join(out, "2025-26");
+  const old = read(out, "2025-26", "index.json");
+  delete old.version;
+  old.games.push({ gameId: "999", gameDateTimeUTC: "2025-12-01T00:00Z", date: "2025-12-01", home: { tri: "CHI", score: 0 }, away: { tri: "NYK", score: 0 } });
+  fs.writeFileSync(path.join(dir, "index.json"), JSON.stringify(old));
+  fs.writeFileSync(path.join(dir, "2025-12.json"), JSON.stringify({ names: [], games: {} }));
+
+  const again = espn(days);
+  assert.match(await bakeSeason("2025-26", { getJson: again.getJson, outDir: out, today: "2026-10-17" }), /\+1 games.*complete; 1 total/);
+  assert.ok(again.asked.some((u) => u.includes("scoreboard")), "read again from the start");
+  assert.deepEqual(read(out, "2025-26", "index.json").games.map((g) => g.gameId), ["501"]);
+  assert.deepEqual(fs.readdirSync(dir).sort(), ["2026-01.json", "index.json"], "the stale month is gone");
+  assert.equal(unpackMonth(read(out, "2025-26", "2026-01.json")).size, 1, "not appended twice");
 });

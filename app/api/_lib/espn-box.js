@@ -8,7 +8,7 @@ const HEADERS = {
   Accept: "application/json, text/plain, */*",
 };
 
-const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
+const ESPN_TO_NBA = { GS: "GSW", NJ: "NJN", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (a) => ESPN_TO_NBA[a] || a;
 const splitMade = (v) => {
   const [m, a] = String(v || "0-0").split("-");
