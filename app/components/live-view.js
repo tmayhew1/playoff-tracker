@@ -47,8 +47,8 @@ function SectionHeader({ title, count, live }) {
   );
 }
 
-// One game: the competition's scoreboard, away card beside home card, the
-// records under it, then the banner for the clock and the box score.
+// One game: the competition's scoreboard, away card beside home card, each
+// team's record under its card, then the banner for the clock and the box score.
 function GameCard({ g, lgaFor, baselineSeason }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
@@ -58,9 +58,13 @@ function GameCard({ g, lgaFor, baselineSeason }) {
         <TeamScoreCard side={g.away} opponent={g.home} gameStatus={g.gameStatus} />
         <TeamScoreCard side={g.home} opponent={g.away} gameStatus={g.gameStatus} right />
       </div>
-      <div className="relative py-1 text-center text-[10px] text-stone-500 tabular-nums">
-        {g.away.record || "–"} <span className="text-stone-400">@</span> {g.home.record || "–"}
-        {kind && <span className="absolute right-0.5 text-[9px] uppercase tracking-wider text-stone-400">{kind}</span>}
+      <div className="flex items-center justify-between px-3 py-1.5 text-sm font-bold tabular-nums tracking-widest">
+        <span style={{ color: teamColor(g.away.tri) }}>{g.away.record || "–"}</span>
+        <span className="flex flex-col items-center leading-tight">
+          <span className="text-stone-400">@</span>
+          {kind && <span className="text-[9px] font-normal uppercase tracking-wider text-stone-400">{kind}</span>}
+        </span>
+        <span style={{ color: teamColor(g.home.tri) }}>{g.home.record || "–"}</span>
       </div>
       <LiveGameBanner liveGame={g} lga={lga} teams={{}} useTeamColor boxSrc={g.boxSrc || undefined} hideScore />
     </div>
