@@ -6,18 +6,20 @@ import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
 
 // The competition's scoreboard card: a label over a big number, a badge for
 // whoever's ahead, and whatever sits under the number. ScoreCard fills it
-// with an owner's points; TeamScoreCard with a team's score on the Live tab.
-function ScoreFrame({ label, dot, accent, borderClass, badge, total, totalClass, children }) {
+// with an owner's points; TeamScoreCard with a team's score on the Live tab,
+// where `filled` paints the card in the team's color with white details.
+function ScoreFrame({ label, dot, accent, filled, borderClass, badge, total, totalClass, children }) {
+  const ink = filled ? "#fff" : accent;
   return (
-    <div className={`flex-1 p-3 border-2 ${borderClass || ""} bg-white`} style={accent ? { borderColor: accent } : undefined}>
+    <div className={`flex-1 p-3 border-2 ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${dot || ""}`} style={accent ? { backgroundColor: accent } : undefined}></span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{label}</span>
+          <span className={`w-2 h-2 rounded-full ${dot || ""}`} style={ink ? { backgroundColor: ink } : undefined}></span>
+          <span className={`text-[10px] font-bold uppercase tracking-widest ${filled ? "text-stone-100" : "text-stone-700"}`}>{label}</span>
         </div>
         {badge && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{badge}</span>}
       </div>
-      <div className={`text-4xl font-black tabular-nums ${totalClass || ""}`} style={accent ? { color: accent } : undefined}>{total}</div>
+      <div className={`text-4xl font-black tabular-nums ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
       {children}
     </div>
   );
@@ -57,18 +59,11 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 }
 
 
-// One side of a game on the Live tab, in the team's color. The badge reads
-// LEAD while the game is on and WINNER once it's final; nothing before tip.
+// One side of a game on the Live tab, in the team's color. Whoever's ahead
+// (or won) gets the card filled in; nothing's filled before tip.
 export function TeamScoreCard({ side, opponent, gameStatus }) {
   const ahead = gameStatus >= 2 && side.score > opponent.score;
-  return (
-    <ScoreFrame
-      label={side.tri}
-      accent={teamColor(side.tri)}
-      badge={ahead ? (gameStatus === 3 ? "WINNER" : "LEAD") : null}
-      total={side.score}
-    />
-  );
+  return <ScoreFrame label={side.tri} accent={teamColor(side.tri)} filled={ahead} total={side.score} />;
 }
 
 
