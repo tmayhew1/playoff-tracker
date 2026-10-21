@@ -127,9 +127,9 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
 // null — a baked regular-season game opens from its static file that way,
 // and only a game the bake doesn't hold goes to /api/boxscore.
 // `teamFilter` (a tricode) swaps the top five and the full box for that
-// team's whole box, framed in `armColor`; tapping the header then calls
-// `onTeamClear` instead of opening the full box.
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, armColor, onTeamClear }) {
+// team's whole box; tapping the header then calls `onTeamClear` instead of
+// opening the full box.
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -257,10 +257,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
   const showFull = expanded && !teamFilter;
 
   return (
-    <div
-      style={armColor ? { borderColor: armColor } : isFinal ? finalStyle : undefined}
-      className={armColor ? "border-2 bg-white" : `mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? finalClasses : "bg-stone-50 border-stone-200"}`}
-    >
+    <div style={isFinal ? finalStyle : undefined} className={`mt-1 border ${isLive ? "bg-red-50 border-red-300" : isFinal ? finalClasses : "bg-stone-50 border-stone-200"}`}>
       <button
         onClick={() => (teamFilter ? onTeamClear?.() : canExpand && setExpanded(!expanded))}
         disabled={!canExpand && !teamFilter}
@@ -303,10 +300,9 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {!box && !loading && !error && <div className="py-2 text-[10px] text-stone-500 italic text-center">No box score yet</div>}
           {box && teamPlayers.length > 0 && (
-            <>
-              <div className="text-[9px] uppercase tracking-widest py-1 font-semibold" style={{ color: armColor || undefined }}>{teamFilter} · Full Box by Value Added</div>
+            <div className="mt-2">
               <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} gameNumber={gameNumber} useTeamColor={useTeamColor} />
-            </>
+            </div>
           )}
           {box && teamPlayers.length === 0 && (
             <div className="py-2 text-[10px] text-stone-500 italic text-center">No player stats yet</div>

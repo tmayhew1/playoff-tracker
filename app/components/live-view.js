@@ -49,45 +49,37 @@ function SectionHeader({ title, count, live }) {
 
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
-// Tapping a card reaches an arm down from it, through its record, into the
-// banner, which then holds that team's whole box.
+// Tapping a card narrows the game to that team: its card alone, framed in its
+// color, over its whole box. Tapping it again brings the other side back.
 function GameCard({ g, lgaFor, baselineSeason }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
-  const armColor = team ? teamColor(team) : null;
-  const card = (side, opponent, right) => (
-    <button
-      onClick={() => setTeam(team === side.tri ? null : side.tri)}
-      aria-pressed={team === side.tri}
-      className="flex-1 flex text-left"
-    >
-      <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} />
-    </button>
-  );
-  // The arm's cell runs 2px over the banner's top border, in the banner's
-  // white, so the two read as one outline.
-  const record = (side, right) => {
-    const arm = team === side.tri;
-    return (
-      <div
-        className={`flex-1 px-3 py-1.5 border-x-2 border-transparent ${right ? "text-right" : ""} ${arm ? "relative z-10 bg-white -mb-[2px] pb-[calc(0.375rem+2px)]" : ""}`}
-        style={arm ? { borderColor: armColor } : undefined}
-      >
-        <span style={{ color: teamColor(side.tri) }}>{side.record || "–"}</span>
-      </div>
-    );
-  };
+  const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
-    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
-      <div className="flex gap-4">
-        {card(g.away, g.home, false)}
-        {card(g.home, g.away, true)}
+    <div
+      className={`mb-3 p-2 rounded ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
+      style={team ? { borderColor: teamColor(team) } : undefined}
+    >
+      <div className="flex gap-2">
+        {sides.map(([side, opponent, right]) => (
+          <button
+            key={side.tri}
+            onClick={() => setTeam(team ? null : side.tri)}
+            aria-pressed={!!team}
+            className="flex-1 flex text-left"
+          >
+            <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} />
+          </button>
+        ))}
       </div>
-      <div className="relative flex gap-4 text-sm font-bold tabular-nums tracking-widest">
-        {record(g.away, false)}
-        <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-stone-400">@</span>
-        {record(g.home, true)}
+      <div className="relative flex gap-2 text-sm font-bold tabular-nums tracking-widest">
+        {sides.map(([side, , right]) => (
+          <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
+            {side.record || "–"}
+          </div>
+        ))}
+        {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-stone-400">@</span>}
       </div>
       <LiveGameBanner
         liveGame={g}
@@ -98,7 +90,6 @@ function GameCard({ g, lgaFor, baselineSeason }) {
         boxSrc={g.boxSrc || undefined}
         hideScore
         teamFilter={team}
-        armColor={armColor}
         onTeamClear={() => setTeam(null)}
       />
     </div>
