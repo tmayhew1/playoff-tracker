@@ -17,7 +17,7 @@ import { CategoryContext } from "./category-context";
 import { AwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -30,7 +30,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   const [selectedCategory, setSelectedCategory] = useState(null);
   // "basic" folds the ten categories into the four Scoring/Passing/
   // Rebounding/Defense buckets with summed VA; "detail" is the full list.
-  const [viewMode, setViewMode] = useState("basic");
+  // A `singleGame` card (the Live tab's) is always the full list, headed by
+  // its game number and minutes.
+  const [viewMode, setViewMode] = useState(singleGame ? "detail" : "basic");
   const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
@@ -437,14 +439,14 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             )}
             <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{selectedDate ? "Date" : effectiveGameNumber ? gameTileLabel : "Games"}</div>
-                <div className="tabular-nums text-base font-semibold text-stone-700">{selectedDate || effectiveGameNumber || p.gp || 1}</div>
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{selectedDate ? "Date" : effectiveGameNumber || singleGame ? gameTileLabel : "Games"}</div>
+                <div className="tabular-nums text-base font-semibold text-stone-700">{selectedDate || effectiveGameNumber || (singleGame ? "–" : p.gp || 1)}</div>
                 {compare && atSeasonLevel && (
                   <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{cmpRow.gp || 0}</div>
                 )}
               </div>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">MIN/G</div>
+                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{singleGame ? "MIN" : "MIN/G"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
                 {compare && atSeasonLevel && (
                   <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{((cmpRow.mp || 0) / (cmpRow.gp || 1)).toFixed(1)}</div>
@@ -542,7 +544,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
         </div>
       ) : (
       <div className="flex justify-between items-center mb-1">
-        <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+        {!singleGame && <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
           <button
             type="button"
             onClick={() => switchView("basic")}
@@ -559,7 +561,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           >
             By Category
           </button>
-        </div>
+        </div>}
         {context && atSeasonLevel && (
           <CompareButton
             compare={compare}
