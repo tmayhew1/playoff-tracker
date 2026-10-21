@@ -218,6 +218,8 @@ test("live rosters move players to their current team, by name", async () => {
     BOS: [jokic.name.normalize("NFD").replace(/[̀-ͯ]/g, "")],
     OKC: [`${first}aun ${rest.join(" ")}`],
     SA: ["Brand New Rookie"],
+    // Same initial and surname as Drew Peterson, who's on no roster here.
+    UTAH: ["Darryn Peterson"],
   };
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
@@ -236,6 +238,9 @@ test("live rosters move players to their current team, by name", async () => {
     assert.equal(by.gilgesh01, "OKC");
     assert.equal(by.wembavi01, null); // on no roster in this mock
     assert.deepEqual(d.unprojected.SAS, ["Brand New Rookie"]);
+    assert.equal(by.peterdr01, null);
+    const dp = d.players.find((p) => p.name === "Darryn Peterson");
+    assert.ok(dp?.rookie && dp.team === "UTA" && dp.pick === 2, JSON.stringify(dp));
   } finally {
     globalThis.fetch = realFetch;
   }

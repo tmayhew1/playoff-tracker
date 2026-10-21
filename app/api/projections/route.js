@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { normalizeName } from "../../lib/format";
 import { withTeamContext } from "../_lib/team-context";
-import { projectRookies } from "../_lib/rookies";
+import { projectRookies, rookieClassNames } from "../_lib/rookies";
 import { mergeInjuries, parseEspnInjuries, withInjuries } from "../../lib/injuries";
 import { lgaForSeason, valueAdd } from "../../scoring";
 
@@ -68,8 +68,9 @@ async function liveRosters() {
 
 // Joins roster names to projected players: an exact normalized-name match
 // first, then for whoever is left, surname + first initial when that pair is
-// unique on both sides ("Nic Claxton" / "Nicolas Claxton").
-function joinRosters(players, rosters) {
+// unique on both sides ("Nic Claxton" / "Nicolas Claxton"), never for a name
+// in `rookies` (this year's draft class and college players).
+function joinRosters(players, rosters, rookies = new Set()) {
   const byName = new Map();
   for (const [team, names] of Object.entries(rosters)) {
     for (const n of names) byName.set(normalizeName(n), { team, name: n, used: false });
@@ -84,7 +85,7 @@ function joinRosters(players, rosters) {
     return parts.length > 1 ? `${parts[0][0]} ${parts.slice(1).join(" ")}` : null;
   };
   const count = (list, key) => list.reduce((m, x) => { const k = key(x); if (k) m.set(k, (m.get(k) || 0) + 1); return m; }, new Map());
-  const openRoster = [...byName.values()].filter((r) => !r.used);
+  const openRoster = [...byName.values()].filter((r) => !r.used && !rookies.has(normalizeName(r.name)));
   const openPlayers = players.filter((p) => !teamOf.has(p.slug));
   const rc = count(openRoster, (r) => loose(r.name)), pc = count(openPlayers, (p) => loose(p.name));
   for (const p of openPlayers) {
@@ -138,7 +139,7 @@ export async function GET() {
   const curated = reported?.season === baked.season ? reported : null;
   let players, unprojected = {};
   if (rosters) {
-    const j = joinRosters(baked.players, rosters);
+    const j = joinRosters(baked.players, rosters, await rookieClassNames(baked));
     unprojected = j.unprojected;
     players = baked.players.map((p) => ({ ...p, team: j.teamOf.get(p.slug) || null }));
     // Rookies join before the team context, so they take their share too.
