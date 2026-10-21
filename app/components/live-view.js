@@ -18,6 +18,9 @@ import { teamColor } from "../lib/format";
 const LIVE_POLL = 30000;
 const IDLE_POLL = 5 * 60000;
 
+// Live red, later grey, final black, in the slate summary.
+const STATUS_INK = { 1: "text-stone-400", 2: "text-red-600", 3: "text-stone-900" };
+
 const KIND_LABEL = { preseason: "Preseason", playoffs: "Playoffs", playin: "Play-In", allstar: "All-Star" };
 
 function dayLabel(date) {
@@ -190,12 +193,20 @@ export function LiveView() {
         <div className="mb-5 p-3 bg-white border-2 border-stone-900 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-[10px] uppercase tracking-widest text-stone-500">{dayLabel(data.date)}</div>
-            <div className="text-sm font-bold text-stone-900">
-              {games.length === 0 ? "No games today" : `${games.length} game${games.length === 1 ? "" : "s"} on the slate`}
-            </div>
+            {games.length === 0
+              ? <div className="text-sm font-bold text-stone-900">No games today</div>
+              : (
+                <div className="mt-0.5 space-y-0.5 text-sm font-bold tabular-nums">
+                  {games.map((g) => (
+                    <div key={g.gameId} className={STATUS_INK[g.gameStatus] || "text-stone-900"}>
+                      {g.gameStatus === 1 ? `${g.away.tri} @ ${g.home.tri}` : `${g.away.tri} ${g.away.score} @ ${g.home.score} ${g.home.tri}`}
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
           <div className="flex gap-3 shrink-0 text-center">
-            {[["Live", live.length, anyLive ? "text-red-600" : "text-stone-300"], ["Later", upcoming.length, "text-stone-900"], ["Final", finals.length, "text-stone-900"]].map(([label, n, cls]) => (
+            {[["Live", live.length, anyLive ? "text-red-600" : "text-stone-300"], ["Later", upcoming.length, STATUS_INK[1]], ["Final", finals.length, STATUS_INK[3]]].map(([label, n, cls]) => (
               <div key={label}>
                 <div className={`text-2xl font-black tabular-nums leading-none ${n ? cls : "text-stone-300"}`}>{n}</div>
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 mt-0.5">{label}</div>
