@@ -110,6 +110,8 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const gameId = searchParams.get("gameId");
   const src = searchParams.get("src"); // "espn" -> skip the live-CDN attempt
+  // The Live tab's in-progress games: still changing, so never cached long.
+  const live = searchParams.get("live") === "1";
   if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
   let body = null;
   let liveCache = true;
@@ -141,7 +143,9 @@ export async function GET(req) {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+        "Cache-Control": live
+          ? "public, s-maxage=20, stale-while-revalidate=60"
+          : "public, s-maxage=86400, stale-while-revalidate=604800",
       },
     });
   }
@@ -182,7 +186,7 @@ export async function GET(req) {
     headers: {
       "Content-Type": "application/json",
       // Historical box scores are immutable — cache them for a day.
-      "Cache-Control": liveCache
+      "Cache-Control": liveCache || live
         ? "public, s-maxage=20, stale-while-revalidate=60"
         : "public, s-maxage=86400, stale-while-revalidate=604800",
     },
