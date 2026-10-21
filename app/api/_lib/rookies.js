@@ -12,11 +12,23 @@ import { normalizeName } from "../../lib/format";
 // season. An undrafted rookie with no college season stays in `unprojected`.
 
 const round1 = (x) => Math.round(x * 10) / 10;
+const readData = (f) => readFile(join(process.cwd(), "app", "data", f), "utf8").then(JSON.parse).catch(() => null);
+
+// Normalized names of this year's draft class and the last college season:
+// players with no NBA line yet, so the roster join's loose surname + initial
+// match must not hand one a veteran's projection (Darryn Peterson ≠ Drew
+// Peterson).
+export async function rookieClassNames(baked) {
+  const [draft, college] = await Promise.all([
+    readData("draft-picks.json"),
+    baked.collegeSeason ? readData(`college-${baked.collegeSeason}.json`) : null,
+  ]);
+  return new Set([...(draft?.years?.[baked.draftYear] || []), ...(college?.players || [])].map((r) => normalizeName(r.name)));
+}
 
 export async function projectRookies(unprojected, baked) {
   const rk = baked.params?.rookie;
   if (!rk || !baked.ctx) return { rookies: [], unprojected };
-  const readData = (f) => readFile(join(process.cwd(), "app", "data", f), "utf8").then(JSON.parse).catch(() => null);
   const college = baked.collegeSeason ? await readData(`college-${baked.collegeSeason}.json`) : null;
   const draft = (await readData("draft-picks.json"))?.years?.[baked.draftYear] || [];
   const pickOf = new Map(draft.map((d) => [normalizeName(d.name), d.pick]));
