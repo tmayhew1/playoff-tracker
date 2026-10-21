@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
+import { TeamScoreCard } from "./scoreboard";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 
@@ -16,6 +17,9 @@ import { teamColor } from "../lib/format";
 // nothing is (so a game tipping off still turns up on its own).
 const LIVE_POLL = 30000;
 const IDLE_POLL = 5 * 60000;
+
+// Live red, later grey, final black, in the slate summary.
+const STATUS_INK = { 1: "text-stone-400", 2: "text-red-600", 3: "text-stone-900" };
 
 const KIND_LABEL = { preseason: "Preseason", playoffs: "Playoffs", playin: "Play-In", allstar: "All-Star" };
 
@@ -46,22 +50,64 @@ function SectionHeader({ title, count, live }) {
   );
 }
 
-// One game: the matchup with records over its banner, the way a series row
-// sits over its games in the bracket.
+// A team's 2P / 3P / FT as [label, made, attempted], summed from its box.
+function shootingSplits(box, tri) {
+  const players = [box?.away, box?.home].find((t) => t?.tri === tri)?.players;
+  if (!players) return null;
+  const sum = (k) => players.reduce((n, p) => n + (p[k] || 0), 0);
+  const [fgm, fga, tpm, tpa] = [sum("fgm"), sum("fga"), sum("tpm"), sum("tpa")];
+  return [["2P", fgm - tpm, fga - tpa], ["3P", tpm, tpa], ["FT", sum("ftm"), sum("fta")]];
+}
+
+// One game: the competition's scoreboard, away card beside home card, each
+// team's record under its card, then the banner for the clock and the box score.
+// Tapping a card narrows the game to that team: its card alone, framed in its
+// color with its shooting down the far side, over its whole box. Tapping it
+// again brings the other side back.
 function GameCard({ g, lgaFor, baselineSeason }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
+  const [team, setTeam] = useState(null);
+  const [box, setBox] = useState(null);
+  const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
-    <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
-      <div className="flex items-baseline justify-between px-0.5 text-xs">
-        <span className="flex items-baseline gap-1.5">
-          <TeamTag side={g.away} />
-          <span className="text-stone-400 text-[10px]">@</span>
-          <TeamTag side={g.home} />
-        </span>
-        {kind && <span className="text-[9px] uppercase tracking-wider text-stone-400">{kind}</span>}
+    <div
+      className={`mb-3 p-2 rounded ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
+      style={team ? { borderColor: teamColor(team) } : undefined}
+    >
+      <div className="relative flex gap-4">
+        {sides.map(([side, opponent, right]) => (
+          <button
+            key={side.tri}
+            onClick={() => setTeam(team ? null : side.tri)}
+            aria-pressed={!!team}
+            className="flex-1 flex text-left"
+          >
+            <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} splits={team ? shootingSplits(box, team) : null} />
+          </button>
+        ))}
+        {/* In the gap, halfway down the cards. */}
+        {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-xs font-bold text-stone-400">@</span>}
       </div>
-      <LiveGameBanner liveGame={g} lga={lga} teams={{}} useTeamColor boxSrc={g.boxSrc || undefined} />
+      <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
+        {sides.map(([side, , right]) => (
+          <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
+            {side.record || "–"}
+          </div>
+        ))}
+      </div>
+      <LiveGameBanner
+        liveGame={g}
+        gameLabel={kind}
+        lga={lga}
+        teams={{}}
+        useTeamColor
+        boxSrc={g.boxSrc || undefined}
+        hideScore
+        teamFilter={team}
+        onTeamClear={() => setTeam(null)}
+        onBox={setBox}
+      />
     </div>
   );
 }
@@ -145,21 +191,33 @@ export function LiveView() {
       </div>
 
       {data && (
-        <div className="mb-5 p-3 bg-white border-2 border-stone-900 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-widest text-stone-500">{dayLabel(data.date)}</div>
-            <div className="text-sm font-bold text-stone-900">
-              {games.length === 0 ? "No games today" : `${games.length} game${games.length === 1 ? "" : "s"} on the slate`}
+        <div className="mb-5 p-3 bg-white border-2 border-stone-900">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-xs uppercase tracking-wider text-stone-500 truncate">{dayLabel(data.date)}</div>
+            <div className="flex gap-2.5 shrink-0 text-xs uppercase tracking-wider text-stone-500 tabular-nums">
+              {[["Live", live.length, STATUS_INK[2]], ["Later", upcoming.length, STATUS_INK[1]], ["Final", finals.length, STATUS_INK[3]]].map(([label, n, cls]) => (
+                <span key={label}><span className={`font-black ${n ? cls : "text-stone-300"}`}>{n}</span> {label}</span>
+              ))}
             </div>
           </div>
-          <div className="flex gap-3 shrink-0 text-center">
-            {[["Live", live.length, anyLive ? "text-red-600" : "text-stone-300"], ["Later", upcoming.length, "text-stone-900"], ["Final", finals.length, "text-stone-900"]].map(([label, n, cls]) => (
-              <div key={label}>
-                <div className={`text-2xl font-black tabular-nums leading-none ${n ? cls : "text-stone-300"}`}>{n}</div>
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 mt-0.5">{label}</div>
+          {games.length === 0
+            ? <div className="mt-1 text-sm font-bold text-stone-900 text-center">No games today</div>
+            : (
+              // Each line's @ sits on the card's center line.
+              <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-1.5 gap-y-0.5 text-sm font-bold tabular-nums">
+                {games.map((g) => {
+                  const ink = STATUS_INK[g.gameStatus] || "text-stone-900";
+                  const scored = g.gameStatus !== 1;
+                  return (
+                    <Fragment key={g.gameId}>
+                      <span className={`${ink} text-right`}>{g.away.tri}{scored && ` ${g.away.score}`}</span>
+                      <span className={ink}>@</span>
+                      <span className={ink}>{scored && `${g.home.score} `}{g.home.tri}</span>
+                    </Fragment>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            )}
         </div>
       )}
 
