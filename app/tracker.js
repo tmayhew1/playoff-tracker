@@ -111,6 +111,14 @@ function Tracker({ initial }) {
   }, [setTab]);
   const clearAwardFocus = useCallback(() => setAwardFocus(null), []);
 
+  // The Live tab reads "Up Next" once the night's games are over (see
+  // LiveView). Asked once here so the label is right before the tab is
+  // opened; LiveView keeps it current from its own polling after that.
+  const [liveMode, setLiveMode] = useState("live");
+  useEffect(() => {
+    fetch("/api/live").then((r) => r.json()).then((d) => d?.mode && setLiveMode(d.mode)).catch(() => {});
+  }, []);
+
   return (
     <ShareProvider value={report}>
     <AwardNavProvider value={goToAward}>
@@ -137,8 +145,8 @@ function Tracker({ initial }) {
               onClick={() => setTab(id)}
               className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === id ? "bg-stone-900 text-white" : "text-stone-500"}`}
             >
-              {id === "live" && <span className="text-red-600 mr-1" aria-hidden="true">•</span>}
-              {label}
+              {id === "live" && liveMode === "live" && <span className="text-red-600 mr-1" aria-hidden="true">•</span>}
+              {id === "live" && liveMode === "upnext" ? "Up Next" : label}
             </button>
           ))}
         </div>
@@ -168,7 +176,7 @@ function Tracker({ initial }) {
         )}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView onMode={setLiveMode} /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
       </div>
     </div>
     </AwardNavProvider>

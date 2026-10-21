@@ -5,7 +5,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isoClock, mergeSlates, parseEspnScoreboard, parseNbaScoreboard, seasonOf } from "../app/api/_lib/live-games.js";
+import { addDays, isoClock, mergeSlates, parseEspnScoreboard, parseNbaScoreboard, seasonOf, upNextNeeds } from "../app/api/_lib/live-games.js";
 
 const nbaGame = (gameId, status, away, home, extra = {}) => ({
   gameId, gameCode: `20261021/${away}${home}`, gameStatus: status, gameStatusText: extra.text || "",
@@ -110,4 +110,19 @@ test("an empty NBA night is still the NBA's answer", () => {
   const m = mergeSlates({ date: "2026-07-04", games: [] }, null);
   assert.equal(m.source, "nba");
   assert.deepEqual(m.games, []);
+});
+
+test("Up Next: a slate all done looks ahead, one not begun looks back, any game on stays Live", () => {
+  const g = (gameStatus) => ({ gameStatus });
+  assert.equal(upNextNeeds([g(3), g(2), g(1)]), null);
+  assert.equal(upNextNeeds([g(3), g(1)]), null);
+  assert.deepEqual(upNextNeeds([g(3), g(3)]), { next: true, prev: false });
+  assert.deepEqual(upNextNeeds([g(1), g(1)]), { next: false, prev: true });
+  assert.deepEqual(upNextNeeds([]), { next: true, prev: true });
+});
+
+test("days step across months and years", () => {
+  assert.equal(addDays("2026-10-31", 1), "2026-11-01");
+  assert.equal(addDays("2027-01-01", -1), "2026-12-31");
+  assert.equal(addDays("2026-10-21", -7), "2026-10-14");
 });

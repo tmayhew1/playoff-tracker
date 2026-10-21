@@ -6,7 +6,9 @@ import { TeamScoreCard } from "./scoreboard";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 
-// The Live tab: today's games, the ones on now at the top. Built from the
+// The Live tab: today's games, the ones on now at the top. Once the day's
+// games are over (or before the first tips) it's Up Next instead: the next
+// slate's schedule over the last slate's finals. Built from the
 // playoff tracker's live pieces (CurrentView's sync strip, the bracket's game
 // banners, the "Today's Upcoming Games" card) with the draft taken out, so it
 // works any night of the season. Games come from /api/live; each live banner
@@ -29,6 +31,17 @@ function dayLabel(date) {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+// A slate's heading in Up Next, by where its day sits from today (Eastern,
+// the NBA's day): "Today’s Games", "Yesterday’s Games", or past those the
+// weekday.
+const todayEt = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+function slateTitle(date) {
+  const diff = Math.round((Date.parse(date) - Date.parse(todayEt())) / 864e5);
+  const day = diff === 0 ? "Today" : diff === -1 ? "Yesterday" : diff === 1 ? "Tomorrow"
+    : new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+  return `${day}’s Games`;
+}
+
 function TeamTag({ side }) {
   return (
     <span className="inline-flex items-baseline gap-1">
@@ -38,12 +51,13 @@ function TeamTag({ side }) {
   );
 }
 
-function SectionHeader({ title, count, live }) {
+function SectionHeader({ title, count, live, sub }) {
   return (
     <div className="flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900">
       <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
         {live && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
         {title}
+        {sub && <span className="font-normal tracking-wider text-stone-500">{sub}</span>}
       </h3>
       <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">{count} game{count === 1 ? "" : "s"}</span>
     </div>
@@ -139,7 +153,43 @@ function UpcomingList({ games }) {
   );
 }
 
-export function LiveView() {
+// The slate at a glance: its day, how many games are live / later / final,
+// and every game's line, colored by where it stands.
+function SlateSummary({ date, games }) {
+  const count = (status) => games.filter((g) => g.gameStatus === status).length;
+  return (
+    <div className="mb-5 p-3 bg-white border-2 border-stone-900">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="text-xs uppercase tracking-wider text-stone-500 truncate">{dayLabel(date)}</div>
+        <div className="flex gap-2.5 shrink-0 text-xs uppercase tracking-wider text-stone-500 tabular-nums">
+          {[["Live", count(2), STATUS_INK[2]], ["Later", count(1), STATUS_INK[1]], ["Final", count(3), STATUS_INK[3]]].map(([label, n, cls]) => (
+            <span key={label}><span className={`font-black ${n ? cls : "text-stone-300"}`}>{n}</span> {label}</span>
+          ))}
+        </div>
+      </div>
+      {games.length === 0
+        ? <div className="mt-1 text-sm font-bold text-stone-900 text-center">No games today</div>
+        : (
+          // Each line's @ sits on the card's center line.
+          <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-1.5 gap-y-0.5 text-sm font-bold tabular-nums">
+            {games.map((g) => {
+              const ink = STATUS_INK[g.gameStatus] || "text-stone-900";
+              const scored = g.gameStatus !== 1;
+              return (
+                <Fragment key={g.gameId}>
+                  <span className={`${ink} text-right`}>{g.away.tri}{scored && ` ${g.away.score}`}</span>
+                  <span className={ink}>@</span>
+                  <span className={ink}>{scored && `${g.home.score} `}{g.home.tri}</span>
+                </Fragment>
+              );
+            })}
+          </div>
+        )}
+    </div>
+  );
+}
+
+export function LiveView({ onMode }) {
   const { lgaFor } = useVAMode();
   const [data, setData] = useState(null);
   const [syncing, setSyncing] = useState(false);
@@ -169,6 +219,10 @@ export function LiveView() {
   const upcoming = games.filter((g) => g.gameStatus === 1);
   const finals = games.filter((g) => g.gameStatus === 3);
   const anyLive = live.length > 0;
+  // Nothing on and the day done (or not begun): the next slate and the last.
+  const upNext = data?.mode === "upnext";
+
+  useEffect(() => { if (data) onMode?.(data.mode); }, [data, onMode]);
 
   useEffect(() => {
     const id = setInterval(sync, anyLive ? LIVE_POLL : IDLE_POLL);
@@ -190,38 +244,34 @@ export function LiveView() {
         </button>
       </div>
 
-      {data && (
-        <div className="mb-5 p-3 bg-white border-2 border-stone-900">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="text-xs uppercase tracking-wider text-stone-500 truncate">{dayLabel(data.date)}</div>
-            <div className="flex gap-2.5 shrink-0 text-xs uppercase tracking-wider text-stone-500 tabular-nums">
-              {[["Live", live.length, STATUS_INK[2]], ["Later", upcoming.length, STATUS_INK[1]], ["Final", finals.length, STATUS_INK[3]]].map(([label, n, cls]) => (
-                <span key={label}><span className={`font-black ${n ? cls : "text-stone-300"}`}>{n}</span> {label}</span>
-              ))}
-            </div>
-          </div>
-          {games.length === 0
-            ? <div className="mt-1 text-sm font-bold text-stone-900 text-center">No games today</div>
-            : (
-              // Each line's @ sits on the card's center line.
-              <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-1.5 gap-y-0.5 text-sm font-bold tabular-nums">
-                {games.map((g) => {
-                  const ink = STATUS_INK[g.gameStatus] || "text-stone-900";
-                  const scored = g.gameStatus !== 1;
-                  return (
-                    <Fragment key={g.gameId}>
-                      <span className={`${ink} text-right`}>{g.away.tri}{scored && ` ${g.away.score}`}</span>
-                      <span className={ink}>@</span>
-                      <span className={ink}>{scored && `${g.home.score} `}{g.home.tri}</span>
-                    </Fragment>
-                  );
-                })}
-              </div>
+      {data && !upNext && <SlateSummary date={data.date} games={games} />}
+
+      {upNext && (
+        <>
+          <div className="mb-6">
+            {data.next ? (
+              <>
+                <SectionHeader title={slateTitle(data.next.date)} sub={dayLabel(data.next.date)} count={data.next.games.length} />
+                <UpcomingList games={data.next.games} />
+              </>
+            ) : (
+              <>
+                <SectionHeader title="Up Next" count={0} />
+                <div className="py-4 text-center text-[11px] text-stone-500 border border-dashed border-stone-300 bg-white">Nothing on the schedule this week.</div>
+              </>
             )}
-        </div>
+          </div>
+          {data.prev && (
+            <div className="mb-6">
+              <SectionHeader title={slateTitle(data.prev.date)} count={data.prev.games.length} />
+              <SlateSummary date={data.prev.date} games={data.prev.games} />
+              {data.prev.games.map((g) => <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason} />)}
+            </div>
+          )}
+        </>
       )}
 
-      {data && !anyLive && (
+      {data && !upNext && !anyLive && (
         <div className="mb-6 py-4 text-center text-[11px] text-stone-500 border border-dashed border-stone-300 bg-white">
           {upcoming.length
             ? <>No games on right now. Next tip: <span className="font-semibold text-stone-700">{upcomingTip(upcoming[0])}</span></>
@@ -236,21 +286,21 @@ export function LiveView() {
         </div>
       )}
 
-      {upcoming.length > 0 && (
+      {!upNext && upcoming.length > 0 && (
         <>
           <SectionHeader title="Later Today" count={upcoming.length} />
           <UpcomingList games={upcoming} />
         </>
       )}
 
-      {finals.length > 0 && (
+      {!upNext && finals.length > 0 && (
         <div className="mb-6">
           <SectionHeader title="Final" count={finals.length} />
           {finals.map((g) => <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason} />)}
         </div>
       )}
 
-      {data && games.length > 0 && (
+      {data && (upNext ? data.prev?.games.length : games.length) > 0 && (
         <div className="text-[10px] text-stone-400 italic text-center">
           VA vs the {data.baselineSeason} baseline{data.baselineSeason !== data.season ? " (this season’s isn’t set yet)" : ""}. Tap a game for its box score, a player for his VA breakdown.
         </div>
