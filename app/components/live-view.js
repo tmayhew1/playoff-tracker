@@ -47,14 +47,25 @@ function SectionHeader({ title, count, live }) {
   );
 }
 
+// A team's 2P / 3P / FT as [label, made, attempted], summed from its box.
+function shootingSplits(box, tri) {
+  const players = [box?.away, box?.home].find((t) => t?.tri === tri)?.players;
+  if (!players) return null;
+  const sum = (k) => players.reduce((n, p) => n + (p[k] || 0), 0);
+  const [fgm, fga, tpm, tpa] = [sum("fgm"), sum("fga"), sum("tpm"), sum("tpa")];
+  return [["2P", fgm - tpm, fga - tpa], ["3P", tpm, tpa], ["FT", sum("ftm"), sum("fta")]];
+}
+
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
 // Tapping a card narrows the game to that team: its card alone, framed in its
-// color, over its whole box. Tapping it again brings the other side back.
+// color with its shooting down the far side, over its whole box. Tapping it
+// again brings the other side back.
 function GameCard({ g, lgaFor, baselineSeason }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
+  const [box, setBox] = useState(null);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
@@ -69,7 +80,7 @@ function GameCard({ g, lgaFor, baselineSeason }) {
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} />
+            <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} splits={team ? shootingSplits(box, team) : null} />
           </button>
         ))}
       </div>
@@ -91,6 +102,7 @@ function GameCard({ g, lgaFor, baselineSeason }) {
         hideScore
         teamFilter={team}
         onTeamClear={() => setTeam(null)}
+        onBox={setBox}
       />
     </div>
   );

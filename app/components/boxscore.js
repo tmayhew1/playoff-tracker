@@ -128,8 +128,8 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
 // and only a game the bake doesn't hold goes to /api/boxscore.
 // `teamFilter` (a tricode) swaps the top five and the full box for that
 // team's whole box; tapping the header then calls `onTeamClear` instead of
-// opening the full box.
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear }) {
+// opening the full box. `onBox` hears each box as it loads.
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -140,6 +140,9 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
   // changes every render must not re-trigger the load effect below.
   const boxLoaderRef = useRef(boxLoader);
   boxLoaderRef.current = boxLoader;
+  const onBoxRef = useRef(onBox);
+  onBoxRef.current = onBox;
+  useEffect(() => { onBoxRef.current?.(box); }, [box]);
 
   const loadBox = useCallback(async () => {
     if (!liveGame?.gameId) return;

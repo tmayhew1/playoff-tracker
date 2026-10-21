@@ -8,11 +8,13 @@ import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
 // whoever's ahead, and whatever sits under the number. ScoreCard fills it
 // with an owner's points; TeamScoreCard with a team's score on the Live tab,
 // where `filled` paints the card in the team's color with white details and
-// `right` mirrors it for the home side.
-function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, children }) {
+// `right` mirrors it for the home side. `aside` sits on the far side of the
+// card from the label and number.
+function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, aside, children }) {
   const ink = filled ? "#fff" : accent;
   return (
-    <div className={`flex-1 p-3 border-2 ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
+    <div className={`flex-1 p-3 border-2 flex items-center gap-3 ${right ? "flex-row-reverse" : ""} ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
+      <div className="flex-1 min-w-0">
       <div className={`flex items-center justify-between mb-1 ${right ? "flex-row-reverse" : ""}`}>
         <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
           <span className={`w-2 h-2 rounded-full ${dot || ""}`} style={ink ? { backgroundColor: ink } : undefined}></span>
@@ -22,6 +24,8 @@ function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, tot
       </div>
       <div className={`text-4xl font-black tabular-nums ${right ? "text-right" : ""} ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
       {children}
+      </div>
+      {aside}
     </div>
   );
 }
@@ -62,9 +66,20 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 
 // One side of a game on the Live tab, in the team's color. Whoever's ahead
 // (or won) gets the card filled in; nothing's filled before tip.
-export function TeamScoreCard({ side, opponent, gameStatus, right }) {
+// `splits`, when given, lists the team's 2P / 3P / FT down the far side.
+export function TeamScoreCard({ side, opponent, gameStatus, right, splits }) {
   const ahead = gameStatus >= 2 && side.score > opponent.score;
-  return <ScoreFrame label={side.tri} accent={teamColor(side.tri)} filled={ahead} right={right} total={side.score} />;
+  const aside = splits && (
+    <div className={`shrink-0 space-y-0.5 text-[10px] tabular-nums ${right ? "text-left" : "text-right"} ${ahead ? "text-white" : "text-stone-600"}`}>
+      {splits.map(([label, made, att]) => (
+        <div key={label}>
+          <span className={`font-bold tracking-wider mr-1.5 ${ahead ? "text-stone-100" : "text-stone-400"}`}>{label}</span>
+          {made}/{att} <span className={ahead ? "text-stone-100" : "text-stone-400"}>({att ? (100 * made / att).toFixed(1) : "–"}%)</span>
+        </div>
+      ))}
+    </div>
+  );
+  return <ScoreFrame label={side.tri} accent={teamColor(side.tri)} filled={ahead} right={right} total={side.score} aside={aside} />;
 }
 
 
