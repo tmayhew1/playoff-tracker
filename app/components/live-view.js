@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
 import { useVAMode } from "../lib/va-mode";
@@ -191,17 +191,18 @@ function SlateSummary({ date, games }) {
       {games.length === 0
         ? <div className="mt-1 text-sm font-bold text-stone-900 text-center">No games today</div>
         : (
-          // Each line's @ sits on the card's center line.
-          <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-1.5 gap-y-0.5 text-sm font-bold tabular-nums">
+          // Two halves, filled left-right then top-bottom; each line's @ sits
+          // on its half's center line.
+          <div className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-0.5 text-sm font-bold tabular-nums">
             {games.map((g) => {
               const ink = STATUS_INK[g.gameStatus] || "text-stone-900";
               const scored = g.gameStatus !== 1;
               return (
-                <Fragment key={g.gameId}>
-                  <span className={`${ink} text-right`}>{g.away.tri}{scored && ` ${g.away.score}`}</span>
-                  <span className={ink}>@</span>
-                  <span className={ink}>{scored && `${g.home.score} `}{g.home.tri}</span>
-                </Fragment>
+                <div key={g.gameId} className={`grid grid-cols-[1fr_auto_1fr] gap-x-1.5 ${ink}`}>
+                  <span className="text-right whitespace-nowrap">{g.away.tri}{scored && ` ${g.away.score}`}</span>
+                  <span>@</span>
+                  <span className="whitespace-nowrap">{scored && `${g.home.score} `}{g.home.tri}</span>
+                </div>
               );
             })}
           </div>
