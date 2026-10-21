@@ -49,24 +49,58 @@ function SectionHeader({ title, count, live }) {
 
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
+// Tapping a card reaches an arm down from it, through its record, into the
+// banner, which then holds that team's whole box.
 function GameCard({ g, lgaFor, baselineSeason }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
+  const [team, setTeam] = useState(null);
+  const armColor = team ? teamColor(team) : null;
+  const card = (side, opponent, right) => (
+    <button
+      onClick={() => setTeam(team === side.tri ? null : side.tri)}
+      aria-pressed={team === side.tri}
+      className="flex-1 flex text-left"
+    >
+      <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} />
+    </button>
+  );
+  // The arm's cell runs 2px over the banner's top border, in the banner's
+  // white, so the two read as one outline.
+  const record = (side, right) => {
+    const arm = team === side.tri;
+    return (
+      <div
+        className={`flex-1 px-3 py-1.5 border-x-2 border-transparent ${right ? "text-right" : ""} ${arm ? "relative z-10 bg-white -mb-[2px] pb-[calc(0.375rem+2px)]" : ""}`}
+        style={arm ? { borderColor: armColor } : undefined}
+      >
+        <span style={{ color: teamColor(side.tri) }}>{side.record || "–"}</span>
+      </div>
+    );
+  };
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
-      <div className="flex gap-2">
-        <TeamScoreCard side={g.away} opponent={g.home} gameStatus={g.gameStatus} />
-        <TeamScoreCard side={g.home} opponent={g.away} gameStatus={g.gameStatus} right />
+      <div className="flex gap-4">
+        {card(g.away, g.home, false)}
+        {card(g.home, g.away, true)}
       </div>
-      <div className="flex items-center justify-between px-3 py-1.5 text-sm font-bold tabular-nums tracking-widest">
-        <span style={{ color: teamColor(g.away.tri) }}>{g.away.record || "–"}</span>
-        <span className="flex flex-col items-center leading-tight">
-          <span className="text-stone-400">@</span>
-          {kind && <span className="text-[9px] font-normal uppercase tracking-wider text-stone-400">{kind}</span>}
-        </span>
-        <span style={{ color: teamColor(g.home.tri) }}>{g.home.record || "–"}</span>
+      <div className="relative flex gap-4 text-sm font-bold tabular-nums tracking-widest">
+        {record(g.away, false)}
+        <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-stone-400">@</span>
+        {record(g.home, true)}
       </div>
-      <LiveGameBanner liveGame={g} lga={lga} teams={{}} useTeamColor boxSrc={g.boxSrc || undefined} hideScore />
+      <LiveGameBanner
+        liveGame={g}
+        gameLabel={kind}
+        lga={lga}
+        teams={{}}
+        useTeamColor
+        boxSrc={g.boxSrc || undefined}
+        hideScore
+        teamFilter={team}
+        armColor={armColor}
+        onTeamClear={() => setTeam(null)}
+      />
     </div>
   );
 }
