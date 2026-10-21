@@ -26,6 +26,7 @@ const ShotZonesView = lazyView(() => import("./components/shot-zones-view").then
 const UsageView = lazyView(() => import("./components/usage-view").then((m) => m.UsageView));
 const DraftView = lazyView(() => import("./components/draft-view").then((m) => m.DraftView));
 const AwardsView = lazyView(() => import("./components/awards-view").then((m) => m.AwardsView));
+const LiveView = lazyView(() => import("./components/live-view").then((m) => m.LiveView));
 
 
 // `initial` is the link this page was opened from, parsed on the server
@@ -42,6 +43,7 @@ export function PlayoffTracker({ initial = null }) {
 const SEASONS = Object.keys(HISTORY);
 const TABS = [
   ["explore", "Explore"],
+  ["live", "Live"],
   ["tvs", "Trey vs Spencer"],
   ["draft", "Draft"],
   ["legacy", "Legacy"],
@@ -135,6 +137,7 @@ function Tracker({ initial }) {
               onClick={() => setTab(id)}
               className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === id ? "bg-stone-900 text-white" : "text-stone-500"}`}
             >
+              {id === "live" && <span className="text-red-600 mr-1" aria-hidden="true">•</span>}
               {label}
             </button>
           ))}
@@ -165,7 +168,7 @@ function Tracker({ initial }) {
         )}
 
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
+          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
       </div>
     </div>
     </AwardNavProvider>

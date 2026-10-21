@@ -85,7 +85,9 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
     </div>
   );
 
-  if (partitionOnCourt) {
+  // ESPN's box carries no on-court flags; without any, a live box would
+  // read as all bench.
+  if (partitionOnCourt && rows.some((p) => p.oncourt)) {
     const onCourt = rows.filter((p) => p.oncourt);
     const bench = rows.filter((p) => !p.oncourt);
     return (
@@ -148,7 +150,8 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
       }
       const dq = liveGame.gameCode ? `&date=${liveGame.gameCode}` : "";
       const sq = boxSrc ? `&src=${boxSrc}` : "";
-      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}${sq}`, { cache: "no-store" });
+      const lq = liveGame.gameStatus === 2 ? "&live=1" : "";
+      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}${sq}${lq}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -158,7 +161,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     } finally {
       setLoading(false);
     }
-  }, [liveGame?.gameId, liveGame?.gameCode, boxSrc]);
+  }, [liveGame?.gameId, liveGame?.gameCode, liveGame?.gameStatus, boxSrc]);
 
   const isLive = liveGame?.gameStatus === 2;
   const isFinal = liveGame?.gameStatus === 3;
@@ -195,8 +198,11 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Between periods the clock reads 0:00, so the feed's own words
+  // ("Half", "End of Q3") say it better.
+  const breakText = isLive && /^(half|end)/i.test(gameStatusText || "") ? gameStatusText : null;
   const liveLabel = isLive
-    ? [formatPeriod(period), formatClock(gameClock)].filter(Boolean).join(" ")
+    ? breakText || [formatPeriod(period), formatClock(gameClock)].filter(Boolean).join(" ")
     : null;
 
   let displayStatus = gameStatusText;
