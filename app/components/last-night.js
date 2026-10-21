@@ -5,30 +5,25 @@ import { fetchBakedJson } from "../lib/fetch-cache";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 
-// "Last night": the night's best Value Added games, top of Explore. Lines are
-// baked each morning (scripts/bake-nights.mjs) and scored by /api/nights; the
-// arrows step through earlier nights. Tapping a player opens him in By
-// Player on that season. Renders nothing until a night has been baked.
+// "About Last Night": the night's best Value Added games, top of Explore,
+// folded until tapped. Lines are baked each morning (scripts/bake-nights.mjs)
+// and scored by /api/nights; the arrows step through earlier nights. Tapping
+// a player opens his game's card on the Live tab when that tab is showing
+// the same night (`liveNight`), and By Player on that season otherwise.
+// Renders nothing until a night has been baked.
 
 const TOP = 5;
 const sign = (n, d = 1) => `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(d)}`;
 
-function nightLabel(date) {
-  const d = new Date(`${date}T12:00:00Z`);
-  const day = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
-  const today = new Date();
-  const y = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-  const yesterday = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-  const ageDays = (Date.parse(`${yesterday}T12:00:00Z`) - d.getTime()) / 864e5;
-  return { day, isLastNight: date === yesterday, stale: ageDays > 3 };
-}
+const nightLabel = (date) => new Date(`${date}T12:00:00Z`)
+  .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
-export function LastNight({ onOpenPlayer }) {
+export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
   const { usgAdj } = useVAMode();
   const [date, setDate] = useState(null);
   const [data, setData] = useState(null);
   const [expanded, setExpanded] = useState(false);
-  const [open, setOpen] = useState(null); // null until the first night decides
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,27 +34,26 @@ export function LastNight({ onOpenPlayer }) {
       .then((d) => {
         if (cancelled) return;
         setData(d);
-        // An old night (the offseason) starts folded, so it doesn't
-        // headline the page as if it were news.
-        if (d.date) setOpen((o) => (o == null ? !nightLabel(d.latest).stale : o));
       })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [date, usgAdj]);
 
   if (!data?.date) return null;
-  const { day, isLastNight, stale } = nightLabel(data.date);
-  const title = isLastNight ? "Last night" : stale && data.date === data.latest ? "Most recent games" : day;
+  const day = nightLabel(data.date);
   const lines = expanded ? data.lines : data.lines.slice(0, TOP);
   const step = (d) => { if (d) { setDate(d); setExpanded(false); } };
+  const openLine = (l) => (data.date === liveNight && onOpenInLive
+    ? onOpenInLive({ date: data.date, name: l.name, team: l.team })
+    : l.slug && onOpenPlayer?.({ name: l.name, slug: l.slug, season: data.season }));
 
   return (
     <section className="mb-4 bg-white border-2 border-stone-900" aria-label="Last night's Value Added leaders">
       <div className="flex items-center px-3 py-2 border-b border-stone-200">
         <button onClick={() => setOpen(!open)} className="flex-1 text-left flex items-baseline gap-2 min-w-0">
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-stone-900 whitespace-nowrap">{title}</span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-stone-900 whitespace-nowrap">About Last Night</span>
           <span className="text-[10px] text-stone-500 truncate">
-            {title === day ? "" : `${day} · `}{data.games.length} game{data.games.length === 1 ? "" : "s"}
+            {day} · {data.games.length} game{data.games.length === 1 ? "" : "s"}
           </span>
           <span className="text-[10px] text-stone-400">{open ? "▾" : "▸"}</span>
         </button>
@@ -73,8 +67,8 @@ export function LastNight({ onOpenPlayer }) {
           {lines.map((l, i) => {
             const vsAvg = l.seasonVaPerG != null ? l.va - l.seasonVaPerG : null;
             return (
-              <button key={`${l.gameId}:${l.name}`} onClick={() => l.slug && onOpenPlayer?.({ name: l.name, slug: l.slug, season: data.season })}
-                disabled={!l.slug}
+              <button key={`${l.gameId}:${l.name}`} onClick={() => openLine(l)}
+                disabled={!l.slug && data.date !== liveNight}
                 className="w-full grid grid-cols-[1.2rem_1fr_auto] gap-x-2 items-center px-3 py-1.5 border-b border-stone-100 last:border-0 text-left">
                 <span className="text-[10px] text-stone-400 tabular-nums">{i + 1}</span>
                 <span className="min-w-0">
@@ -95,16 +89,13 @@ export function LastNight({ onOpenPlayer }) {
               </button>
             );
           })}
-          <div className="flex items-center justify-between px-3 py-1.5 text-[10px] text-stone-500">
-            {data.lines.length > TOP ? (
+          {data.lines.length > TOP && (
+            <div className="px-3 py-1.5 text-[10px] text-stone-500">
               <button onClick={() => setExpanded(!expanded)} className="underline">
                 {expanded ? "Top 5 only" : `All ${data.lines.length} players`}
               </button>
-            ) : <span />}
-            <span className="text-stone-400">
-              VA vs the {data.baselineSeason} baseline{data.baselineSeason !== data.season ? " (this season’s isn’t set yet)" : ""}
-            </span>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </section>

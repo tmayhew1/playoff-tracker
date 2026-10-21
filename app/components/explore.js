@@ -255,7 +255,7 @@ export function exploreSeasonList() {
 // once on mount: the view, scope and season it names, and the player — and
 // the comparison — to open, handed to the leaderboard / By Player as the
 // same pending navigation their own in-page jumps use.
-export function ExploreView({ jump = null, onJumpHandled = null, initial = null, onInitHandled = null }) {
+export function ExploreView({ jump = null, onJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
@@ -426,7 +426,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
 
   return (
     <div>
-      <LastNight onOpenPlayer={navigatePlayerToSeason} />
+      <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive} />
       <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>

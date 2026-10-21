@@ -7,13 +7,15 @@ import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
-// games are over (or before the first tips) it's Up Next instead: the next
+// games are over (or before the first tips) it's NBA Today instead: the next
 // slate's schedule over the last slate's finals. Built from the
 // playoff tracker's live pieces (CurrentView's sync strip, the bracket's game
 // banners, the "Today's Upcoming Games" card) with the draft taken out, so it
 // works any night of the season. Games come from /api/live; each live banner
 // polls its own box score and shows the top five by Value Added, and tapping
-// one opens the full box with players split On Court / Bench.
+// one opens the full box with players split On Court / Bench. A player's card
+// here is one game's: every category, and the game's place in his team's
+// season.
 
 // The slate re-polls this often while a game is on, and much less when
 // nothing is (so a game tipping off still turns up on its own).
@@ -31,7 +33,7 @@ function dayLabel(date) {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-// A slate's heading in Up Next, by where its day sits from today (Eastern,
+// A slate's heading in NBA Today, by where its day sits from today (Eastern,
 // the NBA's day): "Today’s Games", "Yesterday’s Games", or past those the
 // weekday.
 const todayEt = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
@@ -73,16 +75,31 @@ function shootingSplits(box, tri) {
   return [["2P", fgm - tpm, fga - tpa], ["3P", tpm, tpa], ["FT", sum("ftm"), sum("fta")]];
 }
 
+// A team's game number this season, off its record: the record counts a
+// final already, a live game not yet. Unknown for a playoff game (the record
+// is the regular season's) or a feed without records.
+function teamGameNumber(side, g) {
+  const m = (side.record || "").match(/^(\d+)-(\d+)$/);
+  if (!m || !["regular", "preseason"].includes(g.kind)) return null;
+  return Number(m[1]) + Number(m[2]) + (g.gameStatus === 2 ? 1 : 0) || null;
+}
+
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
 // Tapping a card narrows the game to that team: its card alone, framed in its
 // color with its shooting down the far side, over its whole box. Tapping it
-// again brings the other side back.
-function GameCard({ g, lgaFor, baselineSeason }) {
+// again brings the other side back. `focus` (About Last Night's tap) narrows
+// the game to the player's team and opens his card.
+function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
   const [box, setBox] = useState(null);
+  useEffect(() => { if (focus) setTeam(focus.team); }, [focus]);
+  const gameNumberFor = useCallback((tri) => {
+    const side = [g.away, g.home].find((s) => s.tri === tri);
+    return side ? teamGameNumber(side, g) : null;
+  }, [g]);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
@@ -121,6 +138,10 @@ function GameCard({ g, lgaFor, baselineSeason }) {
         teamFilter={team}
         onTeamClear={() => setTeam(null)}
         onBox={setBox}
+        singleGame
+        gameNumberFor={gameNumberFor}
+        focusPlayer={focus?.name}
+        onFocusHandled={onFocusHandled}
       />
     </div>
   );
@@ -189,7 +210,7 @@ function SlateSummary({ date, games }) {
   );
 }
 
-export function LiveView({ onMode }) {
+export function LiveView({ onData, focus, onFocusHandled }) {
   const { lgaFor } = useVAMode();
   const [data, setData] = useState(null);
   const [syncing, setSyncing] = useState(false);
@@ -222,7 +243,21 @@ export function LiveView({ onMode }) {
   // Nothing on and the day done (or not begun): the next slate and the last.
   const upNext = data?.mode === "upnext";
 
-  useEffect(() => { if (data) onMode?.(data.mode); }, [data, onMode]);
+  useEffect(() => { if (data) onData?.(data); }, [data, onData]);
+
+  // About Last Night's player: his game among the finished ones on show, or,
+  // when the tab has moved on to another night, nothing to open.
+  const focusSlate = upNext ? data?.prev : data && { date: data.date, games };
+  const focusGame = focus && focusSlate?.date === focus.date
+    ? focusSlate.games.find((g) => g.gameStatus !== 1 && (g.away.tri === focus.team || g.home.tri === focus.team))
+    : null;
+  useEffect(() => {
+    if (focus && data && !focusGame) onFocusHandled?.();
+  }, [focus, data, focusGame, onFocusHandled]);
+  const gameCard = (g) => (
+    <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason}
+      focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled} />
+  );
 
   useEffect(() => {
     const id = setInterval(sync, anyLive ? LIVE_POLL : IDLE_POLL);
@@ -264,8 +299,7 @@ export function LiveView({ onMode }) {
           {data.prev && (
             <div className="mb-6">
               <SectionHeader title={slateTitle(data.prev.date)} count={data.prev.games.length} />
-              <SlateSummary date={data.prev.date} games={data.prev.games} />
-              {data.prev.games.map((g) => <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason} />)}
+              {data.prev.games.map(gameCard)}
             </div>
           )}
         </>
@@ -282,7 +316,7 @@ export function LiveView({ onMode }) {
       {anyLive && (
         <div className="mb-6">
           <SectionHeader title="Live Now" count={live.length} live />
-          {live.map((g) => <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason} />)}
+          {live.map(gameCard)}
         </div>
       )}
 
@@ -296,7 +330,7 @@ export function LiveView({ onMode }) {
       {!upNext && finals.length > 0 && (
         <div className="mb-6">
           <SectionHeader title="Final" count={finals.length} />
-          {finals.map((g) => <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason} />)}
+          {finals.map(gameCard)}
         </div>
       )}
 
