@@ -192,8 +192,8 @@ export function LiveView() {
       {data && (
         <div className="mb-5 p-3 bg-white border-2 border-stone-900">
           <div className="flex items-baseline justify-between gap-3">
-            <div className="text-[10px] uppercase tracking-widest text-stone-500 truncate">{dayLabel(data.date)}</div>
-            <div className="flex gap-2.5 shrink-0 text-[10px] uppercase tracking-widest text-stone-500 tabular-nums">
+            <div className="text-xs uppercase tracking-wider text-stone-500 truncate">{dayLabel(data.date)}</div>
+            <div className="flex gap-2.5 shrink-0 text-xs uppercase tracking-wider text-stone-500 tabular-nums">
               {[["Live", live.length, STATUS_INK[2]], ["Later", upcoming.length, STATUS_INK[1]], ["Final", finals.length, STATUS_INK[3]]].map(([label, n, cls]) => (
                 <span key={label}><span className={`font-black ${n ? cls : "text-stone-300"}`}>{n}</span> {label}</span>
               ))}
