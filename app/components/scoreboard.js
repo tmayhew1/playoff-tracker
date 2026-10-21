@@ -70,7 +70,7 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 export function TeamScoreCard({ side, opponent, gameStatus, right, splits }) {
   const ahead = gameStatus >= 2 && side.score > opponent.score;
   const aside = splits && (
-    <div className={`shrink-0 space-y-0.5 text-[10px] tabular-nums ${right ? "text-left" : "text-right"} ${ahead ? "text-white" : "text-stone-600"}`}>
+    <div className={`shrink-0 space-y-0.5 text-xs tabular-nums ${right ? "text-left" : "text-right"} ${ahead ? "text-white" : "text-stone-600"}`}>
       {splits.map(([label, made, att]) => (
         <div key={label}>
           <span className={`font-bold tracking-wider mr-1.5 ${ahead ? "text-stone-100" : "text-stone-400"}`}>{label}</span>
