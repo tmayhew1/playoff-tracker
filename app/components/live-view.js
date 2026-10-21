@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
+import { TeamScoreCard } from "./scoreboard";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 
@@ -46,22 +47,22 @@ function SectionHeader({ title, count, live }) {
   );
 }
 
-// One game: the matchup with records over its banner, the way a series row
-// sits over its games in the bracket.
+// One game: the competition's scoreboard, away card beside home card, the
+// records under it, then the banner for the clock and the box score.
 function GameCard({ g, lgaFor, baselineSeason }) {
   const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   return (
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
-      <div className="flex items-baseline justify-between px-0.5 text-xs">
-        <span className="flex items-baseline gap-1.5">
-          <TeamTag side={g.away} />
-          <span className="text-stone-400 text-[10px]">@</span>
-          <TeamTag side={g.home} />
-        </span>
-        {kind && <span className="text-[9px] uppercase tracking-wider text-stone-400">{kind}</span>}
+      <div className="flex gap-2">
+        <TeamScoreCard side={g.away} opponent={g.home} gameStatus={g.gameStatus} />
+        <TeamScoreCard side={g.home} opponent={g.away} gameStatus={g.gameStatus} />
       </div>
-      <LiveGameBanner liveGame={g} lga={lga} teams={{}} useTeamColor boxSrc={g.boxSrc || undefined} />
+      <div className="relative py-1 text-center text-[10px] text-stone-500 tabular-nums">
+        {g.away.record || "–"} <span className="text-stone-400">@</span> {g.home.record || "–"}
+        {kind && <span className="absolute right-0.5 text-[9px] uppercase tracking-wider text-stone-400">{kind}</span>}
+      </div>
+      <LiveGameBanner liveGame={g} lga={lga} teams={{}} useTeamColor boxSrc={g.boxSrc || undefined} hideScore />
     </div>
   );
 }

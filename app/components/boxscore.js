@@ -126,7 +126,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
 // `boxLoader`, when given, is asked first and resolves to the box score or
 // null — a baked regular-season game opens from its static file that way,
 // and only a game the bake doesn't hold goes to /api/boxscore.
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader }) {
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -275,9 +275,11 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
             {liveGame.broadcasters.join(", ")}
           </span>
         )}
-        <div className="tabular-nums font-semibold text-stone-700 shrink-0">
-          {away.tri} {away.score} — {home.score} {home.tri}
-        </div>
+        {!hideScore && (
+          <div className="tabular-nums font-semibold text-stone-700 shrink-0">
+            {away.tri} {away.score} — {home.score} {home.tri}
+          </div>
+        )}
       </button>
 
       {showTop5 && (

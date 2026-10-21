@@ -1,7 +1,27 @@
 "use client";
 
 import { TEAMS } from "../teams";
-import { ownerBg, ownerColor, ownerDot } from "../lib/format";
+import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
+
+
+// The competition's scoreboard card: a label over a big number, a badge for
+// whoever's ahead, and whatever sits under the number. ScoreCard fills it
+// with an owner's points; TeamScoreCard with a team's score on the Live tab.
+function ScoreFrame({ label, dot, accent, borderClass, badge, total, totalClass, children }) {
+  return (
+    <div className={`flex-1 p-3 border-2 ${borderClass || ""} bg-white`} style={accent ? { borderColor: accent } : undefined}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${dot || ""}`} style={accent ? { backgroundColor: accent } : undefined}></span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{label}</span>
+        </div>
+        {badge && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{badge}</span>}
+      </div>
+      <div className={`text-4xl font-black tabular-nums ${totalClass || ""}`} style={accent ? { color: accent } : undefined}>{total}</div>
+      {children}
+    </div>
+  );
+}
 
 
 export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, whatIfTotal, opponentProjected, breakdown, readOnly }) {
@@ -11,15 +31,14 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
   const hasRealProjection = !readOnly && Math.abs(realProj - total) > 0.001;
   const hasWhatIf = !readOnly && (whatIfTotal || 0) > 0.001;
   return (
-    <div className={`flex-1 p-3 border-2 ${owner === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${ownerDot(owner)}`}></span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{owner}</span>
-        </div>
-        {leading && !tied && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{readOnly ? "WINNER" : "LEAD"}</span>}
-      </div>
-      <div className={`text-4xl font-black tabular-nums ${ownerColor(owner)}`}>{total}</div>
+    <ScoreFrame
+      label={owner}
+      dot={ownerDot(owner)}
+      borderClass={owner === "Spencer" ? "border-amber-600" : "border-teal-600"}
+      badge={leading && !tied ? (readOnly ? "WINNER" : "LEAD") : null}
+      total={total}
+      totalClass={ownerColor(owner)}
+    >
       <div className="text-[10px] text-stone-500 uppercase tracking-wider mt-0.5">{breakdown.length} win{breakdown.length === 1 ? "" : "s"}{readOnly ? "" : " · locked"}</div>
       {hasRealProjection && (
         <div className="mt-2 pt-2 border-t border-stone-200">
@@ -33,7 +52,22 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
           <div className="text-sm font-semibold tabular-nums text-stone-500">+{whatIfTotal.toFixed(2)}</div>
         </div>
       )}
-    </div>
+    </ScoreFrame>
+  );
+}
+
+
+// One side of a game on the Live tab, in the team's color. The badge reads
+// LEAD while the game is on and WINNER once it's final; nothing before tip.
+export function TeamScoreCard({ side, opponent, gameStatus }) {
+  const ahead = gameStatus >= 2 && side.score > opponent.score;
+  return (
+    <ScoreFrame
+      label={side.tri}
+      accent={teamColor(side.tri)}
+      badge={ahead ? (gameStatus === 3 ? "WINNER" : "LEAD") : null}
+      total={side.score}
+    />
   );
 }
 
