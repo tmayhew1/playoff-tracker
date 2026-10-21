@@ -7,19 +7,20 @@ import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
 // The competition's scoreboard card: a label over a big number, a badge for
 // whoever's ahead, and whatever sits under the number. ScoreCard fills it
 // with an owner's points; TeamScoreCard with a team's score on the Live tab,
-// where `filled` paints the card in the team's color with white details.
-function ScoreFrame({ label, dot, accent, filled, borderClass, badge, total, totalClass, children }) {
+// where `filled` paints the card in the team's color with white details and
+// `right` mirrors it for the home side.
+function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, children }) {
   const ink = filled ? "#fff" : accent;
   return (
     <div className={`flex-1 p-3 border-2 ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1.5">
+      <div className={`flex items-center justify-between mb-1 ${right ? "flex-row-reverse" : ""}`}>
+        <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
           <span className={`w-2 h-2 rounded-full ${dot || ""}`} style={ink ? { backgroundColor: ink } : undefined}></span>
           <span className={`text-[10px] font-bold uppercase tracking-widest ${filled ? "text-stone-100" : "text-stone-700"}`}>{label}</span>
         </div>
         {badge && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{badge}</span>}
       </div>
-      <div className={`text-4xl font-black tabular-nums ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
+      <div className={`text-4xl font-black tabular-nums ${right ? "text-right" : ""} ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
       {children}
     </div>
   );
@@ -61,9 +62,9 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 
 // One side of a game on the Live tab, in the team's color. Whoever's ahead
 // (or won) gets the card filled in; nothing's filled before tip.
-export function TeamScoreCard({ side, opponent, gameStatus }) {
+export function TeamScoreCard({ side, opponent, gameStatus, right }) {
   const ahead = gameStatus >= 2 && side.score > opponent.score;
-  return <ScoreFrame label={side.tri} accent={teamColor(side.tri)} filled={ahead} total={side.score} />;
+  return <ScoreFrame label={side.tri} accent={teamColor(side.tri)} filled={ahead} right={right} total={side.score} />;
 }
 
 

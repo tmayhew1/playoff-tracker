@@ -56,7 +56,7 @@ function GameCard({ g, lgaFor, baselineSeason }) {
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-2">
         <TeamScoreCard side={g.away} opponent={g.home} gameStatus={g.gameStatus} />
-        <TeamScoreCard side={g.home} opponent={g.away} gameStatus={g.gameStatus} />
+        <TeamScoreCard side={g.home} opponent={g.away} gameStatus={g.gameStatus} right />
       </div>
       <div className="relative py-1 text-center text-[10px] text-stone-500 tabular-nums">
         {g.away.record || "–"} <span className="text-stone-400">@</span> {g.home.record || "–"}
