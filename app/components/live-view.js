@@ -86,8 +86,8 @@ function GameCard({ g, lgaFor, baselineSeason }) {
             <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} splits={team ? shootingSplits(box, team) : null} />
           </button>
         ))}
-        {/* In the gap, level with the team labels (card border + padding). */}
-        {!team && <span className="absolute top-[14px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-stone-400">@</span>}
+        {/* In the gap, halfway down the cards. */}
+        {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-xs font-bold text-stone-400">@</span>}
       </div>
       <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
         {sides.map(([side, , right]) => (
