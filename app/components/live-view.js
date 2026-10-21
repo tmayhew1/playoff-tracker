@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
 import { useVAMode } from "../lib/va-mode";
@@ -190,29 +190,33 @@ export function LiveView() {
       </div>
 
       {data && (
-        <div className="mb-5 p-3 bg-white border-2 border-stone-900 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-widest text-stone-500">{dayLabel(data.date)}</div>
-            {games.length === 0
-              ? <div className="text-sm font-bold text-stone-900">No games today</div>
-              : (
-                <div className="mt-0.5 space-y-0.5 text-sm font-bold tabular-nums">
-                  {games.map((g) => (
-                    <div key={g.gameId} className={STATUS_INK[g.gameStatus] || "text-stone-900"}>
-                      {g.gameStatus === 1 ? `${g.away.tri} @ ${g.home.tri}` : `${g.away.tri} ${g.away.score} @ ${g.home.score} ${g.home.tri}`}
-                    </div>
-                  ))}
-                </div>
-              )}
+        <div className="mb-5 p-3 bg-white border-2 border-stone-900">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-[10px] uppercase tracking-widest text-stone-500 truncate">{dayLabel(data.date)}</div>
+            <div className="flex gap-2.5 shrink-0 text-[10px] uppercase tracking-widest text-stone-500 tabular-nums">
+              {[["Live", live.length, STATUS_INK[2]], ["Later", upcoming.length, STATUS_INK[1]], ["Final", finals.length, STATUS_INK[3]]].map(([label, n, cls]) => (
+                <span key={label}><span className={`font-black ${n ? cls : "text-stone-300"}`}>{n}</span> {label}</span>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-3 shrink-0 text-center">
-            {[["Live", live.length, anyLive ? "text-red-600" : "text-stone-300"], ["Later", upcoming.length, STATUS_INK[1]], ["Final", finals.length, STATUS_INK[3]]].map(([label, n, cls]) => (
-              <div key={label}>
-                <div className={`text-2xl font-black tabular-nums leading-none ${n ? cls : "text-stone-300"}`}>{n}</div>
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 mt-0.5">{label}</div>
+          {games.length === 0
+            ? <div className="mt-1 text-sm font-bold text-stone-900 text-center">No games today</div>
+            : (
+              // Each line's @ sits on the card's center line.
+              <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-x-1.5 gap-y-0.5 text-sm font-bold tabular-nums">
+                {games.map((g) => {
+                  const ink = STATUS_INK[g.gameStatus] || "text-stone-900";
+                  const scored = g.gameStatus !== 1;
+                  return (
+                    <Fragment key={g.gameId}>
+                      <span className={`${ink} text-right`}>{g.away.tri}{scored && ` ${g.away.score}`}</span>
+                      <span className={ink}>@</span>
+                      <span className={ink}>{scored && `${g.home.score} `}{g.home.tri}</span>
+                    </Fragment>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            )}
         </div>
       )}
 
