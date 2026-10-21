@@ -116,8 +116,33 @@ export function mergeSlates(nba, espn) {
     games = espn?.games || [];
     source = espn ? "espn" : null;
   }
+  return { date: (source === "nba" ? nba?.date : espn?.date) || nba?.date || espn?.date || null, games: sortSlate(games), source };
+}
+
+export function sortSlate(games) {
   const rank = { 2: 0, 1: 1, 3: 2 };
   const tip = (g) => (g.gameDateTimeUTC ? Date.parse(g.gameDateTimeUTC) : 0);
-  games.sort((a, b) => (rank[a.gameStatus] ?? 3) - (rank[b.gameStatus] ?? 3) || tip(a) - tip(b));
-  return { date: (source === "nba" ? nba?.date : espn?.date) || nba?.date || espn?.date || null, games, source };
+  return games.sort((a, b) => (rank[a.gameStatus] ?? 3) - (rank[b.gameStatus] ?? 3) || tip(a) - tip(b));
+}
+
+// "2026-10-21" moved n days.
+export function addDays(date, n) {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Once nothing is on, the Live tab turns into Up Next: the next slate to
+// come and the last one played. Which of the two the feed's own slate is
+// depends on where the day stands: every game final, it's the last one played
+// and the next is still to find; none started yet (the feed has rolled over
+// to a new day), it's the next one and the last is to find; an off day, both
+// are. A slate with games both done and to come, or any game on, stays Live.
+// Returns null for Live, else which neighbors to look up.
+export function upNextNeeds(games) {
+  if (games.some((g) => g.gameStatus === 2)) return null;
+  if (!games.length) return { next: true, prev: true };
+  if (games.every((g) => g.gameStatus === 3)) return { next: true, prev: false };
+  if (games.every((g) => g.gameStatus === 1)) return { next: false, prev: true };
+  return null;
 }
