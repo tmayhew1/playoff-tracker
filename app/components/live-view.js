@@ -75,7 +75,7 @@ function GameCard({ g, lgaFor, baselineSeason }) {
       className={`mb-3 p-2 rounded ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
       style={team ? { borderColor: teamColor(team) } : undefined}
     >
-      <div className="flex gap-2">
+      <div className="relative flex gap-4">
         {sides.map(([side, opponent, right]) => (
           <button
             key={side.tri}
@@ -86,14 +86,15 @@ function GameCard({ g, lgaFor, baselineSeason }) {
             <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} splits={team ? shootingSplits(box, team) : null} />
           </button>
         ))}
+        {/* In the gap, level with the team labels (card border + padding). */}
+        {!team && <span className="absolute top-[14px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-stone-400">@</span>}
       </div>
-      <div className="relative flex gap-2 text-sm font-bold tabular-nums tracking-widest">
+      <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
         {sides.map(([side, , right]) => (
           <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
             {side.record || "–"}
           </div>
         ))}
-        {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-stone-400">@</span>}
       </div>
       <LiveGameBanner
         liveGame={g}
