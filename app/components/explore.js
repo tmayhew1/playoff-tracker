@@ -175,8 +175,9 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
 // /api/regular-season/games one calendar month per request, side by side.
 // Everything is merged and regrouped here (a game is filed under its own
 // Eastern date, whichever source found it). `lga` is the regular-season
-// baseline these box scores are priced against.
-export function RegularSeasonMonths({ season, lga }) {
+// baseline these box scores are priced against. `grouped` folds the months
+// under one Reg Season section, for Combined, where the rounds follow them.
+export function RegularSeasonMonths({ season, lga, grouped = false }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
@@ -196,17 +197,35 @@ export function RegularSeasonMonths({ season, lga }) {
   // With the months listed, load and score a baked season's box scores while
   // the page is idle, so a month's averages and a player's chart open at once.
   useEffect(() => (data?.months?.length ? warmSeason(season, data.months, lga) : undefined), [data, season, lga]);
+  const [open, setOpen] = useState(false);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
   if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
-  return (
+  const months = (
     <>
       {data.months.map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season} />)}
       {data.partial && (
         <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
     </>
+  );
+  if (!grouped) return months;
+  // Same header as a month or a round; the months open inside it, set in a step.
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
+      >
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+          Reg Season
+        </h3>
+        <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
+      </button>
+      {open && <div className="pl-3">{months}</div>}
+    </div>
   );
 }
 
@@ -482,7 +501,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
               {scope === "combined" && (
                 <>
                   <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
-                  <RegularSeasonMonths season={season} lga={lga} />
+                  <RegularSeasonMonths season={season} lga={lga} grouped />
                 </>
               )}
               {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
