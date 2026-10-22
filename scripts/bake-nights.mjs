@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mapPlayer } from "../app/api/_lib/nba-box.js";
+import { normName as norm, slugsByName } from "../app/api/_lib/player-slugs.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
@@ -79,20 +80,12 @@ function todayEt() {
 }
 const addDays = (date, n) => new Date(Date.parse(`${date}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 
-const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
-  .toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\b(jr|sr|ii|iii|iv)\b/g, "").trim();
-
 // basketball-reference slugs for the season's players, so a line can link to
-// the player's page. Matched by name, and only where the name is unambiguous.
+// the player's page.
 function slugIndex(season) {
   const file = path.join(DATA, `regular-season-${season}.json`);
-  const byName = new Map();
-  if (!fs.existsSync(file)) return byName;
-  for (const p of JSON.parse(fs.readFileSync(file, "utf8")).players || []) {
-    const k = norm(p.name);
-    byName.set(k, byName.has(k) && byName.get(k) !== p.slug ? null : p.slug);
-  }
-  return byName;
+  if (!fs.existsSync(file)) return new Map();
+  return slugsByName(JSON.parse(fs.readFileSync(file, "utf8")).players);
 }
 
 async function bakeNight(date, schedule, force) {

@@ -93,7 +93,7 @@ export const boxHasMinutes = (parsed) =>
 // A fetched ESPN payload (either source) -> { a, b } sides, or null.
 export const parseEspnPayload = (d) => parseBox(d?.boxscore ? d : { boxscore: d?.gamepackageJSON?.boxscore || null });
 
-async function fetchEspn(url, timeoutMs = 8000) {
+export async function fetchEspn(url, timeoutMs = 8000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
