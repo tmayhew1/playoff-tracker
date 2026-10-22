@@ -145,7 +145,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
 // `gameNumberFor`. `focusPlayer`, a name on the `teamFilter` team, opens
 // that player's card once the box loads, scrolls to it, then calls
 // `onFocusHandled`.
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled }) {
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5 }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -195,10 +195,10 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
       const id = setInterval(loadBox, 45000);
       return () => clearInterval(id);
     }
-    if (isFinal && (expanded || teamFilter)) {
+    if (isFinal && (expanded || teamFilter || finalTop5)) {
       loadBox();
     }
-  }, [staticBox, liveGame?.gameId, isLive, isFinal, expanded, teamFilter, loadBox]);
+  }, [staticBox, liveGame?.gameId, isLive, isFinal, expanded, teamFilter, finalTop5, loadBox]);
 
   if (!liveGame) return null;
   const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC, period, gameClock } = liveGame;
@@ -294,7 +294,9 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     scrollTo.current = null;
     rootRef.current?.querySelector(`[data-row-key="${CSS.escape(expandedPlayer)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [expandedPlayer]);
-  const showTop5 = isLive && sortedPlayers.length > 0 && !expanded && !teamFilter;
+  // A live game always leads with its top five; a final only where the
+  // caller asks (`finalTop5`, the Live tab).
+  const showTop5 = (isLive || (isFinal && finalTop5)) && sortedPlayers.length > 0 && !expanded && !teamFilter;
   const showFull = expanded && !teamFilter;
 
   return (
@@ -329,7 +331,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
       </button>
 
       {showTop5 && (
-        <div className="px-2 pb-2 border-t border-red-200">
+        <div className={`px-2 pb-2 border-t ${isLive ? "border-red-200" : "border-stone-200"}`}>
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
           <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
         </div>
