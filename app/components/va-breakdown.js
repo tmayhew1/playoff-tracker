@@ -266,11 +266,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   const keyW = effectiveRate ? "w-16" : "w-20";
   const labelW = effectiveRate ? "w-[5.25rem]" : "w-12";
 
-  // Nav: in single-game series view, advance within byGame; otherwise hand
-  // off to the parent's prev/next (player navigation). Series-aggregate
-  // view hides the nav entirely — chevrons there were too cluttered.
-  const inGameNav = canSelect && selectedGame != null;
-
   // Two-step drill click handler. Without enableSeriesDrill it's the
   // existing toggle. With it: first tap on a game in a different series
   // scopes to that series; another tap on a game in the current series
@@ -335,35 +330,20 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
       }
     }
   }
-  const showNav = !rate || inGameNav;
-  const findGameWithData = (start, step) => {
-    for (let i = start; i >= 0 && i < byGame.length; i += step) {
-      if (byGame[i]) return i + 1;
-    }
-    return null;
+  // Player nav, on the plain cards only (a box score's — no chart, no
+  // league context): a tap on the card's bare surface steps to the player
+  // before or after, by which side of the midline it lands. Taps on the
+  // card's own controls stay theirs.
+  const tapNav = !rate && (onPrev || onNext);
+  const handleSurfaceTap = (e) => {
+    if (e.target.closest("button, a, input, select, [role=button]")) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const go = e.clientX - box.left < box.width / 2 ? onPrev : onNext;
+    if (go) go();
   };
-  const gameNavPrev = inGameNav ? findGameWithData(selectedGame - 2, -1) : null;
-  const gameNavNext = inGameNav ? findGameWithData(selectedGame, 1) : null;
-  const canPrev = inGameNav ? gameNavPrev != null : !!onPrev;
-  const canNext = inGameNav ? gameNavNext != null : !!onNext;
-  const handlePrev = () => inGameNav ? setSelectedGame(gameNavPrev) : onPrev && onPrev();
-  const handleNext = () => inGameNav ? setSelectedGame(gameNavNext) : onNext && onNext();
 
   return (
-    <div className="px-2 py-3 border-t border-stone-200">
-      <div className="flex items-stretch gap-1">
-        {showNav && !inGameNav && (
-          <button
-            type="button"
-            disabled={!canPrev}
-            onClick={handlePrev}
-            aria-label="Previous player"
-            className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-          >
-            ‹
-          </button>
-        )}
-        <div className="flex-1 min-w-0">
+    <div className="px-2 py-3 border-t border-stone-200" onClick={tapNav ? handleSurfaceTap : undefined}>
       {/* A chart the caller leads the card with, in the card's accent and
           kept to a phone card's width (Month Averages: VA / game by month). */}
       {leadChart && (
@@ -465,46 +445,20 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           </div>
           {rate && gameSeries && gameSeries.length > 0 && (
             <div className="sm:order-1 sm:flex-1">
-            <div className="flex items-stretch gap-1">
-              {showNav && inGameNav && (
-                <button
-                  type="button"
-                  disabled={!canPrev}
-                  onClick={handlePrev}
-                  aria-label="Previous game"
-                  className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-                >
-                  ‹
-                </button>
-              )}
-              <div className="flex-1 min-w-0">
-                <GameVAChart
-                  values={chartValues}
-                  color={accentColor}
-                  selected={selectedGame}
-                  onSelect={canSelect ? handleChartSelect : undefined}
-                  partitions={partitions}
-                  seriesRange={seriesRange}
-                  label={compare && atSeasonLevel && compareRun ? `VA by Game · vs ${shortName(compare.name)} ${seasonTag(compare.row.season)}` : chartLabel}
-                  avgOther={avgOther}
-                  avgSelected={avgSelected}
-                  overlayValues={compare && atSeasonLevel ? compareRun : null}
-                  overlayColor={cmpPal ? cmpPal.base : undefined}
-                  overlayFill={cmpPal ? cmpPal.light : undefined}
-                />
-              </div>
-              {showNav && inGameNav && (
-                <button
-                  type="button"
-                  disabled={!canNext}
-                  onClick={handleNext}
-                  aria-label="Next game"
-                  className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-                >
-                  ›
-                </button>
-              )}
-            </div>
+              <GameVAChart
+                values={chartValues}
+                color={accentColor}
+                selected={selectedGame}
+                onSelect={canSelect ? handleChartSelect : undefined}
+                partitions={partitions}
+                seriesRange={seriesRange}
+                label={compare && atSeasonLevel && compareRun ? `VA by Game · vs ${shortName(compare.name)} ${seasonTag(compare.row.season)}` : chartLabel}
+                avgOther={avgOther}
+                avgSelected={avgSelected}
+                overlayValues={compare && atSeasonLevel ? compareRun : null}
+                overlayColor={cmpPal ? cmpPal.base : undefined}
+                overlayFill={cmpPal ? cmpPal.light : undefined}
+              />
             </div>
           )}
         </div>
@@ -706,19 +660,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
       </div>
       </>
       )}
-        </div>
-        {showNav && !inGameNav && (
-          <button
-            type="button"
-            disabled={!canNext}
-            onClick={handleNext}
-            aria-label="Next player"
-            className="w-6 shrink-0 flex items-center justify-center text-stone-500 disabled:text-stone-200 hover:bg-stone-100 disabled:hover:bg-transparent"
-          >
-            ›
-          </button>
-        )}
-      </div>
     </div>
   );
 }
