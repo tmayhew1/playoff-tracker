@@ -13,8 +13,9 @@ import { teamColor } from "../lib/format";
 // playoff tracker's live pieces (CurrentView's sync strip, the bracket's game
 // banners, the "Today's Upcoming Games" card) with the draft taken out, so it
 // works any night of the season. Games come from /api/live; each live banner
-// polls its own box score and shows the top five by Value Added, and tapping
-// one opens the full box with players split On Court / Bench. A player's card
+// polls its own box score and shows the top five by Value Added (a final
+// keeps its top five up too), and tapping one opens the full box with
+// players split On Court / Bench. A player's card
 // here is one game's: every category, and the game's place in his team's
 // season.
 
@@ -141,6 +142,7 @@ function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
         onTeamClear={() => setTeam(null)}
         onBox={setBox}
         singleGame
+        finalTop5
         gameNumberFor={gameNumberFor}
         focusPlayer={focus?.name}
         onFocusHandled={onFocusHandled}
