@@ -1,6 +1,9 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { LEAGUE_AVERAGES, lgaForSeason, valueAddParts } from "../../scoring";
+import { espnNight } from "../_lib/espn-night";
+import { addDays, seasonOf } from "../_lib/live-games";
+import { slugsByName } from "../_lib/player-slugs";
 
 export const runtime = "nodejs";
 
@@ -14,11 +17,27 @@ export const runtime = "nodejs";
 // date, so a big night reads against his norm as well as the league's. On the
 // first nights of a season, before its baselines are baked, the previous
 // season's stand in and the response says so.
+//
+// "Last night" turns over at midnight Pacific, when the West Coast's day ends.
+// The daily job doesn't bake that night until about 7am ET, so until its file
+// is deployed, yesterday is read live off ESPN (_lib/espn-night.js) and the
+// answer carries `source: "espn"`. Should ESPN fail, or a game still be on,
+// the last baked night stands in.
 
 // NIGHTS_DIR lets the tests point it at fixtures.
 const DIR = process.env.NIGHTS_DIR || join(process.cwd(), "app", "data", "nights");
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const readJson = (path) => readFile(path, "utf8").then(JSON.parse).catch(() => null);
+
+// Today's date on the Pacific clock, and the seconds left in it.
+const PT = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles", hourCycle: "h23",
+  year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+});
+function pacificToday(now = new Date()) {
+  const t = Object.fromEntries(PT.formatToParts(now).map((x) => [x.type, x.value]));
+  return { date: `${t.year}-${t.month}-${t.day}`, secondsLeft: 86400 - (t.hour * 3600 + t.minute * 60 + Number(t.second)) };
+}
 
 const prevSeason = (s) => {
   const y = Number(s.slice(0, 4)) - 1;
@@ -34,10 +53,23 @@ export async function GET(req) {
   } catch {
     // no nights baked yet
   }
-  if (!dates.length) return Response.json({ date: null, dates: [] });
   const asked = params.get("date");
+  const today = pacificToday();
+  const yesterday = addDays(today.date, -1);
+  // Yesterday not baked yet: ESPN fills it in, for the asks that show it or
+  // step to it (no date, yesterday's, the last baked night's "next").
+  const early = !dates.length || dates[dates.length - 1] < yesterday;
+  const checked = early && (!asked || asked === yesterday || asked === dates[dates.length - 1]);
+  let live = null;
+  if (checked) {
+    const ySeason = seasonOf(yesterday);
+    const rs = await readJson(join(process.cwd(), "app", "data", `regular-season-${ySeason}.json`));
+    live = await espnNight(yesterday, ySeason, slugsByName(rs?.players)).catch(() => null);
+    if (live) dates.push(yesterday);
+  }
+  if (!dates.length) return Response.json({ date: null, dates: [] });
   const date = DATE_RE.test(asked || "") && dates.includes(asked) ? asked : dates[dates.length - 1];
-  const night = await readJson(join(DIR, `${date}.json`));
+  const night = date === live?.date ? live : await readJson(join(DIR, `${date}.json`));
   if (!night) return Response.json({ error: "unreadable night" }, { status: 500 });
 
   const season = night.season;
@@ -69,16 +101,23 @@ export async function GET(req) {
     };
   }).sort((a, b) => b.va - a.va);
 
+  // The cache can't outlive what the answer depends on. An answer that asked
+  // ESPN is asked again every few minutes until the bake's deploy changes
+  // every URL; the latest night (and its `next`) holds until midnight
+  // Pacific; any other baked night is fixed for the build.
   const i = dates.indexOf(date);
+  const ttl = checked ? 300
+    : i === dates.length - 1 ? Math.max(60, Math.min(86400, today.secondsLeft))
+    : 86400;
   return Response.json(
     {
-      date, season, baselineSeason, usgAdj,
+      date, season, baselineSeason, usgAdj, source: night.source || "cdn.nba.com",
       prev: i > 0 ? dates[i - 1] : null,
       next: i < dates.length - 1 ? dates[i + 1] : null,
       latest: dates[dates.length - 1],
       games: night.games,
       lines,
     },
-    { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } },
+    { headers: { "Cache-Control": `public, max-age=${Math.min(3600, ttl)}, s-maxage=${ttl}` } },
   );
 }

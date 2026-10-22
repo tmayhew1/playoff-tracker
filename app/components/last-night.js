@@ -7,7 +7,8 @@ import { teamColor } from "../lib/format";
 
 // "About Last Night": the night's best Value Added games, top of Explore,
 // folded until tapped. Lines are baked each morning (scripts/bake-nights.mjs)
-// and scored by /api/nights; the arrows step through earlier nights. Tapping
+// and scored by /api/nights, which reads the new night off ESPN from midnight
+// Pacific until that bake lands; the arrows step through earlier nights. Tapping
 // a player opens his game's card on the Live tab when that tab is showing
 // the same night (`liveNight`), and By Player on that season otherwise.
 // Renders nothing until a night has been baked.
