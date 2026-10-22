@@ -64,11 +64,10 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 }
 
 
-// One side of a game on the Live tab, in the team's color. Whoever's ahead
-// (or won) gets the card filled in; nothing's filled before tip.
+// One side of a game on the Live tab, in the team's color. `ahead` (the
+// game's leader, lib/leader.js) gets the card filled in.
 // `splits`, when given, lists the team's 2P / 3P / FT down the far side.
-export function TeamScoreCard({ side, opponent, gameStatus, right, splits }) {
-  const ahead = gameStatus >= 2 && side.score > opponent.score;
+export function TeamScoreCard({ side, ahead, right, splits }) {
   const aside = splits && (
     <div className={`shrink-0 space-y-0.5 text-xs tabular-nums ${right ? "text-left" : "text-right"} ${ahead ? "text-white" : "text-stone-600"}`}>
       {splits.map(([label, made, att]) => (

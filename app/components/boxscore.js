@@ -6,6 +6,7 @@ import { LGA } from "../scoring";
 import { VABreakdown } from "./va-breakdown";
 import { normalizeName, ownerBadge, teamColor, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
+import { gameLeader } from "../lib/leader";
 
 
 // `outlined` lists teams whose badge goes white with a team-color outline
@@ -268,9 +269,9 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     }
   }
 
-  // Like the score cards: only the side that's ahead (or won) is filled in;
-  // the other, and both before tip or when tied, get an outlined badge.
-  const ahead = gameStatus >= 2 && home.score !== away.score ? (home.score > away.score ? home.tri : away.tri) : null;
+  // Like the score cards: only the leader's badge is filled in (a tie keeps
+  // whoever led last); the other side's is outlined.
+  const ahead = gameLeader(liveGame);
   const outlined = [home.tri, away.tri].filter((t) => t !== ahead);
 
   const sortedPlayers = useMemo(() => getSortedPlayers(box, lga), [box, lga]);
