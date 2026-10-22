@@ -8,7 +8,9 @@ import { normalizeName, ownerBadge, teamColor, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 
 
-export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame }) {
+// `outlined` lists teams whose badge goes white with a team-color outline
+// instead of the solid fill, matching a trailing side's score card.
+export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -19,9 +21,9 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, lga = LGA,
   const tc = badgeUseTeam ? teamColor(p.team) : null;
   // Solid team color with white ink: a pale wash of the color reads too alike
   // between two red (or two blue) teams, a full fill tells them apart.
-  const badgeStyle = badgeUseTeam
-    ? { backgroundColor: tc, color: "#fff", borderColor: tc }
-    : undefined;
+  const badgeStyle = !badgeUseTeam ? undefined
+    : outlined?.includes(p.team) ? { backgroundColor: "#fff", color: tc, borderColor: tc }
+    : { backgroundColor: tc, color: "#fff", borderColor: tc };
   return (
     <div className="border-b border-stone-100 last:border-0" data-row-key={rowKey}>
       <button
@@ -53,7 +55,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, lga = LGA,
 // card by his own team's game instead of the one `gameNumber`.
 export const rowKeyOf = (p, i) => `${p.team}-${p.name}-${i}`;
 
-export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame }) {
+export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame }) {
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
   const buildRow = (arr) => (p, i) => {
@@ -70,6 +72,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, part
         isExpanded={expandedKey === rowKey}
         onToggle={() => setExpandedKey(expandedKey === rowKey ? null : rowKey)}
         dimTeam={dimTeam}
+        outlined={outlined}
         lga={lga}
         teams={teams}
         gameNumber={gameNumberFor?.(p.team) ?? gameNumber}
@@ -265,6 +268,11 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     }
   }
 
+  // Like the score cards: only the side that's ahead (or won) is filled in;
+  // the other, and both before tip or when tied, get an outlined badge.
+  const ahead = gameStatus >= 2 && home.score !== away.score ? (home.score > away.score ? home.tri : away.tri) : null;
+  const outlined = [home.tri, away.tri].filter((t) => t !== ahead);
+
   const sortedPlayers = useMemo(() => getSortedPlayers(box, lga), [box, lga]);
   const top5 = sortedPlayers.slice(0, 5);
   const teamPlayers = useMemo(() => (teamFilter ? sortedPlayers.filter((p) => p.team === teamFilter) : null), [sortedPlayers, teamFilter]);
@@ -322,7 +330,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
       {showTop5 && (
         <div className="px-2 pb-2 border-t border-red-200">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
-          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
+          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
         </div>
       )}
 
@@ -333,7 +341,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
           {!box && !loading && !error && <div className="py-2 text-[10px] text-stone-500 italic text-center">No box score yet</div>}
           {box && teamPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
+              <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
             </div>
           )}
           {box && teamPlayers.length === 0 && (
@@ -348,7 +356,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
