@@ -17,8 +17,10 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, lga = LGA,
     ? "bg-white text-stone-500 border border-stone-200"
     : owner ? ownerBadge(owner) : "border";
   const tc = badgeUseTeam ? teamColor(p.team) : null;
+  // Solid team color with white ink: a pale wash of the color reads too alike
+  // between two red (or two blue) teams, a full fill tells them apart.
   const badgeStyle = badgeUseTeam
-    ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
+    ? { backgroundColor: tc, color: "#fff", borderColor: tc }
     : undefined;
   return (
     <div className="border-b border-stone-100 last:border-0" data-row-key={rowKey}>
