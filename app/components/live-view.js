@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
+import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 
@@ -100,6 +101,7 @@ function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
     const side = [g.away, g.home].find((s) => s.tri === tri);
     return side ? teamGameNumber(side, g) : null;
   }, [g]);
+  const leader = gameLeader(g);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
@@ -107,14 +109,14 @@ function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
       style={team ? { borderColor: teamColor(team) } : undefined}
     >
       <div className="relative flex gap-4">
-        {sides.map(([side, opponent, right]) => (
+        {sides.map(([side, , right]) => (
           <button
             key={side.tri}
             onClick={() => setTeam(team ? null : side.tri)}
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} opponent={opponent} gameStatus={g.gameStatus} right={right} splits={team ? shootingSplits(box, team) : null} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} splits={team ? shootingSplits(box, team) : null} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}
