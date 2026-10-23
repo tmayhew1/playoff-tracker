@@ -236,7 +236,9 @@ test("live rosters move players to their current team, by name", async () => {
     const by = Object.fromEntries(d.players.map((p) => [p.slug, p.team]));
     assert.equal(by.jokicni01, "BOS");
     assert.equal(by.gilgesh01, "OKC");
-    assert.equal(by.wembavi01, null); // on no roster in this mock
+    // On no roster in this mock — but he has played 2026-27 games for San
+    // Antonio, and the box scores place him there (app/api/_lib/in-season.js).
+    assert.equal(by.wembavi01, "SAS");
     assert.deepEqual(d.unprojected.SAS, ["Brand New Rookie"]);
     assert.equal(by.peterdr01, null);
     const dp = d.players.find((p) => p.name === "Darryn Peterson");

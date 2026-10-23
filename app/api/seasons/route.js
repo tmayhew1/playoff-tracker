@@ -1,5 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { seasonOf } from "../../lib/regular-season-games";
 
 export const runtime = "nodejs";
 export const revalidate = 86400;
@@ -16,9 +17,9 @@ function liveRange() {
   // ESPN's scoreboard endpoint reliably covers 1999-00 onward; older
   // seasons mostly come back with no playoff data, so we don't surface
   // them in the picker unless the bake has produced a file for them.
+  // From the season in progress (its first games are out by late October).
   const out = [];
-  const currentYear = new Date().getFullYear();
-  for (let y = currentYear - 1; y >= 1999; y--) {
+  for (let y = Number(seasonOf().slice(0, 4)); y >= 1999; y--) {
     const end = String((y + 1) % 100).padStart(2, "0");
     out.push(`${y}-${end}`);
   }

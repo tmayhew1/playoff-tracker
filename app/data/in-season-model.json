@@ -1,0 +1,165 @@
+{
+  "fittedAt": "2026-10-23",
+  "projection": "projection-2026-27.json",
+  "seasons": [
+    "2016-17",
+    "2017-18",
+    "2018-19",
+    "2019-20",
+    "2020-21",
+    "2021-22",
+    "2022-23",
+    "2023-24",
+    "2024-25",
+    "2025-26"
+  ],
+  "checkpoints": [
+    5,
+    10,
+    20,
+    30,
+    41,
+    55,
+    70
+  ],
+  "samples": 31066,
+  "rate": {
+    "fg2a": 200,
+    "tpa": 200,
+    "fta": 500,
+    "ast": 300,
+    "stl": 1500,
+    "blk": 700,
+    "tov": 700,
+    "drb": 500,
+    "orb": 700
+  },
+  "pct": {
+    "fg2": 300,
+    "tp": 500,
+    "ft": 150
+  },
+  "mpg": 6,
+  "avail": 25,
+  "va": 700,
+  "team": {
+    "W": 17.8,
+    "slope": 0.02843,
+    "sigma": 13.71,
+    "priorSd": 7.57
+  },
+  "report": {
+    "fg2a": {
+      "W": 200,
+      "vsPreseason": 0.381,
+      "vsSeasonOnly": 0.474
+    },
+    "tpa": {
+      "W": 200,
+      "vsPreseason": 0.398,
+      "vsSeasonOnly": 0.456
+    },
+    "fta": {
+      "W": 500,
+      "vsPreseason": 0.257,
+      "vsSeasonOnly": 0.647
+    },
+    "ast": {
+      "W": 300,
+      "vsPreseason": 0.313,
+      "vsSeasonOnly": 0.541
+    },
+    "stl": {
+      "W": 1500,
+      "vsPreseason": 0.081,
+      "vsSeasonOnly": 0.8
+    },
+    "blk": {
+      "W": 700,
+      "vsPreseason": 0.167,
+      "vsSeasonOnly": 0.752
+    },
+    "tov": {
+      "W": 700,
+      "vsPreseason": 0.186,
+      "vsSeasonOnly": 0.776
+    },
+    "drb": {
+      "W": 500,
+      "vsPreseason": 0.244,
+      "vsSeasonOnly": 0.689
+    },
+    "orb": {
+      "W": 700,
+      "vsPreseason": 0.18,
+      "vsSeasonOnly": 0.767
+    },
+    "fg2": {
+      "W": 300,
+      "vsPreseason": 0.08,
+      "vsSeasonOnly": 0.779
+    },
+    "tp": {
+      "W": 500,
+      "vsPreseason": 0.022,
+      "vsSeasonOnly": 0.821
+    },
+    "ft": {
+      "W": 150,
+      "vsPreseason": 0.086,
+      "vsSeasonOnly": 0.781
+    },
+    "mpg": {
+      "W": 6,
+      "vsPreseason": 0.389,
+      "vsSeasonOnly": 0.333
+    },
+    "avail": {
+      "W": 25,
+      "vsPreseason": 0.226,
+      "vsSeasonOnly": 0.365
+    },
+    "va": {
+      "W": 700,
+      "vsPreseason": 0.185,
+      "vsSeasonOnly": 0.708
+    }
+  },
+  "validation": {
+    "5": {
+      "preseason": 3.333,
+      "updated": 3.152,
+      "directVa": 3.192
+    },
+    "10": {
+      "preseason": 3.395,
+      "updated": 3.107,
+      "directVa": 3.155
+    },
+    "20": {
+      "preseason": 3.517,
+      "updated": 3.106,
+      "directVa": 3.143
+    },
+    "30": {
+      "preseason": 3.643,
+      "updated": 3.141,
+      "directVa": 3.162
+    },
+    "41": {
+      "preseason": 3.881,
+      "updated": 3.344,
+      "directVa": 3.358
+    },
+    "55": {
+      "preseason": 4.295,
+      "updated": 3.748,
+      "directVa": 3.748
+    },
+    "70": {
+      "preseason": 5.176,
+      "updated": 4.644,
+      "directVa": 4.63
+    }
+  }
+}

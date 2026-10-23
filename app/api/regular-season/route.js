@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as cheerio from "cheerio";
 import { loadZoneSide, attachZoneFields } from "../_lib/zones";
+import { seasonToDate } from "../_lib/season-to-date";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -127,6 +128,21 @@ export async function GET(req) {
         "Content-Type": "application/json",
         "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=2592000",
       },
+    });
+  }
+
+  // The season in progress before basketball-reference's table is baked:
+  // added up from its own baked box scores, so the board matches the games
+  // listed under it to the night.
+  const toDate = await seasonToDate(season);
+  if (toDate && !toDate.complete) {
+    const players = toDate.players.map(({ teams, last, tg, gs, ...p }) => p);
+    attachZoneFields(players, await loadZoneSide(season, "rs"));
+    return new Response(JSON.stringify({
+      season, players, source: "espn-box-scores", through: toDate.through, partial: true,
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=86400" },
     });
   }
 

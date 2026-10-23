@@ -12,6 +12,8 @@
     "usage:fit": "node scripts/fit-usage-model.mjs",
     "fit:draft": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fit-draft-model.mjs",
     "fit:projections": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fit-projection-model.mjs",
+    "fit:in-season": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fit-in-season.mjs",
+    "bake:in-season-lga": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-in-season-lga.mjs",
     "bake:awards": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-awards.mjs",
     "bake:nights": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-nights.mjs",
     "bake:regular-season": "node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-regular-season-games.mjs",

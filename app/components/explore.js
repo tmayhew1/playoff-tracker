@@ -8,7 +8,7 @@ import { VABaselineToggle } from "./va-baseline-toggle";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
-import { dayLabel, groupByDay, groupByMonth, seasonMonths } from "../lib/regular-season-games";
+import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LastNight } from "./last-night";
@@ -22,15 +22,23 @@ const PlayerExplorer = dynamic(
   () => import("./player-explorer").then((m) => m.PlayerExplorer),
   { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
 );
-// The projected season — a season-picker entry with no games behind it yet,
-// so it renders its own view instead of the leaderboard. Loaded on first pick.
+// The projected season — its own season-picker entry, beside the season it
+// projects, rendering its own view instead of the leaderboard. Loaded on
+// first pick.
 const LookAhead = dynamic(
   () => import("./look-ahead").then((m) => m.LookAhead),
   { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
 );
 // Kept in step with LOOK_AHEAD_SEASON in ./look-ahead (not imported from it,
-// so the picker doesn't pull that chunk into the page bundle).
+// so the picker doesn't pull that chunk into the page bundle). The picker
+// holds the projection under its own value, LOOK_AHEAD, so the season itself
+// — games, box scores, its leaderboard — is the entry beside it.
 const LOOK_AHEAD_SEASON = "2026-27";
+const LOOK_AHEAD = "look-ahead";
+// The season under way: Explore opens on it, its games listed before its
+// leaderboard (the latest night is the news; a finished season's board is
+// its summary), and until April it has no playoffs to show.
+const CURRENT_SEASON = seasonOf();
 
 
 export const ROUND_LABELS = { r1: "First Round", r2: "Conf Semis", r3: "Conf Finals", r4: "Finals" };
@@ -236,8 +244,7 @@ export function exploreSeasonList() {
   // Synchronous fallback used until /api/seasons resolves. Covers the same
   // ESPN-supported range the route emits (1999-00 onward, newest first).
   const seasons = [];
-  const currentYear = new Date().getFullYear();
-  for (let y = currentYear - 1; y >= 1999; y--) {
+  for (let y = Number(CURRENT_SEASON.slice(0, 4)); y >= 1999; y--) {
     const end = String((y + 1) % 100).padStart(2, "0");
     seasons.push(`${y}-${end}`);
   }
@@ -263,7 +270,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   const FALLBACK = useMemo(() => exploreSeasonList(), []);
   const [linked] = useState(initial);
   const [seasons, setSeasons] = useState(() => {
-    const base = [LOOK_AHEAD_SEASON, ...FALLBACK.filter((s) => s !== LOOK_AHEAD_SEASON)];
+    const base = [LOOK_AHEAD, ...FALLBACK];
     return linked?.season && !base.includes(linked.season)
       ? [...base, linked.season].sort((a, b) => b.localeCompare(a)) : base;
   });
@@ -274,7 +281,12 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   const [mode, setMode] = useState(linked?.view === "player" ? "player" : "season"); // "season" | "player"
   // Which games count: regular season, playoffs, or both summed. Applies to
   // both By Season and By Player.
-  const [scope, setScope] = useState(linked?.scope || "combined"); // "regular" | "playoffs" | "combined"
+  // A season in progress before April opens on its regular season, the only
+  // games it has; a link names its own.
+  const [scope, setScope] = useState(() => { // "regular" | "playoffs" | "combined"
+    if (linked && (linked.scope !== "combined" || linked.season || linked.view === "player")) return linked.scope;
+    return playoffsBegun(CURRENT_SEASON) ? "combined" : "regular";
+  });
   // A pending navigation into By Season, applied by the leaderboard once that
   // season's rows have loaded. Two shapes:
   //   { season, team, name, slug } — a player-season, from a compare panel's
@@ -370,7 +382,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (cancelled || !d?.seasons?.length) return;
-        setSeasons(d.seasons.includes(LOOK_AHEAD_SEASON) ? d.seasons : [LOOK_AHEAD_SEASON, ...d.seasons]);
+        setSeasons([LOOK_AHEAD, ...d.seasons.filter((s) => s !== LOOK_AHEAD)]);
         // Switch the default to the newest entry the route reports, but
         // only if the user hasn't already navigated somewhere else.
         // A linked season is a choice too.
@@ -383,7 +395,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   useEffect(() => {
     // The playoff series show under the Playoffs and Combined scopes; the
     // regular season's months load on their own (RegularSeasonMonths).
-    if (mode !== "season" || scope === "regular" || season === LOOK_AHEAD_SEASON) return;
+    if (mode !== "season" || scope === "regular" || season === LOOK_AHEAD || !playoffsBegun(season)) return;
     let cancelled = false;
     setData(null);
     setError(null);
@@ -405,8 +417,9 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   // season, which PlayoffLeaderboard needs for its rs/combined scopes (and from
   // which it derives its own playoff baseline), while the series box scores
   // below are playoff games and take the blended playoff baseline (spec §4.8).
-  const lga = useSeasonLga(season);
-  const poLga = useSeasonLga(season, "po");
+  const lgaSeason = season === LOOK_AHEAD ? LOOK_AHEAD_SEASON : season;
+  const lga = useSeasonLga(lgaSeason);
+  const poLga = useSeasonLga(lgaSeason, "po");
   const byRound = useMemo(() => {
     const out = { r1: [], r2: [], r3: [], r4: [] };
     for (const s of data?.series || []) {
@@ -416,7 +429,15 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   }, [data]);
 
   useShareReport({ view: mode, scope, season: mode === "season" ? season : null });
-  const lookAhead = season === LOOK_AHEAD_SEASON;
+  const lookAhead = season === LOOK_AHEAD;
+  // No playoffs yet: Combined is the regular season alone, and Playoffs says so.
+  const noPlayoffs = !lookAhead && !playoffsBegun(season);
+  const inProgress = season === CURRENT_SEASON;
+
+  // The season's VA leaderboard, in whichever scope it's asked for.
+  const board = (sc) => (
+    <PlayoffLeaderboard season={season} lga={lga} scope={sc} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+  );
 
   const tabCls = (active) =>
     `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
@@ -433,7 +454,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
       </div>
       {/* The projection is a regular season with no games yet, so the scope
           row has nothing to choose between while it's showing. */}
-      {!(mode === "season" && season === LOOK_AHEAD_SEASON) && <div className="mb-2 flex gap-1.5">
+      {!(mode === "season" && lookAhead) && <div className="mb-2 flex gap-1.5">
         <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
         <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
         <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
@@ -466,18 +487,18 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
               className={`w-full text-sm font-bold bg-white border px-2 py-1.5 ${lookAhead ? "text-amber-900 border-amber-400" : "text-stone-900 border-stone-300"}`}
             >
               {seasons.map((s) => (
-                <option key={s} value={s}>{s === LOOK_AHEAD_SEASON ? `${s} · Look Ahead` : s}</option>
+                <option key={s} value={s}>{s === LOOK_AHEAD ? `${LOOK_AHEAD_SEASON} · Look Ahead` : s === CURRENT_SEASON ? `${s} · In progress` : s}</option>
               ))}
             </select>
             <div className={`text-[10px] mt-1 italic ${lookAhead ? "text-amber-700" : "text-stone-400"}`}>
-              {season === LOOK_AHEAD_SEASON
-                ? "Projected from regular seasons via Basketball-Reference; rosters via ESPN."
+              {lookAhead
+                ? `Projected from regular seasons via Basketball-Reference${LOOK_AHEAD_SEASON === CURRENT_SEASON ? `, updated with every ${LOOK_AHEAD_SEASON} game played` : ""}; rosters via ESPN.`
                 : "Box scores via ESPN and Basketball-Reference."}
             </div>
-            {season !== LOOK_AHEAD_SEASON && (
+            {!lookAhead && (
               <button
                 type="button"
-                onClick={() => setSeason(LOOK_AHEAD_SEASON)}
+                onClick={() => setSeason(LOOK_AHEAD)}
                 className="mt-2 w-full flex items-center justify-between gap-2 px-2 py-1.5 border border-amber-400 bg-amber-50 text-left hover:bg-amber-100"
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-800">{LOOK_AHEAD_SEASON} Look Ahead</span>
@@ -486,13 +507,23 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
             )}
           </div>
 
-          {season === LOOK_AHEAD_SEASON ? (
+          {lookAhead ? (
             <LookAhead />
-          ) : scope === "regular" ? (
-            <>
-              <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
-              <RegularSeasonMonths season={season} lga={lga} />
-            </>
+          ) : scope === "regular" || (scope === "combined" && noPlayoffs) ? (
+            // The season under way lists its games first, then the board.
+            inProgress ? (
+              <>
+                <RegularSeasonMonths season={season} lga={lga} />
+                {board("regular")}
+              </>
+            ) : (
+              <>
+                {board("regular")}
+                <RegularSeasonMonths season={season} lga={lga} />
+              </>
+            )
+          ) : scope === "playoffs" && noPlayoffs ? (
+            <div className="text-[10px] text-stone-400 italic py-4 text-center">The {season} playoffs start in April — the regular season is under way.</div>
           ) : (
             <>
               {/* Combined keeps its leaderboard up while the games load, then
@@ -500,7 +531,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
                   same bracket the Playoffs scope shows. */}
               {scope === "combined" && (
                 <>
-                  <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+                  {board(scope)}
                   <RegularSeasonMonths season={season} lga={lga} grouped />
                 </>
               )}
@@ -508,9 +539,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
               {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
               {!loading && !error && data && (
                 <>
-                  {scope === "playoffs" && (
-                    <PlayoffLeaderboard season={season} lga={lga} scope={scope} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
-                  )}
+                  {scope === "playoffs" && board(scope)}
                   {(["r1", "r2", "r3", "r4"]).map((rk) => (
                     <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={poLga} season={season} />
                   ))}
