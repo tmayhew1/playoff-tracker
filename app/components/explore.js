@@ -129,7 +129,7 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // The regular season's counterpart to the rounds: one collapsible section per
 // month, its league-wide averages first, then a card per day holding that
 // day's games. Same header, same card, same game banner as a round, a series
-// and its games.
+// and its games, except each game shows its top five without a tap.
 export function ExploreMonthSection({ month, allMonths, lga, season }) {
   const [open, setOpen] = useState(false);
   const days = useMemo(() => (open ? groupByDay(month.games) : []), [open, month]);
@@ -168,6 +168,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
               useTeamColor
               boxSrc="espn"
               boxLoader={() => bakedBox(season, g)}
+              finalTop5
             />
           ))}
         </div>
