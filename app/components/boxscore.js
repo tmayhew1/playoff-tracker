@@ -295,7 +295,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
     rootRef.current?.querySelector(`[data-row-key="${CSS.escape(expandedPlayer)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [expandedPlayer]);
   // A live game always leads with its top five; a final only where the
-  // caller asks (`finalTop5`, the Live tab).
+  // caller asks (`finalTop5`: the Live tab, Explore's regular-season days).
   const showTop5 = (isLive || (isFinal && finalTop5)) && sortedPlayers.length > 0 && !expanded && !teamFilter;
   const showFull = expanded && !teamFilter;
 
