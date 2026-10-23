@@ -5,6 +5,7 @@ import { combineRows } from "./player-rows";
 import { SCOPE_LABEL } from "../../lib/share-params";
 import { withTeamContext } from "./team-context";
 import { mergeInjuries, withInjuries } from "../../lib/injuries";
+import { seasonToDate } from "./season-to-date";
 
 // The numbers behind a shared link's preview (app/page.js generateMetadata and
 // /api/og). Scored exactly as the page scores them: each scope against its own
@@ -24,10 +25,13 @@ async function readData(name) {
 }
 
 // One season's rows for a scope, each scored: { row, lga, va }.
-async function seasonRows(season, scope, usgAdj) {
+// `toDate` lets the season in progress stand in from its box scores; a career
+// leaves it out, as the By Player index it matches does until it's baked.
+async function seasonRows(season, scope, usgAdj, toDate = true) {
   const [po, rs] = await Promise.all([
     scope === "regular" ? null : readData(`leaderboard-${season}.json`),
-    scope === "playoffs" ? null : readData(`regular-season-${season}.json`),
+    // The season in progress before its table is baked: its box scores, added up.
+    scope === "playoffs" ? null : readData(`regular-season-${season}.json`).then((d) => d || (toDate ? seasonToDate(season) : null)),
   ]);
   const tag = (d) => (d?.players || []).filter((p) => p.name)
     .map((p) => ({ season, p: p.gp == null && p.g != null ? { ...p, gp: p.g } : p }));
@@ -52,9 +56,9 @@ async function seasonRows(season, scope, usgAdj) {
 }
 
 // A player-season's card: totals, per-game, rank, and per-category VA.
-export async function playerSeasonCard({ slug, season, scope, usgAdj = false }) {
+export async function playerSeasonCard({ slug, season, scope, usgAdj = false, toDate = true }) {
   if (!slug || !season) return null;
-  const rows = await seasonRows(season, scope, usgAdj);
+  const rows = await seasonRows(season, scope, usgAdj, toDate);
   if (!rows) return null;
   const i = rows.findIndex((r) => r.row.slug === slug);
   if (i < 0) return null;
@@ -181,7 +185,7 @@ export async function careerCard(slug, scope, usgAdj = false) {
   let best = null, va = 0, seasons = 0;
   for (let y = Number(last.slice(0, 4)); y >= 1980; y--) {
     const season = `${y}-${String((y + 1) % 100).padStart(2, "0")}`;
-    const c = await playerSeasonCard({ slug, season, scope, usgAdj });
+    const c = await playerSeasonCard({ slug, season, scope, usgAdj, toDate: false });
     if (!c) continue;
     va += c.va; seasons += 1;
     if (!best || c.va > best.va) best = c;

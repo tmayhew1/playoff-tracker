@@ -38,6 +38,23 @@ export function seasonMonths(season) {
   return out;
 }
 
+// The season a date belongs to: October on is the season just starting, the
+// summer still the one just finished ("2026-27" from October 2026 to
+// September 2027).
+export function seasonOf(date = new Date()) {
+  const y = date.getUTCFullYear(), start = date.getUTCMonth() >= 9 ? y : y - 1;
+  return `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+}
+
+// Whether a season's playoffs can have begun by `date`: the play-in starts in
+// mid-April. Before then the season in progress has no playoff games to ask
+// anyone for.
+export const PLAYOFFS_FROM = "04-12";
+export function playoffsBegun(season, date = new Date()) {
+  const end = Number(season.slice(0, 4)) + 1;
+  return date.toISOString().slice(0, 10) >= `${end}-${PLAYOFFS_FROM}`;
+}
+
 // Games are dated by the US Eastern calendar, the way the league lists them: a
 // 10:30pm ET tip is already the next day in UTC.
 const ET_DAY = new Intl.DateTimeFormat("en-CA", {

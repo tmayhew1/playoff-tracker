@@ -8,6 +8,7 @@ import { Name, TeamChip } from "./player-chips";
 import { SeasonTiles } from "./season-tiles";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
 import { allNbaTeams, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
+import { updateTeam } from "../lib/in-season";
 import { TEAM_CONF } from "../teams";
 
 // The 2026-27 Look Ahead, Explore's projected season (lib/projection-model.js
@@ -120,11 +121,18 @@ export function LookAhead() {
   const awards = useMemo(() => {
     if (!data) return null;
     const am = data.awardModels;
-    const ballotVa = (p) => (am ? vaPlus(p.va, p.dpm, p.row.mp) : p.va);
+    const ballot = (va, mp, p) => (am ? vaPlus(va, p.dpm, mp) : va);
+    const ballotVa = (p) => ballot(p.va, p.row.mp, p);
     const byBallot = [...players].sort((a, b) => ballotVa(b) - ballotVa(a));
     const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie)];
     const rookiePool = data.params?.rookie?.pool;
-    const res = simulateAwards(field.map((p) => ({ key: p.slug, g: p.row.g, va: ballotVa(p), rangeVa: p.va, mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null })),
+    // In season, the games played are banked and only the rest is drawn
+    // (lib/projection-model.js simulateAwards, `ytd`).
+    const entry = (p) => (p.rest
+      ? { g: p.rest.g, va: ballot(p.restVa, p.rest.mp, p), rangeVa: p.restVa, maxG: p.maxRest, shrink: p.shrink,
+        ytd: p.ytd ? { g: p.ytd.g, va: ballot(p.ytdVa, p.ytd.mp, p), rangeVa: p.ytdVa } : null }
+      : { g: p.row.g, va: ballotVa(p), rangeVa: p.va });
+    const res = simulateAwards(field.map((p) => ({ key: p.slug, ...entry(p), mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null })),
       am ? { a: am.mvp.beta } : data.mvp.model, data.pool,
       { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null });
     return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
@@ -140,19 +148,26 @@ export function LookAhead() {
     for (const p of players) if (p.team) (by[p.team] ||= []).push(p);
     const rec = data.lastRecords || {};
     const lastPct = (t) => (rec[t] ? rec[t].w / (rec[t].w + rec[t].l) : 0.5);
+    // The preseason read of each roster — the line before any game, so the
+    // season's results aren't counted twice — then, once games are played,
+    // mixed with each team's point margin so far (lib/in-season.js).
+    const pre = (p) => p.preseason || p;
     const proj = data.wins ? projectWins(data.wins, Object.fromEntries(Object.entries(by).map(([t, list]) =>
-      [t, { vaPlus: list.map((p) => vaPlus(p.va, p.dpm, p.row.mp)), lastPct: lastPct(t) }]))) : {};
+      [t, { vaPlus: list.map((p) => vaPlus(pre(p).va, p.dpm, pre(p).row.mp)), lastPct: lastPct(t) }]))) : {};
+    const ins = data.inSeason;
+    if (ins) for (const t of Object.keys(proj)) proj[t] = updateTeam(proj[t].winPct, ins.records[t], ins.model.team);
     return Object.entries(by).map(([t, list]) => {
       // The row's five names: the five with the most projected minutes, laid
       // out like a lineup — guards, then forwards, then centers.
       const top = [...list].sort((a, b) => b.row.mp - a.row.mp).slice(0, 5)
         .sort((a, b) => POS_ORDER[posGroup(a.pos)] - POS_ORDER[posGroup(b.pos)]);
-      return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: rec[t] || null, top };
+      return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: ins ? ins.records[t] || { w: 0, l: 0 } : rec[t] || null, top };
     }).sort((a, b) => b.wins - a.wins);
   }, [data, players]);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the projection — {error}</div>;
   if (!data || !awards) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Projecting 2026-27…</div>;
+  const ins = data.inSeason;
 
   const pBySlug = Object.fromEntries(players.map((p) => [p.slug, p]));
   const bt = data.backtest;
@@ -170,7 +185,7 @@ export function LookAhead() {
         <SectionHead
           title="Projected Standings"
           note={data.wins
-            ? `Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.injuries && data.injuries !== "none" ? " · known injuries taken out" : ""}${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
+            ? `${ins ? `Through ${shortDate(ins.through)}: each team’s record so far plus the rest of its schedule, played at the preseason read mixed with its point margin so far · ` : ""}Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.injuries && data.injuries !== "none" ? " · known injuries taken out" : ""}${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
             : "Wins model not fit yet"}
         />
         {["W", "E"].map((conf) => {
@@ -181,7 +196,7 @@ export function LookAhead() {
             <div key={conf} className="border-b border-stone-200 last:border-0">
               <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[9px] uppercase tracking-[0.2em]">
                 <span className="font-bold text-stone-700">{conf === "E" ? "East" : "West"}</span>
-                <span className="text-stone-400 tracking-wider">Proj · Last</span>
+                <span className="text-stone-400 tracking-wider">Proj · {ins ? "Now" : "Last"}</span>
               </div>
               {list.map((t, i) => {
                 const tc = teamColor(t.team), w = Math.round(t.wins), isOpen = openTeam === t.team;
@@ -213,7 +228,7 @@ export function LookAhead() {
                           </span>
                         </span>
                         <span className="w-12 text-right tabular-nums font-bold text-stone-900 shrink-0">{w}–{82 - w}</span>
-                        <span className="w-10 text-right tabular-nums text-stone-400 shrink-0">{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
+                        <span className={`w-10 text-right tabular-nums shrink-0 ${ins ? "text-stone-600" : "text-stone-400"}`}>{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
                       </div>
                     </button>
                     {isOpen && (
@@ -256,7 +271,10 @@ export function LookAhead() {
       {/* Projected leaders */}
       <div className="mb-4 border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200 flex items-center justify-between gap-2">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Projected Leaders</div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Projected Leaders</div>
+            {ins && <div className="text-[9px] italic text-stone-400 mt-0.5">Season totals: VA banked through {shortDate(ins.through)} plus the games left</div>}
+          </div>
           <select
             value={team || ""}
             onChange={(e) => { setTeam(e.target.value || null); setExpanded(null); }}
@@ -517,6 +535,7 @@ function ProjectedLine({ p, sim, lga }) {
     ["FG%", r.fga > 0 ? (100 * r.fgm) / r.fga : NaN], ["3P%", r.tpa > 0 ? (100 * r.tpm) / r.tpa : NaN], ["FT%", r.fta > 0 ? (100 * r.ftm) / r.fta : NaN],
   ];
   const proj = line(p.row, p.row.g), last = L ? line(L, L.g) : null;
+  const ytd = p.ytd?.g > 0 ? line(p.ytd, p.ytd.g) : null;
   return (
     <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
       <div className="overflow-x-auto no-scrollbar">
@@ -532,6 +551,12 @@ function ProjectedLine({ p, sim, lga }) {
               <td className="text-left pr-1 whitespace-nowrap">’27 proj</td>
               {proj.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
             </tr>
+            {ytd && (
+              <tr className="text-stone-700">
+                <td className="text-left pr-1 whitespace-nowrap" title={`${p.ytd.g} games so far, ${fmt1(p.ytdVa)} VA`}>’27 so far · {p.ytd.g} G</td>
+                {ytd.map(([k, v]) => <td key={k} className="text-right px-1">{fmt1(v)}</td>)}
+              </tr>
+            )}
             {L && (
               <tr className="text-stone-500">
                 <td className="text-left pr-1 whitespace-nowrap">’{L.season.slice(5)} {L.college ? <span title={L.team}>NCAA</span> : L.team}</td>
@@ -584,7 +609,9 @@ function Cards({ p, sim, lga }) {
   // What sharing a roster did: every pooled resource, biggest move first, and
   // the VA it cost or added against the player projected alone.
   const moved = p.pool && p.solo ? Object.entries(p.pool).sort(([, a], [, b]) => Math.abs(b - 1) - Math.abs(a - 1)) : [];
-  const dva = moved.length ? p.vaShown - valueAdd(p.solo, lga) : null;
+  // In season the line has moved off the preseason one, so what the roster
+  // did is read off the preseason projection, where it was applied.
+  const dva = moved.length ? (p.contextVa ?? p.vaShown - valueAdd(p.solo, lga)) : null;
   const ctxPct = (f) => { const x = (f - 1) * 100; return `${signed(x, Math.abs(x) < 1 && x !== 0 ? 1 : 0)}%`; };
   // A rookie has no NBA defense to project from, so — as in VA+ and the
   // standings — they're taken as average: VA+ is their VA, defense zero.
@@ -716,6 +743,17 @@ function Spread({ sim, g, tc }) {
 }
 
 
+// How the season so far moves the projection (lib/in-season.js), with the
+// fitted weights in plain words.
+function InSeasonMethod({ ins }) {
+  const m = ins.model, r = m.report || {};
+  const seasons = m.seasons?.length ? `${m.seasons[0]} through ${m.seasons.at(-1)}` : "past seasons";
+  const cut = (k) => (r[k] ? `${Math.round(r[k].vsPreseason * 100)}%` : "–");
+  return (
+    <p><span className="font-semibold text-stone-800">The season so far.</span> Through {fmtDate(ins.through)} ({ins.games} games), every projection is updated with what has actually happened. Each piece of the line mixes the preseason number with the season so far, the preseason counting as a fitted amount of evidence: about {m.rate.fg2a} minutes for how often a player shoots, {m.rate.ast} for assists, {m.rate.drb} for defensive rebounds and {m.rate.stl} for steals; {m.pct.tp} attempts for 3P%, {m.pct.fg2} for 2P% and {m.pct.ft} for FT%; {m.mpg} games for minutes per game and {m.avail} team games for availability. So a hot week moves a player’s role and shot volume quickly and their shooting slowly — which is what past seasons say happens. The VA already earned is banked; only the games left are projected, and the simulated awards draw only those, with the range narrowing as the games come in. Each team’s wins are its record plus the rest of its schedule, played at the preseason read mixed with its point margin so far — the preseason read counting as {Math.round(m.team.W)} games of margin, from the wins model’s own miss. The weights were fit on {seasons}, cut at checkpoints from 5 to 70 games, by how well each mix predicted the rest of that season: the shot rates’ errors drop by {cut("fg2a")} on the preseason projection alone, minutes by {cut("mpg")}.</p>
+  );
+}
+
 function Method({ data }) {
   const m = data.mvp;
   return (
@@ -732,6 +770,7 @@ function Method({ data }) {
       {data.wins && (
         <p><span className="font-semibold text-stone-800">The standings.</span> A team’s wins come from its players’ projected VA+ — VA after the team context, plus a projection of each player’s defense — taken best to worst with each player counting {Math.round(data.wins.rho * 100)}% of the one ahead, and from the record it’s coming off, which carries coaching, system and health that rosters can’t. It was fit on every season since 1990-91, each roster projected from what was known the summer before: it misses by {data.wins.rmseWins.toFixed(1)} wins on average, against {data.wins.rmseLastRecord.toFixed(1)} for last season’s record alone and {data.wins.rmseConstant.toFixed(1)} for calling every team 41–41. VA+ beat plain VA and USG-ADJ VA, the gentle decay beat a top-eight sum and a free weight per rank, and offense and defense, fit separately, came out weighted alike. The dashed lines mark the sixth and tenth seeds.</p>
       )}
+      {data.inSeason && <InSeasonMethod ins={data.inSeason} />}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
       <p><span className="font-semibold text-stone-800">The awards.</span> The same models as the Awards tab, run on the projected season. Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — and then draws each ballot from the player’s VA+: MVP from a logit on VA+, fit on {data.awardModels ? "every winner since 1980-81" : `all ${m.seasons} winners since 1980-81 (on plain VA)`}, with the 65-game rule; All-NBA as the top fifteen of that ballot{data.awardModels ? <>; Rookie of the Year among the projected rookies from VA+ and minutes per game; and All-Star as the {ALL_STAR_PLACES} likeliest selections from a logit on VA+, each fit on the real picks</> : ""}. Most Improved has no board here: it is scored against this projection, so there is nothing to look ahead with.</p>
       <p><span className="font-semibold text-stone-800">Injuries.</span> A player already reported out is projected for the games left after the expected return: the projected availability applied to what remains of the schedule, at the same per-game line, so someone out until March keeps their rate but loses most of their total. The minutes they give up go to their teammates in the team context. Return dates come from {data.injuries === "live" ? "ESPN’s injury report, read live, and " : ""}reporting collected {data.injuriesAsOf ? `as of ${fmtDate(data.injuriesAsOf)}` : "before the season"} (the newer of the two wins), taking the middle of a reported range; day-to-day listings are left to the projected availability. A player out for the season is off the board and named under their team.</p>

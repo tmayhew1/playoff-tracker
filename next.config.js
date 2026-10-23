@@ -22,8 +22,33 @@ function buildId() {
   }
 }
 
+// The season in progress's baked box scores are read off disk by the routes
+// that add them up (app/api/_lib/season-to-date.js) — files under public/.
+// File tracing follows that directory whole (~40 MB, every season), so the
+// finished seasons are left out: those routes only read the one under way.
+const GAMES = "public/regular-season-games";
+function seasonUnderWay() {
+  const d = new Date(), y = d.getUTCFullYear(), start = d.getUTCMonth() >= 9 ? y : y - 1;
+  return `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+}
+function finishedSeasonGames() {
+  try {
+    const current = seasonUnderWay();
+    return require("node:fs").readdirSync(GAMES).filter((s) => s !== current).map((s) => `./${GAMES}/${s}/**`);
+  } catch {
+    return [];
+  }
+}
+// Every route that imports it: the two APIs, and the link preview (the page
+// and its image).
+const inSeasonRoutes = ["/api/regular-season", "/api/projections", "/api/og", "/"];
+
 const nextConfig = {
   reactStrictMode: true,
   env: { NEXT_PUBLIC_BUILD_ID: buildId() },
+  experimental: {
+    outputFileTracingIncludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, [`./${GAMES}/${seasonUnderWay()}/*.json`]])),
+    outputFileTracingExcludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, finishedSeasonGames()])),
+  },
 };
 module.exports = nextConfig;

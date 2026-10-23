@@ -5,6 +5,8 @@ import { withTeamContext } from "../_lib/team-context";
 import { projectRookies, rookieClassNames } from "../_lib/rookies";
 import { mergeInjuries, parseEspnInjuries, withInjuries } from "../../lib/injuries";
 import { lgaForSeason, valueAdd } from "../../scoring";
+import { seasonToDate } from "../_lib/season-to-date";
+import { withSeasonToDate } from "../_lib/in-season";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -120,6 +122,15 @@ async function readAwardModels() {
   }
 }
 
+// How far the season so far moves the projection (scripts/fit-in-season.mjs).
+async function readInSeasonModel() {
+  try {
+    return JSON.parse(await readFile(join(process.cwd(), "app", "data", "in-season-model.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 async function readInjuries() {
   try {
     return JSON.parse(await readFile(join(process.cwd(), "app", "data", "injuries.json"), "utf8"));
@@ -135,7 +146,9 @@ export async function GET() {
   } catch {
     return Response.json({ error: "projection not baked — run npm run fit:projections" }, { status: 500 });
   }
-  const [rosters, reported, live, awardModels] = await Promise.all([liveRosters(), readInjuries(), liveInjuries(), readAwardModels()]);
+  const [rosters, reported, live, awardModels, toDate, inSeasonModel] = await Promise.all([
+    liveRosters(), readInjuries(), liveInjuries(), readAwardModels(), seasonToDate(baked.season), readInSeasonModel(),
+  ]);
   const curated = reported?.season === baked.season ? reported : null;
   let players, unprojected = {};
   if (rosters) {
@@ -150,8 +163,8 @@ export async function GET() {
     players = baked.players.map((p) => ({ ...p, team: MULTI.test(p.team) ? null : p.team }));
   }
   const injuredOut = {};
+  const season = { seasonStart: curated?.seasonStart, seasonEnd: curated?.seasonEnd, schedule: 82 };
   if (curated || live) {
-    const season = { seasonStart: curated?.seasonStart, seasonEnd: curated?.seasonEnd, schedule: 82 };
     const lga = lgaForSeason(baked.base);
     players = withInjuries(players, mergeInjuries(curated, live || []), season, (row) => valueAdd(row, lga));
     // Out for the season: off the board, named under the team.
@@ -162,9 +175,27 @@ export async function GET() {
     players = players.filter((p) => p.row.g > 0);
   }
   players = withTeamContext(players, baked);
+  // Once games have been played, the projection above is the prior and the
+  // season so far is mixed in (lib/in-season.js); a roster player with no
+  // projection who is playing joins the board.
+  let inSeason = null;
+  if (toDate?.players?.length && inSeasonModel) {
+    players = withSeasonToDate(players, toDate, inSeasonModel, baked, season);
+    const placed = new Set(players.filter((p) => p.unprojected).map((p) => normalizeName(p.name)));
+    for (const t of Object.keys(unprojected)) {
+      unprojected[t] = unprojected[t].filter((n) => !placed.has(normalizeName(n)));
+      if (!unprojected[t].length) delete unprojected[t];
+    }
+    inSeason = {
+      through: toDate.through,
+      games: toDate.games.filter((g) => g.home?.score > 0).length,
+      records: toDate.records,
+      model: { team: inSeasonModel.team, rate: inSeasonModel.rate, pct: inSeasonModel.pct, mpg: inSeasonModel.mpg, avail: inSeasonModel.avail, va: inSeasonModel.va, seasons: inSeasonModel.seasons, report: inSeasonModel.report },
+    };
+  }
   return Response.json(
     {
-      ...baked, players, unprojected, injuredOut, awardModels, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString(),
+      ...baked, players, unprojected, injuredOut, awardModels, inSeason, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString(),
       injuries: live ? "live" : curated ? "reported" : "none", injuriesAsOf: curated?.players?.reduce((m, e) => (e.asOf > m ? e.asOf : m), "") || null,
     },
     { headers: { "Cache-Control": "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400" } },

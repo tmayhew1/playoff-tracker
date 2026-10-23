@@ -91,6 +91,15 @@ jobs:
         continue-on-error: true
         run: node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-regular-season-games.mjs --max-seasons 2
 
+      # The season in progress's league baseline, measured from the box scores
+      # just baked and shrunk toward last season's while the sample is thin
+      # (lib/season-to-date.js). Runs after the R consistency pass on purpose:
+      # a week-old season's own medians read blocks as worth nothing. Leaves a
+      # finished season alone.
+      - name: In-season league baseline
+        continue-on-error: true
+        run: node --import ./scripts/node/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bake-in-season-lga.mjs
+
       # Every bake restamps fetchedAt/generatedAt, so an offseason run whose
       # data didn't move still dirties six files. Committing that redeploys,
       # which changes the build id — busting every build-scoped API cache and

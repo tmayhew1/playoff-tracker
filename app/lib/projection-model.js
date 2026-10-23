@@ -386,6 +386,13 @@ export const tierOf = (mpg) => {
 //            players with a `conf` (the real roster's 12 East, 12 West).
 //
 // which add P(ROY), P(All-Star) and P(All-Star by conference) to each result.
+//
+// Once the season is under way (lib/in-season.js) a player can also carry
+// `ytd` { g, va, rangeVa } — the games already played, banked as they are —
+// with `g` and `va` then the games still to come, `maxG` the most of them the
+// schedule leaves, and `shrink` how much of the preseason miss is still ahead.
+// Only the rest of the season is drawn; the 65-game rule and the ballot read
+// the two together.
 const logisticNoise = (u) => { const v = Math.min(1 - 1e-12, Math.max(1e-12, u)); return Math.log(v / (1 - v)); };
 // The simulated VA's shape, for the page's histogram: HIST_BINS even bins
 // from lo to hi (the 2nd to 98th percentile, so a stray tail can't flatten
@@ -415,10 +422,11 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
     for (let i = 0; i < n; i++) {
       const tp = tierPool[i];
       const [dv, gr] = tp[Math.floor(rand() * tp.length)];
-      const g = Math.min(schedule, Math.max(0, Math.round(players[i].g * gr)));
-      simG[i] = g;
-      simVa[i] = (vpg[i] + dv) * g;
-      tally[i].vas.push((rpg[i] + dv) * g);
+      const p = players[i], y = p.ytd, d = dv * (p.shrink ?? 1);
+      const g = Math.min(p.maxG ?? schedule, Math.max(0, Math.round(p.g * gr)));
+      simG[i] = g + (y?.g || 0);
+      simVa[i] = (vpg[i] + d) * g + (y?.va || 0);
+      tally[i].vas.push((rpg[i] + d) * g + (y ? y.rangeVa ?? y.va : 0));
     }
     const ballot = [];
     for (let i = 0; i < n; i++) {
