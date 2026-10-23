@@ -70,7 +70,8 @@ test("/api/nights scores and ranks the night", async () => {
   const d = await get();
   assert.equal(d.date, "2026-01-15");
   assert.equal(d.baselineSeason, "2025-26");
-  assert.equal(d.lines.length, 7);
+  assert.equal(d.lines.length, 6, "the line under 12 minutes doesn't qualify");
+  assert.ok(d.lines.every((l) => l.mp >= 12));
   for (let i = 1; i < d.lines.length; i++) assert.ok(d.lines[i - 1].va >= d.lines[i].va, "sorted by VA");
   const top = d.lines[0];
   assert.equal(top.slug, "jokicni01");
@@ -79,7 +80,7 @@ test("/api/nights scores and ranks the night", async () => {
   const expect = valueAddParts(top, lgaForSeason("2025-26")).va;
   assert.ok(Math.abs(top.va - expect) < 1e-9);
   assert.ok(top.seasonVaPerG > 0, "set against his season average");
-  assert.equal(d.lines.find((l) => !l.slug).seasonVaPerG, null);
+  assert.ok(!d.lines.some((l) => l.name === "Two Way Rookie"), "four minutes is under the cut");
 });
 
 test("dates step and fall back", async () => {

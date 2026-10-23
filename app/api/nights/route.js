@@ -26,6 +26,7 @@ export const runtime = "nodejs";
 
 // NIGHTS_DIR lets the tests point it at fixtures.
 const DIR = process.env.NIGHTS_DIR || join(process.cwd(), "app", "data", "nights");
+const MIN_MP = 12;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const readJson = (path) => readFile(path, "utf8").then(JSON.parse).catch(() => null);
 
@@ -89,7 +90,8 @@ export async function GET(req) {
     const homeWon = g.home.score > g.away.score;
     return [[`${g.gameId}:${g.home.tri}`, homeWon], [`${g.gameId}:${g.away.tri}`, !homeWon]];
   }));
-  const lines = night.players.map((p) => {
+  // Only lines of 12+ minutes qualify: a two-minute cameo can't lead the night.
+  const lines = night.players.filter((p) => (p.mp || 0) >= MIN_MP).map((p) => {
     const { va, efficiency } = valueAddParts(p, lgaFor(kindOf[p.gameId]));
     return {
       ...p,

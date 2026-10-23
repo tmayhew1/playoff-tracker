@@ -128,11 +128,13 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 
 // The regular season's counterpart to the rounds: one collapsible section per
 // month, its league-wide averages first, then a card per day holding that
-// day's games. Same header, same card, same game banner as a round, a series
+// day's games, newest first. Same header, same card, same game banner as a round, a series
 // and its games, except each game shows its top five without a tap.
 export function ExploreMonthSection({ month, allMonths, lga, season }) {
   const [open, setOpen] = useState(false);
-  const days = useMemo(() => (open ? groupByDay(month.games) : []), [open, month]);
+  const days = useMemo(() => (open
+    ? groupByDay(month.games).reverse().map((d) => ({ ...d, games: [...d.games].reverse() }))
+    : []), [open, month]);
   return (
     <div className="mb-3">
       <button
@@ -213,7 +215,7 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
   if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
   const months = (
     <>
-      {data.months.map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season} />)}
+      {[...data.months].reverse().map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season} />)}
       {data.partial && (
         <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
