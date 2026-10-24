@@ -67,7 +67,8 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 // One side of a game on the Live tab, in the team's color. `ahead` (the
 // game's leader, lib/leader.js) gets the card filled in.
 // `tape`, when given (a tapped team: { opp, rows }), runs under the score as
-// a tale of the tape: per line the team's figure, a tug-of-war bar against
+// a tale of the tape: per line the team's figure (and its `note`, small), a
+// tug-of-war bar against
 // the opponent and the opponent's figure. The team holds its own end of the
 // card (the home card is mirrored), in solid ink and bold; the opponent's
 // end is in its color, its figure small. A tick marks even.
@@ -92,7 +93,11 @@ export function TeamScoreCard({ side, ahead, right, tape }) {
             <span className={`w-16 shrink-0 text-[9px] font-bold uppercase tracking-wider ${muted}`}>{r.label}</span>
             <span className="flex-1 min-w-0">
               <span className={`flex items-baseline justify-between gap-2 ${right ? "flex-row-reverse" : ""}`}>
-                <span className="font-bold truncate" style={{ color: ink }}>{r.own}</span>
+                <span className="truncate" style={{ color: ink }}>
+                  {right && r.note && <span className={`text-[10px] mr-1.5 ${muted}`}>{r.note}</span>}
+                  <span className="font-bold">{r.own}</span>
+                  {!right && r.note && <span className={`text-[10px] ml-1.5 ${muted}`}>{r.note}</span>}
+                </span>
                 <span className={`text-[10px] ${muted}`}>{r.opp}</span>
               </span>
               <span className={`relative mt-0.5 flex h-1 gap-px ${right ? "flex-row-reverse" : ""}`}>

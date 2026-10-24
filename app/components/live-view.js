@@ -72,7 +72,13 @@ function SectionHeader({ title, count, live, sub }) {
 // A tapped team's game beside its opponent's, line by line, for its card's
 // tale of the tape: { opp, rows }, each row { label, own, opp, share } with
 // `share` the selected team's part of the bar, always read as "more is
-// better" for it. Shooting is 2P / 3P / FT (made/att and percentage). DEF
+// better" for it. Shooting is 2P / 3P / FT, compared on their Value Added —
+// points over a league-average shooter on the same attempts, 2·(2PM −
+// la2P·2PA) and so on, the efficiency terms of lib/scoring.js summed over the
+// roster — with the selected team's makes, attempts and percentage beside its
+// figure. As VA can be negative, a bar splits on the gap between the two
+// over their combined size, which for two positive figures is simply the
+// selected team's part of the total. DEF
 // PPP is the points a team allowed over the possessions it allowed them on
 // (FGA − ORB + TOV + 0.475·FTA), so lower is better and the bar is turned
 // round. wTRB% is the game's rebounds shared out with each priced as Value
@@ -87,12 +93,14 @@ function teamTape(box, tri, lga) {
   const sum = (ps, k) => ps.reduce((n, p) => n + (p[k] || 0), 0);
   const poss = (ps) => sum(ps, "fga") - sum(ps, "orb") + sum(ps, "tov") + USG_FTA_W * sum(ps, "fta");
   const reb = (ps) => (lga?.laDRBrate ?? 0.75) * sum(ps, "orb") + (lga?.laORBrate ?? 0.25) * sum(ps, "drb");
-  const split = (a, b) => (a + b > 0 ? a / (a + b) : 0.5);
-  const pct = (m, a) => (a ? 100 * m / a : null);
+  const split = (a, b) => (Math.abs(a) + Math.abs(b) > 0 ? 0.5 + (a - b) / (2 * (Math.abs(a) + Math.abs(b))) : 0.5);
   const fmtPct = (v) => (v == null ? "–" : `${v.toFixed(1)}%`);
-  const shooting = (label, made, att) => {
-    const [o, d] = [pct(made(own), att(own)), pct(made(opp), att(opp))];
-    return { label, own: `${made(own)}/${att(own)} · ${fmtPct(o)}`, opp: fmtPct(d), share: split(o || 0, d || 0) };
+  const fmtVA = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
+  const shooting = (label, made, att, value, la) => {
+    const va = (ps) => value * (made(ps) - (la ?? 0) * att(ps));
+    const [o, d] = [va(own), va(opp)];
+    const note = `${made(own)}/${att(own)} · ${fmtPct(att(own) ? 100 * made(own) / att(own) : null)}`;
+    return { label, own: fmtVA(o), note, opp: fmtVA(d), share: split(o, d) };
   };
   const two = (k) => (ps) => sum(ps, k === "m" ? "fgm" : "fga") - sum(ps, k === "m" ? "tpm" : "tpa");
   const [ownPoss, oppPoss] = [poss(own), poss(opp)];
@@ -101,9 +109,9 @@ function teamTape(box, tri, lga) {
   return {
     opp: oppT.tri,
     rows: [
-      shooting("2P", two("m"), two("a")),
-      shooting("3P", (ps) => sum(ps, "tpm"), (ps) => sum(ps, "tpa")),
-      shooting("FT", (ps) => sum(ps, "ftm"), (ps) => sum(ps, "fta")),
+      shooting("2P VA", two("m"), two("a"), 2, lga?.la2P),
+      shooting("3P VA", (ps) => sum(ps, "tpm"), (ps) => sum(ps, "tpa"), 3, lga?.la3P),
+      shooting("FT VA", (ps) => sum(ps, "ftm"), (ps) => sum(ps, "fta"), 1, lga?.laFT),
       { label: "DEF PPP", own: ownDef.toFixed(2), opp: oppDef.toFixed(2), share: split(oppDef, ownDef) },
       { label: "wTRB%", own: fmtPct(100 * rebShare), opp: fmtPct(100 - 100 * rebShare), share: rebShare },
       { label: "Poss Ratio", own: oppPoss > 0 ? (ownPoss / oppPoss).toFixed(2) : "–", opp: ownPoss > 0 ? (oppPoss / ownPoss).toFixed(2) : "–", share: split(ownPoss, oppPoss) },
