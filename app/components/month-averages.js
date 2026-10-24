@@ -18,10 +18,11 @@ import { catVATotal } from "../lib/va";
 // VA-by-month chart, whose other months can be tapped to read the player's
 // breakdown for that month instead. The month's team filter (`team`,
 // `onTeam`) belongs to the month section, which filters its games by it too;
-// tapping a row's team sets it from here.
+// tapping a row's team sets it from here, and the section's picker
+// (`teamControl`) sits in this header beside the minimum-games chip.
 const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 
-export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam }) {
+export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl }) {
   const year = month.key.slice(0, 4);
   const [open, setOpen] = useState(true);
   const [boxes, setBoxes] = useState(() => peekBoxes(season, month));
@@ -168,13 +169,32 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
 
   return (
     <div className="mb-3 border border-stone-300 bg-white">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full px-2 py-1.5 text-[10px] uppercase tracking-widest text-stone-600 font-semibold flex items-center gap-1"
-      >
-        <span className="text-stone-400">{open ? "▾" : "▸"}</span>
-        {month.label} {year} Averages
-      </button>
+      <div className="flex items-center gap-1.5 pr-2">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex-1 min-w-0 px-2 py-1.5 text-[10px] uppercase tracking-widest text-stone-600 font-semibold flex items-center gap-1 text-left"
+        >
+          <span className="text-stone-400">{open ? "▾" : "▸"}</span>
+          {month.label} {year} Averages
+        </button>
+        {teamControl}
+        {open && rows && (min ? (
+          <button
+            onClick={() => setMinGames(null)}
+            className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+            aria-label="Clear the minimum-games filter"
+          >
+            ≥{min} games <span className="text-stone-400">×</span>
+          </button>
+        ) : qualifier > 1 && (
+          <button
+            onClick={() => setMinGames(qualifier)}
+            className="normal-case tracking-normal text-[10px] px-1.5 py-0.5 border bg-white text-stone-500 border-stone-300"
+          >
+            Qualify ≥{qualifier} games
+          </button>
+        ))}
+      </div>
       {open && (
         <div className="px-2 pb-2">
           {!rows && !error && (
@@ -185,27 +205,9 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {rows && (
             <div>
-              <div className="flex items-center justify-between gap-2 py-1">
+              <div className="py-1">
                 <span className="text-[9px] text-stone-400 italic">
                   {boxes.length < month.games.length ? `${boxes.length} of ${month.games.length} games loaded` : `${month.games.length} games`}
-                </span>
-                <span className="flex items-center gap-1.5">
-                {min ? (
-                  <button
-                    onClick={() => setMinGames(null)}
-                    className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
-                    aria-label="Clear the minimum-games filter"
-                  >
-                    ≥{min} games <span className="text-stone-400">×</span>
-                  </button>
-                ) : qualifier > 1 && (
-                  <button
-                    onClick={() => setMinGames(qualifier)}
-                    className="normal-case tracking-normal text-[10px] px-1.5 py-0.5 border bg-white text-stone-500 border-stone-300"
-                  >
-                    Qualify ≥{qualifier} games
-                  </button>
-                )}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">

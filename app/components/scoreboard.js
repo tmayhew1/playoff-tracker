@@ -66,14 +66,21 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 
 // One side of a game on the Live tab, in the team's color. `ahead` (the
 // game's leader, lib/leader.js) gets the card filled in.
-// `splits`, when given, lists the team's 2P / 3P / FT down the far side.
-export function TeamScoreCard({ side, ahead, right, splits }) {
+// `splits`, when given, lists the team's 2P / 3P / FT down the far side,
+// and `stats` ([label, value] lines) follow them.
+export function TeamScoreCard({ side, ahead, right, splits, stats }) {
   const aside = splits && (
     <div className={`shrink-0 space-y-0.5 text-xs tabular-nums ${right ? "text-left" : "text-right"} ${ahead ? "text-white" : "text-stone-600"}`}>
       {splits.map(([label, made, att]) => (
         <div key={label}>
           <span className={`font-bold tracking-wider mr-1.5 ${ahead ? "text-stone-100" : "text-stone-400"}`}>{label}</span>
           {made}/{att} <span className={ahead ? "text-stone-100" : "text-stone-400"}>({att ? (100 * made / att).toFixed(1) : "–"}%)</span>
+        </div>
+      ))}
+      {stats?.map(([label, value]) => (
+        <div key={label}>
+          <span className={`font-bold tracking-wider mr-1.5 ${ahead ? "text-stone-100" : "text-stone-400"}`}>{label}</span>
+          {value}
         </div>
       ))}
     </div>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
+import { USG_FTA_W } from "../scoring";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -77,6 +78,29 @@ function shootingSplits(box, tri) {
   return [["2P", fgm - tpm, fga - tpa], ["3P", tpm, tpa], ["FT", sum("ftm"), sum("fta")]];
 }
 
+// A team's box beside its opponent's, as [label, value] lines under its
+// shooting: its defensive points per possession (the opponent's points over
+// the opponent's estimated possessions, FGA − ORB + TOV + 0.475·FTA), its
+// share of the game's rebounds with each priced as Value Added prices it (an
+// offensive board weighted by the league's DRB rate, a defensive one by its
+// ORB rate, so the two teams' shares add to 100), and its possessions over
+// the opponent's.
+function teamGameStats(box, tri, lga) {
+  const own = [box?.away, box?.home].find((t) => t?.tri === tri)?.players;
+  const opp = [box?.away, box?.home].find((t) => t && t.tri !== tri)?.players;
+  if (!own || !opp) return null;
+  const sum = (ps, k) => ps.reduce((n, p) => n + (p[k] || 0), 0);
+  const poss = (ps) => sum(ps, "fga") - sum(ps, "orb") + sum(ps, "tov") + USG_FTA_W * sum(ps, "fta");
+  const reb = (ps) => (lga?.laDRBrate ?? 0.75) * sum(ps, "orb") + (lga?.laORBrate ?? 0.25) * sum(ps, "drb");
+  const [ownPoss, oppPoss] = [poss(own), poss(opp)];
+  const rebTotal = reb(own) + reb(opp);
+  return [
+    ["DEF PPP", oppPoss > 0 ? (sum(opp, "pts") / oppPoss).toFixed(2) : "–"],
+    ["wTRB%", rebTotal > 0 ? `${(100 * reb(own) / rebTotal).toFixed(1)}%` : "–"],
+    ["POSS", oppPoss > 0 ? `${ownPoss.toFixed(1)}/${oppPoss.toFixed(1)} (${(ownPoss / oppPoss).toFixed(2)})` : "–"],
+  ];
+}
+
 // A team's game number this season, off its record: the record counts a
 // final already, a live game not yet. Unknown for a playoff game (the record
 // is the regular season's) or a feed without records.
@@ -96,13 +120,22 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // again brings the other side back. `focus` (About Last Night's tap) narrows
 // the game to the player's team and opens his card. Explore's regular-season
 // days use it too, handing in their own `lga` and `boxLoader` (a baked box);
-// their games carry no records, so that row drops out.
-export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled }) {
+// their games carry no records, so that row drops out. `onTeamPick` hears a
+// tapped side's team (Explore's month narrows its games to it); the card
+// keeps its place on screen as the games around it come and go.
+export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
   const [box, setBox] = useState(null);
+  const cardRef = useRef(null);
   useEffect(() => { if (focus) setTeam(focus.team); }, [focus]);
+  const pick = (tri) => {
+    setTeam(tri);
+    if (!tri || !onTeamPick) return;
+    onTeamPick(tri);
+    requestAnimationFrame(() => cardRef.current?.scrollIntoView({ block: "start" }));
+  };
   const gameNumberFor = useCallback((tri) => {
     const side = [g.away, g.home].find((s) => s.tri === tri);
     return side ? teamGameNumber(side, g) : null;
@@ -112,6 +145,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
   return (
     <div
       id={gameAnchor(g)}
+      ref={cardRef}
       className={`mb-3 p-2 rounded scroll-mt-3 ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
       style={team ? { borderColor: teamColor(team) } : undefined}
     >
@@ -119,11 +153,11 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         {sides.map(([side, , right]) => (
           <button
             key={side.tri}
-            onClick={() => setTeam(team ? null : side.tri)}
+            onClick={() => pick(team ? null : side.tri)}
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} splits={team ? shootingSplits(box, team) : null} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} splits={team ? shootingSplits(box, team) : null} stats={team ? teamGameStats(box, team, lga) : null} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}
@@ -146,7 +180,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         boxLoader={boxLoader}
         hideScore
         teamFilter={team}
-        onTeamClear={() => setTeam(null)}
+        onTeamClear={() => pick(null)}
         onBox={setBox}
         singleGame
         finalTop5
