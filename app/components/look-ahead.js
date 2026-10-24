@@ -73,7 +73,7 @@ function SectionHead({ title, note }) {
 // The simulated awards and the projected standings for one /api/projections
 // payload. Neither reads the page's LG AVG / USG-ADJ switch, so they're worked
 // out once per payload (fetchBakedJson hands back the same object) and shared
-// by the Look Ahead and the headline cards on the season in progress.
+// by the Look Ahead and the award boxes on a 2026-27 player card.
 const _model = new WeakMap();
 function lookAheadModel(data) {
   if (!_model.has(data)) {
@@ -135,6 +135,20 @@ function standings(data, players) {
   }).sort((a, b) => b.wins - a.wins);
 }
 
+// Every projected player's simulated odds, for the award boxes on a 2026-27
+// player card (award-boxes.js, which loads this chunk only when one opens).
+// A player outside the simulated field is at zero; a rookie also has ROY.
+let _odds = null;
+export function lookAheadOdds() {
+  return (_odds ||= fetchBakedJson("/api/projections").then((data) => {
+    const { bySlug } = lookAheadModel(data).awards;
+    return Object.fromEntries(data.players.map((p) => {
+      const r = bySlug[p.slug];
+      return [p.slug, { mvp: r?.mvp || 0, roy: p.rookie ? r?.roy || 0 : null, allnba: r?.allNba || 0, allstar: r?.allStar || 0, simulated: !!r }];
+    }));
+  }).catch((e) => { _odds = null; throw e; }));
+}
+
 function useProjection() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -148,9 +162,9 @@ function useProjection() {
   return { data, error };
 }
 
-// `target` — from a headline card on the season in progress — is where the
-// page opens: { award, slug } an awards board with that player open, { team }
-// that team's standings row dropped open. onTargetHandled clears it.
+// `target` — an award box on a 2026-27 player card — is where the page opens:
+// { award, slug }, that awards board with the player open. onTargetHandled
+// clears it.
 export function LookAhead({ target = null, onTargetHandled = null }) {
   const { data, error } = useProjection();
   const [team, setTeam] = useState(null);
@@ -186,15 +200,10 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
   const model = useMemo(() => (data ? lookAheadModel(data) : null), [data]);
   const awards = model?.awards, teams = model?.teams || [];
 
-  // Arriving from a headline card: open the spot it named once the page is up.
+  // Arriving from an award box: open the board it named once the page is up.
   useEffect(() => {
     if (!target || !model) return;
-    if (target.award) goToAward(target.award, target.slug);
-    else if (target.team) {
-      setOpenTeam(target.team);
-      requestAnimationFrame(() => document.getElementById(`la-team-${target.team}`)
-        ?.scrollIntoView({ block: "start", behavior: "smooth" }));
-    }
+    goToAward(target.award, target.slug);
     onTargetHandled?.();
   }, [target, model, goToAward, onTargetHandled]);
 
@@ -236,7 +245,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                 const roster = isOpen ? players.filter((p) => p.team === t.team).sort((a, b) => vaPlusShown(b) - vaPlusShown(a)) : [];
                 const rosterMax = Math.max(1, ...roster.map((p) => Math.abs(vaPlusShown(p))));
                 return (
-                  <div key={t.team} id={`la-team-${t.team}`} className={`scroll-mt-2 ${i === 5 || i === 9 ? "border-b border-dashed border-stone-300" : "border-b border-stone-100"}`}>
+                  <div key={t.team} className={i === 5 || i === 9 ? "border-b border-dashed border-stone-300" : "border-b border-stone-100"}>
                     <button
                       type="button"
                       aria-expanded={isOpen}
@@ -389,57 +398,6 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
   );
 }
 
-
-// The model's calls for the season in progress, as cards on top of its
-// leaderboard — the MVP and ROY favorites and each conference's top seed —
-// each opening its spot in the Look Ahead (onOpen gets LookAhead's `target`).
-// The simulation waits a tick after the payload lands, so the board under the
-// cards paints first; the Look Ahead reuses it.
-export function LookAheadHeadlines({ onOpen }) {
-  const { data } = useProjection();
-  const [model, setModel] = useState(null);
-  useEffect(() => {
-    if (!data) return;
-    const t = setTimeout(() => setModel(lookAheadModel(data)), 0);
-    return () => clearTimeout(t);
-  }, [data]);
-  if (!model) return null;
-  const nameOf = Object.fromEntries(data.players.map((p) => [p.slug, p]));
-  const favorite = (odds) => {
-    const r = model.awards.res.filter((x) => nameOf[x.key] && odds(x) > 0).sort((a, b) => odds(b) - odds(a))[0];
-    return r && { p: nameOf[r.key], odds: odds(r) };
-  };
-  const mvp = favorite((r) => r.mvp);
-  const roy = data.awardModels ? favorite((r) => r.roy) : null;
-  const seed = (conf) => model.teams.find((t) => t.conf === conf);
-  const cards = [
-    mvp && { key: "mvp", label: "MVP favorite", team: mvp.p.team, name: splitName(mvp.p.name).last, value: pct(mvp.odds), target: { award: "mvp", slug: mvp.p.slug } },
-    roy && { key: "roy", label: "ROY favorite", team: roy.p.team, name: splitName(roy.p.name).last, value: pct(roy.odds), target: { award: "roy", slug: roy.p.slug } },
-    ...[["W", "West"], ["E", "East"]].map(([c, head]) => {
-      const t = seed(c);
-      if (!t) return null;
-      const w = Math.round(t.wins);
-      return { key: c, label: `${head} No. 1`, team: t.team, name: null, value: `${w}–${82 - w}`, target: { team: t.team } };
-    }),
-  ].filter(Boolean);
-  if (!cards.length) return null;
-  return (
-    <div className="mt-2 grid grid-cols-2 gap-1.5" aria-label={`${LOOK_AHEAD_SEASON} model projections`}>
-      {cards.map((c) => (
-        <button key={c.key} type="button" onClick={() => onOpen(c.target)}
-          className="min-w-0 flex flex-col gap-1 px-2 py-1.5 border border-amber-300 bg-amber-50/60 text-left hover:bg-amber-100">
-          <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-amber-800">{c.label}</span>
-          <span className="flex items-center gap-1.5 min-w-0">
-            <TeamChip team={c.team} />
-            {c.name && <span className="flex-1 min-w-0 truncate text-[11px] font-semibold text-stone-900">{c.name}</span>}
-            <span className={`${c.name ? "" : "flex-1 "}text-right text-[11px] font-bold tabular-nums text-stone-900 shrink-0`}>{c.value}</span>
-            <span className="text-[10px] text-amber-700 shrink-0" aria-hidden>→</span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // The projected awards, laid out like the Awards tab's boards: one sub-page per
 // award, each player's odds beside their projected VA+ and games (minutes for

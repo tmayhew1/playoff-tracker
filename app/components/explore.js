@@ -11,6 +11,7 @@ import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
 import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
+import { LookAheadNavProvider } from "../lib/award-nav";
 import { LastNight } from "./last-night";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
@@ -28,12 +29,6 @@ const PlayerExplorer = dynamic(
 const LookAhead = dynamic(
   () => import("./look-ahead").then((m) => m.LookAhead),
   { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
-);
-// The projection's headline calls, shown on the season it projects while that
-// season is under way. Its own chunk too; nothing shows until it's ready.
-const LookAheadHeadlines = dynamic(
-  () => import("./look-ahead").then((m) => m.LookAheadHeadlines),
-  { loading: () => null },
 );
 // Kept in step with LOOK_AHEAD_SEASON in ./look-ahead (not imported from it,
 // so the picker doesn't pull that chunk into the page bundle). The picker
@@ -284,14 +279,19 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
       ? [...base, linked.season].sort((a, b) => b.localeCompare(a)) : base;
   });
   const [season, setSeason] = useState(linked?.season || FALLBACK[0]);
-  // A headline card's spot in the Look Ahead, waiting for it to open there.
-  const [laTarget, setLaTarget] = useState(null);
-  const openLookAhead = useCallback((target) => { setLaTarget(target); setSeason(LOOK_AHEAD); }, []);
-  const clearLaTarget = useCallback(() => setLaTarget(null), []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState(linked?.view === "player" ? "player" : "season"); // "season" | "player"
+  // A 2026-27 card's award box (award-boxes.js) opens that board in the Look
+  // Ahead, the player open on it; the target waits here until it's up.
+  const [laTarget, setLaTarget] = useState(null);
+  const openLookAhead = useCallback((target) => {
+    setLaTarget(target);
+    setMode("season");
+    setSeason(LOOK_AHEAD);
+  }, []);
+  const clearLaTarget = useCallback(() => setLaTarget(null), []);
   // Which games count: regular season, playoffs, or both summed. Applies to
   // both By Season and By Player.
   // A season in progress before April opens on its regular season, the only
@@ -459,6 +459,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
     `flex-1 text-[9px] uppercase tracking-[0.15em] px-2 py-1.5 border ${active ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
 
   return (
+    <LookAheadNavProvider value={openLookAhead}>
     <div>
       <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive} />
       <div className="mb-2 flex gap-2">
@@ -518,7 +519,6 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
                 <span className="text-[10px] text-amber-700">Projections · MVP odds · All-NBA →</span>
               </button>
             )}
-            {inProgress && season === LOOK_AHEAD_SEASON && <LookAheadHeadlines onOpen={openLookAhead} />}
           </div>
 
           {lookAhead ? (
@@ -567,5 +567,6 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
         </>
       )}
     </div>
+    </LookAheadNavProvider>
   );
 }
