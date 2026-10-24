@@ -13,11 +13,12 @@ import { aggregateSnapshots } from "../lib/players";
 import { GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catVATotal, groupOfCat } from "../lib/va";
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 import { useCompareReport } from "../lib/share-state";
+import { useSeasonSoFar } from "../lib/season-so-far";
 import { CategoryContext } from "./category-context";
 import { AwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null, seasonSoFar: seasonWant = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -123,6 +124,13 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   // Baked defensive ratings (the D-Rating category / VA+). Must load before
   // the early returns below — hooks are unconditional.
   const defs = useDefRatings();
+  // A single game's card can hold the player's season so far beside it
+  // (`seasonSoFar`, { scope, season }: the Live tab's): a tap in the middle
+  // half of a section opens that section's league context on his season
+  // to date, the same drill-in the season cards open. The edges keep
+  // stepping player to player.
+  const [seasonCat, setSeasonCat] = useState(null);
+  const soFar = useSeasonSoFar(pSeries, seasonWant, !!seasonWant);
   const canSelect = rate && Array.isArray(byGame) && byGame.some((b) => b);
   const canDrillToSeries = enableSeriesDrill && Array.isArray(gameContext);
   // Category rows are tappable when tapping can do something: swap the chart
@@ -348,13 +356,21 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   }
   // Player nav, on the plain cards only (a box score's — no chart, no
   // league context): a tap on the card's bare surface steps to the player
-  // before or after, by which side of the midline it lands. Taps on the
-  // card's own controls stay theirs.
-  const tapNav = !rate && (onPrev || onNext);
+  // before or after, by which side of the midline it lands. With the season
+  // so far to hand, only the outer quarters step; the middle half opens the
+  // tapped section's season context (or closes it). Taps on the card's own
+  // controls, and anywhere inside the open context, stay theirs.
+  const tapNav = !rate && (onPrev || onNext || seasonWant);
   const handleSurfaceTap = (e) => {
-    if (e.target.closest("button, a, input, select, [role=button]")) return;
+    if (e.target.closest("button, a, input, select, [role=button], [data-season-context]")) return;
     const box = e.currentTarget.getBoundingClientRect();
-    const go = e.clientX - box.left < box.width / 2 ? onPrev : onNext;
+    const x = (e.clientX - box.left) / box.width;
+    if (seasonWant && x >= 0.25 && x <= 0.75) {
+      const group = e.target.closest("[data-va-group]")?.dataset.vaGroup;
+      if (group) setSeasonCat(seasonCat === group ? null : group);
+      return;
+    }
+    const go = x < 0.5 ? onPrev : onNext;
     if (go) go();
   };
 
@@ -603,8 +619,10 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           // opening under its last row. Without context, rows stay single.
           const byGroup = viewMode === "detail" && !!context && atSeasonLevel;
           const tapKey = byGroup ? groupOfCat(c.key) : c.key;
-          const isCatSel = selectedCategory === tapKey;
+          const group = groupOfCat(c.key);
+          const isCatSel = selectedCategory === tapKey || (!!seasonWant && seasonCat === group);
           const sectionEnd = !byGroup || i === activeRows.length - 1 || groupOfCat(activeRows[i + 1].key) !== tapKey;
+          const seasonEnd = i === activeRows.length - 1 || groupOfCat(activeRows[i + 1].key) !== group;
           const onCatTap = canSelectCategory && (!c.noDrill || byGroup)
             ? () => setSelectedCategory(isCatSel ? null : tapKey)
             : undefined;
@@ -616,6 +634,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             <React.Fragment key={i}>
               <div
                 className={`flex items-center gap-2 text-[10px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${isCatSel ? "bg-stone-200" : ""}`}
+                data-va-group={group}
                 onClick={onCatTap}
                 role={onCatTap ? "button" : undefined}
                 tabIndex={onCatTap ? 0 : undefined}
@@ -668,6 +687,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
               {context && atSeasonLevel && isCatSel && sectionEnd && (
                 <CategoryContext p={pSeries} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
+              {seasonWant && seasonCat === group && seasonEnd && (
+                <SeasonSoFarContext soFar={soFar} catKey={group} scope={seasonWant.scope} defs={defs} defActive={dVA != null} defScope={defScope} />
+              )}
               {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
             </React.Fragment>
           );
@@ -675,11 +697,42 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
       </div>
       <div className="mt-2 text-center text-[9px] italic text-stone-400">
         Bars show contribution above/below the league baseline ({lga?.usgModel ? "median rates, scoring usage-adjusted" : "median rates"}){context && atSeasonLevel ? ` · tap a ${viewMode === "detail" ? "section" : "category"} for league context` : ""}
+        {seasonWant ? ` · tap a section’s middle for his season so far, an edge for the next player` : ""}
       </div>
       </>
       )}
     </div>
   );
+}
+
+
+// Under a single game's section (see `seasonSoFar` above): the player's
+// season to date in that section — its VA per game over his games so far —
+// over the league-context drill-in every season card opens.
+function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope }) {
+  const note = (text) => <div className="py-2 text-[10px] text-stone-500 italic text-center">{text}</div>;
+  const scopeNoun = scope === "playoffs" ? "postseason" : "season";
+  let body;
+  if (!soFar || soFar.loading) body = note("Loading the season so far…");
+  else if (!soFar.row) body = note(`No line yet this ${scopeNoun}.`);
+  else {
+    const { row, context, lga } = soFar;
+    const gp = row.gp || 1;
+    const perG = catVATotal(row, lga, catKey) / gp;
+    body = (
+      <>
+        <div className="flex items-baseline justify-between gap-2 text-[9px] uppercase tracking-widest text-stone-500">
+          <span>So far this {scopeNoun} · {catKey}</span>
+          <span className="tabular-nums normal-case tracking-normal">
+            <span className={`font-semibold ${perG < 0 ? "text-red-600" : "text-stone-800"}`}>{(perG > 0 ? "+" : "") + perG.toFixed(2)}</span>
+            <span className="text-stone-400"> /G · {Math.round(row.gp * 10) / 10} G · {row.team}</span>
+          </span>
+        </div>
+        <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} />
+      </>
+    );
+  }
+  return <div data-season-context className="my-1 -mx-1 px-1 py-1 bg-white border border-stone-200">{body}</div>;
 }
 
 
