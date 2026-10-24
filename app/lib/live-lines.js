@@ -34,8 +34,8 @@ export function gameFraction(g) {
   return Math.max(0, Math.min(1, played / total));
 }
 
-// Each player's line in the live games, as { name, tri, gameId, frac, live,
-// ...TOTAL_KEYS }. `games` carry the slate fields (gameStatus, period,
+// Each player's line in the live games, as { name, tri, gameId, date, frac,
+// live, ...TOTAL_KEYS }. `games` carry the slate fields (gameStatus, period,
 // gameClock) and `box` ({ home, away } with players, as parseBox reads one).
 export function liveLines(games) {
   const out = [];
@@ -46,7 +46,7 @@ export function liveLines(games) {
     for (const side of [g.box.home, g.box.away]) {
       for (const p of side?.players || []) {
         if (!(p.mp > 0) || !p.name) continue;
-        const line = { name: p.name, tri: side.tri, gameId: g.gameId, frac, live: g.gameStatus === 2 };
+        const line = { name: p.name, tri: side.tri, gameId: g.gameId, date: g.date || null, frac, live: g.gameStatus === 2 };
         for (const k of TOTAL_KEYS) line[k] = p[k] || 0;
         out.push(line);
       }
@@ -57,7 +57,7 @@ export function liveLines(games) {
 
 // `players` (regular-season rows, `g` the games played) with `lines` added
 // on: totals summed, G up by each game's share, `team` moved to the live
-// team, and `live` set ({ gameId, frac }) on anyone in a game still on. A
+// team, and `live` set ({ gameId, date, frac }) on anyone in a game still on. A
 // player the bake hasn't seen yet (a debut tonight) joins as a new row.
 export function addLiveLines(players, lines) {
   if (!lines?.length) return players;
@@ -75,7 +75,7 @@ export function addLiveLines(players, lines) {
     r.team = l.tri;
     r.g = Math.round(((r.g || 0) + l.frac) * 1000) / 1000;
     for (const key of TOTAL_KEYS) r[key] = (r[key] || 0) + (l[key] || 0);
-    if (l.live) r.live = { gameId: l.gameId, frac: l.frac };
+    if (l.live) r.live = { gameId: l.gameId, date: l.date, frac: l.frac };
   }
   return rows;
 }

@@ -29,7 +29,7 @@ test("a game counts as the share of it played", () => {
 
 const player = (name, extra = {}) => ({ name, mp: 10, pts: 8, ast: 2, stl: 0, blk: 1, tov: 1, drb: 3, orb: 1, fgm: 3, fga: 6, tpm: 1, tpa: 3, ftm: 1, fta: 2, ...extra });
 const GAMES = [
-  { gameId: "1", gameStatus: 2, period: 3, gameClock: "PT06M00.00S",
+  { gameId: "1", date: "2026-10-23", gameStatus: 2, period: 3, gameClock: "PT06M00.00S",
     box: { home: { tri: "DAL", players: [player("Cooper Flagg"), player("Bench Guy", { mp: 0 })] }, away: { tri: "SAS", players: [player("Victor Wembanyama", { pts: 20 })] } } },
   { gameId: "2", gameStatus: 3, period: 4, gameClock: "",
     box: { home: { tri: "NYK", players: [player("Jalen Brunson")] }, away: { tri: "BOS", players: [] } } },
@@ -54,7 +54,7 @@ test("lines add onto the baked totals; a debut joins as a new row", () => {
   const wemby = rows.find((r) => r.name === "Victor Wembanyama");
   assert.equal(wemby.g, 2.625);
   assert.equal(wemby.pts, 70);
-  assert.deepEqual(wemby.live, { gameId: "1", frac: 0.625 });
+  assert.deepEqual(wemby.live, { gameId: "1", date: "2026-10-23", frac: 0.625 });
   const brunson = rows.find((r) => r.name === "Jalen Brunson");
   assert.equal(brunson.g, 3);
   assert.equal(brunson.live, undefined);

@@ -11,13 +11,13 @@ import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { addLiveLines } from "../lib/live-lines";
-import { LiveStrip, useLiveLines } from "./live-strip";
+import { useLiveLines } from "../lib/live-feed";
 
 
 // Whole games as they are; a game in progress makes G fractional (1.6).
 const fmtG = (g) => (Number.isInteger(g) ? String(g) : g.toFixed(1));
 
-export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
+export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
   // `lga` is the REGULAR-SEASON baseline for this season; the playoff one is
   // derived here rather than passed, because this board scores both sides of
   // the season and each scope needs its own (spec §4.8). The rs scope keeps
@@ -569,7 +569,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-6 sm:w-7 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-7 sm:w-8 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -632,7 +632,6 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     <>
     <div ref={setCardEl} className="mb-4 border border-stone-300 bg-white">
       <div ref={headerFlowRef}>{headerBlock}</div>
-      {scope === "regular" && <LiveStrip live={live} />}
       {(() => {
         // Defensive strip (VA view only): a thin underline segment spanning
         // the gap between a player's VA and his VA+, plotted on the SAME
@@ -788,22 +787,38 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 </span>
                 {nameArmed && canOpenPlayer && <span className="text-[8px] ml-0.5 shrink-0" aria-hidden>›</span>}
               </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  // Unarmed tap on an inactive G is treated as a mis-tap: fall
-                  // through (no stopPropagation) so it bubbles to the row and
-                  // opens the breakdown, instead of doing nothing.
-                  if (!gArmed && minGames !== p.gp) return;
-                  e.stopPropagation();
-                  const next = minGames === p.gp ? null : p.gp;
-                  setMinGames(next);
-                  setGArmed(false);
-                  if (next != null) setPendingScrollName(p.name);
-                }}
-                className={`w-6 sm:w-7 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
-                aria-label={gArmed ? `Filter to players with at least ${fmtG(p.gp)} games` : `${fmtG(p.gp)} games${p.live ? ", one in progress" : ""} (tap the G header to enable filtering)`}
-              >{p.live && <span className="inline-block w-1 h-1 rounded-full bg-red-600 animate-pulse mr-0.5 align-middle" aria-hidden />}{fmtG(p.gp)}</button>
+              {/* A game in progress: G is fractional, and a "Live →" tag
+                  above it opens that game on the Live tab. */}
+              <span className="w-7 sm:w-8 shrink-0 flex flex-col items-end leading-tight">
+                {p.live && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      if (!onOpenInLive) return;
+                      e.stopPropagation();
+                      onOpenInLive({ date: p.live.date, name: p.name, team: p.team });
+                    }}
+                    className="text-[7px] sm:text-[8px] font-bold uppercase tracking-wide text-red-600 whitespace-nowrap inline-flex items-center gap-0.5 hover:underline"
+                    aria-label={`${p.name} is playing now — open the game on the Live tab`}
+                  ><span className="inline-block w-1 h-1 rounded-full bg-red-600 animate-pulse" aria-hidden />Live →</button>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // Unarmed tap on an inactive G is treated as a mis-tap: fall
+                    // through (no stopPropagation) so it bubbles to the row and
+                    // opens the breakdown, instead of doing nothing.
+                    if (!gArmed && minGames !== p.gp) return;
+                    e.stopPropagation();
+                    const next = minGames === p.gp ? null : p.gp;
+                    setMinGames(next);
+                    setGArmed(false);
+                    if (next != null) setPendingScrollName(p.name);
+                  }}
+                  className={`text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                  aria-label={gArmed ? `Filter to players with at least ${fmtG(p.gp)} games` : `${fmtG(p.gp)} games${p.live ? ", one in progress" : ""} (tap the G header to enable filtering)`}
+                >{fmtG(p.gp)}</button>
+              </span>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
               <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.eff / p.gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.eff / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.reb / p.gp).toFixed(1)}</span>
