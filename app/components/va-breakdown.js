@@ -348,7 +348,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           kept to a phone card's width (Month Averages: VA / game by month). */}
       {leadChart && (
         <div className="max-w-sm mx-auto">
-          {typeof leadChart === "function" ? leadChart(accentColor) : leadChart}
+          {typeof leadChart === "function" ? leadChart(accentColor, selectedCategory) : leadChart}
         </div>
       )}
       <div className="mb-3">
