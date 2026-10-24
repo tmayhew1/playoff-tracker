@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS } from "../teams";
 import { LGA, valueAddByCategory } from "../scoring";
 import { VABreakdown } from "./va-breakdown";
-import { normalizeName, ownerBadge, teamColor, withAlpha } from "../lib/format";
+import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 
@@ -63,7 +63,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
           <>
             <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{c.made(p)}</span>
             <span className="tabular-nums text-stone-600 w-7 text-right">{c.att(p)}</span>
-            <span className="tabular-nums text-stone-600 w-10 text-right">{c.att(p) ? `${(100 * c.made(p) / c.att(p)).toFixed(1)}%` : "–"}</span>
+            <span className="tabular-nums text-stone-600 w-10 text-right">{c.att(p) ? `${trimFixed(100 * c.made(p) / c.att(p), 1)}%` : "–"}</span>
           </>
         ) : (
           <>
@@ -74,7 +74,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
           </>
         )}
         <span className={`tabular-nums w-8 text-right font-semibold ${v < 0 ? "text-red-600" : v > 0 ? "text-stone-900" : "text-stone-400"}`}>
-          {v.toFixed(1)}
+          {c ? trimFixed(v, 1) : v.toFixed(1)}
         </span>
       </button>
       </div>

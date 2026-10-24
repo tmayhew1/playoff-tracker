@@ -74,6 +74,10 @@ export function timeAgo(iso) {
 // (a live G of 1.249 is "1+"), not as the share of it played.
 export const fmtG = (g) => (Number.isInteger(g || 0) ? String(g || 0) : `${Math.floor(g)}+`);
 
+// `v` to at most `digits` decimals, trailing zeros dropped: 50.0 -> "50",
+// 1.10 -> "1.1", 66.7 -> "66.7" (and never "-0").
+export const trimFixed = (v, digits) => String(Number(v.toFixed(digits)) || 0);
+
 export const seasonTag = (s) => "’" + (s || "").slice(5);
 
 

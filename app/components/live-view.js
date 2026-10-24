@@ -5,7 +5,7 @@ import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
-import { teamColor } from "../lib/format";
+import { teamColor, trimFixed } from "../lib/format";
 import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 import { useSeasonContext } from "../lib/use-season-context";
 import { etDate, seasonOf } from "../lib/regular-season-games";
@@ -91,8 +91,8 @@ function teamTape(box, tri, lga, dist) {
   const [o, d] = [tapeMeasures(own, opp, lga), tapeMeasures(opp, own, lga)];
   const split = (a, b) => (Math.abs(a) + Math.abs(b) > 0 ? 0.5 + (a - b) / (2 * (Math.abs(a) + Math.abs(b))) : 0.5);
   const fmt = (v, f) => (v == null ? "–" : f(v));
-  const fmtPct = (v) => `${v.toFixed(1)}%`;
-  const fmtVA = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
+  const fmtPct = (v) => `${trimFixed(v, 1)}%`;
+  const fmtVA = (v) => (trimFixed(v, 1) === "0" ? "0" : `${v >= 0 ? "+" : "−"}${trimFixed(Math.abs(v), 1)}`);
   const line = (made, att) => `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`;
   const shootingShare = (key) => {
     const [po, pd] = [percentile(dist?.[key], o[key]), percentile(dist?.[key], d[key])];
@@ -108,9 +108,9 @@ function teamTape(box, tri, lga, dist) {
       shooting("2P", [own.fgm - own.tpm, own.fga - own.tpa], [opp.fgm - opp.tpm, opp.fga - opp.tpa]),
       shooting("3P", [own.tpm, own.tpa], [opp.tpm, opp.tpa]),
       shooting("FT", [own.ftm, own.fta], [opp.ftm, opp.fta]),
-      { key: "def", label: "DEF PPP", own: fmt(o.def, (v) => v.toFixed(2)), opp: fmt(d.def, (v) => v.toFixed(2)), share: split(d.def || 0, o.def || 0) },
+      { key: "def", label: "DEF PPP", own: fmt(o.def, (v) => trimFixed(v, 2)), opp: fmt(d.def, (v) => trimFixed(v, 2)), share: split(d.def || 0, o.def || 0) },
       { key: "reb", label: "wTRB%", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
-      { key: "poss", label: "Poss Ratio", own: fmt(o.poss, (v) => v.toFixed(2)), opp: fmt(d.poss, (v) => v.toFixed(2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
+      { key: "poss", label: "Poss Ratio", own: fmt(o.poss, (v) => trimFixed(v, 2)), opp: fmt(d.poss, (v) => trimFixed(v, 2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
     ],
   };
 }
