@@ -227,7 +227,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         <SectionHead
           title="Projected Standings"
           note={data.wins
-            ? `${ins ? `Through ${shortDate(ins.through)}: each team’s record so far plus the rest of its schedule, played at the preseason read mixed with its point margin so far · ` : ""}Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.injuries && data.injuries !== "none" ? " · known injuries taken out" : ""}${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
+            ? `${ins ? `Through ${throughLabel(ins)}: each team’s record so far plus the rest of its schedule, played at the preseason read mixed with its point margin so far · ` : ""}Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.injuries && data.injuries !== "none" ? " · known injuries taken out" : ""}${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
             : "Wins model not fit yet"}
         />
         {["W", "E"].map((conf) => {
@@ -315,7 +315,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200 flex items-center justify-between gap-2">
           <div>
             <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Projected Leaders</div>
-            {ins && <div className="text-[9px] italic text-stone-400 mt-0.5">Season totals: VA banked through {shortDate(ins.through)} plus the games left</div>}
+            {ins && <div className="text-[9px] italic text-stone-400 mt-0.5">Season totals: VA banked through {throughLabel(ins)} plus the games left</div>}
           </div>
           <select
             value={team || ""}
@@ -638,6 +638,9 @@ const TAG = {
   green: "border-emerald-300 text-emerald-700 bg-emerald-50",
 };
 const signed = (x, d = 1) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(d)}`;
+// The last day the season so far covers; a night still being played reads
+// as its games final so far.
+const throughLabel = (ins) => `${shortDate(ins.through)}${ins.partial ? " (final games so far)" : ""}`;
 const shortDate = (s) => new Date(`${s}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 // A season with at least the awards' 65 games counts as a healthy one.
@@ -792,7 +795,7 @@ function InSeasonMethod({ ins }) {
   const seasons = m.seasons?.length ? `${m.seasons[0]} through ${m.seasons.at(-1)}` : "past seasons";
   const cut = (k) => (r[k] ? `${Math.round(r[k].vsPreseason * 100)}%` : "–");
   return (
-    <p><span className="font-semibold text-stone-800">The season so far.</span> Through {fmtDate(ins.through)} ({ins.games} games), every projection is updated with what has actually happened. Each piece of the line mixes the preseason number with the season so far, the preseason counting as a fitted amount of evidence: about {m.rate.fg2a} minutes for how often a player shoots, {m.rate.ast} for assists, {m.rate.drb} for defensive rebounds and {m.rate.stl} for steals; {m.pct.tp} attempts for 3P%, {m.pct.fg2} for 2P% and {m.pct.ft} for FT%; {m.mpg} games for minutes per game and {m.avail} team games for availability. So a hot week moves a player’s role and shot volume quickly and their shooting slowly — which is what past seasons say happens. The VA already earned is banked; only the games left are projected, and the simulated awards draw only those, with the range narrowing as the games come in. Each team’s wins are its record plus the rest of its schedule, played at the preseason read mixed with its point margin so far — the preseason read counting as {Math.round(m.team.W)} games of margin, from the wins model’s own miss. The weights were fit on {seasons}, cut at checkpoints from 5 to 70 games, by how well each mix predicted the rest of that season: the shot rates’ errors drop by {cut("fg2a")} on the preseason projection alone, minutes by {cut("mpg")}.</p>
+    <p><span className="font-semibold text-stone-800">The season so far.</span> Through {fmtDate(ins.through)}{ins.partial ? "’s games final so far" : ""} ({ins.games} games), every projection is updated with what has actually happened — each game as soon as ESPN has it final, the page re-read every quarter hour. Each piece of the line mixes the preseason number with the season so far, the preseason counting as a fitted amount of evidence: about {m.rate.fg2a} minutes for how often a player shoots, {m.rate.ast} for assists, {m.rate.drb} for defensive rebounds and {m.rate.stl} for steals; {m.pct.tp} attempts for 3P%, {m.pct.fg2} for 2P% and {m.pct.ft} for FT%; {m.mpg} games for minutes per game and {m.avail} team games for availability. So a hot week moves a player’s role and shot volume quickly and their shooting slowly — which is what past seasons say happens. The VA already earned is banked; only the games left are projected, and the simulated awards draw only those, with the range narrowing as the games come in. Each team’s wins are its record plus the rest of its schedule, played at the preseason read mixed with its point margin so far — the preseason read counting as {Math.round(m.team.W)} games of margin, from the wins model’s own miss. The weights were fit on {seasons}, cut at checkpoints from 5 to 70 games, by how well each mix predicted the rest of that season: the shot rates’ errors drop by {cut("fg2a")} on the preseason projection alone, minutes by {cut("mpg")}.</p>
   );
 }
 

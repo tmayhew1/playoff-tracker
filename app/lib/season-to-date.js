@@ -23,6 +23,17 @@ export function gamesWithBoxes(index, months) {
     .map((g) => ({ ...g, box: boxes.get(g.gameId) || null }));
 }
 
+// `games` (from gamesWithBoxes) with `extra` added: finished games the bake
+// hasn't reached, read off ESPN in the same shape (date, home/away tri and
+// score, box). A game the bake already holds is kept as baked. Date order.
+export function withGames(games, extra) {
+  const have = new Set(games.map((g) => g.gameId));
+  const add = (extra || []).filter((g) => g.box && !have.has(g.gameId));
+  if (!add.length) return games;
+  return [...games, ...add]
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.gameDateTimeUTC || "").localeCompare(b.gameDateTimeUTC || ""));
+}
+
 // Every player's totals in `games` (from gamesWithBoxes) on or before
 // `through`: the same row shape a baked regular-season-<season>.json carries,
 // keyed by name — the box scores carry no ids. `team` is the last team played

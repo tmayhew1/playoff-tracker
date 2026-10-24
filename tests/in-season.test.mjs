@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals, teamRecords } from "../app/lib/season-to-date.js";
+import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals, teamRecords, withGames } from "../app/lib/season-to-date.js";
 import { addRows, missShrink, updatePlayer, updateTeam } from "../app/lib/in-season.js";
 import { simulateAwards } from "../app/lib/projection-model.js";
 import { playoffsBegun, seasonOf } from "../app/lib/regular-season-games.js";
@@ -168,4 +168,17 @@ test("the season in progress has a USG-ADJ model, leaning on last season's early
   assert.ok(usageModelFor("2026-27")?.muUsg > 0);
   const row = { mp: 36, pts: 30, fga: 24, fta: 6, fgm: 11, tpm: 2, tpa: 7, ftm: 6, ast: 4, stl: 1, blk: 0, tov: 3, drb: 5, orb: 1 };
   assert.notEqual(valueAdd(row, lgaForSeason("2026-27", true)), valueAdd(row, lgaForSeason("2026-27")));
+});
+
+test("tonight's finals join the season so far once, in date order", () => {
+  const box = (tri, pts) => ({ tri, players: [{ name: `${tri} Guard`, mp: 36, pts, ast: 5, stl: 1, blk: 0, tov: 2, drb: 4, orb: 1, fgm: 10, fga: 20, tpm: 2, tpa: 6, ftm: 4, fta: 5 }] });
+  const game = (gameId, date, h, a) => ({ gameId, date, gameDateTimeUTC: `${date}T23:00Z`, home: { tri: h, score: 110 }, away: { tri: a, score: 100 }, box: { home: box(h, 30), away: box(a, 20) } });
+  const baked = [game("1", "2026-10-21", "BOS", "NYK")];
+  const games = withGames(baked, [game("2", "2026-10-22", "BOS", "MIA"), game("1", "2026-10-21", "BOS", "NYK"), { ...game("3", "2026-10-22", "LAL", "GSW"), box: null }]);
+  assert.deepEqual(games.map((g) => g.gameId), ["1", "2"]);
+  const bos = playerTotals(games).find((r) => r.name === "BOS Guard");
+  assert.equal(bos.g, 2);
+  assert.equal(bos.pts, 60);
+  assert.equal(teamRecords(games).BOS.w, 2);
+  assert.equal(withGames(baked, []), baked);
 });
