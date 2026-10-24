@@ -10,8 +10,9 @@ import { ordinal } from "../lib/team-context";
 // with an owner's points; TeamScoreCard with a team's score on the Live tab,
 // where `filled` paints the card in the team's color with white details and
 // `right` mirrors it for the home side. `aside` sits on the far side of the
-// card from the label and number; `totalNote` beside the number, inboard.
-function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, totalNote, aside, children }) {
+// card from the label and number; `totalNote` beside the number, inboard,
+// and `totalFar` level with it at the card's far edge.
+function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, totalNote, totalFar, aside, children }) {
   const ink = filled ? "#fff" : accent;
   return (
     <div className={`flex-1 p-3 border-2 flex items-center gap-3 ${right ? "flex-row-reverse" : ""} ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
@@ -26,6 +27,8 @@ function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, tot
       <div className={`flex items-end gap-3 ${right ? "flex-row-reverse" : ""}`}>
         <div className={`text-4xl font-black tabular-nums ${right ? "text-right" : ""} ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
         {totalNote}
+        {totalFar && <div className="flex-1" />}
+        {totalFar}
       </div>
       {children}
       </div>
@@ -78,8 +81,8 @@ const SHOOTING = new Set(["2P", "3P", "FT"]);
 // tug-of-war bar against the opponent and the opponent's figure. The team
 // holds its own end of the card (the home card is mirrored), in solid ink and
 // bold; the opponent's end is in its color, its figure small. A tick marks
-// even. The opponent's score (`tape.oppScore`) sits under its name, the
-// card's score a size down. `context` (the team's season through the game: { record, place,
+// even. The opponent's name and score (`tape.oppScore`, a size down) sit
+// level with the card's score at the far edge, over the opponent's figures. `context` (the team's season through the game: { record, place,
 // conf, ranks }) puts its league rank under each line's label and its record
 // and conference place beside its score. A line with `onCat` given and a
 // shooting key ("2P" / "3P" / "FT") is a button for that category (`cat`,
@@ -91,20 +94,6 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat })
   const muted = ahead ? "text-white/70" : "text-stone-400";
   const body = tape && (
     <div className="mt-2.5 space-y-1">
-      <div className={`flex items-start gap-2 text-[9px] font-bold uppercase tracking-widest ${right ? "flex-row-reverse" : ""}`}>
-        <span className="w-16 shrink-0" />
-        <span className={`flex-1 flex items-start justify-between ${right ? "flex-row-reverse" : ""}`}>
-          <span style={{ color: ink }}>{side.tri}</span>
-          <span className={`flex flex-col ${right ? "items-start" : "items-end"}`}>
-            <span className={muted}>{tape.opp}</span>
-            {tape.oppScore != null && (
-              <span className={`mt-0.5 text-2xl font-black tabular-nums tracking-normal leading-none ${ahead ? muted : ""}`} style={ahead ? undefined : { color: oppColor }}>
-                {tape.oppScore}
-              </span>
-            )}
-          </span>
-        </span>
-      </div>
       {tape.rows.map((r) => {
         const pct = Math.round(Math.min(Math.max(r.share, 0.04), 0.96) * 100);
         const tappable = onCat && SHOOTING.has(r.key);
@@ -124,7 +113,7 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat })
           >
             <span className="w-16 shrink-0 flex flex-col">
               <span className={`text-[9px] font-bold uppercase tracking-wider ${lit ? "" : muted}`} style={lit ? { color: ink } : undefined}>
-                {r.label}{tappable && <span className="ml-0.5 opacity-70">{lit ? "▾" : "▸"}</span>}
+                {r.label}
               </span>
               {context?.ranks?.[r.key] && <span className="text-[10px] font-bold leading-tight" style={{ color: ink }}>{ordinal(context.ranks[r.key])}</span>}
             </span>
@@ -154,7 +143,17 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat })
       <div className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>{ordinal(context.place)} {context.conf === "E" ? "East" : "West"}</div>
     </div>
   );
-  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score} totalNote={standing}>{body}</ScoreFrame>;
+  const opponent = tape && (
+    <div className={`pb-1 flex flex-col ${right ? "items-start" : "items-end"}`}>
+      <span className={`text-[10px] font-bold uppercase tracking-widest ${muted}`}>{tape.opp}</span>
+      {tape.oppScore != null && (
+        <span className={`text-2xl font-black tabular-nums leading-none ${ahead ? muted : ""}`} style={ahead ? undefined : { color: oppColor }}>
+          {tape.oppScore}
+        </span>
+      )}
+    </div>
+  );
+  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score} totalNote={standing} totalFar={opponent}>{body}</ScoreFrame>;
 }
 
 
