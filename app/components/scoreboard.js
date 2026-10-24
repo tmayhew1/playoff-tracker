@@ -111,11 +111,12 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat })
             style={lit ? { backgroundColor: ahead ? "rgba(255,255,255,0.16)" : withAlpha(accent, 0.08) } : undefined}
             className={`-mx-1.5 px-1.5 py-0.5 flex items-center gap-2 text-xs tabular-nums ${tappable ? "cursor-pointer" : ""} ${right ? "flex-row-reverse text-right" : ""}`}
           >
-            <span className="w-16 shrink-0 flex flex-col">
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${lit ? "" : muted}`} style={lit ? { color: ink } : undefined}>
+            {/* The label and the league rank on one line, the label at the card's edge. */}
+            <span className={`w-[4.5rem] shrink-0 flex items-baseline gap-1 whitespace-nowrap ${right ? "flex-row-reverse" : ""}`}>
+              <span className={`text-[9px] font-bold tracking-wide ${lit ? "" : muted}`} style={lit ? { color: ink } : undefined}>
                 {r.label}
               </span>
-              {context?.ranks?.[r.key] && <span className="text-[10px] font-bold leading-tight" style={{ color: ink }}>{ordinal(context.ranks[r.key])}</span>}
+              {context?.ranks?.[r.key] && <span className="text-[10px] font-bold" style={{ color: ink }}>{ordinal(context.ranks[r.key])}</span>}
             </span>
             <span className="flex-1 min-w-0">
               <span className={`flex items-baseline justify-between gap-2 ${right ? "flex-row-reverse" : ""}`}>

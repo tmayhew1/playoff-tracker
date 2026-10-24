@@ -77,7 +77,8 @@ function SectionHeader({ title, count, live, sub }) {
 // better" for it. The measures are lib/team-context.js tapeMeasures: 2P / 3P
 // / FT Value Added (with the selected team's makes, attempts and percentage
 // beside its figure, and the opponent's makes, attempts and percentage in
-// place of its VA), DEF PPP, wTRB% and Poss Ratio. A shooting bar splits on
+// place of its VA), DEF PPP, wTRB% and Poss Ratio — labeled 2P, 3P, FT,
+// Def PPP, wTRB and POSS. A shooting bar splits on
 // the two teams' percentiles among the season's team-games (`dist`, from the
 // card's context): VA sits either side of zero, and two small figures of
 // opposite sign would otherwise fill the bar. Without the season to hand it
@@ -100,7 +101,7 @@ function teamTape(box, tri, lga, dist) {
     return po + pd > 0 ? po / (po + pd) : 0.5;
   };
   const shooting = (key, [made, att], [oppMade, oppAtt]) => ({
-    key, label: `${key} VA`, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: shootingShare(key),
+    key, label: key, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: shootingShare(key),
   });
   return {
     opp: oppT.tri,
@@ -108,9 +109,9 @@ function teamTape(box, tri, lga, dist) {
       shooting("2P", [own.fgm - own.tpm, own.fga - own.tpa], [opp.fgm - opp.tpm, opp.fga - opp.tpa]),
       shooting("3P", [own.tpm, own.tpa], [opp.tpm, opp.tpa]),
       shooting("FT", [own.ftm, own.fta], [opp.ftm, opp.fta]),
-      { key: "def", label: "DEF PPP", own: fmt(o.def, (v) => trimFixed(v, 2)), opp: fmt(d.def, (v) => trimFixed(v, 2)), share: split(d.def || 0, o.def || 0) },
-      { key: "reb", label: "wTRB%", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
-      { key: "poss", label: "Poss Ratio", own: fmt(o.poss, (v) => trimFixed(v, 2)), opp: fmt(d.poss, (v) => trimFixed(v, 2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
+      { key: "def", label: "Def PPP", own: fmt(o.def, (v) => trimFixed(v, 2)), opp: fmt(d.def, (v) => trimFixed(v, 2)), share: split(d.def || 0, o.def || 0) },
+      { key: "reb", label: "wTRB", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
+      { key: "poss", label: "POSS", own: fmt(o.poss, (v) => trimFixed(v, 2)), opp: fmt(d.poss, (v) => trimFixed(v, 2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
     ],
   };
 }
