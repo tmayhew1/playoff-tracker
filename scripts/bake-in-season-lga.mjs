@@ -8,6 +8,11 @@
 // basketball-reference's table) and scripts/fit-usage-model.mjs, which runs
 // before this in the daily workflow and rewrites the usage file without it.
 //
+// It also marks the season in progress on app/data/def-ratings.json
+// (`inProgress`), which regresses its D Ratings toward the line by the games
+// played so far (lib/defense-math.js, DEF_SEASON_GAMES), and clears the mark
+// once the season is complete or basketball-reference's table is baked.
+//
 // No network. Run in the daily workflow after the regular-season games bake:
 //
 //   node --import ./scripts/node/register.mjs scripts/bake-in-season-lga.mjs [--check]
@@ -20,6 +25,7 @@ import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals } from ".
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LGA_PATH = path.join(ROOT, "app", "data", "league-averages.json");
 const USAGE_PATH = path.join(ROOT, "app", "data", "usage-model.json");
+const DEF_PATH = path.join(ROOT, "app", "data", "def-ratings.json");
 const GAMES = path.join(ROOT, "public", "regular-season-games");
 const check = process.argv.includes("--check");
 const read = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
@@ -38,6 +44,8 @@ function zoneRates(season) {
 
 const lgas = read(LGA_PATH);
 const usage = read(USAGE_PATH);
+const defs = fs.existsSync(DEF_PATH) ? read(DEF_PATH) : null;
+const inProgress = new Set();
 let changed = 0, usageChanged = 0;
 for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)).sort()) {
   const dir = path.join(GAMES, season);
@@ -45,6 +53,7 @@ for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)
   if (!fs.existsSync(indexPath)) continue;
   const index = read(indexPath);
   if (index.complete) continue;
+  if (!fs.existsSync(path.join(ROOT, "app", "data", `regular-season-${season}.json`))) inProgress.add(season);
   const months = fs.readdirSync(dir).filter((f) => /^\d{4}-\d{2}\.json$/.test(f)).map((f) => read(path.join(dir, f)));
   const rows = playerTotals(gamesWithBoxes(index, months));
   const prior = lgas[prevSeason(season)];
@@ -62,6 +71,15 @@ for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)
     if (JSON.stringify(usage.seasons[season]) !== JSON.stringify(model)) { usage.seasons[season] = model; usageChanged++; }
   }
 }
+let defsChanged = 0;
+for (const [season, entry] of Object.entries(defs || {})) {
+  const want = inProgress.has(season);
+  if (!!entry.inProgress === want) continue;
+  if (want) entry.inProgress = true; else delete entry.inProgress;
+  console.log(`${season}: D Ratings ${want ? "marked" : "no longer marked"} in progress`);
+  defsChanged++;
+}
 if (changed && !check) fs.writeFileSync(LGA_PATH, JSON.stringify(lgas, null, 2) + "\n");
 if (usageChanged && !check) fs.writeFileSync(USAGE_PATH, JSON.stringify(usage, null, 2) + "\n");
-console.log(`${check ? "would update" : "updated"} ${changed} season baseline(s), ${usageChanged} usage model(s)`);
+if (defsChanged && !check) fs.writeFileSync(DEF_PATH, JSON.stringify(defs, null, 2) + "\n");
+console.log(`${check ? "would update" : "updated"} ${changed} season baseline(s), ${usageChanged} usage model(s), ${defsChanged} in-progress mark(s)`);

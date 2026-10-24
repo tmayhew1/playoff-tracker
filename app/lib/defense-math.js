@@ -193,6 +193,31 @@ export function calibratedEst(est, teamDrtg, laDRtg, teamW = 1, slopes = null) {
   return anchor + cal * (est - anchor);
 }
 
+// --- The season in progress: a full season's claim on a few games' evidence -
+// Everything above reads a finished season as the window it describes: a
+// full-time player's g = G and nothing shrinks. A season still being played
+// breaks that. Two games in, the box-score estimate the prior rests on is two
+// games of team defence with the player's stocks on top. The spread of the
+// estimates across the league is then SD ~12 pts/100, not the ~4 of a whole
+// season, and taking one at face value put a 2-game 2026-27 first on the
+// all-time board. What these figures go on to be compared against is whole
+// seasons, so while one is in progress its rating is read as a claim about the
+// full schedule made on the games played so far. That is the same
+// regression teamCoverageW already does, with the schedule as G:
+//
+//   sampleW = g / (g + K (1 - g/82))
+//
+// with the same K. It is borrowed, but it fits: the in-season spread, read as
+// tau^2 (1 + K/g) against a full season's tau^2, puts K at ~15 games two games
+// into 2026-27. The player's rating shrinks toward the line it is measured
+// against (his weighted team line, or the league's without one), and the team
+// terms carry the same weight. So the whole net walks toward zero together:
+// about an eighth of it counts at 2 games, two-thirds at 20, nine-tenths at
+// 50, and all of it on the final night. `inProgress` is set on the season's
+// def-ratings entry by scripts/bake-in-season-lga.mjs until the season is
+// baked whole. A finished season never carries it and is untouched.
+export const DEF_SEASON_GAMES = 82;
+
 // One clause explaining the team line a tooltip is quoting, for the views that
 // show it. Empty string above DEF_TEAM_NOTE_W, where the weighting moves the
 // line by less than the tenth of a point the views print and the caveat would
@@ -214,7 +239,11 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs", slopes =
   // How much of the team's season this player was actually present for — the
   // weight every team term below carries (see teamCoverageW). Rows carry games
   // as `g` (regular-season bakes) or `gp` (leaderboard/normalised rows).
-  const teamW = teamCoverageW(row?.g ?? row?.gp, t?.g);
+  // A season in progress weighs both by the games so far against the whole
+  // schedule instead (see DEF_SEASON_GAMES); a finished one has sampleW = 1.
+  const games = row?.g ?? row?.gp;
+  const sampleW = pref !== "po" && e?.inProgress ? teamCoverageW(games, DEF_SEASON_GAMES) : 1;
+  const teamW = sampleW < 1 ? sampleW : teamCoverageW(games, t?.g);
   // The prior is the CALIBRATED estimate, not the raw one, so the two sides of
   // the blend are on one scale (see DEF_EST_CAL). The team line it shrinks
   // toward is the same box-score team rating the IND term subtracts, and is
@@ -230,7 +259,7 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs", slopes =
     ent.pbp != null && est != null ? poss / (poss + priorPoss)
     : ent.pbp != null ? 1
     : 0;
-  const drtg = pbpW * (ent.pbp ?? 0) + (1 - pbpW) * (est ?? 0);
+  let drtg = pbpW * (ent.pbp ?? 0) + (1 - pbpW) * (est ?? 0);
   // The team baseline blends with the SAME weights so IND subtracts like from
   // like at both extremes (the on-court line and the box-score one count
   // possessions differently). Stock rates still come from the BR team map
@@ -248,6 +277,7 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs", slopes =
     // teamW = 1 leaves it untouched; teamW → 0 walks it to the league line,
     // where both terms below collapse into the plain vs-league fallback.
     teamDrtg = teamW * teamSeasonDrtg + (1 - teamW) * la;
+    drtg = teamDrtg + sampleW * (drtg - teamDrtg);
     const edge = la - teamDrtg;
     const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
     const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;
@@ -255,11 +285,12 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs", slopes =
     w = edge >= 0 ? earned : clampW(2 * DEF_TEAM_SHARE_BASE - earned);
     net = (teamDrtg - drtg) + w * edge;
   } else {
+    drtg = la + sampleW * (drtg - la);
     net = la - drtg;
   }
   return {
     dva: (net / 100) * lgaX.laPOSSperM * viewMp,
-    drtg, w, teamDrtg, teamSeasonDrtg, teamW, laDRtg: la, pbpW,
+    drtg, w, teamDrtg, teamSeasonDrtg, teamW, laDRtg: la, pbpW, sampleW,
   };
 }
 

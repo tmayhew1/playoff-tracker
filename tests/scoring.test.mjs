@@ -85,3 +85,19 @@ test("defVAInfo stays out of the way without ratings", () => {
   assert.equal(defVAInfo(p, p.mp, lgaForSeason("2015-16"), null, "2015-16"), null);
   assert.equal(defVAInfo(p, p.mp, lgaForSeason("2015-16"), {}, "2015-16"), null);
 });
+
+test("a season in progress regresses its D Rating by the games played so far", () => {
+  const lga = lgaForSeason("2015-16");
+  const p = read("regular-season-2015-16.json").players.find((r) => r.g >= 70);
+  const season = { rs: { [p.slug]: 95 } };
+  const done = { "2015-16": season };
+  const live = { "2015-16": { ...season, inProgress: true } };
+  const net = (defs, g) => defVAInfo({ ...p, g }, p.mp, lga, defs, "2015-16").dva;
+  // Two games in, about an eighth of the edge counts; the full schedule, all of it.
+  const early = net(live, 2) / net(done, 2);
+  assert.ok(early > 0.1 && early < 0.15, String(early));
+  assert.ok(close(net(live, 82), net(done, 82)));
+  // A finished season is untouched whatever the games, and the weight grows with them.
+  assert.ok(close(net(done, 2), net(done, 60)));
+  assert.ok(net(live, 2) < net(live, 20) && net(live, 20) < net(live, 60));
+});
