@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { valueAddParts, lgaForSeason, combinedLga } from "../../scoring";
 import { RAW_KEYS, ZONE_SPEC, combineRows, loadRows, norm } from "../_lib/player-rows";
+import { seasonToDate } from "../_lib/season-to-date";
 
 export const runtime = "nodejs";
 
@@ -71,6 +72,21 @@ function attachZones(rows, zoneMap, side) {
 }
 
 
+// The season in progress has no regular-season-<season>.json until
+// basketball-reference's table is baked; until then its rows are its own
+// baked box scores added up (_lib/season-to-date.js), the same totals
+// /api/regular-season serves the board — so a card opened from that board
+// finds its own season in the index (its rank, its bar in the by-season
+// chart) instead of a field of none.
+async function inSeasonRows(files) {
+  const d = new Date(), y = d.getUTCFullYear(), start = d.getUTCMonth() >= 8 ? y : y - 1;
+  const season = `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+  if (files.includes(`regular-season-${season}.json`)) return [];
+  const toDate = await seasonToDate(season).catch(() => null);
+  if (!toDate || toDate.complete) return [];
+  return toDate.players.map(({ teams, last, tg, gs, ...p }) => ({ season, p: { ...p, gp: p.g, partial: true } }));
+}
+
 export async function GET(req) {
   const scopeParam = new URL(req.url).searchParams.get("scope") || "playoffs";
   const scope = ["playoffs", "regular", "combined"].includes(scopeParam) ? scopeParam : "playoffs";
@@ -88,13 +104,16 @@ export async function GET(req) {
   // playoff rows, "rs" for regular-season rows) of each shooting-<season>.json.
   const zoneMap = await loadZoneMap(dir, files);
   let rows, fileCount;
+  const live = scope === "playoffs" ? [] : await inSeasonRows(files);
   if (scope === "regular") {
     ({ rows, fileCount } = await loadRows(dir, files, RS_RE));
+    rows.push(...live);
     attachZones(rows, zoneMap, "rs");
   } else if (scope === "combined") {
     const lb = await loadRows(dir, files, LB_RE);
     attachZones(lb.rows, zoneMap, "po");
     const rs = await loadRows(dir, files, RS_RE);
+    rs.rows.push(...live);
     attachZones(rs.rows, zoneMap, "rs");
     rows = combineRows(lb.rows, rs.rows);
     fileCount = Math.max(lb.fileCount, rs.fileCount);
@@ -157,6 +176,9 @@ export async function GET(req) {
       // scored against — without it, re-pricing under USG-ADJ would apply the
       // mode's delta at a baseline the row was never measured on (spec §4.8).
       ...(scope === "combined" && p._po?.mp > 0 ? { mpPo: r1(p._po.mp) } : {}),
+      // A season still being played: a few games in, its per-game rates are
+      // samples, not seasons, and the all-time board keeps them off it.
+      ...(p.partial ? { partial: true } : {}),
     });
   }
 

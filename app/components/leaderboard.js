@@ -10,9 +10,14 @@ import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamCol
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
+import { addLiveLines } from "../lib/live-lines";
+import { useLiveLines } from "../lib/live-feed";
 
 
-export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
+// Whole games as they are; a game in progress makes G fractional (1.6).
+const fmtG = (g) => (Number.isInteger(g) ? String(g) : g.toFixed(1));
+
+export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
   // `lga` is the REGULAR-SEASON baseline for this season; the playoff one is
   // derived here rather than passed, because this board scores both sides of
   // the season and each scope needs its own (spec §4.8). The rs scope keeps
@@ -175,15 +180,28 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     return () => { cancelled = true; };
   }, [season]);
 
+  // The season in progress is baked through last night; tonight's games, and
+  // any the bake hasn't caught up to, come from ESPN as they're played and
+  // ride on top (lib/live-lines.js), a game in progress counting toward G as
+  // the share of it played.
+  const live = useLiveLines(season, rsSeason === season && rsData?.partial ? rsData.through : null);
+
   // Regular-season rows in leaderboard shape: gp/reb aliases plus VA + EFF
   // computed against the season's league baselines (rs bakes don't carry VA).
   const rsPlayers = useMemo(() => {
     if (!rsData?.players?.length) return null;
-    return rsData.players.map((p) => {
+    const shape = (p) => {
       const parts = valueAddParts(p, lga);
       return { ...p, gp: p.g, reb: (p.drb || 0) + (p.orb || 0), va: parts.va, eff: parts.efficiency, games: [] };
-    });
-  }, [rsData, lga]);
+    };
+    // A row tonight's games moved also keeps its line through last night, for
+    // the breakdown card (`baked`): the card ranks it against a league index
+    // that stops there, and its shooting splits (basketball-reference's) only
+    // cover the box scores that went into it.
+    return addLiveLines(rsData.players, live?.lines).map(({ preLive, ...p }) => (
+      preLive ? { ...shape(p), baked: shape(preLive) } : shape(p)
+    ));
+  }, [rsData, lga, live]);
 
   // Playoff rows arrive from /api/leaderboard with `va` already baked against
   // the standard baseline. Under USG-ADJ they are re-priced in place — the
@@ -558,7 +576,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-4 sm:w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-7 sm:w-8 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -676,7 +694,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         for (let j = 1; j < p.games.length; j++) {
           if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
         }
-        const vaPerG = p.gp > 0 ? rowVa / p.gp : 0;
+        const vaPerG = p.gp > 0 ? rowVa / Math.max(1, p.gp) : 0;
         const { first, last } = splitName(p.name);
         // One flat size for every surname — the column has room for it at
         // 10px. The two hyphenated names past fifteen characters (Gilgeous-
@@ -776,22 +794,38 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 </span>
                 {nameArmed && canOpenPlayer && <span className="text-[8px] ml-0.5 shrink-0" aria-hidden>›</span>}
               </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  // Unarmed tap on an inactive G is treated as a mis-tap: fall
-                  // through (no stopPropagation) so it bubbles to the row and
-                  // opens the breakdown, instead of doing nothing.
-                  if (!gArmed && minGames !== p.gp) return;
-                  e.stopPropagation();
-                  const next = minGames === p.gp ? null : p.gp;
-                  setMinGames(next);
-                  setGArmed(false);
-                  if (next != null) setPendingScrollName(p.name);
-                }}
-                className={`w-4 sm:w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
-                aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
-              >{p.gp}</button>
+              {/* A game in progress: G is fractional, and a "Live →" tag
+                  above it opens that game on the Live tab. */}
+              <span className="w-7 sm:w-8 shrink-0 flex flex-col items-end leading-tight">
+                {p.live && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      if (!onOpenInLive) return;
+                      e.stopPropagation();
+                      onOpenInLive({ date: p.live.date, name: p.name, team: p.team });
+                    }}
+                    className="text-[7px] sm:text-[8px] font-bold uppercase tracking-wide text-red-600 whitespace-nowrap inline-flex items-center gap-0.5 hover:underline"
+                    aria-label={`${p.name} is playing now — open the game on the Live tab`}
+                  ><span className="inline-block w-1 h-1 rounded-full bg-red-600 animate-pulse" aria-hidden />Live →</button>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // Unarmed tap on an inactive G is treated as a mis-tap: fall
+                    // through (no stopPropagation) so it bubbles to the row and
+                    // opens the breakdown, instead of doing nothing.
+                    if (!gArmed && minGames !== p.gp) return;
+                    e.stopPropagation();
+                    const next = minGames === p.gp ? null : p.gp;
+                    setMinGames(next);
+                    setGArmed(false);
+                    if (next != null) setPendingScrollName(p.name);
+                  }}
+                  className={`text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                  aria-label={gArmed ? `Filter to players with at least ${fmtG(p.gp)} games` : `${fmtG(p.gp)} games${p.live ? ", one in progress" : ""} (tap the G header to enable filtering)`}
+                >{fmtG(p.gp)}</button>
+              </span>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
               <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.eff / p.gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.eff / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.reb / p.gp).toFixed(1)}</span>
@@ -844,7 +878,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               // per-category breakdown instead, with the same category
               // context drill-ins as the playoff view.
               <VACategoryBreakdown
-                player={p}
+                player={p.baked || p}
                 lga={lgaOf(p)}
                 baseline="NBA"
                 context={contextFor(p)}

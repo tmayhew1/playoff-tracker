@@ -439,7 +439,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
 
   // The season's VA leaderboard, in whichever scope it's asked for.
   const board = (sc) => (
-    <PlayoffLeaderboard season={season} lga={lga} scope={sc} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} />
+    <PlayoffLeaderboard season={season} lga={lga} scope={sc} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} onOpenInLive={onOpenInLive} />
   );
 
   const tabCls = (active) =>

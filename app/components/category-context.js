@@ -635,7 +635,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // SEASONS: every player-season on its own. When a 2-point distance is
     // selected, seasons without shot-location data drop out (their zone value
     // is undefined, not zero).
-    const floorA = Math.min(5, p.gp || 1);
+    //
+    // A season still being played is a few games' sample, so the board ranks
+    // only the player's own season so far against the finished ones: every
+    // other partial season stays off it (a one-game per-game rate tops any
+    // real season), and so does the floor, which for a season so far would
+    // just be its own handful of games — the field is held to 5 G instead.
+    const partialSelf = !!(self.seasons || []).find((s) => s.season === seasonKey)?.partial;
+    const floorA = partialSelf ? 5 : Math.min(5, p.gp || 1);
     // CAREERS: the same rows summed per player, so a long prime and a short
     // peak are separable readings of one career — the total on /G off, career
     // value per career game on /G on. The games floor keeps a 12-game career
@@ -667,7 +674,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       board = boardWindow(list, idx);
     } else {
       const list = allRows
-        .filter((r) => (r.gp || 0) >= floorA && r.mp > 0 && segEra(r.season))
+        .filter((r) => r.mp > 0 && segEra(r.season) && (r.season === seasonKey && samePlayer(r, selfRow)
+          ? true
+          : !r.partial && (r.gp || 0) >= floorA))
         .map((r) => ({ r, m: metric(r, lgaFor(r.season, poolScope), r.season) }))
         .sort((a, b) => b.m - a.m);
       boardN = list.length;
@@ -701,7 +710,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       });
 
     return { floor, N, rank: selfIdx + 1, win,
-             floorA, careerFloor, board, allN: boardN, allRank: boardRank, mine };
+             floorA, partialSelf, careerFloor, board, allN: boardN, allRank: boardRank, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg]);
 
   const segData = useMemo(() => {
@@ -1218,7 +1227,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">
           {careerBoard
             ? `Across all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G), ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
-            : `Across all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)${selSeg?.eraNote || ""}.`}
+            : `Across all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
         </div>
       </div>
 
