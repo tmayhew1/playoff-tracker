@@ -728,7 +728,7 @@ function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope })
             <span className="text-stone-400"> /G · {Math.round(row.gp * 10) / 10} G · {row.team}</span>
           </span>
         </div>
-        <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} />
+        <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} seasonOnly />
       </>
     );
   }
