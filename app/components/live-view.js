@@ -7,6 +7,8 @@ import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
 import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
+import { useSeasonContext } from "../lib/use-season-context";
+import { etDate, seasonOf } from "../lib/regular-season-games";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -131,31 +133,45 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // color with its tale of the tape against the opponent, over its whole box. Tapping it
 // again brings the other side back. `focus` (About Last Night's tap) narrows
 // the game to the player's team and opens his card. Explore's regular-season
-// days use it too, handing in their own `lga` and `boxLoader` (a baked box);
-// their games carry no records, so that row drops out. `onTeamPick` hears a
-// tapped side's team (Explore's month narrows its games to it); the card
-// keeps its place on screen as the games around it come and go. `context`,
-// when given, is (tri) -> the team's season through this game for its card
-// ({ record, place, conf, ranks }, scoreboard.js TeamScoreCard), or null.
-export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, context }) {
+// days use it too, handing in their own `lga` and `boxLoader` (a baked box).
+// `context`, when given, is (tri) -> the team's regular season through this
+// game (lib/use-season-context.js: { record, place, conf, ranks, dist }) or
+// null: its record fills the row under the cards where the feed carries none
+// (Explore's games), and a tapped card takes the record inside, beside the
+// score, with the conference place under it and the league ranks down its
+// tape. `onTeamPick` hears a tapped side's team (Explore's month narrows its
+// games to it, the Live tab starts loading the season); with `keepInView`
+// the card keeps its place on screen as the games around it come and go.
+// Tapping a shooting line of the tape sorts the box below by that
+// category's VA, with its makes, attempts and percentage.
+export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, keepInView, context }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
   const [box, setBox] = useState(null);
+  // The shooting category ("2P" / "3P" / "FT") the box is sorted by.
+  const [cat, setCat] = useState(null);
   const cardRef = useRef(null);
-  useEffect(() => { if (focus) setTeam(focus.team); }, [focus]);
+  useEffect(() => { if (focus) { setTeam(focus.team); onTeamPick?.(focus.team); } }, [focus]); // eslint-disable-line react-hooks/exhaustive-deps
   const pick = (tri) => {
     setTeam(tri);
-    if (!tri || !onTeamPick) return;
-    onTeamPick(tri);
-    requestAnimationFrame(() => cardRef.current?.scrollIntoView({ block: "start" }));
+    setCat(null);
+    if (!tri) return;
+    onTeamPick?.(tri);
+    if (keepInView) requestAnimationFrame(() => cardRef.current?.scrollIntoView({ block: "start" }));
   };
-  const gameNumberFor = useCallback((tri) => {
-    const side = [g.away, g.home].find((s) => s.tri === tri);
-    return side ? teamGameNumber(side, g) : null;
-  }, [g]);
+
   const leader = gameLeader(g);
-  const ctx = team ? context?.(team) ?? null : null;
+  const ctxOf = (side) => {
+    const c = context?.(side.tri) ?? null;
+    return side.record ? { ...c, record: side.record } : c;
+  };
+  const gameNumberFor = (tri) => {
+    const side = [g.away, g.home].find((s) => s.tri === tri);
+    return side ? teamGameNumber({ record: ctxOf(side)?.record }, g) : null;
+  };
+  const ctx = team ? ctxOf([g.away, g.home].find((s) => s.tri === team)) : null;
+  const records = team ? [] : [g.away, g.home].map((side) => ctxOf(side)?.record);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
@@ -172,16 +188,17 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga, ctx?.dist) : null} context={ctx} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga, ctx?.dist) : null} context={ctx}
+              cat={cat} onCat={(k) => setCat(cat === k ? null : k)} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}
         {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-xs font-bold text-stone-400">@</span>}
       </div>
-      {(g.away.record || g.home.record) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
-        {sides.map(([side, , right]) => (
+      {records.some(Boolean) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
+        {sides.map(([side, , right], i) => (
           <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
-            {side.record || "–"}
+            {records[i] || "–"}
           </div>
         ))}
       </div>}
@@ -196,6 +213,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         hideScore
         teamFilter={team}
         onTeamClear={() => pick(null)}
+        teamCat={cat}
         onBox={setBox}
         singleGame
         finalTop5
@@ -321,9 +339,16 @@ export function LiveView({ onData, focus, onFocusHandled }) {
   useEffect(() => {
     if (focus && data && !focusGame) onFocusHandled?.();
   }, [focus, data, focusGame, onFocusHandled]);
+  // A tapped team's season so far, loaded the first time a card is tapped.
+  const [picked, setPicked] = useState(false);
+  const context = useSeasonContext({
+    enabled: picked, season: seasonOf(), lga: data ? lgaFor(data.baselineSeason, "rs") : null,
+  });
   const gameCard = (g) => (
     <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason}
-      focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled} />
+      focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled}
+      onTeamPick={() => setPicked(true)}
+      context={g.kind === "regular" && g.gameDateTimeUTC ? (tri) => context(tri, etDate(g.gameDateTimeUTC)) : undefined} />
   );
 
   useEffect(() => {

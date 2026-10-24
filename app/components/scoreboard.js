@@ -1,7 +1,7 @@
 "use client";
 
 import { TEAMS } from "../teams";
-import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
+import { ownerBg, ownerColor, ownerDot, teamColor, withAlpha } from "../lib/format";
 import { ordinal } from "../lib/team-context";
 
 
@@ -68,6 +68,9 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 }
 
 
+// The tape's lines that open their category in the box below.
+const SHOOTING = new Set(["2P", "3P", "FT"]);
+
 // One side of a game on the Live tab, in the team's color. `ahead` (the
 // game's leader, lib/leader.js) gets the card filled in.
 // `tape`, when given (a tapped team: { opp, rows }), runs under the score as
@@ -77,14 +80,16 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 // bold; the opponent's end is in its color, its figure small. A tick marks
 // even. `context` (the team's season through the game: { record, place,
 // conf, ranks }) puts its league rank under each line's label and its record
-// and conference place beside its score.
-export function TeamScoreCard({ side, ahead, right, tape, context }) {
+// and conference place beside its score. A line with `onCat` given and a
+// shooting key ("2P" / "3P" / "FT") is a button for that category (`cat`,
+// the one picked, is lit).
+export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat }) {
   const accent = teamColor(side.tri);
   const ink = ahead ? "#fff" : accent;
   const oppColor = tape && teamColor(tape.opp);
   const muted = ahead ? "text-white/70" : "text-stone-400";
   const body = tape && (
-    <div className="mt-2.5 space-y-1.5">
+    <div className="mt-2.5 space-y-1">
       <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${right ? "flex-row-reverse" : ""}`}>
         <span className="w-16 shrink-0" />
         <span className={`flex-1 flex justify-between ${right ? "flex-row-reverse" : ""}`}>
@@ -94,10 +99,25 @@ export function TeamScoreCard({ side, ahead, right, tape, context }) {
       </div>
       {tape.rows.map((r) => {
         const pct = Math.round(Math.min(Math.max(r.share, 0.04), 0.96) * 100);
+        const tappable = onCat && SHOOTING.has(r.key);
+        const lit = tappable && cat === r.key;
         return (
-          <div key={r.label} className={`flex items-center gap-2 text-xs tabular-nums ${right ? "flex-row-reverse text-right" : ""}`}>
+          <div
+            key={r.label}
+            {...(tappable && {
+              role: "button",
+              tabIndex: 0,
+              "aria-pressed": lit,
+              onClick: (e) => { e.stopPropagation(); onCat(r.key); },
+              onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onCat(r.key); } },
+            })}
+            style={lit ? { backgroundColor: ahead ? "rgba(255,255,255,0.16)" : withAlpha(accent, 0.08) } : undefined}
+            className={`-mx-1.5 px-1.5 py-0.5 flex items-center gap-2 text-xs tabular-nums ${tappable ? "cursor-pointer" : ""} ${right ? "flex-row-reverse text-right" : ""}`}
+          >
             <span className="w-16 shrink-0 flex flex-col">
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>{r.label}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${lit ? "" : muted}`} style={lit ? { color: ink } : undefined}>
+                {r.label}{tappable && <span className="ml-0.5 opacity-70">{lit ? "▾" : "▸"}</span>}
+              </span>
               {context?.ranks?.[r.key] && <span className="text-[10px] font-bold leading-tight" style={{ color: ink }}>{ordinal(context.ranks[r.key])}</span>}
             </span>
             <span className="flex-1 min-w-0">
