@@ -69,36 +69,46 @@ function SectionHeader({ title, count, live, sub }) {
   );
 }
 
-// A team's 2P / 3P / FT as [label, made, attempted], summed from its box.
-function shootingSplits(box, tri) {
-  const players = [box?.away, box?.home].find((t) => t?.tri === tri)?.players;
-  if (!players) return null;
-  const sum = (k) => players.reduce((n, p) => n + (p[k] || 0), 0);
-  const [fgm, fga, tpm, tpa] = [sum("fgm"), sum("fga"), sum("tpm"), sum("tpa")];
-  return [["2P", fgm - tpm, fga - tpa], ["3P", tpm, tpa], ["FT", sum("ftm"), sum("fta")]];
-}
-
-// A team's box beside its opponent's, as [label, value] lines under its
-// shooting: its defensive points per possession (the opponent's points over
-// the opponent's estimated possessions, FGA − ORB + TOV + 0.475·FTA), its
-// share of the game's rebounds with each priced as Value Added prices it (an
-// offensive board weighted by the league's DRB rate, a defensive one by its
-// ORB rate, so the two teams' shares add to 100), and its possessions over
-// the opponent's.
-function teamGameStats(box, tri, lga) {
-  const own = [box?.away, box?.home].find((t) => t?.tri === tri)?.players;
-  const opp = [box?.away, box?.home].find((t) => t && t.tri !== tri)?.players;
-  if (!own || !opp) return null;
+// A tapped team's game beside its opponent's, line by line, for its card's
+// tale of the tape: { opp, rows }, each row { label, own, opp, share } with
+// `share` the selected team's part of the bar, always read as "more is
+// better" for it. Shooting is 2P / 3P / FT (made/att and percentage). DEF
+// PPP is the points a team allowed over the possessions it allowed them on
+// (FGA − ORB + TOV + 0.475·FTA), so lower is better and the bar is turned
+// round. wTRB% is the game's rebounds shared out with each priced as Value
+// Added prices it (an offensive board weighted by the league's DRB rate, a
+// defensive one by its ORB rate), so the two add to 100. Poss Ratio is a
+// team's possessions over its opponent's.
+function teamTape(box, tri, lga) {
+  const ownT = [box?.away, box?.home].find((t) => t?.tri === tri);
+  const oppT = [box?.away, box?.home].find((t) => t && t.tri !== tri);
+  if (!ownT?.players || !oppT?.players) return null;
+  const [own, opp] = [ownT.players, oppT.players];
   const sum = (ps, k) => ps.reduce((n, p) => n + (p[k] || 0), 0);
   const poss = (ps) => sum(ps, "fga") - sum(ps, "orb") + sum(ps, "tov") + USG_FTA_W * sum(ps, "fta");
   const reb = (ps) => (lga?.laDRBrate ?? 0.75) * sum(ps, "orb") + (lga?.laORBrate ?? 0.25) * sum(ps, "drb");
+  const split = (a, b) => (a + b > 0 ? a / (a + b) : 0.5);
+  const pct = (m, a) => (a ? 100 * m / a : null);
+  const fmtPct = (v) => (v == null ? "–" : `${v.toFixed(1)}%`);
+  const shooting = (label, made, att) => {
+    const [o, d] = [pct(made(own), att(own)), pct(made(opp), att(opp))];
+    return { label, own: `${made(own)}/${att(own)} · ${fmtPct(o)}`, opp: fmtPct(d), share: split(o || 0, d || 0) };
+  };
+  const two = (k) => (ps) => sum(ps, k === "m" ? "fgm" : "fga") - sum(ps, k === "m" ? "tpm" : "tpa");
   const [ownPoss, oppPoss] = [poss(own), poss(opp)];
-  const rebTotal = reb(own) + reb(opp);
-  return [
-    ["DEF PPP", oppPoss > 0 ? (sum(opp, "pts") / oppPoss).toFixed(2) : "–"],
-    ["wTRB%", rebTotal > 0 ? `${(100 * reb(own) / rebTotal).toFixed(1)}%` : "–"],
-    ["POSS", oppPoss > 0 ? `${ownPoss.toFixed(1)}/${oppPoss.toFixed(1)} (${(ownPoss / oppPoss).toFixed(2)})` : "–"],
-  ];
+  const [ownDef, oppDef] = [oppPoss > 0 ? sum(opp, "pts") / oppPoss : 0, ownPoss > 0 ? sum(own, "pts") / ownPoss : 0];
+  const rebShare = split(reb(own), reb(opp));
+  return {
+    opp: oppT.tri,
+    rows: [
+      shooting("2P", two("m"), two("a")),
+      shooting("3P", (ps) => sum(ps, "tpm"), (ps) => sum(ps, "tpa")),
+      shooting("FT", (ps) => sum(ps, "ftm"), (ps) => sum(ps, "fta")),
+      { label: "DEF PPP", own: ownDef.toFixed(2), opp: oppDef.toFixed(2), share: split(oppDef, ownDef) },
+      { label: "wTRB%", own: fmtPct(100 * rebShare), opp: fmtPct(100 - 100 * rebShare), share: rebShare },
+      { label: "Poss Ratio", own: oppPoss > 0 ? (ownPoss / oppPoss).toFixed(2) : "–", opp: ownPoss > 0 ? (oppPoss / ownPoss).toFixed(2) : "–", share: split(ownPoss, oppPoss) },
+    ],
+  };
 }
 
 // A team's game number this season, off its record: the record counts a
@@ -116,7 +126,7 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
 // Tapping a card narrows the game to that team: its card alone, framed in its
-// color with its shooting down the far side, over its whole box. Tapping it
+// color with its tale of the tape against the opponent, over its whole box. Tapping it
 // again brings the other side back. `focus` (About Last Night's tap) narrows
 // the game to the player's team and opens his card. Explore's regular-season
 // days use it too, handing in their own `lga` and `boxLoader` (a baked box);
@@ -157,7 +167,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} splits={team ? shootingSplits(box, team) : null} stats={team ? teamGameStats(box, team, lga) : null} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga) : null} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}

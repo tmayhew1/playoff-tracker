@@ -66,26 +66,47 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 
 // One side of a game on the Live tab, in the team's color. `ahead` (the
 // game's leader, lib/leader.js) gets the card filled in.
-// `splits`, when given, lists the team's 2P / 3P / FT down the far side,
-// and `stats` ([label, value] lines) follow them.
-export function TeamScoreCard({ side, ahead, right, splits, stats }) {
-  const aside = splits && (
-    <div className={`shrink-0 space-y-0.5 text-xs tabular-nums ${right ? "text-left" : "text-right"} ${ahead ? "text-white" : "text-stone-600"}`}>
-      {splits.map(([label, made, att]) => (
-        <div key={label}>
-          <span className={`font-bold tracking-wider mr-1.5 ${ahead ? "text-stone-100" : "text-stone-400"}`}>{label}</span>
-          {made}/{att} <span className={ahead ? "text-stone-100" : "text-stone-400"}>({att ? (100 * made / att).toFixed(1) : "–"}%)</span>
-        </div>
-      ))}
-      {stats?.map(([label, value]) => (
-        <div key={label}>
-          <span className={`font-bold tracking-wider mr-1.5 ${ahead ? "text-stone-100" : "text-stone-400"}`}>{label}</span>
-          {value}
-        </div>
-      ))}
+// `tape`, when given (a tapped team: { opp, rows }), runs under the score as
+// a tale of the tape: per line the team's figure, a tug-of-war bar against
+// the opponent and the opponent's figure. The team holds its own end of the
+// card (the home card is mirrored), in solid ink and bold; the opponent's
+// end is in its color, its figure small. A tick marks even.
+export function TeamScoreCard({ side, ahead, right, tape }) {
+  const accent = teamColor(side.tri);
+  const ink = ahead ? "#fff" : accent;
+  const oppColor = tape && teamColor(tape.opp);
+  const muted = ahead ? "text-white/70" : "text-stone-400";
+  const body = tape && (
+    <div className="mt-2.5 space-y-1.5">
+      <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${right ? "flex-row-reverse" : ""}`}>
+        <span className="w-16 shrink-0" />
+        <span className={`flex-1 flex justify-between ${right ? "flex-row-reverse" : ""}`}>
+          <span style={{ color: ink }}>{side.tri}</span>
+          <span className={muted}>{tape.opp}</span>
+        </span>
+      </div>
+      {tape.rows.map((r) => {
+        const pct = Math.round(Math.min(Math.max(r.share, 0.04), 0.96) * 100);
+        return (
+          <div key={r.label} className={`flex items-center gap-2 text-xs tabular-nums ${right ? "flex-row-reverse text-right" : ""}`}>
+            <span className={`w-16 shrink-0 text-[9px] font-bold uppercase tracking-wider ${muted}`}>{r.label}</span>
+            <span className="flex-1 min-w-0">
+              <span className={`flex items-baseline justify-between gap-2 ${right ? "flex-row-reverse" : ""}`}>
+                <span className="font-bold truncate" style={{ color: ink }}>{r.own}</span>
+                <span className={`text-[10px] ${muted}`}>{r.opp}</span>
+              </span>
+              <span className={`relative mt-0.5 flex h-1 gap-px ${right ? "flex-row-reverse" : ""}`}>
+                <span style={{ width: `${pct}%`, backgroundColor: ink }} />
+                <span className="flex-1" style={{ backgroundColor: oppColor, opacity: 0.55, boxShadow: ahead ? "inset 0 0 0 0.5px rgba(255,255,255,0.6)" : undefined }} />
+                <span className={`absolute left-1/2 -top-0.5 -bottom-0.5 w-px ${ahead ? "bg-white/80" : "bg-stone-900/40"}`} />
+              </span>
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
-  return <ScoreFrame label={side.tri} accent={teamColor(side.tri)} filled={ahead} right={right} total={side.score} aside={aside} />;
+  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score}>{body}</ScoreFrame>;
 }
 
 
