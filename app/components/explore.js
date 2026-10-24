@@ -17,6 +17,7 @@ import { GameCard } from "./live-view";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
 import { warmSeason } from "../lib/month-tables";
+import { useSeasonContext } from "../lib/use-season-context";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -132,11 +133,40 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // month, its league-wide averages first, then a card per day holding that
 // day's games, newest first. Each game is the Live tab's scoreboard card (the
 // winner's side filled in, tap a side for that team's box) over its top five.
+// A team picked in the averages' header, by tapping a team in the averages,
+// or by tapping a side of a scoreboard narrows both the averages and the days
+// to that team's games.
 export function ExploreMonthSection({ month, allMonths, lga, season }) {
   const [open, setOpen] = useState(false);
+  const [team, setTeam] = useState(null);
+  const teams = useMemo(() => [...new Set(month.games.flatMap((g) => [g.home?.tri, g.away?.tri]).filter(Boolean))].sort(), [month]);
   const days = useMemo(() => (open
-    ? groupByDay(month.games).reverse().map((d) => ({ ...d, games: [...d.games].reverse() }))
-    : []), [open, month]);
+    ? groupByDay(month.games).reverse()
+        .map((d) => ({ ...d, games: d.games.filter((g) => !team || g.home?.tri === team || g.away?.tri === team).reverse() }))
+        .filter((d) => d.games.length)
+    : []), [open, month, team]);
+  const teamGames = team ? days.reduce((n, d) => n + d.games.length, 0) : month.games.length;
+  const context = useSeasonContext({ enabled: open, season, allMonths, through: month.key, lga });
+  const teamControl = teams.length > 1 && (team ? (
+    <button
+      onClick={() => setTeam(null)}
+      style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamColor(team), borderColor: withAlpha(teamColor(team), 0.4) }}
+      className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
+      aria-label="Clear the team filter"
+    >
+      {team} <span className="opacity-60">×</span>
+    </button>
+  ) : (
+    <select
+      value=""
+      onChange={(e) => setTeam(e.target.value || null)}
+      className="shrink-0 text-[10px] px-1 py-0.5 border bg-white text-stone-500 border-stone-300 rounded-none"
+      aria-label="Filter the month by team"
+    >
+      <option value="">All teams</option>
+      {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+    </select>
+  ));
   return (
     <div className="mb-3">
       <button
@@ -147,9 +177,9 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
           <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
           {month.label} {month.key.slice(0, 4)}
         </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{month.games.length} games</span>
+        <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
       </button>
-      {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} />}
+      {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">
@@ -172,6 +202,9 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
                 }}
                 lga={lga}
                 boxLoader={() => bakedBox(season, g)}
+                onTeamPick={setTeam}
+                keepInView
+                context={(tri) => context(tri, g.date)}
               />
             ))}
           </div>

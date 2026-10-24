@@ -2,16 +2,27 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS } from "../teams";
-import { LGA } from "../scoring";
+import { LGA, valueAddByCategory } from "../scoring";
 import { VABreakdown } from "./va-breakdown";
-import { normalizeName, ownerBadge, teamColor, withAlpha } from "../lib/format";
+import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 
 
+// A shooting category's columns in the box: its makes and attempts off a
+// player's line, and its VA key in scoring.js valueAddByCategory.
+export const SHOT_CATS = {
+  "2P": { made: (p) => (p.fgm || 0) - (p.tpm || 0), att: (p) => (p.fga || 0) - (p.tpa || 0), va: "2-Pointers" },
+  "3P": { made: (p) => p.tpm || 0, att: (p) => p.tpa || 0, va: "3-Pointers" },
+  FT: { made: (p) => p.ftm || 0, att: (p) => p.fta || 0, va: "Free Throws" },
+};
+
 // `outlined` lists teams whose badge goes white with a team-color outline
 // instead of the solid fill, matching a trailing side's score card.
-export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame }) {
+// With `cat` (a SHOT_CATS key) the row reads that category instead — makes,
+// attempts, percentage and its VA (`p.catVA`) — over a light bar of that VA
+// against `maxAbs`, as the leaderboards draw theirs.
+export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -25,11 +36,21 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
   const badgeStyle = !badgeUseTeam ? undefined
     : outlined?.includes(p.team) ? { backgroundColor: "#fff", color: tc, borderColor: tc }
     : { backgroundColor: tc, color: "#fff", borderColor: tc };
+  const c = cat && SHOT_CATS[cat];
+  const v = c ? p.catVA : p.va;
   return (
     <div className="border-b border-stone-100 last:border-0" data-row-key={rowKey}>
+      <div className="relative overflow-hidden">
+      {c && (
+        <div
+          className="absolute inset-y-0 left-0 pointer-events-none"
+          style={{ width: `${(Math.abs(v) / (maxAbs || 1)) * 100}%`, backgroundColor: v >= 0 ? withAlpha(teamColor(p.team), 0.16) : withAlpha("#dc2626", 0.10) }}
+          aria-hidden
+        />
+      )}
       <button
         onClick={onToggle}
-        className={`w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
+        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
       >
         <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
           {p.team}
@@ -38,14 +59,25 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
           <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
           {p.name}
         </span>
-        <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
-        <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
-        <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
-        <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
-        <span className={`tabular-nums w-8 text-right font-semibold ${p.va < 0 ? "text-red-600" : p.va > 0 ? "text-stone-900" : "text-stone-400"}`}>
-          {p.va.toFixed(1)}
+        {c ? (
+          <>
+            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{c.made(p)}</span>
+            <span className="tabular-nums text-stone-600 w-7 text-right">{c.att(p)}</span>
+            <span className="tabular-nums text-stone-600 w-10 text-right">{c.att(p) ? `${trimFixed(100 * c.made(p) / c.att(p), 1)}%` : "–"}</span>
+          </>
+        ) : (
+          <>
+            <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
+            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
+            <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
+            <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
+          </>
+        )}
+        <span className={`tabular-nums w-8 text-right font-semibold ${v < 0 ? "text-red-600" : v > 0 ? "text-stone-900" : "text-stone-400"}`}>
+          {c ? trimFixed(v, 1) : v.toFixed(1)}
         </span>
       </button>
+      </div>
       {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} useTeamColor={useTeamColor} singleGame={singleGame} />}
     </div>
   );
@@ -56,7 +88,10 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
 // card by his own team's game instead of the one `gameNumber`.
 export const rowKeyOf = (p, i) => `${p.team}-${p.name}-${i}`;
 
-export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame }) {
+// `cat` (a SHOT_CATS key) shows that category's columns, rows carrying
+// their `catVA`.
+export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat }) {
+  const maxAbs = cat ? Math.max(...rows.map((p) => Math.abs(p.catVA || 0)), 0.5) : null;
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
   const buildRow = (arr) => (p, i) => {
@@ -79,6 +114,8 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
         gameNumber={gameNumberFor?.(p.team) ?? gameNumber}
         useTeamColor={useTeamColor}
         singleGame={singleGame}
+        cat={cat}
+        maxAbs={maxAbs}
         onPrev={prevKey ? () => setExpandedKey(prevKey) : undefined}
         onNext={nextKey ? () => setExpandedKey(nextKey) : undefined}
       />
@@ -89,11 +126,22 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
     <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
       <span className="w-10">Team</span>
       <span className="flex-1">Player</span>
-      <span className="w-7 text-right">MIN</span>
-      <span className="w-6 text-right">PTS</span>
-      <span className="w-5 text-right">REB</span>
-      <span className="w-5 text-right">AST</span>
-      <span className="w-8 text-right">VA</span>
+      {cat ? (
+        <>
+          <span className="w-6 text-right">{cat}</span>
+          <span className="w-7 text-right">{cat}A</span>
+          <span className="w-10 text-right">{cat}%</span>
+          <span className="w-8 text-right">{cat} VA</span>
+        </>
+      ) : (
+        <>
+          <span className="w-7 text-right">MIN</span>
+          <span className="w-6 text-right">PTS</span>
+          <span className="w-5 text-right">REB</span>
+          <span className="w-5 text-right">AST</span>
+          <span className="w-8 text-right">VA</span>
+        </>
+      )}
     </div>
   );
 
@@ -144,8 +192,9 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
 // shows player cards as one game's (see VABreakdown), numbered by
 // `gameNumberFor`. `focusPlayer`, a name on the `teamFilter` team, opens
 // that player's card once the box loads, scrolls to it, then calls
-// `onFocusHandled`.
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5 }) {
+// `onFocusHandled`. `teamCat` (a SHOT_CATS key) sorts the `teamFilter`
+// team's box by that category's VA and shows its columns.
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -278,7 +327,14 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
   // A final's top five only counts real minutes (short stints can post
   // outsized VA); a live game keeps everyone, since early on nobody has 12.
   const top5 = (isFinal ? sortedPlayers.filter((p) => p.mp > 12) : sortedPlayers).slice(0, 5);
-  const teamPlayers = useMemo(() => (teamFilter ? sortedPlayers.filter((p) => p.team === teamFilter) : null), [sortedPlayers, teamFilter]);
+  const teamPlayers = useMemo(() => {
+    if (!teamFilter) return null;
+    const own = sortedPlayers.filter((p) => p.team === teamFilter);
+    const c = teamCat && SHOT_CATS[teamCat];
+    if (!c) return own;
+    return own.map((p) => ({ ...p, catVA: valueAddByCategory(p, lga)[c.va] }))
+      .sort((a, b) => b.catVA - a.catVA || c.att(b) - c.att(a));
+  }, [sortedPlayers, teamFilter, teamCat, lga]);
 
   const rootRef = useRef(null);
   const scrollTo = useRef(null);
@@ -346,7 +402,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
           {!box && !loading && !error && <div className="py-2 text-[10px] text-stone-500 italic text-center">No box score yet</div>}
           {box && teamPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
+              <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} cat={teamCat} />
             </div>
           )}
           {box && teamPlayers.length === 0 && (

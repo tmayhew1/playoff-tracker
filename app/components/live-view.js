@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
-import { teamColor } from "../lib/format";
+import { teamColor, trimFixed } from "../lib/format";
+import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
+import { useSeasonContext } from "../lib/use-season-context";
+import { etDate, seasonOf } from "../lib/regular-season-games";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -68,14 +71,53 @@ function SectionHeader({ title, count, live, sub }) {
   );
 }
 
-// A team's 2P / 3P / FT as [label, made, attempted], summed from its box.
-function shootingSplits(box, tri) {
-  const players = [box?.away, box?.home].find((t) => t?.tri === tri)?.players;
-  if (!players) return null;
-  const sum = (k) => players.reduce((n, p) => n + (p[k] || 0), 0);
-  const [fgm, fga, tpm, tpa] = [sum("fgm"), sum("fga"), sum("tpm"), sum("tpa")];
-  return [["2P", fgm - tpm, fga - tpa], ["3P", tpm, tpa], ["FT", sum("ftm"), sum("fta")]];
+// A tapped team's game beside its opponent's, line by line, for its card's
+// tale of the tape: { opp, rows }, each row { key, label, own, opp, share }
+// with `share` the selected team's part of the bar, always read as "more is
+// better" for it. The measures are lib/team-context.js tapeMeasures: 2P / 3P
+// / FT Value Added (with the selected team's makes, attempts and percentage
+// beside its figure, and the opponent's makes, attempts and percentage in
+// place of its VA), DEF PPP, wTRB% and Poss Ratio. A shooting bar splits on
+// the two teams' percentiles among the season's team-games (`dist`, from the
+// card's context): VA sits either side of zero, and two small figures of
+// opposite sign would otherwise fill the bar. Without the season to hand it
+// splits on the gap between the two, against 10 points of VA. DEF PPP's bar
+// is turned round, lower being better.
+function teamTape(box, tri, lga, dist) {
+  const ownT = [box?.away, box?.home].find((t) => t?.tri === tri);
+  const oppT = [box?.away, box?.home].find((t) => t && t.tri !== tri);
+  if (!ownT?.players || !oppT?.players) return null;
+  const [own, opp] = [teamSums(ownT.players), teamSums(oppT.players)];
+  const [o, d] = [tapeMeasures(own, opp, lga), tapeMeasures(opp, own, lga)];
+  const split = (a, b) => (Math.abs(a) + Math.abs(b) > 0 ? 0.5 + (a - b) / (2 * (Math.abs(a) + Math.abs(b))) : 0.5);
+  const fmt = (v, f) => (v == null ? "–" : f(v));
+  const fmtPct = (v) => `${trimFixed(v, 1)}%`;
+  const fmtVA = (v) => (trimFixed(v, 1) === "0" ? "0" : `${v >= 0 ? "+" : "−"}${trimFixed(Math.abs(v), 1)}`);
+  const line = (made, att) => `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`;
+  const shootingShare = (key) => {
+    const [po, pd] = [percentile(dist?.[key], o[key]), percentile(dist?.[key], d[key])];
+    if (po == null || pd == null) return Math.min(Math.max(0.5 + (o[key] - d[key]) / 20, 0), 1);
+    return po + pd > 0 ? po / (po + pd) : 0.5;
+  };
+  const shooting = (key, [made, att], [oppMade, oppAtt]) => ({
+    key, label: `${key} VA`, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: shootingShare(key),
+  });
+  return {
+    opp: oppT.tri,
+    rows: [
+      shooting("2P", [own.fgm - own.tpm, own.fga - own.tpa], [opp.fgm - opp.tpm, opp.fga - opp.tpa]),
+      shooting("3P", [own.tpm, own.tpa], [opp.tpm, opp.tpa]),
+      shooting("FT", [own.ftm, own.fta], [opp.ftm, opp.fta]),
+      { key: "def", label: "DEF PPP", own: fmt(o.def, (v) => trimFixed(v, 2)), opp: fmt(d.def, (v) => trimFixed(v, 2)), share: split(d.def || 0, o.def || 0) },
+      { key: "reb", label: "wTRB%", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
+      { key: "poss", label: "Poss Ratio", own: fmt(o.poss, (v) => trimFixed(v, 2)), opp: fmt(d.poss, (v) => trimFixed(v, 2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
+    ],
+  };
 }
+
+// A tape with the opponent's score on the scoreboard (which a live game
+// keeps current) for its header.
+const withScore = (tape, oppScore) => tape && { ...tape, oppScore };
 
 // A team's game number this season, off its record: the record counts a
 // final already, a live game not yet. Unknown for a playoff game (the record
@@ -92,47 +134,75 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
 // Tapping a card narrows the game to that team: its card alone, framed in its
-// color with its shooting down the far side, over its whole box. Tapping it
+// color with its tale of the tape against the opponent, over its whole box. Tapping it
 // again brings the other side back. `focus` (About Last Night's tap) narrows
 // the game to the player's team and opens his card. Explore's regular-season
-// days use it too, handing in their own `lga` and `boxLoader` (a baked box);
-// their games carry no records, so that row drops out.
-export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled }) {
+// days use it too, handing in their own `lga` and `boxLoader` (a baked box).
+// `context`, when given, is (tri) -> the team's regular season through this
+// game (lib/use-season-context.js: { record, place, conf, ranks, dist }) or
+// null: its record fills the row under the cards where the feed carries none
+// (Explore's games), and a tapped card takes the record inside, beside the
+// score, with the conference place under it and the league ranks down its
+// tape. `onTeamPick` hears a tapped side's team (Explore's month narrows its
+// games to it, the Live tab starts loading the season); with `keepInView`
+// the card keeps its place on screen as the games around it come and go.
+// Tapping a shooting line of the tape sorts the box below by that
+// category's VA, with its makes, attempts and percentage.
+export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, keepInView, context }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
   const [box, setBox] = useState(null);
-  useEffect(() => { if (focus) setTeam(focus.team); }, [focus]);
-  const gameNumberFor = useCallback((tri) => {
-    const side = [g.away, g.home].find((s) => s.tri === tri);
-    return side ? teamGameNumber(side, g) : null;
-  }, [g]);
+  // The shooting category ("2P" / "3P" / "FT") the box is sorted by.
+  const [cat, setCat] = useState(null);
+  const cardRef = useRef(null);
+  useEffect(() => { if (focus) { setTeam(focus.team); onTeamPick?.(focus.team); } }, [focus]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pick = (tri) => {
+    setTeam(tri);
+    setCat(null);
+    if (!tri) return;
+    onTeamPick?.(tri);
+    if (keepInView) requestAnimationFrame(() => cardRef.current?.scrollIntoView({ block: "start" }));
+  };
+
   const leader = gameLeader(g);
+  const ctxOf = (side) => {
+    const c = context?.(side.tri) ?? null;
+    return side.record ? { ...c, record: side.record } : c;
+  };
+  const gameNumberFor = (tri) => {
+    const side = [g.away, g.home].find((s) => s.tri === tri);
+    return side ? teamGameNumber({ record: ctxOf(side)?.record }, g) : null;
+  };
+  const ctx = team ? ctxOf([g.away, g.home].find((s) => s.tri === team)) : null;
+  const records = team ? [] : [g.away, g.home].map((side) => ctxOf(side)?.record);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
       id={gameAnchor(g)}
+      ref={cardRef}
       className={`mb-3 p-2 rounded scroll-mt-3 ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
       style={team ? { borderColor: teamColor(team) } : undefined}
     >
       <div className="relative flex gap-4">
-        {sides.map(([side, , right]) => (
+        {sides.map(([side, other, right]) => (
           <button
             key={side.tri}
-            onClick={() => setTeam(team ? null : side.tri)}
+            onClick={() => pick(team ? null : side.tri)}
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} splits={team ? shootingSplits(box, team) : null} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? withScore(teamTape(box, team, lga, ctx?.dist), other.score) : null} context={ctx}
+              cat={cat} onCat={(k) => setCat(cat === k ? null : k)} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}
         {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-xs font-bold text-stone-400">@</span>}
       </div>
-      {(g.away.record || g.home.record) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
-        {sides.map(([side, , right]) => (
+      {records.some(Boolean) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
+        {sides.map(([side, , right], i) => (
           <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
-            {side.record || "–"}
+            {records[i] || "–"}
           </div>
         ))}
       </div>}
@@ -146,7 +216,8 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         boxLoader={boxLoader}
         hideScore
         teamFilter={team}
-        onTeamClear={() => setTeam(null)}
+        onTeamClear={() => pick(null)}
+        teamCat={cat}
         onBox={setBox}
         singleGame
         finalTop5
@@ -272,9 +343,16 @@ export function LiveView({ onData, focus, onFocusHandled }) {
   useEffect(() => {
     if (focus && data && !focusGame) onFocusHandled?.();
   }, [focus, data, focusGame, onFocusHandled]);
+  // A tapped team's season so far, loaded the first time a card is tapped.
+  const [picked, setPicked] = useState(false);
+  const context = useSeasonContext({
+    enabled: picked, season: seasonOf(), lga: data ? lgaFor(data.baselineSeason, "rs") : null,
+  });
   const gameCard = (g) => (
     <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason}
-      focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled} />
+      focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled}
+      onTeamPick={() => setPicked(true)}
+      context={g.kind === "regular" && g.gameDateTimeUTC ? (tri) => context(tri, etDate(g.gameDateTimeUTC)) : undefined} />
   );
 
   useEffect(() => {
