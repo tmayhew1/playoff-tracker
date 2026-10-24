@@ -711,7 +711,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         return { season: s.season, team: s.team || null, m, rank, poolN: seasonPool.length };
       });
 
-    return { floor, N, rank: selfIdx + 1, win,
+    return { floor, N, rank: selfIdx + 1, win, top: pool[0]?.r || null,
              floorA, partialSelf, careerFloor, board, allN: boardN, allRank: boardRank, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg]);
 
@@ -1016,7 +1016,20 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       {/* View 1 — rank + mini leaderboard */}
       <div>
         <div className="flex items-baseline justify-between gap-2 mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0">{metricLabel} Rankings ({scopeTitle})</span>
+          {/* The header jumps the card to the pool's #1 (same re-point a row
+              tap does — the ← control still returns to the owner). Whoever is
+              #1 reads "Leaders"; anyone else, "Rankings". */}
+          {d.rank === 1 ? (
+            <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0">{metricLabel} Leaders ({scopeTitle})</span>
+          ) : (
+            <button
+              type="button"
+              disabled={!d.top}
+              onClick={() => setFocusRow(samePlayer(d.top, ownerRow) ? null : d.top)}
+              aria-label={`Show the ${scopeTitle} ${metricLabel} leader${d.top ? `, ${d.top.name}` : ""}`}
+              className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 text-left rounded-sm hover:text-stone-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+            >{metricLabel} Rankings ({scopeTitle})</button>
+          )}
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
