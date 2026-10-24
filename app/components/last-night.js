@@ -42,7 +42,8 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
 
   if (!data?.date) return null;
   const day = nightLabel(data.date);
-  const lines = expanded ? data.lines : data.lines.slice(0, TOP);
+  // Like the game cards' top fives, the folded list only counts real minutes.
+  const lines = expanded ? data.lines : data.lines.filter((l) => l.mp > 12).slice(0, TOP);
   const step = (d) => { if (d) { setDate(d); setExpanded(false); } };
   const openLine = (l) => (data.date === liveNight && onOpenInLive
     ? onOpenInLive({ date: data.date, name: l.name, team: l.team })
