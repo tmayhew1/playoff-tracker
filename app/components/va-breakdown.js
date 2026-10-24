@@ -17,7 +17,7 @@ import { CategoryContext } from "./category-context";
 import { AwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -27,13 +27,33 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   // Tap a category row to swap the spark-line out of total VA and into
   // that category's per-game contribution (e.g. "2-Pointers" → 2P VA in
   // each game). Tap again to clear.
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [ownCategory, setOwnCategory] = useState(null);
   // "basic" folds the ten categories into the four Scoring/Passing/
   // Rebounding/Defense buckets with summed VA; "detail" is the full list.
   // A `singleGame` card (the Live tab's) is always the full list, headed by
   // its game number and minutes.
-  const [viewMode, setViewMode] = useState(singleGame ? "detail" : "basic");
-  const switchView = (m) => { setViewMode(m); setSelectedCategory(null); };
+  const [ownView, setOwnView] = useState(singleGame ? "detail" : "basic");
+  // Per-36 vs per-game normalization for the counting-stat labels (PTS,
+  // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
+  // hidden in the single-game drill-in where raw counts are shown.
+  const [ownRate, setOwnRate] = useState("perG");
+  // A caller that swaps this card's player row in and out (Month Averages,
+  // reading another month) can hold the view, category and rate toggles
+  // itself — `display` as { view, category, rate } with `onDisplayChange` —
+  // so they carry across the swap instead of resetting with the card.
+  const toggles = display || { view: ownView, category: ownCategory, rate: ownRate };
+  const setDisplay = (next) => {
+    if (display) { onDisplayChange?.({ ...display, ...next }); return; }
+    if ("view" in next) setOwnView(next.view);
+    if ("category" in next) setOwnCategory(next.category);
+    if ("rate" in next) setOwnRate(next.rate);
+  };
+  const selectedCategory = toggles.category;
+  const setSelectedCategory = (c) => setDisplay({ category: c });
+  const viewMode = toggles.view;
+  const switchView = (m) => setDisplay({ view: m, category: null });
+  const rateMode = toggles.rate;
+  const setRateMode = (r) => setDisplay({ rate: r });
   // Head-to-head comparison against another player-season from the same scope.
   const [compare, setCompare] = useState(null);
   // Into the page's link, when this breakdown is a board's open row.
@@ -100,10 +120,6 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
       .catch(() => {});
     return () => { cancelled = true; };
   }, [cmpSeason, cmpSlug, cmpName, lgaFor]);
-  // Per-36 vs per-game normalization for the counting-stat labels (PTS,
-  // AST, DRB, etc.). Only meaningful in multi-game series/playoff views;
-  // hidden in the single-game drill-in where raw counts are shown.
-  const [rateMode, setRateMode] = useState("perG");
   // Baked defensive ratings (the D-Rating category / VA+). Must load before
   // the early returns below — hooks are unconditional.
   const defs = useDefRatings();

@@ -17,6 +17,8 @@ import { catVATotal } from "../lib/va";
 // reloading it. `allMonths` is the whole season, for an open row's
 // VA-by-month chart, whose other months can be tapped to read the player's
 // breakdown for that month instead.
+const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
+
 export function MonthAverages({ month, allMonths, lga, season }) {
   const year = month.key.slice(0, 4);
   const [open, setOpen] = useState(false);
@@ -33,6 +35,10 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   // The month an open row's breakdown reads, when another month's bar was
   // tapped; null reads this month.
   const [viewKey, setViewKey] = useState(null);
+  // The open breakdown's Basic / By Category, tapped row and Per 36 / Per G,
+  // held here so they carry over when another month's bar swaps the card's
+  // month in (the card remounts per month). A new row starts fresh.
+  const [display, setDisplay] = useState(DEFAULT_DISPLAY);
   const [rsLookup, setRsLookup] = useState(null);
   // The season's VA per game by month, for an open row's chart: usually
   // built already (lib/month-tables.js warmSeason); otherwise loaded the first
@@ -67,6 +73,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   const openRow = (name) => {
     setExpanded(name);
     setViewKey(null);
+    setDisplay(DEFAULT_DISPLAY);
   };
 
   // Another month of the open player's season, once the season is loaded:
@@ -298,6 +305,8 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                         gameContext={shown.gameContext}
                         breakdownTitle={`${(other ? other.month : month).label} ${(other ? other.month : month).key.slice(0, 4)} Breakdown`}
                         leadChart={monthChart(p.name, other)}
+                        display={display}
+                        onDisplayChange={setDisplay}
                         useTeamColor
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => openRow(visible[i - 1].name) : undefined}
