@@ -396,10 +396,10 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="sm:order-2 sm:flex-1">
-            {/* Total Value Added — label + value inline, no background. While
+            {/* Value Added — label + value inline, no background. While
                 comparing, the compared player's figure rides along in gold. */}
             <div className={`flex items-baseline justify-center gap-2 ${vaPlus != null ? "mb-0.5" : "mb-2"}`}>
-              <span className="text-[10px] uppercase tracking-widest text-stone-500">Total Value Added</span>
+              <span className="text-[10px] uppercase tracking-widest text-stone-500">Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
               {compare && atSeasonLevel && (
                 <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(cmpRow.va ?? 0).toFixed(1)}</span>
@@ -417,7 +417,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 <span className={`text-[9px] tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}>D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
               </div>
             )}
-            <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
+            {/* A single game's card (the box scores') has no use for the
+                game / minutes tiles: its row already shows the minutes. */}
+            {!singleGame && <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
                 <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{selectedDate ? "Date" : effectiveGameNumber || singleGame ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{selectedDate || effectiveGameNumber || (singleGame ? "–" : p.gp || 1)}</div>
@@ -441,7 +443,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                   )}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
           {rate && gameSeries && gameSeries.length > 0 && (
             <div className="sm:order-1 sm:flex-1">
