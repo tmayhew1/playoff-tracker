@@ -143,7 +143,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
       >
         <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
           <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {month.label}
+          {month.label} {month.key.slice(0, 4)}
         </h3>
         <span className="text-[10px] uppercase tracking-wider text-stone-400">{month.games.length} games</span>
       </button>

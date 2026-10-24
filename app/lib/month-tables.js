@@ -94,7 +94,7 @@ export function peekRows(season, month, lga) {
 // The season's VA per game by month for every player — the open row's
 // VA-by-month chart — built from the months' own tables rather than scoring
 // the season a second time: { months: [{ key, label }], byName: Map(name ->
-// [{ vapg, gp } | null per month]) }.
+// [{ vapg, gp } | null per month]) }, each month with its short label and year.
 const monthlyCache = lru(12);
 const monthlyKey = (season, allMonths, lga) => `${season}|${allMonths.map((m) => m.key).join(",")}|${lgaKey(lga)}`;
 
@@ -108,7 +108,7 @@ function buildMonthly(season, allMonths, lga) {
       byName.get(r.name)[i] = { vapg: r.vapg, gp: r.gp };
     }
   });
-  return { months: allMonths.map((m) => ({ key: m.key, label: m.label.slice(0, 3) })), byName };
+  return { months: allMonths.map((m) => ({ key: m.key, label: m.label.slice(0, 3), year: m.key.slice(0, 4) })), byName };
 }
 
 export function peekMonthly(season, allMonths, lga) {
