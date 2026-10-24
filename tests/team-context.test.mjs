@@ -5,7 +5,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ordinal, seasonRanks, standingsThrough } from "../app/lib/team-context.js";
+import { ordinal, percentile, seasonRanks, standingsThrough } from "../app/lib/team-context.js";
 
 const game = (date, home, hs, away, as, id = `${date}${home}`) => ({ gameId: id, date, home: { tri: home, score: hs }, away: { tri: away, score: as } });
 
@@ -41,4 +41,10 @@ test("ranks: DEF PPP ranks the lowest first, the rest the highest", () => {
 
 test("ordinal", () => {
   assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101].map(ordinal), ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd", "101st"]);
+});
+
+test("percentile: ties count half, nothing to place in is null", () => {
+  assert.equal(percentile([1, 2, 3, 4], 3), 0.625);
+  assert.equal(percentile([1, 2, 3, 4], 0), 0);
+  assert.equal(percentile([], 3), null);
 });

@@ -6,7 +6,7 @@ import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
-import { teamSums, tapeMeasures } from "../lib/team-context";
+import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -75,11 +75,13 @@ function SectionHeader({ title, count, live, sub }) {
 // better" for it. The measures are lib/team-context.js tapeMeasures: 2P / 3P
 // / FT Value Added (with the selected team's makes, attempts and percentage
 // beside its figure, and the opponent's makes, attempts and percentage in
-// place of its VA), DEF PPP, wTRB% and Poss Ratio. As VA can be negative, a
-// shooting bar splits on the gap between the two over their combined size,
-// which for two positive figures is simply the selected team's part of the
-// total; DEF PPP's bar is turned round, lower being better.
-function teamTape(box, tri, lga) {
+// place of its VA), DEF PPP, wTRB% and Poss Ratio. A shooting bar splits on
+// the two teams' percentiles among the season's team-games (`dist`, from the
+// card's context): VA sits either side of zero, and two small figures of
+// opposite sign would otherwise fill the bar. Without the season to hand it
+// splits on the gap between the two, against 10 points of VA. DEF PPP's bar
+// is turned round, lower being better.
+function teamTape(box, tri, lga, dist) {
   const ownT = [box?.away, box?.home].find((t) => t?.tri === tri);
   const oppT = [box?.away, box?.home].find((t) => t && t.tri !== tri);
   if (!ownT?.players || !oppT?.players) return null;
@@ -90,8 +92,13 @@ function teamTape(box, tri, lga) {
   const fmtPct = (v) => `${v.toFixed(1)}%`;
   const fmtVA = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
   const line = (made, att) => `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`;
+  const shootingShare = (key) => {
+    const [po, pd] = [percentile(dist?.[key], o[key]), percentile(dist?.[key], d[key])];
+    if (po == null || pd == null) return Math.min(Math.max(0.5 + (o[key] - d[key]) / 20, 0), 1);
+    return po + pd > 0 ? po / (po + pd) : 0.5;
+  };
   const shooting = (key, [made, att], [oppMade, oppAtt]) => ({
-    key, label: `${key} VA`, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: split(o[key], d[key]),
+    key, label: `${key} VA`, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: shootingShare(key),
   });
   return {
     opp: oppT.tri,
@@ -148,6 +155,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
     return side ? teamGameNumber(side, g) : null;
   }, [g]);
   const leader = gameLeader(g);
+  const ctx = team ? context?.(team) ?? null : null;
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
@@ -164,7 +172,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga) : null} context={team ? context?.(team) : null} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga, ctx?.dist) : null} context={ctx} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}

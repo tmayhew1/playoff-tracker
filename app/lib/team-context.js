@@ -102,6 +102,31 @@ export function standingsThrough(games, date, projected = null) {
   return out;
 }
 
+// Every team-game's measures over `boxes` (a season's so far), each measure's
+// figures sorted: { "2P": [...], … } — the league's spread of single games
+// that a game's own figure is placed in (percentile).
+export function gameDistributions(boxes, lga) {
+  const out = { "2P": [], "3P": [], FT: [], def: [], reb: [], poss: [] };
+  for (const box of boxes) {
+    for (const [side, other] of [[box.away, box.home], [box.home, box.away]]) {
+      if (!side?.players?.length || !other?.players?.length) continue;
+      const m = tapeMeasures(teamSums(side.players), teamSums(other.players), lga);
+      for (const k of Object.keys(out)) if (m[k] != null) out[k].push(m[k]);
+    }
+  }
+  for (const k of Object.keys(out)) out[k].sort((a, b) => a - b);
+  return out;
+}
+
+// Where `v` sits in `sorted`, 0 to 1 (ties counting half), or null without a
+// spread to place it in.
+export function percentile(sorted, v) {
+  if (!sorted?.length || v == null) return null;
+  let below = 0, equal = 0;
+  for (const x of sorted) { if (x < v) below += 1; else if (x === v) equal += 1; }
+  return (below + equal / 2) / sorted.length;
+}
+
 // 1 -> "1st", 22 -> "22nd".
 export function ordinal(n) {
   const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");

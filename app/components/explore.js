@@ -17,7 +17,7 @@ import { GameCard } from "./live-view";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
 import { monthBoxes, warmSeason } from "../lib/month-tables";
-import { seasonRanks, standingsThrough } from "../lib/team-context";
+import { gameDistributions, seasonRanks, standingsThrough } from "../lib/team-context";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -130,10 +130,11 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 
 
 // A tapped team's season through a game, for its card: (tri, date) -> {
-// record, place, conf, ranks } — its conference standing (lib/team-context.js
+// record, place, conf, ranks, dist } — its conference standing (lib/team-context.js
 // standingsThrough, teams level broken on the Look Ahead's projected wins in
-// the season it projects) and its league rank in each of the card's measures
-// over the games through that day — or null while the season's box scores
+// the season it projects), its league rank in each of the card's measures
+// over the games through that day and the league's spread of single games in
+// them (lib/team-context.js gameDistributions) — or null while the season's box scores
 // up to this month are still loading. Worked out once per team and day.
 function useSeasonContext(open, month, allMonths, lga, season) {
   const [boxes, setBoxes] = useState(null);
@@ -156,11 +157,12 @@ function useSeasonContext(open, month, allMonths, lga, season) {
       cache.set(date, {
         standings: standingsThrough(games, date, projected),
         ranks: seasonRanks(boxes.filter((b) => b.date <= date), lga),
+        dist: gameDistributions(boxes.filter((b) => b.date <= date), lga),
       });
     }
-    const { standings, ranks } = cache.get(date);
+    const { standings, ranks, dist } = cache.get(date);
     const st = standings[tri];
-    return { record: st ? `${st.w}-${st.l}` : null, place: st?.place, conf: st?.conf, ranks: ranks[tri] || null };
+    return { record: st ? `${st.w}-${st.l}` : null, place: st?.place, conf: st?.conf, ranks: ranks[tri] || null, dist };
   }, [boxes, projected, lga, games, cache]);
 }
 
