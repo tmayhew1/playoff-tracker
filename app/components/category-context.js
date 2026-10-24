@@ -119,7 +119,9 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // Rating) collapses horizontally. Tapping a grey dot re-points the whole card
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null }) {
+// `game`, when given, is one game's value per segment (null where a box
+// score can't say), drawn as a ring.
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, game = null }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -146,11 +148,15 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
         ? { cx: clamp(p.cross, 100), cy: clamp(height - p.along, height) }
         : { cx: clamp(p.along, 100), cy: clamp(p.cross, height) };
       const dots = positions.map((p) => ({ ...place(p), row: p.row, v: p.all, self: p.key === "self" }));
+      // The game sits on the centre line at its value.
+      const gameAt = game?.[selIdx] != null ? (vertical
+        ? { cx: 50, cy: clamp(height - along(game[selIdx]), height) }
+        : { cx: clamp(along(game[selIdx]), 100), cy: height / 2 }) : null;
       // A second line the caller can put anywhere on the value axis, with a
       // label hung off the plot's edge beside it (see refLine).
       const refAt = refLine ? clamp(along(refLine.v), L) : null;
       return {
-        dots, r,
+        dots, r, game: gameAt,
         self: dots.find((dt) => dt.self),
         guides: vertical
           ? [{ x1: 0, y1: height - zero, x2: 100, y2: height - zero }]
@@ -170,6 +176,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
     return {
       dots: [...dots, self],
       self,
+      game: game ? place(game) : null,
       r: DOT_R,
       // The reference is a point on ONE stat's axis, so it only means something
       // once the plot has collapsed onto that stat.
@@ -179,7 +186,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
         { x1: 0, y1: clamp(height - pos(yi, 0) * height, height), x2: 100, y2: clamp(height - pos(yi, 0) * height, height) },
       ],
     };
-  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine]);
+  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine, game]);
 
   // Turn a tap into the players under it. The SVG scales uniformly from a
   // 100-wide viewBox, so client coordinates map straight back through its box.
@@ -263,6 +270,10 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           )}
           <circle cx={view.self.cx} cy={view.self.cy} r="2.4" fill="#fff" />
           <circle cx={view.self.cx} cy={view.self.cy} r="1.5" fill="#1c1917" />
+          {/* This game, as a ring (held to the plot's edges). */}
+          {view.game && (
+            <circle cx={view.game.cx} cy={view.game.cy} r="1.4" fill="#fff" stroke="#1c1917" strokeWidth="0.6" />
+          )}
         </svg>
         {menu && (
           // Disambiguation menu: one tap landed on several players, so name
@@ -329,8 +340,10 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
 // `seasonOnly` keeps the card to the season itself — the rankings and the
 // split row — without the all-time board or the by-season trend (a single
-// game's card, where the season so far is the whole question).
-export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs", seasonOnly = false }) {
+// game's card, where the season so far is the whole question). `gameRow`, a
+// single game's line, rides on the split row as a ring beside the season's
+// own bars and dot, so the game reads against his average.
+export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs", seasonOnly = false, gameRow = null }) {
   // The pools below are scored season by season, so they need the same
   // baseline getter the card above them was handed (lib/va-mode.js) — a rank
   // computed against the standard baseline under a USG-ADJ card would be a
@@ -735,9 +748,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       // show — never shot from here, no rating — so it reads "–" rather than a
       // misleading 0%).
       const head = seg.head(selfRow, lga, seasonKey);
-      return { ...seg, selfV, min, max, med, head, vals };
+      // The game's own value at this component: one game, so its total is
+      // its per-game value. None where a box score can't say — a 2-point
+      // distance (no shot locations in a box), a defensive rating.
+      const gameV = !gameRow || seg.key === "D Rating" || (seg.group === "2p" && !hasZoneData(gameRow))
+        ? null : seg.val(gameRow, lga, seasonKey);
+      return { ...seg, selfV, min, max, med, head, vals, gameV };
     });
-  }, [SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+  }, [SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga, gameRow]);
 
   // One value-added scale shared by every bar in the split row, centred on the
   // league baseline, so bar heights compare across columns (FT's +0.44 really
@@ -846,6 +864,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const xi = axisIdx(axisKeys?.[0], 0);
   const yi = axisIdx(axisKeys?.[1], 1);
   const selIdx = scatter && selSeg ? segData.findIndex((s) => s.key === selSeg.key) : -1;
+  // The game's point on the scatter — only when it has both plotted values.
+  const scatterGame = useMemo(() => (
+    scatter && segData[xi]?.gameV != null && segData[yi]?.gameV != null ? segData.map((sg) => sg.gameV) : null
+  ), [scatter, segData, xi, yi]);
 
   // Headline total(s) for the split row, shown inline with its section heading.
   // Everywhere but the six-bar Scoring card the bars are the group's own
@@ -1121,6 +1143,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               sgn={sgn}
               name={self.name}
               refLine={teamRefLine}
+              game={scatterGame}
             />
           ) : (
           <>
@@ -1192,6 +1215,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       className={`absolute left-1/2 -translate-x-1/2 w-2.5 ${barFill} ${selfShown >= 0 ? "rounded-t-sm" : "rounded-b-sm"}`}
                       style={selfShown >= 0 ? { bottom: "50%", height: `${barH}%` } : { top: "50%", height: `${barH}%` }}
                     />
+                    {/* This game, on the same scale (held to the strip's
+                        ends when a single game runs past them). */}
+                    {seg.gameV != null && (
+                      <div
+                        className="absolute left-1/2 -translate-x-1/2 translate-y-1/2 w-2 h-2 rounded-full bg-white border-[1.5px] border-stone-900"
+                        style={{ bottom: `${Math.max(0, Math.min(100, 50 + (seg.gameV / lim) * 50))}%` }}
+                        title={`This game: ${sgn(seg.gameV)}`}
+                      />
+                    )}
                   </div>
                   <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
                   <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
@@ -1206,6 +1238,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             })}
           </div>
           </>
+          )}
+          {gameRow && segData.some((sg) => sg.gameV != null) && (
+            <div className="mt-1.5 flex items-center justify-center gap-3 text-[8px] uppercase tracking-wider text-stone-500">
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-stone-900" />Season so far</span>
+              <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-white border-[1.5px] border-stone-900" />This game</span>
+            </div>
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
