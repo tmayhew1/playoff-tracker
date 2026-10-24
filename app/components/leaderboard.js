@@ -10,7 +10,12 @@ import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamCol
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
+import { addLiveLines } from "../lib/live-lines";
+import { LiveStrip, useLiveLines } from "./live-strip";
 
+
+// Whole games as they are; a game in progress makes G fractional (1.6).
+const fmtG = (g) => (Number.isInteger(g) ? String(g) : g.toFixed(1));
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null }) {
   // `lga` is the REGULAR-SEASON baseline for this season; the playoff one is
@@ -175,15 +180,21 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     return () => { cancelled = true; };
   }, [season]);
 
+  // The season in progress is baked through last night; tonight's games, and
+  // any the bake hasn't caught up to, come from ESPN as they're played and
+  // ride on top (lib/live-lines.js), a game in progress counting toward G as
+  // the share of it played.
+  const live = useLiveLines(season, rsSeason === season && rsData?.partial ? rsData.through : null);
+
   // Regular-season rows in leaderboard shape: gp/reb aliases plus VA + EFF
   // computed against the season's league baselines (rs bakes don't carry VA).
   const rsPlayers = useMemo(() => {
     if (!rsData?.players?.length) return null;
-    return rsData.players.map((p) => {
+    return addLiveLines(rsData.players, live?.lines).map((p) => {
       const parts = valueAddParts(p, lga);
       return { ...p, gp: p.g, reb: (p.drb || 0) + (p.orb || 0), va: parts.va, eff: parts.efficiency, games: [] };
     });
-  }, [rsData, lga]);
+  }, [rsData, lga, live]);
 
   // Playoff rows arrive from /api/leaderboard with `va` already baked against
   // the standard baseline. Under USG-ADJ they are re-priced in place — the
@@ -558,7 +569,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-4 sm:w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-6 sm:w-7 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -621,6 +632,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     <>
     <div ref={setCardEl} className="mb-4 border border-stone-300 bg-white">
       <div ref={headerFlowRef}>{headerBlock}</div>
+      {scope === "regular" && <LiveStrip live={live} />}
       {(() => {
         // Defensive strip (VA view only): a thin underline segment spanning
         // the gap between a player's VA and his VA+, plotted on the SAME
@@ -676,7 +688,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         for (let j = 1; j < p.games.length; j++) {
           if (p.games[j].seriesIdx !== p.games[j - 1].seriesIdx) partitions.push(j);
         }
-        const vaPerG = p.gp > 0 ? rowVa / p.gp : 0;
+        const vaPerG = p.gp > 0 ? rowVa / Math.max(1, p.gp) : 0;
         const { first, last } = splitName(p.name);
         // One flat size for every surname — the column has room for it at
         // 10px. The two hyphenated names past fifteen characters (Gilgeous-
@@ -789,9 +801,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setGArmed(false);
                   if (next != null) setPendingScrollName(p.name);
                 }}
-                className={`w-4 sm:w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
-                aria-label={gArmed ? `Filter to players with at least ${p.gp} games` : `${p.gp} games (tap the G header to enable filtering)`}
-              >{p.gp}</button>
+                className={`w-6 sm:w-7 text-right tabular-nums cursor-pointer ${gArmed || minGames === p.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === p.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
+                aria-label={gArmed ? `Filter to players with at least ${fmtG(p.gp)} games` : `${fmtG(p.gp)} games${p.live ? ", one in progress" : ""} (tap the G header to enable filtering)`}
+              >{p.live && <span className="inline-block w-1 h-1 rounded-full bg-red-600 animate-pulse mr-0.5 align-middle" aria-hidden />}{fmtG(p.gp)}</button>
               <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(p.pts / p.gp).toFixed(1)}</span>
               <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${p.eff / p.gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.eff / p.gp).toFixed(1)}</span>
               <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{(p.reb / p.gp).toFixed(1)}</span>
