@@ -29,6 +29,12 @@ const LookAhead = dynamic(
   () => import("./look-ahead").then((m) => m.LookAhead),
   { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
 );
+// The projection's headline calls, shown on the season it projects while that
+// season is under way. Its own chunk too; nothing shows until it's ready.
+const LookAheadHeadlines = dynamic(
+  () => import("./look-ahead").then((m) => m.LookAheadHeadlines),
+  { loading: () => null },
+);
 // Kept in step with LOOK_AHEAD_SEASON in ./look-ahead (not imported from it,
 // so the picker doesn't pull that chunk into the page bundle). The picker
 // holds the projection under its own value, LOOK_AHEAD, so the season itself
@@ -278,6 +284,10 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
       ? [...base, linked.season].sort((a, b) => b.localeCompare(a)) : base;
   });
   const [season, setSeason] = useState(linked?.season || FALLBACK[0]);
+  // A headline card's spot in the Look Ahead, waiting for it to open there.
+  const [laTarget, setLaTarget] = useState(null);
+  const openLookAhead = useCallback((target) => { setLaTarget(target); setSeason(LOOK_AHEAD); }, []);
+  const clearLaTarget = useCallback(() => setLaTarget(null), []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -508,10 +518,11 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
                 <span className="text-[10px] text-amber-700">Projections · MVP odds · All-NBA →</span>
               </button>
             )}
+            {inProgress && season === LOOK_AHEAD_SEASON && <LookAheadHeadlines onOpen={openLookAhead} />}
           </div>
 
           {lookAhead ? (
-            <LookAhead />
+            <LookAhead target={laTarget} onTargetHandled={clearLaTarget} />
           ) : scope === "regular" || (scope === "combined" && noPlayoffs) ? (
             // The season under way lists its games first, then the board.
             inProgress ? (
