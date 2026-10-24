@@ -227,7 +227,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         <SectionHead
           title="Projected Standings"
           note={data.wins
-            ? `${ins ? `Through ${throughLabel(ins)}: each team’s record so far plus the rest of its schedule, played at the preseason read mixed with its point margin so far · ` : ""}Wins from each roster’s VA+ (VA after the team context, plus projected defense), best player to worst, and last season’s record · typical miss ±${Math.round(data.wins.rmseWins)} wins · tap a team for its projected roster${data.injuries && data.injuries !== "none" ? " · known injuries taken out" : ""}${data.rosters === "live" ? "" : ` · live rosters unavailable, so players are on their last ${data.base} team`}`
+            ? `${ins ? `Record through ${throughLabel(ins)} plus the rest of the schedule, projected` : "Projected"} from each roster’s VA+${data.injuries && data.injuries !== "none" ? " (injuries out)" : ""}${ins ? " and point margin so far" : " and last season’s record"}, typically within ±${Math.round(data.wins.rmseWins)} wins. Tap a team for its roster${data.rosters === "live" ? "" : ` (live rosters unavailable, so players are on their last ${data.base} team)`}.`
             : "Wins model not fit yet"}
         />
         {["W", "E"].map((conf) => {
