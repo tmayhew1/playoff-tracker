@@ -275,7 +275,9 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
   const outlined = [home.tri, away.tri].filter((t) => t !== ahead);
 
   const sortedPlayers = useMemo(() => getSortedPlayers(box, lga), [box, lga]);
-  const top5 = sortedPlayers.slice(0, 5);
+  // A final's top five only counts real minutes (short stints can post
+  // outsized VA); a live game keeps everyone, since early on nobody has 12.
+  const top5 = (isFinal ? sortedPlayers.filter((p) => p.mp > 12) : sortedPlayers).slice(0, 5);
   const teamPlayers = useMemo(() => (teamFilter ? sortedPlayers.filter((p) => p.team === teamFilter) : null), [sortedPlayers, teamFilter]);
 
   const rootRef = useRef(null);
@@ -296,7 +298,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
   }, [expandedPlayer]);
   // A live game always leads with its top five; a final only where the
   // caller asks (`finalTop5`: the Live tab, Explore's regular-season days).
-  const showTop5 = (isLive || (isFinal && finalTop5)) && sortedPlayers.length > 0 && !expanded && !teamFilter;
+  const showTop5 = (isLive || (isFinal && finalTop5)) && top5.length > 0 && !expanded && !teamFilter;
   const showFull = expanded && !teamFilter;
 
   return (
