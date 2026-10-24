@@ -6,6 +6,7 @@ import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { monthBoxes, monthRows, peekBoxes, peekMonthly, seasonMonthly } from "../lib/month-tables";
 import { normalizeName, teamColor, withAlpha } from "../lib/format";
+import { catVATotal } from "../lib/va";
 
 // A month's league-wide leaders: every player who played in the month, best
 // Value Added per game first — the regular season's Series Averages. Box
@@ -16,6 +17,8 @@ import { normalizeName, teamColor, withAlpha } from "../lib/format";
 // reloading it. `allMonths` is the whole season, for an open row's
 // VA-by-month chart, whose other months can be tapped to read the player's
 // breakdown for that month instead.
+const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
+
 export function MonthAverages({ month, allMonths, lga, season }) {
   const year = month.key.slice(0, 4);
   const [open, setOpen] = useState(false);
@@ -32,6 +35,10 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   // The month an open row's breakdown reads, when another month's bar was
   // tapped; null reads this month.
   const [viewKey, setViewKey] = useState(null);
+  // The open breakdown's Basic / By Category, tapped row and Per 36 / Per G,
+  // held here so they carry over when another month's bar swaps the card's
+  // month in (the card remounts per month). A new row starts fresh.
+  const [display, setDisplay] = useState(DEFAULT_DISPLAY);
   const [rsLookup, setRsLookup] = useState(null);
   // The season's VA per game by month, for an open row's chart: usually
   // built already (lib/month-tables.js warmSeason); otherwise loaded the first
@@ -66,6 +73,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   const openRow = (name) => {
     setExpanded(name);
     setViewKey(null);
+    setDisplay(DEFAULT_DISPLAY);
   };
 
   // Another month of the open player's season, once the season is loaded:
@@ -78,12 +86,24 @@ export function MonthAverages({ month, allMonths, lga, season }) {
     return p ? { month: m, p } : null;
   };
 
-  const monthChart = (name, other) => (color) => {
+  // `category` is the breakdown row tapped below the chart (a group such as
+  // "Scoring" or one of its categories): the bars then read that category's
+  // VA per game in each month instead of the total, scored off the months'
+  // own tables (already loaded, since the season chart is built from them).
+  const monthChart = (name, other) => (color, category) => {
     if (!monthly) {
       const note = seasonProgress ? `Loading the season… ${seasonProgress.done} of ${seasonProgress.total} months` : "Loading the season…";
       return <MonthlyVAChart months={[]} note={note} />;
     }
     const series = monthly.byName.get(name) || monthly.months.map(() => null);
+    const catVapg = (i) => {
+      const m = allMonths[i];
+      const mBoxes = m && peekBoxes(season, m);
+      const r = mBoxes && monthRows(season, m, mBoxes, lga).find((x) => x.name === name);
+      if (!r) return null;
+      const v = catVATotal(r, lga, category) / (r.gp || 1);
+      return Number.isFinite(v) ? v : null;
+    };
     const currentKey = other ? other.month.key : month.key;
     return (
       <>
@@ -100,11 +120,12 @@ export function MonthAverages({ month, allMonths, lga, season }) {
         )}
         <MonthlyVAChart
           color={color}
+          label={category ? `${category} VA / Game by Month` : undefined}
           months={monthly.months.map((m, i) => ({
             key: m.key,
             label: m.label,
             year: m.year,
-            vapg: series[i]?.vapg ?? null,
+            vapg: series[i] ? (category ? catVapg(i) : series[i].vapg) : null,
             gp: series[i]?.gp ?? 0,
             current: m.key === currentKey,
             home: m.key === month.key,
@@ -284,6 +305,8 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                         gameContext={shown.gameContext}
                         breakdownTitle={`${(other ? other.month : month).label} ${(other ? other.month : month).key.slice(0, 4)} Breakdown`}
                         leadChart={monthChart(p.name, other)}
+                        display={display}
+                        onDisplayChange={setDisplay}
                         useTeamColor
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => openRow(visible[i - 1].name) : undefined}
