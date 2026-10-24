@@ -74,7 +74,8 @@ function SectionHeader({ title, count, live, sub }) {
 // with `share` the selected team's part of the bar, always read as "more is
 // better" for it. The measures are lib/team-context.js tapeMeasures: 2P / 3P
 // / FT Value Added (with the selected team's makes, attempts and percentage
-// beside its figure), DEF PPP, wTRB% and Poss Ratio. As VA can be negative, a
+// beside its figure, and the opponent's makes, attempts and percentage in
+// place of its VA), DEF PPP, wTRB% and Poss Ratio. As VA can be negative, a
 // shooting bar splits on the gap between the two over their combined size,
 // which for two positive figures is simply the selected team's part of the
 // total; DEF PPP's bar is turned round, lower being better.
@@ -88,16 +89,16 @@ function teamTape(box, tri, lga) {
   const fmt = (v, f) => (v == null ? "–" : f(v));
   const fmtPct = (v) => `${v.toFixed(1)}%`;
   const fmtVA = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
-  const shooting = (key, made, att) => ({
-    key, label: `${key} VA`, own: fmtVA(o[key]), opp: fmtVA(d[key]), share: split(o[key], d[key]),
-    note: `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`,
+  const line = (made, att) => `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`;
+  const shooting = (key, [made, att], [oppMade, oppAtt]) => ({
+    key, label: `${key} VA`, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: split(o[key], d[key]),
   });
   return {
     opp: oppT.tri,
     rows: [
-      shooting("2P", own.fgm - own.tpm, own.fga - own.tpa),
-      shooting("3P", own.tpm, own.tpa),
-      shooting("FT", own.ftm, own.fta),
+      shooting("2P", [own.fgm - own.tpm, own.fga - own.tpa], [opp.fgm - opp.tpm, opp.fga - opp.tpa]),
+      shooting("3P", [own.tpm, own.tpa], [opp.tpm, opp.tpa]),
+      shooting("FT", [own.ftm, own.fta], [opp.ftm, opp.fta]),
       { key: "def", label: "DEF PPP", own: fmt(o.def, (v) => v.toFixed(2)), opp: fmt(d.def, (v) => v.toFixed(2)), share: split(d.def || 0, o.def || 0) },
       { key: "reb", label: "wTRB%", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
       { key: "poss", label: "Poss Ratio", own: fmt(o.poss, (v) => v.toFixed(2)), opp: fmt(d.poss, (v) => v.toFixed(2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
