@@ -39,9 +39,9 @@ function finishedSeasonGames() {
     return [];
   }
 }
-// Every route that imports it: the two APIs, and the link preview (the page
+// Every route that imports it: the three APIs, and the link preview (the page
 // and its image).
-const inSeasonRoutes = ["/api/regular-season", "/api/projections", "/api/og", "/"];
+const inSeasonRoutes = ["/api/regular-season", "/api/players", "/api/projections", "/api/og", "/"];
 
 const nextConfig = {
   reactStrictMode: true,
