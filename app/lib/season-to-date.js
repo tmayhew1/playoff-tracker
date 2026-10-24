@@ -89,11 +89,16 @@ export function teamRecords(games, through = "9999-12-31") {
 // for the conversions). A week in, that is a median over a few games each —
 // the median player-minute of a stat most players haven't recorded yet is
 // zero, and 2026-27's first entry read blocks as worth nothing. So until the
-// season is baked whole, its baseline is the measured one shrunk toward last
-// season's by LGA_PRIOR_MP phantom minutes: about a tenth of a season, so the
-// season's own league is most of it by mid-November and nearly all of it by
-// the new year.
-export const LGA_PRIOR_MP = 60000;
+// season is baked whole, its baseline is the measured one blended with last
+// season's, its own share growing in step with the league's minutes until it
+// is the whole baseline LGA_FULL_GAMES games per team in.
+export const LGA_FULL_GAMES = 15;
+
+// This season's share of the blend for `mp` league minutes so far: every team
+// game is five on the floor for 48 (overtime only gets it there sooner).
+export function seasonShare(mp, fullGames = LGA_FULL_GAMES) {
+  return Math.min(1, Math.max(0, mp) / (fullGames * 30 * 240));
+}
 
 // Minutes-weighted median of a per-minute rate. KEEP IN SYNC with
 // scripts/bake-playoff-averages.mjs and scrape_common.R.
@@ -126,16 +131,19 @@ export function lgaFromPlayers(rows) {
   return { lga: base, mp: t.mp };
 }
 
-// The season-so-far baseline, shrunk toward `prior` (last season's entry).
-// Keys the prior carries that aren't measured here (zoneFG) ride along from it.
-export function inSeasonLga(rows, prior, priorMp = LGA_PRIOR_MP) {
+// The season-so-far baseline, blended with `prior` (last season's entry).
+// `zoneFG` is the season's own shot-distance FG% so far (basketball-reference's
+// shooting page, fetch_shooting_splits.R), blended the same way; without one,
+// the prior's rides along.
+export function inSeasonLga(rows, prior, zoneFG = null, fullGames = LGA_FULL_GAMES) {
   const { lga, mp } = lgaFromPlayers(rows);
-  if (!prior) return { ...lga };
-  const w = mp / (mp + priorMp);
-  const out = { ...prior };
-  for (const [k, v] of Object.entries(lga)) {
-    if (typeof prior[k] === "number") out[k] = w * v + (1 - w) * prior[k];
-  }
+  if (!prior) return zoneFG ? { ...lga, zoneFG } : { ...lga };
+  const w = seasonShare(mp, fullGames);
+  const mix = (own, was) => Object.fromEntries(Object.entries(was).map(([k, v]) => (
+    [k, typeof v === "number" && typeof own?.[k] === "number" ? w * own[k] + (1 - w) * v : v]
+  )));
+  const out = mix(lga, prior);
+  if (zoneFG) out.zoneFG = prior.zoneFG ? mix(zoneFG, prior.zoneFG) : { ...zoneFG };
   return out;
 }
 
@@ -145,9 +153,9 @@ export function inSeasonLga(rows, prior, priorMp = LGA_PRIOR_MP) {
 // doesn't have until it's baked whole — so without this the switch reads that
 // season as having no model and does nothing. The same minutes-weighted line
 // of PTS/MP on USG/MP and the same median-minute usage ū, each blended with
-// `prior` (last season's entry) by LGA_PRIOR_MP phantom minutes. `ftaWeight`
+// `prior` (last season's entry) as the baseline is (seasonShare). `ftaWeight`
 // KEEP IN SYNC with FTA_W there.
-export function inSeasonUsageModel(rows, prior, ftaWeight, priorMp = LGA_PRIOR_MP) {
+export function inSeasonUsageModel(rows, prior, ftaWeight, fullGames = LGA_FULL_GAMES) {
   const usg = (p) => (p.fga || 0) + ftaWeight * (p.fta || 0);
   let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0, n = 0;
   for (const p of rows) {
@@ -164,7 +172,7 @@ export function inSeasonUsageModel(rows, prior, ftaWeight, priorMp = LGA_PRIOR_M
   const own = { b: vxy / vxx };
   own.a = my - own.b * mx;
   own.muUsg = weightedMedianRate(rows.map((p) => ({ mp: p.mp, usg: usg(p) })), "usg");
-  const w = prior ? sw / (sw + priorMp) : 1;
+  const w = prior ? seasonShare(sw, fullGames) : 1;
   const mix = (k) => (prior && typeof prior[k] === "number" ? w * own[k] + (1 - w) * prior[k] : own[k]);
   const r = (v, d) => Number(v.toFixed(d));
   const a = mix("a"), b = mix("b"), muUsg = mix("muUsg");

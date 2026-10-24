@@ -68,6 +68,23 @@ test("an early-season baseline leans on last season's", () => {
   assert.ok(lgaForSeason("2026-27").laBLKperM > 0.005);
 });
 
+test("the season's own baseline, shot distances too, is all of it 15 games per team in", () => {
+  const prior = lgaForSeason("2025-26");
+  const zone = { z03: 0.7, z310: 0.45, z1016: 0.42, z16xp: 0.35 };
+  const row = (mp) => ({ mp, pts: 0.5 * mp, ast: 0.1 * mp, stl: 0.02 * mp, blk: 0.02 * mp, tov: 0.05 * mp, drb: 0.15 * mp, orb: 0.05 * mp, fgm: 0.18 * mp, fga: 0.4 * mp, tpm: 0.05 * mp, tpa: 0.15 * mp, ftm: 0.1 * mp, fta: 0.13 * mp });
+  // Two games per team: two-fifteenths of the way from last season's.
+  const early = inSeasonLga([row(2 * 30 * 240)], prior, zone);
+  const share = (k, own) => (early.zoneFG[k] - prior.zoneFG[k]) / (own - prior.zoneFG[k]);
+  assert.ok(Math.abs(share("z16xp", zone.z16xp) - 2 / 15) < 1e-9);
+  assert.ok(Math.abs((early.la3P - prior.la3P) / (0.05 / 0.15 - prior.la3P) - 2 / 15) < 1e-9);
+  // Fifteen games and on: this season's alone.
+  const full = inSeasonLga([row(16 * 30 * 240)], prior, zone);
+  assert.deepEqual(full.zoneFG, zone);
+  assert.ok(Math.abs(full.la3P - 0.05 / 0.15) < 1e-12);
+  // No shooting file yet: last season's shot distances ride along.
+  assert.deepEqual(inSeasonLga([row(2 * 30 * 240)], prior).zoneFG, prior.zoneFG);
+});
+
 const PRIOR = { g: 70, mp: 2380, pts: 1750, ast: 420, stl: 80, blk: 40, tov: 200, drb: 400, orb: 70, fgm: 630, fga: 1330, tpm: 175, tpa: 490, ftm: 315, fta: 385 };
 
 test("with no games played the update is the preseason line", () => {
