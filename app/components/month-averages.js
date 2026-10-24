@@ -16,12 +16,14 @@ import { catVATotal } from "../lib/va";
 // priced against `lga`, so the USG-ADJ switch re-ranks the table without
 // reloading it. `allMonths` is the whole season, for an open row's
 // VA-by-month chart, whose other months can be tapped to read the player's
-// breakdown for that month instead.
+// breakdown for that month instead. The month's team filter (`team`,
+// `onTeam`) belongs to the month section, which filters its games by it too;
+// tapping a row's team sets it from here.
 const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 
-export function MonthAverages({ month, allMonths, lga, season }) {
+export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam }) {
   const year = month.key.slice(0, 4);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [boxes, setBoxes] = useState(() => peekBoxes(season, month));
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
@@ -30,8 +32,6 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   // A one-game spot-up can top a per-game table, so it opens qualified to
   // players with at least half the month's most games; the chip clears it.
   const [minGames, setMinGames] = useState(undefined);
-  // One team's players only: picked from the chip, or by tapping a row's team.
-  const [team, setTeam] = useState(null);
   // The month an open row's breakdown reads, when another month's bar was
   // tapped; null reads this month.
   const [viewKey, setViewKey] = useState(null);
@@ -162,7 +162,6 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   const rows = useMemo(() => (boxes ? monthRows(season, month, boxes, lga) : null), [boxes, lga, season, month]);
   const qualifier = useMemo(() => (rows?.length ? Math.ceil(Math.max(...rows.map((r) => r.gp)) / 2) : null), [rows]);
   const min = minGames === undefined ? qualifier : minGames;
-  const teams = useMemo(() => (rows ? [...new Set(rows.map((r) => r.team).filter(Boolean))].sort() : []), [rows]);
   const filtered = rows ? rows.filter((r) => (!min || r.gp >= min) && (!team || r.team === team)) : [];
   const visible = showAll ? filtered : filtered.slice(0, 10);
   const maxAbs = Math.max(...visible.map((r) => Math.abs(r.vapg)), 0.5);
@@ -191,26 +190,6 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                   {boxes.length < month.games.length ? `${boxes.length} of ${month.games.length} games loaded` : `${month.games.length} games`}
                 </span>
                 <span className="flex items-center gap-1.5">
-                {team ? (
-                  <button
-                    onClick={() => setTeam(null)}
-                    style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamColor(team), borderColor: withAlpha(teamColor(team), 0.4) }}
-                    className="normal-case tracking-normal text-[10px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
-                    aria-label="Clear the team filter"
-                  >
-                    {team} <span className="opacity-60">×</span>
-                  </button>
-                ) : teams.length > 1 && (
-                  <select
-                    value=""
-                    onChange={(e) => setTeam(e.target.value || null)}
-                    className="normal-case tracking-normal text-[10px] px-1 py-0.5 border bg-white text-stone-500 border-stone-300 rounded-none"
-                    aria-label="Filter by team"
-                  >
-                    <option value="">All teams</option>
-                    {teams.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                )}
                 {min ? (
                   <button
                     onClick={() => setMinGames(null)}
@@ -272,7 +251,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setTeam(team === p.team ? null : p.team);
+                            onTeam?.(team === p.team ? null : p.team);
                           }}
                           style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
                           className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border"
