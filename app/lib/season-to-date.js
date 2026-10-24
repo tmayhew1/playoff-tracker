@@ -127,3 +127,40 @@ export function inSeasonLga(rows, prior, priorMp = LGA_PRIOR_MP) {
   }
   return out;
 }
+
+// The season-so-far usage model for USG-ADJ (app/data/usage-model.json, spec
+// §4.6), shrunk toward last season's the same way: scripts/fit-usage-model.mjs
+// fits a season from its regular-season table, which the season in progress
+// doesn't have until it's baked whole — so without this the switch reads that
+// season as having no model and does nothing. The same minutes-weighted line
+// of PTS/MP on USG/MP and the same median-minute usage ū, each blended with
+// `prior` (last season's entry) by LGA_PRIOR_MP phantom minutes. `ftaWeight`
+// KEEP IN SYNC with FTA_W there.
+export function inSeasonUsageModel(rows, prior, ftaWeight, priorMp = LGA_PRIOR_MP) {
+  const usg = (p) => (p.fga || 0) + ftaWeight * (p.fta || 0);
+  let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0, n = 0;
+  for (const p of rows) {
+    const mp = p.mp || 0;
+    if (!(mp > 0)) continue;
+    const x = usg(p) / mp, y = (p.pts || 0) / mp;
+    sw += mp; sx += mp * x; sy += mp * y; sxx += mp * x * x; sxy += mp * x * y; syy += mp * y * y;
+    n++;
+  }
+  if (!(sw > 0) || n < 2) return prior ? { ...prior } : null;
+  const mx = sx / sw, my = sy / sw;
+  const vxx = sxx / sw - mx * mx, vxy = sxy / sw - mx * my, vyy = syy / sw - my * my;
+  if (!(vxx > 0)) return prior ? { ...prior } : null;
+  const own = { b: vxy / vxx };
+  own.a = my - own.b * mx;
+  own.muUsg = weightedMedianRate(rows.map((p) => ({ mp: p.mp, usg: usg(p) })), "usg");
+  const w = prior ? sw / (sw + priorMp) : 1;
+  const mix = (k) => (prior && typeof prior[k] === "number" ? w * own[k] + (1 - w) * prior[k] : own[k]);
+  const r = (v, d) => Number(v.toFixed(d));
+  const a = mix("a"), b = mix("b"), muUsg = mix("muUsg");
+  return {
+    a: r(a, 8), b: r(b, 8),
+    r2: r(vyy > 0 ? (vxy * vxy) / (vxx * vyy) : 0, 4), n, mp: Math.round(sw),
+    muUsg: r(muUsg, 6), atMuUsg: r(a + b * muUsg, 6),
+    inSeason: true,
+  };
+}

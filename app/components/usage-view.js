@@ -309,7 +309,9 @@ export function UsageView() {
   // numbers, and the two stay pointed at the same player.
   const [showPlot, setShowPlot] = useState(true);
   const [picked, setPicked] = useState(null);
-  const sel = season || seasons[0] || null;
+  // Opens on the newest finished fit: the season in progress has a model too
+  // (lib/season-to-date.js inSeasonUsageModel) but a few weeks of it.
+  const sel = season || seasons.find((s) => !USAGE_MODELS[s].inSeason) || seasons[0] || null;
 
   useEffect(() => {
     if (!sel) return;

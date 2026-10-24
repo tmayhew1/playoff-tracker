@@ -9,11 +9,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { gamesWithBoxes, inSeasonLga, playerTotals, teamRecords } from "../app/lib/season-to-date.js";
+import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals, teamRecords } from "../app/lib/season-to-date.js";
 import { addRows, missShrink, updatePlayer, updateTeam } from "../app/lib/in-season.js";
 import { simulateAwards } from "../app/lib/projection-model.js";
 import { playoffsBegun, seasonOf } from "../app/lib/regular-season-games.js";
-import { lgaForSeason, valueAdd } from "../app/scoring.js";
+import { USG_FTA_W, lgaForSeason, usageModelFor, valueAdd } from "../app/scoring.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (...p) => JSON.parse(fs.readFileSync(path.join(ROOT, ...p), "utf8"));
@@ -154,4 +154,18 @@ test("a hot start moves the projected season for real players", () => {
   const u = updatePlayer({ prior: p.row, healthyG: p.row.g, ytd, team: { played: 1 } }, MODEL);
   const va = valueAdd(u.row, lga);
   assert.ok(va > p.va, `${va} vs ${p.va}`);
+});
+
+test("the season in progress has a USG-ADJ model, leaning on last season's early", () => {
+  const prior = usageModelFor("2025-26");
+  const thin = inSeasonUsageModel([
+    { mp: 30, pts: 30, fga: 20, fta: 6 },
+    { mp: 20, pts: 4, fga: 4, fta: 0 },
+  ], prior, USG_FTA_W);
+  // Fifty minutes barely move it off last season's pivot.
+  assert.ok(Math.abs(thin.muUsg - prior.muUsg) / prior.muUsg < 0.01);
+  // And the baked 2026-27 entry turns the switch on for that season.
+  assert.ok(usageModelFor("2026-27")?.muUsg > 0);
+  const row = { mp: 36, pts: 30, fga: 24, fta: 6, fgm: 11, tpm: 2, tpa: 7, ftm: 6, ast: 4, stl: 1, blk: 0, tov: 3, drb: 5, orb: 1 };
+  assert.notEqual(valueAdd(row, lgaForSeason("2026-27", true)), valueAdd(row, lgaForSeason("2026-27")));
 });
