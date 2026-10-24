@@ -398,9 +398,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // divisor catRateLabel gives every other category's rate, so one column of
   // the mini leaderboard can't be reading a different normalization from the
   // row above it (and the fine print under it can name one of them). The FG%
-  // is scale-invariant, so it's unchanged either way.
+  // is scale-invariant, so it's unchanged either way. Under Per G, the /G
+  // toggle off reads the season's totals, as the bar headlines do.
   const maLabel = (made, att, r) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
+    if (rateMode !== "per36" && !perGame) return `${made}/${att} (${pct}%)`;
     const div = rateMode === "per36" ? ((r.mp || 1) / 36) : (r.gp || 1);
     return `${(made / div).toFixed(1)}/${(att / div).toFixed(1)} (${pct}%)`;
   };
