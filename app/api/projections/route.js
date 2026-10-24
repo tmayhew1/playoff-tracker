@@ -5,13 +5,17 @@ import { withTeamContext } from "../_lib/team-context";
 import { projectRookies, rookieClassNames } from "../_lib/rookies";
 import { mergeInjuries, parseEspnInjuries, withInjuries } from "../../lib/injuries";
 import { lgaForSeason, valueAdd } from "../../scoring";
-import { seasonToDate } from "../_lib/season-to-date";
+import { seasonToDate, withFinals } from "../_lib/season-to-date";
+import { unbakedGames } from "../_lib/unbaked-games";
 import { withSeasonToDate } from "../_lib/in-season";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
-// Rosters move all offseason; the projection itself only changes with a bake.
-export const revalidate = 21600;
+// Re-read every quarter hour, so a game that has gone final since the bake
+// moves the projection the same night (the ESPN box scores, below). Rosters
+// and injuries move more slowly and keep their own six-hour cache.
+export const revalidate = 900;
+const ESPN_REVALIDATE = 21600;
 
 // The 2026-27 Look Ahead: the baked projection (scripts/fit-projection-model.mjs)
 // with every player placed on their team as of NOW.
@@ -32,6 +36,11 @@ export const revalidate = 21600;
 // minutes an injured player gives up go to the teammates: ESPN's injury feed
 // read live, merged with the reported list in data/injuries.json. A player out
 // for the season leaves the board and is listed under `injuredOut`.
+//
+// The season so far is the baked box scores through last night plus every
+// game ESPN has as final since (_lib/unbaked-games.js) — whole games only: the
+// in-season weights were fit on finished games, and a game in progress would
+// swing the odds one way and back.
 
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 const ESPN_TO_NBA = { GS: "GSW", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
@@ -41,7 +50,7 @@ async function fetchJson(url, timeoutMs = 5000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: ctrl.signal, next: { revalidate } });
+    const res = await fetch(url, { signal: ctrl.signal, next: { revalidate: ESPN_REVALIDATE } });
     if (!res.ok) throw new Error(`${res.status}`);
     return await res.json();
   } finally {
@@ -139,6 +148,20 @@ async function readInjuries() {
   }
 }
 
+// The baked season so far, with tonight's finals (and any day the bake has
+// missed) on top; just the bake when ESPN can't be reached.
+async function seasonToDateWithFinals(season) {
+  const toDate = await seasonToDate(season);
+  if (!toDate || toDate.complete) return toDate;
+  try {
+    const { games, pending } = await unbakedGames(season, toDate.through, { finalOnly: true });
+    const out = await withFinals(toDate, games);
+    return out === toDate ? toDate : { ...out, partial: pending.includes(out.through) };
+  } catch {
+    return toDate;
+  }
+}
+
 export async function GET() {
   let baked;
   try {
@@ -147,7 +170,7 @@ export async function GET() {
     return Response.json({ error: "projection not baked — run npm run fit:projections" }, { status: 500 });
   }
   const [rosters, reported, live, awardModels, toDate, inSeasonModel] = await Promise.all([
-    liveRosters(), readInjuries(), liveInjuries(), readAwardModels(), seasonToDate(baked.season), readInSeasonModel(),
+    liveRosters(), readInjuries(), liveInjuries(), readAwardModels(), seasonToDateWithFinals(baked.season), readInSeasonModel(),
   ]);
   const curated = reported?.season === baked.season ? reported : null;
   let players, unprojected = {};
@@ -188,6 +211,9 @@ export async function GET() {
     }
     inSeason = {
       through: toDate.through,
+      // Games final since the morning bake, and whether the last day still has
+      // games to finish (the label reads "so far" then).
+      finals: toDate.finals || 0, partial: !!toDate.partial,
       games: toDate.games.filter((g) => g.home?.score > 0).length,
       records: toDate.records,
       model: { team: inSeasonModel.team, rate: inSeasonModel.rate, pct: inSeasonModel.pct, mpg: inSeasonModel.mpg, avail: inSeasonModel.avail, va: inSeasonModel.va, seasons: inSeasonModel.seasons, report: inSeasonModel.report },
@@ -198,6 +224,6 @@ export async function GET() {
       ...baked, players, unprojected, injuredOut, awardModels, inSeason, rosters: rosters ? "live" : "baked", rostersAt: new Date().toISOString(),
       injuries: live ? "live" : curated ? "reported" : "none", injuriesAsOf: curated?.players?.reduce((m, e) => (e.asOf > m ? e.asOf : m), "") || null,
     },
-    { headers: { "Cache-Control": "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400" } },
+    { headers: { "Cache-Control": "public, max-age=300, s-maxage=900, stale-while-revalidate=3600" } },
   );
 }

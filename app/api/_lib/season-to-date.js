@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { normalizeName } from "../../lib/format";
-import { gamesWithBoxes, playerTotals, teamRecords } from "../../lib/season-to-date";
+import { gamesWithBoxes, playerTotals, teamRecords, withGames } from "../../lib/season-to-date";
 
 // The season in progress from its baked box scores (lib/season-to-date.js),
 // read off disk: the player totals /api/regular-season serves while
@@ -34,10 +34,37 @@ export async function seasonToDate(season) {
   return out;
 }
 
+// The season so far with `finals` (_lib/unbaked-games.js, finished games
+// only) on top: what /api/projections updates the Look Ahead with, so it moves
+// the night a game ends rather than the morning after. `through` becomes the
+// last day with a final in it; `baked` keeps the bake's own, and `finals`
+// counts the games added.
+export async function withFinals(toDate, finals) {
+  if (!toDate || toDate.complete) return toDate;
+  const games = withGames(toDate.games, finals);
+  if (games === toDate.games) return toDate;
+  const added = games.length - toDate.games.length;
+  const through = games.reduce((m, g) => (g.date > m ? g.date : m), toDate.through);
+  return {
+    ...toDate, through, baked: toDate.through, finals: added, games,
+    players: await withIds(playerTotals(games), toDate.season), records: teamRecords(games),
+  };
+}
+
 // The box scores have names only; basketball-reference's slug and position
 // come from the last two baked seasons, by name — a name two players share is
 // left without one rather than guessed. A rookie has neither yet.
+const idsBySeason = new Map();
 async function withIds(rows, season) {
+  if (!idsBySeason.has(season)) idsBySeason.set(season, idMap(season));
+  const byName = await idsBySeason.get(season);
+  return rows.map((r) => {
+    const id = byName.get(normalizeName(r.name));
+    return { ...r, slug: id?.slug || null, pos: id?.pos || null };
+  });
+}
+
+async function idMap(season) {
   const y = Number(season.slice(0, 4));
   const prev = [1, 2].map((k) => `${y - k}-${String((y - k + 1) % 100).padStart(2, "0")}`);
   const byName = new Map();
@@ -47,8 +74,5 @@ async function withIds(rows, season) {
       byName.set(k, cur && cur.slug !== p.slug && cur.season === s ? { slug: null, pos: null, season: s } : { slug: p.slug, pos: p.pos, season: s });
     }
   }
-  return rows.map((r) => {
-    const id = byName.get(normalizeName(r.name));
-    return { ...r, slug: id?.slug || null, pos: id?.pos || null };
-  });
+  return byName;
 }

@@ -11,6 +11,7 @@ import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
 import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
+import { LookAheadNavProvider } from "../lib/award-nav";
 import { LastNight } from "./last-night";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
@@ -282,6 +283,15 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState(linked?.view === "player" ? "player" : "season"); // "season" | "player"
+  // A 2026-27 card's award box (award-boxes.js) opens that board in the Look
+  // Ahead, the player open on it; the target waits here until it's up.
+  const [laTarget, setLaTarget] = useState(null);
+  const openLookAhead = useCallback((target) => {
+    setLaTarget(target);
+    setMode("season");
+    setSeason(LOOK_AHEAD);
+  }, []);
+  const clearLaTarget = useCallback(() => setLaTarget(null), []);
   // Which games count: regular season, playoffs, or both summed. Applies to
   // both By Season and By Player.
   // A season in progress before April opens on its regular season, the only
@@ -449,6 +459,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
     `flex-1 text-[9px] uppercase tracking-[0.15em] px-2 py-1.5 border ${active ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
 
   return (
+    <LookAheadNavProvider value={openLookAhead}>
     <div>
       <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive} />
       <div className="mb-2 flex gap-2">
@@ -511,7 +522,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
           </div>
 
           {lookAhead ? (
-            <LookAhead />
+            <LookAhead target={laTarget} onTargetHandled={clearLaTarget} />
           ) : scope === "regular" || (scope === "combined" && noPlayoffs) ? (
             // The season under way lists its games first, then the board.
             inProgress ? (
@@ -556,5 +567,6 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
         </>
       )}
     </div>
+    </LookAheadNavProvider>
   );
 }

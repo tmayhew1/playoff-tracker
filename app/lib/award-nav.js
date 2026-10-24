@@ -9,3 +9,11 @@ const AwardNavContext = createContext(null);
 
 export const AwardNavProvider = AwardNavContext.Provider;
 export const useAwardNav = () => useContext(AwardNavContext);
+
+// The same for a 2026-27 card, whose awards haven't been voted: its award box
+// calls openLookAhead({ award, slug }) and Explore opens the Look Ahead on that
+// board with the player open. Only Explore provides it.
+const LookAheadNavContext = createContext(null);
+
+export const LookAheadNavProvider = LookAheadNavContext.Provider;
+export const useLookAheadNav = () => useContext(LookAheadNavContext);
