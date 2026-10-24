@@ -94,9 +94,11 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // Tapping a card narrows the game to that team: its card alone, framed in its
 // color with its shooting down the far side, over its whole box. Tapping it
 // again brings the other side back. `focus` (About Last Night's tap) narrows
-// the game to the player's team and opens his card.
-function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
-  const lga = lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
+// the game to the player's team and opens his card. Explore's regular-season
+// days use it too, handing in their own `lga` and `boxLoader` (a baked box);
+// their games carry no records, so that row drops out.
+export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled }) {
+  const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
   const [box, setBox] = useState(null);
@@ -127,13 +129,13 @@ function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
         {/* In the gap, halfway down the cards. */}
         {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-xs font-bold text-stone-400">@</span>}
       </div>
-      <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
+      {(g.away.record || g.home.record) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
         {sides.map(([side, , right]) => (
           <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
             {side.record || "–"}
           </div>
         ))}
-      </div>
+      </div>}
       <LiveGameBanner
         liveGame={g}
         gameLabel={kind}
@@ -141,6 +143,7 @@ function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
         teams={{}}
         useTeamColor
         boxSrc={g.boxSrc || undefined}
+        boxLoader={boxLoader}
         hideScore
         teamFilter={team}
         onTeamClear={() => setTeam(null)}

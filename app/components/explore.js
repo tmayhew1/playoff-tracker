@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
 import { LookAheadNavProvider } from "../lib/award-nav";
 import { LastNight } from "./last-night";
+import { GameCard } from "./live-view";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
 import { warmSeason } from "../lib/month-tables";
@@ -129,8 +130,8 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 
 // The regular season's counterpart to the rounds: one collapsible section per
 // month, its league-wide averages first, then a card per day holding that
-// day's games, newest first. Same header, same card, same game banner as a round, a series
-// and its games, except each game shows its top five without a tap.
+// day's games, newest first. Each game is the Live tab's scoreboard card (the
+// winner's side filled in, tap a side for that team's box) over its top five.
 export function ExploreMonthSection({ month, allMonths, lga, season }) {
   const [open, setOpen] = useState(false);
   const days = useMemo(() => (open
@@ -155,25 +156,25 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
             <span className="text-xs font-semibold text-stone-900">{dayLabel(d.date)}</span>
             <span className="text-[10px] uppercase tracking-wider text-stone-400">{d.games.length} game{d.games.length === 1 ? "" : "s"}</span>
           </div>
-          {d.games.map((g) => (
-            <LiveGameBanner
-              key={g.gameId}
-              liveGame={{
-                gameId: g.gameId,
-                gameStatus: 3,
-                gameStatusText: "Final",
-                gameDateTimeUTC: g.gameDateTimeUTC,
-                home: g.home,
-                away: g.away,
-              }}
-              lga={lga}
-              teams={{}}
-              useTeamColor
-              boxSrc="espn"
-              boxLoader={() => bakedBox(season, g)}
-              finalTop5
-            />
-          ))}
+          <div className="mt-1.5">
+            {d.games.map((g) => (
+              <GameCard
+                key={g.gameId}
+                g={{
+                  gameId: g.gameId,
+                  kind: "regular",
+                  gameStatus: 3,
+                  gameStatusText: "Final",
+                  gameDateTimeUTC: g.gameDateTimeUTC,
+                  boxSrc: "espn",
+                  home: g.home,
+                  away: g.away,
+                }}
+                lga={lga}
+                boxLoader={() => bakedBox(season, g)}
+              />
+            ))}
+          </div>
         </div>
       ))}
     </div>
