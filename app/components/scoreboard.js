@@ -122,8 +122,8 @@ export function TeamScoreCard({ side, ahead, right, tape, context }) {
   );
   const standing = context?.record && (
     <div className={`pb-1 leading-tight tabular-nums ${right ? "text-right" : ""}`}>
-      <div className="text-sm font-bold" style={{ color: ink }}>{context.record}, {ordinal(context.place)}</div>
-      <div className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>in the {context.conf === "E" ? "East" : "West"}</div>
+      <div className="text-sm font-bold" style={{ color: ink }}>{context.record}</div>
+      <div className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>{ordinal(context.place)} {context.conf === "E" ? "East" : "West"}</div>
     </div>
   );
   return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score} totalNote={standing}>{body}</ScoreFrame>;
