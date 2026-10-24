@@ -25,8 +25,8 @@ async function readData(name) {
 }
 
 // One season's rows for a scope, each scored: { row, lga, va }.
-// `toDate` lets the season in progress stand in from its box scores; a career
-// leaves it out, as the By Player index it matches does until it's baked.
+// `toDate` lets the season in progress stand in from its box scores, as it
+// does in the By Player index (/api/players) a card has to agree with.
 async function seasonRows(season, scope, usgAdj, toDate = true) {
   const [po, rs] = await Promise.all([
     scope === "regular" ? null : readData(`leaderboard-${season}.json`),
@@ -185,7 +185,7 @@ export async function careerCard(slug, scope, usgAdj = false) {
   let best = null, va = 0, seasons = 0;
   for (let y = Number(last.slice(0, 4)); y >= 1980; y--) {
     const season = `${y}-${String((y + 1) % 100).padStart(2, "0")}`;
-    const c = await playerSeasonCard({ slug, season, scope, usgAdj, toDate: false });
+    const c = await playerSeasonCard({ slug, season, scope, usgAdj });
     if (!c) continue;
     va += c.va; seasons += 1;
     if (!best || c.va > best.va) best = c;
