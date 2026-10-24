@@ -120,8 +120,8 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
 // `game`, when given, is one game's value per segment (null where a box
-// score can't say), pointed at by a "Today" arrow; tapping either calls
-// `onToday`.
+// score can't say), pointed at by an arrow; tapping the spot or the arrow
+// calls `onToday`.
 function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, game = null, onToday = null, gameInk = "#1c1917" }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
@@ -189,8 +189,8 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
     };
   }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine, game]);
 
-  // The Today arrow: from a tail out toward the plot's middle (so the label
-  // stays on the card) to just short of the game's spot.
+  // The game's arrow: from a tail out toward the plot's middle (so it stays
+  // on the card) to just short of the game's spot.
   const arrow = useMemo(() => {
     const g = view.game;
     if (!g) return null;
@@ -212,7 +212,8 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
     if (!box || !box.width) return;
     const vx = ((e.clientX - box.left) / box.width) * 100;
     const vy = ((e.clientY - box.top) / box.height) * height;
-    if (view.game && onToday && Math.hypot(view.game.cx - vx, view.game.cy - vy) <= 2.5) { setMenu(null); onToday(); return; }
+    if (arrow && onToday && [[view.game.cx, view.game.cy], [arrow.tx, arrow.ty], [(arrow.x1 + arrow.x2) / 2, (arrow.y1 + arrow.y2) / 2]]
+      .some(([x, y]) => Math.hypot(x - vx, y - vy) <= 2.5)) { setMenu(null); onToday(); return; }
     const hits = view.dots
       .filter((dt) => !dt.self && dt.row)
       .map((dt) => ({ dt, d: Math.hypot(dt.cx - vx, dt.cy - vy) }))
@@ -288,7 +289,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           )}
           <circle cx={view.self.cx} cy={view.self.cy} r="2.4" fill="#fff" />
           <circle cx={view.self.cx} cy={view.self.cy} r="1.5" fill="#1c1917" />
-          {/* Today: a small ring on the spot (held to the plot's edges) and
+          {/* The game: a dot on the spot (held to the plot's edges) and
               an arrow in to it from the side with more room. */}
           {arrow && (
             <>
@@ -298,16 +299,6 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
             </>
           )}
         </svg>
-        {arrow && (
-          <button
-            type="button"
-            onClick={onToday || undefined}
-            className="absolute -translate-x-1/2 -translate-y-1/2 px-1 text-[8px] font-bold uppercase tracking-wide leading-tight text-white rounded-sm"
-            style={{ left: `${arrow.tx}%`, top: `${(arrow.ty / height) * 100}%`, backgroundColor: gameInk }}
-          >
-            Today
-          </button>
-        )}
         {menu && (
           // Disambiguation menu: one tap landed on several players, so name
           // them and let the next tap choose. Anything else dismisses.
@@ -374,7 +365,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
 // `seasonOnly` keeps the card to the season itself — the rankings and the
 // split row — without the all-time board or the by-season trend (a single
 // game's card, where the season so far is the whole question). `gameRow`, a
-// single game's line, rides on the split row as "Today" beside the season's
+// single game's line, rides on the split row in his team's color beside the season's
 // own bars and dot, so the game reads against his average; tapping it puts
 // the game in the rankings as a row of its own.
 export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs", seasonOnly = false, gameRow = null }) {
@@ -400,7 +391,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const [showToday, setShowToday] = useState(false);
   useEffect(() => { setShowToday(false); }, [catKey]);
   const today = focused ? null : gameRow;
-  // Today wears his team's color in the game.
+  // The game wears his team's color.
   const todayInk = today?.team ? teamColor(today.team) : "#1c1917";
 
   // Tapping a bar in the by-season trend (View 6) arms a "Go →" popup for that
@@ -1051,12 +1042,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     <button
       type="button"
       onClick={() => setShowToday(false)}
-      aria-label={`${self.name} today, would rank #${rank}, ${metricLabel} value added ${sgn(m)} — tap to hide`}
+      aria-label={`${self.name} this game, would rank #${rank}, ${metricLabel} value added ${sgn(m)} — tap to hide`}
       className={`${rowGrid} w-full text-left text-white rounded-sm`}
       style={{ backgroundColor: todayInk }}
     >
       <span className="text-right text-[9px] opacity-70">{rank}</span>
-      <span className="truncate text-[10px] font-semibold">{shortName(self.name)} <span className="font-normal italic">Today</span></span>
+      <span className="truncate text-[10px] font-semibold">{shortName(self.name)}</span>
       <span className="text-right text-[9px]">1</span>
       <span className="text-right text-[9px]">{Math.round(r.mp)}</span>
       <span className="text-right text-[10px] font-semibold">{sgn(m)}</span>
@@ -1296,11 +1287,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       className={`absolute left-1/2 -translate-x-1/2 w-2.5 ${barFill} ${selfShown >= 0 ? "rounded-t-sm" : "rounded-b-sm"}`}
                       style={selfShown >= 0 ? { bottom: "50%", height: `${barH}%` } : { top: "50%", height: `${barH}%` }}
                     />
-                    {/* Today, on the same scale (held to the strip's ends when
+                    {/* The game, on the same scale (held to the strip's ends when
                         a single game runs past them): a line across the
                         column — across all four 2-point columns, at the
                         game's whole 2P VA — with an arrowhead on its first
-                        column and the word over it. Tapping it adds the game
+                        column. Tapping it adds the game
                         to the rankings. */}
                     {(() => {
                       const v = seg.group === "2p" ? game2P : seg.gameV;
@@ -1311,13 +1302,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setShowToday((x) => !x); }}
                           aria-pressed={showToday}
-                          aria-label={`Today: ${sgn(v)}${seg.group === "2p" ? " 2-point VA" : ""} — tap to ${showToday ? "hide it from" : "add it to"} the rankings`}
+                          aria-label={`This game: ${sgn(v)}${seg.group === "2p" ? " 2-point VA" : ""} — tap to ${showToday ? "hide it from" : "add it to"} the rankings`}
                           className="absolute inset-x-0 h-3 translate-y-1/2 flex items-center"
                           style={{ bottom: `${Math.max(4, Math.min(92, 50 + (v / lim) * 50))}%` }}
                         >
                           <span className="block w-full h-[2px]" style={{ backgroundColor: todayInk }} />
                           {lead && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[4px] border-y-transparent border-l-[5px]" style={{ borderLeftColor: todayInk }} />}
-                          {lead && <span className="absolute left-1.5 bottom-full -mb-0.5 text-[6px] font-bold uppercase tracking-wide leading-none" style={{ color: todayInk }}>Today</span>}
                         </button>
                       );
                     })()}
@@ -1339,7 +1329,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           {today && (game2P != null || segData.some((sg) => sg.gameV != null)) && (
             <div className="mt-1.5 flex items-center justify-center gap-3 text-[8px] uppercase tracking-wider text-stone-500">
               <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-stone-900" />Season so far</span>
-              <span className="inline-flex items-center gap-1"><span aria-hidden className="font-bold" style={{ color: todayInk }}>{scatter ? "↘" : "▸"}</span>Today · tap it to rank it</span>
+              <span className="inline-flex items-center gap-1"><span aria-hidden className="font-bold" style={{ color: todayInk }}>{scatter ? "↘" : "▸"}</span>This game · tap to rank it</span>
             </div>
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
