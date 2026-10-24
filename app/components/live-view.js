@@ -86,6 +86,9 @@ function teamGameNumber(side, g) {
   return Number(m[1]) + Number(m[2]) + (g.gameStatus === 2 ? 1 : 0) || null;
 }
 
+// A game's place on the page, for the slate summary to scroll to.
+const gameAnchor = (g) => `live-game-${g.gameId}`;
+
 // One game: the competition's scoreboard, away card beside home card, each
 // team's record under its card, then the banner for the clock and the box score.
 // Tapping a card narrows the game to that team: its card alone, framed in its
@@ -106,7 +109,8 @@ function GameCard({ g, lgaFor, baselineSeason, focus, onFocusHandled }) {
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
   return (
     <div
-      className={`mb-3 p-2 rounded ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
+      id={gameAnchor(g)}
+      className={`mb-3 p-2 rounded scroll-mt-3 ${team ? "bg-white border-2" : "bg-stone-50 border border-stone-200"}`}
       style={team ? { borderColor: teamColor(team) } : undefined}
     >
       <div className="relative flex gap-4">
@@ -162,7 +166,7 @@ function UpcomingList({ games }) {
             : "TBD";
           const tv = (g.broadcasters || []).join(", ");
           return (
-            <div key={g.gameId} className="flex items-center justify-between gap-2 text-xs">
+            <div key={g.gameId} id={gameAnchor(g)} className="flex items-center justify-between gap-2 text-xs scroll-mt-3">
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="tabular-nums text-[10px] text-stone-500 w-14 shrink-0">{timeStr}</span>
                 <TeamTag side={g.away} />
@@ -179,7 +183,8 @@ function UpcomingList({ games }) {
 }
 
 // The slate at a glance: its day, how many games are live / later / final,
-// and every game's line, colored by where it stands.
+// and every game's line, colored by where it stands. Tapping a line scrolls
+// down to that game.
 function SlateSummary({ date, games }) {
   const count = (status) => games.filter((g) => g.gameStatus === status).length;
   return (
@@ -202,11 +207,16 @@ function SlateSummary({ date, games }) {
               const ink = STATUS_INK[g.gameStatus] || "text-stone-900";
               const scored = g.gameStatus !== 1;
               return (
-                <div key={g.gameId} className={`grid grid-cols-[1fr_auto_1fr] gap-x-1.5 ${ink}`}>
+                <button
+                  key={g.gameId}
+                  type="button"
+                  onClick={() => document.getElementById(gameAnchor(g))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className={`grid grid-cols-[1fr_auto_1fr] gap-x-1.5 font-bold hover:opacity-70 ${ink}`}
+                >
                   <span className="text-right whitespace-nowrap">{g.away.tri}{scored && ` ${g.away.score}`}</span>
                   <span>@</span>
-                  <span className="whitespace-nowrap">{scored && `${g.home.score} `}{g.home.tri}</span>
-                </div>
+                  <span className="text-left whitespace-nowrap">{scored && `${g.home.score} `}{g.home.tri}</span>
+                </button>
               );
             })}
           </div>
