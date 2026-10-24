@@ -6,7 +6,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addLiveLines, clockSeconds, gameFraction, liveLines } from "../app/lib/live-lines.js";
+import { addLiveLines, addLiveLinesToIndex, clockSeconds, gameFraction, liveLines } from "../app/lib/live-lines.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≉ ${b}`);
 
@@ -61,12 +61,42 @@ test("lines add onto the baked totals; a debut joins as a new row", () => {
   const flagg = rows.find((r) => r.name === "Cooper Flagg");
   assert.equal(flagg.team, "DAL");
   assert.equal(flagg.g, 0.625);
-  // A moved row keeps its line through last night; a debut has none to keep.
-  assert.equal(wemby.preLive, baked[0]);
-  assert.equal(flagg.preLive, undefined);
-  const quiet = addLiveLines([...baked, { name: "Day Off", team: "LAL", g: 2, mp: 50 }], liveLines(GAMES)).find((r) => r.name === "Day Off");
-  assert.equal(quiet.preLive, undefined);
   // The baked rows themselves are left as they were.
   assert.equal(baked[0].g, 2);
   assert.equal(addLiveLines(baked, []), baked);
+});
+
+test("the player index takes the same lines on its season-so-far rows", () => {
+  const index = [
+    { slug: "wembavi01", name: "Victor Wembanyama", bestVa: 30, careerVa: 40, teams: ["SAS"], seasons: [
+      { season: "2025-26", team: "SAS", gp: 70, va: 30, pts: 1800, z03a: 300 },
+      { season: "2026-27", team: "SAS", gp: 2, va: 10, vaPerG: 5, partial: true, mp: 60, pts: 50, fga: 35, z03a: 9 },
+    ] },
+    { slug: "brunsja01", name: "Jalen Brunson", bestVa: 20, careerVa: 20, teams: ["NYK"], seasons: [
+      { season: "2025-26", team: "NYK", gp: 70, va: 20, pts: 1900 },
+    ] },
+  ];
+  const out = addLiveLinesToIndex(index, "2026-27", liveLines(GAMES), (row) => row.pts / 2);
+  const wemby = out[0].seasons.find((s) => s.season === "2026-27");
+  assert.equal(wemby.gp, 2.625);
+  assert.equal(wemby.pts, 70);
+  assert.equal(wemby.fga, 41);
+  assert.equal(wemby.va, 35);
+  close(wemby.vaPerG, 13.33);
+  // basketball-reference's zones stay where its bake left them.
+  assert.equal(wemby.z03a, 9);
+  assert.equal(out[0].careerVa, 65);
+  assert.equal(out[0].bestVa, 35);
+  // Brunson's first game of the season starts his season so far, beside the
+  // finished one; Flagg's debut joins as a new player.
+  assert.equal(out[1].seasons.find((s) => s.season === "2025-26"), index[1].seasons[0]);
+  const brunson = out[1].seasons.find((s) => s.season === "2026-27");
+  assert.equal(brunson.gp, 1);
+  assert.equal(brunson.partial, true);
+  assert.equal(out[1].careerVa, 24);
+  assert.equal(index[1].seasons.length, 1);
+  assert.deepEqual(out.slice(2).map((pl) => [pl.name, pl.seasons[0].gp]), [["Cooper Flagg", 0.625]]);
+  // The index itself is left as it was.
+  assert.equal(index[0].seasons[1].gp, 2);
+  assert.equal(addLiveLinesToIndex(index, "2026-27", [], () => 0), index);
 });

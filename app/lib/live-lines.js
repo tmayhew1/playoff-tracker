@@ -59,13 +59,10 @@ export function liveLines(games) {
 // on: totals summed, G up by each game's share, `team` moved to the live
 // team, and `live` set ({ gameId, date, frac }) on anyone in a game still on. A
 // player the bake hasn't seen yet (a debut tonight) joins as a new row.
-// `preLive` keeps a moved row as the bake had it, for the views that stay on
-// the season through last night.
 export function addLiveLines(players, lines) {
   if (!lines?.length) return players;
-  const rows = players.map((p) => ({ ...p, preLive: p }));
+  const rows = players.map((p) => ({ ...p }));
   const by = new Map(rows.map((r) => [normalizeName(r.name), r]));
-  const moved = new Set();
   for (const l of lines) {
     const k = normalizeName(l.name);
     let r = by.get(k);
@@ -75,12 +72,66 @@ export function addLiveLines(players, lines) {
       rows.push(r);
       by.set(k, r);
     }
-    moved.add(r);
     r.team = l.tri;
     r.g = Math.round(((r.g || 0) + l.frac) * 1000) / 1000;
     for (const key of TOTAL_KEYS) r[key] = (r[key] || 0) + (l[key] || 0);
     if (l.live) r.live = { gameId: l.gameId, date: l.date, frac: l.frac };
   }
-  for (const r of rows) if (!moved.has(r)) delete r.preLive;
   return rows;
+}
+
+// The same lines laid over the player index (/api/players) the breakdown
+// card ranks against, so a card opened from the board reads the board's row
+// in a field moved as far: each player's `season` row (the season so far,
+// added up from the same baked box scores as the board) takes the lines on,
+// G by each game's share, and `vaOf(row)` re-prices it. A player without one
+// yet (his first game of the season) gets one, and a debut joins as a new
+// player. Rows only basketball-reference fills (the shot-distance zones)
+// stay at its last bake until it catches up.
+export function addLiveLinesToIndex(indexPlayers, season, lines, vaOf) {
+  if (!lines?.length || !Array.isArray(indexPlayers)) return indexPlayers;
+  const out = indexPlayers.slice();
+  const isNow = (s) => s.season === season && s.partial;
+  // By name, a player with a season so far ahead of a namesake without.
+  const by = new Map();
+  out.forEach((pl, i) => {
+    const k = normalizeName(pl.name);
+    if (!by.has(k) || pl.seasons?.some(isNow)) by.set(k, i);
+  });
+  const moved = new Set();
+  const blank = (tri) => {
+    const row = { season, team: tri, gp: 0, partial: true };
+    for (const key of TOTAL_KEYS) row[key] = 0;
+    return row;
+  };
+  for (const l of lines) {
+    const k = normalizeName(l.name);
+    let i = by.get(k);
+    if (i == null) {
+      i = out.push({ slug: null, name: l.name, seasons: [blank(l.tri)], teams: [l.tri] }) - 1;
+      by.set(k, i);
+    } else if (!moved.has(i)) {
+      const seasons = out[i].seasons.map((s) => (isNow(s) ? { ...s } : s));
+      if (!seasons.some(isNow)) seasons.push(blank(l.tri));
+      out[i] = { ...out[i], seasons };
+    }
+    moved.add(i);
+    const row = out[i].seasons.find(isNow);
+    row.team = l.tri;
+    row.gp = Math.round(((row.gp || 0) + l.frac) * 1000) / 1000;
+    for (const key of TOTAL_KEYS) row[key] = (row[key] || 0) + (l[key] || 0);
+  }
+  for (const i of moved) {
+    const pl = out[i];
+    for (const s of pl.seasons) {
+      if (!isNow(s)) continue;
+      s.va = Math.round(vaOf(s) * 100) / 100;
+      s.vaPerG = s.gp ? Math.round((s.va / s.gp) * 100) / 100 : 0;
+    }
+    pl.seasons.sort((a, b) => b.va - a.va);
+    pl.bestVa = pl.seasons[0].va;
+    pl.careerVa = Math.round(pl.seasons.reduce((t, s) => t + (s.va || 0), 0) * 100) / 100;
+    pl.teams = [...new Set(pl.seasons.map((s) => s.team))];
+  }
+  return out;
 }
