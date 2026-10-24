@@ -206,15 +206,21 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
 
 
 // A player's Value Added per game in each month of a season, one bar per
-// month, the month being read drawn in full color and the rest pale. Read
-// only: it sets the open month against the rest of his season. `months` is
-// [{ label, vapg, gp, current }], with vapg null for a month he sat out.
-export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game by Month", note = null }) {
+// month, the month being read drawn in full color and the rest pale: it sets
+// the open month against the rest of the season. `months` is
+// [{ key, label, year, vapg, gp, current, home }], with vapg null for a month
+// sat out. `year` labels the first month and each new year under the month
+// names. With `onSelect`, every other month that has a value is tappable
+// (onSelect(i)), and `home` outlines the month the chart was opened from while
+// another is being read.
+export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game by Month", note = null, onSelect = null }) {
   const vals = months.map((m) => m.vapg).filter((v) => v != null);
-  const W = 320, H = 92;
+  const years = months.map((m, i) => (m.year && (i === 0 || months[i - 1].year !== m.year) ? m.year : null));
+  const hasYears = years.some(Boolean);
+  const W = 320, H = hasYears ? 102 : 92;
   // A negative month's value sits under its bar, so leave room above the
   // month names for it.
-  const pad = { l: 14, r: 6, t: 14, b: vals.some((v) => v < 0) ? 26 : 16 };
+  const pad = { l: 14, r: 6, t: 14, b: (vals.some((v) => v < 0) ? 26 : 16) + (hasYears ? 10 : 0) };
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
   let vMin = Math.min(0, ...vals), vMax = Math.max(0, ...vals);
@@ -222,6 +228,7 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
   const y = (v) => pad.t + (1 - (v - vMin) / (vMax - vMin)) * innerH;
   const slot = innerW / Math.max(months.length, 1);
   const barW = Math.min(26, slot * 0.62);
+  const nameY = H - 4 - (hasYears ? 10 : 0);
   return (
     <div className="mt-1 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
@@ -238,13 +245,22 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
             const base = neg ? "#dc2626" : color;
             const top = has ? Math.min(y(m.vapg), y(0)) : y(0);
             const h = has ? Math.max(Math.abs(y(m.vapg) - y(0)), 1) : 0;
+            const tappable = onSelect && has && !m.current;
             return (
-              <g key={m.label}>
+              <g
+                key={m.key || m.label}
+                onClick={tappable ? () => onSelect(i) : undefined}
+                style={tappable ? { cursor: "pointer" } : undefined}
+                role={tappable ? "button" : undefined}
+                aria-label={tappable ? `Show ${m.label}${m.year ? ` ${m.year}` : ""}` : undefined}
+              >
+                {tappable && <rect x={cx - slot / 2} y={0} width={slot} height={H} fill="transparent" />}
                 {has && (
                   <rect
                     x={cx - barW / 2} y={top} width={barW} height={h}
                     fill={m.current ? base : withAlpha(base, 0.28)}
-                    stroke={m.current ? "#1c1917" : "none"} strokeWidth="1"
+                    stroke={m.current ? "#1c1917" : m.home ? base : "none"} strokeWidth="1"
+                    strokeDasharray={!m.current && m.home ? "2 1.5" : undefined}
                   />
                 )}
                 {has && (
@@ -254,9 +270,12 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
                   >{m.vapg.toFixed(1)}</text>
                 )}
                 <text
-                  x={cx} y={H - 4} fontSize="8" textAnchor="middle"
+                  x={cx} y={nameY} fontSize="8" textAnchor="middle"
                   fill={m.current ? "#1c1917" : has ? "#78716c" : "#d6d3d1"} fontWeight={m.current ? 700 : 400}
                 >{m.label}</text>
+                {years[i] && (
+                  <text x={cx} y={H - 3} fontSize="6.5" textAnchor="middle" fill="#a8a29e" className="tabular-nums">{years[i]}</text>
+                )}
               </g>
             );
           })}

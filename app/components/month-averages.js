@@ -14,8 +14,10 @@ import { normalizeName, teamColor, withAlpha } from "../lib/format";
 // idle; otherwise they load the first time the section is opened. They are
 // priced against `lga`, so the USG-ADJ switch re-ranks the table without
 // reloading it. `allMonths` is the whole season, for an open row's
-// VA-by-month chart.
+// VA-by-month chart, whose other months can be tapped to read the player's
+// breakdown for that month instead.
 export function MonthAverages({ month, allMonths, lga, season }) {
+  const year = month.key.slice(0, 4);
   const [open, setOpen] = useState(false);
   const [boxes, setBoxes] = useState(() => peekBoxes(season, month));
   const [progress, setProgress] = useState(null);
@@ -25,6 +27,11 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   // A one-game spot-up can top a per-game table, so it opens qualified to
   // players with at least half the month's most games; the chip clears it.
   const [minGames, setMinGames] = useState(undefined);
+  // One team's players only: picked from the chip, or by tapping a row's team.
+  const [team, setTeam] = useState(null);
+  // The month an open row's breakdown reads, when another month's bar was
+  // tapped; null reads this month.
+  const [viewKey, setViewKey] = useState(null);
   const [rsLookup, setRsLookup] = useState(null);
   // The season's VA per game by month, for an open row's chart: usually
   // built already (lib/month-tables.js warmSeason); otherwise loaded the first
@@ -56,17 +63,58 @@ export function MonthAverages({ month, allMonths, lga, season }) {
     return () => { cancelled = true; };
   }, [expanded, allMonths, season, lga]);
 
-  const monthChart = (name) => (color) => {
+  const openRow = (name) => {
+    setExpanded(name);
+    setViewKey(null);
+  };
+
+  // Another month of the open player's season, once the season is loaded:
+  // { month, p } with that month's row, or null to read this month.
+  const viewed = (name) => {
+    if (!viewKey || !monthly) return null;
+    const m = allMonths.find((x) => x.key === viewKey);
+    const mBoxes = m && peekBoxes(season, m);
+    const p = mBoxes && monthRows(season, m, mBoxes, lga).find((r) => r.name === name);
+    return p ? { month: m, p } : null;
+  };
+
+  const monthChart = (name, other) => (color) => {
     if (!monthly) {
       const note = seasonProgress ? `Loading the season… ${seasonProgress.done} of ${seasonProgress.total} months` : "Loading the season…";
       return <MonthlyVAChart months={[]} note={note} />;
     }
     const series = monthly.byName.get(name) || monthly.months.map(() => null);
+    const currentKey = other ? other.month.key : month.key;
     return (
-      <MonthlyVAChart
-        color={color}
-        months={monthly.months.map((m, i) => ({ label: m.label, vapg: series[i]?.vapg ?? null, gp: series[i]?.gp ?? 0, current: m.key === month.key }))}
-      />
+      <>
+        {other && (
+          <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-widest text-stone-700">
+            <span className="italic">{other.month.label} {other.month.key.slice(0, 4)}</span>
+            <button
+              onClick={() => setViewKey(null)}
+              className="normal-case tracking-normal font-normal text-stone-400 hover:text-stone-700"
+            >
+              ← {month.label.slice(0, 3)} {year}
+            </button>
+          </div>
+        )}
+        <MonthlyVAChart
+          color={color}
+          months={monthly.months.map((m, i) => ({
+            key: m.key,
+            label: m.label,
+            year: m.year,
+            vapg: series[i]?.vapg ?? null,
+            gp: series[i]?.gp ?? 0,
+            current: m.key === currentKey,
+            home: m.key === month.key,
+          }))}
+          onSelect={(i) => {
+            const key = monthly.months[i].key;
+            setViewKey(key === month.key ? null : key);
+          }}
+        />
+      </>
     );
   };
 
@@ -93,7 +141,8 @@ export function MonthAverages({ month, allMonths, lga, season }) {
   const rows = useMemo(() => (boxes ? monthRows(season, month, boxes, lga) : null), [boxes, lga, season, month]);
   const qualifier = useMemo(() => (rows?.length ? Math.ceil(Math.max(...rows.map((r) => r.gp)) / 2) : null), [rows]);
   const min = minGames === undefined ? qualifier : minGames;
-  const filtered = rows ? (min ? rows.filter((r) => r.gp >= min) : rows) : [];
+  const teams = useMemo(() => (rows ? [...new Set(rows.map((r) => r.team).filter(Boolean))].sort() : []), [rows]);
+  const filtered = rows ? rows.filter((r) => (!min || r.gp >= min) && (!team || r.team === team)) : [];
   const visible = showAll ? filtered : filtered.slice(0, 10);
   const maxAbs = Math.max(...visible.map((r) => Math.abs(r.vapg)), 0.5);
 
@@ -104,7 +153,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
         className="w-full px-2 py-1.5 text-[10px] uppercase tracking-widest text-stone-600 font-semibold flex items-center gap-1"
       >
         <span className="text-stone-400">{open ? "▾" : "▸"}</span>
-        {month.label} Averages
+        {month.label} {year} Averages
       </button>
       {open && (
         <div className="px-2 pb-2">
@@ -120,6 +169,27 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                 <span className="text-[9px] text-stone-400 italic">
                   {boxes.length < month.games.length ? `${boxes.length} of ${month.games.length} games loaded` : `${month.games.length} games`}
                 </span>
+                <span className="flex items-center gap-1.5">
+                {team ? (
+                  <button
+                    onClick={() => setTeam(null)}
+                    style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamColor(team), borderColor: withAlpha(teamColor(team), 0.4) }}
+                    className="normal-case tracking-normal text-[10px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
+                    aria-label="Clear the team filter"
+                  >
+                    {team} <span className="opacity-60">×</span>
+                  </button>
+                ) : teams.length > 1 && (
+                  <select
+                    value=""
+                    onChange={(e) => setTeam(e.target.value || null)}
+                    className="normal-case tracking-normal text-[10px] px-1 py-0.5 border bg-white text-stone-500 border-stone-300 rounded-none"
+                    aria-label="Filter by team"
+                  >
+                    <option value="">All teams</option>
+                    {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                )}
                 {min ? (
                   <button
                     onClick={() => setMinGames(null)}
@@ -136,6 +206,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                     Qualify ≥{qualifier} games
                   </button>
                 )}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-5 text-right">#</span>
@@ -153,7 +224,9 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                 const tc = teamColor(p.team);
                 const isOpen = expanded === p.name;
                 const barColor = p.vapg >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
-                const toggle = () => setExpanded(isOpen ? null : p.name);
+                const toggle = () => openRow(isOpen ? null : p.name);
+                const other = isOpen ? viewed(p.name) : null;
+                const shown = other ? other.p : p;
                 return (
                   <div key={p.name} className="border-b border-stone-100 last:border-0">
                     <div className="relative overflow-hidden">
@@ -175,10 +248,15 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                         className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
                       >
                         <span className="w-5 text-right tabular-nums text-stone-400">{i + 1}</span>
-                        <span
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTeam(team === p.team ? null : p.team);
+                          }}
                           style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
                           className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border"
-                        >{p.team}</span>
+                          aria-label={team === p.team ? "Show every team" : `Show only ${p.team}`}
+                        >{p.team}</button>
                         <span className="flex-1 truncate text-stone-800">
                           <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
                           {p.name}
@@ -194,21 +272,22 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                     </div>
                     {isOpen && (
                       <VABreakdown
-                        p={p}
+                        key={other ? other.month.key : month.key}
+                        p={shown}
                         lga={lga}
                         teams={{}}
                         rate
                         season={season}
                         defScope="rs"
-                        gameSeries={p.games}
-                        byGame={p.byGame}
-                        gameContext={p.gameContext}
-                        breakdownTitle={`${month.label} Breakdown`}
-                        leadChart={monthChart(p.name)}
+                        gameSeries={shown.games}
+                        byGame={shown.byGame}
+                        gameContext={shown.gameContext}
+                        breakdownTitle={`${(other ? other.month : month).label} ${(other ? other.month : month).key.slice(0, 4)} Breakdown`}
+                        leadChart={monthChart(p.name, other)}
                         useTeamColor
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
-                        onPrev={i > 0 ? () => setExpanded(visible[i - 1].name) : undefined}
-                        onNext={i < visible.length - 1 ? () => setExpanded(visible[i + 1].name) : undefined}
+                        onPrev={i > 0 ? () => openRow(visible[i - 1].name) : undefined}
+                        onNext={i < visible.length - 1 ? () => openRow(visible[i + 1].name) : undefined}
                       />
                     )}
                   </div>
@@ -222,7 +301,7 @@ export function MonthAverages({ month, allMonths, lga, season }) {
                   {showAll ? "Show top 10" : `Show all (${filtered.length})`}
                 </button>
               )}
-              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by Value Added per game · tap a row for VA breakdown</div>
+              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by Value Added per game · tap a row for VA breakdown, a team to filter</div>
             </div>
           )}
         </div>
