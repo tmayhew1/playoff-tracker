@@ -6,7 +6,7 @@ import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
 import { teamColor } from "../lib/format";
-import { USG_FTA_W } from "../scoring";
+import { teamSums, tapeMeasures } from "../lib/team-context";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -70,51 +70,37 @@ function SectionHeader({ title, count, live, sub }) {
 }
 
 // A tapped team's game beside its opponent's, line by line, for its card's
-// tale of the tape: { opp, rows }, each row { label, own, opp, share } with
-// `share` the selected team's part of the bar, always read as "more is
-// better" for it. Shooting is 2P / 3P / FT, compared on their Value Added —
-// points over a league-average shooter on the same attempts, 2·(2PM −
-// la2P·2PA) and so on, the efficiency terms of lib/scoring.js summed over the
-// roster — with the selected team's makes, attempts and percentage beside its
-// figure. As VA can be negative, a bar splits on the gap between the two
-// over their combined size, which for two positive figures is simply the
-// selected team's part of the total. DEF
-// PPP is the points a team allowed over the possessions it allowed them on
-// (FGA − ORB + TOV + 0.475·FTA), so lower is better and the bar is turned
-// round. wTRB% is the game's rebounds shared out with each priced as Value
-// Added prices it (an offensive board weighted by the league's DRB rate, a
-// defensive one by its ORB rate), so the two add to 100. Poss Ratio is a
-// team's possessions over its opponent's.
+// tale of the tape: { opp, rows }, each row { key, label, own, opp, share }
+// with `share` the selected team's part of the bar, always read as "more is
+// better" for it. The measures are lib/team-context.js tapeMeasures: 2P / 3P
+// / FT Value Added (with the selected team's makes, attempts and percentage
+// beside its figure), DEF PPP, wTRB% and Poss Ratio. As VA can be negative, a
+// shooting bar splits on the gap between the two over their combined size,
+// which for two positive figures is simply the selected team's part of the
+// total; DEF PPP's bar is turned round, lower being better.
 function teamTape(box, tri, lga) {
   const ownT = [box?.away, box?.home].find((t) => t?.tri === tri);
   const oppT = [box?.away, box?.home].find((t) => t && t.tri !== tri);
   if (!ownT?.players || !oppT?.players) return null;
-  const [own, opp] = [ownT.players, oppT.players];
-  const sum = (ps, k) => ps.reduce((n, p) => n + (p[k] || 0), 0);
-  const poss = (ps) => sum(ps, "fga") - sum(ps, "orb") + sum(ps, "tov") + USG_FTA_W * sum(ps, "fta");
-  const reb = (ps) => (lga?.laDRBrate ?? 0.75) * sum(ps, "orb") + (lga?.laORBrate ?? 0.25) * sum(ps, "drb");
+  const [own, opp] = [teamSums(ownT.players), teamSums(oppT.players)];
+  const [o, d] = [tapeMeasures(own, opp, lga), tapeMeasures(opp, own, lga)];
   const split = (a, b) => (Math.abs(a) + Math.abs(b) > 0 ? 0.5 + (a - b) / (2 * (Math.abs(a) + Math.abs(b))) : 0.5);
-  const fmtPct = (v) => (v == null ? "–" : `${v.toFixed(1)}%`);
+  const fmt = (v, f) => (v == null ? "–" : f(v));
+  const fmtPct = (v) => `${v.toFixed(1)}%`;
   const fmtVA = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
-  const shooting = (label, made, att, value, la) => {
-    const va = (ps) => value * (made(ps) - (la ?? 0) * att(ps));
-    const [o, d] = [va(own), va(opp)];
-    const note = `${made(own)}/${att(own)} · ${fmtPct(att(own) ? 100 * made(own) / att(own) : null)}`;
-    return { label, own: fmtVA(o), note, opp: fmtVA(d), share: split(o, d) };
-  };
-  const two = (k) => (ps) => sum(ps, k === "m" ? "fgm" : "fga") - sum(ps, k === "m" ? "tpm" : "tpa");
-  const [ownPoss, oppPoss] = [poss(own), poss(opp)];
-  const [ownDef, oppDef] = [oppPoss > 0 ? sum(opp, "pts") / oppPoss : 0, ownPoss > 0 ? sum(own, "pts") / ownPoss : 0];
-  const rebShare = split(reb(own), reb(opp));
+  const shooting = (key, made, att) => ({
+    key, label: `${key} VA`, own: fmtVA(o[key]), opp: fmtVA(d[key]), share: split(o[key], d[key]),
+    note: `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`,
+  });
   return {
     opp: oppT.tri,
     rows: [
-      shooting("2P VA", two("m"), two("a"), 2, lga?.la2P),
-      shooting("3P VA", (ps) => sum(ps, "tpm"), (ps) => sum(ps, "tpa"), 3, lga?.la3P),
-      shooting("FT VA", (ps) => sum(ps, "ftm"), (ps) => sum(ps, "fta"), 1, lga?.laFT),
-      { label: "DEF PPP", own: ownDef.toFixed(2), opp: oppDef.toFixed(2), share: split(oppDef, ownDef) },
-      { label: "wTRB%", own: fmtPct(100 * rebShare), opp: fmtPct(100 - 100 * rebShare), share: rebShare },
-      { label: "Poss Ratio", own: oppPoss > 0 ? (ownPoss / oppPoss).toFixed(2) : "–", opp: ownPoss > 0 ? (oppPoss / ownPoss).toFixed(2) : "–", share: split(ownPoss, oppPoss) },
+      shooting("2P", own.fgm - own.tpm, own.fga - own.tpa),
+      shooting("3P", own.tpm, own.tpa),
+      shooting("FT", own.ftm, own.fta),
+      { key: "def", label: "DEF PPP", own: fmt(o.def, (v) => v.toFixed(2)), opp: fmt(d.def, (v) => v.toFixed(2)), share: split(d.def || 0, o.def || 0) },
+      { key: "reb", label: "wTRB%", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
+      { key: "poss", label: "Poss Ratio", own: fmt(o.poss, (v) => v.toFixed(2)), opp: fmt(d.poss, (v) => v.toFixed(2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
     ],
   };
 }
@@ -140,8 +126,10 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // days use it too, handing in their own `lga` and `boxLoader` (a baked box);
 // their games carry no records, so that row drops out. `onTeamPick` hears a
 // tapped side's team (Explore's month narrows its games to it); the card
-// keeps its place on screen as the games around it come and go.
-export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick }) {
+// keeps its place on screen as the games around it come and go. `context`,
+// when given, is (tri) -> the team's season through this game for its card
+// ({ record, place, conf, ranks }, scoreboard.js TeamScoreCard), or null.
+export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, context }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   const [team, setTeam] = useState(null);
@@ -175,7 +163,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga) : null} />
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga) : null} context={team ? context?.(team) : null} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}

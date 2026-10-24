@@ -149,6 +149,16 @@ export function lookAheadOdds() {
   }).catch((e) => { _odds = null; throw e; }));
 }
 
+// The projected standings' wins by team — the tiebreak for teams level in
+// Explore's standings this season — without simulating the awards.
+let _wins = null;
+export function lookAheadWins() {
+  return (_wins ||= fetchBakedJson("/api/projections").then((data) => {
+    const rostered = data.players.filter((p) => data.rosters !== "live" || p.team);
+    return Object.fromEntries(standings(data, rostered).map((t) => [t.team, t.wins]));
+  }).catch((e) => { _wins = null; throw e; }));
+}
+
 function useProjection() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);

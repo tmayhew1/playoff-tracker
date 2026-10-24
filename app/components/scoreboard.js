@@ -2,6 +2,7 @@
 
 import { TEAMS } from "../teams";
 import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
+import { ordinal } from "../lib/team-context";
 
 
 // The competition's scoreboard card: a label over a big number, a badge for
@@ -9,8 +10,8 @@ import { ownerBg, ownerColor, ownerDot, teamColor } from "../lib/format";
 // with an owner's points; TeamScoreCard with a team's score on the Live tab,
 // where `filled` paints the card in the team's color with white details and
 // `right` mirrors it for the home side. `aside` sits on the far side of the
-// card from the label and number.
-function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, aside, children }) {
+// card from the label and number; `totalNote` beside the number, inboard.
+function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, totalNote, aside, children }) {
   const ink = filled ? "#fff" : accent;
   return (
     <div className={`flex-1 p-3 border-2 flex items-center gap-3 ${right ? "flex-row-reverse" : ""} ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
@@ -22,7 +23,10 @@ function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, tot
         </div>
         {badge && <span className="text-[9px] font-bold uppercase tracking-wider text-stone-900 bg-stone-900 text-white px-1.5 py-0.5">{badge}</span>}
       </div>
-      <div className={`text-4xl font-black tabular-nums ${right ? "text-right" : ""} ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
+      <div className={`flex items-end gap-3 ${right ? "flex-row-reverse" : ""}`}>
+        <div className={`text-4xl font-black tabular-nums ${right ? "text-right" : ""} ${totalClass || ""}`} style={ink ? { color: ink } : undefined}>{total}</div>
+        {totalNote}
+      </div>
       {children}
       </div>
       {aside}
@@ -68,11 +72,13 @@ export function ScoreCard({ owner, total, projectedTotal, realProjectedTotal, wh
 // game's leader, lib/leader.js) gets the card filled in.
 // `tape`, when given (a tapped team: { opp, rows }), runs under the score as
 // a tale of the tape: per line the team's figure (and its `note`, small), a
-// tug-of-war bar against
-// the opponent and the opponent's figure. The team holds its own end of the
-// card (the home card is mirrored), in solid ink and bold; the opponent's
-// end is in its color, its figure small. A tick marks even.
-export function TeamScoreCard({ side, ahead, right, tape }) {
+// tug-of-war bar against the opponent and the opponent's figure. The team
+// holds its own end of the card (the home card is mirrored), in solid ink and
+// bold; the opponent's end is in its color, its figure small. A tick marks
+// even. `context` (the team's season through the game: { record, place,
+// conf, ranks }) puts its league rank under each line's label and its record
+// and conference place beside its score.
+export function TeamScoreCard({ side, ahead, right, tape, context }) {
   const accent = teamColor(side.tri);
   const ink = ahead ? "#fff" : accent;
   const oppColor = tape && teamColor(tape.opp);
@@ -90,7 +96,10 @@ export function TeamScoreCard({ side, ahead, right, tape }) {
         const pct = Math.round(Math.min(Math.max(r.share, 0.04), 0.96) * 100);
         return (
           <div key={r.label} className={`flex items-center gap-2 text-xs tabular-nums ${right ? "flex-row-reverse text-right" : ""}`}>
-            <span className={`w-16 shrink-0 text-[9px] font-bold uppercase tracking-wider ${muted}`}>{r.label}</span>
+            <span className="w-16 shrink-0 flex flex-col">
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>{r.label}</span>
+              {context?.ranks?.[r.key] && <span className="text-[10px] font-bold leading-tight" style={{ color: ink }}>{ordinal(context.ranks[r.key])}</span>}
+            </span>
             <span className="flex-1 min-w-0">
               <span className={`flex items-baseline justify-between gap-2 ${right ? "flex-row-reverse" : ""}`}>
                 <span className="truncate" style={{ color: ink }}>
@@ -111,7 +120,13 @@ export function TeamScoreCard({ side, ahead, right, tape }) {
       })}
     </div>
   );
-  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score}>{body}</ScoreFrame>;
+  const standing = context?.record && (
+    <div className={`pb-1 leading-tight tabular-nums ${right ? "text-right" : ""}`}>
+      <div className="text-sm font-bold" style={{ color: ink }}>{context.record}, {ordinal(context.place)}</div>
+      <div className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>in the {context.conf === "E" ? "East" : "West"}</div>
+    </div>
+  );
+  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score} totalNote={standing}>{body}</ScoreFrame>;
 }
 
 

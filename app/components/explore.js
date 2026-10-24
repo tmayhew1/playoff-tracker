@@ -16,7 +16,8 @@ import { LastNight } from "./last-night";
 import { GameCard } from "./live-view";
 import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
-import { warmSeason } from "../lib/month-tables";
+import { monthBoxes, warmSeason } from "../lib/month-tables";
+import { seasonRanks, standingsThrough } from "../lib/team-context";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -128,6 +129,42 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 }
 
 
+// A tapped team's season through a game, for its card: (tri, date) -> {
+// record, place, conf, ranks } — its conference standing (lib/team-context.js
+// standingsThrough, teams level broken on the Look Ahead's projected wins in
+// the season it projects) and its league rank in each of the card's measures
+// over the games through that day — or null while the season's box scores
+// up to this month are still loading. Worked out once per team and day.
+function useSeasonContext(open, month, allMonths, lga, season) {
+  const [boxes, setBoxes] = useState(null);
+  const [projected, setProjected] = useState(null);
+  useEffect(() => {
+    if (!open || !allMonths) return;
+    let cancelled = false;
+    Promise.all(allMonths.filter((m) => m.key <= month.key).map((m) => monthBoxes(season, m).catch(() => [])))
+      .then((all) => { if (!cancelled) setBoxes(all.flat()); });
+    if (season === LOOK_AHEAD_SEASON) {
+      import("./look-ahead").then((m) => m.lookAheadWins()).then((w) => { if (!cancelled) setProjected(w); }, () => {});
+    }
+    return () => { cancelled = true; };
+  }, [open, month, allMonths, season]);
+  const games = useMemo(() => (allMonths || []).flatMap((m) => m.games), [allMonths]);
+  const cache = useMemo(() => new Map(), [boxes, projected, lga]);
+  return useCallback((tri, date) => {
+    if (!boxes) return null;
+    if (!cache.has(date)) {
+      cache.set(date, {
+        standings: standingsThrough(games, date, projected),
+        ranks: seasonRanks(boxes.filter((b) => b.date <= date), lga),
+      });
+    }
+    const { standings, ranks } = cache.get(date);
+    const st = standings[tri];
+    return { record: st ? `${st.w}-${st.l}` : null, place: st?.place, conf: st?.conf, ranks: ranks[tri] || null };
+  }, [boxes, projected, lga, games, cache]);
+}
+
+
 // The regular season's counterpart to the rounds: one collapsible section per
 // month, its league-wide averages first, then a card per day holding that
 // day's games, newest first. Each game is the Live tab's scoreboard card (the
@@ -145,6 +182,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
         .filter((d) => d.games.length)
     : []), [open, month, team]);
   const teamGames = team ? days.reduce((n, d) => n + d.games.length, 0) : month.games.length;
+  const context = useSeasonContext(open, month, allMonths, lga, season);
   const teamControl = teams.length > 1 && (team ? (
     <button
       onClick={() => setTeam(null)}
@@ -201,6 +239,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
                 lga={lga}
                 boxLoader={() => bakedBox(season, g)}
                 onTeamPick={setTeam}
+                context={(tri) => context(tri, g.date)}
               />
             ))}
           </div>
