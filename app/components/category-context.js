@@ -928,6 +928,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // stock 1.4rem for the three-digit ranks the season boards print and grows
   // from there, so short ranks look exactly as they always have.
   const allRowGrid = { gridTemplateColumns: `${Math.max(1.4, allRankChars * 0.36 + 0.3).toFixed(2)}rem 1fr 2.9rem` };
+  // A made/attempted label puts its FG% on a line of its own, short or not,
+  // so every row of the column breaks in the same place.
+  const twoLine = (label) => {
+    const at = typeof label === "string" ? label.lastIndexOf(" (") : -1;
+    return at > 0 ? <>{label.slice(0, at)}<br />{label.slice(at + 1)}</> : label;
+  };
   const Row = ({ rank, r, m, isSelf }) => {
     const cells = (
       <>
@@ -940,7 +946,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="text-right text-[9px]">{fmtG(r.gp)}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode)}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
       </>
     );
     // The player the card is currently about is marked, not a link to itself.

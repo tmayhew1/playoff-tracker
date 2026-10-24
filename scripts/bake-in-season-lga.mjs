@@ -2,7 +2,8 @@
 // and its USG-ADJ usage model in app/data/usage-model.json,
 // measured from its own baked box scores (public/regular-season-games) and
 // shrunk toward the season before while the sample is thin
-// (lib/season-to-date.js inSeasonLga, inSeasonUsageModel). A finished season
+// (lib/season-to-date.js inSeasonLga, inSeasonUsageModel), its shot-distance
+// FG% (zoneFG) along with the rest. A finished season
 // is left to the R pipeline (recompute_derived.R rebuilds it from
 // basketball-reference's table) and scripts/fit-usage-model.mjs, which runs
 // before this in the daily workflow and rewrites the usage file without it.
@@ -24,6 +25,17 @@ const check = process.argv.includes("--check");
 const read = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
 const prevSeason = (s) => { const y = Number(s.slice(0, 4)) - 1; return `${y}-${String((y + 1) % 100).padStart(2, "0")}`; };
 
+// League FG% at each shot distance from shooting-<season>.json's made/attempted
+// totals, or null before the season has one.
+function zoneRates(season) {
+  const p = path.join(ROOT, "app", "data", `shooting-${season}.json`);
+  const avg = fs.existsSync(p) ? read(p).rs?.leagueAvg : null;
+  if (!avg) return null;
+  const out = {};
+  for (const [k, z] of Object.entries(avg)) if (z?.fga > 0) out[k] = z.fgm / z.fga;
+  return Object.keys(out).length ? out : null;
+}
+
 const lgas = read(LGA_PATH);
 const usage = read(USAGE_PATH);
 let changed = 0, usageChanged = 0;
@@ -37,9 +49,10 @@ for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)
   const rows = playerTotals(gamesWithBoxes(index, months));
   const prior = lgas[prevSeason(season)];
   if (!rows.length || !prior) continue;
-  const next = inSeasonLga(rows, prior);
-  // The season's own shot-distance split, once fetch_shooting_splits.R has one.
-  if (lgas[season]?.zoneFG) next.zoneFG = lgas[season].zoneFG;
+  // The season's own shot-distance split, once fetch_shooting_splits.R has
+  // one: read from its shooting file, not the entry here, which already holds
+  // yesterday's blend whenever that script didn't run.
+  const next = inSeasonLga(rows, prior, zoneRates(season));
   const mp = rows.reduce((s, r) => s + r.mp, 0);
   console.log(`${season}: ${rows.length} players, ${Math.round(mp)} min through ${index.through} — laPTSperM ${next.laPTSperM.toFixed(4)}, laBLKperM ${next.laBLKperM.toFixed(4)}`);
   if (JSON.stringify(lgas[season]) !== JSON.stringify(next)) { lgas[season] = next; changed++; }
