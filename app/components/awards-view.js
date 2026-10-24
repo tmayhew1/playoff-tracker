@@ -36,11 +36,14 @@ export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHand
   const [boards, setBoards] = useState({});
   const [error, setError] = useState(null);
   const [sub, setSub] = useState(focus?.award || "mvp");
+  // One season across the sub-pages: switching award keeps the year in view.
+  const [season, setSeason] = useState(focus?.season || null);
   // A card's Go → lands here: switch to its award; the board opens the player.
   const [target, setTarget] = useState(focus);
   useEffect(() => {
     if (!focus) return;
     setSub(focus.award);
+    setSeason(focus.season);
     setTarget(focus);
     onFocusHandled?.();
   }, [focus, onFocusHandled]);
@@ -69,8 +72,8 @@ export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHand
       </div>
       {error ? <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the awards — {error}</div>
         : !data ? <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading awards…</div>
-        : sub === "mip" ? <MipBoard data={data} focus={mine} onGo={onGoToLeaderboard} />
-        : <PickBoard key={sub} award={sub} data={data} focus={mine} onGo={onGoToLeaderboard} />}
+        : sub === "mip" ? <MipBoard data={data} season={season} onSeason={setSeason} focus={mine} onGo={onGoToLeaderboard} />
+        : <PickBoard key={sub} award={sub} data={data} season={season} onSeason={setSeason} focus={mine} onGo={onGoToLeaderboard} />}
     </div>
   );
 }
@@ -86,6 +89,12 @@ function useFocusRow(focus, slugs, open) {
     requestAnimationFrame(() => document.getElementById(`award-row-${focus.slug}`)?.scrollIntoView({ block: "center", behavior: "smooth" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus, key]);
+}
+
+// The shared season if this board has it, else the nearest end of its range.
+function boardSeason(seasons, season) {
+  if (!season || seasons.includes(season)) return season || seasons.at(-1);
+  return season < seasons[0] ? seasons[0] : seasons.at(-1);
 }
 
 function SeasonPicker({ seasons, cur, onPick, children }) {
@@ -112,13 +121,12 @@ const WinnerTag = ({ award }) => (
   <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">{award}</span>
 );
 
-function MipBoard({ data, focus = null, onGo = null }) {
-  const [season, setSeason] = useState(focus?.season || null);
+function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
   const [sort, setSort] = useState("mip");
   const [open, setOpen] = useState(null);
 
   const seasons = useMemo(() => (data ? Object.keys(data.seasons).sort() : []), [data]);
-  const cur = season || seasons.at(-1);
+  const cur = boardSeason(seasons, season);
   // Rows arrive as arrays keyed by data.fields.
   const row = useMemo(() => {
     const F = data.fields;
@@ -128,7 +136,7 @@ function MipBoard({ data, focus = null, onGo = null }) {
   // Arriving from a card: that season, by MIP odds, the player opened.
   useEffect(() => {
     if (!focus) return;
-    setSort("mip"); setSeason(focus.season);
+    setSort("mip");
   }, [focus]);
   const S = data.seasons[cur];
   const list = S[sort].map(([i, rank]) => ({ ...row(i), rank, i }));
@@ -136,7 +144,7 @@ function MipBoard({ data, focus = null, onGo = null }) {
   const valOf = (r) => (sort === "mip" ? r.mip || 0 : sort === "pg" ? r.actualPg - r.projPg : r.actual - r.proj);
   const maxVal = Math.max(1e-9, ...list.map(valOf));
   const winSlug = S.winner?.slug;
-  const pick = (s) => { setSeason(s); setOpen(null); };
+  const pick = (s) => { onSeason(s); setOpen(null); };
   const tapSort = (m) => setSort(sort === m ? "mip" : m);
 
   const sortCls = (m) => `text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort === m ? "text-stone-900 font-semibold" : ""}`;
@@ -338,19 +346,17 @@ const PICK = {
   },
 };
 
-function PickBoard({ award, data, focus = null, onGo = null }) {
+function PickBoard({ award, data, season, onSeason, focus = null, onGo = null }) {
   const cfg = PICK[award];
   const seasons = useMemo(() => Object.keys(data.seasons).sort(), [data]);
-  const [season, setSeason] = useState(focus?.season || null);
   const [open, setOpen] = useState(null);
-  useEffect(() => { if (focus) setSeason(focus.season); }, [focus]);
-  const cur = season && data.seasons[season] ? season : seasons.at(-1);
+  const cur = boardSeason(seasons, season);
   const S = data.seasons[cur];
   const F = data.fields;
   const list = S.rows.map((a, k) => ({ ...Object.fromEntries(F.map((f, j) => [f, a[j]])), rank: S.ranks ? S.ranks[k] : k + 1 }));
   useFocusRow(focus, list.map((r) => r.slug), setOpen);
   const max = Math.max(1e-9, ...list.map((r) => r.p));
-  const pick = (s) => { setSeason(s); setOpen(null); };
+  const pick = (s) => { onSeason(s); setOpen(null); };
   const m = data.model, bt = m.backtest;
   const meta = cfg.meta(S, list);
 
