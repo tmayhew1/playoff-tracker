@@ -78,7 +78,8 @@ const SHOOTING = new Set(["2P", "3P", "FT"]);
 // tug-of-war bar against the opponent and the opponent's figure. The team
 // holds its own end of the card (the home card is mirrored), in solid ink and
 // bold; the opponent's end is in its color, its figure small. A tick marks
-// even. `context` (the team's season through the game: { record, place,
+// even. The opponent's score (`tape.oppScore`) sits under its name, the
+// card's score a size down. `context` (the team's season through the game: { record, place,
 // conf, ranks }) puts its league rank under each line's label and its record
 // and conference place beside its score. A line with `onCat` given and a
 // shooting key ("2P" / "3P" / "FT") is a button for that category (`cat`,
@@ -90,11 +91,18 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat })
   const muted = ahead ? "text-white/70" : "text-stone-400";
   const body = tape && (
     <div className="mt-2.5 space-y-1">
-      <div className={`flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest ${right ? "flex-row-reverse" : ""}`}>
+      <div className={`flex items-start gap-2 text-[9px] font-bold uppercase tracking-widest ${right ? "flex-row-reverse" : ""}`}>
         <span className="w-16 shrink-0" />
-        <span className={`flex-1 flex justify-between ${right ? "flex-row-reverse" : ""}`}>
+        <span className={`flex-1 flex items-start justify-between ${right ? "flex-row-reverse" : ""}`}>
           <span style={{ color: ink }}>{side.tri}</span>
-          <span className={muted}>{tape.opp}</span>
+          <span className={`flex flex-col ${right ? "items-start" : "items-end"}`}>
+            <span className={muted}>{tape.opp}</span>
+            {tape.oppScore != null && (
+              <span className={`mt-0.5 text-2xl font-black tabular-nums tracking-normal leading-none ${ahead ? muted : ""}`} style={ahead ? undefined : { color: oppColor }}>
+                {tape.oppScore}
+              </span>
+            )}
+          </span>
         </span>
       </div>
       {tape.rows.map((r) => {

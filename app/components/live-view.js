@@ -115,6 +115,10 @@ function teamTape(box, tri, lga, dist) {
   };
 }
 
+// A tape with the opponent's score on the scoreboard (which a live game
+// keeps current) for its header.
+const withScore = (tape, oppScore) => tape && { ...tape, oppScore };
+
 // A team's game number this season, off its record: the record counts a
 // final already, a live game not yet. Unknown for a playoff game (the record
 // is the regular season's) or a feed without records.
@@ -181,14 +185,14 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
       style={team ? { borderColor: teamColor(team) } : undefined}
     >
       <div className="relative flex gap-4">
-        {sides.map(([side, , right]) => (
+        {sides.map(([side, other, right]) => (
           <button
             key={side.tri}
             onClick={() => pick(team ? null : side.tri)}
             aria-pressed={!!team}
             className="flex-1 flex text-left"
           >
-            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? teamTape(box, team, lga, ctx?.dist) : null} context={ctx}
+            <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? withScore(teamTape(box, team, lga, ctx?.dist), other.score) : null} context={ctx}
               cat={cat} onCat={(k) => setCat(cat === k ? null : k)} />
           </button>
         ))}
