@@ -6,16 +6,13 @@ import { combinedLga, valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
-import { addLiveLines } from "../lib/live-lines";
+import { addLiveLines, addLiveLinesToIndex } from "../lib/live-lines";
 import { useLiveLines } from "../lib/live-feed";
 
-
-// Whole games as they are; a game in progress makes G fractional (1.6).
-const fmtG = (g) => (Number.isInteger(g) ? String(g) : g.toFixed(1));
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
   // `lga` is the REGULAR-SEASON baseline for this season; the playoff one is
@@ -194,13 +191,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       const parts = valueAddParts(p, lga);
       return { ...p, gp: p.g, reb: (p.drb || 0) + (p.orb || 0), va: parts.va, eff: parts.efficiency, games: [] };
     };
-    // A row tonight's games moved also keeps its line through last night, for
-    // the breakdown card (`baked`): the card ranks it against a league index
-    // that stops there, and its shooting splits (basketball-reference's) only
-    // cover the box scores that went into it.
-    return addLiveLines(rsData.players, live?.lines).map(({ preLive, ...p }) => (
-      preLive ? { ...shape(p), baked: shape(preLive) } : shape(p)
-    ));
+    return addLiveLines(rsData.players, live?.lines).map(shape);
   }, [rsData, lga, live]);
 
   // Playoff rows arrive from /api/leaderboard with `va` already baked against
@@ -282,7 +273,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // rows and re-prices against the playoff baseline (spec §4.8). Left on the
   // regular season it would rank a playoff card against a differently-scored
   // field.
-  const ctxPlayers = useUsgAdjIndex(ctxByScope[scope] || null, lgaScopeFor(scope));
+  //
+  // The board's live lines (games the bake hasn't caught up to) ride on the
+  // index's season-so-far rows too, so the card opened from a row ranks that
+  // same row — ESPN's box scores — in a field moved as far, until the next
+  // bake folds them in (lib/live-lines.js).
+  const ctxLive = useMemo(() => {
+    const idx = ctxByScope[scope] || null;
+    if (scope === "playoffs" || rsSeason !== season) return idx;
+    return addLiveLinesToIndex(idx, season, live?.lines, (row) => valueAddParts(row, lga).va);
+  }, [ctxByScope, scope, rsSeason, season, live, lga]);
+  const ctxPlayers = useUsgAdjIndex(ctxLive, lgaScopeFor(scope));
   useEffect(() => {
     if (expanded == null || ctxByScope[scope]) return;
     let cancelled = false;
@@ -878,7 +879,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               // per-category breakdown instead, with the same category
               // context drill-ins as the playoff view.
               <VACategoryBreakdown
-                player={p.baked || p}
+                player={p}
                 lga={lgaOf(p)}
                 baseline="NBA"
                 context={contextFor(p)}

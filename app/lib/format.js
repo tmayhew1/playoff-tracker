@@ -70,6 +70,10 @@ export function timeAgo(iso) {
 // VABreakdown: diverging +/- bars (per-GAME contribution above/below the D-I
 // average), grouped with separators, plus a Per 36 / Per G stat-label toggle.
 // "’26" for "2025-26" — season's end year, short form.
+// Games played, with a game still on read as the games finished and a "+"
+// (a live G of 1.249 is "1+"), not as the share of it played.
+export const fmtG = (g) => (Number.isInteger(g || 0) ? String(g || 0) : `${Math.floor(g)}+`);
+
 export const seasonTag = (s) => "’" + (s || "").slice(5);
 
 
