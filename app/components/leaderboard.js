@@ -190,10 +190,17 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // computed against the season's league baselines (rs bakes don't carry VA).
   const rsPlayers = useMemo(() => {
     if (!rsData?.players?.length) return null;
-    return addLiveLines(rsData.players, live?.lines).map((p) => {
+    const shape = (p) => {
       const parts = valueAddParts(p, lga);
       return { ...p, gp: p.g, reb: (p.drb || 0) + (p.orb || 0), va: parts.va, eff: parts.efficiency, games: [] };
-    });
+    };
+    // A row tonight's games moved also keeps its line through last night, for
+    // the breakdown card (`baked`): the card ranks it against a league index
+    // that stops there, and its shooting splits (basketball-reference's) only
+    // cover the box scores that went into it.
+    return addLiveLines(rsData.players, live?.lines).map(({ preLive, ...p }) => (
+      preLive ? { ...shape(p), baked: shape(preLive) } : shape(p)
+    ));
   }, [rsData, lga, live]);
 
   // Playoff rows arrive from /api/leaderboard with `va` already baked against
@@ -871,7 +878,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               // per-category breakdown instead, with the same category
               // context drill-ins as the playoff view.
               <VACategoryBreakdown
-                player={p}
+                player={p.baked || p}
                 lga={lgaOf(p)}
                 baseline="NBA"
                 context={contextFor(p)}

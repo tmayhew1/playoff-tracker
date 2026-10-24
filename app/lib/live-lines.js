@@ -59,10 +59,13 @@ export function liveLines(games) {
 // on: totals summed, G up by each game's share, `team` moved to the live
 // team, and `live` set ({ gameId, date, frac }) on anyone in a game still on. A
 // player the bake hasn't seen yet (a debut tonight) joins as a new row.
+// `preLive` keeps a moved row as the bake had it, for the views that stay on
+// the season through last night.
 export function addLiveLines(players, lines) {
   if (!lines?.length) return players;
-  const rows = players.map((p) => ({ ...p }));
+  const rows = players.map((p) => ({ ...p, preLive: p }));
   const by = new Map(rows.map((r) => [normalizeName(r.name), r]));
+  const moved = new Set();
   for (const l of lines) {
     const k = normalizeName(l.name);
     let r = by.get(k);
@@ -72,10 +75,12 @@ export function addLiveLines(players, lines) {
       rows.push(r);
       by.set(k, r);
     }
+    moved.add(r);
     r.team = l.tri;
     r.g = Math.round(((r.g || 0) + l.frac) * 1000) / 1000;
     for (const key of TOTAL_KEYS) r[key] = (r[key] || 0) + (l[key] || 0);
     if (l.live) r.live = { gameId: l.gameId, date: l.date, frac: l.frac };
   }
+  for (const r of rows) if (!moved.has(r)) delete r.preLive;
   return rows;
 }

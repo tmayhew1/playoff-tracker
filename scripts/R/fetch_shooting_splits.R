@@ -124,19 +124,48 @@ norm_name <- function(s) {
   tolower(trimws(gsub("[^a-zA-Z0-9]+", " ", s %||% "")))
 }
 
+# The season under way on today's date (Oct-Dec: the year just started).
+current_season <- function(d = Sys.Date()) {
+  y <- as.integer(format(d, "%Y"))
+  make_season(if (as.integer(format(d, "%m")) >= 10) y else y - 1L)
+}
+
+# basketball-reference's totals for a season still being played, through
+# fetch_historical.R's scraper. Sourced into its own environment, so its
+# main() (which only runs when it is invoked as a script) and its other
+# helpers can't shadow this script's.
+fetch_season_so_far_totals <- function(season) {
+  hist <- new.env(parent = globalenv())
+  source(file.path(dirname(sub("^--file=", "",
+    grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), "fetch_historical.R"), local = hist)
+  message(sprintf("  (%s in progress - FGA from basketball-reference's totals so far)", season))
+  hist$fetch_regular_season_totals(season_end_year(season))
+}
+
 # slug -> total-season FGA and normalized-name -> total-season FGA, from the
 # sibling bake already on disk: regular-season-<season>.json for "rs",
 # leaderboard-<season>.json for "po". NULL if that bake doesn't exist yet
 # (the season hasn't been baked by fetch_historical.R), which the caller
 # treats as "can't determine attempts, skip this season/scope".
+#
+# The season in progress has no regular-season-<season>.json until it is
+# over (the app adds its totals up from its box scores meanwhile), so for
+# "rs" the attempts come from basketball-reference's own totals page for the
+# season so far - the same site, and the same night, as the shooting page
+# whose shares they multiply.
 load_player_fga <- function(season, scope) {
   path <- file.path(DATA_DIR, if (scope == "po") sprintf("leaderboard-%s.json", season)
                                else sprintf("regular-season-%s.json", season))
-  if (!file.exists(path)) return(NULL)
-  d <- jsonlite::fromJSON(path, simplifyVector = FALSE)
+  players <- if (file.exists(path)) {
+    jsonlite::fromJSON(path, simplifyVector = FALSE)$players
+  } else if (scope == "rs" && season == current_season()) {
+    fetch_season_so_far_totals(season)
+  } else {
+    return(NULL)
+  }
   by_slug <- new.env(parent = emptyenv())
   by_name <- new.env(parent = emptyenv())
-  for (p in (if (is.null(d$players)) list() else d$players)) {
+  for (p in (if (is.null(players)) list() else players)) {
     fga <- suppressWarnings(as.numeric(p$fga %||% 0))
     if (is.na(fga) || fga <= 0) next
     slug <- p$slug

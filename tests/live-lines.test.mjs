@@ -61,6 +61,11 @@ test("lines add onto the baked totals; a debut joins as a new row", () => {
   const flagg = rows.find((r) => r.name === "Cooper Flagg");
   assert.equal(flagg.team, "DAL");
   assert.equal(flagg.g, 0.625);
+  // A moved row keeps its line through last night; a debut has none to keep.
+  assert.equal(wemby.preLive, baked[0]);
+  assert.equal(flagg.preLive, undefined);
+  const quiet = addLiveLines([...baked, { name: "Day Off", team: "LAL", g: 2, mp: 50 }], liveLines(GAMES)).find((r) => r.name === "Day Off");
+  assert.equal(quiet.preLive, undefined);
   // The baked rows themselves are left as they were.
   assert.equal(baked[0].g, 2);
   assert.equal(addLiveLines(baked, []), baked);
