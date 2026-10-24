@@ -122,7 +122,7 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // `game`, when given, is one game's value per segment (null where a box
 // score can't say), pointed at by a "Today" arrow; tapping either calls
 // `onToday`.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, game = null, onToday = null }) {
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, game = null, onToday = null, gameInk = "#1c1917" }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -292,9 +292,9 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
               an arrow in to it from the side with more room. */}
           {arrow && (
             <>
-              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke="#1c1917" strokeWidth="0.5" />
-              <polygon points={arrow.head} fill="#1c1917" />
-              <circle cx={view.game.cx} cy={view.game.cy} r="0.9" fill="#fff" stroke="#1c1917" strokeWidth="0.45" />
+              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke={gameInk} strokeWidth="0.5" />
+              <polygon points={arrow.head} fill={gameInk} />
+              <circle cx={view.game.cx} cy={view.game.cy} r="1.1" fill={gameInk} stroke="#fff" strokeWidth="0.35" />
             </>
           )}
         </svg>
@@ -302,8 +302,8 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           <button
             type="button"
             onClick={onToday || undefined}
-            className="absolute -translate-x-1/2 -translate-y-1/2 px-1 text-[8px] font-bold uppercase tracking-wide leading-tight text-stone-900 bg-white/80 rounded-sm"
-            style={{ left: `${arrow.tx}%`, top: `${(arrow.ty / height) * 100}%` }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 px-1 text-[8px] font-bold uppercase tracking-wide leading-tight text-white rounded-sm"
+            style={{ left: `${arrow.tx}%`, top: `${(arrow.ty / height) * 100}%`, backgroundColor: gameInk }}
           >
             Today
           </button>
@@ -400,6 +400,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const [showToday, setShowToday] = useState(false);
   useEffect(() => { setShowToday(false); }, [catKey]);
   const today = focused ? null : gameRow;
+  // Today wears his team's color in the game.
+  const todayInk = today?.team ? teamColor(today.team) : "#1c1917";
 
   // Tapping a bar in the by-season trend (View 6) arms a "Go →" popup for that
   // season. Unlike the mini leaderboard above — which re-points the card in
@@ -1050,14 +1052,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       type="button"
       onClick={() => setShowToday(false)}
       aria-label={`${self.name} today, would rank #${rank}, ${metricLabel} value added ${sgn(m)} — tap to hide`}
-      className={`${rowGrid} w-full text-left text-stone-900 rounded-sm border border-dashed border-stone-500 bg-stone-50`}
+      className={`${rowGrid} w-full text-left text-white rounded-sm`}
+      style={{ backgroundColor: todayInk }}
     >
       <span className="text-right text-[9px] opacity-70">{rank}</span>
       <span className="truncate text-[10px] font-semibold">{shortName(self.name)} <span className="font-normal italic">Today</span></span>
       <span className="text-right text-[9px]">1</span>
       <span className="text-right text-[9px]">{Math.round(r.mp)}</span>
-      <span className={`text-right text-[10px] font-semibold ${m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-      <span className="text-right text-[9px] text-stone-500">{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
+      <span className="text-right text-[10px] font-semibold">{sgn(m)}</span>
+      <span className="text-right text-[9px] text-white/80">{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
     </button>
   );
 
@@ -1221,6 +1224,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               refLine={teamRefLine}
               game={scatterGame}
               onToday={() => setShowToday((x) => !x)}
+              gameInk={todayInk}
             />
           ) : (
           <>
@@ -1311,9 +1315,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           className="absolute inset-x-0 h-3 translate-y-1/2 flex items-center"
                           style={{ bottom: `${Math.max(4, Math.min(92, 50 + (v / lim) * 50))}%` }}
                         >
-                          <span className="block w-full h-[1.5px] bg-stone-900" />
-                          {lead && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[4px] border-y-transparent border-l-[5px] border-l-stone-900" />}
-                          {lead && <span className="absolute left-1.5 bottom-full -mb-0.5 text-[6px] font-bold uppercase tracking-wide text-stone-900 leading-none">Today</span>}
+                          <span className="block w-full h-[2px]" style={{ backgroundColor: todayInk }} />
+                          {lead && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[4px] border-y-transparent border-l-[5px]" style={{ borderLeftColor: todayInk }} />}
+                          {lead && <span className="absolute left-1.5 bottom-full -mb-0.5 text-[6px] font-bold uppercase tracking-wide leading-none" style={{ color: todayInk }}>Today</span>}
                         </button>
                       );
                     })()}
@@ -1335,7 +1339,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           {today && (game2P != null || segData.some((sg) => sg.gameV != null)) && (
             <div className="mt-1.5 flex items-center justify-center gap-3 text-[8px] uppercase tracking-wider text-stone-500">
               <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-stone-900" />Season so far</span>
-              <span className="inline-flex items-center gap-1"><span aria-hidden className="font-bold text-stone-900">{scatter ? "↘" : "▸"}</span>Today · tap it to rank it</span>
+              <span className="inline-flex items-center gap-1"><span aria-hidden className="font-bold" style={{ color: todayInk }}>{scatter ? "↘" : "▸"}</span>Today · tap it to rank it</span>
             </div>
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
