@@ -6,16 +6,13 @@ import { combinedLga, valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { addLiveLines, addLiveLinesToIndex } from "../lib/live-lines";
 import { useLiveLines } from "../lib/live-feed";
 
-
-// Whole games as they are; a game in progress makes G fractional (1.6).
-const fmtG = (g) => (Number.isInteger(g) ? String(g) : g.toFixed(1));
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
   // `lga` is the REGULAR-SEASON baseline for this season; the playoff one is

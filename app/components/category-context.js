@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
 import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
-import { GOLD, GOLD_BG, compName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
@@ -935,7 +935,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             were truncating mid-word on a phone; the initial still separates
             same-surname players. Full names stay in the aria-label below. */}
         <span className="truncate text-[10px] font-medium" title={r.name}>{compName(r.name)}</span>
-        <span className="text-right text-[9px]">{r.gp}</span>
+        <span className="text-right text-[9px]">{fmtG(r.gp)}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
         <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode)}</span>
