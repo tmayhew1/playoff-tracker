@@ -119,10 +119,7 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // Rating) collapses horizontally. Tapping a grey dot re-points the whole card
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
-// `game`, when given, is one game's value per segment (null where a box
-// score can't say), pointed at by an arrow; tapping the spot or the arrow
-// calls `onToday`.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, game = null, onToday = null, gameInk = "#1c1917" }) {
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -149,15 +146,11 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
         ? { cx: clamp(p.cross, 100), cy: clamp(height - p.along, height) }
         : { cx: clamp(p.along, 100), cy: clamp(p.cross, height) };
       const dots = positions.map((p) => ({ ...place(p), row: p.row, v: p.all, self: p.key === "self" }));
-      // The game sits on the centre line at its value.
-      const gameAt = game?.[selIdx] != null ? (vertical
-        ? { cx: 50, cy: clamp(height - along(game[selIdx]), height) }
-        : { cx: clamp(along(game[selIdx]), 100), cy: height / 2 }) : null;
       // A second line the caller can put anywhere on the value axis, with a
       // label hung off the plot's edge beside it (see refLine).
       const refAt = refLine ? clamp(along(refLine.v), L) : null;
       return {
-        dots, r, game: gameAt,
+        dots, r,
         self: dots.find((dt) => dt.self),
         guides: vertical
           ? [{ x1: 0, y1: height - zero, x2: 100, y2: height - zero }]
@@ -177,7 +170,6 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
     return {
       dots: [...dots, self],
       self,
-      game: game ? place(game) : null,
       r: DOT_R,
       // The reference is a point on ONE stat's axis, so it only means something
       // once the plot has collapsed onto that stat.
@@ -187,23 +179,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
         { x1: 0, y1: clamp(height - pos(yi, 0) * height, height), x2: 100, y2: clamp(height - pos(yi, 0) * height, height) },
       ],
     };
-  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine, game]);
-
-  // The game's arrow: from a tail out toward the plot's middle (so it stays
-  // on the card) to just short of the game's spot.
-  const arrow = useMemo(() => {
-    const g = view.game;
-    if (!g) return null;
-    const dx = g.cx > 50 ? -1 : 1, dy = g.cy > height / 2 ? -1 : 1;
-    const [len, gap] = [9, 1.6];
-    const ux = dx / Math.SQRT2, uy = dy / Math.SQRT2;
-    const tipX = g.cx + ux * gap, tipY = g.cy + uy * gap;
-    const tailX = g.cx + ux * len, tailY = g.cy + uy * len;
-    // Arrowhead at the tip, pointing back at the spot.
-    const hx = tipX + ux * 1.6, hy = tipY + uy * 1.6;
-    const head = `${tipX},${tipY} ${hx - uy * 0.9},${hy + ux * 0.9} ${hx + uy * 0.9},${hy - ux * 0.9}`;
-    return { x1: tailX - ux * 1.5, y1: tailY - uy * 1.5, x2: hx, y2: hy, head, tx: tailX + ux * 2.5, ty: tailY + uy * 2.5 };
-  }, [view.game, height]);
+  }, [rows, me, ranges, collapsed, vertical, selIdx, xi, yi, height, refLine]);
 
   // Turn a tap into the players under it. The SVG scales uniformly from a
   // 100-wide viewBox, so client coordinates map straight back through its box.
@@ -212,8 +188,6 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
     if (!box || !box.width) return;
     const vx = ((e.clientX - box.left) / box.width) * 100;
     const vy = ((e.clientY - box.top) / box.height) * height;
-    if (arrow && onToday && [[view.game.cx, view.game.cy], [arrow.tx, arrow.ty], [(arrow.x1 + arrow.x2) / 2, (arrow.y1 + arrow.y2) / 2]]
-      .some(([x, y]) => Math.hypot(x - vx, y - vy) <= 2.5)) { setMenu(null); onToday(); return; }
     const hits = view.dots
       .filter((dt) => !dt.self && dt.row)
       .map((dt) => ({ dt, d: Math.hypot(dt.cx - vx, dt.cy - vy) }))
@@ -289,15 +263,6 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           )}
           <circle cx={view.self.cx} cy={view.self.cy} r="2.4" fill="#fff" />
           <circle cx={view.self.cx} cy={view.self.cy} r="1.5" fill="#1c1917" />
-          {/* The game: a dot on the spot (held to the plot's edges) and
-              an arrow in to it from the side with more room. */}
-          {arrow && (
-            <>
-              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke={gameInk} strokeWidth="0.5" />
-              <polygon points={arrow.head} fill={gameInk} />
-              <circle cx={view.game.cx} cy={view.game.cy} r="1.1" fill={gameInk} stroke="#fff" strokeWidth="0.35" />
-            </>
-          )}
         </svg>
         {menu && (
           // Disambiguation menu: one tap landed on several players, so name
@@ -364,11 +329,8 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
 // `seasonOnly` keeps the card to the season itself — the rankings and the
 // split row — without the all-time board or the by-season trend (a single
-// game's card, where the season so far is the whole question). `gameRow`, a
-// single game's line, rides on the split row in his team's color beside the season's
-// own bars and dot, so the game reads against his average; tapping it puts
-// the game in the rankings as a row of its own.
-export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs", seasonOnly = false, gameRow = null }) {
+// game's card, where the season so far is the whole question).
+export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs", seasonOnly = false }) {
   // The pools below are scored season by season, so they need the same
   // baseline getter the card above them was handed (lib/va-mode.js) — a rank
   // computed against the standard baseline under a USG-ADJ card would be a
@@ -386,13 +348,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const [focusRow, setFocusRow] = useState(null);
   useEffect(() => { setFocusRow(null); }, [ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
   const focused = !!focusRow;
-  // The game's row in the rankings, on a tap of its marker. Only while the
-  // card is about the player whose game it is.
-  const [showToday, setShowToday] = useState(false);
-  useEffect(() => { setShowToday(false); }, [catKey]);
-  const today = focused ? null : gameRow;
-  // The game wears his team's color.
-  const todayInk = today?.team ? teamColor(today.team) : "#1c1917";
 
   // Tapping a bar in the by-season trend (View 6) arms a "Go →" popup for that
   // season. Unlike the mini leaderboard above — which re-points the card in
@@ -761,7 +716,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         return { season: s.season, team: s.team || null, m, rank, poolN: seasonPool.length };
       });
 
-    return { floor, N, rank: selfIdx + 1, win, top: pool[0]?.r || null, poolMs: pool.map((x) => x.m),
+    return { floor, N, rank: selfIdx + 1, win, top: pool[0]?.r || null,
              floorA, partialSelf, careerFloor, board, allN: boardN, allRank: boardRank, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg, seasonOnly]);
 
@@ -780,17 +735,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       // show — never shot from here, no rating — so it reads "–" rather than a
       // misleading 0%).
       const head = seg.head(selfRow, lga, seasonKey);
-      // The game's own value at this component: one game, so its total is
-      // its per-game value. None where a box score can't say — a 2-point
-      // distance (no shot locations in a box), a defensive rating.
-      const gameV = !today || seg.key === "D Rating" || (seg.group === "2p" && !hasZoneData(today))
-        ? null : seg.val(today, lga, seasonKey);
-      return { ...seg, selfV, min, max, med, head, vals, gameV };
+      return { ...seg, selfV, min, max, med, head, vals };
     });
-  }, [SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga, today]);
-  // A box score can't split 2-point value by distance, so the game's marker
-  // runs straight across the four 2-point bars at its whole 2-Pointers VA.
-  const game2P = today && showZones ? catVATotal(today, lga, "2-Pointers") : null;
+  }, [SEGMENTS, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
 
   // One value-added scale shared by every bar in the split row, centred on the
   // league baseline, so bar heights compare across columns (FT's +0.44 really
@@ -899,10 +846,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const xi = axisIdx(axisKeys?.[0], 0);
   const yi = axisIdx(axisKeys?.[1], 1);
   const selIdx = scatter && selSeg ? segData.findIndex((s) => s.key === selSeg.key) : -1;
-  // The game's point on the scatter — only when it has both plotted values.
-  const scatterGame = useMemo(() => (
-    scatter && segData[xi]?.gameV != null && segData[yi]?.gameV != null ? segData.map((sg) => sg.gameV) : null
-  ), [scatter, segData, xi, yi]);
 
   // Headline total(s) for the split row, shown inline with its section heading.
   // Everywhere but the six-bar Scoring card the bars are the group's own
@@ -1030,31 +973,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     );
   };
 
-  // The game as a row of the rankings: its value on the card's metric, and
-  // the rank it would take in the season's field. Not for a 2-point
-  // distance, D Rating or Impact — readings a box score can't give.
-  const todayFits = !selSeg || (selSeg.group !== "2p" && selSeg.key !== "D Rating" && selSeg.key !== "impact");
-  const todayEntry = today && showToday && todayFits && d.win.length ? (() => {
-    const m = metric(today, lga, seasonKey);
-    return { rank: 1 + d.poolMs.filter((v) => v > m).length, r: today, m };
-  })() : null;
-  const TodayRow = ({ rank, r, m }) => (
-    <button
-      type="button"
-      onClick={() => setShowToday(false)}
-      aria-label={`${self.name} this game, would rank #${rank}, ${metricLabel} value added ${sgn(m)} — tap to hide`}
-      className={`${rowGrid} w-full text-left text-white rounded-sm`}
-      style={{ backgroundColor: todayInk }}
-    >
-      <span className="text-right text-[9px] opacity-70">{rank}</span>
-      <span className="truncate text-[10px] font-semibold">{shortName(self.name)}</span>
-      <span className="text-right text-[9px]">1</span>
-      <span className="text-right text-[9px]">{Math.round(r.mp)}</span>
-      <span className="text-right text-[10px] font-semibold">{sgn(m)}</span>
-      <span className="text-right text-[9px] text-white/80">{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
-    </button>
-  );
-
   // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
   // all-time, trend, and shown values). The same control the compare panel
@@ -1122,19 +1040,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
           <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA</span><span className="text-right">{metricLabel}</span>
         </div>
-        {(() => {
-          const rows = d.win.map((x) => <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />);
-          if (!todayEntry) return rows;
-          // The game where it would rank, set off with a ⋯ when that's
-          // outside the five rows around him.
-          const { rank } = todayEntry;
-          const row = <TodayRow key="today" {...todayEntry} />;
-          const gap = <div key="gap" className="text-center text-stone-300 leading-none">⋯</div>;
-          if (rank < d.win[0].rank) return [row, ...(rank < d.win[0].rank - 1 ? [gap] : []), ...rows];
-          if (rank > d.win[d.win.length - 1].rank + 1) return [...rows, gap, row];
-          const at = d.win.findIndex((x) => x.rank >= rank);
-          return at < 0 ? [...rows, row] : [...rows.slice(0, at), row, ...rows.slice(at)];
-        })()}
+        {d.win.map((x) => (
+          <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
+        ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {scopeNoun} players with ≥{d.floor} G ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
@@ -1213,9 +1121,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               sgn={sgn}
               name={self.name}
               refLine={teamRefLine}
-              game={scatterGame}
-              onToday={() => setShowToday((x) => !x)}
-              gameInk={todayInk}
             />
           ) : (
           <>
@@ -1287,30 +1192,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       className={`absolute left-1/2 -translate-x-1/2 w-2.5 ${barFill} ${selfShown >= 0 ? "rounded-t-sm" : "rounded-b-sm"}`}
                       style={selfShown >= 0 ? { bottom: "50%", height: `${barH}%` } : { top: "50%", height: `${barH}%` }}
                     />
-                    {/* The game, on the same scale (held to the strip's ends when
-                        a single game runs past them): a line across the
-                        column — across all four 2-point columns, at the
-                        game's whole 2P VA — with an arrowhead on its first
-                        column. Tapping it adds the game
-                        to the rankings. */}
-                    {(() => {
-                      const v = seg.group === "2p" ? game2P : seg.gameV;
-                      if (v == null) return null;
-                      const lead = seg.group !== "2p" || seg.key === "z03";
-                      return (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setShowToday((x) => !x); }}
-                          aria-pressed={showToday}
-                          aria-label={`This game: ${sgn(v)}${seg.group === "2p" ? " 2-point VA" : ""} — tap to ${showToday ? "hide it from" : "add it to"} the rankings`}
-                          className="absolute inset-x-0 h-3 translate-y-1/2 flex items-center"
-                          style={{ bottom: `${Math.max(4, Math.min(92, 50 + (v / lim) * 50))}%` }}
-                        >
-                          <span className="block w-full h-[2px]" style={{ backgroundColor: todayInk }} />
-                          {lead && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[4px] border-y-transparent border-l-[5px]" style={{ borderLeftColor: todayInk }} />}
-                        </button>
-                      );
-                    })()}
                   </div>
                   <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
                   <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
@@ -1325,12 +1206,6 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             })}
           </div>
           </>
-          )}
-          {today && (game2P != null || segData.some((sg) => sg.gameV != null)) && (
-            <div className="mt-1.5 flex items-center justify-center gap-3 text-[8px] uppercase tracking-wider text-stone-500">
-              <span className="inline-flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-stone-900" />Season so far</span>
-              <span className="inline-flex items-center gap-1"><span aria-hidden className="font-bold" style={{ color: todayInk }}>{scatter ? "↘" : "▸"}</span>This game · tap to rank it</span>
-            </div>
           )}
           <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter

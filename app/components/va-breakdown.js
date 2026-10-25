@@ -688,7 +688,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 <CategoryContext p={pSeries} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
               {seasonWant && seasonCat === group && seasonEnd && (
-                <SeasonSoFarContext soFar={soFar} game={p} catKey={group} scope={seasonWant.scope} defs={defs} defActive={dVA != null} defScope={defScope} />
+                <SeasonSoFarContext soFar={soFar} catKey={group} scope={seasonWant.scope} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
               {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
             </React.Fragment>
@@ -709,9 +709,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
 // Under a single game's section (see `seasonSoFar` above): the player's
 // season to date in that section — its VA per game over his games so far —
 // over the league-context drill-in every season card opens.
-// `game` is the card's own line, marked on the context's split row.
-function SeasonSoFarContext({ soFar, game, catKey, scope, defs, defActive, defScope }) {
-  const gameRow = useMemo(() => ({ ...game, gp: 1 }), [game]);
+function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope }) {
   const note = (text) => <div className="py-2 text-[10px] text-stone-500 italic text-center">{text}</div>;
   const scopeNoun = scope === "playoffs" ? "postseason" : "season";
   let body;
@@ -730,7 +728,7 @@ function SeasonSoFarContext({ soFar, game, catKey, scope, defs, defActive, defSc
             <span className="text-stone-400"> /G · {Math.round(row.gp * 10) / 10} G · {row.team}</span>
           </span>
         </div>
-        <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} seasonOnly gameRow={gameRow} />
+        <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} seasonOnly />
       </>
     );
   }
