@@ -327,7 +327,10 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
 //   self           the player object   (name, slug, seasons[]) for identity/trend
 // The ranking metric is per-game category VA so longevity doesn't dominate a
 // per-game breakdown; the >=1/3-GP floor guards against tiny-sample outliers.
-export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs" }) {
+// `seasonOnly` keeps the card to the season itself — the rankings and the
+// split row — without the all-time board or the by-season trend (a single
+// game's card, where the season so far is the whole question).
+export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs = null, defActive = false, defScope = "rs", seasonOnly = false }) {
   // The pools below are scored season by season, so they need the same
   // baseline getter the card above them was handed (lib/va-mode.js) — a rank
   // computed against the standard baseline under a USG-ADJ card would be a
@@ -651,7 +654,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // off a per-game board, lowered to the viewed player's own career total so
     // the board never ranks a career against a pool it isn't in.
     let careerFloor = 0, board = [], boardN = 0, boardRank = 0;
-    if (careerBoard) {
+    if (seasonOnly) {
+      // No all-time board to build.
+    } else if (careerBoard) {
       const careers = new Map();
       for (const r of allRows) {
         if (!(r.mp > 0) || !segEra(r.season)) continue;
@@ -690,7 +695,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // Trend (view 6): this player's own seasons over time. Each season also
     // carries the player's league rank that year on the same metric, so a
     // top-of-league campaign can flag itself above its bar.
-    const mine = [...(self.seasons || [])]
+    const mine = seasonOnly ? [] : [...(self.seasons || [])]
       .filter((s) => s.mp > 0 && segEra(s.season))
       .sort((a, b) => a.season.localeCompare(b.season))
       .map((s) => {
@@ -713,7 +718,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
     return { floor, N, rank: selfIdx + 1, win, top: pool[0]?.r || null,
              floorA, partialSelf, careerFloor, board, allN: boardN, allRank: boardRank, mine };
-  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg]);
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg, seasonOnly]);
 
   const segData = useMemo(() => {
     if (!SEGMENTS) return null;
@@ -1212,7 +1217,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
       {/* View 4 — the all-time board: single seasons, or whole careers. Always
           the top three plus the player's own neighbourhood of the ranking. */}
-      <div className="border-t border-stone-100 pt-2">
+      {!seasonOnly && <div className="border-t border-stone-100 pt-2">
         <div className="flex items-baseline justify-between gap-1.5 mb-1">
           <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel} VA</span>
           <div className="shrink-0 flex items-baseline gap-1.5">
@@ -1250,10 +1255,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             ? `Across all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G), ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
             : `Across all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
         </div>
-      </div>
+      </div>}
 
       {/* View 6 — trend across this player's seasons, one labeled bar each */}
-      <div className="border-t border-stone-100 pt-2">
+      {!seasonOnly && <div className="border-t border-stone-100 pt-2">
         {/* Second /G toggle, in sync with the first, so it's clear the
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
@@ -1364,7 +1369,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             )}
           </>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

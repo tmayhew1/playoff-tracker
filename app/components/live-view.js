@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
@@ -152,6 +152,14 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, keepInView, context }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
+  // The index scope and season a player's card reads his season so far from:
+  // the regular season's or the playoffs', in the season the game is in.
+  const soFarScope = g.kind === "regular" ? "regular" : g.kind === "playoffs" ? "playoffs" : null;
+  const soFarDate = g.gameDateTimeUTC ? etDate(g.gameDateTimeUTC) : null;
+  const seasonSoFar = useMemo(
+    () => (soFarScope && soFarDate ? { scope: soFarScope, season: seasonOf(new Date(`${soFarDate}T12:00:00Z`)) } : null),
+    [soFarScope, soFarDate]
+  );
   const [team, setTeam] = useState(null);
   const [box, setBox] = useState(null);
   // The shooting category ("2P" / "3P" / "FT") the box is sorted by.
@@ -222,6 +230,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         onBox={setBox}
         singleGame
         finalTop5
+        seasonSoFar={seasonSoFar}
         gameNumberFor={gameNumberFor}
         focusPlayer={focus?.name}
         onFocusHandled={onFocusHandled}

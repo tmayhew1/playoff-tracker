@@ -22,7 +22,7 @@ export const SHOT_CATS = {
 // With `cat` (a SHOT_CATS key) the row reads that category instead — makes,
 // attempts, percentage and its VA (`p.catVA`) — over a light bar of that VA
 // against `maxAbs`, as the leaderboards draw theirs.
-export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs }) {
+export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs, seasonSoFar }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -78,7 +78,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
         </span>
       </button>
       </div>
-      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} useTeamColor={useTeamColor} singleGame={singleGame} />}
+      {isExpanded && <VABreakdown p={p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />}
     </div>
   );
 }
@@ -89,8 +89,9 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
 export const rowKeyOf = (p, i) => `${p.team}-${p.name}-${i}`;
 
 // `cat` (a SHOT_CATS key) shows that category's columns, rows carrying
-// their `catVA`.
-export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat }) {
+// their `catVA`. `seasonSoFar` ({ scope, season }) hands each player's card
+// his season to date (see VABreakdown).
+export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat, seasonSoFar }) {
   const maxAbs = cat ? Math.max(...rows.map((p) => Math.abs(p.catVA || 0)), 0.5) : null;
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
@@ -116,6 +117,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
         singleGame={singleGame}
         cat={cat}
         maxAbs={maxAbs}
+        seasonSoFar={seasonSoFar}
         onPrev={prevKey ? () => setExpandedKey(prevKey) : undefined}
         onNext={nextKey ? () => setExpandedKey(nextKey) : undefined}
       />
@@ -193,8 +195,9 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
 // `gameNumberFor`. `focusPlayer`, a name on the `teamFilter` team, opens
 // that player's card once the box loads, scrolls to it, then calls
 // `onFocusHandled`. `teamCat` (a SHOT_CATS key) sorts the `teamFilter`
-// team's box by that category's VA and shows its columns.
-export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat }) {
+// team's box by that category's VA and shows its columns. `seasonSoFar`
+// passes through to the player cards (BoxscoreTable).
+export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -391,7 +394,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
       {showTop5 && (
         <div className={`px-2 pb-2 border-t ${isLive ? "border-red-200" : "border-stone-200"}`}>
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
-          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
+          <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />
         </div>
       )}
 
@@ -402,7 +405,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
           {!box && !loading && !error && <div className="py-2 text-[10px] text-stone-500 italic text-center">No box score yet</div>}
           {box && teamPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} cat={teamCat} />
+              <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} cat={teamCat} seasonSoFar={seasonSoFar} />
             </div>
           )}
           {box && teamPlayers.length === 0 && (
@@ -417,7 +420,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
           {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
-              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} />
+              <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
