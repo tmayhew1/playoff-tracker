@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
+import { Seg } from "./ui/seg";
 import { LGA, valueAddByCategory, playmakingVA, reboundGamma, volumeVA } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, resolveCompareTarget, useFreshRows } from "./compare";
@@ -384,7 +385,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
         </div>
       )}
       <div className="mb-3">
-        <div className={`mb-2 flex items-center justify-between gap-2 uppercase tracking-widest text-stone-500 ${(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) ? "text-xs font-semibold text-stone-700" : "text-[9px]"}`}>
+        <div className={`mb-2 flex items-center justify-between gap-2 text-stone-500 ${(selectedGame || (canDrillToSeries && selectedSeriesIdx != null)) ? "text-[13px] font-semibold text-stone-700" : "text-[11px]"}`}>
           <span>{(() => {
             if (!rate) return "Value Added Breakdown";
             // When a game/series is selected, italicize the matchup so it
@@ -420,7 +421,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 if (selectedGame) setSelectedGame(null);
                 else setSelectedSeriesIdx(null);
               }}
-              className="normal-case tracking-normal text-stone-400 hover:text-stone-700"
+              className="normal-case text-stone-400 hover:text-stone-700"
             >
               ← back
             </button>
@@ -431,7 +432,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             {/* Value Added — label + value inline, no background. While
                 comparing, the compared player's figure rides along in gold. */}
             <div className={`flex items-baseline justify-center gap-2 ${vaPlus != null ? "mb-0.5" : "mb-2"}`}>
-              <span className="text-[10px] uppercase tracking-widest text-stone-500">Value Added</span>
+              <span className="text-[12px] text-stone-500">Value Added</span>
               <span className={`tabular-nums text-lg font-bold leading-none ${p.va < 0 ? "text-red-600" : "text-stone-900"}`}>{p.va.toFixed(2)}</span>
               {compare && atSeasonLevel && (
                 <span className="tabular-nums text-sm font-semibold leading-none rounded-sm px-1 py-[1px]" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(cmpRow.va ?? 0).toFixed(1)}</span>
@@ -444,34 +445,34 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                   ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
                   : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
               >
-                <span className="text-[9px] uppercase tracking-widest text-stone-400">VA+</span>
+                <span className="text-[11px] text-stone-400">VA+</span>
                 <span className={`tabular-nums text-sm font-bold leading-none ${vaPlus < 0 ? "text-red-600" : "text-stone-900"}`}>{vaPlus.toFixed(2)}</span>
-                <span className={`text-[9px] tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}>D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
+                <span className={`text-[11px] tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}>D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
               </div>
             )}
             {/* A single game's card (the box scores') has no use for the
                 game / minutes tiles: its row already shows the minutes. */}
             {!singleGame && <div className={`grid gap-2 items-end ${multiGame ? "grid-cols-3" : "grid-cols-2"}`}>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{selectedDate ? "Date" : effectiveGameNumber || singleGame ? gameTileLabel : "Games"}</div>
+                <div className="text-[11px] text-stone-500 leading-tight">{selectedDate ? "Date" : effectiveGameNumber || singleGame ? gameTileLabel : "Games"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{selectedDate || effectiveGameNumber || (singleGame ? "–" : p.gp || 1)}</div>
                 {compare && atSeasonLevel && (
-                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{cmpRow.gp || 0}</div>
+                  <div className="tabular-nums text-[12px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{cmpRow.gp || 0}</div>
                 )}
               </div>
               <div className="flex flex-col justify-end text-center">
-                <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">{singleGame ? "MIN" : "MIN/G"}</div>
+                <div className="text-[11px] text-stone-500 leading-tight">{singleGame ? "MIN" : "MIN/G"}</div>
                 <div className="tabular-nums text-base font-semibold text-stone-700">{(mp / (p.gp || 1)).toFixed(1)}</div>
                 {compare && atSeasonLevel && (
-                  <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{((cmpRow.mp || 0) / (cmpRow.gp || 1)).toFixed(1)}</div>
+                  <div className="tabular-nums text-[12px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{((cmpRow.mp || 0) / (cmpRow.gp || 1)).toFixed(1)}</div>
                 )}
               </div>
               {multiGame && (
                 <div className="flex flex-col justify-end text-center">
-                  <div className="text-[9px] uppercase tracking-widest text-stone-500 leading-tight">VA / Game</div>
+                  <div className="text-[11px] text-stone-500 leading-tight">VA / Game</div>
                   <div className={`tabular-nums text-base font-semibold ${(p.va / p.gp) < 0 ? "text-red-600" : "text-stone-700"}`}>{(p.va / p.gp).toFixed(2)}</div>
                   {compare && atSeasonLevel && (
-                    <div className="tabular-nums text-[10px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(cmpRow.vaPerG ?? ((cmpRow.va || 0) / (cmpRow.gp || 1))).toFixed(2)}</div>
+                    <div className="tabular-nums text-[12px] font-semibold rounded-sm mx-auto px-1" style={{ color: cmpPal.ink, backgroundColor: cmpPal.bg }}>{(cmpRow.vaPerG ?? ((cmpRow.va || 0) / (cmpRow.gp || 1))).toFixed(2)}</div>
                   )}
                 </div>
               )}
@@ -511,45 +512,11 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
-          <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
-            <button
-              type="button"
-              onClick={() => setCompareMode("values")}
-              className={`whitespace-nowrap px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-              aria-pressed={compareMode === "values"}
-            >
-              Values
-            </button>
-            <button
-              type="button"
-              onClick={() => setCompareMode("pct")}
-              className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-              aria-pressed={compareMode === "pct"}
-            >
-              Percentiles
-            </button>
-          </div>
+          <Seg size="sm" label="Compare as" value={compareMode} onChange={setCompareMode} options={[["values", "Values"], ["pct", "Percentiles"]]} />
         </div>
       ) : (
       <div className="flex justify-between items-center mb-1">
-        {!singleGame && <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
-          <button
-            type="button"
-            onClick={() => switchView("basic")}
-            className={`whitespace-nowrap px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-            aria-pressed={viewMode === "basic"}
-          >
-            Basic
-          </button>
-          <button
-            type="button"
-            onClick={() => switchView("detail")}
-            className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${viewMode === "detail" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-            aria-pressed={viewMode === "detail"}
-          >
-            By Category
-          </button>
-        </div>}
+        {!singleGame && <Seg size="sm" label="Rows" value={viewMode} onChange={switchView} options={[["basic", "Basic"], ["detail", "By Category"]]} />}
         {context && atSeasonLevel && (
           <CompareButton
             compare={compare}
@@ -559,24 +526,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           />
         )}
         {effectiveRate && (
-          <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
-            <button
-              type="button"
-              onClick={() => setRateMode("per36")}
-              className={`whitespace-nowrap px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-              aria-pressed={rateMode === "per36"}
-            >
-              Per 36
-            </button>
-            <button
-              type="button"
-              onClick={() => setRateMode("perG")}
-              className={`whitespace-nowrap px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500 hover:text-stone-700"}`}
-              aria-pressed={rateMode === "perG"}
-            >
-              Per G
-            </button>
-          </div>
+          <Seg size="sm" label="Rates" value={rateMode} onChange={setRateMode} options={[["per36", "Per 36"], ["perG", "Per G"]]} />
         )}
       </div>
       )}
@@ -633,7 +583,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           return (
             <React.Fragment key={i}>
               <div
-                className={`flex items-center gap-2 text-[10px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${isCatSel ? "bg-stone-200" : ""}`}
+                className={`flex items-center gap-2 text-[12px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${isCatSel ? "bg-stone-200" : ""}`}
                 data-va-group={group}
                 onClick={onCatTap}
                 role={onCatTap ? "button" : undefined}
@@ -663,7 +613,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                       topmost tick so the column of marks is self-explanatory. */}
                   {refLeftPct != null && i === firstRefIdx && (
                     <div
-                      className="absolute bottom-full mb-0.5 -translate-x-1/2 whitespace-nowrap text-[8px] leading-none text-stone-400 pointer-events-none"
+                      className="absolute bottom-full mb-0.5 -translate-x-1/2 whitespace-nowrap text-[10px] leading-none text-stone-400 pointer-events-none"
                       style={{ left: `${refLeftPct}%` }}
                     >
                       Reg. Season Avg
@@ -682,7 +632,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 ) : (
                   <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value, 2)}</span>
                 )}
-                <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
+                <span className={`${labelW} text-[11px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
               </div>
               {context && atSeasonLevel && isCatSel && sectionEnd && (
                 <CategoryContext p={pSeries} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
@@ -695,7 +645,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           );
         })}
       </div>
-      <div className="mt-2 text-center text-[9px] italic text-stone-400">
+      <div className="mt-2 text-center text-[11px] italic text-stone-400">
         Bars show contribution above/below the league baseline ({lga?.usgModel ? "median rates, scoring usage-adjusted" : "median rates"}){context && atSeasonLevel ? ` · tap a ${viewMode === "detail" ? "section" : "category"} for league context` : ""}
         {seasonWant ? ` · tap a section’s middle for his season so far, an edge for the next player` : ""}
       </div>
@@ -710,7 +660,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
 // season to date in that section, in the league-context drill-in every
 // season card opens.
 function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope }) {
-  const note = (text) => <div className="py-2 text-[10px] text-stone-500 italic text-center">{text}</div>;
+  const note = (text) => <div className="py-2 text-[12px] text-stone-500 italic text-center">{text}</div>;
   const scopeNoun = scope === "playoffs" ? "postseason" : "season";
   let body;
   if (!soFar || soFar.loading) body = note("Loading the season so far…");
@@ -719,7 +669,7 @@ function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope })
     const { row, context, lga } = soFar;
     body = (
       <>
-        <div className="text-[9px] uppercase tracking-widest text-stone-500">So far this {scopeNoun}</div>
+        <div className="text-[11px] text-stone-500">So far this {scopeNoun}</div>
         <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} seasonOnly />
       </>
     );
@@ -760,7 +710,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
   }, [pendingCompare, context, onCompareHandled]);
   const switchView = (m) => { setViewMode(m); setOpenCat(null); };
   if (p.ast == null || !lga || !(p.mp > 0)) {
-    return <div className="px-2 py-2 text-[10px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
+    return <div className="px-2 py-2 text-[12px] text-stone-400 italic">Per-stat breakdown needs the latest data — re-run the college bake.</div>;
   }
   const mp = p.mp, gp = p.gp || 1;
   const twoPm = p.fgm - p.tpm, twoPa = p.fga - p.tpa;
@@ -839,17 +789,14 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
-          <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <div className="shrink-0 inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden">
             <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
             <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
           </div>
         </div>
       ) : (
       <div className="flex justify-between items-center gap-1 mb-1.5">
-        <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
-          <button onClick={() => switchView("basic")} className={`px-1.5 py-0.5 ${viewMode === "basic" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Basic</button>
-          <button onClick={() => switchView("detail")} className={`px-1.5 py-0.5 border-l border-stone-300 ${viewMode === "detail" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>By Category</button>
-        </div>
+        <Seg size="sm" label="Rows" value={viewMode} onChange={switchView} options={[["basic", "Basic"], ["detail", "By Category"]]} />
         {context && (
           <CompareButton
             compare={compare}
@@ -858,10 +805,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
             onClear={() => { setCompare(null); setPicking(false); }}
           />
         )}
-        <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
-          <button onClick={() => setRateMode("per36")} className={`px-1.5 py-0.5 ${rateMode === "per36" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per 36</button>
-          <button onClick={() => setRateMode("perG")} className={`px-1.5 py-0.5 border-l border-stone-300 ${rateMode === "perG" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Per G</button>
-        </div>
+        <Seg size="sm" label="Rates" value={rateMode} onChange={setRateMode} options={[["per36", "Per 36"], ["perG", "Per G"]]} />
       </div>
       )}
       {picking && context && (
@@ -878,12 +822,12 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
       <>
       {vaPlus != null && (
         <div
-          className="text-center text-[9px] mb-1"
+          className="text-center text-[11px] mb-1"
           title={dInfo?.w != null
             ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
             : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
         >
-          <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>
+          <span className="text-stone-400 mr-1.5">VA+</span>
           <span className={`tabular-nums font-bold ${vaPlus < 0 ? "text-red-600" : "text-stone-800"}`}>{vaPlus.toFixed(1)}</span>
           <span className={`tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}> · D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
         </div>
@@ -904,7 +848,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         return (
           <React.Fragment key={c.key}>
             <div
-              className={`flex items-center gap-2 text-[10px] py-[1px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${catOpen ? "bg-stone-200" : ""}`}
+              className={`flex items-center gap-2 text-[12px] py-[1px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${catOpen ? "bg-stone-200" : ""}`}
               onClick={onCatTap}
               role={onCatTap ? "button" : undefined}
               tabIndex={onCatTap ? 0 : undefined}
@@ -917,14 +861,14 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
                 <div className="absolute inset-y-0.5" style={{ backgroundColor: isPos ? "#1c1917" : "#a8a29e", left: isPos ? "50%" : `${50 - pct}%`, width: `${pct}%` }} />
               </div>
               <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(perG, 2)}</span>
-              <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
+              <span className="w-[5.5rem] shrink-0 text-[11px] text-stone-500 text-right tabular-nums">{c.label}</span>
             </div>
             {catOpen && sectionEnd && <CategoryContext p={p} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope="rs" />}
             {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
           </React.Fragment>
         );
       })}
-      <div className="mt-2 text-center text-[9px] italic text-stone-400">
+      <div className="mt-2 text-center text-[11px] italic text-stone-400">
         Bars show per-game contribution above / below the {baseline || (context ? "NBA playoff" : "D-I")} baseline{lga?.usgModel ? ", scoring usage-adjusted" : ""}{context ? ` · tap a ${viewMode === "detail" ? "section" : "category"} for league context` : ""}
       </div>
       </>

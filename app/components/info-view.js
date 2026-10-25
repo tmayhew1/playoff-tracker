@@ -46,11 +46,11 @@ export function InfoView() {
 
   const Group = ({ title, items }) => (
     <div className="mb-3">
-      <div className="text-[9px] uppercase tracking-widest text-stone-400 mb-1">{title}</div>
+      <div className="text-[11px] text-stone-400 mb-1">{title}</div>
       {items.map((it) => (
         <div key={it.label} className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 py-1 border-b border-stone-100">
-          <span className="text-xs font-semibold text-stone-700">{it.label}</span>
-          <span className="text-[11px] tabular-nums text-stone-500" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{it.f}</span>
+          <span className="text-[13px] font-semibold text-stone-700">{it.label}</span>
+          <span className="text-[13px] tabular-nums text-stone-500" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{it.f}</span>
         </div>
       ))}
     </div>
@@ -59,7 +59,7 @@ export function InfoView() {
   // The story of the app, told in the order it was built.
   const Step = ({ n, title, children }) => (
     <section className="p-3 bg-white border border-stone-300 text-sm text-stone-700 leading-relaxed">
-      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">
+      <h2 className="text-[13px] font-bold text-stone-900 mb-2">
         <span className="text-stone-400 tabular-nums mr-1.5">{n}</span>{title}
       </h2>
       {children}
@@ -69,21 +69,21 @@ export function InfoView() {
   return (
     <div className="space-y-5">
       <section className="p-3 bg-white border border-stone-300">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Data status</h2>
+        <h2 className="text-[13px] font-bold text-stone-900 mb-2">Data status</h2>
         {status ? (
           <div className="space-y-1 text-sm text-stone-700">
             <div>
               Last refreshed: <span className="font-semibold text-stone-900">{refreshed ? refreshed.toLocaleString() : "—"}</span>
               {refreshed && <span className="text-stone-400"> ({timeAgo(status.lastRefresh)})</span>}
             </div>
-            <div className="text-xs text-stone-500">
+            <div className="text-[13px] text-stone-500">
               {status.seasonsBaked} season{status.seasonsBaked === 1 ? "" : "s"} stored
               {status.earliestSeason && ` (${status.earliestSeason} – ${status.latestSeason})`}
               {status.latestRefreshedSeason && `, most recent bake: ${status.latestRefreshedSeason}.`}
             </div>
           </div>
         ) : (
-          <div className="text-[10px] text-stone-400 italic">Checking…</div>
+          <div className="text-[12px] text-stone-400 italic">Checking…</div>
         )}
       </section>
 
@@ -94,13 +94,13 @@ export function InfoView() {
 
       <Step n="2" title="Value Added (VA)">
         <p className="mb-3">Team points settle the draft; <span className="font-semibold">Value Added</span> settles the player arguments. VA is the points a player creates above — or below — the typical NBA player, given the same workload. Every skill follows one shape:</p>
-        <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-xs text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+        <div className="p-2 mb-3 bg-stone-50 border border-stone-200 rounded text-center text-[13px] text-stone-700" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           ( player rate − <span className="text-amber-700 font-semibold">league rate</span> ) × opportunity × point value
         </div>
         <Group title="Scoring" items={SCORING} />
         <Group title="Playmaking &amp; Defense" items={PLAYDEF} />
         <Group title="Rebounding" items={REB} />
-        <p className="text-[10px] text-stone-500 mt-1 mb-2 leading-relaxed">
+        <p className="text-[12px] text-stone-500 mt-1 mb-2 leading-relaxed">
           <span className="font-semibold">γ</span> is the rebound credit. A rebound is the one box-score event that&apos;s
           guaranteed to be won by <span className="italic">someone</span> — every miss produces exactly one, and one of
           the ten players on the floor gets it — so &ldquo;would his team have gotten it anyway?&rdquo; has a real answer.
@@ -113,7 +113,7 @@ export function InfoView() {
           <span className="tabular-nums"> 1.5</span>. It reads only his own line, never his teammates&apos;.
         </p>
         {USG && (
-          <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
+          <p className="text-[12px] text-stone-500 mt-2 mb-2 leading-relaxed">
             <span className="font-semibold">USG-ADJ</span> is a second reading of that first line.
             Scoring volume normally charges every player the same league rate for his minutes,
             which is the point — VA pays for absorbing volume — but it never asks whether the
@@ -131,7 +131,7 @@ export function InfoView() {
           </p>
         )}
         {USG && (
-          <p className="text-[10px] text-stone-500 mt-2 mb-2 leading-relaxed">
+          <p className="text-[12px] text-stone-500 mt-2 mb-2 leading-relaxed">
             <span className="font-semibold">A note on what an assist is worth.</span> An assist is
             credited on a made field goal, so it&apos;s worth what that basket is worth times the share
             the passer is responsible for. The basket is a <span className="italic">field goal</span> —
@@ -148,7 +148,7 @@ export function InfoView() {
             them.
           </p>
         )}
-        <p className="text-[10px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>
+        <p className="text-[12px] text-stone-400 mt-2 leading-relaxed">VA is the sum of all ten. Per-minute baselines are the league&apos;s <span className="font-semibold">minutes-weighted median</span> rates (half of all NBA minutes are played above them, half below) so a few high-usage stars can&apos;t skew the bar; shooting percentages and the conversion constants (points per possession, points per made shot, DRB%/ORB%) are league aggregates. Baselines are season-accurate — the constants above are 2025-26&apos;s — so older eras are measured against their own league, not today&apos;s. Playoff runs use their season&apos;s regular-season baselines, keeping every era on level ground.</p>
       </Step>
 
       <Step n="3" title="The data pipeline">
@@ -196,8 +196,8 @@ export function InfoView() {
         <p>The playoffs the app was built for ended with the <span className="font-semibold">Knicks over the Spurs</span> — and <span className="font-semibold">Spencer over Trey, 36-9</span>. That season now lives in its own tab like any other finished year, and the app keeps growing between drafts.</p>
       </Step>
 
-      <section className="p-3 bg-white border border-stone-300 text-[10px] text-stone-400 leading-relaxed">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Fine print</h2>
+      <section className="p-3 bg-white border border-stone-300 text-[12px] text-stone-400 leading-relaxed">
+        <h2 className="text-[13px] font-bold text-stone-900 mb-2">Fine print</h2>
         <p>Coverage follows the sources: box-score VA reaches 1979-80; shot zones start 1996-97; on-court defensive data starts 1996-97, the first season with play-by-play behind it. Historical data comes from basketball-reference.com, live games from the NBA feed, college stats from sports-reference.com. Players are matched across sources by ID where possible, by normalized name otherwise.</p>
       </section>
     </div>

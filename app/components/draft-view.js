@@ -66,8 +66,8 @@ export function DraftView() {
     [model, teams, owners, me, free.length],
   );
 
-  if (error) return <div className="text-[10px] text-red-600 py-6 text-center">Couldn’t load the draft — {error}</div>;
-  if (!data || !odds) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading draft…</div>;
+  if (error) return <div className="text-[12px] text-red-600 py-6 text-center">Couldn’t load the draft — {error}</div>;
+  if (!data || !odds) return <div className="text-[12px] text-stone-500 italic py-6 text-center">Loading draft…</div>;
 
   const asDrafted = Object.entries(teams).every(([t, x]) => owners[t] === x.owner);
   const rows = Object.keys(teams).sort((a, b) => odds[b].ep - odds[a].ep);
@@ -83,18 +83,18 @@ export function DraftView() {
     <div>
       <div className="mb-3 p-3 bg-white border border-stone-300 flex flex-wrap items-end gap-3">
         <label className="flex-1 min-w-[8rem]">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Draft</span>
+          <span className="text-[12px] text-stone-500 block mb-1">Draft</span>
           <select value={season || ""} onChange={(e) => setSeason(e.target.value)}
             className="w-full text-sm font-bold text-stone-900 bg-white border border-stone-300 px-2 py-1.5">
             {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </label>
         <div>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1">Advising</span>
+          <span className="text-[12px] text-stone-500 block mb-1">Advising</span>
           <div className="flex">
             {OWNERS.map((o) => (
               <button key={o} onClick={() => setMe(o)}
-                className={`px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest border ${me === o ? `${ownerBadge(o)} border-current` : "bg-white text-stone-400 border-stone-300"}`}>
+                className={`px-2.5 py-1.5 text-[12px] font-bold border ${me === o ? `${ownerBadge(o)} border-current` : "bg-white text-stone-400 border-stone-300"}`}>
                 {o}
               </button>
             ))}
@@ -107,18 +107,18 @@ export function DraftView() {
           <div key={o} className={`flex-1 p-3 border-2 ${o === "Spencer" ? "border-amber-600" : "border-teal-600"} bg-white`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-2 h-2 rounded-full ${ownerDot(o)}`} />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-700">{o}</span>
+              <span className="text-[12px] font-bold text-stone-700">{o}</span>
             </div>
             <div className={`text-3xl font-black tabular-nums ${ownerColor(o)}`}>{pct(sim?.winProb[o])}</div>
-            <div className="text-[10px] text-stone-500 uppercase tracking-wider">{free.length ? "projected to win" : "to win the draft"}</div>
-            <div className="mt-2 pt-2 border-t border-stone-200 text-[11px] text-stone-600 tabular-nums">
+            <div className="text-[12px] text-stone-500">{free.length ? "projected to win" : "to win the draft"}</div>
+            <div className="mt-2 pt-2 border-t border-stone-200 text-[13px] text-stone-600 tabular-nums">
               {sumBy(o, (t) => odds[t].ep).toFixed(1)} expected pts
               {finished && asDrafted && <span className="text-stone-900 font-bold"> · {sumBy(o, (t) => teams[t].actual)} actual</span>}
             </div>
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-between mb-4 text-[10px] text-stone-500">
+      <div className="flex items-center justify-between mb-4 text-[12px] text-stone-500">
         <span>{sim?.tieProb > 0.005 ? `Tie ${pct(sim.tieProb)} · ` : ""}{free.length ? `${free.length} team${free.length === 1 ? "" : "s"} undrafted` : "All 16 teams drafted"}</span>
         <span className="flex gap-2">
           {!asDrafted && <button onClick={() => setOwners(Object.fromEntries(Object.entries(teams).map(([t, x]) => [t, x.owner])))} className="underline">Reset to the real draft</button>}
@@ -128,25 +128,25 @@ export function DraftView() {
 
       {advice?.length > 0 && (
         <div className="mb-4 p-3 bg-white border-2 border-stone-900">
-          <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-900 mb-2">Best picks for {me}</div>
+          <div className="text-[12px] font-bold text-stone-900 mb-2">Best picks for {me}</div>
           {advice.slice(0, 5).map((a, i) => (
             <button key={a.tri} onClick={() => setOwners((o) => ({ ...o, [a.tri]: me }))}
               className="w-full flex items-center gap-2 py-1.5 border-b border-stone-100 last:border-0 text-left">
-              <span className="w-4 text-[11px] text-stone-400 tabular-nums">{i + 1}</span>
-              <span className="w-10 text-[11px] font-bold" style={{ color: teamColor(a.tri) }}>{a.tri}</span>
-              <span className="flex-1 text-[11px] text-stone-600">{teams[a.tri].conf}{teams[a.tri].seed} · {teams[a.tri].name}</span>
-              <span className="text-[11px] tabular-nums text-stone-500 w-14 text-right">{a.ep.toFixed(1)} pts</span>
-              <span className={`text-[12px] font-bold tabular-nums w-12 text-right ${ownerColor(me)}`}>{pct(a.winProb)}</span>
+              <span className="w-4 text-[13px] text-stone-400 tabular-nums">{i + 1}</span>
+              <span className="w-10 text-[13px] font-bold" style={{ color: teamColor(a.tri) }}>{a.tri}</span>
+              <span className="flex-1 text-[13px] text-stone-600">{teams[a.tri].conf}{teams[a.tri].seed} · {teams[a.tri].name}</span>
+              <span className="text-[13px] tabular-nums text-stone-500 w-14 text-right">{a.ep.toFixed(1)} pts</span>
+              <span className={`text-[14px] font-bold tabular-nums w-12 text-right ${ownerColor(me)}`}>{pct(a.winProb)}</span>
             </button>
           ))}
-          <div className="text-[9px] text-stone-400 italic mt-2 leading-snug">
+          <div className="text-[11px] text-stone-400 italic mt-2 leading-snug">
             Win % assumes the rest of the draft alternates, {other(me)} next, each side taking the most expected points left. Tap a team to draft it for {me}.
           </div>
         </div>
       )}
 
       <div className="bg-white border border-stone-300">
-        <div className="grid grid-cols-[2.4rem_1fr_3rem_3rem_3.2rem_4.2rem] gap-x-1 px-2 py-1.5 text-[9px] uppercase tracking-wider text-stone-400 border-b border-stone-200">
+        <div className="grid grid-cols-[2.4rem_1fr_3rem_3rem_3.2rem_4.2rem] gap-x-1 px-2 py-1.5 text-[11px] text-stone-400 border-b border-stone-200">
           <span>Seed</span><span>Team</span><span className="text-right">Title</span>
           <span className="text-right">Exp</span><span className="text-right">{finished ? "Actual" : ""}</span><span className="text-right">Owner</span>
         </div>
@@ -156,23 +156,23 @@ export function DraftView() {
           return (
             <div key={t} className="border-b border-stone-100 last:border-0">
               <div className="grid grid-cols-[2.4rem_1fr_3rem_3rem_3.2rem_4.2rem] gap-x-1 items-center px-2 py-1.5">
-                <span className="text-[10px] text-stone-500 tabular-nums">{x.conf}{x.seed}</span>
+                <span className="text-[12px] text-stone-500 tabular-nums">{x.conf}{x.seed}</span>
                 <button onClick={() => setOpenTeam(open ? null : t)} className="text-left truncate">
-                  <span className="text-[12px] font-bold" style={{ color: teamColor(t) }}>{t}</span>
-                  <span className="text-[10px] text-stone-400 ml-1">{open ? "▾" : "▸"} {x.strength.toFixed(1)}</span>
+                  <span className="text-[14px] font-bold" style={{ color: teamColor(t) }}>{t}</span>
+                  <span className="text-[12px] text-stone-400 ml-1">{open ? "▾" : "▸"} {x.strength.toFixed(1)}</span>
                 </button>
-                <span className="text-[11px] tabular-nums text-right text-stone-600">{pct(odds[t].win.r4)}</span>
-                <span className="text-[12px] tabular-nums text-right font-bold text-stone-900">{odds[t].ep.toFixed(1)}</span>
-                <span className="text-[12px] tabular-nums text-right text-stone-500">{x.actual ?? ""}</span>
+                <span className="text-[13px] tabular-nums text-right text-stone-600">{pct(odds[t].win.r4)}</span>
+                <span className="text-[14px] tabular-nums text-right font-bold text-stone-900">{odds[t].ep.toFixed(1)}</span>
+                <span className="text-[14px] tabular-nums text-right text-stone-500">{x.actual ?? ""}</span>
                 <span className="text-right">
                   <button onClick={() => cycle(t)} aria-label={`Change ${t}'s owner`}
-                    className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${owners[t] ? ownerBadge(owners[t]) : "border border-dashed border-stone-300 text-stone-400"}`}>
+                    className={`text-[11px] font-bold px-1.5 py-0.5 ${owners[t] ? ownerBadge(owners[t]) : "border border-dashed border-stone-300 text-stone-400"}`}>
                     {owners[t] || "open"}
                   </button>
                 </span>
               </div>
               {open && (
-                <div className="px-3 pb-2 text-[10px] text-stone-600">
+                <div className="px-3 pb-2 text-[12px] text-stone-600">
                   <div className="flex gap-3 tabular-nums mb-1">
                     {["r1", "r2", "r3", "r4"].map((rk, i) => (
                       <span key={rk}>{["R1", "Semis", "Conf F", "Title"][i]} <b className="text-stone-900">{pct(odds[t].win[rk])}</b></span>
@@ -188,7 +188,7 @@ export function DraftView() {
           );
         })}
       </div>
-      <div className="text-[9px] text-stone-400 mt-1 mb-4">
+      <div className="text-[11px] text-stone-400 mt-1 mb-4">
         Beside each team: its strength (top {model.n} players’ regular-season VA per game) · Title: chance to win it all · Exp: expected draft points · tap a team for its round-by-round odds, its owner chip to reassign it
       </div>
 
@@ -201,8 +201,8 @@ function ModelNote({ model, rosterSource }) {
   const f = model.fit;
   const m = f.heldOut.model, home = f.heldOut.homeCourtOnly;
   return (
-    <div className="p-3 bg-stone-50 border border-stone-200 text-[10px] text-stone-600 leading-relaxed">
-      <div className="font-bold uppercase tracking-widest text-stone-500 mb-1">How it works</div>
+    <div className="p-3 bg-stone-50 border border-stone-200 text-[12px] text-stone-600 leading-relaxed">
+      <div className="font-bold text-stone-500 mb-1">How it works</div>
       <p>
         Each series is a coin weighted by two things: home court (the better seed), and the gap in team strength — the
         top {model.n} players’ regular-season Value Added per game. Expected points and win chances follow from playing

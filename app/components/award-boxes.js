@@ -79,10 +79,10 @@ export function AwardBoxes({ slug, season }) {
             className={`min-w-0 flex flex-col px-1.5 py-1 border border-stone-300 bg-white text-left ${go ? "hover:bg-stone-100 cursor-pointer" : ""}`}
             aria-label={go ? `${label} odds ${fmt(p)} — open the ${where}` : undefined}
           >
-            <span className="text-[8px] font-bold uppercase tracking-wider text-stone-500 truncate">{label}</span>
+            <span className="text-[10px] font-bold text-stone-500 truncate">{label}</span>
             <span className="flex items-baseline justify-between gap-1">
-              <span className="text-[11px] font-bold tabular-nums text-stone-900">{fmt(p)}</span>
-              <span className={`text-[8px] uppercase tracking-wider whitespace-nowrap ${go ? "text-stone-500" : "text-transparent"}`} aria-hidden>Go →</span>
+              <span className="text-[13px] font-bold tabular-nums text-stone-900">{fmt(p)}</span>
+              <span className={`text-[10px] whitespace-nowrap ${go ? "text-stone-500" : "text-transparent"}`} aria-hidden>Go →</span>
             </span>
           </Tag>
         );

@@ -1,26 +1,10 @@
-import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { BuildWatch } from "./components/build-watch";
 
-// Self-hosted through next/font rather than an @import in globals.css: an
-// @import is only legal before any other rule, and Tailwind's `@tailwind base`
-// expands ahead of it, so the imported sheet landed ~24kB into the bundle and
-// every browser dropped it on the floor. The faces never loaded anywhere, and
-// each platform silently substituted its own UI font — which is why the type
-// looked one size on a laptop and another on a phone. next/font also emits a
-// metric-adjusted fallback face (size-adjust/ascent-override), so the text
-// occupies the same box before and after the real font arrives.
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
+// The whole app sets in Times New Roman, which every phone and laptop already
+// has (Liberation Serif, its metric twin, stands in on Linux), so there is no
+// web font to download and nothing reflows when one arrives. The face is set
+// once, on <body>, in globals.css.
 
 export const metadata = {
   title: "NBA Box Score Value Added Tracker",
@@ -38,7 +22,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en">
       <body>
         {/* Renders nothing; reloads the page when a stale phone tab is still
             running a previous deployment. */}

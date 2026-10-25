@@ -38,12 +38,12 @@ export function CollegeView() {
     return (teamFilter || q) ? list : list.slice(0, 100); // full roster/results when filtering; else top 100
   }, [data, q, teamFilter, sortMode]);
 
-  if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading college players…</div>;
-  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
+  if (loading) return <div className="text-[12px] text-stone-500 italic py-6 text-center">Loading college players…</div>;
+  if (error) return <div className="text-[12px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
   if (!data || data.missing || !(data.players && data.players.length)) {
     return (
       <div className="p-3 bg-white border border-stone-300 text-sm text-stone-600 leading-relaxed">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 mb-2">Top College Players</h2>
+        <h2 className="text-[13px] font-bold text-stone-900 mb-2">Top College Players</h2>
         College data hasn’t been baked yet. Run the <span className="font-semibold">“Bake college players”</span> workflow from the Actions tab to populate the 2025-26 men’s D-I leaders by Value Added.
       </div>
     );
@@ -56,7 +56,7 @@ export function CollegeView() {
     <div>
       <div className="mb-3">
         <h2 className="text-base font-bold text-stone-900">Top College Players</h2>
-        <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+        <div className="text-[12px] text-stone-500 mt-0.5">
           {data.season} men’s D-I{data.playerPool ? ` · ${data.playerPool.toLocaleString()} players` : ""}
         </div>
       </div>
@@ -70,25 +70,25 @@ export function CollegeView() {
       />
       {teamFilter && (
         <div className="flex items-center gap-2 mb-2 px-2">
-          <span className="text-[10px] uppercase tracking-widest text-stone-400">Team</span>
+          <span className="text-[12px] text-stone-400">Team</span>
           <span className="text-sm font-semibold text-stone-800">{teamFilter}</span>
-          <span className="text-[10px] text-stone-400 tabular-nums">· {shown.length}</span>
-          <button onClick={() => setTeamFilter(null)} className="ml-auto text-[10px] uppercase tracking-widest text-stone-400 hover:text-stone-700">✕ Clear</button>
+          <span className="text-[12px] text-stone-400 tabular-nums">· {shown.length}</span>
+          <button onClick={() => setTeamFilter(null)} className="ml-auto text-[12px] text-stone-400 hover:text-stone-700">✕ Clear</button>
         </div>
       )}
       {q && !teamFilter && (
-        <div className="text-[10px] text-stone-400 tabular-nums mb-1 px-2">{shown.length} {shown.length === 1 ? "player" : "players"}</div>
+        <div className="text-[12px] text-stone-400 tabular-nums mb-1 px-2">{shown.length} {shown.length === 1 ? "player" : "players"}</div>
       )}
 
       {/* Tap VA or VA/G to sort by that column; the caret marks the active sort. */}
-      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
+      <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[12px] text-stone-400 px-2 pb-1 border-b border-stone-200">
         <span></span><span>Player</span><span className="text-right">G</span>
-        <button onClick={() => setSortMode("va")} className={`text-right uppercase tracking-wider ${sortMode === "va" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA{sortMode === "va" ? " ▾" : ""}</button>
-        <button onClick={() => setSortMode("vaPerG")} className={`text-right uppercase tracking-wider ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA/G{sortMode === "vaPerG" ? " ▾" : ""}</button>
+        <button onClick={() => setSortMode("va")} className={`text-right ${sortMode === "va" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA{sortMode === "va" ? " ▾" : ""}</button>
+        <button onClick={() => setSortMode("vaPerG")} className={`text-right ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA/G{sortMode === "vaPerG" ? " ▾" : ""}</button>
       </div>
 
       {shown.length === 0 && (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{q}”.</div>
+        <div className="text-[12px] text-stone-400 italic py-6 text-center">No players match “{q}”.</div>
       )}
 
       {shown.map((p, i) => {
@@ -101,13 +101,13 @@ export function CollegeView() {
               onClick={() => setExpanded(open ? null : key)}
               className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm cursor-pointer hover:bg-stone-50"
             >
-              <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
+              <span className="text-[12px] tabular-nums text-stone-400">{i + 1}</span>
               <span className="min-w-0">
                 <span className="font-semibold text-stone-800 block truncate">{p.name}</span>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setTeamFilter(p.school); setQuery(""); setExpanded(null); }}
-                  className="text-[10px] text-stone-500 hover:text-stone-900 hover:underline"
+                  className="text-[12px] text-stone-500 hover:text-stone-900 hover:underline"
                 >{p.school}</button>
               </span>
               <span className="text-right tabular-nums text-stone-600">{p.gp ?? 0}</span>
@@ -124,7 +124,7 @@ export function CollegeView() {
         );
       })}
 
-      <div className="text-[10px] text-stone-400 italic mt-2">Source: College Sports Reference. Tap a player for the per-stat breakdown; tap a team name to see its roster.</div>
+      <div className="text-[12px] text-stone-400 italic mt-2">Source: College Sports Reference. Tap a player for the per-stat breakdown; tap a team name to see its roster.</div>
     </div>
   );
 }

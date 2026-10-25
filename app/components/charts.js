@@ -46,7 +46,7 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
 
   return (
     <div className="mt-2 mb-3">
-      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
+      <div className="text-[11px] text-stone-500 mb-1 text-center">{label}</div>
       <div className="relative">
       <svg viewBox={`0 0 ${W} ${H + STRIP}`} className="w-full block">
         {/* Series-band shading (used when a series is selected but no
@@ -231,9 +231,9 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
   const nameY = H - 4 - (hasYears ? 10 : 0);
   return (
     <div className="mt-1 mb-3">
-      <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
+      <div className="text-[11px] text-stone-500 mb-1 text-center">{label}</div>
       {note ? (
-        <div className="py-4 text-[10px] text-stone-500 italic text-center">{note}</div>
+        <div className="py-4 text-[12px] text-stone-500 italic text-center">{note}</div>
       ) : (
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" role="img" aria-label={label}>
           <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#78716c" strokeWidth="1" />

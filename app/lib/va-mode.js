@@ -59,26 +59,22 @@ export function useVAMode() {
   return useContext(VAModeContext) || DEFAULT;
 }
 
-// The switch as a board chip. The page-level control under the tab strip is
-// the one that explains itself; this is the same state, reachable from the
-// header of a board that is already re-scored by it — By Season and By Player
-// both carry one, next to their VA/VA+ chips. Two chips, one mode: it reads
-// the context, never a copy of it, so the two can never disagree.
+// The mode as a board chip, beside By Season's and By Player's VA/VA+
+// switch. It reads the context, never a copy of it, so it can't disagree
+// with the settings menu.
 export function UsgAdjChip({ className = "" }) {
   const { usgAdj, setUsgAdj } = useVAMode();
+  // The baseline is picked in the header's settings menu; the chip only
+  // flags a board priced the other way, and taps back to the default.
+  if (!usgAdj) return null;
   return (
     <button
       type="button"
-      onClick={() => setUsgAdj(!usgAdj)}
-      aria-pressed={usgAdj}
-      title={usgAdj
-        ? "Scoring volume is priced against the possessions used — tap for the league median baseline"
-        : "Price scoring volume against the possessions used instead of the median minute"}
-      className={`normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border rounded-sm ${
-        usgAdj ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-500 border-stone-300"
-      } ${className}`}
+      onClick={() => setUsgAdj(false)}
+      title="Priced against the possessions used — tap for the league-average baseline"
+      className={`text-[14px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-900 text-white border-stone-900 ${className}`}
     >
-      USG-ADJ
+      Usage-adjusted <span className="opacity-60">×</span>
     </button>
   );
 }

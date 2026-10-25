@@ -53,7 +53,7 @@ function TeamTag({ side }) {
   return (
     <span className="inline-flex items-baseline gap-1">
       <span className="font-bold tabular-nums" style={{ color: teamColor(side.tri) }}>{side.tri}</span>
-      {side.record && <span className="text-[9px] text-stone-400 tabular-nums">{side.record}</span>}
+      {side.record && <span className="text-[11px] text-stone-400 tabular-nums">{side.record}</span>}
     </span>
   );
 }
@@ -61,12 +61,12 @@ function TeamTag({ side }) {
 function SectionHeader({ title, count, live, sub }) {
   return (
     <div className="flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900">
-      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+      <h3 className="text-[13px] font-bold text-stone-900 flex items-center gap-2">
         {live && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
         {title}
-        {sub && <span className="font-normal tracking-wider text-stone-500">{sub}</span>}
+        {sub && <span className="font-normal text-stone-500">{sub}</span>}
       </h3>
-      <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">{count} game{count === 1 ? "" : "s"}</span>
+      <span className="text-[12px] text-stone-500 tabular-nums">{count} game{count === 1 ? "" : "s"}</span>
     </div>
   );
 }
@@ -206,9 +206,9 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}
-        {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-xs font-bold text-stone-400">@</span>}
+        {!team && <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center text-[13px] font-bold text-stone-400">@</span>}
       </div>
-      {records.some(Boolean) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
+      {records.some(Boolean) && <div className="flex gap-4 text-sm font-bold tabular-nums">
         {sides.map(([side, , right], i) => (
           <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
             {records[i] || "–"}
@@ -250,14 +250,14 @@ function UpcomingList({ games }) {
             : "TBD";
           const tv = (g.broadcasters || []).join(", ");
           return (
-            <div key={g.gameId} id={gameAnchor(g)} className="flex items-center justify-between gap-2 text-xs scroll-mt-3">
+            <div key={g.gameId} id={gameAnchor(g)} className="flex items-center justify-between gap-2 text-[13px] scroll-mt-3">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="tabular-nums text-[10px] text-stone-500 w-14 shrink-0">{timeStr}</span>
+                <span className="tabular-nums text-[12px] text-stone-500 w-14 shrink-0">{timeStr}</span>
                 <TeamTag side={g.away} />
                 <span className="text-stone-400">@</span>
                 <TeamTag side={g.home} />
               </div>
-              {tv && <span className="text-[9px] uppercase tracking-wider text-stone-500 shrink-0 truncate max-w-[40%]">{tv}</span>}
+              {tv && <span className="text-[11px] text-stone-500 shrink-0 truncate max-w-[40%]">{tv}</span>}
             </div>
           );
         })}
@@ -274,8 +274,8 @@ function SlateSummary({ date, games }) {
   return (
     <div className="mb-5 p-3 bg-white border-2 border-stone-900">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="text-xs uppercase tracking-wider text-stone-500 truncate">{dayLabel(date)}</div>
-        <div className="flex gap-2.5 shrink-0 text-xs uppercase tracking-wider text-stone-500 tabular-nums">
+        <div className="text-[13px] text-stone-500 truncate">{dayLabel(date)}</div>
+        <div className="flex gap-2.5 shrink-0 text-[13px] text-stone-500 tabular-nums">
           {[["Live", count(2), STATUS_INK[2]], ["Later", count(1), STATUS_INK[1]], ["Final", count(3), STATUS_INK[3]]].map(([label, n, cls]) => (
             <span key={label}><span className={`font-black ${n ? cls : "text-stone-300"}`}>{n}</span> {label}</span>
           ))}
@@ -376,11 +376,11 @@ export function LiveView({ onData, focus, onFocusHandled }) {
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
+        <div className="text-[12px] text-stone-400 leading-tight">
           {syncedAt ? (<>Live synced <span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span></>) : syncing ? "Syncing…" : "Not synced yet"}
-          {syncError && <div className="text-red-600 normal-case mt-0.5 tracking-normal">{syncError}</div>}
+          {syncError && <div className="text-red-600 normal-case mt-0.5">{syncError}</div>}
         </div>
-        <button onClick={sync} disabled={syncing} className="shrink-0 text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50">
+        <button onClick={sync} disabled={syncing} className="shrink-0 text-[12px] text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50">
           {syncing ? "Syncing…" : "↻ Sync"}
         </button>
       </div>
@@ -398,7 +398,7 @@ export function LiveView({ onData, focus, onFocusHandled }) {
             ) : (
               <>
                 <SectionHeader title="Up Next" count={0} />
-                <div className="py-4 text-center text-[11px] text-stone-500 border border-dashed border-stone-300 bg-white">Nothing on the schedule this week.</div>
+                <div className="py-4 text-center text-[13px] text-stone-500 border border-dashed border-stone-300 bg-white">Nothing on the schedule this week.</div>
               </>
             )}
           </div>
@@ -412,7 +412,7 @@ export function LiveView({ onData, focus, onFocusHandled }) {
       )}
 
       {data && !upNext && !anyLive && (
-        <div className="mb-6 py-4 text-center text-[11px] text-stone-500 border border-dashed border-stone-300 bg-white">
+        <div className="mb-6 py-4 text-center text-[13px] text-stone-500 border border-dashed border-stone-300 bg-white">
           {upcoming.length
             ? <>No games on right now. Next tip: <span className="font-semibold text-stone-700">{upcomingTip(upcoming[0])}</span></>
             : games.length ? "Tonight's games are done." : "Nothing on the schedule today."}
@@ -441,7 +441,7 @@ export function LiveView({ onData, focus, onFocusHandled }) {
       )}
 
       {data && (upNext ? data.prev?.games.length : games.length) > 0 && (
-        <div className="text-[10px] text-stone-400 italic text-center">
+        <div className="text-[12px] text-stone-400 italic text-center">
           VA vs the {data.baselineSeason} baseline{data.baselineSeason !== data.season ? " (this season’s isn’t set yet)" : ""}. Tap a game for its box score, a player for his VA breakdown.
         </div>
       )}

@@ -112,16 +112,16 @@ export function ShotZonesView() {
   const cols = "grid grid-cols-[1.4rem_minmax(0,1fr)_2.6rem_2.6rem_2.6rem_2.6rem_2.8rem] gap-x-1 items-center";
 
   return (
-    <div className="text-[10px]">
+    <div className="text-[12px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
           value={sel || ""}
           onChange={(e) => { setSeason(e.target.value); }}
-          className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
+          className="text-[12px] bg-white border border-stone-300 px-1.5 py-1"
         >
           {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+        <div className="inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setScope("combined")} className={`px-1.5 py-0.5 ${scope === "combined" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Combined</button>
           <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
           <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
@@ -131,7 +131,7 @@ export function ShotZonesView() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search…"
-          className="flex-1 min-w-[6rem] text-[10px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
+          className="flex-1 min-w-[6rem] text-[12px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
         />
       </div>
       {!seasons.length && (
@@ -141,7 +141,7 @@ export function ShotZonesView() {
       )}
       {seasons.length > 0 && (
         <>
-          <div className="text-[9px] text-stone-400 mb-1.5">
+          <div className="text-[11px] text-stone-400 mb-1.5">
             Each zone shows M/A (FG%) and that zone's points of value vs. {sel}'s league FG% at that distance (regular-season baseline, same as the rest of VA) · Total sums the 4 zones
           </div>
           {(() => {
@@ -149,14 +149,14 @@ export function ShotZonesView() {
               <button
                 type="button"
                 onClick={() => setSort((p) => ({ key: k, dir: p.key === k ? -p.dir : natural }))}
-                className={`${right ? "text-right" : "text-left"} uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
+                className={`${right ? "text-right" : "text-left"} cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
                 aria-pressed={sort.key === k}
               >
                 {label}{sort.key === k ? (sort.dir < 0 ? "▾" : "▴") : ""}
               </button>
             );
             return (
-              <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+              <div className={`${cols} text-[10px] text-stone-400 border-b border-stone-300 pb-0.5`}>
                 <span>#</span><H k="name" label="Player" right={false} natural={1} />
                 {ZONES.map((z) => <H key={z.key} k={z.key} label={z.label} />)}
                 <H k="total" label="Total" />
@@ -169,11 +169,11 @@ export function ShotZonesView() {
             <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[3px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
               <span className="text-stone-400 tabular-nums">{i + 1}</span>
               <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
-                {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
+                {r.name} <span className="text-stone-400 font-normal text-[10px]">{r.team}</span>
               </span>
               {zones.map(({ z, m, att, pct, val }) => (
                 <span key={z.key} className="text-right leading-tight">
-                  <span className="block tabular-nums text-stone-500 text-[8px]">{m}/{att} ({(pct * 100).toFixed(0)}%)</span>
+                  <span className="block tabular-nums text-stone-500 text-[10px]">{m}/{att} ({(pct * 100).toFixed(0)}%)</span>
                   <span className={`block tabular-nums font-semibold ${val < 0 ? "text-red-600" : "text-stone-900"}`}>{sgn1(val)}</span>
                 </span>
               ))}
@@ -181,7 +181,7 @@ export function ShotZonesView() {
             </div>
           ))}
           {list && list.length > 0 && (
-            <div className="mt-2 text-center text-[9px] italic text-stone-400">
+            <div className="mt-2 text-center text-[11px] italic text-stone-400">
               {query.trim() === "" ? `Min ${scope === "po" ? 20 : 50} 2-point attempts · search to include everyone · ` : ""}tap a column to sort by its zone value
             </div>
           )}

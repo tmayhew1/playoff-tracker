@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { Seg } from "./ui/seg";
 import { TEAMS, TEAM_CONF } from "../teams";
 import { combinedLga, valueAddParts, ZONES } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
@@ -395,9 +396,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // as the words it stands for. `scopeLabel` keeps the spelled-out ones for the
   // empty-state sentence below, which has no such constraint and would
   // otherwise read "…in the 1996-97 reg seas board".
-  const title = scope === "regular" ? "Reg Seas Leaders"
-    : scope === "combined" ? "Combined Leaders"
-    : "Playoff Leaders";
+  const title = scope === "regular" ? "Regular season leaders"
+    : scope === "combined" ? "Combined leaders"
+    : "Playoff leaders";
   const scopeLabel = scope === "regular" ? "regular season"
     : scope === "combined" ? "combined"
     : "playoff";
@@ -407,16 +408,16 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   if (scopeLoading) {
     return (
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">{title}</div>
-        <div className="text-[10px] text-stone-500 italic py-2 text-center">Aggregating box scores… (first load may take ~10s)</div>
+        <div className="text-[12px] text-stone-500 mb-2">{title}</div>
+        <div className="text-[12px] text-stone-500 italic py-2 text-center">Aggregating box scores… (first load may take ~10s)</div>
       </div>
     );
   }
   if (scopeError) {
     return (
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">{title}</div>
-        <div className="text-[10px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load — {scopeError}</div>
+        <div className="text-[12px] text-stone-500 mb-2">{title}</div>
+        <div className="text-[12px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load — {scopeError}</div>
       </div>
     );
   }
@@ -480,7 +481,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // in flow inside the card and again in the fixed overlay while pinned.
   const headerBlock = (
     <>
-      <div className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <div className="px-3 pt-2.5 pb-1.5 text-[12px] text-stone-500 border-b border-stone-200 flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span>{title}</span>
         {/* Chip group stays glued together and right-aligned (ml-auto); when
             the title + all three chips can't share one line it wraps to its
@@ -493,41 +494,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
               screen. Same state as the control under the tab strip, and the
               same chip By Player carries. */}
           <UsgAdjChip />
-          {/* VA vs VA+ (adds defensive net rating). Midnight purple when on. */}
-          <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
-            <button
-              type="button"
-              onClick={() => setMetric("va")}
-              className="px-1.5 py-0.5"
-              style={metric === "va" ? { backgroundColor: MIDNIGHT_PURPLE, color: "#fff" } : { backgroundColor: "#fff", color: "#78716c" }}
-              aria-pressed={metric === "va"}
-            >VA</button>
-            <button
-              type="button"
-              onClick={() => setMetric("vaPlus")}
-              className="px-1.5 py-0.5 border-l"
-              style={metric === "vaPlus" ? { backgroundColor: MIDNIGHT_PURPLE, borderColor: MIDNIGHT_PURPLE } : { backgroundColor: "#fff", borderColor: "#d6d3d1" }}
-              aria-pressed={metric === "vaPlus"}
-            >
-              {/* VA+ wears the defensive strip's palette — gold (defense
-                  adds) bleeding into red (defense subtracts) — in both
-                  states, so the metric is recognizable at a glance. The
-                  purple fill, not the text color, marks which side is on. */}
-              <span
-                style={{
-                  backgroundImage: `linear-gradient(100deg, ${GOLD} 20%, #dc2626 90%)`,
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >VA+</span>
-            </button>
-          </div>
+          <Seg size="sm" label="Value Added or VA+" value={metric} onChange={setMetric} options={[["va", "VA"], ["vaPlus", "VA+"]]} />
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
-              className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
+              className="normal-case text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
               aria-label="Clear min-games filter"
             >
               ≥{minGames} games <span className="text-stone-400">×</span>
@@ -538,7 +509,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             return (
               <button
                 onClick={() => setTeamFilter(null)}
-                className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap"
+                className="normal-case text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap"
                 style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
                 aria-label={`Clear ${teamFilter} filter`}
               >
@@ -549,11 +520,11 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         </div>
       </div>
       {scope === "combined" && !rsPlayers && (
-        <div className="px-3 py-1.5 text-[9px] italic text-stone-400 border-b border-stone-200">
+        <div className="px-3 py-1.5 text-[11px] italic text-stone-400 border-b border-stone-200">
           Regular-season totals aren’t baked for {season} yet — showing playoff stats only.
         </div>
       )}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
         <span className="w-5 sm:w-6 text-right">#</span>
         <span className="w-8 sm:w-10">Team</span>
         {/* Arming step for the cross-over into By Player: tap Player here
@@ -563,7 +534,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
           <button
             type="button"
             onClick={armName}
-            className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
+            className={`flex-1 text-left cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
             title="Tap, then tap a player to open this season in their By Player career"
             aria-pressed={nameArmed}
           >
@@ -577,7 +548,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-7 sm:w-8 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-7 sm:w-8 text-right cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -601,7 +572,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-11 sm:w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-11 sm:w-14 text-right whitespace-nowrap cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
           aria-label="Sort by total VA"
           aria-pressed={effectiveSort === "totalVA"}
         >
@@ -613,7 +584,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-10 sm:w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-10 sm:w-11 text-right whitespace-nowrap cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
           aria-label="Sort by VA per game"
           aria-pressed={effectiveSort === "vaPerG"}
         >
@@ -704,7 +675,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         // wrapping mid-word looks worse than truncating, so an unhyphenated
         // outlier (Mamukelashvili, by a few px) truncates instead. sm+ has
         // the room for the whole name on one line at row size.
-        const lastCls = `text-[10px] ${last.length > 15 ? "break-words sm:truncate" : "truncate"}`;
+        const lastCls = `text-[12px] ${last.length > 15 ? "break-words sm:truncate" : "truncate"}`;
         return (
           <div key={rowKey} data-player-row={p.name} className="border-b border-stone-100 last:border-0">
             {/* Bar wraps just the click row, not the expanded breakdown —
@@ -747,7 +718,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setExpanded(isOpen ? null : rowKey);
                 }
               }}
-              className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+              className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[12px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
             >
               <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
               <button
@@ -757,7 +728,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   setTeamFilter(teamFilter === p.team ? null : p.team);
                 }}
                 style={badgeStyle}
-                className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border hover:brightness-95"
+                className="w-8 sm:w-10 text-[10px] font-bold px-0.5 py-0.5 text-center border hover:brightness-95"
                 aria-label={`Filter by ${p.team}`}
               >{p.team}</button>
               {/* Armed, the name crosses over to By Player with this season
@@ -790,10 +761,10 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                     armed chevron sits outside it so a long name can't eat
                     the one mark that says the tap goes somewhere. */}
                 <span className={`min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1] ${nameArmed && canOpenPlayer ? "underline decoration-dotted" : ""}`}>
-                  {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:text-inherit sm:shrink-0">{first}</span>}
+                  {first && <span className="truncate text-[10px] text-stone-500 sm:text-[12px] sm:text-inherit sm:shrink-0">{first}</span>}
                   <span className={lastCls}>{last}</span>
                 </span>
-                {nameArmed && canOpenPlayer && <span className="text-[8px] ml-0.5 shrink-0" aria-hidden>›</span>}
+                {nameArmed && canOpenPlayer && <span className="text-[10px] ml-0.5 shrink-0" aria-hidden>›</span>}
               </button>
               {/* A game in progress: G is fractional, and a "Live →" tag
                   above it opens that game on the Live tab. */}
@@ -806,7 +777,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                       e.stopPropagation();
                       onOpenInLive({ date: p.live.date, name: p.name, team: p.team });
                     }}
-                    className="text-[7px] sm:text-[8px] font-bold uppercase tracking-wide text-red-600 whitespace-nowrap inline-flex items-center gap-0.5 hover:underline"
+                    className="text-[10px] sm:text-[10px] font-bold text-red-600 whitespace-nowrap inline-flex items-center gap-0.5 hover:underline"
                     aria-label={`${p.name} is playing now — open the game on the Live tab`}
                   ><span className="inline-block w-1 h-1 rounded-full bg-red-600 animate-pulse" aria-hidden />Live →</button>
                 )}
@@ -893,7 +864,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       });
       })()}
       {shown.length === 0 && (
-        <div className="px-3 py-3 text-[10px] text-stone-400 italic text-center">
+        <div className="px-3 py-3 text-[12px] text-stone-400 italic text-center">
           No {teamFilter ? `${teamFilter} ` : ""}players in the {season} {scopeLabel} board{minGames != null ? ` with ${minGames}+ games` : ""}.
         </div>
       )}
@@ -901,7 +872,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           ref={footerFlowRef}
           onClick={() => setShowAll((s) => !s)}
-          className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
+          className="w-full text-center py-2 text-[12px] text-stone-500 hover:text-stone-900 border-t border-stone-200"
         >
           {showAll ? "Show top 10" : `Show all (${all.length})`}
         </button>
@@ -924,7 +895,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       <button
         type="button"
         onClick={collapseFromPinnedBar}
-        className="fixed bottom-0 z-30 bg-white border-x border-t border-stone-300 text-center py-4 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900"
+        className="fixed bottom-0 z-30 bg-white border-x border-t border-stone-300 text-center py-4 text-[12px] text-stone-500 hover:text-stone-900"
         style={{
           left: fixedFooter.left,
           width: fixedFooter.width,

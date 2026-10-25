@@ -8,9 +8,10 @@ import { CompareChipLabel, ComparePanel } from "./compare";
 import { MultiComparePicker } from "./compare-picker";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { Sparkline } from "./ui/sparkline";
+import { Seg } from "./ui/seg";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
@@ -160,8 +161,8 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   // the context can rank, place, and find the player within a season or all-time.
   const contextData = useMemo(() => (index ? buildScopePools(index) : null), [index]);
 
-  if (loading) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
-  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
+  if (loading) return <div className="text-[12px] text-stone-500 italic py-6 text-center">Loading player index…</div>;
+  if (error) return <div className="text-[12px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load players — {error}</div>;
 
   if (player) {
     // Keyed so sort/filter/expanded state resets when the player or scope changes.
@@ -196,11 +197,11 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
         className="w-full text-sm text-stone-900 bg-white border border-stone-300 px-3 py-2 mb-3"
       />
       {query.trim().length < 2 ? (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">
+        <div className="text-[12px] text-stone-400 italic py-6 text-center">
           Type a name to see their {scope === "playoffs" ? "playoff runs" : scope === "regular" ? "regular seasons" : "combined seasons"} ranked by Value Added.
         </div>
       ) : matches.length === 0 ? (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
+        <div className="text-[12px] text-stone-400 italic py-6 text-center">No players match “{query.trim()}”.</div>
       ) : (
         matches.map((p) => {
           // The career at a glance: VA season by season in this scope, oldest
@@ -219,7 +220,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
           >
             <span className="text-sm font-semibold text-stone-800">{p.name}</span>
             <Sparkline values={byYear} highlight={byYear.indexOf(Math.max(...byYear))} color={teamColor(lead)} width={48} height={16} className="shrink-0 self-center" />
-            <span className="ml-auto text-right text-[10px] uppercase tracking-wider text-stone-400">
+            <span className="ml-auto text-right text-[12px] text-stone-400">
               {p.seasons.length} {scope === "playoffs" ? "run" : "season"}{p.seasons.length === 1 ? "" : "s"} ·{" "}
               {p.teams.map((t, ti) => (
                 <React.Fragment key={t}>
@@ -698,7 +699,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             {selecting && (
               <button
                 onClick={exitSelect}
-                className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 text-amber-900 whitespace-nowrap shrink-0 self-center"
+                className="text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 text-amber-900 whitespace-nowrap shrink-0 self-center"
                 style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
                 // The only way out of the mode, and so also the way back to the
                 // breakdowns — say both, since the rows no longer open them.
@@ -717,7 +718,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
               </button>
             )}
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-stone-500 mt-0.5">
+          <div className="text-[12px] text-stone-500 mt-0.5">
             {player.seasons.length} {runNoun}{player.seasons.length === 1 ? "" : "s"} · {player.teams.join(" / ")} · career {metric === "vaPlus" ? "VA+" : "VA"}{" "}
             {/* The career line follows the toggle too — a table reading VA+
                 under a VA career total would be two different careers. */}
@@ -736,42 +737,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
               board is one of the things it re-scores — the career total on the
               left included. */}
           <UsgAdjChip />
-          {/* VA vs VA+ (adds defensive net rating). Midnight purple when on —
-              the same control, in the same palette, as the By Season board's. */}
-          <div className="inline-flex normal-case tracking-normal text-[10px] font-semibold rounded-sm overflow-hidden border" style={{ borderColor: metric === "vaPlus" ? MIDNIGHT_PURPLE : "#d6d3d1" }}>
-            <button
-              type="button"
-              onClick={() => setMetric("va")}
-              className="px-1.5 py-0.5"
-              style={metric === "va" ? { backgroundColor: MIDNIGHT_PURPLE, color: "#fff" } : { backgroundColor: "#fff", color: "#78716c" }}
-              aria-pressed={metric === "va"}
-            >VA</button>
-            <button
-              type="button"
-              onClick={() => setMetric("vaPlus")}
-              className="px-1.5 py-0.5 border-l"
-              style={metric === "vaPlus" ? { backgroundColor: MIDNIGHT_PURPLE, borderColor: MIDNIGHT_PURPLE } : { backgroundColor: "#fff", borderColor: "#d6d3d1" }}
-              aria-pressed={metric === "vaPlus"}
-            >
-              {/* VA+ wears the defensive strip's palette — gold (defense
-                  adds) bleeding into red (defense subtracts) — in both
-                  states, so the metric is recognizable at a glance. The
-                  purple fill, not the text color, marks which side is on. */}
-              <span
-                style={{
-                  backgroundImage: `linear-gradient(100deg, ${GOLD} 20%, #dc2626 90%)`,
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >VA+</span>
-            </button>
-          </div>
+          <Seg size="sm" label="Value Added or VA+" value={metric} onChange={setMetric} options={[["va", "VA"], ["vaPlus", "VA+"]]} />
           {minGames != null && (
             <button
               onClick={() => setMinGames(null)}
-              className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+              className="text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
               aria-label="Clear min-games filter"
             >
               ≥{minGames} games <span className="text-stone-400">×</span>
@@ -782,7 +752,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             return (
               <button
                 onClick={() => setTeamFilter(null)}
-                className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
+                className="text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1"
                 style={{ backgroundColor: withAlpha(c, 0.14), color: c, borderColor: withAlpha(c, 0.4) }}
                 aria-label={`Clear ${teamFilter} filter`}
               >
@@ -792,11 +762,11 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           })()}
         </div>
       </div>
-      <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-2 border-b border-stone-200">
+      <div className="flex items-center gap-2 text-[11px] text-stone-400 py-1 px-2 border-b border-stone-200">
         <button
           type="button"
           onClick={tapHash}
-          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${selecting ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-6 text-right cursor-pointer hover:text-stone-900 ${selecting ? "text-stone-900 font-bold underline" : ""}`}
           title={!selecting
             ? "Tap to pick multiple seasons — the table sorts by VA/G — then tap # again to compare them against another player’s run"
             : picked.size === 0
@@ -810,7 +780,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           <button
             type="button"
             onClick={armTeam}
-            className={`w-10 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${teamArmed ? "text-stone-900 font-bold underline" : ""}`}
+            className={`w-10 text-left cursor-pointer hover:text-stone-900 ${teamArmed ? "text-stone-900 font-bold underline" : ""}`}
             title="Tap, then tap a team card to open that team’s By Season leaderboard with this player’s row open"
             aria-pressed={teamArmed}
           >
@@ -822,7 +792,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <button
           type="button"
           onClick={cycleSeasonSort}
-          className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${seasonSorted ? "text-stone-900 font-semibold" : ""}`}
+          className={`flex-1 text-left cursor-pointer hover:text-stone-900 ${seasonSorted ? "text-stone-900 font-semibold" : ""}`}
           title="Sort by season — newest first, then oldest first, then back to the default order"
           aria-label="Sort by season"
           aria-pressed={seasonSorted}
@@ -832,7 +802,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <button
           type="button"
           onClick={armG}
-          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-6 text-right cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a season's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -853,7 +823,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-14 text-right whitespace-nowrap cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
           aria-label={metric === "vaPlus" ? "Sort by total VA+" : "Sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
@@ -865,7 +835,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-11 text-right whitespace-nowrap cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
           aria-label={metric === "vaPlus" ? "Sort by VA+ per game" : "Sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
@@ -880,7 +850,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
     <div ref={setCardEl}>
       <button
         onClick={onBack}
-        className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 mb-3"
+        className="text-[12px] text-stone-500 hover:text-stone-900 mb-3"
       >
         ‹ Back to search
       </button>
@@ -967,7 +937,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                     activate();
                   }
                 }}
-                className={`relative w-full flex items-center gap-2 text-[10px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""}`}
+                className={`relative w-full flex items-center gap-2 text-[12px] py-1.5 px-2 text-left cursor-pointer ${sOpen ? "bg-stone-100/60" : ""}`}
               >
                 {selecting ? (
                   // The rank column becomes the check box while selecting —
@@ -1002,14 +972,14 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                     setTeamFilter(teamFilter === s.team ? null : s.team);
                   }}
                   style={badgeStyle}
-                  className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border hover:brightness-95"
+                  className="w-10 text-[11px] font-bold px-1 py-0.5 border hover:brightness-95"
                   aria-label={teamArmed && canOpenTeam
                     ? `Open ${s.team} in the ${s.season} By Season leaderboard with ${player.name}’s row expanded`
                     : `Filter by ${s.team}`}
                 >
                   <span className="flex items-center justify-center gap-px leading-none">
                     {s.team}
-                    {teamArmed && canOpenTeam && <span className="text-[8px]" aria-hidden>›</span>}
+                    {teamArmed && canOpenTeam && <span className="text-[10px]" aria-hidden>›</span>}
                   </span>
                 </button>
                 <span className="flex-1 truncate text-stone-800 font-semibold tabular-nums">
@@ -1124,7 +1094,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 dropping it. */}
             <button
               onClick={() => (careerPick ? careerPick.clear() : setMultiCompare(null))}
-              className="min-w-0 overflow-hidden text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+              className="min-w-0 overflow-hidden text-[11px] px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
               // Gold in every state, like the Compare button it replaces —
               // the compared player's palette read as his color rather than as
               // a control, and went wrong outright once the chart below
@@ -1141,7 +1111,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                 tail={careerPick ? null : multiCompare.row.spanLabel}
               />
             </button>
-            <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+            <div className="shrink-0 inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden">
               <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
               <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
             </div>
@@ -1168,7 +1138,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           />
         </div>
       )}
-      <div className="text-[10px] text-stone-400 italic mt-2 px-2">
+      <div className="text-[12px] text-stone-400 italic mt-2 px-2">
         {selecting
           // The chart below owns the boxes for as long as its ticks are on
           // them, so the line under the table follows them too. Say which way
@@ -1266,7 +1236,7 @@ export function PlayerSeasonDrill({ s, indexPlayer, context, showDRating = true,
     );
   }
   if (!lb) {
-    return <div className="px-2 py-3 text-[10px] text-stone-500 italic text-center border-t border-stone-200">Loading game log…</div>;
+    return <div className="px-2 py-3 text-[12px] text-stone-500 italic text-center border-t border-stone-200">Loading game log…</div>;
   }
 
   const roundBySeries = Object.fromEntries((lb.series || []).map((x) => [x.idx, x.round]));

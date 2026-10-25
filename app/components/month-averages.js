@@ -109,11 +109,11 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
     return (
       <>
         {other && (
-          <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-widest text-stone-700">
+          <div className="flex items-center justify-between gap-2 text-[13px] font-semibold text-stone-700">
             <span className="italic">{other.month.label} {other.month.key.slice(0, 4)}</span>
             <button
               onClick={() => setViewKey(null)}
-              className="normal-case tracking-normal font-normal text-stone-400 hover:text-stone-700"
+              className="normal-case font-normal text-stone-400 hover:text-stone-700"
             >
               ← {month.label.slice(0, 3)} {year}
             </button>
@@ -172,7 +172,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
       <div className="flex items-center gap-1.5 pr-2">
         <button
           onClick={() => setOpen((o) => !o)}
-          className="flex-1 min-w-0 px-2 py-1.5 text-[10px] uppercase tracking-widest text-stone-600 font-semibold flex items-center gap-1 text-left"
+          className="flex-1 min-w-0 px-2 py-1.5 text-[12px] text-stone-600 font-semibold flex items-center gap-1 text-left"
         >
           <span className="text-stone-400">{open ? "▾" : "▸"}</span>
           {month.label} {year} Averages
@@ -181,7 +181,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
         {open && rows && (min ? (
           <button
             onClick={() => setMinGames(null)}
-            className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+            className="normal-case text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
             aria-label="Clear the minimum-games filter"
           >
             ≥{min} games <span className="text-stone-400">×</span>
@@ -189,7 +189,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
         ) : qualifier > 1 && (
           <button
             onClick={() => setMinGames(qualifier)}
-            className="normal-case tracking-normal text-[10px] px-1.5 py-0.5 border bg-white text-stone-500 border-stone-300"
+            className="normal-case text-[12px] px-1.5 py-0.5 border bg-white text-stone-500 border-stone-300"
           >
             Qualify ≥{qualifier} games
           </button>
@@ -198,19 +198,19 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
       {open && (
         <div className="px-2 pb-2">
           {!rows && !error && (
-            <div className="py-2 text-[10px] text-stone-500 italic text-center">
+            <div className="py-2 text-[12px] text-stone-500 italic text-center">
               {progress?.total ? `Loading box scores… ${progress.done} of ${progress.total}` : "Loading box scores…"}
             </div>
           )}
-          {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
+          {error && <div className="py-2 text-[12px] text-red-600 text-center">{error}</div>}
           {rows && (
             <div>
               <div className="py-1">
-                <span className="text-[9px] text-stone-400 italic">
+                <span className="text-[11px] text-stone-400 italic">
                   {boxes.length < month.games.length ? `${boxes.length} of ${month.games.length} games loaded` : `${month.games.length} games`}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+              <div className="flex items-center gap-2 text-[11px] text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-5 text-right">#</span>
                 <span className="w-10">Team</span>
                 <span className="flex-1">Player</span>
@@ -247,7 +247,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                             toggle();
                           }
                         }}
-                        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+                        className={`relative w-full flex items-center gap-2 text-[12px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
                       >
                         <span className="w-5 text-right tabular-nums text-stone-400">{i + 1}</span>
                         <button
@@ -256,7 +256,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                             onTeam?.(team === p.team ? null : p.team);
                           }}
                           style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
-                          className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border"
+                          className="w-10 text-[11px] font-bold px-1 py-0.5 text-center border"
                           aria-label={team === p.team ? "Show every team" : `Show only ${p.team}`}
                         >{p.team}</button>
                         <span className="flex-1 truncate text-stone-800">
@@ -300,12 +300,12 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
               {filtered.length > 10 && (
                 <button
                   onClick={() => setShowAll((s) => !s)}
-                  className="w-full mt-1 py-1.5 text-[10px] uppercase tracking-widest text-stone-500 border border-stone-200 hover:bg-stone-50"
+                  className="w-full mt-1 py-1.5 text-[12px] text-stone-500 border border-stone-200 hover:bg-stone-50"
                 >
                   {showAll ? "Show top 10" : `Show all (${filtered.length})`}
                 </button>
               )}
-              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by Value Added per game · tap a row for VA breakdown, a team to filter</div>
+              <div className="text-[11px] text-stone-400 mt-1.5 text-center italic">Sorted by Value Added per game · tap a row for VA breakdown, a team to filter</div>
             </div>
           )}
         </div>

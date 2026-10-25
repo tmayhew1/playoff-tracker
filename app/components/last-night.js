@@ -53,11 +53,11 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
     <section className="mb-4 bg-white border-2 border-stone-900" aria-label="Last night's Value Added leaders">
       <div className="flex items-center px-3 py-2 border-b border-stone-200">
         <button onClick={() => setOpen(!open)} className="flex-1 text-left flex items-baseline gap-2 min-w-0">
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-stone-900 whitespace-nowrap">About Last Night</span>
-          <span className="text-[10px] text-stone-500 truncate">
+          <span className="text-[13px] font-bold text-stone-900 whitespace-nowrap">About Last Night</span>
+          <span className="text-[12px] text-stone-500 truncate">
             {day} · {data.games.length} game{data.games.length === 1 ? "" : "s"}
           </span>
-          <span className="text-[10px] text-stone-400">{open ? "▾" : "▸"}</span>
+          <span className="text-[12px] text-stone-400">{open ? "▾" : "▸"}</span>
         </button>
         <button onClick={() => step(data.prev)} disabled={!data.prev} aria-label="Earlier night"
           className="px-2 text-sm text-stone-500 disabled:text-stone-200">‹</button>
@@ -72,27 +72,27 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
               <button key={`${l.gameId}:${l.name}`} onClick={() => openLine(l)}
                 disabled={!l.slug && data.date !== liveNight}
                 className="w-full grid grid-cols-[1.2rem_1fr_auto] gap-x-2 items-center px-3 py-1.5 border-b border-stone-100 last:border-0 text-left">
-                <span className="text-[10px] text-stone-400 tabular-nums">{i + 1}</span>
+                <span className="text-[12px] text-stone-400 tabular-nums">{i + 1}</span>
                 <span className="min-w-0">
-                  <span className="block text-[12px] font-semibold text-stone-900 truncate">
-                    {l.name} <span className="text-[10px] font-bold" style={{ color: teamColor(l.team) }}>{l.team}</span>
-                    <span className="text-[10px] text-stone-400 font-normal"> {l.won ? "W" : "L"} vs {l.opp}</span>
+                  <span className="block text-[14px] font-semibold text-stone-900 truncate">
+                    {l.name} <span className="text-[12px] font-bold" style={{ color: teamColor(l.team) }}>{l.team}</span>
+                    <span className="text-[12px] text-stone-400 font-normal"> {l.won ? "W" : "L"} vs {l.opp}</span>
                   </span>
-                  <span className="block text-[10px] text-stone-500 tabular-nums">
+                  <span className="block text-[12px] text-stone-500 tabular-nums">
                     {l.pts} pts · {l.reb} reb · {l.ast} ast{l.stl + l.blk > 2 ? ` · ${l.stl} stl · ${l.blk} blk` : ""} · {l.fgm}-{l.fga} FG · {Math.round(l.mp)} min
                   </span>
                 </span>
                 <span className="text-right">
-                  <span className={`block text-[14px] font-black tabular-nums ${l.va >= 0 ? "text-stone-900" : "text-red-600"}`}>{sign(l.va)}</span>
+                  <span className={`block text-[15px] font-black tabular-nums ${l.va >= 0 ? "text-stone-900" : "text-red-600"}`}>{sign(l.va)}</span>
                   {vsAvg != null && (
-                    <span className={`block text-[9px] tabular-nums ${vsAvg >= 0 ? "text-emerald-700" : "text-stone-400"}`}>{sign(vsAvg)} vs avg</span>
+                    <span className={`block text-[11px] tabular-nums ${vsAvg >= 0 ? "text-emerald-700" : "text-stone-400"}`}>{sign(vsAvg)} vs avg</span>
                   )}
                 </span>
               </button>
             );
           })}
           {data.lines.length > TOP && (
-            <div className="px-3 py-1.5 text-[10px] text-stone-500">
+            <div className="px-3 py-1.5 text-[12px] text-stone-500">
               <button onClick={() => setExpanded(!expanded)} className="underline">
                 {expanded ? "Top 5 only" : `All ${data.lines.length} players`}
               </button>
