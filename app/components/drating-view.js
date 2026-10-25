@@ -1,5 +1,6 @@
 "use client";
 
+import { HowItWorks } from "./ui/how-it-works";
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
@@ -96,23 +97,23 @@ export function DRatingView() {
   const cols = "grid grid-cols-[1.5rem_minmax(0,1fr)_2.4rem_2.2rem_2.2rem_2.6rem_2.6rem_2.6rem] gap-x-1 items-center";
 
   return (
-    <div className="text-[10px]">
+    <div className="text-[12px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
           value={sel || ""}
           onChange={(e) => { setSeason(e.target.value); }}
-          className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
+          className="text-[12px] bg-white border border-stone-300 px-1.5 py-1"
         >
           {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+        <div className="inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
           <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
         </div>
         {minMpFilter != null && (
           <button
             onClick={() => setMinMpFilter(null)}
-            className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
+            className="text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
             aria-label="Clear min-minutes filter"
           >
             ≥{minMpFilter} min <span className="text-stone-400">×</span>
@@ -123,18 +124,18 @@ export function DRatingView() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search…"
-          className="flex-1 min-w-[6rem] text-[10px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
+          className="flex-1 min-w-[6rem] text-[12px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
         />
       </div>
       {lga && (
-        <div className="text-[9px] text-stone-400 mb-1.5">
+        <HowItWorks>
           League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
           DRTG = box-score estimate, calibrated onto the play-by-play scale (within-team spread ×0.5), as the prior (≈1500 poss) — updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
           IND = player's edge over his own team's D · TM+ = his stock-rate share of the team's edge vs the league line ·
           TEAM = that team's D over the season, weighted by the share of the season the player was there for and the
           balance taken at the league line (whole-season players carry it in full; an 11-of-72-game season carries ~46%) ·
           both as points/game, so IND + TM+ = D/G · “–” = no single-team context (traded)
-        </div>
+        </HowItWorks>
       )}
       {(() => {
         const NATURAL = { name: 1, drtg: 1, team: 1, ind: -1, tmp: -1, perG: -1 };
@@ -142,14 +143,14 @@ export function DRatingView() {
           <button
             type="button"
             onClick={() => setSort((p) => ({ key: k, dir: p.key === k ? -p.dir : NATURAL[k] }))}
-            className={`${right ? "text-right" : "text-left"} uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
+            className={`${right ? "text-right" : "text-left"} cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
             aria-pressed={sort.key === k}
           >
             {label}{sort.key === k ? (sort.dir < 0 ? "▾" : "▴") : ""}
           </button>
         );
         return (
-          <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+          <div className={`${cols} text-[10px] text-stone-400 border-b border-stone-300 pb-0.5`}>
             <span>#</span><H k="name" label="Player" right={false} />
             {/* MP header arms the min-minutes filter (two-step, like the
                 leaderboards' G column) instead of sorting; a second tap
@@ -157,7 +158,7 @@ export function DRatingView() {
             <button
               type="button"
               onClick={() => setMpArmed((v) => !v)}
-              className={`text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${mpArmed ? "text-stone-900 font-bold underline" : ""}`}
+              className={`text-right cursor-pointer hover:text-stone-900 ${mpArmed ? "text-stone-900 font-bold underline" : ""}`}
               title="Tap, then tap a player's MP to filter to at least that many minutes"
               aria-pressed={mpArmed}
             >
@@ -175,7 +176,7 @@ export function DRatingView() {
         <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
           <span className="text-stone-400 tabular-nums">{i + 1}</span>
           <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
-            {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
+            {r.name} <span className="text-stone-400 font-normal text-[10px]">{r.team}</span>
           </span>
           {(() => {
             const mpVal = Math.round(r.mp);
@@ -206,7 +207,7 @@ export function DRatingView() {
         </div>
       ))}
       {list && list.length > 0 && (
-        <div className="mt-2 text-center text-[9px] italic text-stone-400">
+        <div className="mt-2 text-center text-[11px] italic text-stone-400">
           {minMpFilter != null
             ? `Min ${minMpFilter} minutes · `
             : query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}

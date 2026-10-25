@@ -17,3 +17,11 @@ const LookAheadNavContext = createContext(null);
 
 export const LookAheadNavProvider = LookAheadNavContext.Provider;
 export const useLookAheadNav = () => useContext(LookAheadNavContext);
+
+// Any player's name in a box score — Live, About Last Night, Explore's games —
+// opens their By Player career: openCareer({ name, slug?, season? }). The
+// tracker provides it; a page without it (none today) just shows no link.
+const PlayerNavContext = createContext(null);
+
+export const PlayerNavProvider = PlayerNavContext.Provider;
+export const usePlayerNav = () => useContext(PlayerNavContext);

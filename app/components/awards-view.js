@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { teamColor, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
+import { Seg } from "./ui/seg";
 
 // The Awards tab: one sub-page per award, each a season-by-season board of the
 // award's odds, fit on the real winners (scripts/bake-awards.mjs, served by
@@ -60,18 +61,12 @@ export function AwardsView({ onGoToLeaderboard = null, focus = null, onFocusHand
   }, [sub, boards]);
   const data = boards[sub];
 
-  const subCls = (active) =>
-    `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   const mine = target?.award === sub ? target : null;
   return (
     <div>
-      <div className="mb-3 grid grid-cols-5 gap-1" role="tablist" aria-label="Award">
-        {SUBS.map(([k, label]) => (
-          <button key={k} type="button" role="tab" aria-selected={sub === k} onClick={() => setSub(k)} className={subCls(sub === k)}>{label}</button>
-        ))}
-      </div>
-      {error ? <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the awards — {error}</div>
-        : !data ? <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading awards…</div>
+      <Seg label="Award" value={sub} onChange={setSub} options={SUBS} className="mb-3 w-full [&>button]:flex-1" />
+      {error ? <div className="text-[12px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the awards — {error}</div>
+        : !data ? <div className="text-[12px] text-stone-500 italic py-4 text-center">Loading awards…</div>
         : sub === "mip" ? <MipBoard data={data} season={season} onSeason={setSeason} focus={mine} onGo={onGoToLeaderboard} />
         : <PickBoard key={sub} award={sub} data={data} season={season} onSeason={setSeason} focus={mine} onGo={onGoToLeaderboard} />}
     </div>
@@ -101,7 +96,7 @@ function SeasonPicker({ seasons, cur, onPick, children }) {
   const i = seasons.indexOf(cur);
   return (
     <div className="mb-4 p-3 bg-white border border-stone-300">
-      <label className="text-[10px] uppercase tracking-[0.3em] text-stone-500 block mb-1" htmlFor="award-season">Season</label>
+      <label className="text-[12px] text-stone-500 block mb-1" htmlFor="award-season">Season</label>
       <div className="flex gap-1.5">
         <button type="button" aria-label="Previous season" disabled={i <= 0} onClick={() => onPick(seasons[i - 1])}
           className="w-9 border border-stone-300 bg-white text-stone-700 disabled:text-stone-300">‹</button>
@@ -112,13 +107,13 @@ function SeasonPicker({ seasons, cur, onPick, children }) {
         <button type="button" aria-label="Next season" disabled={i >= seasons.length - 1} onClick={() => onPick(seasons[i + 1])}
           className="w-9 border border-stone-300 bg-white text-stone-700 disabled:text-stone-300">›</button>
       </div>
-      <div className="text-[10px] mt-1.5 text-stone-500 text-center">{children}</div>
+      <div className="text-[12px] mt-1.5 text-stone-500 text-center">{children}</div>
     </div>
   );
 }
 
 const WinnerTag = ({ award }) => (
-  <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">{award}</span>
+  <span className="ml-1 shrink-0 text-[10px] font-bold px-1 border border-amber-400 text-amber-700 bg-amber-50">{award}</span>
 );
 
 function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
@@ -147,7 +142,7 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
   const pick = (s) => { onSeason(s); setOpen(null); };
   const tapSort = (m) => setSort(sort === m ? "mip" : m);
 
-  const sortCls = (m) => `text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort === m ? "text-stone-900 font-semibold" : ""}`;
+  const sortCls = (m) => `text-right whitespace-nowrap cursor-pointer hover:text-stone-900 ${sort === m ? "text-stone-900 font-semibold" : ""}`;
   const bt = data.model.backtest;
 
   return (
@@ -160,10 +155,10 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
 
       <div className="mb-4 border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Most Improved · {cur}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">{SORT_NOTE[sort]} · tap a player for the expected line beside the actual</div>
+          <div className="text-[12px] text-stone-500">Most Improved · {cur}</div>
+          <div className="text-[11px] italic text-stone-400 mt-0.5">{SORT_NOTE[sort]} · tap a player for the expected line beside the actual</div>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
@@ -184,16 +179,16 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
       </div>
 
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Against the real award</div>
+        <div className="text-[12px] text-stone-500">Against the real award</div>
         <div className="mt-2 grid grid-cols-4 gap-1.5 text-center">
           {[["#1", bt.top1], ["Top 5", bt.top5], ["Top 10", bt.top10], ["Median", `#${bt.medianRank}`]].map(([k, v]) => (
             <div key={k} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
-              <div className="text-[8px] uppercase tracking-wider text-stone-400">{k}</div>
+              <div className="text-[10px] text-stone-400">{k}</div>
               <div className="text-sm font-bold tabular-nums text-stone-900">{v}</div>
             </div>
           ))}
         </div>
-        <div className="text-[9px] italic text-stone-400 mt-1">Where the real winner ranked, {bt.seasons} seasons, each scored by a model fit on the others.</div>
+        <div className="text-[11px] italic text-stone-400 mt-1">Where the real winner ranked, {bt.seasons} seasons, each scored by a model fit on the others.</div>
       </div>
 
       <MipMethod model={data.model} />
@@ -215,7 +210,7 @@ function MipRow({ r, isWinner, width, gap, isOpen, onToggle, onGo }) {
           aria-label={`${r.name} — ${isOpen ? "hide" : "show"} expected and actual lines`}
           onClick={onToggle}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
-          className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 cursor-pointer`}
+          className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[12px] py-1.5 px-1.5 sm:px-2 cursor-pointer`}
         >
           <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{r.rank}</span>
           <TeamChip team={r.team} active={isOpen} />
@@ -254,9 +249,9 @@ function Lines({ r, onGo }) {
   return (
     <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
       <div className="overflow-x-auto no-scrollbar">
-        <table className="w-full text-[9px] tabular-nums">
+        <table className="w-full text-[11px] tabular-nums">
           <thead>
-            <tr className="text-stone-400 uppercase tracking-wider">
+            <tr className="text-stone-400">
               <th className="text-left font-normal pr-1"></th>
               <th className="text-right font-normal px-1">G</th>
               <th className="text-right font-normal px-1">VA</th>
@@ -281,7 +276,7 @@ function Lines({ r, onGo }) {
         <button
           type="button"
           onClick={() => onGo({ season: r.season, slug: r.slug, name: r.name, team: null, scope: "regular" })}
-          className="mt-1.5 text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900"
+          className="mt-1.5 text-[11px] font-bold text-stone-400 hover:text-stone-900"
         >{r.season} leaderboard →</button>
       )}
     </div>
@@ -292,11 +287,11 @@ function MipMethod({ model }) {
   const [show, setShow] = useState(false);
   return (
     <div className="mb-4 border border-stone-300 bg-white">
-      <button type="button" onClick={() => setShow((s) => !s)} className="w-full px-3 py-2 text-left text-[10px] uppercase tracking-[0.3em] text-stone-500 flex items-center gap-2">
-        <span className="text-stone-400 text-[10px]">{show ? "▾" : "▸"}</span> How this works
+      <button type="button" onClick={() => setShow((s) => !s)} className="w-full px-3 py-2 text-left text-[12px] text-stone-500 flex items-center gap-2">
+        <span className="text-stone-400 text-[12px]">{show ? "▾" : "▸"}</span> How this works
       </button>
       {show && (
-        <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
+        <div className="px-3 pb-3 text-[12px] text-stone-600 leading-relaxed space-y-2">
           <p><span className="font-semibold text-stone-800">Expected.</span> The Look Ahead model’s projection from the summer before: the last three seasons’ per-minute rates and percentages, shrunk toward position and aged, plus projected minutes and games, placed on the roster the player actually played for. It’s priced against the previous season’s league, the way the Look Ahead backtest is. Actual is the season’s VA against that season’s league.</p>
           <p><span className="font-semibold text-stone-800">MIP %.</span> Each player’s chance of winning that season’s award, from one number: the per-game ratio (actual VA/G + {model.floor}) ÷ (expected VA/G + {model.floor}), put through a logistic model fit on all {model.backtest.seasons} winners. VA is measured against an average player, so most role players are expected at or below zero; the +{model.floor} floor keeps the ratio meaningful for them, and the model chose it. Going from 0 to 8 VA/G scores ×1.40 while a star going from 17 to 26 scores ×1.24, so a role player’s leap counts for more than a star’s. The ratio beat the total gain, the per-game gain, a blend of the two, and either gain with the player’s starting level beside it.</p>
           <p><span className="font-semibold text-stone-800">Who’s counted.</span> MIP % and Over/G rank players who played at least half as many games as that season’s leader in games played, and MIP % only those who finished above zero VA: a player still below average isn’t the most improved, however far below expectation they started. Over ranks everyone. Rookies have no prior season and aren’t listed.</p>
@@ -369,14 +364,14 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
 
       <div className="mb-4 border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {cur}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">{cfg.note(m, cur >= m.ruleSince)} · tap a player for the season line</div>
+          <div className="text-[12px] text-stone-500">{cfg.title} · {cur}</div>
+          <div className="text-[11px] italic text-stone-400 mt-0.5">{cfg.note(m, cur >= m.ruleSince)} · tap a player for the season line</div>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
-          <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
+          <span className="w-12 -ml-2 whitespace-nowrap text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
           {cfg.vote && <span className="w-8 text-right">Vote</span>}
           <span className="w-11 text-right">VA+</span>
           <span className={`${cfg.minutes ? "w-8" : "w-6"} text-right`}>{cfg.minutes ? "MIN" : "G"}</span>
@@ -393,7 +388,7 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
                   aria-label={`${r.name} — ${isOpen ? "hide" : "show"} season line`}
                   onClick={() => setOpen(isOpen ? null : r.slug)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(isOpen ? null : r.slug); } }}
-                  className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
+                  className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[12px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
                 >
                   <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{r.rank}</span>
                   <TeamChip team={r.team} active={isOpen} />
@@ -413,9 +408,9 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
               {isOpen && (
                 <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
                   <div className="overflow-x-auto no-scrollbar">
-                    <table className="w-full text-[9px] tabular-nums">
+                    <table className="w-full text-[11px] tabular-nums">
                       <thead>
-                        <tr className="text-stone-400 uppercase tracking-wider">
+                        <tr className="text-stone-400">
                           <th className="text-left font-normal pr-1"></th>
                           <th className="text-right font-normal px-1">G</th>
                           <th className="text-right font-normal px-1">VA+</th>
@@ -434,7 +429,7 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
                   </div>
                   {onGo && (
                     <button type="button" onClick={() => onGo({ season: cur, slug: r.slug, name: r.name, team: null, scope: "regular" })}
-                      className="mt-1.5 text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900">{cur} leaderboard →</button>
+                      className="mt-1.5 text-[11px] font-bold text-stone-400 hover:text-stone-900">{cur} leaderboard →</button>
                   )}
                 </div>
               )}
@@ -444,16 +439,16 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
       </div>
 
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Against the real {award === "mvp" || award === "roy" ? "award" : "picks"}</div>
+        <div className="text-[12px] text-stone-500">Against the real {award === "mvp" || award === "roy" ? "award" : "picks"}</div>
         <div className={`mt-2 grid gap-1.5 text-center ${cfg.tiles(bt).length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
           {cfg.tiles(bt).map(([k, v]) => (
             <div key={k} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
-              <div className="text-[8px] uppercase tracking-wider text-stone-400">{k}</div>
+              <div className="text-[10px] text-stone-400">{k}</div>
               <div className="text-sm font-bold tabular-nums text-stone-900">{v}</div>
             </div>
           ))}
         </div>
-        <div className="text-[9px] italic text-stone-400 mt-1">{cfg.tilesNote(bt)}</div>
+        <div className="text-[11px] italic text-stone-400 mt-1">{cfg.tilesNote(bt)}</div>
       </div>
 
       <PickMethod award={award} model={m} />
@@ -466,11 +461,11 @@ function PickMethod({ award, model }) {
   const bt = model.backtest;
   return (
     <div className="mb-4 border border-stone-300 bg-white">
-      <button type="button" onClick={() => setShow((s) => !s)} className="w-full px-3 py-2 text-left text-[10px] uppercase tracking-[0.3em] text-stone-500 flex items-center gap-2">
-        <span className="text-stone-400 text-[10px]">{show ? "▾" : "▸"}</span> How this works
+      <button type="button" onClick={() => setShow((s) => !s)} className="w-full px-3 py-2 text-left text-[12px] text-stone-500 flex items-center gap-2">
+        <span className="text-stone-400 text-[12px]">{show ? "▾" : "▸"}</span> How this works
       </button>
       {show && (
-        <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
+        <div className="px-3 pb-3 text-[12px] text-stone-600 leading-relaxed space-y-2">
           {award === "roy" ? (
             <>
               <p><span className="font-semibold text-stone-800">ROY %.</span> Each rookie’s chance of winning that season’s award: a logistic model on two numbers, season VA+ (per 82 games) and minutes per game, fit on the top vote-getter of every Rookie of the Year ballot since 1981-82 (co-winners share the weight). Minutes carry the role a rookie was handed, which voters weigh; they’re scaled down for anyone who played fewer than half as many games as the season’s leader, so a short call-up can’t ride a big minutes average. With them the model ranks the real winner first in {bt.top1} of {bt.seasons} seasons, against 30 for VA+ alone. Points per game, games played and plain VA added nothing beside them. Vote is each rookie’s share of the real ballot.</p>

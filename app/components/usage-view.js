@@ -1,5 +1,6 @@
 "use client";
 
+import { HowItWorks } from "./ui/how-it-works";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
@@ -186,7 +187,7 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
 
         {/* The y axis is named where the data never reaches — this
             relationship slopes up, so the top-left corner is always empty. */}
-        <div className="absolute left-0 top-0 text-[7px] leading-none text-stone-400 tabular-nums pointer-events-none">
+        <div className="absolute left-0 top-0 text-[10px] leading-none text-stone-400 tabular-nums pointer-events-none">
           PTS/MIN ↑ {view.yMax.toFixed(2)}
         </div>
 
@@ -198,7 +199,7 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
               style={{ left: `${menu.left}%`, top: `${menu.top}%` }}
             >
               <div className="min-w-[8rem] rounded-sm border border-stone-300 bg-white shadow-md overflow-hidden">
-                <div className="px-1.5 py-0.5 text-[7px] uppercase tracking-wider text-stone-400 border-b border-stone-100">{menu.items.length} players here</div>
+                <div className="px-1.5 py-0.5 text-[10px] text-stone-400 border-b border-stone-100">{menu.items.length} players here</div>
                 {menu.items.map((r) => (
                   <button
                     key={r.key}
@@ -206,8 +207,8 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
                     onClick={() => { setMenu(null); onSelect(r); }}
                     className="w-full flex items-baseline justify-between gap-2 px-1.5 py-1 text-left hover:bg-stone-100"
                   >
-                    <span className="truncate text-[9px] font-medium text-stone-800">{r.r.name}</span>
-                    <span className="shrink-0 text-[8px] tabular-nums text-stone-500">{r.ptsPerM.toFixed(3)}</span>
+                    <span className="truncate text-[11px] font-medium text-stone-800">{r.r.name}</span>
+                    <span className="shrink-0 text-[10px] tabular-nums text-stone-500">{r.ptsPerM.toFixed(3)}</span>
                   </button>
                 ))}
               </div>
@@ -218,9 +219,9 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
 
       {/* Axis extremes on the frame — the plot is small, so two numbers an axis
           beats a full tick ladder. */}
-      <div className="flex justify-between text-[7px] text-stone-400 tabular-nums -mt-0.5">
+      <div className="flex justify-between text-[10px] text-stone-400 tabular-nums -mt-0.5">
         <span>0</span>
-        <span className="uppercase tracking-wider">poss. used / min →</span>
+        <span className="">poss. used / min →</span>
         <span>{view.xMax.toFixed(2)}</span>
       </div>
 
@@ -228,7 +229,7 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
           overlap need naming, and there is nowhere inside the frame to put the
           names where they don't land on data. Each carries its own dash
           pattern as well as its colour. */}
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] leading-none">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] leading-none">
         <span className="text-stone-900"><span className="font-bold">──</span> fitted line</span>
         <span className="text-stone-500"><span className="font-bold">- -</span> median {mu.toFixed(3)}</span>
         <span style={{ color: CAP_LINE }}><span className="font-bold">━</span> cap = the lower of the two
@@ -238,11 +239,11 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
       </div>
 
       {/* Readout: the dot under the finger, or the invitation to find one. */}
-      <div className="mt-1 h-[2.1rem] text-[9px] leading-tight">
+      <div className="mt-1 h-[2.1rem] text-[11px] leading-tight">
         {shown ? (
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="font-semibold" style={{ color: teamColor(shown.r.team) }}>
-              {shown.r.name} <span className="text-stone-400 font-normal text-[8px]">{shown.r.team}</span>
+              {shown.r.name} <span className="text-stone-400 font-normal text-[10px]">{shown.r.team}</span>
             </span>
             <span className="text-stone-500 tabular-nums">
               {shown.ptsPerM.toFixed(3)} PTS/min on {shown.usgPerM.toFixed(3)} poss/min · line says {shown.pred.toFixed(3)}
@@ -429,33 +430,33 @@ export function UsageView() {
   const cols = "grid grid-cols-[1.2rem_minmax(0,1fr)_1.9rem_2.0rem_2.0rem_2.5rem_2.5rem_2.5rem_2.4rem] gap-x-[3px] items-center";
 
   return (
-    <div className="text-[10px]">
+    <div className="text-[12px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
           value={sel || ""}
           onChange={(e) => setSeason(e.target.value)}
-          className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
+          className="text-[12px] bg-white border border-stone-300 px-1.5 py-1"
         >
           {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+        <div className="inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setScope("rs")} className={`px-1.5 py-0.5 ${scope === "rs" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Regular</button>
           <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
         </div>
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+        <div className="inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden">
           <button onClick={() => setPerGame(false)} className={`px-1.5 py-0.5 ${!perGame ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Tot</button>
           <button onClick={() => setPerGame(true)} className={`px-1.5 py-0.5 border-l border-stone-300 ${perGame ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>/G</button>
         </div>
         <button
           type="button"
           onClick={() => setShowPlot((v) => !v)}
-          className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border rounded-sm ${showPlot ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300"}`}
+          className={`text-[11px] px-1.5 py-0.5 border rounded-sm ${showPlot ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300"}`}
           aria-pressed={showPlot}
         >Plot</button>
         {minMpFilter != null && (
           <button
             onClick={() => setMinMpFilter(null)}
-            className="text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
+            className="text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 whitespace-nowrap bg-stone-100 text-stone-700 border-stone-300"
             aria-label="Clear min-minutes filter"
           >
             ≥{minMpFilter} min <span className="text-stone-400">×</span>
@@ -466,7 +467,7 @@ export function UsageView() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search…"
-          className="flex-1 min-w-[6rem] text-[10px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
+          className="flex-1 min-w-[6rem] text-[12px] text-stone-900 bg-white border border-stone-300 px-2 py-1"
         />
       </div>
       {/* Second row: which candidates the table shows, what Δ measures, and
@@ -474,17 +475,17 @@ export function UsageView() {
           three change what the numbers MEAN, the ones above change which
           numbers. */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Whole baselines, or today's volume term split into its two halves">
+        <div className="inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden" title="Whole baselines, or today's volume term split into its two halves">
           <button onClick={() => setColView("base")} className={`px-1.5 py-0.5 ${colView === "base" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Baselines</button>
           <button onClick={() => setColView("split")} className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "split" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Split</button>
         </div>
-        <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which candidate the Δ column measures against today's VA">
+        <div className="inline-flex text-[11px] border border-stone-300 rounded-sm overflow-hidden" title="Which candidate the Δ column measures against today's VA">
           <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
           <button onClick={() => setDeltaVs("cap")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "cap" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Cap</button>
           <button onClick={() => setDeltaVs("usg")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "usg" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Usg</button>
           <button onClick={() => setDeltaVs("spl")} className={`px-1.5 py-0.5 border-l border-stone-300 normal-case ${deltaVs === "spl" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>λ</button>
         </div>
-        <label className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider text-stone-500">
+        <label className="flex items-center gap-1.5 text-[11px] text-stone-500">
           <span>Volume credit <span className="normal-case">λ</span></span>
           <input
             type="range" min="0" max="1" step="0.05" value={lambda}
@@ -496,7 +497,7 @@ export function UsageView() {
         </label>
       </div>
       {model && lga && (
-        <div className="text-[9px] text-stone-400 mb-1.5">
+        <HowItWorks>
           {sel} line <span className="tabular-nums text-stone-600">
             PTS/min ≈ {model.b.toFixed(3)} × (poss. used/min) {model.a >= 0 ? "+" : "−"} {Math.abs(model.a).toFixed(3)}
           </span> (R² <span className="tabular-nums text-stone-600">{model.r2.toFixed(2)}</span>,
@@ -516,7 +517,7 @@ export function UsageView() {
           adopting that baseline moves this player&apos;s total VA by (the other nine
           categories don&apos;t change)
           {scope === "po" && " · playoff rows are scored against the season's regular-season line, as all VA baselines are"}
-        </div>
+        </HowItWorks>
       )}
       {showPlot && plotRows && plotRows.length > 0 && (
         <UsageScatter
@@ -537,7 +538,7 @@ export function UsageView() {
           <button
             type="button"
             onClick={() => setSort((p) => ({ key: k, dir: p.key === k ? -p.dir : NATURAL[k] }))}
-            className={`${right ? "text-right" : "text-left"} uppercase tracking-wider cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
+            className={`${right ? "text-right" : "text-left"} cursor-pointer hover:text-stone-900 ${sort.key === k ? "text-stone-900 font-semibold" : ""}`}
             aria-pressed={sort.key === k}
             title={title}
           >
@@ -545,7 +546,7 @@ export function UsageView() {
           </button>
         );
         return (
-          <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
+          <div className={`${cols} text-[10px] text-stone-400 border-b border-stone-300 pb-0.5`}>
             <span>#</span><H k="name" label="Player" right={false} />
             {/* MP header arms the min-minutes filter (two-step, like the
                 D Rating tab) rather than sorting; a second tap disarms.
@@ -554,7 +555,7 @@ export function UsageView() {
             <button
               type="button"
               onClick={() => setMpArmed((v) => !v)}
-              className={`text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${mpArmed ? "text-stone-900 font-bold underline" : ""}`}
+              className={`text-right cursor-pointer hover:text-stone-900 ${mpArmed ? "text-stone-900 font-bold underline" : ""}`}
               title="Tap, then tap a player's MP to filter to at least that many minutes"
               aria-pressed={mpArmed}
             >
@@ -612,7 +613,7 @@ export function UsageView() {
             aria-pressed={isPicked}
             title={isPicked ? "Clear the highlight" : "Highlight this player in the plot"}
           >
-            {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
+            {r.name} <span className="text-stone-400 font-normal text-[10px]">{r.team}</span>
           </button>
           {(() => {
             const mpVal = Math.round(r.mp);
@@ -665,7 +666,7 @@ export function UsageView() {
         );
       })}
       {list && list.length > 0 && (
-        <div className="mt-2 text-center text-[9px] italic text-stone-400">
+        <div className="mt-2 text-center text-[11px] italic text-stone-400">
           {minMpFilter != null
             ? `Min ${minMpFilter} minutes · `
             : query.trim() === "" ? `Min ${scope === "po" ? 40 : 100} minutes · search to include everyone · ` : ""}

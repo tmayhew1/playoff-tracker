@@ -224,7 +224,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
       <div className={`relative mt-1 ${view.ref ? "pt-3" : ""}`}>
         {view.ref && refLine.label && (
           <div
-            className={`absolute text-[7px] leading-none font-semibold text-stone-500 whitespace-nowrap pointer-events-none ${view.ref.vertical ? "-translate-y-full" : "-translate-x-1/2"}`}
+            className={`absolute text-[10px] leading-none font-semibold text-stone-500 whitespace-nowrap pointer-events-none ${view.ref.vertical ? "-translate-y-full" : "-translate-x-1/2"}`}
             style={{ left: `${view.ref.left}%`, top: view.ref.vertical ? `${view.ref.top}%` : 0 }}
             title={refLine.title || undefined}
           >
@@ -274,7 +274,7 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
               style={{ left: `${menu.left}%`, top: `${menu.top}%` }}
             >
               <div className="min-w-[7.5rem] rounded-sm border border-stone-300 bg-white shadow-md overflow-hidden">
-                <div className="px-1.5 py-0.5 text-[7px] uppercase tracking-wider text-stone-400 border-b border-stone-100">{menu.items.length} players here</div>
+                <div className="px-1.5 py-0.5 text-[10px] text-stone-400 border-b border-stone-100">{menu.items.length} players here</div>
                 {menu.items.map((dt, i) => (
                   <button
                     key={i}
@@ -282,8 +282,8 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
                     onClick={() => { setMenu(null); onPickPlayer(dt.row); }}
                     className="w-full flex items-baseline justify-between gap-2 px-1.5 py-1 text-left hover:bg-stone-100 focus-visible:outline-none focus-visible:bg-stone-100"
                   >
-                    <span className="truncate text-[9px] font-medium text-stone-800">{dt.row.name}</span>
-                    <span className="shrink-0 text-[8px] tabular-nums text-stone-500">{collapsed ? sgn(dt.v[selIdx]) : `${sgn(dt.v[yi])} / ${sgn(dt.v[xi])}`}</span>
+                    <span className="truncate text-[11px] font-medium text-stone-800">{dt.row.name}</span>
+                    <span className="shrink-0 text-[10px] tabular-nums text-stone-500">{collapsed ? sgn(dt.v[selIdx]) : `${sgn(dt.v[yi])} / ${sgn(dt.v[xi])}`}</span>
                   </button>
                 ))}
               </div>
@@ -308,9 +308,9 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
               title={`${seg.cat || seg.sub} — ${isSel ? "back to the scatter" : "collapse the plot onto this stat and filter the card"}`}
               className={`flex flex-col items-center gap-0.5 min-w-0 rounded px-1 py-1 border transition-colors ${isSel ? "bg-stone-200 border-stone-800 ring-1 ring-stone-800" : "bg-white border-stone-200 hover:bg-stone-100"}`}
             >
-              <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub}{seg.headUnit || ""}{axis && !collapsed ? ` ${axis}` : ""}</span>
-              <span className="text-[11px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
-              <span className={`text-[8px] font-semibold tabular-nums leading-none ${vaColor(shown)}`}>{sgn(shown)}</span>
+              <span className="text-[10px] text-stone-400 leading-none">{seg.sub}{seg.headUnit || ""}{axis && !collapsed ? ` ${axis}` : ""}</span>
+              <span className="text-[13px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
+              <span className={`text-[10px] font-semibold tabular-nums leading-none ${vaColor(shown)}`}>{sgn(shown)}</span>
             </button>
           );
         })}
@@ -942,16 +942,16 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const Row = ({ rank, r, m, isSelf }) => {
     const cells = (
       <>
-        <span className="text-right text-[9px] opacity-70">{rank}</span>
+        <span className="text-right text-[11px] opacity-70">{rank}</span>
         {/* First initial + surname ("S. Gilgeous-Alexander"). The name column
             is the only elastic one in a six-column row, and full given names
             were truncating mid-word on a phone; the initial still separates
             same-surname players. Full names stay in the aria-label below. */}
-        <span className="truncate text-[10px] font-medium" title={r.name}>{compName(r.name)}</span>
-        <span className="text-right text-[9px]">{fmtG(r.gp)}</span>
-        <span className="text-right text-[9px]">{mpg(r)}</span>
-        <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
+        <span className="truncate text-[12px] font-medium" title={r.name}>{compName(r.name)}</span>
+        <span className="text-right text-[11px]">{fmtG(r.gp)}</span>
+        <span className="text-right text-[11px]">{mpg(r)}</span>
+        <span className={`text-right text-[12px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
+        <span className={`text-right text-[11px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
       </>
     );
     // The player the card is currently about is marked, not a link to itself.
@@ -987,7 +987,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
   return (
     <div
-      className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[10px] space-y-3"
+      className="my-1.5 px-2 py-2 bg-white border border-stone-200 rounded text-[12px] space-y-3"
       role="group"
       aria-label={`${self.name}, ${seasonKey} — ${metricLabel} value added context`}
     >
@@ -999,19 +999,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           const tc = teamColor(p.team);
           return (
             <span
-              className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded-sm border"
+              className="shrink-0 text-[10px] font-bold px-1 py-0.5 rounded-sm border"
               style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
             >{p.team}</span>
           );
         })()}
-        <span className="font-bold text-stone-900 text-[11px] truncate">{self.name}</span>
-        <span className="shrink-0 text-stone-400 text-[9px] tabular-nums">{seasonKey}</span>
+        <span className="font-bold text-stone-900 text-[13px] truncate">{self.name}</span>
+        <span className="shrink-0 text-stone-400 text-[11px] tabular-nums">{seasonKey}</span>
         {focused && (
           <button
             type="button"
             onClick={() => setFocusRow(null)}
             aria-label={`Back to ${ownerSelf.name}`}
-            className="ml-auto shrink-0 inline-flex items-center gap-0.5 normal-case tracking-normal text-[9px] font-semibold text-stone-500 hover:text-stone-900 border border-stone-300 rounded-sm px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+            className="ml-auto shrink-0 inline-flex items-center gap-0.5 normal-case text-[11px] font-semibold text-stone-500 hover:text-stone-900 border border-stone-300 rounded-sm px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
           >
             <span aria-hidden>←</span> {shortName(ownerSelf.name)}
           </button>
@@ -1025,19 +1025,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               tap does — the ← control still returns to the owner). Whoever is
               #1 reads "Leaders"; anyone else, "Rankings". */}
           {d.rank === 1 ? (
-            <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0">{metricLabel} Leaders ({scopeTitle})</span>
+            <span className="text-[11px] text-stone-400 min-w-0">{metricLabel} Leaders ({scopeTitle})</span>
           ) : (
             <button
               type="button"
               disabled={!d.top}
               onClick={() => setFocusRow(samePlayer(d.top, ownerRow) ? null : d.top)}
               aria-label={`Show the ${scopeTitle} ${metricLabel} leader${d.top ? `, ${d.top.name}` : ""}`}
-              className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 text-left rounded-sm hover:text-stone-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+              className="text-[11px] text-stone-400 min-w-0 text-left rounded-sm hover:text-stone-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
             >{metricLabel} Rankings ({scopeTitle})</button>
           )}
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
-        <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
+        <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[10px] text-stone-400 border-b border-stone-100">
           <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA</span><span className="text-right">{metricLabel}</span>
         </div>
         {d.win.map((x) => (
@@ -1045,7 +1045,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {scopeNoun} players with ≥{d.floor} G ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
+        <div className="text-[10px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {scopeNoun} players with ≥{d.floor} G ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
       </div>
 
       {/* View 2 — the split row. Every Basic group card fans its total out into
@@ -1060,14 +1060,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       {segData && (
         <div className="border-t border-stone-100 pt-2">
           <div className="flex items-baseline justify-between gap-2 mb-1">
-            <span className="uppercase tracking-wider text-[9px] text-stone-400 truncate">{segHeading}</span>
+            <span className="text-[11px] text-stone-400 truncate">{segHeading}</span>
             <div className="shrink-0 flex items-baseline gap-2">
               {segTotals && (segTotals.total != null ? (
                 <span
-                  className="uppercase tracking-wider text-[8px] text-stone-400 whitespace-nowrap"
+                  className="text-[10px] text-stone-400 whitespace-nowrap"
                   title={`${catKey} value added${perGame ? " per game" : ""} — the bars below, summed`}
                 >
-                  Total <span className={`text-[9px] font-bold tabular-nums ${segTotals.total > 0.05 ? "text-green-600" : segTotals.total < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(segTotals.total)}</span>
+                  Total <span className={`text-[11px] font-bold tabular-nums ${segTotals.total > 0.05 ? "text-green-600" : segTotals.total < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(segTotals.total)}</span>
                 </span>
               ) : (
                 // Both totals SELECT, the same way a distance bar does: the
@@ -1087,9 +1087,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                         onClick={() => setSelectedSeg(isSel ? null : t.key)}
                         aria-pressed={isSel}
                         title={`${t.title} — tap to rank the card on it`}
-                        className={`uppercase tracking-wider text-[8px] whitespace-nowrap rounded px-1 -mx-0.5 py-0.5 -my-0.5 transition-colors ${isSel ? "bg-stone-200 ring-1 ring-stone-800 text-stone-700" : "text-stone-400 hover:bg-stone-100"}`}
+                        className={`text-[10px] whitespace-nowrap rounded px-1 -mx-0.5 py-0.5 -my-0.5 transition-colors ${isSel ? "bg-stone-200 ring-1 ring-stone-800 text-stone-700" : "text-stone-400 hover:bg-stone-100"}`}
                       >
-                        {t.label} <span className={`text-[9px] font-bold tabular-nums ${t.v > 0.05 ? "text-green-600" : t.v < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(t.v)}</span>
+                        {t.label} <span className={`text-[11px] font-bold tabular-nums ${t.v > 0.05 ? "text-green-600" : t.v < -0.05 ? "text-red-600" : "text-stone-500"}`}>{sgn(t.v)}</span>
                       </button>
                     );
                   })}
@@ -1099,7 +1099,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 <button
                   type="button"
                   onClick={() => setSelectedSeg(null)}
-                  className="normal-case tracking-normal text-[9px] text-stone-400 hover:text-stone-700"
+                  className="normal-case text-[11px] text-stone-400 hover:text-stone-700"
                 >
                   {metricLabel} ✕
                 </button>
@@ -1128,7 +1128,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               Only the six-bar Scoring card needs them — every other split is
               all one section, so its per-bar sub-labels are enough. */}
           {showZones && catKey !== "2-Pointers" && (
-            <div className="grid grid-cols-6 gap-1 text-[7px] uppercase tracking-wider text-stone-400">
+            <div className="grid grid-cols-6 gap-1 text-[10px] text-stone-400">
               <div className="col-span-1 text-center">FT</div>
               <div className="col-span-4 text-center border-x border-stone-200">2-Pointers</div>
               <div className="col-span-1 text-center">3PT</div>
@@ -1173,7 +1173,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       distance or a shooting category, the counting rate (on the
                       Per 36 / Per G toggle, falling back to the /G toggle's
                       season total under Per G) otherwise. */}
-                  <span className="text-[10px] font-bold text-stone-800 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
+                  <span className="text-[12px] font-bold text-stone-800 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
                   {/* Value-added bar on the row's shared scale: zero (league
                       average) across the middle, green up / red down to the
                       player's value, over a grey heatmap of where the rest of
@@ -1193,13 +1193,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       style={selfShown >= 0 ? { bottom: "50%", height: `${barH}%` } : { top: "50%", height: `${barH}%` }}
                     />
                   </div>
-                  <span className={`text-[8px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
-                  <span className="mt-0.5 text-[7px] uppercase tracking-wide text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
+                  <span className={`text-[10px] tabular-nums font-semibold leading-none ${vaColor}`}>{sgn(selfShown)}</span>
+                  <span className="mt-0.5 text-[10px] text-stone-400 leading-tight text-center">{seg.sub}{seg.headUnit || ""}</span>
                   {/* The distance the nickname stands for, so "Float" doesn't
                       have to be decoded. Sized down and untracked so the
                       longest range ("16 ft-3PT") clears a sixth of the row. */}
                   {seg.dist && (
-                    <span className="text-[6px] uppercase text-stone-400 leading-tight text-center tabular-nums">{seg.dist}</span>
+                    <span className="text-[10px] text-stone-400 leading-tight text-center tabular-nums">{seg.dist}</span>
                   )}
                 </div>
               );
@@ -1207,7 +1207,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           </div>
           </>
           )}
-          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+          <div className="text-[10px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {scatter
               ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
               : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (zero line = league average, grey shading = where the field landed, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
@@ -1219,7 +1219,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           the top three plus the player's own neighbourhood of the ranking. */}
       {!seasonOnly && <div className="border-t border-stone-100 pt-2">
         <div className="flex items-baseline justify-between gap-1.5 mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel} VA</span>
+          <span className="text-[11px] text-stone-400 min-w-0 truncate">All-time {metricLabel} VA</span>
           <div className="shrink-0 flex items-baseline gap-1.5">
             <button
               type="button"
@@ -1228,7 +1228,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               title={careerBoard
                 ? `Ranking whole careers, ${perGame ? "career value added per career game" : "every season summed"} — tap to rank single ${scopeNoun} seasons instead`
                 : `Ranking single ${scopeNoun} seasons — tap to rank whole careers instead`}
-              className={`shrink-0 text-[8px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-sm border transition-colors ${careerBoard ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+              className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-sm border transition-colors ${careerBoard ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
             >
               {careerBoard ? "Careers" : "Seasons"}
             </button>
@@ -1244,13 +1244,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               aria-current={x.isSelf ? "true" : undefined}
               className={`grid gap-x-1 items-center px-1 py-[2px] tabular-nums ${x.isSelf ? "bg-stone-800 text-white rounded-sm" : "text-stone-600"}`}
             >
-              <span className="text-right text-[9px] opacity-70">{x.rank}</span>
-              <span className="truncate text-[10px]" title={x.r.name}>{compName(x.r.name)} <span className="opacity-60">{careerBoard ? careerSpan(x.r) : x.r.season}</span></span>
-              <span className="text-right text-[10px] font-semibold">{boardSgn(x.m)}</span>
+              <span className="text-right text-[11px] opacity-70">{x.rank}</span>
+              <span className="truncate text-[12px]" title={x.r.name}>{compName(x.r.name)} <span className="opacity-60">{careerBoard ? careerSpan(x.r) : x.r.season}</span></span>
+              <span className="text-right text-[12px] font-semibold">{boardSgn(x.m)}</span>
             </div>
           </React.Fragment>
         ))}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">
+        <div className="text-[10px] italic text-stone-400 mt-0.5 px-1">
           {careerBoard
             ? `Across all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G), ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
             : `Across all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
@@ -1263,11 +1263,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
         <div className="flex items-center justify-between mb-3">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{metricLabel} VA by season</span>
+          <span className="text-[11px] text-stone-400">{metricLabel} VA by season</span>
           {gToggle}
         </div>
         {d.mine.length === 0 ? (
-          <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
+          <div className="text-[11px] italic text-stone-400 px-1">No seasons on record.</div>
         ) : (
           <>
             {/* justify-start + a 10%-of-graph cap on each column keeps a
@@ -1301,7 +1301,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       // reserved headroom just above the bar's top — no full-
                       // width background to poke past the bar as a ghost bar.
                       <span
-                        className="absolute left-1/2 -translate-x-1/2 text-[7px] font-bold text-stone-900 tabular-nums leading-none whitespace-nowrap"
+                        className="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold text-stone-900 tabular-nums leading-none whitespace-nowrap"
                         style={{ top: `max(0px, calc(${topPct}% - 9px))` }}
                       >
                         #{topRank}
@@ -1332,16 +1332,16 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm px-1.5 py-[2px] shadow-sm"
                           style={{ backgroundColor: GOLD_BG, border: `1px solid ${withAlpha(GOLD, 0.5)}` }}
                         >
-                          <span className="text-[9px] font-semibold tabular-nums text-stone-700">{x.season}</span>
+                          <span className="text-[11px] font-semibold tabular-nums text-stone-700">{x.season}</span>
                           {x.team && (
-                            <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(x.team) }}>{x.team}</span>
+                            <span className="text-[10px] font-bold" style={{ color: teamColor(x.team) }}>{x.team}</span>
                           )}
-                          <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(x.m)}</span>
+                          <span className={`text-[11px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(x.m)}</span>
                           <button
                             ref={seasonGo.goRef}
                             type="button"
                             onClick={() => seasonGo.confirm(() => goToSeason(x))}
-                            className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
+                            className="text-[11px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
                             title={`Open ${self.name} ${x.season}`}
                           >
                             Go <span aria-hidden>→</span>
@@ -1358,14 +1358,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 <span
                   key={x.season}
                   style={{ maxWidth: "10%" }}
-                  className={`flex-1 min-w-0 text-center text-[7px] tabular-nums leading-tight ${i === curIdx ? "text-stone-900 font-bold" : "text-stone-400"}`}
+                  className={`flex-1 min-w-0 text-center text-[10px] tabular-nums leading-tight ${i === curIdx ? "text-stone-900 font-bold" : "text-stone-400"}`}
                 >
                   {yearTag(x.season)}
                 </span>
               ))}
             </div>
             {canGoSeason && (
-              <div className="text-[8px] italic text-stone-400 mt-1 px-1">Tap a season, then <span className="font-semibold not-italic">Go →</span>, to open that {focused ? `${shortName(self.name)} ` : ""}season.</div>
+              <div className="text-[10px] italic text-stone-400 mt-1 px-1">Tap a season, then <span className="font-semibold not-italic">Go →</span>, to open that {focused ? `${shortName(self.name)} ` : ""}season.</div>
             )}
           </>
         )}

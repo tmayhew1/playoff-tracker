@@ -831,7 +831,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
   const sideLabel = (x) => (pick ? x.name : `${x.name} ${rowSeasonLabel(x)}`);
 
   return (
-    <div className="text-[10px]">
+    <div className="text-[12px]">
       {/* Legend + tally (the head-to-head scorecard header) */}
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <span className="font-semibold truncate" style={{ color: ca }}><Swatch color={ca} />{sideLabel(a)}</span>
@@ -877,7 +877,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
           The tally stays optically centered either way (the button is out of
           flow). */}
       <div className="relative flex items-center justify-center mb-1.5 min-h-[1.1rem]">
-        <span className={`text-center text-[9px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cbInk }}>
+        <span className={`text-center text-[11px] font-semibold ${slots > 0 ? "" : "px-14"}`} style={{ color: d.diff >= 0 ? ca : cbInk }}>
           {rowSeasonLabel(leader)} {leader.name} <span className="tabular-nums">{sgn(Math.abs(d.diff))} {vaUnit}</span>
         </span>
         {slots < 1 && gToggle && <div className="absolute right-0 top-0">{gToggle}</div>}
@@ -907,7 +907,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
             onClick={toggleAll}
             aria-pressed={anyOpen}
             title={anyOpen ? "Close every group and raw-stats card" : "Open every group and raw-stats card"}
-            className="shrink-0 w-4 rounded-sm border border-stone-200 bg-white text-[8px] uppercase tracking-[0.15em] text-stone-400 hover:text-stone-700 hover:border-stone-300 flex items-center justify-center"
+            className="shrink-0 w-4 rounded-sm border border-stone-200 bg-white text-[10px] text-stone-400 hover:text-stone-700 hover:border-stone-300 flex items-center justify-center"
             style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
           >
             {anyOpen ? "Collapse All" : "Expand All"}
@@ -991,15 +991,15 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                   <div className="min-w-0 px-1 py-0.5 rounded-sm" style={comp ? { backgroundColor: cbBg } : undefined}>
                     <div className="flex items-center gap-0.5 justify-end">
                       <Swatch color={comp ? cb : ca} outline={comp} />
-                      <span className="truncate font-semibold text-[10px] leading-tight" style={{ color: comp ? cbInk : ca }}>{row.name}</span>
+                      <span className="truncate font-semibold text-[12px] leading-tight" style={{ color: comp ? cbInk : ca }}>{row.name}</span>
                     </div>
                     {/* Season/span · games · the minutes role those games were
                         played in — two players at the same PTS/G off 34 and 22
                         MPG aren't the same scorer, and PTS/36 below only reads
                         as a projection once you can see how far it reaches. */}
-                    <div className="text-[8px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
+                    <div className="text-[10px] text-stone-400 text-right leading-tight">{rowSeasonLabel(row)} · {row.gp || 0} G</div>
                     {anyMinutes && (
-                      <div className="text-[8px] text-stone-400 text-right leading-tight whitespace-nowrap">
+                      <div className="text-[10px] text-stone-400 text-right leading-tight whitespace-nowrap">
                         {row.mp > 0 ? `${(row.mp / (row.gp || 1)).toFixed(1)} MPG` : " "}
                       </div>
                     )}
@@ -1007,7 +1007,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                 );
                 const cell = (disp, win, comp) => (
                   <div className="px-1 py-[1px] rounded-sm text-right" style={comp ? { backgroundColor: cbBg } : undefined}>
-                    <span className={`inline-block tabular-nums text-[10px] leading-tight ${win ? "font-bold text-stone-900 ring-1 ring-stone-500 rounded-full px-1.5 py-[1px]" : "text-stone-600 px-1.5 py-[1px]"}`}>{disp}</span>
+                    <span className={`inline-block tabular-nums text-[12px] leading-tight ${win ? "font-bold text-stone-900 ring-1 ring-stone-500 rounded-full px-1.5 py-[1px]" : "text-stone-600 px-1.5 py-[1px]"}`}>{disp}</span>
                   </div>
                 );
                 return (
@@ -1019,7 +1019,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                     </div>
                     {rows.map((r) => (
                       <div key={r.label} className="grid grid-cols-[3.4rem_1fr_1fr] gap-x-1 items-center py-[2px]">
-                        <span className="text-[8px] uppercase tracking-wider text-stone-400 text-right" title={r.hint || undefined}>{r.label}</span>
+                        <span className="text-[10px] text-stone-400 text-right" title={r.hint || undefined}>{r.label}</span>
                         {cell(r.a, r.win === "a", false)}
                         {cell(r.b, r.win === "b", true)}
                       </div>
@@ -1043,7 +1043,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       })}
       </div>
       </div>
-      <div className="mt-1 text-center text-[9px] italic text-stone-400">
+      <div className="mt-1 text-center text-[11px] italic text-stone-400">
         {(mode === "values"
           ? `${perGame ? "Per-game" : isMulti ? "Run-total" : "Season-total"} VA, each vs their own ${isMulti ? "run’s blended league baseline" : "season’s league baseline"}`
           : `Percentile of ${pctPerGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`
@@ -1058,7 +1058,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
         // weighted by the player's volume in each — so its 3P% line is
         // Σ(league 3P% × his 3PA) / Σ his 3PA, and the VA above it is exactly
         // what his individual seasons already added up to.
-        <div className="mt-0.5 text-center text-[8px] italic text-stone-400">
+        <div className="mt-0.5 text-center text-[10px] italic text-stone-400">
           {sideSummary(a, ca)} <span className="text-stone-300">·</span> {sideSummary(b, cbInk)}
           {" — each run vs its own seasons’ league averages, weighted by the volume he played in them"}
         </div>
@@ -1070,7 +1070,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
           {/* Extra bottom margin keeps a constant gap under the button, so a
               full-height bar never crowds it. */}
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
+            <span className="text-[11px] text-stone-400 min-w-0 truncate">{careerLabel}</span>
             {/* What the panel above is currently reading, when that came from a
                 selection made in this chart rather than from the caller. Clears
                 back to the comparison the card opened on. Hidden when the
@@ -1079,7 +1079,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               <button
                 type="button"
                 onClick={() => setPick(null)}
-                className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+                className="shrink-0 text-[11px] px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
                 style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
                 title={`Back to ${aProp.name} ${rowSeasonLabel(aProp)} vs ${bProp.name} ${rowSeasonLabel(bProp)}`}
                 aria-label="Clear the career-year selection"
@@ -1189,7 +1189,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
             {Array.from({ length: slots }, (_, i) => (
               <span
                 key={i}
-                className={`flex-1 min-w-0 text-center text-[7px] tabular-nums ${picked?.has(i) ? "text-stone-900 font-bold" : "text-stone-400"}`}
+                className={`flex-1 min-w-0 text-center text-[10px] tabular-nums ${picked?.has(i) ? "text-stone-900 font-bold" : "text-stone-400"}`}
                 style={{ maxWidth: SLOT_MAX }}
               >{i + 1}</span>
             ))}
@@ -1198,7 +1198,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
             // The selection's own footer, shaped like the run picker's: what is
             // ticked on the left, the way out and the way on on the right.
             <div className="mt-1.5 flex items-center justify-between gap-1.5 border-t border-stone-100 pt-1.5">
-              <span className="text-[9px] text-stone-500 tabular-nums min-w-0 truncate">
+              <span className="text-[11px] text-stone-500 tabular-nums min-w-0 truncate">
                 {pickedIdxs.length === 0
                   ? "Tick career years to compare"
                   : <>
@@ -1211,7 +1211,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
               <button
                 type="button"
                 onClick={() => setPicked(null)}
-                className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-stone-300 bg-white text-stone-500 hover:text-stone-700"
+                className="shrink-0 text-[11px] px-1.5 py-0.5 rounded-sm border border-stone-300 bg-white text-stone-500 hover:text-stone-700"
               >
                 Cancel
               </button>
@@ -1222,13 +1222,13 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
                 title={pickedIdxs.length > 1
                   ? "Pool the ticked years on each side and read the comparison as those two runs"
                   : "Read the comparison as those two seasons"}
-                className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${pickedIdxs.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
+                className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-sm border ${pickedIdxs.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
               >
                 Compare →
               </button>
             </div>
           ) : (
-            <div className="text-center text-[8px] italic text-stone-400 mt-0.5">
+            <div className="text-center text-[10px] italic text-stone-400 mt-0.5">
               {samePlayer ? (
                 // One career, one bar a year: the chart is his whole career as
                 // the backdrop the two compared seasons sit in, and there is no
@@ -1265,7 +1265,7 @@ export function PerGameToggle({ perGame, onToggle, title }) {
       title={title || (perGame
         ? "Values shown per game — tap for season totals"
         : "Show values per game instead of season totals")}
-      className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+      className={`shrink-0 tabular-nums text-[11px] font-semibold px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
     >
       /G {perGame ? "ON" : "OFF"}
     </button>
@@ -1313,7 +1313,7 @@ export function CompareButton({ compare, picking, onOpen, onClear, careerPick = 
     return (
       <button
         onClick={careerPick ? careerPick.clear : onClear}
-        className="min-w-0 overflow-hidden text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
+        className="min-w-0 overflow-hidden text-[11px] px-1.5 py-0.5 rounded-sm border font-semibold inline-flex items-center gap-1 text-amber-900"
         style={{ backgroundColor: GOLD_BG, borderColor: withAlpha(GOLD, 0.5) }}
         title={careerPick ? `Back to ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}` : `vs ${shortName(compare.name)} ${rowSeasonLabel(compare.row)}`}
         aria-label={careerPick ? "Clear the career-year selection" : "Clear comparison"}
@@ -1333,7 +1333,7 @@ export function CompareButton({ compare, picking, onOpen, onClear, careerPick = 
   return (
     <button
       onClick={onOpen}
-      className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border font-semibold ${picking ? "border-amber-500 bg-amber-100 text-amber-700" : "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300"}`}
+      className={`text-[12px] px-1.5 py-0.5 border ${picking ? "border-amber-600 bg-amber-50 text-amber-800 font-bold" : "border-amber-600 bg-white text-amber-800 hover:bg-amber-50"}`}
       aria-pressed={picking}
     >
       Compare

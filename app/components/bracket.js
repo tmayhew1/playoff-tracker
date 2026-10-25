@@ -61,9 +61,9 @@ export function TbdCard({ gameNumbers }) {
   }
   return (
     <div className="mt-1 border bg-stone-300 border-stone-400">
-      <div className="w-full px-2 py-1 text-[10px] flex items-center justify-between gap-2">
-        <span className="font-bold uppercase tracking-wider text-stone-700">{label}</span>
-        <span className="text-[9px] uppercase tracking-wider text-stone-600 italic">If necessary</span>
+      <div className="w-full px-2 py-1 text-[12px] flex items-center justify-between gap-2">
+        <span className="font-bold text-stone-700">{label}</span>
+        <span className="text-[11px] text-stone-600 italic">If necessary</span>
       </div>
     </div>
   );
@@ -72,7 +72,7 @@ export function TbdCard({ gameNumbers }) {
 
 export function TeamButton({ code, selected, disabled, onClick, gamesWon, actualWins, onGamesChange, seriesDecided, dim, pointValue }) {
   if (!code) {
-    return <div className="flex-1 px-3 py-2.5 text-xs uppercase tracking-widest text-stone-400 italic border border-dashed border-stone-300 bg-stone-50 text-center">TBD</div>;
+    return <div className="flex-1 px-3 py-2.5 text-[13px] text-stone-400 italic border border-dashed border-stone-300 bg-stone-50 text-center">TBD</div>;
   }
   const t = TEAMS[code];
   const isSel = selected === code;
@@ -80,11 +80,11 @@ export function TeamButton({ code, selected, disabled, onClick, gamesWon, actual
     <div className={`flex-1 px-3 py-2.5 transition-all border ${isSel ? `${ownerBg(t.owner)} border-2 shadow-sm` : "bg-white border-stone-200"} ${disabled ? "opacity-60" : ""}`}>
       <button onClick={() => !disabled && onClick(code)} disabled={disabled} className="w-full text-left">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
+          <span className="text-[12px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
           <span className={`text-sm font-semibold ${isSel ? ownerColor(t.owner, dim) : "text-stone-900"}`}>{t.name}</span>
-          {isSel && <span className="ml-auto text-xs">✓</span>}
+          {isSel && <span className="ml-auto text-[13px]">✓</span>}
         </div>
-        <div className="text-[10px] uppercase tracking-wider mt-0.5 flex items-center gap-1">
+        <div className="text-[12px] mt-0.5 flex items-center gap-1">
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner, dim)}`}></span>
           <span className="text-stone-500">{t.owner}</span>
         </div>
@@ -93,7 +93,7 @@ export function TeamButton({ code, selected, disabled, onClick, gamesWon, actual
         <>
           <WinCircles value={gamesWon || 0} actualValue={actualWins || 0} onChange={(v) => onGamesChange(code, v)} disabled={disabled} owner={t.owner} dim={dim} />
           {pointValue != null && (
-            <div className={`text-[9px] uppercase tracking-wider mt-1 tabular-nums font-semibold ${ownerColor(t.owner, dim)}`}>
+            <div className={`text-[11px] mt-1 tabular-nums font-semibold ${ownerColor(t.owner, dim)}`}>
               +{pointValue} pt{pointValue === 1 ? "" : "s"}
             </div>
           )}
@@ -162,7 +162,7 @@ export function SeriesRow({ series, roundKey, matchups, winners, gameWins, actua
     <>
       <div className="flex gap-1.5 items-stretch">
         <TeamButton code={a} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[a]} actualWins={actualGames[a]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimA} pointValue={ptsA} />
-        <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
+        <div className="flex items-center justify-center px-1 text-[12px] font-bold text-stone-400">VS</div>
         <TeamButton code={b} selected={winner} disabled={!canPick} onClick={(code) => onPick(series.id, winner === code ? null : code)} gamesWon={games[b]} actualWins={actualGames[b]} onGamesChange={(code, v) => onGamesChange(series.id, code, v)} seriesDecided={seriesDecided} dim={dimB} pointValue={ptsB} />
       </div>
       <SeriesAverages games={seriesGames} teamsMap={TEAMS} lga={lga} dimTeam={dimTeam} season={LIVE_SEASON} />
@@ -179,13 +179,13 @@ export function SeriesRow({ series, roundKey, matchups, winners, gameWins, actua
     <div className="mb-3 bg-stone-50 border border-stone-200 rounded">
       {isOver && (
         <button onClick={() => setExpanded((e) => !e)} className="w-full p-2 flex items-center gap-2 text-left">
-          <span className="text-stone-400 text-[10px]">{expanded ? "▾" : "▸"}</span>
-          <span className="text-xs">
+          <span className="text-stone-400 text-[12px]">{expanded ? "▾" : "▸"}</span>
+          <span className="text-[13px]">
             <span className="font-semibold text-stone-900">{seriesWinner}</span>
             <span className="text-stone-500"> def. </span>
             <span className="text-stone-600">{seriesLoser}</span>
           </span>
-          <span className="ml-auto text-xs font-semibold tabular-nums text-stone-700">{hiWins}–{loWins}</span>
+          <span className="ml-auto text-[13px] font-semibold tabular-nums text-stone-700">{hiWins}–{loWins}</span>
         </button>
       )}
       {(!isOver || expanded) && (
@@ -235,12 +235,12 @@ export function RoundSection({ roundKey, title, series, matchups, winners, gameW
         onClick={() => setCollapsed((c) => !c)}
         className="w-full flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{collapsed ? "▸" : "▾"}</span>
+        <h3 className="text-[13px] font-bold text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[12px]">{collapsed ? "▸" : "▾"}</span>
           {title}
-          {allClinched && <span className="text-[9px] uppercase tracking-wider text-stone-500 font-normal">Complete</span>}
+          {allClinched && <span className="text-[11px] text-stone-500 font-normal">Complete</span>}
         </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
+        <span className="text-[12px] text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
       </button>
       {!collapsed && sortedSeries.map((s) => (
         <SeriesRow key={s.id} series={s} roundKey={roundKey} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />

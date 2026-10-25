@@ -7,6 +7,7 @@ import { VABreakdown } from "./va-breakdown";
 import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
+import { usePlayerNav } from "../lib/award-nav";
 
 
 // A shooting category's columns in the box: its makes and attempts off a
@@ -22,7 +23,7 @@ export const SHOT_CATS = {
 // With `cat` (a SHOT_CATS key) the row reads that category instead — makes,
 // attempts, percentage and its VA (`p.catVA`) — over a light bar of that VA
 // against `maxAbs`, as the leaderboards draw theirs.
-export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs, seasonSoFar }) {
+export function PlayerRow({ p, rowKey, isExpanded, onToggle, onOpenCareer, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs, seasonSoFar }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -49,15 +50,17 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
         />
       )}
       <button
-        onClick={onToggle}
-        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
+        onClick={onOpenCareer || onToggle}
+        aria-label={onOpenCareer ? `Open ${p.name}’s career` : undefined}
+        className={`relative w-full flex items-center gap-2 text-[12px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
       >
-        <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
+        <span style={badgeStyle} className={`w-10 text-[11px] font-bold px-1 py-0.5 text-center ${badgeClass}`}>
           {p.team}
         </span>
         <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
-          <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
-          {p.name}
+          {!onOpenCareer && <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>}
+          <span className={onOpenCareer ? "text-stone-900 underline decoration-dotted" : ""}>{p.name}</span>
+          {onOpenCareer && <span className="ml-0.5 text-stone-900" aria-hidden>›</span>}
         </span>
         {c ? (
           <>
@@ -93,6 +96,11 @@ export const rowKeyOf = (p, i) => `${p.team}-${p.name}-${i}`;
 // his season to date (see VABreakdown).
 export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat, seasonSoFar }) {
   const maxAbs = cat ? Math.max(...rows.map((p) => Math.abs(p.catVA || 0)), 0.5) : null;
+  // Same arming step as the leaderboards' Player header: tap it, then a
+  // player, to open their By Player career, with this game's season drilled
+  // in. A bare row tap still opens the game card.
+  const openCareer = usePlayerNav();
+  const [nameArmed, setNameArmed] = useState(false);
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
   const buildRow = (arr) => (p, i) => {
@@ -108,6 +116,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
         p={p}
         isExpanded={expandedKey === rowKey}
         onToggle={() => setExpandedKey(expandedKey === rowKey ? null : rowKey)}
+        onOpenCareer={nameArmed ? () => { setNameArmed(false); openCareer({ name: p.name, slug: p.slug || null, season: seasonSoFar?.season || null }); } : undefined}
         dimTeam={dimTeam}
         outlined={outlined}
         lga={lga}
@@ -125,9 +134,19 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
   };
 
   const header = (
-    <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+    <div className="flex items-center gap-2 text-[11px] text-stone-400 py-1 border-b border-stone-200">
       <span className="w-10">Team</span>
-      <span className="flex-1">Player</span>
+      {openCareer ? (
+        <button
+          type="button"
+          onClick={() => setNameArmed((v) => !v)}
+          aria-pressed={nameArmed}
+          title="Tap, then tap a player to open their career"
+          className={`flex-1 text-left hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
+        >Player{nameArmed ? " → career" : ""}</button>
+      ) : (
+        <span className="flex-1">Player</span>
+      )}
       {cat ? (
         <>
           <span className="w-6 text-right">{cat}</span>
@@ -157,7 +176,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
         {header}
         {onCourt.length > 0 && (
           <>
-            <div className="text-[9px] uppercase tracking-widest text-red-600 font-semibold pt-1.5 pb-0.5 flex items-center gap-1">
+            <div className="text-[11px] text-red-600 font-semibold pt-1.5 pb-0.5 flex items-center gap-1">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
               On Court
             </div>
@@ -166,7 +185,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
         )}
         {bench.length > 0 && (
           <>
-            <div className="text-[9px] uppercase tracking-widest text-stone-500 pt-2 pb-0.5">Bench</div>
+            <div className="text-[11px] text-stone-500 pt-2 pb-0.5">Bench</div>
             {bench.map(buildRow(bench))}
           </>
         )}
@@ -365,22 +384,22 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
       <button
         onClick={() => (teamFilter ? onTeamClear?.() : canExpand && setExpanded(!expanded))}
         disabled={!canExpand && !teamFilter}
-        className="w-full px-2 py-1 text-[10px] flex items-center justify-between gap-2"
+        className="w-full px-2 py-1 text-[12px] flex items-center justify-between gap-2"
       >
         <div className="flex items-center gap-1.5">
           {isLive && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
-          <span className={`font-bold uppercase tracking-wider ${isLive ? "text-red-700" : "text-stone-600"}`}>
-            {isLive ? (liveLabel || "LIVE") : isFinal ? "FINAL" : (displayStatus || "SOON")}
+          <span className={`font-bold ${isLive ? "text-red-700" : "text-stone-600"}`}>
+            {isLive ? (liveLabel || "Live") : isFinal ? "Final" : (displayStatus || "Soon")}
           </span>
           {gameLabel && (
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-stone-500 px-1 py-0.5 bg-white border border-stone-300">
+            <span className="text-[11px] font-semibold text-stone-500 px-1 py-0.5 bg-white border border-stone-300">
               {gameLabel}
             </span>
           )}
           {(canExpand || teamFilter) && <span className="text-stone-400">{expanded || teamFilter ? "▾" : "▸"}</span>}
         </div>
         {isLive && liveGame.broadcasters && liveGame.broadcasters.length > 0 && (
-          <span className="text-[9px] uppercase tracking-wider text-stone-500 truncate text-center flex-1 min-w-0">
+          <span className="text-[11px] text-stone-500 truncate text-center flex-1 min-w-0">
             {liveGame.broadcasters.join(", ")}
           </span>
         )}
@@ -393,38 +412,38 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
 
       {showTop5 && (
         <div className={`px-2 pb-2 border-t ${isLive ? "border-red-200" : "border-stone-200"}`}>
-          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Top 5 by Value Added</div>
+          <div className="text-[11px] text-stone-500 py-1">Top 5 by Value Added</div>
           <BoxscoreTable rows={top5} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />
         </div>
       )}
 
       {teamFilter && (
         <div className="px-2 pb-2 border-t border-stone-200">
-          {loading && !box && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading stats…</div>}
-          {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
-          {!box && !loading && !error && <div className="py-2 text-[10px] text-stone-500 italic text-center">No box score yet</div>}
+          {loading && !box && <div className="py-2 text-[12px] text-stone-500 italic text-center">Loading stats…</div>}
+          {error && <div className="py-2 text-[12px] text-red-600 text-center">{error}</div>}
+          {!box && !loading && !error && <div className="py-2 text-[12px] text-stone-500 italic text-center">No box score yet</div>}
           {box && teamPlayers.length > 0 && (
             <div className="mt-2">
               <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} cat={teamCat} seasonSoFar={seasonSoFar} />
             </div>
           )}
           {box && teamPlayers.length === 0 && (
-            <div className="py-2 text-[10px] text-stone-500 italic text-center">No player stats yet</div>
+            <div className="py-2 text-[12px] text-stone-500 italic text-center">No player stats yet</div>
           )}
         </div>
       )}
 
       {showFull && (
         <div className="px-2 pb-2 border-t border-stone-200">
-          {loading && !box && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading stats…</div>}
-          {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
+          {loading && !box && <div className="py-2 text-[12px] text-stone-500 italic text-center">Loading stats…</div>}
+          {error && <div className="py-2 text-[12px] text-red-600 text-center">{error}</div>}
           {box && sortedPlayers.length > 0 && (
             <div className="mt-2">
               <BoxscoreTable rows={sortedPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} partitionOnCourt={isLive} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />
             </div>
           )}
           {box && sortedPlayers.length === 0 && (
-            <div className="py-2 text-[10px] text-stone-500 italic text-center">No player stats yet</div>
+            <div className="py-2 text-[12px] text-stone-500 italic text-center">No player stats yet</div>
           )}
         </div>
       )}

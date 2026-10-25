@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
-import { VABaselineToggle } from "./va-baseline-toggle";
+import { Seg } from "./ui/seg";
 import { teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
@@ -23,14 +23,14 @@ import { useSeasonContext } from "../lib/use-season-context";
 // opened (see app/page.js for the same treatment of the other tabs).
 const PlayerExplorer = dynamic(
   () => import("./player-explorer").then((m) => m.PlayerExplorer),
-  { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
+  { loading: () => <div className="py-10 text-center text-[13px] text-stone-400">Loading…</div> },
 );
 // The projected season — its own season-picker entry, beside the season it
 // projects, rendering its own view instead of the leaderboard. Loaded on
 // first pick.
 const LookAhead = dynamic(
   () => import("./look-ahead").then((m) => m.LookAhead),
-  { loading: () => <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div> },
+  { loading: () => <div className="py-10 text-center text-[13px] text-stone-400">Loading…</div> },
 );
 // Kept in step with LOOK_AHEAD_SEASON in ./look-ahead (not imported from it,
 // so the picker doesn't pull that chunk into the page bundle). The picker
@@ -61,7 +61,7 @@ export function ExploreSeriesRow({ s, lga, season }) {
         <div className="flex items-center gap-1.5">
           <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c }} />
           <span className="text-sm font-semibold" style={{ color: isWinner ? c : "#1c1917" }}>{code}</span>
-          {isWinner && <span className="ml-auto text-[10px]" style={{ color: c }}>✓</span>}
+          {isWinner && <span className="ml-auto text-[12px]" style={{ color: c }}>✓</span>}
         </div>
       </div>
     );
@@ -70,7 +70,7 @@ export function ExploreSeriesRow({ s, lga, season }) {
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
         {teamCell(s.teams[0], s.winner === s.teams[0])}
-        <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
+        <div className="flex items-center justify-center px-1 text-[12px] font-bold text-stone-400">VS</div>
         {teamCell(s.teams[1], s.winner === s.teams[1])}
       </div>
       {s.games.length > 0 ? (
@@ -99,7 +99,7 @@ export function ExploreSeriesRow({ s, lga, season }) {
           })}
         </>
       ) : (
-        <div className="mt-1 text-[10px] text-stone-400 italic text-center py-1">No games</div>
+        <div className="mt-1 text-[12px] text-stone-400 italic text-center py-1">No games</div>
       )}
     </div>
   );
@@ -115,11 +115,11 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+        <h3 className="text-[13px] font-bold text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[12px]">{open ? "▾" : "▸"}</span>
           {ROUND_LABELS[roundKey] || roundKey}
         </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
+        <span className="text-[12px] text-stone-400">{series.length} series</span>
       </button>
       {open && series.map((s, i) => (
         <ExploreSeriesRow key={i} s={s} lga={lga} season={season} />
@@ -151,7 +151,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
     <button
       onClick={() => setTeam(null)}
       style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamColor(team), borderColor: withAlpha(teamColor(team), 0.4) }}
-      className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
+      className="shrink-0 text-[12px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
       aria-label="Clear the team filter"
     >
       {team} <span className="opacity-60">×</span>
@@ -160,7 +160,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
     <select
       value=""
       onChange={(e) => setTeam(e.target.value || null)}
-      className="shrink-0 text-[10px] px-1 py-0.5 border bg-white text-stone-500 border-stone-300 rounded-none"
+      className="shrink-0 text-[12px] px-1 py-0.5 border bg-white text-stone-500 border-stone-300 rounded-none"
       aria-label="Filter the month by team"
     >
       <option value="">All teams</option>
@@ -173,18 +173,18 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+        <h3 className="text-[13px] font-bold text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[12px]">{open ? "▾" : "▸"}</span>
           {month.label} {month.key.slice(0, 4)}
         </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
+        <span className="text-[12px] text-stone-400">{open ? teamGames : month.games.length} games</span>
       </button>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">
-            <span className="text-xs font-semibold text-stone-900">{dayLabel(d.date)}</span>
-            <span className="text-[10px] uppercase tracking-wider text-stone-400">{d.games.length} game{d.games.length === 1 ? "" : "s"}</span>
+            <span className="text-[13px] font-semibold text-stone-900">{dayLabel(d.date)}</span>
+            <span className="text-[12px] text-stone-400">{d.games.length} game{d.games.length === 1 ? "" : "s"}</span>
           </div>
           <div className="mt-1.5">
             {d.games.map((g) => (
@@ -245,14 +245,14 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
   useEffect(() => (data?.months?.length ? warmSeason(season, data.months, lga) : undefined), [data, season, lga]);
   const [open, setOpen] = useState(false);
 
-  if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
-  if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
-  if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
+  if (error) return <div className="text-[12px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
+  if (!data) return <div className="text-[12px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
+  if (!data.months.length) return <div className="text-[12px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
   const months = (
     <>
       {[...data.months].reverse().map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season} />)}
       {data.partial && (
-        <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
+        <div className="text-[12px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
     </>
   );
@@ -264,11 +264,11 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+        <h3 className="text-[13px] font-bold text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[12px]">{open ? "▾" : "▸"}</span>
           Reg Season
         </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
+        <span className="text-[12px] text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
       </button>
       {open && <div className="pl-3">{months}</div>}
     </div>
@@ -300,7 +300,7 @@ export function exploreSeasonList() {
 // once on mount: the view, scope and season it names, and the player — and
 // the comparison — to open, handed to the leaderboard / By Player as the
 // same pending navigation their own in-page jumps use.
-export function ExploreView({ jump = null, onJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
+export function ExploreView({ mode = "season", onModeChange, careerJump = null, onCareerJumpHandled = null, jump = null, onJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
@@ -316,7 +316,8 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [mode, setMode] = useState(linked?.view === "player" ? "player" : "season"); // "season" | "player"
+  // "season" | "player" — picked in the tracker's sub-nav, so held there.
+  const setMode = onModeChange || (() => {});
   // A 2026-27 card's award box (award-boxes.js) opens that board in the Look
   // Ahead, the player open on it; the target waits here until it's up.
   const [laTarget, setLaTarget] = useState(null);
@@ -422,6 +423,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
+  // A box score's player tapped anywhere in the app (lib/award-nav.js
+  // PlayerNavContext): the tracker has already switched to By Player.
+  useEffect(() => {
+    if (!careerJump) return;
+    setPlayerNav({ name: careerJump.name || null, slug: careerJump.slug || null, season: careerJump.season || null });
+    onCareerJumpHandled?.();
+  }, [careerJump, onCareerJumpHandled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -486,30 +494,42 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
     <PlayoffLeaderboard season={season} lga={lga} scope={sc} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} onOpenInLive={onOpenInLive} />
   );
 
-  const tabCls = (active) =>
-    `flex-1 text-[10px] uppercase tracking-[0.2em] px-3 py-2 border ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
-
-  const scopeCls = (active) =>
-    `flex-1 text-[9px] uppercase tracking-[0.15em] px-2 py-1.5 border ${active ? "bg-stone-700 text-white border-stone-700" : "bg-white text-stone-500 border-stone-300 hover:bg-stone-50"}`;
+  // One line of choices: the season (By Season only) and which games count.
+  // The projection is a regular season with no games yet, so the scope has
+  // nothing to choose between while it's showing.
+  const seasonPicker = (
+    <select
+      value={season}
+      onChange={(e) => setSeason(e.target.value)}
+      aria-label="Season"
+      className={`min-w-0 text-[16px] font-bold bg-transparent border-0 border-b pr-1 py-0.5 ${lookAhead ? "text-amber-800 border-amber-500" : "text-stone-900 border-stone-900"}`}
+    >
+      {seasons.map((s) => (
+        <option key={s} value={s}>{s === LOOK_AHEAD ? `${LOOK_AHEAD_SEASON} Look Ahead` : s === CURRENT_SEASON ? `${s} (in progress)` : s}</option>
+      ))}
+    </select>
+  );
 
   return (
     <LookAheadNavProvider value={openLookAhead}>
     <div>
       <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive} />
-      <div className="mb-2 flex gap-2">
-        <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
-        <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        {mode === "season" ? seasonPicker : <span />}
+        {!(mode === "season" && lookAhead) && (
+          <Seg label="Games counted" value={scope} onChange={setScope}
+            options={[["combined", "Combined"], ["regular", "Regular"], ["playoffs", "Playoffs"]]} />
+        )}
+        {mode === "season" && (lookAhead ? (
+          <div className="w-full text-[14px] italic text-amber-800">
+            Projected from regular seasons via Basketball-Reference{LOOK_AHEAD_SEASON === CURRENT_SEASON ? `, updated with every ${LOOK_AHEAD_SEASON} game played` : ""}; rosters via ESPN.
+          </div>
+        ) : (
+          <button type="button" onClick={() => setSeason(LOOK_AHEAD)} className="w-full text-left text-[13px] text-amber-800 hover:underline">
+            {LOOK_AHEAD_SEASON} Look Ahead: projections, MVP odds, All-NBA →
+          </button>
+        ))}
       </div>
-      {/* The projection is a regular season with no games yet, so the scope
-          row has nothing to choose between while it's showing. */}
-      {!(mode === "season" && lookAhead) && <div className="mb-2 flex gap-1.5">
-        <button onClick={() => setScope("combined")} className={scopeCls(scope === "combined")}>Combined</button>
-        <button onClick={() => setScope("regular")} className={scopeCls(scope === "regular")}>Regular Season</button>
-        <button onClick={() => setScope("playoffs")} className={scopeCls(scope === "playoffs")}>Playoffs</button>
-      </div>}
-      {/* Last of the three page-level choices, under the two that pick WHICH
-          games are counted — this one only prices them. */}
-      <VABaselineToggle />
 
       {mode === "player" ? (
         <PlayerExplorer
@@ -520,41 +540,6 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
         />
       ) : (
         <>
-          {/* On the Look Ahead the whole card turns the banner's gold, so the
-              projected season reads as a different kind of page at a glance. */}
-          <div className={`mb-4 p-3 border ${lookAhead ? "bg-amber-50 border-amber-400" : "bg-white border-stone-300"}`}>
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <label className={`text-[10px] uppercase tracking-[0.3em] block ${lookAhead ? "text-amber-800" : "text-stone-500"}`}>Season</label>
-              {lookAhead && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 border border-amber-400 bg-amber-100 text-amber-800">Projected</span>
-              )}
-            </div>
-            <select
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              className={`w-full text-sm font-bold bg-white border px-2 py-1.5 ${lookAhead ? "text-amber-900 border-amber-400" : "text-stone-900 border-stone-300"}`}
-            >
-              {seasons.map((s) => (
-                <option key={s} value={s}>{s === LOOK_AHEAD ? `${LOOK_AHEAD_SEASON} · Look Ahead` : s === CURRENT_SEASON ? `${s} · In progress` : s}</option>
-              ))}
-            </select>
-            <div className={`text-[10px] mt-1 italic ${lookAhead ? "text-amber-700" : "text-stone-400"}`}>
-              {lookAhead
-                ? `Projected from regular seasons via Basketball-Reference${LOOK_AHEAD_SEASON === CURRENT_SEASON ? `, updated with every ${LOOK_AHEAD_SEASON} game played` : ""}; rosters via ESPN.`
-                : "Box scores via ESPN and Basketball-Reference."}
-            </div>
-            {!lookAhead && (
-              <button
-                type="button"
-                onClick={() => setSeason(LOOK_AHEAD)}
-                className="mt-2 w-full flex items-center justify-between gap-2 px-2 py-1.5 border border-amber-400 bg-amber-50 text-left hover:bg-amber-100"
-              >
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-800">{LOOK_AHEAD_SEASON} Look Ahead</span>
-                <span className="text-[10px] text-amber-700">Projections · MVP odds · All-NBA →</span>
-              </button>
-            )}
-          </div>
-
           {lookAhead ? (
             <LookAhead target={laTarget} onTargetHandled={clearLaTarget} />
           ) : scope === "regular" || (scope === "combined" && noPlayoffs) ? (
@@ -571,7 +556,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
               </>
             )
           ) : scope === "playoffs" && noPlayoffs ? (
-            <div className="text-[10px] text-stone-400 italic py-4 text-center">The {season} playoffs start in April — the regular season is under way.</div>
+            <div className="text-[12px] text-stone-400 italic py-4 text-center">The {season} playoffs start in April — the regular season is under way.</div>
           ) : (
             <>
               {/* Combined keeps its leaderboard up while the games load, then
@@ -583,8 +568,8 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
                   <RegularSeasonMonths season={season} lga={lga} grouped />
                 </>
               )}
-              {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
-              {error && !loading && <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
+              {loading && <div className="text-[12px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
+              {error && !loading && <div className="text-[12px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load games — {error}</div>}
               {!loading && !error && data && (
                 <>
                   {scope === "playoffs" && board(scope)}
@@ -592,7 +577,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
                     <ExploreRoundSection key={rk} roundKey={rk} series={byRound[rk]} lga={poLga} season={season} />
                   ))}
                   {data.series && data.series.length === 0 && (
-                    <div className="text-[10px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
+                    <div className="text-[12px] text-stone-400 italic py-4 text-center">No playoff games found for {season}</div>
                   )}
                 </>
               )}

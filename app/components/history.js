@@ -186,15 +186,15 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
     <div className="mt-1 border border-stone-300 bg-white">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full px-2 py-1.5 text-[10px] uppercase tracking-widest text-stone-600 font-semibold flex items-center gap-1"
+        className="w-full px-2 py-1.5 text-[12px] text-stone-600 font-semibold flex items-center gap-1"
       >
         <span className="text-stone-400">{open ? "▾" : "▸"}</span>
         Series Averages
       </button>
       {open && (
         <div className="px-2 pb-2">
-          {loading && <div className="py-2 text-[10px] text-stone-500 italic text-center">Loading…</div>}
-          {error && <div className="py-2 text-[10px] text-red-600 text-center">{error}</div>}
+          {loading && <div className="py-2 text-[12px] text-stone-500 italic text-center">Loading…</div>}
+          {error && <div className="py-2 text-[12px] text-red-600 text-center">{error}</div>}
           {rows && rows.length > 0 && (() => {
             const sortedRows = minGames != null
               ? [...rows].sort((a, b) => (b.va / Math.max(1, b.gp)) - (a.va / Math.max(1, a.gp)))
@@ -211,20 +211,20 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                 <div className="flex items-center justify-end py-1">
                   <button
                     onClick={() => setMinGames(null)}
-                    className="normal-case tracking-normal text-[10px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
+                    className="normal-case text-[12px] font-semibold px-1.5 py-0.5 border inline-flex items-center gap-1 bg-stone-100 text-stone-700 border-stone-300"
                     aria-label="Clear min-games filter"
                   >
                     ≥{minGames} games <span className="text-stone-400">×</span>
                   </button>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
+              <div className="flex items-center gap-2 text-[11px] text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-10">Team</span>
                 <span className="flex-1">Player</span>
                 <button
                   type="button"
                   onClick={() => setGArmed((v) => !v)}
-                  className={`hidden sm:block w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+                  className={`hidden sm:block w-6 text-right cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
                   title="Tap, then tap a player's G to filter to at least that many games"
                   aria-pressed={gArmed}
                 >
@@ -277,9 +277,9 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                             setExpanded(isOpen ? null : rowKey);
                           }
                         }}
-                        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+                        className={`relative w-full flex items-center gap-2 text-[12px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
                       >
-                      <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
+                      <span style={badgeStyle} className={`w-10 text-[11px] font-bold px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
                         {p.name}
@@ -329,12 +329,12 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                   </div>
                 );
               })}
-              <div className="text-[9px] text-stone-400 mt-1.5 text-center italic">Sorted by {minGames != null ? "VA / Game" : "total Value Added"} · STK = steals + blocks · tap a row for VA breakdown</div>
+              <div className="text-[11px] text-stone-400 mt-1.5 text-center italic">Sorted by {minGames != null ? "VA / Game" : "total Value Added"} · STK = steals + blocks · tap a row for VA breakdown</div>
             </div>
             );
           })()}
           {rows && rows.length === 0 && !error && (
-            <div className="py-2 text-[10px] text-stone-500 italic text-center">No stats</div>
+            <div className="py-2 text-[12px] text-stone-500 italic text-center">No stats</div>
           )}
         </div>
       )}
@@ -355,7 +355,7 @@ export function HistorySeriesRow({ s, teamsMap, lga, roundKey, season }) {
 
   const teamCell = (code) => {
     const t = teamsMap[code];
-    if (!t) return <div className="flex-1 px-2 py-1.5 border border-stone-200 bg-white text-xs text-stone-400">{code}</div>;
+    if (!t) return <div className="flex-1 px-2 py-1.5 border border-stone-200 bg-white text-[13px] text-stone-400">{code}</div>;
     const isWinner = s.winner === code;
     const dim = code === dimTeam;
     // Dimmed (top seed in a same-owner series) gets a white card even when it won.
@@ -363,11 +363,11 @@ export function HistorySeriesRow({ s, teamsMap, lga, roundKey, season }) {
     return (
       <div className={`flex-1 px-2 py-1.5 border ${cellBg}`}>
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
-          <span className={`text-xs font-semibold ${isWinner ? ownerColor(t.owner, dim) : "text-stone-900"}`}>{t.name}</span>
-          {isWinner && <span className="ml-auto text-[10px]">✓</span>}
+          <span className="text-[12px] font-bold text-stone-500 tabular-nums w-4">{t.seed}</span>
+          <span className={`text-[13px] font-semibold ${isWinner ? ownerColor(t.owner, dim) : "text-stone-900"}`}>{t.name}</span>
+          {isWinner && <span className="ml-auto text-[12px]">✓</span>}
         </div>
-        <div className="text-[9px] uppercase tracking-wider mt-0.5 flex items-center gap-1">
+        <div className="text-[11px] mt-0.5 flex items-center gap-1">
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${ownerDot(t.owner, dim)}`}></span>
           <span className="text-stone-500">{t.owner}</span>
         </div>
@@ -378,7 +378,7 @@ export function HistorySeriesRow({ s, teamsMap, lga, roundKey, season }) {
     <div className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
       <div className="flex gap-1.5 items-stretch">
         {teamCell(s.teams[0])}
-        <div className="flex items-center justify-center px-1 text-[10px] font-bold text-stone-400 tracking-widest">VS</div>
+        <div className="flex items-center justify-center px-1 text-[12px] font-bold text-stone-400">VS</div>
         {teamCell(s.teams[1])}
       </div>
       {s.games.length > 0 ? (
@@ -387,7 +387,7 @@ export function HistorySeriesRow({ s, teamsMap, lga, roundKey, season }) {
           <HistoryGameList games={s.games} teamsMap={teamsMap} lga={lga} dimTeam={dimTeam} />
         </>
       ) : (
-        <div className="mt-1 text-[10px] text-stone-400 italic text-center py-1">Game data not available</div>
+        <div className="mt-1 text-[12px] text-stone-400 italic text-center py-1">Game data not available</div>
       )}
     </div>
   );
@@ -402,8 +402,8 @@ export function HistoryRoundSection({ round, teamsMap, lga, season }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
+        <h3 className="text-[13px] font-bold text-stone-900 flex items-center gap-2">
+          <span className="text-stone-400 text-[12px]">{open ? "▾" : "▸"}</span>
           {round.label}
         </h3>
       </button>
@@ -446,7 +446,7 @@ export function HistoryView({ season }) {
     return () => { cancelled = true; };
   }, [season]);
 
-  if (!data) return <div className="text-stone-500 text-xs italic">No data for {season}</div>;
+  if (!data) return <div className="text-stone-500 text-[13px] italic">No data for {season}</div>;
   const { breakdown, totals, meta } = data;
   const rounds = historyRounds(season, histGames);
   const hasGames = rounds?.some((r) => r.series.some((s) => s.games.length > 0));
@@ -454,7 +454,7 @@ export function HistoryView({ season }) {
   return (
     <div>
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-1">Champion</div>
+        <div className="text-[12px] text-stone-500 mb-1">Champion</div>
         <div className="text-lg font-bold text-stone-900">{meta.champion}</div>
       </div>
 
@@ -470,24 +470,24 @@ export function HistoryView({ season }) {
       {showBreakdown && (
         <div className="mb-5 p-3 bg-white border border-stone-300">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-bold uppercase tracking-widest text-stone-900">{showBreakdown}'s Points</div>
+            <div className="text-[13px] font-bold text-stone-900">{showBreakdown}'s Points</div>
             <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
           </div>
           <BreakdownList breakdown={breakdown[showBreakdown]} owner={showBreakdown} />
         </div>
       )}
 
-      <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Rosters</div>
+      <div className="text-[12px] text-stone-500 mb-2">Rosters</div>
       <div className="grid grid-cols-2 gap-2 mb-5">
         {["Spencer", "Trey"].map((owner) => {
           const teams = Object.entries(meta.teams).filter(([, t]) => t.owner === owner);
           return (
             <div key={owner} className={`p-2 border ${ownerBg(owner)}`}>
-              <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${ownerColor(owner)}`}>{owner}</div>
+              <div className={`text-[12px] font-bold mb-1 ${ownerColor(owner)}`}>{owner}</div>
               <div className="space-y-0.5">
                 {teams.map(([code, t]) => (
-                  <div key={code} className="text-xs flex items-baseline gap-1">
-                    <span className="text-[10px] text-stone-500 tabular-nums w-4">{t.seed}</span>
+                  <div key={code} className="text-[13px] flex items-baseline gap-1">
+                    <span className="text-[12px] text-stone-500 tabular-nums w-4">{t.seed}</span>
                     <span className="font-semibold text-stone-800">{t.name}</span>
                   </div>
                 ))}
@@ -498,15 +498,15 @@ export function HistoryView({ season }) {
       </div>
 
       <div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500 mb-2">Game Results</div>
+        <div className="text-[12px] text-stone-500 mb-2">Game Results</div>
         {gamesLoading && (
-          <div className="text-[10px] text-stone-500 italic py-2 text-center">Loading games…</div>
+          <div className="text-[12px] text-stone-500 italic py-2 text-center">Loading games…</div>
         )}
         {gamesError && !gamesLoading && (
-          <div className="text-[10px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load games — {gamesError}</div>
+          <div className="text-[12px] text-red-600 py-2 text-center px-2 break-words">Couldn’t load games — {gamesError}</div>
         )}
         {!gamesLoading && !gamesError && !hasGames && (
-          <div className="text-[10px] text-stone-400 italic py-2 text-center">No game data</div>
+          <div className="text-[12px] text-stone-400 italic py-2 text-center">No game data</div>
         )}
         {hasGames && rounds.map((r) => (
           <HistoryRoundSection key={r.key} round={r} teamsMap={meta.teams} lga={lga} season={season} />

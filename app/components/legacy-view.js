@@ -160,7 +160,7 @@ function GoToBoard({ onGo, run, scope }) {
         season: run.season, team: run.team || null,
         name: run.name || null, slug: run.slug || null, scope,
       })}
-      className="text-[9px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 whitespace-nowrap"
+      className="text-[11px] font-bold text-stone-400 hover:text-stone-900 whitespace-nowrap"
       title={`Open the ${scope === "regular" ? "regular-season" : "playoff"} leaderboard for ${run.team || "this team"}, ${run.season}`}
     >Go →</button>
   );
@@ -186,13 +186,13 @@ function CareerSeasons({ p, segments, onGoToLeaderboard }) {
           ["Raw/G", p.peakRaw.toFixed(1)],
         ].map(([label, value]) => (
           <div key={label}>
-            <div className="text-[9px] uppercase tracking-wider text-stone-400">{label}</div>
+            <div className="text-[11px] text-stone-400">{label}</div>
             <div className="text-sm font-bold text-stone-900 tabular-nums">{value}</div>
           </div>
         ))}
       </div>
 
-      <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
+      <p className="text-[12px] text-stone-500 leading-relaxed mb-2">
         {p.seasonCount} seasons · {fmt0(p.careerGames)} games · {p.span}
         {/* The same franchises, in the same order, as the segments of the bar
             on the row above — so the colors up there can be read off. */}
@@ -209,7 +209,7 @@ function CareerSeasons({ p, segments, onGoToLeaderboard }) {
         Tap any season for the stat lines behind it and every game of the run.
       </p>
 
-      <div className={`${COLS} text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200`}>
+      <div className={`${COLS} text-[11px] text-stone-400 pb-1 border-b border-stone-200`}>
         <span>#</span><span>Season</span>
         <span className="text-right">LVA</span>
       </div>
@@ -228,16 +228,16 @@ function CareerSeasons({ p, segments, onGoToLeaderboard }) {
               type="button"
               aria-expanded={seasonOpen}
               onClick={() => setOpenSeason(seasonOpen ? null : s.season)}
-              className={`${COLS} text-[11px] w-full text-left ${seasonOpen ? "" : "hover:bg-stone-100/70"}`}
+              className={`${COLS} text-[13px] w-full text-left ${seasonOpen ? "" : "hover:bg-stone-100/70"}`}
             >
               <span className="tabular-nums text-stone-400">{s.rank}</span>
               <span className="min-w-0">
-                <span className="text-stone-400 text-[8px] mr-0.5">{seasonOpen ? "▾" : "▸"}</span>
+                <span className="text-stone-400 text-[10px] mr-0.5">{seasonOpen ? "▾" : "▸"}</span>
                 <span className="font-semibold text-stone-800">{s.season}</span>
                 {/* A season with no playoff run says "82 RS", not "0 PO · 82 RS" —
                     missing the playoffs is already legible from the empty dark
                     segment on the bar. */}
-                <span className="text-[9px] text-stone-500 tabular-nums">
+                <span className="text-[11px] text-stone-500 tabular-nums">
                   {s.team ? ` ${s.team}` : ""}
                   {[s.poGames ? `${s.poGames} PO` : null, s.rsGames ? `${s.rsGames} RS` : null]
                     .filter(Boolean).map((part) => ` · ${part}`).join("")}
@@ -269,7 +269,7 @@ function CareerSeasons({ p, segments, onGoToLeaderboard }) {
         );
       })}
 
-      <p className="text-[9px] text-stone-400 leading-relaxed mt-2">
+      <p className="text-[11px] text-stone-400 leading-relaxed mt-2">
         Bars are each season&apos;s value against this career&apos;s best — the
         colored part is the playoff run, in that season&apos;s team colors;{" "}
         <span className="text-stone-500 font-semibold">grey</span> is the regular season.
@@ -345,12 +345,12 @@ function StatStrip({ stats, compareTo, action, note }) {
           const [glyph, phrase] = trend ? TREND[trend] : [];
           return (
             <div key={label} className="text-center">
-              <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
-              <div className="text-[11px] font-semibold text-stone-800 tabular-nums leading-tight">
+              <div className="text-[10px] text-stone-400">{label}</div>
+              <div className="text-[13px] font-semibold text-stone-800 tabular-nums leading-tight">
                 {v == null ? "—" : v.toFixed(key.endsWith("%") || cat === "2-Pointers" || cat === "3-Pointers" || cat === "Free Throws" ? 1 : 1)}
               </div>
               <div
-                className={`text-[9px] tabular-nums leading-tight ${
+                className={`text-[11px] tabular-nums leading-tight ${
                   va == null ? "text-stone-300"
                     : va < 0 ? "text-red-600" : "text-stone-500"}`}
                 title={trend ? `${label}: worth ${phrase} in the playoffs (${va.toFixed(VA_DP)}) as in the regular season (${prior.toFixed(VA_DP)})` : undefined}
@@ -367,7 +367,7 @@ function StatStrip({ stats, compareTo, action, note }) {
         })}
         {action && <div className="text-center self-center">{action}</div>}
       </div>
-      <div className="text-[8px] text-stone-400 mt-1">
+      <div className="text-[10px] text-stone-400 mt-1">
         {note || "Per game, with the Value Added each one contributed underneath — the ten add up to VA/G."}
       </div>
     </div>
@@ -397,8 +397,8 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
     return () => { cancelled = true; };
   }, [slug, season]);
 
-  if (error) return <div className="px-2 py-2 text-[10px] text-red-600">Couldn’t load — {error}</div>;
-  if (!d) return <div className="px-2 py-2 text-[10px] text-stone-500 italic">Loading…</div>;
+  if (error) return <div className="px-2 py-2 text-[12px] text-red-600">Couldn’t load — {error}</div>;
+  if (!d) return <div className="px-2 py-2 text-[12px] text-stone-500 italic">Loading…</div>;
 
   const po = d.run.stats, rs = d.run.rsStats;
   const games = d.games || [];
@@ -412,7 +412,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
     <div className="bg-white border-t border-b border-stone-200 pt-2 mt-1 mb-1">
       {po && (
         <>
-          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+          <div className="px-2 text-[11px] text-stone-500">
             {/* Where the run sits among every postseason run on record — the
                 one number here that is about the field rather than about this
                 career. */}
@@ -434,7 +434,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
 
       {rs && (
         <>
-          <div className="px-2 text-[9px] uppercase tracking-widest text-stone-500">
+          <div className="px-2 text-[11px] text-stone-500">
             Regular season · {rs.games} games
           </div>
           <StatStrip
@@ -446,7 +446,7 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
       )}
 
       {!po && !rs && (
-        <div className="px-2 py-2 text-[10px] text-stone-400 italic">No stat line on record for this season.</div>
+        <div className="px-2 py-2 text-[12px] text-stone-400 italic">No stat line on record for this season.</div>
       )}
 
       {/* Every game of the run, heaviest contribution first. This is where the
@@ -454,13 +454,13 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
           sit below a quieter one in the Finals, and here you can see why. */}
       {games.length > 0 && (
         <div className="px-2 pb-3 pt-2 mt-1 bg-stone-50 border-t border-stone-200">
-          <p className="text-[10px] text-stone-500 leading-relaxed mb-2">
+          <p className="text-[12px] text-stone-500 leading-relaxed mb-2">
             {games.length} games, biggest contribution first. Every game of a series
             carries the same weight, so the order is what he did times what the series
             was worth — <span className="font-semibold">VA × weight</span>.
           </p>
 
-          <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 text-[9px] uppercase tracking-wider text-stone-400 pb-1 border-b border-stone-200">
+          <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 text-[11px] text-stone-400 pb-1 border-b border-stone-200">
             <span>Game</span><span>Line</span>
             <span className="text-right">VA</span>
             <span className="text-right">×W</span>
@@ -471,12 +471,12 @@ function SeasonPanel({ slug, season, onGoToLeaderboard }) {
             const down = g.contribution < 0;
             return (
               <div key={g.gameId} className="pt-1 pb-1.5 border-b border-stone-100 last:border-0">
-                <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 items-baseline text-[11px]">
+                <div className="grid grid-cols-[4.6rem_1fr_2.6rem_2.4rem_3rem] gap-x-1.5 items-baseline text-[13px]">
                   <span className="tabular-nums text-stone-700 font-semibold">
                     {ROUND[g.round] || `R${g.round}`} {g.opp}
                     <span className="text-stone-400 font-normal"> G{g.gameNo}</span>
                   </span>
-                  <span className="text-[10px] text-stone-500 tabular-nums truncate">
+                  <span className="text-[12px] text-stone-500 tabular-nums truncate">
                     {g.pts}p {g.reb}r {g.ast}a
                     {g.stl ? ` ${g.stl}s` : ""}{g.blk ? ` ${g.blk}b` : ""}
                     {" · "}{g.fgm}/{g.fga}{g.fta ? ` ${g.ftm}/${g.fta}ft` : ""}
@@ -521,11 +521,11 @@ function PositionFilter({ value, onChange }) {
     // without it a narrow phone compresses the chips into unreadable slivers
     // instead of letting the row scroll.
     <div className="flex items-center gap-1 w-max">
-      <label className="text-[10px] uppercase tracking-widest text-stone-400 shrink-0">Pos</label>
+      <label className="text-[12px] text-stone-400 shrink-0">Pos</label>
       {value && (
         <button
           onClick={() => onChange(parent)}
-          className="text-[11px] px-2 py-1.5 border border-stone-900 bg-stone-900 text-white shrink-0"
+          className="text-[13px] px-2 py-1.5 border border-stone-900 bg-stone-900 text-white shrink-0"
           title={parent ? `Back to all ${parent}` : "Show every position"}
         >{value} ✕</button>
       )}
@@ -533,7 +533,7 @@ function PositionFilter({ value, onChange }) {
         <button
           key={c}
           onClick={() => onChange(c)}
-          className="text-[11px] px-2 py-1.5 border border-stone-300 bg-white text-stone-700 hover:border-stone-500 hover:text-stone-900 shrink-0"
+          className="text-[13px] px-2 py-1.5 border border-stone-300 bg-white text-stone-700 hover:border-stone-500 hover:text-stone-900 shrink-0"
           title={`Filter to ${c}`}
         >{c}</button>
       ))}
@@ -594,8 +594,8 @@ function CareersBoard({ onGoToLeaderboard }) {
 
   const shown = rows;
 
-  if (error) return <div className="text-[10px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
-  if (!data) return <div className="text-[10px] text-stone-500 italic py-6 text-center">Ranking careers…</div>;
+  if (error) return <div className="text-[12px] text-red-600 py-6 text-center px-2 break-words">Couldn’t load — {error}</div>;
+  if (!data) return <div className="text-[12px] text-stone-500 italic py-6 text-center">Ranking careers…</div>;
   const total = data.matched ?? data.qualified;
 
   // The board arrives sorted, so the leader is the scale for every bar — it
@@ -605,7 +605,7 @@ function CareersBoard({ onGoToLeaderboard }) {
   const head = (key, label) => (
     <button
       onClick={() => setSortKey(key)}
-      className={`text-right uppercase tracking-wider whitespace-nowrap ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
+      className={`text-right whitespace-nowrap ${sortKey === key ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}
     >{/* A non-breaking space, and nowrap on top of it: the caret belongs to the
          label it marks, and a column narrow enough to break between them would
          drop it onto a second line and push the header row taller than the
@@ -615,11 +615,11 @@ function CareersBoard({ onGoToLeaderboard }) {
 
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-3">
+      <div className="text-[12px] text-stone-500 mb-3">
         {data.firstSeason}–{data.lastSeason} · {data.qualified.toLocaleString()} careers qualified
       </div>
 
-      <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
+      <p className="text-[13px] text-stone-600 leading-relaxed mb-3">
         <span className="font-semibold">Legacy</span> is a career&apos;s value with every game
         priced by what was at stake, added up; <span className="font-semibold">Peak</span> is the
         same weighting as a per-game rate over the best {data.dials.peakSeasons} seasons. Tap either
@@ -644,7 +644,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         <select
           value={minGames}
           onChange={(e) => setMinGames(Number(e.target.value))}
-          className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800 shrink-0"
+          className="text-[13px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800 shrink-0"
           title="Career games a player must have played to appear"
         >
           {GAME_FLOORS.map(([v, label]) => (
@@ -673,13 +673,13 @@ function CareersBoard({ onGoToLeaderboard }) {
             new. Unfiltered, the whole span was that duplicate. */}
         {(query.trim() || pos) && (
           <span
-            className="ml-auto shrink-0 text-[10px] text-stone-400 tabular-nums whitespace-nowrap"
+            className="ml-auto shrink-0 text-[12px] text-stone-400 tabular-nums whitespace-nowrap"
             title={`${total.toLocaleString()} of ${data.qualified.toLocaleString()} qualified careers match`}
           >{total.toLocaleString()}</span>
         )}
       </div>
 
-      <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
+      <div className={`${BOARD_COLS} text-[12px] text-stone-400 px-2 pb-1 border-b border-stone-200`}>
         <span></span><span>Player</span><span className="text-right">Yr</span>
         {head("total", "Legacy")}
         {/* "Peak", not "Peak/G": the per-game part is spelled out in the
@@ -690,7 +690,7 @@ function CareersBoard({ onGoToLeaderboard }) {
       </div>
 
       {!shown.length && (
-        <div className="text-[10px] text-stone-400 italic py-6 text-center">
+        <div className="text-[12px] text-stone-400 italic py-6 text-center">
           {/* Name the filter that actually emptied the board — with a position
               on, "no careers qualified" reads as a broken board rather than as
               a search the reader can widen. */}
@@ -713,13 +713,13 @@ function CareersBoard({ onGoToLeaderboard }) {
             >
               {/* The rank the server assigned in the sorted order, not the row's
                   position in whatever has been paged in so far. */}
-              <span className="text-[10px] tabular-nums text-stone-400">{p.rank.toLocaleString()}</span>
+              <span className="text-[12px] tabular-nums text-stone-400">{p.rank.toLocaleString()}</span>
               <span className="min-w-0">
                 <span className="font-semibold text-stone-800 block truncate">
-                  <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
+                  <span className="text-stone-400 text-[11px] mr-1">{isOpen ? "▾" : "▸"}</span>
                   {p.name}{p.truncated ? <span className="text-stone-400"> *</span> : null}
                 </span>
-                <span className="text-[10px] text-stone-500 tabular-nums">
+                <span className="text-[12px] text-stone-500 tabular-nums">
                   {p.span} · {fmt0(p.careerGames)} G
                 </span>
               </span>
@@ -745,7 +745,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         <button
           onClick={more}
           disabled={loading}
-          className="w-full mt-2 py-2 text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-300 hover:bg-stone-50 disabled:text-stone-300"
+          className="w-full mt-2 py-2 text-[12px] font-bold text-stone-500 border border-stone-300 hover:bg-stone-50 disabled:text-stone-300"
         >
           {loading
             ? "Loading…"
@@ -753,7 +753,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         </button>
       ) : (
         shown.length > 0 && (
-          <div className="text-[10px] text-stone-400 italic mt-2 text-center">
+          <div className="text-[12px] text-stone-400 italic mt-2 text-center">
             {query.trim()
               ? `All ${total.toLocaleString()} matching careers shown.`
               : `All ${total.toLocaleString()} qualifying careers shown.`}
@@ -761,7 +761,7 @@ function CareersBoard({ onGoToLeaderboard }) {
         )
       )}
 
-      <div className="text-[10px] text-stone-400 italic mt-2 leading-relaxed">
+      <div className="text-[12px] text-stone-400 italic mt-2 leading-relaxed">
         {anyTruncated && (
           <>* career reaches {data.firstSeason}, the first season on record — it may extend
           earlier, in which case only part of it is measured.<br /></>
@@ -811,7 +811,7 @@ function LegacyInfo({ dials }) {
   const ladderMax = Math.max(...ladder.map((r) => r.value), 0.1);
 
   return (
-    <div className="mb-3 p-3 bg-white border border-stone-300 text-[11px] text-stone-600 leading-relaxed">
+    <div className="mb-3 p-3 bg-white border border-stone-300 text-[13px] text-stone-600 leading-relaxed">
       <p className="mb-2">
         Legacy answers one question with two instruments. <span className="font-semibold">Value
         Added</span> says what a stat line was worth in points above the league&apos;s typical
@@ -820,7 +820,7 @@ function LegacyInfo({ dials }) {
         neutral coin where every game and every future series is a 50/50. Multiply, and add up.
       </p>
 
-      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+      <div className="text-[11px] text-stone-400 mt-3 mb-1">
         1 · What a playoff game is worth
       </div>
       <p className="mb-2">
@@ -835,18 +835,18 @@ function LegacyInfo({ dials }) {
       <div className="mb-1">
         {ladder.map((r) => (
           <div key={r.label} className="grid grid-cols-[3.4rem_1fr_2.2rem] gap-2 items-center py-[2px]">
-            <span className="text-[9px] text-stone-500 text-right">{r.label}</span>
+            <span className="text-[11px] text-stone-500 text-right">{r.label}</span>
             <span className="h-1.5 bg-stone-100 rounded-sm overflow-hidden">
               <span
                 className="block h-full bg-stone-900 rounded-sm"
                 style={{ width: `${(r.value / ladderMax) * 100}%` }}
               />
             </span>
-            <span className="text-[10px] font-bold tabular-nums text-stone-900">{r.value.toFixed(2)}</span>
+            <span className="text-[12px] font-bold tabular-nums text-stone-900">{r.value.toFixed(2)}</span>
           </div>
         ))}
       </div>
-      <p className="text-[9px] text-stone-400 mb-2">
+      <p className="text-[11px] text-stone-400 mb-2">
         A whole round-1 series, to one of its teams. The margin is squared, so the drop from
         winning in seven to losing in seven is the <em>smallest</em> step on the ladder — a
         series that goes the distance says the two teams were even — while a sweep and being
@@ -855,31 +855,31 @@ function LegacyInfo({ dials }) {
       <div className="grid grid-cols-[3.9rem_repeat(4,1fr)] gap-[2px] mb-1">
         <span />
         {[4, 5, 6, 7].map((n) => (
-          <span key={n} className="text-[8px] uppercase tracking-wider text-stone-400 text-center">{n} gm</span>
+          <span key={n} className="text-[10px] text-stone-400 text-center">{n} gm</span>
         ))}
         {ROUND_LABELS.map(([label, ra]) => (
           <Fragment key={label}>
-            <span className="text-[9px] text-stone-500 flex items-center">{label}</span>
+            <span className="text-[11px] text-stone-500 flex items-center">{label}</span>
             {[4, 5, 6, 7].map((n) => {
               // A best-of-7: the winner takes four of them, the loser the rest.
               const won = seriesGameWeight(ra, 4, n, alpha, 4, omega);
               const lost = seriesGameWeight(ra, 4, n, alpha, n - 4, omega);
               return (
                 <span key={n} className={`text-center py-1 leading-tight ${shadeFor(won)}`}>
-                  <span className="block text-[10px] font-bold tabular-nums">{won.toFixed(2)}</span>
-                  <span className="block text-[8px] tabular-nums opacity-60">{lost.toFixed(2)}</span>
+                  <span className="block text-[12px] font-bold tabular-nums">{won.toFixed(2)}</span>
+                  <span className="block text-[10px] tabular-nums opacity-60">{lost.toFixed(2)}</span>
                 </span>
               );
             })}
           </Fragment>
         ))}
       </div>
-      <p className="text-[9px] text-stone-400 mb-2">
+      <p className="text-[11px] text-stone-400 mb-2">
         By round, each <em>game</em> of that series against a round-1 series of average
         length = 1.00. Top number to the team that won it, bottom to the team that lost.
       </p>
 
-      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+      <div className="text-[11px] text-stone-400 mt-3 mb-1">
         2 · What a regular-season game is worth
       </div>
       <p className="mb-2">
@@ -890,7 +890,7 @@ function LegacyInfo({ dials }) {
         out in four.
       </p>
 
-      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+      <div className="text-[11px] text-stone-400 mt-3 mb-1">
         3 · How the seasons add up
       </div>
       <p className="mb-2">
@@ -900,12 +900,12 @@ function LegacyInfo({ dials }) {
         would price the same fact twice. A season below the league&apos;s typical minute
         subtracts exactly what it cost.
       </p>
-      <p className="text-[9px] text-stone-400 mb-2">
+      <p className="text-[11px] text-stone-400 mb-2">
         The cost of that is stated rather than hidden: summed straight, this axis is volume,
         and an extra good-not-great season always helps. That is what the rate below is for.
       </p>
 
-      <div className="text-[9px] uppercase tracking-widest text-stone-400 mt-3 mb-1">
+      <div className="text-[11px] text-stone-400 mt-3 mb-1">
         4 · Two numbers, not one
       </div>
       <p className="mb-0">
@@ -935,7 +935,7 @@ export function LegacyView({ onGoToLeaderboard = null }) {
           aria-expanded={info}
           aria-label="How the Legacy score is calculated"
           title="How the Legacy score is calculated"
-          className={`w-4 h-4 shrink-0 self-center rounded-full border text-[9px] font-bold leading-none flex items-center justify-center ${
+          className={`w-4 h-4 shrink-0 self-center rounded-full border text-[11px] font-bold leading-none flex items-center justify-center ${
             info
               ? "bg-stone-900 border-stone-900 text-white"
               : "border-stone-400 text-stone-500 hover:border-stone-900 hover:text-stone-900"}`}

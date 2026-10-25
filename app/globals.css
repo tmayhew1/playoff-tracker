@@ -7,17 +7,22 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Both faces come from next/font (see app/layout.js), which self-hosts them
-   and exposes each as a CSS variable already carrying its metric-adjusted
-   fallback. Setting the UI face on <body> keeps the whole tree — including
-   anything rendered outside the page's root div — on one font. */
+/* One face for everything (see app/layout.js). Lining, even-width figures
+   by default, so the stat columns line up without each cell asking. */
 body {
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: "Times New Roman", Times, "Liberation Serif", serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: #1c1917;
   /* Keep the phone from resizing text on its own: everything here is sized in
-     fixed px against a 672px column, and an inflated 9px stat cell wrecks the
+     fixed px against a 672px column, and an inflated stat cell wrecks the
      table rows it sits in. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+/* Form controls don't inherit the page's face on their own. */
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 /* Horizontal chip/tab strips scroll without showing a scrollbar

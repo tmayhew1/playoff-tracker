@@ -54,8 +54,8 @@ const AWARD_KEY = { MVP: "mvp", ROY: "roy", "All-NBA": "allnba", "All-Star": "al
 function InjuredOut({ list }) {
   if (!list?.length) return null;
   return (
-    <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
-      <span className="uppercase tracking-wider text-red-400">Out for the season: </span>
+    <div className="px-3 py-2 text-[11px] text-stone-500 border-t border-stone-200 leading-snug">
+      <span className="text-red-400">Out for the season: </span>
       {list.map((x) => `${x.name} (${x.injury})`).join(", ")}
     </div>
   );
@@ -64,8 +64,8 @@ function InjuredOut({ list }) {
 function SectionHead({ title, note }) {
   return (
     <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
-      <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{title}</div>
-      {note && <div className="text-[9px] italic text-stone-400 mt-0.5">{note}</div>}
+      <div className="text-[12px] text-stone-500">{title}</div>
+      {note && <div className="text-[11px] italic text-stone-400 mt-0.5">{note}</div>}
     </div>
   );
 }
@@ -217,8 +217,8 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
     onTargetHandled?.();
   }, [target, model, goToAward, onTargetHandled]);
 
-  if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the projection — {error}</div>;
-  if (!data || !awards) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Projecting 2026-27…</div>;
+  if (error) return <div className="text-[12px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load the projection — {error}</div>;
+  if (!data || !awards) return <div className="text-[12px] text-stone-500 italic py-4 text-center">Projecting 2026-27…</div>;
   const ins = data.inSeason;
 
   const pBySlug = Object.fromEntries(players.map((p) => [p.slug, p]));
@@ -246,9 +246,9 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
           const maxW = Math.max(1, ...teams.map((t) => t.wins));
           return (
             <div key={conf} className="border-b border-stone-200 last:border-0">
-              <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[9px] uppercase tracking-[0.2em]">
+              <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[11px]">
                 <span className="font-bold text-stone-700">{conf === "E" ? "East" : "West"}</span>
-                <span className="text-stone-400 tracking-wider">Proj · {ins ? "Now" : "Last"}</span>
+                <span className="text-stone-400">Proj · {ins ? "Now" : "Last"}</span>
               </div>
               {list.map((t, i) => {
                 const tc = teamColor(t.team), w = Math.round(t.wins), isOpen = openTeam === t.team;
@@ -263,7 +263,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                       className="relative w-full overflow-hidden text-left"
                     >
                       <div className="absolute inset-y-0 left-0 pointer-events-none" style={{ width: `${(t.wins / maxW) * 100}%`, backgroundColor: withAlpha(tc, isOpen ? 0.3 : 0.16) }} aria-hidden />
-                      <div className="relative flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2">
+                      <div className="relative flex items-center gap-1.5 sm:gap-2 text-[12px] py-1.5 px-1.5 sm:px-2">
                         <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{i + 1}</span>
                         <TeamChip team={t.team} active={isOpen} />
                         {/* Always two lines: three names over two, the perimeter players
@@ -285,7 +285,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                     </button>
                     {isOpen && (
                       <div className="bg-stone-50/60 border-t border-stone-200 pl-2 sm:pl-4">
-                        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
                           <span className="w-5 sm:w-6 text-right">#</span>
                           <span className="flex-1">Player</span>
                           <span className="w-6 text-right">G</span>
@@ -302,8 +302,8 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                         ))}
                         <InjuredOut list={data.injuredOut?.[t.team]} />
                         {data.unprojected?.[t.team]?.length > 0 && (
-                          <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
-                            <span className="uppercase tracking-wider text-stone-400">Not projected: </span>
+                          <div className="px-3 py-2 text-[11px] text-stone-500 border-t border-stone-200 leading-snug">
+                            <span className="text-stone-400">Not projected: </span>
                             {data.unprojected[t.team].join(", ")}
                           </div>
                         )}
@@ -324,20 +324,20 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
       <div className="mb-4 border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200 flex items-center justify-between gap-2">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">Projected Leaders</div>
-            {ins && <div className="text-[9px] italic text-stone-400 mt-0.5">Season totals: VA banked through {throughLabel(ins)} plus the games left</div>}
+            <div className="text-[12px] text-stone-500">Projected Leaders</div>
+            {ins && <div className="text-[11px] italic text-stone-400 mt-0.5">Season totals: VA banked through {throughLabel(ins)} plus the games left</div>}
           </div>
           <select
             value={team || ""}
             onChange={(e) => { setTeam(e.target.value || null); setExpanded(null); }}
-            className="text-[10px] font-semibold text-stone-700 bg-white border border-stone-300 px-1.5 py-0.5"
+            className="text-[12px] font-semibold text-stone-700 bg-white border border-stone-300 px-1.5 py-0.5"
             aria-label="Filter by team"
           >
             <option value="">All teams</option>
             {[...teams].sort((a, b) => a.team.localeCompare(b.team)).map((t) => <option key={t.team} value={t.team}>{t.team}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
@@ -356,28 +356,28 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
           <button
             type="button"
             onClick={() => setShowAll((s) => !s)}
-            className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border-t border-stone-200"
+            className="w-full text-center py-2 text-[12px] text-stone-500 hover:text-stone-900 border-t border-stone-200"
           >{showAll ? `Show top ${PAGE}` : `Show all ${rows.length}`}</button>
         )}
         {team && <InjuredOut list={data.injuredOut?.[team]} />}
         {team && data.unprojected?.[team]?.length > 0 && (
-          <div className="px-3 py-2 text-[9px] text-stone-500 border-t border-stone-200 leading-snug">
-            <span className="uppercase tracking-wider text-stone-400">Not projected (no NBA seasons): </span>
+          <div className="px-3 py-2 text-[11px] text-stone-500 border-t border-stone-200 leading-snug">
+            <span className="text-stone-400">Not projected (no NBA seasons): </span>
             {data.unprojected[team].join(", ")}
           </div>
         )}
       </div>
 
       {offRoster.length > 0 && (
-        <div className="mb-4 px-3 py-2 bg-white border border-stone-300 text-[9px] text-stone-500 leading-snug">
-          <span className="uppercase tracking-wider text-stone-400">Projected, but on no current roster: </span>
+        <div className="mb-4 px-3 py-2 bg-white border border-stone-300 text-[11px] text-stone-500 leading-snug">
+          <span className="text-stone-400">Projected, but on no current roster: </span>
           {offRoster.slice(0, 20).map((p) => p.name).join(", ")}{offRoster.length > 20 ? `, +${offRoster.length - 20} more` : ""}
         </div>
       )}
 
       {/* Accuracy */}
       <div className="mb-4 p-3 bg-white border border-stone-300">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">How accurate</div>
+        <div className="text-[12px] text-stone-500">How accurate</div>
         <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
           {[
             ["VA correlation", bt.corr.toFixed(2), bt.corrNaive.toFixed(2)],
@@ -385,21 +385,21 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
             ["Top-25 hits", bt.top25Hit, bt.top25HitNaive],
           ].map(([label, model, naive]) => (
             <div key={label} className="border border-stone-200 bg-stone-50 px-1 py-1.5">
-              <div className="text-[8px] uppercase tracking-wider text-stone-400">{label}</div>
+              <div className="text-[10px] text-stone-400">{label}</div>
               <div className="text-sm font-bold tabular-nums text-stone-900">{model}</div>
-              <div className="text-[8px] text-stone-400 tabular-nums">vs {naive} naive</div>
+              <div className="text-[10px] text-stone-400 tabular-nums">vs {naive} naive</div>
             </div>
           ))}
         </div>
-        <div className="text-[9px] italic text-stone-400 mt-1">
+        <div className="text-[11px] italic text-stone-400 mt-1">
           Backtest: {bt.season} projected from data through the season before, {bt.players} players with {bt.minMinutes}+ min. “Naive” repeats each player’s previous season.
         </div>
       </div>
 
       {/* Method */}
       <div className="mb-4 border border-stone-300 bg-white">
-        <button type="button" onClick={() => setShowMethod((s) => !s)} className="w-full px-3 py-2 text-left text-[10px] uppercase tracking-[0.3em] text-stone-500 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{showMethod ? "▾" : "▸"}</span> How this works
+        <button type="button" onClick={() => setShowMethod((s) => !s)} className="w-full px-3 py-2 text-left text-[12px] text-stone-500 flex items-center gap-2">
+          <span className="text-stone-400 text-[12px]">{showMethod ? "▾" : "▸"}</span> How this works
         </button>
         {showMethod && <Method data={data} />}
       </div>
@@ -449,7 +449,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
     : [{ rows: ranked.slice(0, BOARD_SHOWN), cut: cfg.cut }];
   const max = Math.max(1e-9, ...groups.flatMap((g) => g.rows.map((e) => e.odds)));
   const subCls = (active) =>
-    `text-[10px] font-bold uppercase tracking-wider px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
+    `text-[12px] font-bold px-0.5 py-2 border whitespace-nowrap ${active ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-300 hover:bg-stone-50"}`;
   let rank = 0;
   return (
     <div id="la-awards" className="mb-4">
@@ -460,18 +460,18 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
       </div>
       <div className="border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
+          <div className="text-[12px] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
+          <div className="text-[11px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
           {sub === "allstar" && (
             <div className="mt-1.5 flex border border-stone-300" role="group" aria-label="All-Star places">
               {[[true, `${ALL_STAR_PLACES / 2} West / ${ALL_STAR_PLACES / 2} East`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
                 <button key={label} type="button" aria-pressed={split === v} onClick={() => { setSplit(v); setOpen(null); }}
-                  className={`flex-1 text-[9px] font-bold uppercase tracking-wider px-2 py-1 ${split === v ? "bg-stone-900 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}>{label}</button>
+                  className={`flex-1 text-[11px] font-bold px-2 py-1 ${split === v ? "bg-stone-900 text-white" : "bg-white text-stone-600 hover:bg-stone-50"}`}>{label}</button>
               ))}
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
@@ -481,7 +481,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
         </div>
         {groups.map((g, gi) => (
           <div key={gi} className={gi ? "border-t border-dashed border-stone-300" : ""}>
-            {g.head && <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-700">{g.head}</div>}
+            {g.head && <div className="px-3 pt-2 pb-1 text-[11px] font-bold text-stone-700">{g.head}</div>}
             {g.rows.map((e, k) => {
               if (g.restart && k === 0) rank = 0;
               rank++;
@@ -496,14 +496,14 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
                       aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
                       onClick={() => setOpen(isOpen ? null : r.key)}
                       onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpen(isOpen ? null : r.key); } }}
-                      className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
+                      className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[12px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
                     >
                       <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
                       <TeamChip team={p.team} active={isOpen} />
                       <span className="flex-1 min-w-0 flex items-center text-stone-800">
                         <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
                         <Name name={p.name} />
-                        {p.injury && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
+                        {p.injury && <span className="ml-1 shrink-0 text-[10px] font-bold px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
                       </span>
                       <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(odds)}</span>
                       <span className={`w-11 text-right tabular-nums ${vp < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtInt(vp)}</span>
@@ -518,7 +518,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
             })}
           </div>
         ))}
-        {!groups.some((g) => g.rows.length) && <div className="px-3 py-3 text-[10px] italic text-stone-400">No projected {sub === "roy" ? "rookies" : "players"} yet.</div>}
+        {!groups.some((g) => g.rows.length) && <div className="px-3 py-3 text-[12px] italic text-stone-400">No projected {sub === "roy" ? "rookies" : "players"} yet.</div>}
       </div>
     </div>
   );
@@ -555,15 +555,15 @@ function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = n
           aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
           onClick={onToggle}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
-          className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
+          className={`relative w-full flex items-center gap-1.5 sm:gap-2 text-[12px] py-1.5 px-1.5 sm:px-2 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
         >
           <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
           {!withVaPlus && <TeamChip team={p.team} active={activeTeam === p.team} onClick={onTeam && p.team ? (e) => { e.stopPropagation(); onTeam(p.team); } : undefined} />}
           <span className="flex-1 min-w-0 flex items-center text-stone-800">
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
             {starter ? <span className="font-bold min-w-0"><Name name={p.name} /></span> : <Name name={p.name} />}
-            {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
-            {p.injury && <span title={`${p.injury.injury} — out ${p.injury.missed} games`} className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
+            {p.rookie && <span className="ml-1 shrink-0 text-[10px] font-bold px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
+            {p.injury && <span title={`${p.injury.injury} — out ${p.injury.missed} games`} className="ml-1 shrink-0 text-[10px] font-bold px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
           </span>
           <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>
           <span className={`w-12 text-right tabular-nums ${withVaPlus ? "text-stone-600" : "font-bold"} ${p.vaShown < 0 ? "text-red-600" : withVaPlus ? "" : "text-stone-900"}`}>{fmt1(p.vaShown)}</span>
@@ -591,9 +591,9 @@ function ProjectedLine({ p, sim, lga }) {
   return (
     <div className="px-2 sm:px-3 py-2 bg-stone-50 border-t border-stone-200">
       <div className="overflow-x-auto no-scrollbar">
-        <table className="w-full text-[9px] tabular-nums">
+        <table className="w-full text-[11px] tabular-nums">
           <thead>
-            <tr className="text-stone-400 uppercase tracking-wider">
+            <tr className="text-stone-400">
               <th className="text-left font-normal pr-1"></th>
               {proj.map(([k]) => <th key={k} className="text-right font-normal px-1">{k}</th>)}
             </tr>
@@ -633,9 +633,9 @@ function ProjectedLine({ p, sim, lga }) {
 function Card({ tag, tagClass = "", tagStyle, tag2 = null, tag2Class = "", title, tight = false, className = "", onClick = null, children }) {
   const Tag = onClick ? "button" : "span";
   return (
-    <Tag type={onClick ? "button" : undefined} onClick={onClick || undefined} title={title} className={`${className} ${onClick ? "hover:bg-stone-100 cursor-pointer" : ""} flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[10px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
-      <span style={tagStyle} className={`text-[9px] font-bold uppercase px-1 py-0.5 border ${tight ? "tracking-normal" : "tracking-wider"} ${tagClass}`}>{tag}</span>
-      {tag2 && <span className={`-ml-0.5 text-[9px] font-bold uppercase px-1 py-0.5 border tracking-wider ${tag2Class}`}>{tag2}</span>}
+    <Tag type={onClick ? "button" : undefined} onClick={onClick || undefined} title={title} className={`${className} ${onClick ? "hover:bg-stone-100 cursor-pointer" : ""} flex items-center justify-center min-h-8 border border-stone-200 bg-white py-1 text-[12px] text-stone-600 tabular-nums whitespace-nowrap ${tight ? "flex-1 min-w-0 gap-1 px-1" : "flex-auto gap-1.5 px-2"}`}>
+      <span style={tagStyle} className={`text-[11px] font-bold px-1 py-0.5 border ${tight ? "" : ""} ${tagClass}`}>{tag}</span>
+      {tag2 && <span className={`-ml-0.5 text-[11px] font-bold px-1 py-0.5 border ${tag2Class}`}>{tag2}</span>}
       <span>{children}</span>
     </Tag>
   );
@@ -685,8 +685,8 @@ function Cards({ p, sim, lga }) {
       {moved.length > 0 ? (
         <div className="basis-full grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-1">
           <div title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${ctxPct(f)}`).join(", ")}`}
-            className="row-span-2 h-[4.25rem] flex flex-col items-center justify-center gap-1 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums">
-            <span style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border">{p.team}</span>
+            className="row-span-2 h-[4.25rem] flex flex-col items-center justify-center gap-1 border border-stone-200 bg-white px-2 py-0.5 text-[12px] text-stone-600 tabular-nums">
+            <span style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[11px] font-bold px-1 py-0.5 border">{p.team}</span>
             {/* Exactly three lines tall, the rest a scroll away, snapping a line at a time. */}
             <span className="w-full h-[3.6em] overflow-y-auto no-scrollbar snap-y snap-mandatory leading-[1.2] text-center">
               {moved.map(([k, f]) => <span key={k} className="block snap-start whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
@@ -753,7 +753,7 @@ function Cards({ p, sim, lga }) {
 // stays small and uncoloured: the number carries it.
 function Situation({ dva, g, className = "" }) {
   return (
-    <Card className={className} tag={dva >= 0 ? "▲" : "▼"} tagClass={`${TAG.stone} !text-[7px] !px-0.5 !py-0 leading-none`} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
+    <Card className={className} tag={dva >= 0 ? "▲" : "▼"} tagClass={`${TAG.stone} !text-[10px] !px-0.5 !py-0 leading-none`} title={`${signed(dva)} VA over the season on this roster vs. the same player projected alone`}>
       <span className={`font-semibold ${dva < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(dva / g, 2)} VA/G</span> {dva >= 0 ? "better" : "worse"} situation
     </Card>
   );
@@ -777,13 +777,13 @@ function Spread({ sim, g, tc }) {
   const top = Math.max(1e-9, ...counts);
   const end = (label, x) => (
     <span className="flex flex-col items-center leading-none shrink-0">
-      <span className="text-[7px] uppercase tracking-wider text-stone-400">{label}</span>
+      <span className="text-[10px] text-stone-400">{label}</span>
       <span className="mt-0.5 font-semibold text-stone-700">{(x / g).toFixed(2)}</span>
     </span>
   );
   return (
     <span title={`60% of simulated seasons land between ${(sim.va20 / g).toFixed(2)} and ${(sim.va80 / g).toFixed(2)} VA/G (20th to 80th percentile, ${Math.round(sim.va20)}–${Math.round(sim.va80)} VA over the ${g} projected games)`}
-      className="basis-full flex items-center gap-2 min-h-8 border border-stone-200 bg-white px-2 py-1 text-[10px] tabular-nums">
+      className="basis-full flex items-center gap-2 min-h-8 border border-stone-200 bg-white px-2 py-1 text-[12px] tabular-nums">
       {end("20th", sim.va20)}
       <span className="flex-1 flex items-end gap-px h-5" aria-hidden>
         {counts.map((c, i) => {
@@ -812,7 +812,7 @@ function InSeasonMethod({ ins }) {
 function Method({ data }) {
   const m = data.mvp;
   return (
-    <div className="px-3 pb-3 text-[10px] text-stone-600 leading-relaxed space-y-2">
+    <div className="px-3 pb-3 text-[12px] text-stone-600 leading-relaxed space-y-2">
       <p><span className="font-semibold text-stone-800">The line.</span> Each player’s box score is projected in pieces — per-minute shot attempts, assists, steals, blocks, turnovers and rebounds; 2P%, 3P% and FT%; minutes per game; and games played — and rebuilt into a season line. Points come from the projected shots and percentages, never on their own.</p>
       <p><span className="font-semibold text-stone-800">The time series.</span> Every rate and percentage is a weighted average of the last three seasons (each counting a fitted fraction of the one after it, and weighted by its minutes or attempts), shrunk toward the player’s position by a fitted number of phantom minutes or attempts, then aged along a curve fit by career stage. Minutes and games are a regression on the last five seasons, which treats a season lost to injury (under half the schedule at starter minutes) as an injury rather than as the new normal: the healthy seasons around it stand in for it, and a fitted adjustment prices in the risk of getting hurt again. Repeated lost seasons count against a player. Every constant was fit on {data.base === "2025-26" ? "1985-86 through 2025-26" : `seasons through ${data.base}`}, judged on how well it predicted the next season.</p>
       <p><span className="font-semibold text-stone-800">The team context.</span> A team only has so much to share — 240 minutes a night, one shot or turnover per possession, assists off its own baskets, and its share of the rebounds. So once players are placed on their current rosters, each of those is pooled: a roster projected to play more minutes than a typical team, or to use possessions, assist or rebound at a hotter rate per minute, has every player’s share scaled back toward the league’s norm (and a thin roster’s scaled up). How hard each resource pools was fit on how players actually did on the rosters they played for since 1995-96 — usage pools the most, and a team’s heaviest user gives up the least of it, while rebounds pool only lightly. Who takes the possessions that remain is split by each player’s own projected volume raised to a fitted power slightly above one, so stars draw a little more than their proportion — a rank-based curve (best player X shots, second fewer, and so on) was tested against it and fit the data clearly worse. On held-out 2025-26, it cut the usage error for players on new teams by about 5% and the assist error by 3%.</p>
@@ -830,7 +830,7 @@ function Method({ data }) {
       <p><span className="font-semibold text-stone-800">The awards.</span> The same models as the Awards tab, run on the projected season. Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — and then draws each ballot from the player’s VA+: MVP from a logit on VA+, fit on {data.awardModels ? "every winner since 1980-81" : `all ${m.seasons} winners since 1980-81 (on plain VA)`}, with the 65-game rule; All-NBA as the top fifteen of that ballot{data.awardModels ? <>; Rookie of the Year among the projected rookies from VA+ and minutes per game; and All-Star as the {ALL_STAR_PLACES} likeliest selections from a logit on VA+, each fit on the real picks</> : ""}. Most Improved has no board here: it is scored against this projection, so there is nothing to look ahead with.</p>
       <p><span className="font-semibold text-stone-800">Injuries.</span> A player already reported out is projected for the games left after the expected return: the projected availability applied to what remains of the schedule, at the same per-game line, so someone out until March keeps their rate but loses most of their total. The minutes they give up go to their teammates in the team context. Return dates come from {data.injuries === "live" ? "ESPN’s injury report, read live, and " : ""}reporting collected {data.injuriesAsOf ? `as of ${fmtDate(data.injuriesAsOf)}` : "before the season"} (the newer of the two wins), taking the middle of a reported range; day-to-day listings are left to the projected availability. A player out for the season is off the board and named under their team.</p>
       <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Undrafted rookies with no college season in the data aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
-      <p className="text-[9px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
+      <p className="text-[11px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
     </div>
   );
 }

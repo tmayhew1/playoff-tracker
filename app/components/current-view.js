@@ -207,21 +207,21 @@ export function CurrentView() {
   );
 
   if (!loaded) {
-    return <div className="text-stone-500 text-xs uppercase tracking-widest py-12 text-center">Loading…</div>;
+    return <div className="text-stone-500 text-[13px] py-12 text-center">Loading…</div>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="text-[10px] uppercase tracking-widest text-stone-400 leading-tight">
+        <div className="text-[12px] text-stone-400 leading-tight">
           {syncedAt ? (<>{syncSource === "baked" ? "Synced" : "Live synced"} <span className="text-stone-600">{syncedAt.toLocaleTimeString()}</span>{syncSource === "baked" && <span className="text-stone-400"> · stored results</span>}</>) : (<>Not synced yet</>)}
-          {syncError && <div className="text-red-600 normal-case mt-0.5 tracking-normal">{syncError}</div>}
+          {syncError && <div className="text-red-600 normal-case mt-0.5">{syncError}</div>}
         </div>
         <div className="flex gap-2 shrink-0">
-          <button onClick={() => syncLive(true)} disabled={syncing} className="text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50">
+          <button onClick={() => syncLive(true)} disabled={syncing} className="text-[12px] text-stone-600 border border-stone-400 px-2 py-1.5 bg-white hover:bg-stone-50 disabled:opacity-50">
             {syncing ? "Syncing…" : "↻ Sync"}
           </button>
-          <button onClick={resetAll} className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 border border-stone-300 px-2 py-1.5 bg-white">
+          <button onClick={resetAll} className="text-[12px] text-stone-500 hover:text-stone-900 border border-stone-300 px-2 py-1.5 bg-white">
             Reset
           </button>
         </div>
@@ -239,19 +239,19 @@ export function CurrentView() {
       {showBreakdown && (
         <div className={`mb-5 p-3 border-2 ${showBreakdown === "Spencer" ? "bg-amber-50 border-amber-600" : "bg-teal-50 border-teal-600"}`}>
           <div className="flex items-center justify-between mb-2">
-            <div className={`text-xs font-bold uppercase tracking-widest ${ownerColor(showBreakdown)}`}>{showBreakdown}'s Points</div>
+            <div className={`text-[13px] font-bold ${ownerColor(showBreakdown)}`}>{showBreakdown}'s Points</div>
             <button onClick={() => setShowBreakdown(null)} className="text-stone-400 text-lg leading-none">×</button>
           </div>
 
-          <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5">Actual Results</div>
+          <div className="text-[12px] text-stone-500 mb-1.5">Actual Results</div>
           <BreakdownList breakdown={breakdown[showBreakdown]} owner={showBreakdown} />
           <ProjectionList projections={projections[showBreakdown]} owner={showBreakdown} label="In-Progress Projections" />
 
           {(whatIfClinched[showBreakdown].length > 0 || whatIfProj[showBreakdown].length > 0) && (
             <div className="mt-4 pt-3 border-t-2 border-dashed border-stone-300">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500">What If?</div>
-                <div className="text-[10px] tabular-nums font-bold text-stone-500">+{whatIfTotals[showBreakdown].toFixed(2)} pts</div>
+                <div className="text-[12px] font-bold text-stone-500">What If?</div>
+                <div className="text-[12px] tabular-nums font-bold text-stone-500">+{whatIfTotals[showBreakdown].toFixed(2)} pts</div>
               </div>
               <WhatIfClinchedList items={whatIfClinched[showBreakdown]} />
               <ProjectionList projections={whatIfProj[showBreakdown]} owner={showBreakdown} label="Speculated Game Wins" muted />
@@ -260,8 +260,8 @@ export function CurrentView() {
         </div>
       )}
 
-      <details className="mb-5 text-xs text-stone-600 border-l-2 border-stone-300 pl-3">
-        <summary className="cursor-pointer font-semibold uppercase tracking-wider text-stone-700 text-[10px]">Scoring rules</summary>
+      <details className="mb-5 text-[13px] text-stone-600 border-l-2 border-stone-300 pl-3">
+        <summary className="cursor-pointer font-semibold text-stone-700 text-[12px]">Scoring rules</summary>
         <div className="mt-2 space-y-1 leading-relaxed">
           <div>R1: 1 pt · R2: 2 pts · CF: 4 pts · Finals: 8 pts</div>
           <div>Upset bonus: winner's seed minus loser's seed (when winner is the lower seed).</div>

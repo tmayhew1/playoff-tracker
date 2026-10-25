@@ -42,7 +42,7 @@ export function SeasonTiles({ slug = null, name }) {
   );
 
   if (failed || (index && !seasons.length)) return null;
-  if (!index) return <div className="mt-1.5 text-[9px] italic text-stone-400 text-center">Loading seasons…</div>;
+  if (!index) return <div className="mt-1.5 text-[11px] italic text-stone-400 text-center">Loading seasons…</div>;
 
   const s = open ? seasons.find((x) => x.season === open) : null;
   const context = s ? { ...poolsFor(index), self: player, scope: "regular", season: s.season } : null;
@@ -54,7 +54,7 @@ export function SeasonTiles({ slug = null, name }) {
           return (
             <button key={x.season} type="button" onClick={() => setOpen(on ? null : x.season)} aria-pressed={on}
               title={`${x.season} · ${x.team} · ${x.gp} G`}
-              className={`min-h-8 border px-2 py-1 text-[10px] tabular-nums ${on ? "bg-stone-700 border-stone-700 text-white" : "bg-white border-stone-200 text-stone-600 hover:bg-stone-100"}`}>
+              className={`min-h-8 border px-2 py-1 text-[12px] tabular-nums ${on ? "bg-stone-700 border-stone-700 text-white" : "bg-white border-stone-200 text-stone-600 hover:bg-stone-100"}`}>
               {x.season}
             </button>
           );

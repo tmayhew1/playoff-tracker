@@ -255,9 +255,9 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   };
 
   return (
-    <div ref={panelRef} className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px] scroll-mt-2">
+    <div ref={panelRef} className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[12px] scroll-mt-2">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="uppercase tracking-wider text-[9px] text-stone-500">Compare against…</span>
+        <span className="text-[11px] text-stone-500">Compare against…</span>
         <button onClick={onCancel} className="text-stone-400 hover:text-stone-700 px-1" aria-label="Cancel compare">✕</button>
       </div>
       {!sel ? (
@@ -269,10 +269,10 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
             onFocus={onSearchFocus}
             placeholder="Search a player…"
             autoFocus
-            className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
+            className="w-full text-[13px] text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
           />
           {query.trim() === "" && comps.length === 0 && self && (
-            <div className="mb-1 py-1 text-[9px] text-stone-400 leading-snug">
+            <div className="mb-1 py-1 text-[11px] text-stone-400 leading-snug">
               No closest comps: no season in the index draws its value from the
               same parts of the game at a similar minutes load. Search for a
               player above to compare anyway.
@@ -282,7 +282,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
             <div className="mb-1">
               <div className="flex items-center justify-between gap-2 mt-1 mb-0.5">
                 <span
-                  className="uppercase tracking-wider text-[8px] text-stone-400 shrink-0"
+                  className="text-[10px] text-stone-400 shrink-0"
                   title={`Ranked by how close the season is AND how close it sits to the same point in a career${selfStage != null ? ` — this one is your career year ${stageDigits(selfStage, selfStage, selfStageAtLeast)}` : ""}. Only seasons built out of the same parts of the game are eligible at all, so a decade with nothing comparable in it is left out rather than filled. Hover a comp for the career year it came from.`}
                 >Closest comps · by decade</span>
                 <div className="flex shrink-0 border border-stone-200 rounded-sm overflow-hidden">
@@ -298,7 +298,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                         onClick={() => !disabled && setCompMetric(o.key)}
                         disabled={disabled}
                         title={disabled ? "No shot-distance data for this player-season" : o.title}
-                        className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider ${disabled ? "bg-stone-50 text-stone-300 cursor-not-allowed" : compMetric === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
+                        className={`px-1.5 py-0.5 text-[10px] ${disabled ? "bg-stone-50 text-stone-300 cursor-not-allowed" : compMetric === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
                       >
                         {o.label}
                       </button>
@@ -308,7 +308,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
               </div>
               {comps.map(({ dec, list }) => (
                 <div key={dec} className="flex items-center gap-1.5 py-0.5 border-b border-stone-100 last:border-0">
-                  <span className="shrink-0 w-7 text-[8px] uppercase tracking-wider text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
+                  <span className="shrink-0 w-7 text-[10px] text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
                   <div className="flex gap-1 overflow-x-auto no-scrollbar min-w-0 pb-0.5">
                     {list.map((item) => {
                       const { r } = item;
@@ -337,7 +337,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                         >
                           <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
-                          <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
+                          <span className="text-stone-500 tabular-nums text-[11px]"> {pct}%</span>
                         </button>
                       );
                     })}
@@ -353,7 +353,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
               className="w-full flex items-baseline justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-stone-50"
             >
               <span className="font-semibold text-stone-800">{pl.name}</span>
-              <span className="text-[9px] text-stone-400">{pl.seasons.length} seasons · best <span className="tabular-nums text-stone-600">{pl.bestVa.toFixed(1)}</span></span>
+              <span className="text-[11px] text-stone-400">{pl.seasons.length} seasons · best <span className="tabular-nums text-stone-600">{pl.bestVa.toFixed(1)}</span></span>
             </button>
           ))}
         </>
@@ -361,7 +361,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
         <>
           <div className="flex items-baseline justify-between mb-1">
             <span className="font-semibold text-stone-800">{sel.name}</span>
-            <button onClick={() => setSelKey(null)} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+            <button onClick={() => setSelKey(null)} className="text-[11px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1">
             {sel.seasons.map((s) => {
@@ -641,9 +641,9 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   };
 
   return (
-    <div ref={panelRef} className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[10px] scroll-mt-2">
+    <div ref={panelRef} className="my-1.5 px-2 py-2 bg-white border border-amber-400 rounded text-[12px] scroll-mt-2">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="uppercase tracking-wider text-[9px] text-stone-500">
+        <span className="text-[11px] text-stone-500">
           {sel ? `Pick ${sel.name}’s seasons…` : "Compare this run against…"}
         </span>
         <button onClick={onCancel} className="text-stone-400 hover:text-stone-700 px-1" aria-label="Cancel compare">✕</button>
@@ -659,21 +659,21 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
             // No autoFocus, deliberately: the panel arrives on its own, and
             // focusing the field would scroll the page to it and open the
             // keyboard over the very suggestions it leads with.
-            className="w-full text-xs text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
+            className="w-full text-[13px] text-stone-900 bg-white border border-stone-300 px-2 py-1 mb-1"
           />
           {query.trim().length < 2 ? (
             <>
               {runComps.length > 0 && (
                 <div className="mb-1">
                   <div
-                    className="uppercase tracking-wider text-[8px] text-stone-400 mt-1 mb-0.5"
+                    className="text-[10px] text-stone-400 mt-1 mb-0.5"
                     title={`Ranked by how close the run is AND how close it sits to the same point in a career${selfStages.length ? ` — this one is your career year${selfStages.length > 1 ? "s" : ""} ${stageDigits(selfStages[0], selfStages[selfStages.length - 1], selfStageAtLeast)}` : ""}. Hover a run for the career years it came from.`}
                   >
                     {runLen === 1 ? "Closest seasons" : `Closest ${runLen}-year runs`} · by decade
                   </div>
                   {runComps.map(({ dec, list }) => (
                     <div key={dec} className="flex items-center gap-1.5 py-0.5 border-b border-stone-100 last:border-0">
-                      <span className="shrink-0 w-7 text-[8px] uppercase tracking-wider text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
+                      <span className="shrink-0 w-7 text-[10px] text-stone-400 tabular-nums">’{String(dec).slice(2)}s</span>
                       <div className="flex gap-1 overflow-x-auto no-scrollbar min-w-0 pb-0.5">
                         {list.map((run) => {
                           const pct = Math.min(99, Math.round(run.score * 100));
@@ -704,7 +704,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                             >
                               <span className="font-semibold" style={{ color: teamColor(run.team) }}>{compName(run.player.name)}</span>
                               <span className="text-stone-400"> {run.span}</span>
-                              <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
+                              <span className="text-stone-500 tabular-nums text-[11px]"> {pct}%</span>
                             </button>
                           );
                         })}
@@ -713,14 +713,14 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                   ))}
                 </div>
               )}
-              <div className="text-[9px] text-stone-400 italic py-2 text-center">
+              <div className="text-[11px] text-stone-400 italic py-2 text-center">
                 {runComps.length > 0
                   ? "Or type a name, then tick the seasons of theirs to pool."
                   : "Type a name, then tick the seasons of theirs to pool."}
               </div>
             </>
           ) : matches.length === 0 ? (
-            <div className="text-[9px] text-stone-400 italic py-2 text-center">No players match “{query.trim()}”.</div>
+            <div className="text-[11px] text-stone-400 italic py-2 text-center">No players match “{query.trim()}”.</div>
           ) : (
             matches.map((pl) => (
               <button
@@ -729,7 +729,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                 className="w-full flex items-baseline justify-between gap-2 px-1 py-1 border-b border-stone-100 last:border-0 text-left hover:bg-stone-50"
               >
                 <span className="font-semibold text-stone-800">{pl.name}</span>
-                <span className="text-[9px] text-stone-400">{pl.seasons.length} seasons · best <span className="tabular-nums text-stone-600">{pl.bestVa.toFixed(1)}</span></span>
+                <span className="text-[11px] text-stone-400">{pl.seasons.length} seasons · best <span className="tabular-nums text-stone-600">{pl.bestVa.toFixed(1)}</span></span>
               </button>
             ))
           )}
@@ -738,7 +738,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
         <>
           <div className="flex items-baseline justify-between mb-1">
             <span className="font-semibold text-stone-800">{sel.name}</span>
-            <button onClick={() => { setSelKey(null); setPicked(null); }} className="text-[9px] text-stone-400 hover:text-stone-700">‹ change player</button>
+            <button onClick={() => { setSelKey(null); setPicked(null); }} className="text-[11px] text-stone-400 hover:text-stone-700">‹ change player</button>
           </div>
           <div className="flex flex-wrap gap-1 mb-1.5">
             {[...sel.seasons].sort((x, y) => y.season.localeCompare(x.season)).map((s) => {
@@ -755,14 +755,14 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                     ? { backgroundColor: GOLD_BG, borderColor: GOLD, color: tc }
                     : { backgroundColor: "#fff", borderColor: "#d6d3d1", color: "#a8a29e" }}
                 >
-                  <span aria-hidden className="text-[9px] leading-none">{on ? "◼" : "⬜"}</span>
+                  <span aria-hidden className="text-[11px] leading-none">{on ? "◼" : "⬜"}</span>
                   {seasonTag(s.season)} {s.team} <span className={on ? "text-stone-500" : "text-stone-300"}>{(s.vaPerG ?? 0).toFixed(1)}/G</span>
                 </button>
               );
             })}
           </div>
           <div className="flex items-center justify-between gap-1.5 border-t border-stone-100 pt-1.5">
-            <span className="text-[9px] text-stone-500 tabular-nums min-w-0 truncate">
+            <span className="text-[11px] text-stone-500 tabular-nums min-w-0 truncate">
               {chosen.length === 0
                 ? "Pick at least one season"
                 : <>{chosen.length} season{chosen.length === 1 ? "" : "s"} · {chosen.reduce((n, s) => n + (s.gp || 0), 0)} G · <span className="font-semibold">{chosen.reduce((n, s) => n + (s.va || 0), 0).toFixed(1)}</span> VA</>}
@@ -780,7 +780,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                 title={matchNote
                   ? `${MATCH_LABEL[matchMode]} — ${matchNote}. Tap to change.`
                   : "Showing his best seasons by VA — tap to match the selection’s career years, or the same calendar seasons"}
-                className={`shrink-0 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${matchMode !== "best" ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
+                className={`shrink-0 whitespace-nowrap text-[11px] font-semibold px-1.5 py-0.5 rounded-sm border transition-colors ${matchMode !== "best" ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
               >
                 {MATCH_LABEL[matchMode]}
               </button>
@@ -788,13 +788,13 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
             <button
               onClick={confirm}
               disabled={!chosen.length}
-              className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${chosen.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
+              className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-sm border ${chosen.length ? "border-amber-500 bg-amber-400 text-stone-900 hover:bg-amber-300" : "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed"}`}
             >
               Compare →
             </button>
           </div>
           {matchNote && (
-            <div className="mt-1 text-center text-[8px] italic text-stone-400">
+            <div className="mt-1 text-center text-[10px] italic text-stone-400">
               {matchNote}
             </div>
           )}
