@@ -707,8 +707,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
 
 
 // Under a single game's section (see `seasonSoFar` above): the player's
-// season to date in that section — its VA per game over his games so far —
-// over the league-context drill-in every season card opens.
+// season to date in that section, in the league-context drill-in every
+// season card opens.
 function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope }) {
   const note = (text) => <div className="py-2 text-[10px] text-stone-500 italic text-center">{text}</div>;
   const scopeNoun = scope === "playoffs" ? "postseason" : "season";
@@ -717,17 +717,9 @@ function SeasonSoFarContext({ soFar, catKey, scope, defs, defActive, defScope })
   else if (!soFar.row) body = note(`No line yet this ${scopeNoun}.`);
   else {
     const { row, context, lga } = soFar;
-    const gp = row.gp || 1;
-    const perG = catVATotal(row, lga, catKey) / gp;
     body = (
       <>
-        <div className="flex items-baseline justify-between gap-2 text-[9px] uppercase tracking-widest text-stone-500">
-          <span>So far this {scopeNoun} · {catKey}</span>
-          <span className="tabular-nums normal-case tracking-normal">
-            <span className={`font-semibold ${perG < 0 ? "text-red-600" : "text-stone-800"}`}>{(perG > 0 ? "+" : "") + perG.toFixed(2)}</span>
-            <span className="text-stone-400"> /G · {Math.round(row.gp * 10) / 10} G · {row.team}</span>
-          </span>
-        </div>
+        <div className="text-[9px] uppercase tracking-widest text-stone-500">So far this {scopeNoun}</div>
         <CategoryContext p={row} catKey={catKey} lga={lga} rateMode="perG" context={context} defs={defs} defActive={defActive} defScope={defScope} seasonOnly />
       </>
     );
