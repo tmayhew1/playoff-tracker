@@ -322,7 +322,7 @@ export function LiveGameBanner({ liveGame, gameLabel, dimTeam, staticBox, lga = 
   }
 
   // Like the score cards: only the leader's badge is filled in (a tie keeps
-  // whoever led last); the other side's is outlined.
+  // whoever led last, else home); the other side's is outlined.
   const ahead = gameLeader(liveGame);
   const outlined = [home.tri, away.tri].filter((t) => t !== ahead);
 
