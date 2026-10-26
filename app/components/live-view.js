@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LiveGameBanner } from "./boxscore";
+import { BoxscoreTable, LiveGameBanner, SHOT_CATS } from "./boxscore";
+import { valueAdd, valueAddByCategory } from "../scoring";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
@@ -273,9 +274,13 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
 // A game yet to tip, narrowed to one team: its card holds the pregame
 // projection (lib/team-context.js projectScore) where a game's score would
 // be, its opponent's opposite, and its tale of the tape over the two teams'
-// seasons so far (seasonTape) with the team's league ranks. `context` is the
-// Live tab's (tri, date) -> season so far (lib/use-season-context.js),
-// loading until it isn't. Tapping the card closes it.
+// seasons so far (seasonTape) with the team's league ranks; under it the
+// team's players, each his season per game (seasonLines). Tapping a
+// shooting line of the tape sorts the players by that category's VA, with
+// their makes, attempts and percentage, as a game's card does its box.
+// `context` is the Live tab's (tri, date) -> season so far
+// (lib/use-season-context.js), loading until it isn't. Tapping the card
+// closes it.
 function PregameCard({ g, tri, lga, context, onClose }) {
   const date = g.gameDateTimeUTC ? etDate(g.gameDateTimeUTC) : null;
   const right = tri === g.home.tri;
@@ -288,6 +293,10 @@ function PregameCard({ g, tri, lga, context, onClose }) {
   const proj = ctx?.project?.(g.away.tri, g.home.tri);
   const [own, opp] = proj ? (right ? [proj.home, proj.away] : [proj.away, proj.home]) : [null, null];
   const tape = seasonTape(ctx, oppCtx, other.tri, lga);
+  const [cat, setCat] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  const players = useMemo(() => seasonLines(ctx?.players, lga, cat), [ctx?.players, lga, cat]);
+  const seasonSoFar = useMemo(() => (date ? { scope: "regular", season: seasonOf(new Date(`${date}T12:00:00Z`)) } : null), [date]);
   return (
     <div className="my-2 p-2 rounded bg-white border-2" style={{ borderColor: teamColor(tri) }}>
       <button onClick={onClose} className="w-full flex text-left">
@@ -297,9 +306,17 @@ function PregameCard({ g, tri, lga, context, onClose }) {
           right={right}
           tape={tape ? { ...tape, oppScore: opp == null ? null : Math.round(opp) } : null}
           context={ctx}
-          kicker="Projected · season averages"
+          kicker="Projected"
+          cat={cat}
+          onCat={(k) => setCat(cat === k ? null : k)}
         />
       </button>
+      {players.length > 0 && (
+        <div className="mt-2 px-1">
+          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Season per game{cat ? ` · by ${cat} VA` : ""}</div>
+          <BoxscoreTable rows={players} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
+        </div>
+      )}
       {!tape && (
         <div className="pt-2 text-center text-[10px] uppercase tracking-wider text-stone-400">
           {ctx?.project ? "No season averages until both teams have played" : "Loading the season…"}
@@ -307,6 +324,23 @@ function PregameCard({ g, tri, lga, context, onClose }) {
       )}
     </div>
   );
+}
+
+// A team's players' season totals (lib/season-to-date.js playerTotals) as
+// box-score rows a game per game — counts, minutes and VA each over his own
+// games, starting where he started most of them — sorted by VA, or with
+// `cat` (a SHOT_CATS key) by that category's VA (`catVA`) then attempts.
+function seasonLines(players, lga, cat) {
+  const c = cat && SHOT_CATS[cat];
+  const rows = (players || []).filter((p) => p.g > 0).map((p) => {
+    const row = { name: p.name, team: p.team, gp: p.g, starter: 2 * p.gs >= p.g };
+    for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) row[k] = (p[k] || 0) / p.g;
+    row.reb = row.drb + row.orb;
+    row.va = valueAdd(row, lga);
+    if (c) row.catVA = valueAddByCategory(row, lga)[c.va];
+    return row;
+  });
+  return c ? rows.sort((a, b) => b.catVA - a.catVA || c.att(b) - c.att(a)) : rows.sort((a, b) => b.va - a.va);
 }
 
 // Games yet to tip, a line each. In the regular season, with `context`

@@ -11,12 +11,14 @@ import { ordinal } from "../lib/team-context";
 // where `filled` paints the card in the team's color with white details and
 // `right` mirrors it for the home side. `aside` sits on the far side of the
 // card from the label and number; `totalNote` beside the number, inboard,
-// and `totalFar` level with it at the card's far edge.
-function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, totalNote, totalFar, aside, children }) {
+// and `totalFar` level with it at the card's far edge. `kicker`, a small
+// line over it all, sits in the card's top-left corner whichever side it's on.
+function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, totalNote, totalFar, aside, kicker, children }) {
   const ink = filled ? "#fff" : accent;
   return (
     <div className={`flex-1 p-3 border-2 flex items-center gap-3 ${right ? "flex-row-reverse" : ""} ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
       <div className="flex-1 min-w-0">
+      {kicker && <div className={`-mt-1 mb-1 text-left text-[9px] font-bold uppercase tracking-wider ${filled ? "text-white/70" : "text-stone-400"}`}>{kicker}</div>}
       <div className={`flex items-center justify-between mb-1 ${right ? "flex-row-reverse" : ""}`}>
         <div className={`flex items-center gap-1.5 ${right ? "flex-row-reverse" : ""}`}>
           <span className={`w-2 h-2 rounded-full ${dot || ""}`} style={ink ? { backgroundColor: ink } : undefined}></span>
@@ -86,8 +88,9 @@ const SHOOTING = new Set(["2P", "3P", "FT"]);
 // conf, ranks }) puts its league rank under each line's label and its record
 // and conference place beside its score. A line with `onCat` given and a
 // shooting key ("2P" / "3P" / "FT") is a button for that category (`cat`,
-// the one picked, is lit). Over the lines, the games the ranks run through
-// (`context.games`), after `kicker` when given (the pregame card's).
+// the one picked, is lit). In the card's top-left corner, the games the
+// ranks run through (`context.games`), after `kicker` when given (the
+// pregame card's).
 export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, kicker }) {
   const accent = teamColor(side.tri);
   const ink = ahead ? "#fff" : accent;
@@ -97,7 +100,6 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, k
   const head = [kicker, through].filter(Boolean).join(" · ");
   const body = tape && (
     <div className="mt-2.5 space-y-1">
-      {head && <div className={`text-[9px] font-bold uppercase tracking-wider ${muted} ${right ? "text-right" : ""}`}>{head}</div>}
       {tape.rows.map((r) => {
         const pct = Math.round(Math.min(Math.max(r.share, 0.04), 0.96) * 100);
         const tappable = onCat && SHOOTING.has(r.key);
@@ -158,7 +160,7 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, k
       )}
     </div>
   );
-  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score} totalNote={standing} totalFar={opponent}>{body}</ScoreFrame>;
+  return <ScoreFrame label={side.tri} accent={accent} filled={ahead} right={right} total={side.score} totalNote={standing} totalFar={opponent} kicker={tape ? head : null}>{body}</ScoreFrame>;
 }
 
 

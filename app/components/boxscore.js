@@ -17,6 +17,8 @@ export const SHOT_CATS = {
   FT: { made: (p) => p.ftm || 0, att: (p) => p.fta || 0, va: "Free Throws" },
 };
 
+// Counts print whole in a game's box and to a tenth in a season's
+// per-game line (the pregame card's).
 // `outlined` lists teams whose badge goes white with a team-color outline
 // instead of the solid fill, matching a trailing side's score card.
 // With `cat` (a SHOT_CATS key) the row reads that category instead — makes,
@@ -61,16 +63,16 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
         </span>
         {c ? (
           <>
-            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{c.made(p)}</span>
-            <span className="tabular-nums text-stone-600 w-7 text-right">{c.att(p)}</span>
+            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{trimFixed(c.made(p), 1)}</span>
+            <span className="tabular-nums text-stone-600 w-7 text-right">{trimFixed(c.att(p), 1)}</span>
             <span className="tabular-nums text-stone-600 w-10 text-right">{c.att(p) ? `${trimFixed(100 * c.made(p) / c.att(p), 1)}%` : "–"}</span>
           </>
         ) : (
           <>
             <span className="tabular-nums text-stone-500 w-7 text-right">{Math.round(p.mp)}</span>
-            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{p.pts}</span>
-            <span className="tabular-nums text-stone-600 w-5 text-right">{p.reb}</span>
-            <span className="tabular-nums text-stone-600 w-5 text-right">{p.ast}</span>
+            <span className="tabular-nums font-bold text-stone-900 w-6 text-right">{trimFixed(p.pts, 1)}</span>
+            <span className="tabular-nums text-stone-600 w-5 text-right">{trimFixed(p.reb, 1)}</span>
+            <span className="tabular-nums text-stone-600 w-5 text-right">{trimFixed(p.ast, 1)}</span>
           </>
         )}
         <span className={`tabular-nums w-8 text-right font-semibold ${v < 0 ? "text-red-600" : v > 0 ? "text-stone-900" : "text-stone-400"}`}>
