@@ -86,14 +86,18 @@ const SHOOTING = new Set(["2P", "3P", "FT"]);
 // conf, ranks }) puts its league rank under each line's label and its record
 // and conference place beside its score. A line with `onCat` given and a
 // shooting key ("2P" / "3P" / "FT") is a button for that category (`cat`,
-// the one picked, is lit).
-export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat }) {
+// the one picked, is lit). Over the lines, the games the ranks run through
+// (`context.games`), after `kicker` when given (the pregame card's).
+export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, kicker }) {
   const accent = teamColor(side.tri);
   const ink = ahead ? "#fff" : accent;
   const oppColor = tape && teamColor(tape.opp);
   const muted = ahead ? "text-white/70" : "text-stone-400";
+  const through = context?.ranks && context.games ? `Ranks through ${context.games} game${context.games === 1 ? "" : "s"}` : null;
+  const head = [kicker, through].filter(Boolean).join(" · ");
   const body = tape && (
     <div className="mt-2.5 space-y-1">
+      {head && <div className={`text-[9px] font-bold uppercase tracking-wider ${muted} ${right ? "text-right" : ""}`}>{head}</div>}
       {tape.rows.map((r) => {
         const pct = Math.round(Math.min(Math.max(r.share, 0.04), 0.96) * 100);
         const tappable = onCat && SHOOTING.has(r.key);
