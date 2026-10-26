@@ -314,7 +314,7 @@ function PregameCard({ g, tri, lga, context, onClose }) {
       {players.length > 0 && (
         <div className="mt-2 px-1">
           <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Season per game{cat ? ` · by ${cat} VA` : ""}</div>
-          <BoxscoreTable rows={players} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
+          <BoxscoreTable rows={players} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} teams={{}} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
         </div>
       )}
       {!tape && (
