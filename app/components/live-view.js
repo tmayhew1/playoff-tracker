@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LiveGameBanner } from "./boxscore";
+import { BoxscoreTable, LiveGameBanner, SHOT_CATS } from "./boxscore";
+import { valueAdd, valueAddByCategory } from "../scoring";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
@@ -90,30 +91,66 @@ function teamTape(box, tri, lga, dist) {
   if (!ownT?.players || !oppT?.players) return null;
   const [own, opp] = [teamSums(ownT.players), teamSums(oppT.players)];
   const [o, d] = [tapeMeasures(own, opp, lga), tapeMeasures(opp, own, lga)];
-  const split = (a, b) => (Math.abs(a) + Math.abs(b) > 0 ? 0.5 + (a - b) / (2 * (Math.abs(a) + Math.abs(b))) : 0.5);
-  const fmt = (v, f) => (v == null ? "–" : f(v));
-  const fmtPct = (v) => `${trimFixed(v, 1)}%`;
-  const fmtVA = (v) => (trimFixed(v, 1) === "0" ? "0" : `${v >= 0 ? "+" : "−"}${trimFixed(Math.abs(v), 1)}`);
-  const line = (made, att) => `${made}/${att} · ${att ? fmtPct(100 * made / att) : "–"}`;
   const shootingShare = (key) => {
     const [po, pd] = [percentile(dist?.[key], o[key]), percentile(dist?.[key], d[key])];
     if (po == null || pd == null) return Math.min(Math.max(0.5 + (o[key] - d[key]) / 20, 0), 1);
     return po + pd > 0 ? po / (po + pd) : 0.5;
   };
+  return {
+    opp: oppT.tri,
+    rows: tapeRows(o, d, own, opp, 1, shootingShare, (v) => v / (v + 1)),
+  };
+}
+
+// The tape's six lines from the two sides' measures (`o` the tapped team's,
+// `d` the other's) and box-score sums (`own`, `opp`, over `gp` games: the
+// makes and attempts beside a shooting line are per game). `shootingShare`
+// (key) and `possShare` (the tapped team's Poss Ratio) give those lines'
+// bars; DEF PPP's is turned round, lower being better, and wTRB's is the
+// tapped team's part of the two figures.
+function tapeRows(o, d, own, opp, gp, shootingShare, possShare) {
+  const split = (a, b) => (Math.abs(a) + Math.abs(b) > 0 ? 0.5 + (a - b) / (2 * (Math.abs(a) + Math.abs(b))) : 0.5);
+  const fmt = (v, f) => (v == null ? "–" : f(v));
+  const fmtPct = (v) => `${trimFixed(v, 1)}%`;
+  const fmtVA = (v) => (trimFixed(v, 1) === "0" ? "0" : `${v >= 0 ? "+" : "−"}${trimFixed(Math.abs(v), 1)}`);
+  // A season's line leads with the percentage, so a narrow card trims the
+  // per-game makes and attempts rather than it.
+  const line = (made, att) => {
+    const [ma, pct] = [`${trimFixed(made / gp, 1)}/${trimFixed(att / gp, 1)}`, att ? fmtPct(100 * made / att) : "–"];
+    return gp > 1 ? `${pct} · ${ma}` : `${ma} · ${pct}`;
+  };
   const shooting = (key, [made, att], [oppMade, oppAtt]) => ({
     key, label: key, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: shootingShare(key),
   });
-  return {
-    opp: oppT.tri,
-    rows: [
-      shooting("2P", [own.fgm - own.tpm, own.fga - own.tpa], [opp.fgm - opp.tpm, opp.fga - opp.tpa]),
-      shooting("3P", [own.tpm, own.tpa], [opp.tpm, opp.tpa]),
-      shooting("FT", [own.ftm, own.fta], [opp.ftm, opp.fta]),
-      { key: "def", label: "Def PPP", own: fmt(o.def, (v) => trimFixed(v, 2)), opp: fmt(d.def, (v) => trimFixed(v, 2)), share: split(d.def || 0, o.def || 0) },
-      { key: "reb", label: "wTRB", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: (o.reb ?? 50) / 100 },
-      { key: "poss", label: "POSS", own: fmt(o.poss, (v) => trimFixed(v, 2)), opp: fmt(d.poss, (v) => trimFixed(v, 2)), share: o.poss ? o.poss / (o.poss + 1) : 0.5 },
-    ],
+  return [
+    shooting("2P", [own.fgm - own.tpm, own.fga - own.tpa], [opp.fgm - opp.tpm, opp.fga - opp.tpa]),
+    shooting("3P", [own.tpm, own.tpa], [opp.tpm, opp.tpa]),
+    shooting("FT", [own.ftm, own.fta], [opp.ftm, opp.fta]),
+    { key: "def", label: "Def PPP", own: fmt(o.def, (v) => trimFixed(v, 2)), opp: fmt(d.def, (v) => trimFixed(v, 2)), share: split(d.def || 0, o.def || 0) },
+    { key: "reb", label: "wTRB", own: fmt(o.reb, fmtPct), opp: fmt(d.reb, fmtPct), share: o.reb != null && d.reb != null ? o.reb / (o.reb + d.reb) : 0.5 },
+    { key: "poss", label: "POSS", own: fmt(o.poss, (v) => trimFixed(v, 2)), opp: fmt(d.poss, (v) => trimFixed(v, 2)), share: o.poss ? possShare(o.poss, d.poss) : 0.5 },
+  ];
+}
+
+// The pregame tape: a team's season so far beside its opponent's, the same
+// six lines as a game's (teamTape) but each side's season averages — its
+// own measures over its games (lib/team-context.js tapeMeasures), makes and
+// attempts per game. The bars split on where the two seasons sit among the
+// league's (`teamDist`). Null until both teams have played.
+function seasonTape(ownCtx, oppCtx, oppTri, lga) {
+  const [a, b] = [ownCtx?.season, oppCtx?.season];
+  if (!a?.gp || !b?.gp) return null;
+  const [o, d] = [tapeMeasures(a.own, a.opp, lga, a.gp), tapeMeasures(b.own, b.opp, lga, b.gp)];
+  const dist = ownCtx.teamDist;
+  const shootingShare = (key) => {
+    const [po, pd] = [percentile(dist?.[key], o[key]), percentile(dist?.[key], d[key])];
+    if (po == null || pd == null) return Math.min(Math.max(0.5 + (o[key] - d[key]) / 20, 0), 1);
+    return po + pd > 0 ? po / (po + pd) : 0.5;
   };
+  // Per-game lines need each side's own games: scale the opponent's sums to
+  // the tapped team's count so tapeRows' one divisor reads both right.
+  const scaled = Object.fromEntries(Object.entries(b.own).map(([k, v]) => [k, v * a.gp / b.gp]));
+  return { opp: oppTri, rows: tapeRows(o, d, a.own, scaled, a.gp, shootingShare, (x, y) => (y ? x / (x + y) : 0.5)) };
 }
 
 // A tape with the opponent's score on the scoreboard (which a live game
@@ -239,7 +276,87 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
   );
 }
 
-function UpcomingList({ games }) {
+// A game yet to tip, narrowed to one team: its card holds the pregame
+// projection (lib/team-context.js projectScore) where a game's score would
+// be, its opponent's opposite, and its tale of the tape over the two teams'
+// seasons so far (seasonTape) with the team's league ranks; under it the
+// team's players, each his season per game (seasonLines). Tapping a
+// shooting line of the tape sorts the players by that category's VA, with
+// their makes, attempts and percentage, as a game's card does its box.
+// `context` is the Live tab's (tri, date) -> season so far
+// (lib/use-season-context.js), loading until it isn't. Tapping the card
+// closes it.
+function PregameCard({ g, tri, lga, context, onClose }) {
+  const date = g.gameDateTimeUTC ? etDate(g.gameDateTimeUTC) : null;
+  const right = tri === g.home.tri;
+  const [side, other] = right ? [g.home, g.away] : [g.away, g.home];
+  const ctxOf = (s) => {
+    const c = context?.(s.tri, date) ?? null;
+    return s.record ? { ...c, record: s.record } : c;
+  };
+  const [ctx, oppCtx] = [ctxOf(side), ctxOf(other)];
+  const proj = ctx?.project?.(g.away.tri, g.home.tri);
+  const [own, opp] = proj ? (right ? [proj.home, proj.away] : [proj.away, proj.home]) : [null, null];
+  const tape = seasonTape(ctx, oppCtx, other.tri, lga);
+  const [cat, setCat] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  const players = useMemo(() => seasonLines(ctx?.players, lga, cat), [ctx?.players, lga, cat]);
+  const seasonSoFar = useMemo(() => (date ? { scope: "regular", season: seasonOf(new Date(`${date}T12:00:00Z`)) } : null), [date]);
+  return (
+    <div className="my-2 p-2 rounded bg-white border-2" style={{ borderColor: teamColor(tri) }}>
+      <button onClick={onClose} className="w-full flex text-left">
+        <TeamScoreCard
+          side={{ tri, score: own == null ? "–" : Math.round(own) }}
+          ahead={own != null && Math.round(own) > Math.round(opp)}
+          right={right}
+          tape={tape ? { ...tape, oppScore: opp == null ? null : Math.round(opp) } : null}
+          context={ctx}
+          kicker="Projected"
+          cat={cat}
+          onCat={(k) => setCat(cat === k ? null : k)}
+        />
+      </button>
+      {players.length > 0 && (
+        <div className="mt-2 px-1">
+          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Season per game{cat ? ` · by ${cat} VA` : ""}</div>
+          <BoxscoreTable rows={players} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} teams={{}} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
+        </div>
+      )}
+      {!tape && (
+        <div className="pt-2 text-center text-[10px] uppercase tracking-wider text-stone-400">
+          {ctx?.project ? "No season averages until both teams have played" : "Loading the season…"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A team's players' season totals (lib/season-to-date.js playerTotals) as
+// box-score rows a game per game — counts, minutes and VA each over his own
+// games, starting where he started most of them — sorted by VA, or with
+// `cat` (a SHOT_CATS key) by that category's VA (`catVA`) then attempts.
+function seasonLines(players, lga, cat) {
+  const c = cat && SHOT_CATS[cat];
+  const rows = (players || []).filter((p) => p.g > 0).map((p) => {
+    const row = { name: p.name, team: p.team, gp: p.g, starter: 2 * p.gs >= p.g };
+    for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) row[k] = (p[k] || 0) / p.g;
+    row.reb = row.drb + row.orb;
+    row.va = valueAdd(row, lga);
+    if (c) row.catVA = valueAddByCategory(row, lga)[c.va];
+    return row;
+  });
+  return c ? rows.sort((a, b) => b.catVA - a.catVA || c.att(b) - c.att(a)) : rows.sort((a, b) => b.va - a.va);
+}
+
+// Games yet to tip, a line each. In the regular season, with `context`
+// given, a team's name opens its pregame card (PregameCard) under the line,
+// `onTeamPick` hearing it; tapping it again, or the card, closes it.
+function UpcomingList({ games, lga, context, onTeamPick }) {
+  const [open, setOpen] = useState({}); // gameId -> tri
+  const toggle = (g, tri) => {
+    setOpen((o) => ({ ...o, [g.gameId]: o[g.gameId] === tri ? null : tri }));
+    onTeamPick?.(tri);
+  };
   return (
     <div className="mb-6 p-3 bg-white border border-stone-300">
       <div className="space-y-1">
@@ -249,15 +366,28 @@ function UpcomingList({ games }) {
             ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
             : "TBD";
           const tv = (g.broadcasters || []).join(", ");
+          const tappable = context && g.kind === "regular" && g.gameDateTimeUTC;
+          const tag = (side) => (tappable ? (
+            <button type="button" onClick={() => toggle(g, side.tri)} aria-pressed={open[g.gameId] === side.tri}
+              className={`rounded px-0.5 -mx-0.5 hover:bg-stone-100 ${open[g.gameId] === side.tri ? "bg-stone-100" : ""}`}>
+              <TeamTag side={side} />
+            </button>
+          ) : <TeamTag side={side} />);
           return (
-            <div key={g.gameId} id={gameAnchor(g)} className="flex items-center justify-between gap-2 text-xs scroll-mt-3">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="tabular-nums text-[10px] text-stone-500 w-14 shrink-0">{timeStr}</span>
-                <TeamTag side={g.away} />
-                <span className="text-stone-400">@</span>
-                <TeamTag side={g.home} />
+            <div key={g.gameId} id={gameAnchor(g)} className="scroll-mt-3">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="tabular-nums text-[10px] text-stone-500 w-14 shrink-0">{timeStr}</span>
+                  {tag(g.away)}
+                  <span className="text-stone-400">@</span>
+                  {tag(g.home)}
+                </div>
+                {tv && <span className="text-[9px] uppercase tracking-wider text-stone-500 shrink-0 truncate max-w-[40%]">{tv}</span>}
               </div>
-              {tv && <span className="text-[9px] uppercase tracking-wider text-stone-500 shrink-0 truncate max-w-[40%]">{tv}</span>}
+              {open[g.gameId] && (
+                <PregameCard g={g} tri={open[g.gameId]} lga={lga} context={context}
+                  onClose={() => setOpen((o) => ({ ...o, [g.gameId]: null }))} />
+              )}
             </div>
           );
         })}
@@ -358,6 +488,10 @@ export function LiveView({ onData, focus, onFocusHandled }) {
   const context = useSeasonContext({
     enabled: picked, season: seasonOf(), lga: data ? lgaFor(data.baselineSeason, "rs") : null,
   });
+  const upcomingList = (list) => (
+    <UpcomingList games={list} lga={data ? lgaFor(data.baselineSeason, "rs") : null}
+      context={context} onTeamPick={() => setPicked(true)} />
+  );
   const gameCard = (g) => (
     <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason}
       focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled}
@@ -393,7 +527,7 @@ export function LiveView({ onData, focus, onFocusHandled }) {
             {data.next ? (
               <>
                 <SectionHeader title={slateTitle(data.next.date)} sub={dayLabel(data.next.date)} count={data.next.games.length} />
-                <UpcomingList games={data.next.games} />
+                {upcomingList(data.next.games)}
               </>
             ) : (
               <>
@@ -429,7 +563,7 @@ export function LiveView({ onData, focus, onFocusHandled }) {
       {!upNext && upcoming.length > 0 && (
         <>
           <SectionHeader title="Later Today" count={upcoming.length} />
-          <UpcomingList games={upcoming} />
+          {upcomingList(upcoming)}
         </>
       )}
 
