@@ -16,7 +16,7 @@ import { ordinal } from "../lib/team-context";
 function ScoreFrame({ label, dot, accent, filled, right, borderClass, badge, total, totalClass, totalNote, totalFar, aside, kicker, children }) {
   const ink = filled ? "#fff" : accent;
   return (
-    <div className={`flex-1 p-3 border-2 flex items-center gap-3 ${right ? "flex-row-reverse" : ""} ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
+    <div className={`flex-1 min-w-0 p-3 border-2 flex items-center gap-3 ${right ? "flex-row-reverse" : ""} ${borderClass || ""} ${filled ? "" : "bg-white"}`} style={accent ? { borderColor: accent, backgroundColor: filled ? accent : undefined } : undefined}>
       <div className="flex-1 min-w-0">
       {kicker && <div className={`-mt-1 mb-1 text-left text-[9px] font-bold uppercase tracking-wider ${filled ? "text-white/70" : "text-stone-400"}`}>{kicker}</div>}
       <div className={`flex items-center justify-between mb-1 ${right ? "flex-row-reverse" : ""}`}>
@@ -126,12 +126,13 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, k
             </span>
             <span className="flex-1 min-w-0">
               <span className={`flex items-baseline justify-between gap-2 ${right ? "flex-row-reverse" : ""}`}>
-                <span className="truncate" style={{ color: ink }}>
-                  {right && r.note && <span className={`text-[10px] mr-1.5 ${muted}`}>{r.note}</span>}
-                  <span className="font-bold">{r.own}</span>
-                  {!right && r.note && <span className={`text-[10px] ml-1.5 ${muted}`}>{r.note}</span>}
+                {/* One line whatever the width: the figure keeps its room,
+                    the notes and the opponent's figure give theirs up. */}
+                <span className={`min-w-0 flex items-baseline gap-1.5 whitespace-nowrap ${right ? "flex-row-reverse" : ""}`} style={{ color: ink }}>
+                  <span className="font-bold shrink-0">{r.own}</span>
+                  {r.note && <span className={`min-w-0 truncate text-[10px] ${muted}`}>{r.note}</span>}
                 </span>
-                <span className={`text-[10px] ${muted}`}>{r.opp}</span>
+                <span className={`min-w-0 truncate whitespace-nowrap text-[10px] ${muted}`}>{r.opp}</span>
               </span>
               <span className={`relative mt-0.5 flex h-1 gap-px ${right ? "flex-row-reverse" : ""}`}>
                 <span style={{ width: `${pct}%`, backgroundColor: ink }} />

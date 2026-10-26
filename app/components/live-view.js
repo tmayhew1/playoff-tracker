@@ -113,7 +113,12 @@ function tapeRows(o, d, own, opp, gp, shootingShare, possShare) {
   const fmt = (v, f) => (v == null ? "–" : f(v));
   const fmtPct = (v) => `${trimFixed(v, 1)}%`;
   const fmtVA = (v) => (trimFixed(v, 1) === "0" ? "0" : `${v >= 0 ? "+" : "−"}${trimFixed(Math.abs(v), 1)}`);
-  const line = (made, att) => `${trimFixed(made / gp, 1)}/${trimFixed(att / gp, 1)} · ${att ? fmtPct(100 * made / att) : "–"}`;
+  // A season's line leads with the percentage, so a narrow card trims the
+  // per-game makes and attempts rather than it.
+  const line = (made, att) => {
+    const [ma, pct] = [`${trimFixed(made / gp, 1)}/${trimFixed(att / gp, 1)}`, att ? fmtPct(100 * made / att) : "–"];
+    return gp > 1 ? `${pct} · ${ma}` : `${ma} · ${pct}`;
+  };
   const shooting = (key, [made, att], [oppMade, oppAtt]) => ({
     key, label: key, own: fmtVA(o[key]), note: line(made, att), opp: line(oppMade, oppAtt), share: shootingShare(key),
   });
