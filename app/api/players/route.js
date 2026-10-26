@@ -48,8 +48,12 @@ async function loadZoneMap(dir, files) {
           flat[mk] = p[zk]?.fgm || 0;
           flat[ak] = p[zk]?.fga || 0;
         }
-        const key = p.slug ? "s:" + p.slug : "n:" + norm(p.name || "");
-        byKey.set(key, flat);
+        // Keyed by name too, not only slug: the season in progress's rows
+        // carry no slug for a rookie (_lib/season-to-date.js withIds), so
+        // the name is the only key they can join on.
+        if (p.slug) byKey.set("s:" + p.slug, flat);
+        const n = "n:" + norm(p.name || "");
+        if (!byKey.has(n)) byKey.set(n, flat);
       }
       bySide[side] = byKey;
     }
