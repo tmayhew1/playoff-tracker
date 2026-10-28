@@ -182,11 +182,14 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
     const div = rateMode === "perG" ? (p.gp || 1) : (mp / 36);
     return `${(m / div).toFixed(1)}/${(att / div).toFixed(1)} (${att > 0 ? ((m / att) * 100).toFixed(1) : "0.0"}%)`;
   };
+  // Raw labels can still be averages (the pregame card passes per-game
+  // lines with rate off) — keep whole counts whole, round the rest to 0.1.
+  const num = (v) => (Number.isInteger(v) ? `${v}` : (v || 0).toFixed(1));
   const cnt = (v, tag) => {
-    if (!effectiveRate) return `${v} ${tag}`;
+    if (!effectiveRate) return `${num(v)} ${tag}`;
     return rateMode === "perG" ? rG(v, tag) : r36(v, tag);
   };
-  const shoot = (m, att, tag) => (effectiveRate ? shot(m, att) : `${m}/${att} ${tag}`);
+  const shoot = (m, att, tag) => (effectiveRate ? shot(m, att) : `${num(m)}/${num(att)} ${tag}`);
 
   // D Rating — the fifth defensive stat, folded in under Defense. Season
   // DRtg (and season stock rate, for the team-share weight) come from the
