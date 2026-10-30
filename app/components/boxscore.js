@@ -24,7 +24,8 @@ export const SHOT_CATS = {
 // With `cat` (a SHOT_CATS key) the row reads that category instead — makes,
 // attempts, percentage and its VA (`p.catVA`) — over a light bar of that VA
 // against `maxAbs`, as the leaderboards draw theirs. A per-game row hands
-// its card its `totals`, the card dividing by `gp` itself.
+// its card its `totals`, the card dividing by `gp` itself, its labels on
+// the per-game / per-36 switch.
 export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs, seasonSoFar }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
@@ -81,7 +82,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
         </span>
       </button>
       </div>
-      {isExpanded && <VABreakdown p={p.totals || p} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />}
+      {isExpanded && <VABreakdown p={p.totals || p} rates={!!p.totals} lga={lga} teams={teams} gameNumber={gameNumber} onPrev={onPrev} onNext={onNext} useTeamColor={useTeamColor} singleGame={singleGame} seasonSoFar={seasonSoFar} />}
     </div>
   );
 }

@@ -18,7 +18,7 @@ import { CategoryContext } from "./category-context";
 import { AwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null, seasonSoFar: seasonWant = null }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null, seasonSoFar: seasonWant = null, rates = false }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -160,7 +160,9 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   // When the user drills into one game we want raw single-game labels
   // ("33 PTS", "3/5 3P"), matching the per-game box-row breakdown — not
   // the per-36 / pct view used for the series aggregate.
-  const effectiveRate = rate && !selectedGame;
+  // `rates` takes just the per-36 / per-game labels without the rest of
+  // `rate` (the chart and its drill-ins): the pregame card's season lines.
+  const effectiveRate = (rate || rates) && !selectedGame;
   // Multi-game views get the VA/Game tile; single-game drill-ins don't
   // (VA/Game would just echo the Total VA banner).
   const multiGame = (p.gp || 1) > 1;
@@ -673,7 +675,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                     </div>
                   )}
                 </div>
-                {rate && p.gp > 1 ? (
+                {effectiveRate && p.gp > 1 ? (
                   // Portrait phones hide the total + per-game contribution
                   // numbers so the bars (and the rate label) get the room.
                   <>
