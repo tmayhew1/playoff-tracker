@@ -333,15 +333,23 @@ function PregameCard({ g, tri, lga, context, onClose }) {
 
 // A team's players' season totals (lib/season-to-date.js playerTotals) as
 // box-score rows a game per game — counts, minutes and VA each over his own
-// games, starting where he started most of them — sorted by VA, or with
+// games, starting where he started most of them; each keeps his `totals`
+// for his breakdown card, which takes a line over `gp` games — sorted by VA, or with
 // `cat` (a SHOT_CATS key) by that category's VA (`catVA`) then attempts.
 function seasonLines(players, lga, cat) {
   const c = cat && SHOT_CATS[cat];
   const rows = (players || []).filter((p) => p.g > 0).map((p) => {
     const row = { name: p.name, team: p.team, gp: p.g, starter: 2 * p.gs >= p.g };
-    for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) row[k] = (p[k] || 0) / p.g;
+    const totals = { name: p.name, team: p.team, gp: p.g };
+    for (const k of ["mp", "pts", "ast", "stl", "blk", "tov", "drb", "orb", "fgm", "fga", "tpm", "tpa", "ftm", "fta"]) {
+      totals[k] = p[k] || 0;
+      row[k] = totals[k] / p.g;
+    }
     row.reb = row.drb + row.orb;
+    totals.reb = totals.drb + totals.orb;
     row.va = valueAdd(row, lga);
+    totals.va = valueAdd(totals, lga);
+    row.totals = totals;
     if (c) row.catVA = valueAddByCategory(row, lga)[c.va];
     return row;
   });
