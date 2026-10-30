@@ -126,7 +126,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   const defs = useDefRatings();
   // A single game's card can hold the player's season so far beside it
   // (`seasonSoFar`, { scope, season }: the Live tab's): a tap in the middle
-  // half of a section opens that section's league context on his season
+  // 70% of a section opens that section's league context on his season
   // to date, the same drill-in the season cards open. The edges keep
   // stepping player to player.
   const [seasonCat, setSeasonCat] = useState(null);
@@ -360,7 +360,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
   // Player nav, on the plain cards only (a box score's — no chart, no
   // league context): a tap on the card's bare surface steps to the player
   // before or after, by which side of the midline it lands. With the season
-  // so far to hand, only the outer quarters step; the middle half opens the
+  // so far to hand, only the outer 15% on each side step; the middle 70% opens the
   // tapped section's season context (or closes it). Taps on the card's own
   // controls, and anywhere inside the open context, stay theirs.
   const tapNav = !rate && (onPrev || onNext || seasonWant);
@@ -368,7 +368,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
     if (e.target.closest("button, a, input, select, [role=button], [data-season-context]")) return;
     const box = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - box.left) / box.width;
-    if (seasonWant && x >= 0.25 && x <= 0.75) {
+    if (seasonWant && x >= 0.15 && x <= 0.85) {
       const group = e.target.closest("[data-va-group]")?.dataset.vaGroup;
       if (group) setSeasonCat(seasonCat === group ? null : group);
       return;
