@@ -1257,9 +1257,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             })}
           </div>
           {/* Shot distribution — where the player's attempts come from, one
-              greyscale blob per distance column: area and depth both scale
-              with that distance's share of his attempts (FTA counted as
-              attempts), relative to his busiest distance. */}
+              greyscale disc per distance column, sized by that distance's
+              share of his attempts (FTA counted as attempts) relative to his
+              busiest distance, with the share itself as a dark pie slice
+              pointing straight up. */}
           {showZones && (() => {
             const atts = segData.map((seg) => seg.a(selfRow) || 0);
             const tot = atts.reduce((t, a) => t + a, 0);
@@ -1278,16 +1279,21 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                     return (
                       <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${atts[i]} attempts (${(share * 100).toFixed(0)}%)`}>
                         <div className="relative h-9 w-full flex items-center justify-center">
-                          {share > 0 && (
-                            <div
-                              className="rounded-full"
-                              style={{
-                                width: `${Math.max(4, 36 * Math.sqrt(rel))}px`,
-                                height: `${Math.max(4, 36 * Math.sqrt(rel))}px`,
-                                background: `radial-gradient(circle, rgba(41,37,36,${0.15 + 0.75 * rel}) 0%, rgba(41,37,36,${0.08 + 0.4 * rel}) 55%, rgba(41,37,36,0) 100%)`,
-                              }}
-                            />
-                          )}
+                          {share > 0 && (() => {
+                            // Pie slice of the share, centred on straight up:
+                            // 50% is the top semicircle. Disc size still
+                            // scales with the share, relative to the busiest.
+                            const d = Math.max(6, 36 * Math.sqrt(rel));
+                            const th = Math.min(share, 0.9999) * 2 * Math.PI;
+                            const x0 = 50 - 50 * Math.sin(th / 2), x1 = 50 + 50 * Math.sin(th / 2);
+                            const y = 50 - 50 * Math.cos(th / 2);
+                            return (
+                              <svg width={d} height={d} viewBox="0 0 100 100" aria-hidden="true">
+                                <circle cx="50" cy="50" r="50" className="fill-stone-200" />
+                                <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" />
+                              </svg>
+                            );
+                          })()}
                         </div>
                         <span className="text-[8px] tabular-nums text-stone-500 leading-none">{(share * 100).toFixed(0)}%</span>
                       </div>
