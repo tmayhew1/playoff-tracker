@@ -1296,7 +1296,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                               <svg width={d * 1.4} height={d * 1.4} viewBox="-20 -20 140 140" aria-hidden="true" className="overflow-visible">
                                 <defs>
                                   <filter id="shot-blob-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
-                                  <filter id="shot-blob-slice" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" /></filter>
+                                  <filter id="shot-blob-slice" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" /></filter>
                                 </defs>
                                 <circle cx="50" cy="50" r="50" className="fill-stone-300" fillOpacity="0.7" filter="url(#shot-blob-soft)" />
                                 <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" fillOpacity={0.55 + 0.4 * rel} filter="url(#shot-blob-slice)" />
