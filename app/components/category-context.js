@@ -1258,11 +1258,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           </div>
           {/* Shot distribution — where the player's attempts come from, one
               greyscale disc per distance column, sized by that distance's
-              share of his attempts (FTA counted as attempts) relative to his
+              share of his attempts (FTA ÷ 2.2 counted as attempts) relative to his
               busiest distance, with the share itself as a dark pie slice
               pointing straight up. */}
           {showZones && (() => {
-            const atts = segData.map((seg) => seg.a(selfRow) || 0);
+            // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
+            // shooting chances they are rather than double-counting and-ones
+            // and two-shot fouls.
+            const atts = segData.map((seg) => (seg.a(selfRow) || 0) / (seg.key === "ft" ? 2.2 : 1));
             const tot = atts.reduce((t, a) => t + a, 0);
             if (!(tot > 0)) return null;
             const peak = Math.max(...atts) / tot;
@@ -1277,7 +1280,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                     const share = atts[i] / tot;
                     const rel = peak > 0 ? share / peak : 0;
                     return (
-                      <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${atts[i]} attempts (${(share * 100).toFixed(0)}%)`}>
+                      <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%)`}>
                         <div className="relative h-9 w-full flex items-center justify-center">
                           {share > 0 && (() => {
                             // Pie slice of the share, centred on straight up:
