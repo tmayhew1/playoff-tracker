@@ -44,8 +44,6 @@ const SEASONS = Object.keys(HISTORY);
 const TABS = [
   ["explore", "Explore"],
   ["live", "Live"],
-  ["tvs", "Trey vs Spencer"],
-  ["draft", "Draft"],
   ["legacy", "Legacy"],
   ["awards", "Awards"],
   ["college", "College"],
@@ -53,6 +51,8 @@ const TABS = [
   ["usage", "Usage"],
   ["shotzones", "Shot Zones"],
   ["info", "Info"],
+  ["tvs", "Trey vs Spencer"],
+  ["draft", "Draft"],
 ];
 const TAB_IDS = new Set(TABS.map(([id]) => id));
 // Trey vs Spencer holds every draft season under one tab; a link still names
