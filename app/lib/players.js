@@ -23,14 +23,26 @@ export function buildScopePools(indexPlayers) {
 
 
 // Find the index entry for a leaderboard/rs row (slug first, then name).
-export function findIndexPlayer(indexPlayers, row) {
+// The name match drops suffixes, so "Jabari Smith Jr." also matches the
+// 2000s Jabari Smith; when it hits more than one player, the one with a line
+// in `season` (when given) wins, then the one whose name matches as written.
+export function findIndexPlayer(indexPlayers, row, season = null) {
   if (!indexPlayers) return null;
   if (row.slug) {
     const hit = indexPlayers.find((pl) => pl.slug === row.slug);
     if (hit) return hit;
   }
   const n = normalizeName(row.name || "");
-  return indexPlayers.find((pl) => normalizeName(pl.name) === n) || null;
+  let hits = indexPlayers.filter((pl) => normalizeName(pl.name) === n);
+  if (hits.length > 1 && season) {
+    const inSeason = hits.filter((pl) => pl.seasons?.some((s) => s.season === season));
+    if (inSeason.length) hits = inSeason;
+  }
+  if (hits.length > 1) {
+    const exact = (row.name || "").trim().toLowerCase();
+    return hits.find((pl) => (pl.name || "").trim().toLowerCase() === exact) || hits[0];
+  }
+  return hits[0] || null;
 }
 
 
