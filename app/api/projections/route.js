@@ -120,6 +120,39 @@ async function liveInjuries() {
   }
 }
 
+// The league's standings as ESPN lists them — the Look Ahead's "Now" column:
+// { NBA tricode: { w, l, seed } }, or null when the feed can't be read or
+// comes back short. Read on the quarter-hour cycle, like the finals.
+async function liveStandings() {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    let d;
+    try {
+      const res = await fetch("https://site.api.espn.com/apis/v2/sports/basketball/nba/standings", { signal: ctrl.signal, next: { revalidate } });
+      if (!res.ok) return null;
+      d = await res.json();
+    } finally {
+      clearTimeout(t);
+    }
+    const out = {};
+    for (const conf of d?.children || []) {
+      for (const e of conf?.standings?.entries || []) {
+        const abbr = e?.team?.abbreviation;
+        if (!abbr) continue;
+        const stat = (n) => e.stats?.find((x) => x.name === n)?.value;
+        const w = stat("wins"), l = stat("losses");
+        if (!Number.isFinite(w) || !Number.isFinite(l)) continue;
+        const seed = stat("playoffSeed");
+        out[ESPN_TO_NBA[abbr] || abbr] = { w, l, seed: Number.isFinite(seed) && seed > 0 ? seed : null };
+      }
+    }
+    return Object.keys(out).length >= 30 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 // The Awards tab's fits (scripts/bake-awards.mjs) — the Look Ahead simulates
 // the same MVP, ROY and All-Star models on the projected season.
 async function readAwardModels() {
@@ -169,8 +202,8 @@ export async function GET() {
   } catch {
     return Response.json({ error: "projection not baked — run npm run fit:projections" }, { status: 500 });
   }
-  const [rosters, reported, live, awardModels, toDate, inSeasonModel] = await Promise.all([
-    liveRosters(), readInjuries(), liveInjuries(), readAwardModels(), seasonToDateWithFinals(baked.season), readInSeasonModel(),
+  const [rosters, reported, live, awardModels, toDate, inSeasonModel, standings] = await Promise.all([
+    liveRosters(), readInjuries(), liveInjuries(), readAwardModels(), seasonToDateWithFinals(baked.season), readInSeasonModel(), liveStandings(),
   ]);
   const curated = reported?.season === baked.season ? reported : null;
   let players, unprojected = {};
@@ -216,6 +249,9 @@ export async function GET() {
       finals: toDate.finals || 0, partial: !!toDate.partial,
       games: toDate.games.filter((g) => g.home?.score > 0).length,
       records: toDate.records,
+      // The official standings for the "Now" column; the records above (the
+      // box scores added up) stand in when ESPN can't be read.
+      standings,
       model: { team: inSeasonModel.team, rate: inSeasonModel.rate, pct: inSeasonModel.pct, mpg: inSeasonModel.mpg, avail: inSeasonModel.avail, va: inSeasonModel.va, seasons: inSeasonModel.seasons, report: inSeasonModel.report },
     };
   }
