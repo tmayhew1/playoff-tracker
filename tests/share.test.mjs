@@ -36,7 +36,7 @@ test("defaults are left out of a link", () => {
 test("malformed values are dropped, never passed through", () => {
   const st = parse("p=../../etc/passwd&season=2015&scope=all&vs=curryst01&tab=<script>&ps=x&b=yes");
   assert.deepEqual(st, {
-    tab: null, view: "season", scope: "combined", season: null, p: null, ps: null, vs: null, usg: false,
+    tab: null, view: "season", scope: "combined", season: null, p: null, ps: null, run: null, vs: null, usg: false,
   });
   // shareQuery holds component-supplied values to the same patterns.
   assert.equal(shareQuery({ p: "a&b=c", season: "2015-16" }), "?season=2015-16");
@@ -67,4 +67,13 @@ test("a link to nothing gets no preview text", async () => {
   assert.equal(await shareSummary(parse("p=nobodyxx01&season=2015-16")), null);
   assert.equal(await shareSummary(parse("tab=legacy")), null);
   assert.equal(await shareSummary(parse("")), null);
+});
+
+test("a By Player run and the run it's compared against survive the link", () => {
+  const st = parse("view=player&scope=regular&p=flaggco01&run=2026-27,2025-26&vs=jamesle01:2003-04,2004-05");
+  assert.deepEqual(st.run, ["2025-26", "2026-27"]);
+  assert.deepEqual(st.vs, { slug: "jamesle01", season: "2004-05", seasons: ["2003-04", "2004-05"] });
+  assert.equal(shareQuery(st), "?view=player&scope=regular&p=flaggco01&run=2025-26,2026-27&vs=jamesle01:2003-04,2004-05");
+  // An open season wins over a run.
+  assert.equal(shareQuery({ ...st, ps: "2025-26", vs: null }), "?view=player&scope=regular&p=flaggco01&ps=2025-26");
 });

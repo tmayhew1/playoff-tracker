@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { TEAMS, TEAM_CONF } from "../teams";
 import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
-import { CompareChipLabel, ComparePanel } from "./compare";
+import { CompareChipLabel, ComparePanel, buildComparePlayers } from "./compare";
 import { MultiComparePicker } from "./compare-picker";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { Sparkline } from "./ui/sparkline";
@@ -62,7 +62,10 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   // season. There is no single row to open, so the landing is the career table
   // with exactly those seasons ticked — the selection you'd have made by hand.
   const [navRun, setNavRun] = useState(null);
-  const clearNavRun = useCallback(() => setNavRun(null), []);
+  // The run a linked run is measured against ({ slug, seasons }), applied
+  // with navRun so the table lands already comparing the two.
+  const [navRunVs, setNavRunVs] = useState(null);
+  const clearNavRun = useCallback(() => { setNavRun(null); setNavRunVs(null); }, []);
 
   // Jump to a player — invoked from a compare panel's compared-player chip or
   // a trend bar's "Go →" (via context.onNavigateToPlayer). Resolve the target
@@ -81,6 +84,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     setNavSeason(target.season || null);
     setNavCompare(target.season ? target.compare || null : null);
     setNavRun(null);
+    setNavRunVs(null);
     // The season row scrolls itself into view; only a plain legacy-view jump
     // wants the top of the page.
     if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -103,6 +107,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     setNavSeason(null);
     setNavCompare(null);
     setNavRun(seasons);
+    setNavRunVs(null);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -133,6 +138,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
       const have = new Set(found.seasons.map((s) => s.season));
       const run = (pendingPlayer.seasons || []).filter((s) => have.has(s));
       setNavRun(run.length ? run : null);
+      setNavRunVs(run.length ? pendingPlayer.runCompare || null : null);
     }
     onPlayerNavHandled?.();
   }, [pendingPlayer, index, onPlayerNavHandled]);
@@ -180,6 +186,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
         pendingCompare={navCompare}
         onCompareHandled={clearNavCompare}
         pendingRun={navRun}
+        pendingRunCompare={navRunVs}
         onRunHandled={clearNavRun}
       />
     );
@@ -243,7 +250,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
 // tappable TOT VA / VA/G column headers, team-color badges that filter, a
 // min-games filter on the G column, team-tinted VA bars behind rows, and the
 // landscape-only per-game stat columns. Rows expand to the same drill-ins.
-export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onNavigateToRun = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null, pendingCompare = null, onCompareHandled = null, pendingRun = null, onRunHandled = null }) {
+export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToPlayer = null, onNavigateToRun = null, onOpenTeamSeason = null, pendingSeason = null, onNavHandled = null, pendingCompare = null, onCompareHandled = null, pendingRun = null, pendingRunCompare = null, onRunHandled = null }) {
   // Season baselines under the active USG-ADJ mode (lib/va-mode.js). The rows
   // themselves arrive already re-priced from the index; this is what scores
   // everything derived from them here — per-season efficiency, the pooled
@@ -431,9 +438,20 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // The open season and its comparison, for the page's link — or, while a
   // navigation is still waiting to land, the season and comparison it names.
   const [rowVs, setRowVs] = useState(null);
-  useShareReport(openSeason
-    ? { ps: openSeason, vs: rowVs || (rowCompare?.season === openSeason ? rowCompare.compare : null) }
-    : { ps: pendingSeason || null, vs: pendingSeason ? pendingCompare || null : null });
+  // A ticked run (and the run it's measured against) goes in instead when no
+  // season is open — otherwise a run-vs-run link reopened on the player alone.
+  const runReport = !openSeason && !pendingSeason && selecting && picked.size
+    ? {
+      ps: null,
+      run: [...picked].sort(),
+      vs: multiCompare?.slug
+        ? { slug: multiCompare.slug, seasons: (multiCompare.row?.seasons || []).map((x) => x.season) }
+        : null,
+    }
+    : null;
+  useShareReport(runReport || (openSeason
+    ? { ps: openSeason, run: null, vs: rowVs || (rowCompare?.season === openSeason ? rowCompare.compare : null) }
+    : { ps: pendingSeason || null, run: null, vs: pendingSeason ? pendingCompare || null : null }));
 
   const runNoun = scope === "playoffs" ? "playoff run" : scope === "regular" ? "regular season" : "combined season";
   const seasons = player.seasons;
@@ -479,9 +497,26 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
       setSelecting(true);
       setPicked(want);
       setPickOverride(null);
-      setMultiCompare(null);
+      // A linked run-vs-run lands already comparing: rebuild the other run
+      // from this scope's pool, the same row the picker would have built.
+      let vsRun = null;
+      if (pendingRunCompare?.slug && contextData?.allRows) {
+        const pl = buildComparePlayers(contextData.allRows).find((x) => x.slug === pendingRunCompare.slug);
+        const want = new Set(pendingRunCompare.seasons || []);
+        const rows = pl ? pl.seasons.filter((x) => want.has(x.season)) : [];
+        if (rows.length) {
+          vsRun = {
+            name: pl.name,
+            slug: pl.slug || null,
+            seasons: pl.seasons,
+            row: aggregateSeasons(rows, { name: pl.name, slug: pl.slug || null }, rowLga),
+          };
+        }
+      }
+      setMultiCompare(vsRun);
     }
     onRunHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingRun, seasons, onRunHandled]);
 
   useEffect(() => {
