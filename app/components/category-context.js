@@ -1281,7 +1281,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                     const rel = peak > 0 ? share / peak : 0;
                     return (
                       <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%)`}>
-                        <div className="relative h-9 w-full flex items-center justify-center">
+                        <div className="relative h-12 w-full flex items-center justify-center">
                           {share > 0 && (() => {
                             // Pie slice of the share, centred on straight up:
                             // 50% is the top semicircle. Disc size still
@@ -1291,9 +1291,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                             const x0 = 50 - 50 * Math.sin(th / 2), x1 = 50 + 50 * Math.sin(th / 2);
                             const y = 50 - 50 * Math.cos(th / 2);
                             return (
-                              <svg width={d} height={d} viewBox="0 0 100 100" aria-hidden="true">
-                                <circle cx="50" cy="50" r="50" className="fill-stone-200" />
-                                <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" />
+                              // Padded viewBox so the blur feathers out past
+                              // the disc instead of clipping at its edge.
+                              <svg width={d * 1.4} height={d * 1.4} viewBox="-20 -20 140 140" aria-hidden="true" className="overflow-visible">
+                                <defs>
+                                  <filter id="shot-blob-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
+                                  <filter id="shot-blob-slice" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" /></filter>
+                                </defs>
+                                <circle cx="50" cy="50" r="50" className="fill-stone-300" fillOpacity="0.7" filter="url(#shot-blob-soft)" />
+                                <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" fillOpacity={0.55 + 0.4 * rel} filter="url(#shot-blob-slice)" />
                               </svg>
                             );
                           })()}
