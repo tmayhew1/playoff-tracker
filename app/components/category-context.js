@@ -1256,13 +1256,67 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               );
             })}
           </div>
+          {/* Shot distribution — where the player's attempts come from, one
+              greyscale disc per distance column, sized by that distance's
+              share of his attempts (FTA ÷ 2.2 counted as attempts) relative to his
+              busiest distance, with the share itself as a dark pie slice
+              pointing straight up. */}
+          {showZones && (() => {
+            // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
+            // shooting chances they are rather than double-counting and-ones
+            // and two-shot fouls.
+            const atts = segData.map((seg) => (seg.a(selfRow) || 0) / (seg.key === "ft" ? 2.2 : 1));
+            const tot = atts.reduce((t, a) => t + a, 0);
+            if (!(tot > 0)) return null;
+            const peak = Math.max(...atts) / tot;
+            return (
+              <div className="mt-2 border-t border-stone-100 pt-1.5">
+                <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
+                <div
+                  className="grid gap-1 items-center mt-1 mx-auto"
+                  style={{ gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))` }}
+                >
+                  {segData.map((seg, i) => {
+                    const share = atts[i] / tot;
+                    const rel = peak > 0 ? share / peak : 0;
+                    return (
+                      <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%)`}>
+                        <div className="relative h-12 w-full flex items-center justify-center">
+                          {share > 0 && (() => {
+                            // Pie slice of the share, centred on straight up:
+                            // 50% is the top semicircle. Disc size still
+                            // scales with the share, relative to the busiest.
+                            const d = Math.max(6, 36 * Math.sqrt(rel));
+                            const th = Math.min(share, 0.9999) * 2 * Math.PI;
+                            const x0 = 50 - 50 * Math.sin(th / 2), x1 = 50 + 50 * Math.sin(th / 2);
+                            const y = 50 - 50 * Math.cos(th / 2);
+                            return (
+                              // Padded viewBox so the blur feathers out past
+                              // the disc instead of clipping at its edge.
+                              <svg width={d * 1.4} height={d * 1.4} viewBox="-20 -20 140 140" aria-hidden="true" className="overflow-visible">
+                                <defs>
+                                  <filter id="shot-blob-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
+                                  <filter id="shot-blob-slice" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" /></filter>
+                                </defs>
+                                <circle cx="50" cy="50" r="50" className="fill-stone-300" fillOpacity="0.7" filter="url(#shot-blob-soft)" />
+                                <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" fillOpacity={0.55 + 0.4 * rel} filter="url(#shot-blob-slice)" />
+                              </svg>
+                            );
+                          })()}
+                        </div>
+                        <span className="text-[8px] tabular-nums text-stone-500 leading-none">{(share * 100).toFixed(0)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           </>
           )}
-          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
-            {scatter
-              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
-              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (zero line = league average, grey shading = where the field landed, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
-          </div>
+          {scatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+            {`Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`}
+          </div>}
         </div>
       )}
 
