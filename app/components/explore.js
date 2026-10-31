@@ -397,7 +397,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
   // Player — { name, slug, season } — applied by the player explorer once its
   // index for the current scope has loaded.
   const [playerNav, setPlayerNav] = useState(() => (linked?.view === "player" && linked?.p
-    ? { slug: linked.p, name: null, season: linked.ps || null, compare: linked.ps ? linkedCompare : null } : null));
+    ? {
+      slug: linked.p, name: null, season: linked.ps || null, compare: linked.ps ? linkedCompare : null,
+      // A pooled run, and the run it was measured against — a run-vs-run link.
+      seasons: !linked.ps && linked.run ? linked.run : null,
+      runCompare: !linked.ps && linked.run && linked.vs
+        ? { slug: linked.vs.slug, seasons: linked.vs.seasons || [linked.vs.season] } : null,
+    } : null));
   // Taken: let the tracker drop it, so a later return to Explore starts fresh.
   useEffect(() => { if (linked) onInitHandled?.(); }, [linked, onInitHandled]);
   // Called from By Season when the user arms the Player header and taps a name:

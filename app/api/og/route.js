@@ -135,7 +135,7 @@ function PlayerCard({ a, career = null, usg }) {
               {sign(career ? career.va : a.va)}
             </span>
             <span style={{ fontSize: 24, color: INK, marginTop: 10 }}>
-              {career ? `Best ${sign(a.va)} · ${sign(a.vaPerG, 2)} VA/G` : `${sign(a.vaPerG, 2)} VA/G · #${a.rank} of ${a.of}`}
+              {career ? `Best ${sign(a.va)} · ${sign(a.vaPerG, 2)} VA/G` : (a.run ? `${sign(a.vaPerG, 2)} VA/G · ${a.seasonCount} seasons` : `${sign(a.vaPerG, 2)} VA/G · #${a.rank} of ${a.of}`)}
             </span>
           </div>
         </div>

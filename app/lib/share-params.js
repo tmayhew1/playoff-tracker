@@ -10,7 +10,10 @@
 //   season By Season's season
 //   p      the opened player, by basketball-reference slug
 //   ps     By Player: the season row opened under that player
-//   vs     the compared player-season, "<slug>:<season>"
+//   run    By Player: a pooled run of the opened player's seasons, comma-
+//          separated ("2025-26,2026-27") — the # column's ticked seasons
+//   vs     the compared player-season, "<slug>:<season>" — or, against a
+//          run, the compared run, "<slug>:<season>,<season>,…"
 //   b      "usg" for the USG-ADJUSTED baseline (LG AVG is the default)
 //
 // Query parameters rather than the #hash so the server can read them: a link
@@ -24,6 +27,14 @@ export const DEFAULT_SCOPE = "combined";
 const SEASON_RE = /^\d{4}-\d{2}$/;
 const SLUG_RE = /^[a-z][a-z0-9.'-]{2,15}$/;
 const TAB_RE = /^[a-z0-9-]{2,20}$/;
+
+// Most seasons a run or a compared run carries in a link — a whole career fits.
+const MAX_RUN = 30;
+const seasonList = (v) => {
+  if (typeof v !== "string" || !v) return null;
+  const out = [...new Set(v.split(",").filter((x) => SEASON_RE.test(x)))].sort().slice(0, MAX_RUN);
+  return out.length ? out : null;
+};
 
 const one = (v) => (Array.isArray(v) ? v[0] : v);
 const pick = (v, re) => {
@@ -39,8 +50,11 @@ export function parseShareParams(sp) {
   const vsRaw = one(get("vs"));
   let vs = null;
   if (typeof vsRaw === "string" && vsRaw.includes(":")) {
-    const [slug, season] = vsRaw.split(":");
-    if (SLUG_RE.test(slug) && SEASON_RE.test(season)) vs = { slug, season };
+    const [slug, list] = vsRaw.split(":");
+    const seasons = seasonList(list);
+    // `season` stays the single-season form every older reader expects; a
+    // compared run also carries all of its seasons.
+    if (SLUG_RE.test(slug) && seasons) vs = seasons.length === 1 ? { slug, season: seasons[0] } : { slug, season: seasons[seasons.length - 1], seasons };
   }
   return {
     tab: pick(get("tab"), TAB_RE),
@@ -49,6 +63,7 @@ export function parseShareParams(sp) {
     season: pick(get("season"), SEASON_RE),
     p: pick(get("p"), SLUG_RE),
     ps: pick(get("ps"), SEASON_RE),
+    run: seasonList(one(get("run"))),
     vs,
     usg: one(get("b")) === "usg",
   };
@@ -63,12 +78,15 @@ export function parseShareParams(sp) {
 // on the client the values come from component state, not from a parse.
 export function shareQuery(input) {
   const ok = (v, re) => (typeof v === "string" && re.test(v) ? v : null);
-  const vsOk = ok(input.vs?.slug, SLUG_RE) && ok(input.vs?.season, SEASON_RE);
+  const okList = (v) => (Array.isArray(v) ? seasonList(v.join(",")) : null);
+  const vsSeasons = okList(input.vs?.seasons) || (ok(input.vs?.season, SEASON_RE) ? [input.vs.season] : null);
+  const vsOk = ok(input.vs?.slug, SLUG_RE) && vsSeasons;
   const st = {
     tab: ok(input.tab, TAB_RE), view: input.view,
     scope: SCOPES.includes(input.scope) ? input.scope : DEFAULT_SCOPE,
     season: ok(input.season, SEASON_RE), p: ok(input.p, SLUG_RE), ps: ok(input.ps, SEASON_RE),
-    vs: vsOk ? input.vs : null, usg: !!input.usg,
+    run: okList(input.run),
+    vs: vsOk ? { slug: input.vs.slug, seasons: vsSeasons } : null, usg: !!input.usg,
   };
   const parts = [];
   const q = { set: (k, v) => parts.push(`${k}=${v}`) };
@@ -81,7 +99,8 @@ export function shareQuery(input) {
     if (!player && st.season) q.set("season", st.season);
     if (st.p) q.set("p", st.p);
     if (player && st.p && st.ps) q.set("ps", st.ps);
-    if (st.p && st.vs?.slug && st.vs?.season) q.set("vs", `${st.vs.slug}:${st.vs.season}`);
+    else if (player && st.p && st.run) q.set("run", st.run.join(","));
+    if (st.p && st.vs) q.set("vs", `${st.vs.slug}:${st.vs.seasons.join(",")}`);
   }
   if (st.usg) q.set("b", "usg");
   return parts.length ? `?${parts.join("&")}` : "";

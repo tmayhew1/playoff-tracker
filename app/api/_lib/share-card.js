@@ -79,6 +79,36 @@ export async function playerSeasonCard({ slug, season, scope, usgAdj = false, to
   };
 }
 
+// A pooled run of one player's seasons, shaped like a player-season card: the
+// seasons' VA, games and category VA summed (a run's VA is exactly what its
+// seasons added up to — lib/multi-season.js), team the one most games went to.
+export async function playerRunCard({ slug, seasons, scope, usgAdj = false }) {
+  if (!slug || !seasons?.length) return null;
+  const cards = (await Promise.all(seasons.map((season) => playerSeasonCard({ slug, season, scope, usgAdj })))).filter(Boolean);
+  if (!cards.length) return null;
+  if (cards.length === 1) return cards[0];
+  const gp = cards.reduce((n, c) => n + c.gp, 0);
+  const va = cards.reduce((n, c) => n + c.va, 0);
+  const byTeam = new Map();
+  for (const c of cards) byTeam.set(c.team, (byTeam.get(c.team) || 0) + c.gp);
+  const team = [...byTeam.entries()].sort((x, y) => y[1] - x[1])[0][0];
+  const tag = (x) => `’${x.slice(5)}`;
+  const yrs = cards.map((c) => c.season).sort();
+  return {
+    slug, scope, usgAdj, run: true,
+    season: `${tag(yrs[0])}–${tag(yrs[yrs.length - 1])}`,
+    seasonCount: yrs.length,
+    scopeLabel: SCOPE_LABEL[scope],
+    name: cards[cards.length - 1].name,
+    team, gp, va,
+    vaPerG: gp ? va / gp : 0,
+    cats: VA_CATEGORY_KEYS.map((k) => {
+      const v = cards.reduce((n, c) => n + (c.cats.find((x) => x.key === k)?.va || 0), 0);
+      return { key: k, va: v, perG: gp ? v / gp : 0 };
+    }),
+  };
+}
+
 // A season board's card: the top of it by total VA.
 export async function seasonCard({ season, scope, usgAdj = false, top = 5 }) {
   if (!season) return null;
@@ -133,6 +163,28 @@ export async function shareSummary(st) {
   const base = st.usg ? " (USG-adjusted)" : "";
   if (st.tab && st.tab !== "explore") return null;
   const season = st.view === "player" ? st.ps : st.season;
+  // By Player with a pooled run ticked — against another run when it names one.
+  if (st.p && st.view === "player" && !st.ps && st.run) {
+    const a = await playerRunCard({ slug: st.p, seasons: st.run, scope: st.scope, usgAdj: st.usg });
+    if (a) {
+      const label = (c) => (c.run ? c.season : `’${c.season.slice(5)}`);
+      const b = st.vs
+        ? await playerRunCard({ slug: st.vs.slug, seasons: st.vs.seasons || [st.vs.season], scope: st.scope, usgAdj: st.usg })
+        : null;
+      if (b) {
+        return {
+          kind: "compare", a, b,
+          title: `${a.name} ${label(a)} vs ${b.name} ${label(b)}`,
+          description: `${a.scopeLabel}${base} · ${a.name}: ${sign(a.vaPerG, 2)} VA/G over ${a.gp} G · ${b.name}: ${sign(b.vaPerG, 2)} VA/G over ${b.gp} G`,
+        };
+      }
+      return {
+        kind: "player", a,
+        title: `${a.name} ${label(a)} ${a.scopeLabel}: ${sign(a.va)} VA`,
+        description: `${sign(a.vaPerG, 2)} VA/G over ${a.gp} games${base}`,
+      };
+    }
+  }
   if (st.p) {
     // By Player with no season open is the player's career page: career VA in
     // the text, and the best season's breakdown on the card.
