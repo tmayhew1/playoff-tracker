@@ -37,7 +37,7 @@ export function useSeasonSoFar(p, want, enabled) {
   return useMemo(() => {
     if (!enabled || !want) return null;
     if (!index) return { loading: true };
-    const self = findIndexPlayer(index, p);
+    const self = findIndexPlayer(index, p, want.season);
     const row = self?.seasons.find((s) => s.season === want.season && s.mp > 0) || null;
     if (!row) return { row: null };
     const context = { ...poolsFor(index), self, scope, season: want.season };

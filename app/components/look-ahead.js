@@ -131,8 +131,17 @@ function standings(data, players) {
     // out like a lineup — guards, then forwards, then centers.
     const top = [...list].sort((a, b) => b.row.mp - a.row.mp).slice(0, 5)
       .sort((a, b) => POS_ORDER[posGroup(a.pos)] - POS_ORDER[posGroup(b.pos)]);
-    return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: ins ? ins.records[t] || { w: 0, l: 0 } : rec[t] || null, top };
+    return { team: t, conf: TEAM_CONF[t] || "?", wins: proj[t]?.wins ?? 41, last: ins ? ins.standings?.[t] || ins.records[t] || { w: 0, l: 0 } : rec[t] || null, top };
   }).sort((a, b) => b.wins - a.wins);
+}
+
+// The "Now" order: the league's own seeds when the standings carry them
+// (they hold the tiebreakers), else win percentage, then wins, then the
+// projection.
+const pctOf = (r) => (r && r.w + r.l > 0 ? r.w / (r.w + r.l) : 0.5);
+function byNow(a, b) {
+  if (a.last?.seed && b.last?.seed) return a.last.seed - b.last.seed;
+  return pctOf(b.last) - pctOf(a.last) || (b.last?.w || 0) - (a.last?.w || 0) || b.wins - a.wins;
 }
 
 // Every projected player's simulated odds, for the award boxes on a 2026-27
@@ -179,6 +188,9 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
   const { data, error } = useProjection();
   const [team, setTeam] = useState(null);
   const [openTeam, setOpenTeam] = useState(null); // the standings row dropped open
+  // The standings' order: "proj" (projected wins) or "now" (the record). The
+  // bars stay projected wins either way.
+  const [standSort, setStandSort] = useState("proj");
   const [expanded, setExpanded] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [showMethod, setShowMethod] = useState(false);
@@ -237,18 +249,33 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         <SectionHead
           title="Projected Standings"
           note={data.wins
-            ? `${ins ? `Record through ${throughLabel(ins)} plus the rest of the schedule, projected` : "Projected"} from each roster’s VA+${data.injuries && data.injuries !== "none" ? " (injuries out)" : ""}${ins ? " and point margin so far" : " and last season’s record"}, typically within ±${Math.round(data.wins.rmseWins)} wins. Tap a team for its roster${data.rosters === "live" ? "" : ` (live rosters unavailable, so players are on their last ${data.base} team)`}.`
+            ? `${ins ? `Record through ${throughLabel(ins)} plus the rest of the schedule, projected` : "Projected"} from each roster’s VA+${data.injuries && data.injuries !== "none" ? " (injuries out)" : ""}${ins ? " and point margin so far" : " and last season’s record"}, typically within ±${Math.round(data.wins.rmseWins)} wins. Tap a team for its roster${data.rosters === "live" ? "" : ` (live rosters unavailable, so players are on their last ${data.base} team)`}, or Proj / ${ins ? "Now" : "Last"} to sort — the bars stay projected wins.`
             : "Wins model not fit yet"}
         />
         {["W", "E"].map((conf) => {
           const list = teams.filter((t) => t.conf === conf);
+          if (standSort === "now") list.sort(byNow);
           if (!list.length) return null;
           const maxW = Math.max(1, ...teams.map((t) => t.wins));
           return (
             <div key={conf} className="border-b border-stone-200 last:border-0">
               <div className="px-3 pt-2 pb-1 flex items-baseline justify-between text-[9px] uppercase tracking-[0.2em]">
                 <span className="font-bold text-stone-700">{conf === "E" ? "East" : "West"}</span>
-                <span className="text-stone-400 tracking-wider">Proj · {ins ? "Now" : "Last"}</span>
+                <span className="text-stone-400 tracking-wider">
+                  {[["proj", "Proj"], ["now", ins ? "Now" : "Last"]].map(([k, label], j) => (
+                    <span key={k}>
+                      {j > 0 && " · "}
+                      <button
+                        type="button"
+                        onClick={() => setStandSort(k)}
+                        aria-pressed={standSort === k}
+                        className={`uppercase tracking-wider ${standSort === k ? "text-stone-800 font-bold underline underline-offset-2" : "hover:text-stone-600"}`}
+                      >
+                        {label}
+                      </button>
+                    </span>
+                  ))}
+                </span>
               </div>
               {list.map((t, i) => {
                 const tc = teamColor(t.team), w = Math.round(t.wins), isOpen = openTeam === t.team;
@@ -279,8 +306,8 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                             ))}
                           </span>
                         </span>
-                        <span className="w-12 text-right tabular-nums font-bold text-stone-900 shrink-0">{w}–{82 - w}</span>
-                        <span className={`w-10 text-right tabular-nums shrink-0 ${ins ? "text-stone-600" : "text-stone-400"}`}>{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
+                        <span className={`w-12 text-right tabular-nums shrink-0 ${standSort === "proj" ? "font-bold text-stone-900" : "text-stone-600"}`}>{w}–{82 - w}</span>
+                        <span className={`w-10 text-right tabular-nums shrink-0 ${standSort === "now" ? "font-bold text-stone-900" : ins ? "text-stone-600" : "text-stone-400"}`}>{t.last ? `${t.last.w}–${t.last.l}` : "—"}</span>
                       </div>
                     </button>
                     {isOpen && (

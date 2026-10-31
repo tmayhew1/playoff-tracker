@@ -295,7 +295,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   const ctxPools = useMemo(() => (ctxPlayers ? buildScopePools(ctxPlayers) : null), [ctxPlayers]);
   const contextFor = (p) => {
     if (!ctxPools) return null;
-    const self = findIndexPlayer(ctxPlayers, p);
+    const self = findIndexPlayer(ctxPlayers, p, p.season);
     if (!self) return null;
     // onNavigateToPlayer lets a compare panel's compared-player chip jump the
     // leaderboard to that player's season, filtered to their team with their

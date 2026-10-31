@@ -147,6 +147,31 @@ test("the route falls back to the baked teams when rosters can't be fetched", as
   }
 });
 
+test("the route reads the Now column from ESPN's standings, the box scores when it can't", async () => {
+  const realFetch = globalThis.fetch;
+  const TEAMS = ["ATL", "BOS", "BKN", "CHA", "CHI", "CLE", "DAL", "DEN", "DET", "GS", "HOU", "IND", "LAC", "LAL", "MEM", "MIA", "MIL", "MIN", "NO", "NY", "OKC", "ORL", "PHI", "PHX", "POR", "SAC", "SA", "TOR", "UTAH", "WSH"];
+  const entry = (abbreviation, i) => ({ team: { abbreviation }, stats: [{ name: "wins", value: 9 - (i % 10) }, { name: "losses", value: i % 10 }, { name: "playoffSeed", value: (i % 15) + 1 }] });
+  const body = { children: [{ standings: { entries: TEAMS.slice(0, 15).map(entry) } }, { standings: { entries: TEAMS.slice(15).map((a, i) => entry(a, i + 15)) } }] };
+  try {
+    const { GET } = await import("../app/api/projections/route.js");
+    globalThis.fetch = async (url) => {
+      if (String(url).includes("/standings")) return { ok: true, json: async () => body };
+      throw new Error("offline");
+    };
+    const live = (await (await GET()).json()).inSeason;
+    assert.ok(live, "the season so far is baked");
+    assert.deepEqual(live.standings.GSW, { w: 0, l: 9, seed: 10 });
+    assert.deepEqual(live.standings.HOU, { w: 9, l: 0, seed: 11 });
+    assert.equal(Object.keys(live.standings).length, 30);
+    globalThis.fetch = async () => { throw new Error("offline"); };
+    const off = (await (await GET()).json()).inSeason;
+    assert.equal(off.standings, null);
+    assert.ok(Object.keys(off.records).length > 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 const SEASON = { seasonStart: "2026-10-20", seasonEnd: "2027-04-11", schedule: 82 };
 
 test("injuries: games missed run with the calendar", () => {
