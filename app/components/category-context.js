@@ -67,6 +67,7 @@ const CAREER_GP_FLOOR = 100;
 // (82 in a full regular season, a bit more for a mid-season trade, ~100 for a
 // combined line with a deep playoff run, 6 six games into a season). Scaling by
 // the player's own games let a hot 20-game stint (Marshon Brooks) clear it.
+const SHOT_ATT_PER_G = 1;
 
 // What a career row prints where a season row prints its season: "’08–’26",
 // or just "’14" for a one-season career. A season missed entirely sits inside
