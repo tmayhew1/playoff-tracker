@@ -1256,13 +1256,52 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               );
             })}
           </div>
+          {/* Shot distribution — where the player's attempts come from, one
+              greyscale blob per distance column: area and depth both scale
+              with that distance's share of his attempts (FTA counted as
+              attempts), relative to his busiest distance. */}
+          {showZones && (() => {
+            const atts = segData.map((seg) => seg.a(selfRow) || 0);
+            const tot = atts.reduce((t, a) => t + a, 0);
+            if (!(tot > 0)) return null;
+            const peak = Math.max(...atts) / tot;
+            return (
+              <div className="mt-2 border-t border-stone-100 pt-1.5">
+                <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
+                <div
+                  className="grid gap-1 items-center mt-1 mx-auto"
+                  style={{ gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))` }}
+                >
+                  {segData.map((seg, i) => {
+                    const share = atts[i] / tot;
+                    const rel = peak > 0 ? share / peak : 0;
+                    return (
+                      <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${atts[i]} attempts (${(share * 100).toFixed(0)}%)`}>
+                        <div className="relative h-9 w-full flex items-center justify-center">
+                          {share > 0 && (
+                            <div
+                              className="rounded-full"
+                              style={{
+                                width: `${Math.max(4, 36 * Math.sqrt(rel))}px`,
+                                height: `${Math.max(4, 36 * Math.sqrt(rel))}px`,
+                                background: `radial-gradient(circle, rgba(41,37,36,${0.15 + 0.75 * rel}) 0%, rgba(41,37,36,${0.08 + 0.4 * rel}) 55%, rgba(41,37,36,0) 100%)`,
+                              }}
+                            />
+                          )}
+                        </div>
+                        <span className="text-[8px] tabular-nums text-stone-500 leading-none">{(share * 100).toFixed(0)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           </>
           )}
-          <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
-            {scatter
-              ? `Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`
-              : <>Top = {showZones ? "FG%" : "rate"} · bar = {perGame ? "per-game" : "total"} value added {showZones ? "vs. league FG% at each distance" : "at each stat"} among the {scopeNoun} field (zero line = league average, grey shading = where the field landed, tick = median) · number below = value added · tap a {showZones ? "distance" : "stat"} to filter the card.{segTotals?.total != null ? ` Total = the ${segData.length} bars summed — the ${catKey} row above.` : segTotals ? " Eff = 3P + 2P + FT value added; Impact = the six bars summed — tap either to rank the card on it." : ""}</>}
-          </div>
+          {scatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+            {`Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`}
+          </div>}
         </div>
       )}
 
