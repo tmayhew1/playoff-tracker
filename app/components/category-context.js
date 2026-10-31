@@ -54,13 +54,19 @@ const CAREER_GP_FLOOR = 100;
 
 // Attempts floor on every board ranking a SHOOTING reading (3P, 2P, FT, or one
 // shot distance) — season and all-time alike: at least this many attempts per
-// game played. Shooting value scales with accuracy over attempts, so a player
+// game in the season. Shooting value scales with accuracy over attempts, so a player
 // who barely takes the shot (2/2 over a season) would otherwise ride a tiny
 // sample up a per-game board. A per-game rate rather than a season total so it
 // holds the same bar six games into a season as at its end — a fixed total
 // empties every board until players reach it. The viewed player is held exempt
 // rather than lowering the floor to them, so a short sample can still see where
 // it lands without opening the board to every other short sample.
+//
+// "Per game" means per game the SEASON has had, not per game the player
+// played: the floor is the most games anyone in that season's pool logged
+// (82 in a full regular season, a bit more for a mid-season trade, ~100 for a
+// combined line with a deep playoff run, 6 six games into a season). Scaling by
+// the player's own games let a hot 20-game stint (Marshon Brooks) clear it.
 const SHOT_ATT_PER_G = 1;
 
 // What a career row prints where a season row prints its season: "’08–’26",
@@ -581,8 +587,20 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const shotAtt = selSeg
     ? (selSeg.a ? selSeg.a : CAT_SHOOTING[selSeg.cat] ? (r) => CAT_SHOOTING[selSeg.cat](r)[1] || 0 : null)
     : (CAT_SHOOTING[catKey] ? (r) => CAT_SHOOTING[catKey](r)[1] || 0 : null);
-  const attFloor = shotAtt ? SHOT_ATT_PER_G : 0;
-  const shotQual = (r) => !shotAtt || shotAtt(r) >= SHOT_ATT_PER_G * (r.gp || 0);
+  // Most games anyone played in each season of this pool — the attempts floor
+  // for that season's rows (see SHOT_ATT_PER_G).
+  const maxGpBySeason = useMemo(() => {
+    const m = new Map();
+    for (const [season, rows] of poolsBySeason) {
+      let g = 0;
+      for (const r of rows) if ((r.gp || 0) > g) g = r.gp;
+      m.set(season, g);
+    }
+    return m;
+  }, [poolsBySeason]);
+  const attFloorFor = (season) => shotAtt ? Math.ceil(SHOT_ATT_PER_G * (maxGpBySeason.get(season) || 0)) : 0;
+  const attFloor = attFloorFor(seasonKey);
+  const shotQual = (r) => !shotAtt || shotAtt(r) >= attFloorFor(r.season ?? seasonKey);
 
   // The card's metric for one stat line as a SEASON TOTAL, before the /G
   // toggle divides it (and folding in the row's D Rating when withDef). When a
@@ -633,7 +651,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // this player's GP.
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || [])
-      .filter((r) => (r.gp || 0) >= floor && r.mp > 0 && (shotQual(r) || samePlayer(r, selfRow)))
+      .filter((r) => (shotAtt || (r.gp || 0) >= floor) && r.mp > 0 && (shotQual(r) || samePlayer(r, selfRow)))
       .map((r) => ({ r, m: metric(r, lga, seasonKey) }))
       .sort((a, b) => b.m - a.m);
     const N = pool.length;
@@ -667,13 +685,16 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // real season), and so does the floor, which for a season so far would
     // just be its own handful of games — the field is held to 5 G instead.
     const partialSelf = !!(self.seasons || []).find((s) => s.season === seasonKey)?.partial;
-    const floorA = partialSelf ? 5 : Math.min(5, p.gp || 1);
+    // A shooting board drops the games floors: its attempts floor already
+    // scales with the season's games, and a games floor on top only hides
+    // seasons that cleared it.
+    const floorA = shotAtt ? 0 : partialSelf ? 5 : Math.min(5, p.gp || 1);
     // CAREERS: the same rows summed per player, so a long prime and a short
     // peak are separable readings of one career — the total on /G off, career
     // value per career game on /G on. The games floor keeps a 12-game career
     // off a per-game board, lowered to the viewed player's own career total so
     // the board never ranks a career against a pool it isn't in.
-    let careerFloor = 0, board = [], boardN = 0, boardRank = 0;
+    let careerFloor = 0, board = [], boardN = 0, boardRank = 0, attLo = null, attHi = null;
     if (seasonOnly) {
       // No all-time board to build.
     } else if (careerBoard) {
@@ -682,18 +703,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         if (!(r.mp > 0) || !segEra(r.season)) continue;
         const k = comparePlayerKey(r);
         let c = careers.get(k);
-        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, m: 0, first: r.season, last: r.season }));
+        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, attNeed: 0, m: 0, first: r.season, last: r.season }));
         c.gp += r.gp || 0;
-        if (shotAtt) c.att += shotAtt(r);
+        // A career's attempts floor is its seasons' floors summed.
+        if (shotAtt) { c.att += shotAtt(r); c.attNeed += attFloorFor(r.season); }
         c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
         if (r.season < c.first) c.first = r.season;
         // Carry the name as it was spelled in the latest season on record.
         if (r.season > c.last) { c.last = r.season; c.name = r.name; }
       }
       const selfCareer = careers.get(comparePlayerKey(selfRow)) || null;
-      careerFloor = Math.min(CAREER_GP_FLOOR, selfCareer?.gp || CAREER_GP_FLOOR);
+      careerFloor = shotAtt ? 0 : Math.min(CAREER_GP_FLOOR, selfCareer?.gp || CAREER_GP_FLOOR);
       const list = [...careers.values()]
-        .filter((c) => c === selfCareer || (c.gp >= careerFloor && c.att >= attFloor * c.gp))
+        .filter((c) => c === selfCareer || (c.gp >= careerFloor && c.att >= c.attNeed))
         .map((c) => ({ r: c, m: perGame ? c.m / (c.gp || 1) : c.m }))
         .sort((a, b) => b.m - a.m);
       boardN = list.length;
@@ -708,6 +730,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         .map((r) => ({ r, m: metric(r, lgaFor(r.season, poolScope), r.season) }))
         .sort((a, b) => b.m - a.m);
       boardN = list.length;
+      // The attempts floors the qualified seasons were held to (each season's
+      // own), for the fine print — one number, or a range across eras.
+      if (shotAtt) for (const { r } of list) {
+        if (!shotQual(r)) continue;
+        const f = attFloorFor(r.season);
+        if (attLo == null || f < attLo) attLo = f;
+        if (attHi == null || f > attHi) attHi = f;
+      }
       const idx = list.findIndex((x) => x.r.season === seasonKey && samePlayer(x.r, selfRow));
       boardRank = idx + 1;
       board = boardWindow(list, idx);
@@ -729,7 +759,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // season leaderboard above), by strictly-greater count.
         const floorS = Math.max(1, Math.ceil((s.gp || 1) / 3));
         const seasonPool = (poolsBySeason.get(s.season) || [])
-          .filter((r) => (r.gp || 0) >= floorS && r.mp > 0 && shotQual(r));
+          .filter((r) => (shotAtt || (r.gp || 0) >= floorS) && r.mp > 0 && shotQual(r));
         let rank = 1;
         for (const r of seasonPool) if (metric(r, lgaS, s.season) > m) rank += 1;
         // team rides along so a tapped bar can hand the navigation target a
@@ -738,7 +768,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       });
 
     return { floor, N, rank: selfIdx + 1, win, top: pool[0]?.r || null,
-             floorA, partialSelf, careerFloor, attFloor, board, allN: boardN, allRank: boardRank, mine };
+             floorA, partialSelf, careerFloor, attFloor, attLo, attHi, board, allN: boardN, allRank: boardRank, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg, seasonOnly]);
 
   const segData = useMemo(() => {
@@ -1066,7 +1096,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {scopeNoun} players with ≥{d.floor} G{d.attFloor ? ` and ≥${d.attFloor} attempt/G` : ""} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
       </div>
 
       {/* View 2 — the split row. Every Basic group card fans its total out into
@@ -1273,8 +1303,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         ))}
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">
           {careerBoard
-            ? `Across all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G${d.attFloor ? `, ≥${d.attFloor} attempt/G` : ""}), ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
-            : `Across all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G${d.attFloor ? `, ≥${d.attFloor} attempt/G` : ""})${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
+            ? `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} careers, attempts ≥ each season’s most G, summed —` : `all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G),`} ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
+            : `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} player seasons, attempts ≥ ${d.attLo === d.attHi ? d.attLo : `${d.attLo}–${d.attHi}`}` : `all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)`}${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
         </div>
       </div>}
 
