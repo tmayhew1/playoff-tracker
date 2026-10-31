@@ -1,7 +1,7 @@
 {
   "ftaWeight": 0.475,
   "fit": "minutes-weighted OLS of PTS/MP on (FGA + 0.475*FTA)/MP, per season, over that season's regular-season player-seasons",
-  "generatedAt": "2026-10-30T17:01:10.585Z",
+  "generatedAt": "2026-10-31T15:42:24.297Z",
   "seasons": {
     "1980-81": {
       "a": -0.02459897,
@@ -418,13 +418,13 @@
       "atMuUsg": 0.464679
     },
     "2026-27": {
-      "a": -0.0046377,
-      "b": 1.15729353,
-      "r2": 0.7843,
-      "n": 430,
-      "mp": 34314,
-      "muUsg": 0.401299,
-      "atMuUsg": 0.459783,
+      "a": -0.00377356,
+      "b": 1.1543476,
+      "r2": 0.7944,
+      "n": 432,
+      "mp": 39119,
+      "muUsg": 0.40069,
+      "atMuUsg": 0.458762,
       "inSeason": true
     }
   }
