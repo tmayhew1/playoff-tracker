@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { normalizeName } from "../../lib/format";
 
 // Shared shot-distance zone merge: every bake-first API route (players,
 // leaderboard, regular-season) needs the same "flatten shooting-<season>.json
@@ -29,7 +30,7 @@ export async function loadZoneSide(season, side) {
     const data = JSON.parse(await readFile(path, "utf8"));
     const players = data?.[side]?.players;
     if (!players) return null;
-    const map = new Map();
+    const map = new Map(), loose = new Map();
     for (const p of players) {
       const flat = {};
       for (const [zk, mk, ak] of ZONE_SPEC) {
@@ -39,7 +40,13 @@ export async function loadZoneSide(season, side) {
       if (p.slug) map.set("s:" + p.slug, flat);
       const n = "n:" + norm(p.name || "");
       if (!map.has(n)) map.set(n, flat);
+      const u = normalizeName(p.name);
+      loose.set(u, loose.has(u) ? null : flat);
     }
+    // Suffix-blind name key ("u:"), unique names only, for rows with no slug
+    // of their own (a rookie's in-season line) whose box-score name drops the
+    // "Jr."/"II" basketball-reference keeps — see attachZoneFields.
+    for (const [u, flat] of loose) if (flat) map.set("u:" + u, flat);
     return map;
   } catch {
     return null;
@@ -53,7 +60,8 @@ export async function loadZoneSide(season, side) {
 export function attachZoneFields(rows, zoneMap) {
   if (!zoneMap || !rows) return;
   for (const p of rows) {
-    const flat = (p.slug && zoneMap.get("s:" + p.slug)) || zoneMap.get("n:" + norm(p.name || ""));
+    const flat = (p.slug && zoneMap.get("s:" + p.slug)) || zoneMap.get("n:" + norm(p.name || ""))
+      || (!p.slug && zoneMap.get("u:" + normalizeName(p.name)));
     if (flat) Object.assign(p, flat);
   }
 }
