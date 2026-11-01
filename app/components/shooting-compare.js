@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useId, useMemo } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { ZONES, hasZoneData, valueAddByCategory, zoneShotValue } from "../scoring";
-import { comparePalette, shortName, teamColor, withAlpha } from "../lib/format";
+import { compName, comparePalette, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { rowSeasonLabel } from "../lib/multi-season";
+import { samePlayer } from "../lib/va";
 import { useRowLga } from "../lib/va-mode";
 import { B_FILL, useFreshRows } from "./compare";
 
@@ -67,25 +68,94 @@ const zeroed = (v) => (Math.abs(v) < 0.005 ? 0 : v);
 const sgn = (v) => { const z = zeroed(v); return (z > 0 ? "+" : "") + z.toFixed(2); };
 
 
-// Box Score VA ⇄ Shooting switch for an open comparison. Rendered by the
-// breakdown cards above whichever panel is showing.
+// Box Score VA ⇄ Shooting switch for an open comparison. Sits at the right
+// end of the breakdown's vs-chip row, the same height as the toggles there.
 export function CompareLensToggle({ lens, onChange }) {
-  const opts = [{ key: "box", label: "Box Score VA" }, { key: "shoot", label: "Shooting" }];
+  const opts = [{ key: "box", label: "Box VA" }, { key: "shoot", label: "Shooting" }];
   return (
-    <div className="flex justify-center mb-1.5">
-      <div className="inline-flex border border-stone-200 rounded-sm overflow-hidden">
-        {opts.map((o) => (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onChange(o.key)}
-            aria-pressed={lens === o.key}
-            className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider ${lens === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
-          >
-            {o.label}
-          </button>
-        ))}
+    <div className="shrink-0 inline-flex border border-stone-300 rounded-sm overflow-hidden">
+      {opts.map((o, i) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={() => onChange(o.key)}
+          aria-pressed={lens === o.key}
+          className={`whitespace-nowrap px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${i ? "border-l border-stone-300" : ""} ${lens === o.key ? "bg-amber-400 text-amber-950 font-semibold" : "bg-white text-stone-400 hover:bg-amber-50"}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
+// Attempts floor on a zone board — the category card's rule (SHOT_ATT_PER_G
+// there): one attempt per game the season has had, i.e. per the most games
+// anyone in that season's pool logged. The player himself is always on it.
+const SHOT_ATT_PER_G = 1;
+
+// One side's season leaderboard at one distance: the category card's mini
+// board (five rows around the player), ranked on per-game value added there.
+// Null for a pooled run, which has no single season to rank in.
+function zoneBoard(row, col, context, lgaOf) {
+  if (!row || row.multi || !row.season) return null;
+  const rows = context?.poolsBySeason?.get(row.season) || [];
+  let maxGp = 0;
+  for (const r of rows) if ((r.gp || 0) > maxGp) maxGp = r.gp;
+  const floor = Math.ceil(SHOT_ATT_PER_G * maxGp);
+  const pool = rows
+    .filter((r) => r.mp > 0 && (col.a(r) >= floor || samePlayer(r, row)))
+    .map((r) => ({ r, m: col.val(r, lgaOf(r)) / (r.gp || 1) }))
+    .sort((x, y) => y.m - x.m);
+  const N = pool.length;
+  const idx = pool.findIndex((x) => samePlayer(x.r, row));
+  if (idx < 0) return null;
+  let lo = Math.max(0, idx - 2);
+  const hi = Math.min(N, lo + 5);
+  lo = Math.max(0, hi - 5);
+  return { N, rank: idx + 1, floor, win: pool.slice(lo, hi).map((x, i) => ({ ...x, rank: lo + i + 1, isSelf: lo + i === idx })) };
+}
+
+function ZoneBoard({ board, row, col, color, ink }) {
+  const head = (
+    <div className="flex items-baseline justify-between gap-1 mb-0.5 min-w-0">
+      <span className="truncate font-semibold text-[9px]" style={{ color: ink }}>
+        {shortName(row.name)} <span className="font-normal text-stone-400 tabular-nums">{seasonTag(row.season || "")}</span>
+      </span>
+      {board && <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold text-[9px]">#{board.rank}<span className="text-stone-400 font-normal"> of {board.N}</span></span>}
+    </div>
+  );
+  if (!board) {
+    return <div className="min-w-0">{head}<div className="text-[8px] italic text-stone-400 py-2">No single season to rank a run in.</div></div>;
+  }
+  const grid = "grid grid-cols-[1.1rem_1fr_2.1rem_2.3rem] gap-x-1 items-center px-0.5 py-[2px] tabular-nums";
+  return (
+    <div className="min-w-0">
+      {head}
+      <div className={`${grid} !py-0 pb-0.5 text-[7px] uppercase tracking-wider text-stone-400 border-b border-stone-100`}>
+        <span className="text-right">#</span><span>Player</span><span className="text-right">VA</span><span className="text-right">{col.sub}</span>
       </div>
+      {board.win.map(({ r, m, rank, isSelf }) => {
+        const gp = r.gp || 1, att = col.a(r);
+        const v = Math.abs(m) < 0.005 ? 0 : m;
+        return (
+          <div
+            key={rank}
+            className={`${grid} rounded-sm ${isSelf ? "text-white" : "text-stone-600"}`}
+            style={isSelf ? { backgroundColor: color } : undefined}
+            title={`${r.name} — ${(col.m(r) / gp).toFixed(1)}/${(att / gp).toFixed(1)} per game at ${col.sub}${col.dist ? ` (${col.dist})` : ""}, ${(v > 0 ? "+" : "") + v.toFixed(2)} VA/G`}
+            aria-current={isSelf ? "true" : undefined}
+          >
+            <span className="text-right text-[8px] opacity-70">{rank}</span>
+            <span className="truncate text-[9px] font-medium">{compName(r.name)}</span>
+            <span className={`text-right text-[9px] font-semibold ${!isSelf && v < 0 ? "text-red-600" : ""}`}>{(v > 0 ? "+" : "") + v.toFixed(2)}</span>
+            <span className={`text-right text-[7px] leading-[1.15] ${isSelf ? "text-white/80" : "text-stone-500"}`}>
+              {`${(col.m(r) / gp).toFixed(1)}/${(att / gp).toFixed(1)}`}<br />{att > 0 ? `${((col.m(r) / att) * 100).toFixed(0)}%` : "–"}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -100,6 +170,9 @@ export function ShootingCompare({ a: aProp, b: bProp, context }) {
   const b = useMemo(() => freshSide(bProp), [freshSide, bProp]);
   const lgaA = lgaOf(a), lgaB = lgaOf(b);
   const uid = useId().replace(/:/g, "");
+  // A tapped distance column opens both players' season leaderboards at that
+  // distance, side by side under the chart. Tap it again to close.
+  const [selCol, setSelCol] = useState(null);
 
   const ok = canShootCompare(a, b, lgaA, lgaB);
   const A = useMemo(() => (ok ? shotSide(a, lgaA) : null), [ok, a, lgaA]);
@@ -186,6 +259,9 @@ export function ShootingCompare({ a: aProp, b: bProp, context }) {
   };
 
   const grid = { gridTemplateColumns: `repeat(${SHOT_COLS.length}, minmax(0, 1fr))` };
+  const sel = SHOT_COLS.find((c) => c.key === selCol) || null;
+  const boardA = sel ? zoneBoard(a, sel, context, lgaOf) : null;
+  const boardB = sel ? zoneBoard(b, sel, context, lgaOf) : null;
 
   return (
     <div
@@ -242,10 +318,17 @@ export function ShootingCompare({ a: aProp, b: bProp, context }) {
             };
             const fg = (x) => (x == null ? "–" : `${Math.round(x * 100)}%`);
             const aWin = av > bv, bWin = bv > av;
+            const isSel = selCol === c.key;
+            const toggle = () => setSelCol(isSel ? null : c.key);
             return (
               <div
                 key={c.key}
-                className="flex flex-col items-center min-w-0"
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSel}
+                onClick={toggle}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
+                className={`flex flex-col items-center min-w-0 cursor-pointer rounded py-1 -my-1 transition-colors ${isSel ? "bg-stone-200 ring-1 ring-stone-800" : "hover:bg-stone-100"}`}
                 title={`${c.sub}${c.dist ? ` (${c.dist})` : ""} — ${shortName(a.name)} ${A.cols[i].ma} (${fg(A.cols[i].fg)}) ${sgn(av)}/G · ${shortName(b.name)} ${B.cols[i].ma} (${fg(B.cols[i].fg)}) ${sgn(bv)}/G`}
               >
                 <span className="text-[10px] font-bold tabular-nums leading-none" style={{ color: ca }}>{fg(A.cols[i].fg)}</span>
@@ -265,6 +348,24 @@ export function ShootingCompare({ a: aProp, b: bProp, context }) {
           })}
         </div>
       </div>
+
+      {sel && (
+        <div className="border-t border-stone-100 pt-2">
+          <div className="flex items-baseline justify-between gap-2 mb-1">
+            <span className="uppercase tracking-wider text-[9px] text-stone-400 truncate">
+              {sel.sub}{sel.dist ? ` · ${sel.dist}` : ""} rankings · each in his own season
+            </span>
+            <button type="button" onClick={() => setSelCol(null)} className="shrink-0 text-[9px] text-stone-400 hover:text-stone-700">{sel.sub} ✕</button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <ZoneBoard board={boardA} row={a} col={sel} color={ca} ink={ca} />
+            <ZoneBoard board={boardB} row={b} col={sel} color={pal.base} ink={pal.ink} />
+          </div>
+          <div className="text-[8px] italic text-stone-400 mt-1 px-0.5 leading-[1.3]">
+            Ranked by per-game {sel.sub} value added among that season’s players with ≥1 {sel.key === "ft" ? "FTA" : "attempt"} per team game there{boardA && boardB ? ` (at least ${boardA.floor} and ${boardB.floor} ${sel.key === "ft" ? "FTA" : "attempts"})` : ""} · {sel.sub} column = made/attempted per game and FG%.
+          </div>
+        </div>
+      )}
 
       <div className="border-t border-stone-100 pt-1.5">
         <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
@@ -292,7 +393,7 @@ export function ShootingCompare({ a: aProp, b: bProp, context }) {
       </div>
 
       <div className="text-[8px] italic text-stone-400 px-1 leading-[1.3]">
-        Per-game value added at each distance, each player against his own season’s league FG% there · bold = the better of the two at that distance · bottom line = {shortName(a.name)}’s share minus {shortName(b.name)}’s, in points.
+        Per-game value added at each distance, each player against his own season’s league FG% there · bold = the better of the two at that distance · tap a distance for both seasons’ rankings there · bottom line = {shortName(a.name)}’s share minus {shortName(b.name)}’s, in points.
       </div>
     </div>
   );
