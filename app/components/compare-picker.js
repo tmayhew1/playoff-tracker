@@ -241,7 +241,10 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   const pickComp = (r) => {
     const pl = players.find((p) => (r.slug ? p.slug === r.slug : normalizeName(p.name) === normalizeName(r.name)));
     const row = (pl && pl.seasons.find((s) => s.season === r.season)) || r;
-    onPick({ name: pl?.name || r.name, slug: pl?.slug || r.slug || null, seasons: pl?.seasons || [r], row });
+    // The lens the comp was found on rides along, so a Shooting comp opens
+    // the shooting comparison (shot-distance bars + distribution) rather than
+    // the box-score one — the comparison answers the question the match asked.
+    onPick({ name: pl?.name || r.name, slug: pl?.slug || r.slug || null, seasons: pl?.seasons || [r], row, lens: compMetric === "shoot" ? "shoot" : "box" });
   };
 
   // On mobile the on-screen keyboard covers the lower half of the viewport,

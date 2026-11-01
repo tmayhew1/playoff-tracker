@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { TEAMS } from "../teams";
-import { LGA, valueAddByCategory, playmakingVA, reboundGamma, volumeVA } from "../scoring";
+import { LGA, hasZoneData, valueAddByCategory, playmakingVA, reboundGamma, volumeVA } from "../scoring";
 import { GameVAChart } from "./charts";
 import { CompareButton, ComparePanel, resolveCompareTarget, useFreshRows } from "./compare";
 import { ComparePicker } from "./compare-picker";
@@ -15,6 +15,7 @@ import { useLgaFor, usgAdjRows } from "../lib/va-mode";
 import { useCompareReport } from "../lib/share-state";
 import { useSeasonSoFar } from "../lib/season-so-far";
 import { CategoryContext } from "./category-context";
+import { CompareLensToggle, ShootingCompare } from "./shooting-compare";
 import { AwardBoxes } from "./award-boxes";
 
 
@@ -516,7 +517,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
-          <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
+          <div className="shrink-0 flex items-center gap-1">
+          {compare.lens !== "shoot" && <div className="shrink-0 inline-flex items-center border border-stone-300 rounded-sm overflow-hidden text-[9px]">
             <button
               type="button"
               onClick={() => setCompareMode("values")}
@@ -533,6 +535,10 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
             >
               Percentiles
             </button>
+          </div>}
+          {hasZoneData(pSeries) && hasZoneData(compare.row) && (
+            <CompareLensToggle lens={compare.lens === "shoot" ? "shoot" : "box"} onChange={(lens) => setCompare((c) => (c ? { ...c, lens } : c))} />
+          )}
           </div>
         </div>
       ) : (
@@ -594,6 +600,15 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
         />
       )}
       {compare && context && atSeasonLevel ? (
+        <>
+        {compare.lens === "shoot" ? (
+          <ShootingCompare
+            key={`shoot:${compare.row.season}:${compare.slug || compare.name}`}
+            a={{ ...pSeries, season: pSeries.season || context.season, name: pSeries.name || context.self?.name, slug: pSeries.slug || context.self?.slug || null }}
+            b={compare.row}
+            context={context}
+          />
+        ) : (
         <ComparePanel
           key={`${compare.row.season}:${compare.slug || compare.name}`}
           a={{ ...pSeries, season: pSeries.season || context.season, name: pSeries.name || context.self?.name, slug: pSeries.slug || context.self?.slug || null }}
@@ -608,6 +623,8 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           defScope={defScope}
           onPickChange={setCareerPick}
         />
+        )}
+        </>
       ) : (
       <>
       {/* Extra headroom when the tick caption is showing, so "Reg. Season Avg"
@@ -844,9 +861,14 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
             onOpen={() => setPicking((v) => !v)}
             onClear={() => { setCompare(null); setPicking(false); }}
           />
-          <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
+          <div className="shrink-0 flex items-center gap-1">
+          {compare.lens !== "shoot" && <div className="shrink-0 inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden">
             <button onClick={() => setCompareMode("values")} className={`px-1.5 py-0.5 ${compareMode === "values" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Values</button>
             <button onClick={() => setCompareMode("pct")} className={`px-1.5 py-0.5 border-l border-stone-300 ${compareMode === "pct" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Percentiles</button>
+          </div>}
+          {hasZoneData(aRow) && hasZoneData(compare.row) && (
+            <CompareLensToggle lens={compare.lens === "shoot" ? "shoot" : "box"} onChange={(lens) => setCompare((c) => (c ? { ...c, lens } : c))} />
+          )}
           </div>
         </div>
       ) : (
@@ -878,7 +900,13 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         />
       )}
       {compare && context ? (
+        <>
+        {compare.lens === "shoot" ? (
+          <ShootingCompare key={`shoot:${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} context={context} />
+        ) : (
         <ComparePanel key={`${compare.row.season}:${compare.slug || compare.name}`} a={aRow} b={compare.row} bSeasons={compare.seasons} context={context} rateMode={rateMode} mode={compareMode} setMode={setCompareMode} defs={defs} defActive={dVA != null} defScope="rs" onPickChange={setCareerPick} />
+        )}
+        </>
       ) : (
       <>
       {vaPlus != null && (
