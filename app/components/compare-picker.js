@@ -546,7 +546,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
   // player can't support are skipped, so the cycle only ever lands somewhere
   // that means something.
   const MATCH_ORDER = ["best", "year", "same"];
-  const MATCH_LABEL = { best: "Best", year: "Career Year", same: "Same Season" };
+  const MATCH_LABEL = { best: "Best", year: "Same Career Year", same: "Same Season" };
   const switchMatch = () => {
     let i = MATCH_ORDER.indexOf(matchMode);
     for (let n = 0; n < MATCH_ORDER.length; n++) {
