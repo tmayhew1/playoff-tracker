@@ -1,6 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { normalizeName } from "../../lib/format";
+import { aliasedName, normalizeName } from "../../lib/format";
 import { gamesWithBoxes, playerTotals, teamRecords, withGames } from "../../lib/season-to-date";
 
 // The season in progress from its baked box scores (lib/season-to-date.js),
@@ -53,14 +53,18 @@ export async function withFinals(toDate, finals) {
 
 // The box scores have names only; basketball-reference's slug and position
 // come from the last two baked seasons, by name — a name two players share is
-// left without one rather than guessed. A rookie has neither yet.
+// left without one rather than guessed. A rookie has neither yet. Names the
+// two spell differently are joined by NAME_ALIASES (lib/format.js).
 const idsBySeason = new Map();
 async function withIds(rows, season) {
   if (!idsBySeason.has(season)) idsBySeason.set(season, idMap(season));
   const byName = await idsBySeason.get(season);
   return rows.map((r) => {
     const id = byName.get(normalizeName(r.name));
-    return { ...r, slug: id?.slug || null, pos: id?.pos || null };
+    // A name joined only through NAME_ALIASES ("Ronald Holland II") takes
+    // basketball-reference's spelling, the one his career goes by.
+    const name = id?.name && aliasedName(r.name, id.name) ? id.name : r.name;
+    return { ...r, name, slug: id?.slug || null, pos: id?.pos || null };
   });
 }
 
@@ -71,7 +75,7 @@ async function idMap(season) {
   for (const s of prev.reverse()) {
     for (const p of (await readJson(join(DATA, `regular-season-${s}.json`)))?.players || []) {
       const k = normalizeName(p.name), cur = byName.get(k);
-      byName.set(k, cur && cur.slug !== p.slug && cur.season === s ? { slug: null, pos: null, season: s } : { slug: p.slug, pos: p.pos, season: s });
+      byName.set(k, cur && cur.slug !== p.slug && cur.season === s ? { slug: null, pos: null, season: s } : { slug: p.slug, pos: p.pos, name: p.name, season: s });
     }
   }
   return byName;
