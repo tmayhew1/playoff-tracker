@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { valueAddParts, lgaForSeason, combinedLga } from "../../scoring";
 import { RAW_KEYS, ZONE_SPEC, combineRows, loadRows, norm } from "../_lib/player-rows";
 import { seasonToDate } from "../_lib/season-to-date";
+import { normalizeName } from "../../lib/format";
 
 export const runtime = "nodejs";
 
@@ -41,16 +42,28 @@ async function loadZoneMap(dir, files) {
     for (const side of ["rs", "po"]) {
       const players = data[side]?.players;
       if (!players) continue;
-      const byKey = new Map();
+      // A slugged bake line is also indexed by name ("u:", suffix-blind via
+      // normalizeName so the box score's "Christian Anderson" finds
+      // basketball-reference's "Christian Anderson Jr."; unique names only —
+      // a name two lines share is dropped rather than guessed) for
+      // rows that have no slug of their own: every rookie's in-season row,
+      // since season-to-date takes slugs from the two prior baked seasons and
+      // a rookie is in neither. Keyed by slug alone, all of them got no
+      // zones — their Scoring/2-Pointers cards fell back to the by-stat form
+      // and they sat at zero on every shot-distance board.
+      const byKey = new Map(), names = new Map();
       for (const p of players) {
         const flat = {};
         for (const [zk, mk, ak] of ZONE_SPEC) {
           flat[mk] = p[zk]?.fgm || 0;
           flat[ak] = p[zk]?.fga || 0;
         }
-        const key = p.slug ? "s:" + p.slug : "n:" + norm(p.name || "");
-        byKey.set(key, flat);
+        if (p.slug) byKey.set("s:" + p.slug, flat);
+        else byKey.set("n:" + norm(p.name || ""), flat);
+        const n = normalizeName(p.name);
+        names.set(n, names.has(n) ? null : flat);
       }
+      for (const [n, flat] of names) if (flat) byKey.set("u:" + n, flat);
       bySide[side] = byKey;
     }
     map.set(season, bySide);
@@ -60,13 +73,16 @@ async function loadZoneMap(dir, files) {
 
 // Attaches one side's ("rs" or "po") zone fields onto rows in place, joined
 // by slug first then normalized name — same join key combineRows() already
-// uses. Rows with no match (no zone data for that season/player) are left
+// uses. A row with no slug of its own (a rookie's in-season line) may also
+// take a slugged bake line by name, when only one bake line has that name.
+// Rows with no match (no zone data for that season/player) are left
 // untouched; RAW_KEYS' generic `p[k] || 0` summing treats that as zero.
 function attachZones(rows, zoneMap, side) {
   for (const { season, p } of rows) {
     const byKey = zoneMap.get(season)?.[side];
     if (!byKey) continue;
-    const flat = (p.slug && byKey.get("s:" + p.slug)) || byKey.get("n:" + norm(p.name || ""));
+    const flat = (p.slug && byKey.get("s:" + p.slug)) || byKey.get("n:" + norm(p.name || ""))
+      || (!p.slug && byKey.get("u:" + normalizeName(p.name)));
     if (flat) Object.assign(p, flat);
   }
 }

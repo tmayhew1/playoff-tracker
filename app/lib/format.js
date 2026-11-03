@@ -20,14 +20,84 @@ export const withAlpha = (hex, alpha) => {
 // names (regular-season reference tick). Strips punctuation, suffixes like
 // "Jr."/"III", collapses whitespace, and folds diacritics so "P.J. Tucker"
 // matches "PJ Tucker" and "Luka Dončić" matches "Luka Doncic".
-export const normalizeName = (s) => (s || "")
+//
+// Letters NFD leaves whole (Plei\u00df, A\u015f\u0131k's dotless \u0131) are folded by hand, and
+// a name the box scores spell differently from basketball-reference in a way
+// no rule catches \u2014 a nickname, a middle name, a transliteration \u2014 is mapped
+// onto basketball-reference's spelling by NAME_ALIASES below.
+const foldName = (s) => (s || "")
   .normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "")
   .toLowerCase()
+  .replace(/\u00df/g, "ss")
+  .replace(/\u0131/g, "i")
   .replace(/[.''`,]/g, "")
   .replace(/\s+/g, " ")
   .trim()
   .replace(/\s+(jr|sr|ii|iii|iv|v)$/, "");
+
+// Box-score (ESPN) name -> basketball-reference name, both as foldName
+// leaves them. Every pair was matched on season and team: a box-score name
+// with no basketball-reference row that season, against the one row on his
+// team with no box-score name. Unmatched, a player's in-season line has no
+// slug, so it is split from his career, and his shot zones, position and
+// prior seasons never reach it. To find new ones, list the box-score names
+// in public/regular-season-games/<season> with no normalizeName match in
+// that season's regular-season / shooting bake.
+const NAME_ALIASES = {
+  "larry d johnson": "larry johnson",
+  "tyrone bogues": "muggsy bogues",
+  "kiwane garris": "kiwane lemorris garris",
+  "armon gilliam": "armen gilliam",
+  "mark g davis": "mark davis",
+  "slava medvedenko": "stanislav medvedenko",
+  "zhizhi wang": "wang zhizhi",
+  "charles a smith": "charles smith",
+  "norman richardson": "norm richardson",
+  "ike fontaine": "isaac fontaine",
+  "mike james batiste": "mike batiste",
+  "michael sweetney": "mike sweetney",
+  "didier ilunga-mbenga": "dj mbenga",
+  "luis alberto flores": "luis flores",
+  "ibrahim kutluay": "ibo kutluay",
+  "victor khryapa": "viktor khryapa",
+  "vasileios spanoulis": "vassilis spanoulis",
+  "walter herrmann heinrich": "walter herrmann",
+  "marquinhos vieira": "marcus vinicius",
+  "roko-leni ukic": "roko ukic",
+  "hamed ehaddadi": "hamed haddadi",
+  "jerome adolphus jordan": "jerome jordan",
+  "gustavo alfonso ayon": "gustavo ayon",
+  "jeffery taylor": "jeff taylor",
+  "slava kravtsov": "viacheslav kravtsov",
+  "josh emmanuel akognon": "josh akognon",
+  "vitor faverani": "vitor luiz faverani",
+  "robbie john hummel": "robbie hummel",
+  "luigi datome": "gigi datome",
+  "rondae hollis jefferson": "rondae hollis-jefferson",
+  "marcelinho huertas": "marcelo huertas",
+  "pierre deshawn jackson": "pierre jackson",
+  "vince shamar hunter": "vince hunter",
+  "omari rasulala spellman": "omari spellman",
+  "vincent edwards": "vince edwards",
+  "mitchell creek": "mitch creek",
+  "trevon scott": "tre scott",
+  "cam mcgriff": "cameron mcgriff",
+  "nate mensah": "nathan mensah",
+  "matt hurt": "matthew hurt",
+  "ronald holland": "ron holland",
+  "yongxi cui": "cui yongxi",
+  "adama bal": "adama-alpha bal",
+};
+
+// True when two names only match through NAME_ALIASES ("Ronald Holland II"
+// and "Ron Holland") rather than by spelling.
+export const aliasedName = (a, b) => foldName(a) !== foldName(b) && normalizeName(a) === normalizeName(b);
+
+export const normalizeName = (s) => {
+  const n = foldName(s);
+  return NAME_ALIASES[n] || n;
+};
 
 
 // `dim` = lighten owner styling when both teams in a matchup share an owner,
