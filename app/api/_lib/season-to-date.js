@@ -53,8 +53,12 @@ export async function withFinals(toDate, finals) {
 
 // The box scores have names only; basketball-reference's slug and position
 // come from the last two baked seasons, by name — a name two players share is
-// left without one rather than guessed. A rookie has neither yet. Names the
-// two spell differently are joined by NAME_ALIASES (lib/format.js).
+// left without one rather than guessed. Names the two spell differently are
+// joined by NAME_ALIASES (lib/format.js). A rookie isn't in those seasons, so
+// his slug comes from this season's own shooting bake (BR's shot-distance
+// table, which lists everyone who has played); without one his row can't be
+// named in a share link or matched to the league index. His position stays
+// unknown.
 const idsBySeason = new Map();
 async function withIds(rows, season) {
   if (!idsBySeason.has(season)) idsBySeason.set(season, idMap(season));
@@ -77,6 +81,16 @@ async function idMap(season) {
       const k = normalizeName(p.name), cur = byName.get(k);
       byName.set(k, cur && cur.slug !== p.slug && cur.season === s ? { slug: null, pos: null, season: s } : { slug: p.slug, pos: p.pos, name: p.name, season: s });
     }
+  }
+  const shooting = await readJson(join(DATA, `shooting-${season}.json`));
+  const fresh = new Map();
+  for (const p of [...(shooting?.rs?.players || []), ...(shooting?.po?.players || [])]) {
+    if (!p?.slug || !p.name) continue;
+    const k = normalizeName(p.name), cur = fresh.get(k);
+    fresh.set(k, cur !== undefined && cur?.slug !== p.slug ? null : { slug: p.slug, name: p.name });
+  }
+  for (const [k, id] of fresh) {
+    if (id && !byName.get(k)?.slug) byName.set(k, { slug: id.slug, pos: null, name: id.name, season });
   }
   return byName;
 }
