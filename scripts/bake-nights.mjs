@@ -1,70 +1,46 @@
 #!/usr/bin/env node
-// Bake last night's box scores: every finished game's player lines, from the
-// NBA's live CDN, into app/data/nights/<YYYY-MM-DD>.json. The Explore tab's
-// "Last night" card (/api/nights) scores and ranks them.
+// Bake last night's box scores: every finished game's player lines, from
+// ESPN, into app/data/nights/<YYYY-MM-DD>.json. The Explore tab's "Last
+// night" card (/api/nights) scores and ranks them.
 //
-//   npm run bake:nights                     # the last 3 nights not yet baked
+//   npm run bake:nights                     # every night not yet baked
 //   npm run bake:nights -- --date 2026-10-21 [--date …] [--force]
 //
 // Run by the daily workflow at 7am ET, when the previous night's games are
-// final. Looking back 3 nights (instead of 1) means a missed or failed run
-// is caught up by the next one. A night is written only once every game on
-// it is final, and is left alone after that unless --force.
+// final. With no --date it bakes the last 3 nights plus every night since
+// the newest one on disk (up to MAX_GAP), so a missed or failed run is
+// caught up by the next one. A night is written only once every game on it
+// is final, and is left alone after that unless --force.
 //
-// NIGHTS_FIXTURES=<dir> reads schedule.json and boxscore_<gameId>.json from
-// that directory instead of the network — how the tests run it.
+// The NBA's CDN (cdn.nba.com) answered this from GitHub's runners until late
+// October 2026, when it began refusing them with 403s. ESPN, which the rest
+// of the app's box scores already come from, doesn't.
+//
+// NIGHTS_FIXTURES=<dir> answers ESPN's scoreboard and summary URLs from
+// scoreboard_<YYYYMMDD>.json and summary_<eventId>.json in that directory
+// instead of the network — how the tests run it.
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { mapPlayer } from "../app/api/_lib/nba-box.js";
-import { normName as norm, slugsByName } from "../app/api/_lib/player-slugs.js";
+import { readEspnNight } from "../app/api/_lib/espn-night.js";
+import { slugsByName } from "../app/api/_lib/player-slugs.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
 const OUT_DIR = process.env.NIGHTS_OUT || path.join(DATA, "nights");
 const FIXTURES = process.env.NIGHTS_FIXTURES || null;
 const LOOKBACK = 3;
+const MAX_GAP = 30;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const SCHEDULE_URL = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json";
-const BOX_URL = (id) => `https://cdn.nba.com/static/json/liveData/boxscore/boxscore_${id}.json`;
-const HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  Accept: "application/json, text/plain, */*",
-  Referer: "https://www.nba.com/",
-  Origin: "https://www.nba.com",
-};
-
-// Which games count. The id's first three digits are the game type: 002
-// regular season (NBA Cup group games included), 004 playoffs, 005 play-in,
-// 006 the Cup final. Preseason (001) and the All-Star game (003) don't.
-const KINDS = { "002": "regular", "004": "playoffs", "005": "play-in", "006": "cup-final" };
-
-async function getJson(url) {
-  if (FIXTURES) {
-    const name = url === SCHEDULE_URL ? "schedule.json" : path.basename(url);
-    return JSON.parse(fs.readFileSync(path.join(FIXTURES, name), "utf8"));
-  }
-  for (let attempt = 1; ; attempt++) {
-    try {
-      const res = await fetch(url, { headers: HEADERS });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (e) {
-      if (attempt >= 3) throw new Error(`${url}: ${e.message}`);
-      await new Promise((r) => setTimeout(r, 2000 * attempt));
-    }
-  }
-}
-
-// A game's date in US Eastern time — the NBA's "night" — from the fields the
-// schedule carries, most reliable first.
-function gameDate(g, gd) {
-  const code = /^(\d{4})(\d{2})(\d{2})\//.exec(g.gameCode || "");
-  if (code) return `${code[1]}-${code[2]}-${code[3]}`;
-  if (/^\d{4}-\d{2}-\d{2}/.test(g.gameDateEst || "")) return g.gameDateEst.slice(0, 10);
-  const us = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(gd?.gameDate || "");
-  return us ? `${us[3]}-${us[1]}-${us[2]}` : null;
+if (FIXTURES) {
+  globalThis.fetch = async (url) => {
+    const m = /scoreboard\?dates=(\d{8})|summary\?event=(\d+)/.exec(url);
+    const file = m && path.join(FIXTURES, m[1] ? `scoreboard_${m[1]}.json` : `summary_${m[2]}.json`);
+    if (!file || !fs.existsSync(file)) return new Response("{}", { status: 404 });
+    return new Response(fs.readFileSync(file, "utf8"), { status: 200 });
+  };
 }
 
 // "2026-10-21" -> "2026-27": a season starts in October.
@@ -88,59 +64,62 @@ function slugIndex(season) {
   return slugsByName(JSON.parse(fs.readFileSync(file, "utf8")).players);
 }
 
-async function bakeNight(date, schedule, force) {
+// ESPN's one-off hiccups (a timeout, a 5xx) get two more tries.
+async function withRetries(fn) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (FIXTURES || attempt >= 3) throw e;
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
+  }
+}
+
+async function bakeNight(date, force) {
   const out = path.join(OUT_DIR, `${date}.json`);
   if (!force && fs.existsSync(out)) return `${date}: already baked`;
-  const games = [];
-  for (const gd of schedule?.leagueSchedule?.gameDates || []) {
-    for (const g of gd.games || []) {
-      const kind = KINDS[String(g.gameId || "").slice(0, 3)];
-      if (kind && gameDate(g, gd) === date) games.push({ g, kind });
-    }
-  }
-  if (!games.length) return `${date}: no games`;
-  const unfinished = games.filter(({ g }) => Number(g.gameStatus) !== 3);
-  if (unfinished.length) return `${date}: ${unfinished.length} of ${games.length} games not final yet - skipped`;
-
   const season = seasonOf(date);
-  const slugs = slugIndex(season);
-  const outGames = [], players = [];
-  for (const { g, kind } of games) {
-    const box = (await getJson(BOX_URL(g.gameId)))?.game;
-    if (!box) throw new Error(`${g.gameId}: no box score`);
-    const home = box.homeTeam, away = box.awayTeam;
-    outGames.push({
-      gameId: g.gameId, kind,
-      home: { tri: home.teamTricode, score: home.score ?? 0 },
-      away: { tri: away.teamTricode, score: away.score ?? 0 },
-    });
-    for (const [team, opp] of [[home, away], [away, home]]) {
-      for (const raw of team.players || []) {
-        const p = mapPlayer(raw);
-        if (!(p.mp > 0)) continue;
-        // "On court" is a live-game field; a finished night has no one on court.
-        const line = { ...p };
-        delete line.oncourt;
-        players.push({ ...line, slug: slugs.get(norm(p.name)) || null, team: team.teamTricode, opp: opp.teamTricode, gameId: g.gameId });
-      }
-    }
-  }
+  const { night, skip } = await withRetries(() => readEspnNight(date, season, slugIndex(season)));
+  if (skip) return `${date}: ${skip}${skip === "no games" ? "" : " - skipped"}`;
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  fs.writeFileSync(out, JSON.stringify({
-    date, season, games: outGames, players,
-    source: "cdn.nba.com", fetchedAt: new Date().toISOString(),
-  }, null, 2) + "\n");
-  const linked = players.filter((p) => p.slug).length;
-  return `${date}: ${outGames.length} games, ${players.length} player lines (${linked} linked to a player page)`;
+  fs.writeFileSync(out, JSON.stringify(night, null, 2) + "\n");
+  const linked = night.players.filter((p) => p.slug).length;
+  return `${date}: ${night.games.length} games, ${night.players.length} player lines (${linked} linked to a player page)`;
+}
+
+// The nights to try with no --date: the last LOOKBACK, and every one since
+// the newest baked night, oldest first.
+function defaultTargets() {
+  const yesterday = addDays(todayEt(), -1);
+  let from = addDays(yesterday, -(LOOKBACK - 1));
+  const baked = fs.existsSync(OUT_DIR)
+    ? fs.readdirSync(OUT_DIR).map((f) => f.replace(/\.json$/, "")).filter((d) => DATE_RE.test(d)).sort()
+    : [];
+  const newest = baked[baked.length - 1];
+  if (newest && newest < from) from = [addDays(newest, 1), addDays(yesterday, -(MAX_GAP - 1))].sort().pop();
+  const out = [];
+  for (let d = from; d <= yesterday; d = addDays(d, 1)) out.push(d);
+  return out;
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const force = args.includes("--force");
-  const dates = args.flatMap((a, i) => (a === "--date" ? [args[i + 1]] : [])).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d || ""));
-  const targets = dates.length ? dates : Array.from({ length: LOOKBACK }, (_, i) => addDays(todayEt(), -(i + 1)));
-  const schedule = await getJson(SCHEDULE_URL);
-  for (const d of targets) console.log(await bakeNight(d, schedule, force));
+  const dates = args.flatMap((a, i) => (a === "--date" ? [args[i + 1]] : [])).filter((d) => DATE_RE.test(d || ""));
+  const targets = dates.length ? dates : defaultTargets();
+  // One night ESPN fails on doesn't stop the rest; the run still exits 1,
+  // with an annotation the workflow's summary shows.
+  let failed = 0;
+  for (const d of targets) {
+    try {
+      console.log(await bakeNight(d, force));
+    } catch (e) {
+      failed++;
+      console.error(`${process.env.GITHUB_ACTIONS ? "::error::" : ""}${d}: ${e.message}`);
+    }
+  }
+  if (failed) process.exit(1);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

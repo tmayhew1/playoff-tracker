@@ -1,0 +1,70 @@
+{
+ "events": [
+  {
+   "id": "401800101",
+   "date": "2026-01-16T00:30Z",
+   "season": {
+    "type": 2
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "state": "post",
+       "completed": true
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "NY"
+       },
+       "score": "118"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "DEN"
+       },
+       "score": "121"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401800102",
+   "date": "2026-01-16T01:00Z",
+   "season": {
+    "type": 2
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "state": "post",
+       "completed": true
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "OKC"
+       },
+       "score": "109"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "SA"
+       },
+       "score": "104"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
