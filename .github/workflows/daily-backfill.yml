@@ -75,9 +75,10 @@ jobs:
           node-version: 22
 
       # Last night's box scores for the Explore tab's "Last night" card, from
-      # the NBA's live CDN. Independent of the R bake, and never fatal to it:
-      # a CDN hiccup costs one card a day, and the next run looks back three
-      # nights, so it catches up.
+      # ESPN (cdn.nba.com refuses GitHub's runners). Independent of the R
+      # bake, and never fatal to it: a failed night shows as an error
+      # annotation on the run, and the next run bakes every night since the
+      # newest one on disk, so it catches up.
       - name: Bake last night's games
         continue-on-error: true
         run: node --import ./scripts/node/register.mjs scripts/bake-nights.mjs

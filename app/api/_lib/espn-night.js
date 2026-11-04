@@ -2,15 +2,15 @@ import { fetchEspn, fetchEspnBox } from "./espn-box";
 import { parseEspnScoreboard } from "./live-games";
 import { normName } from "./player-slugs";
 
-// One night of games read live off ESPN, in the shape scripts/bake-nights.mjs
-// writes to app/data/nights/<date>.json. /api/nights serves it for
-// yesterday from midnight Pacific until the daily job's bake of that night
-// is deployed (about 7am ET), so About Last Night is on the new night as
-// soon as the day turns over on the West Coast.
+// One night of games read off ESPN, in the shape of
+// app/data/nights/<date>.json. scripts/bake-nights.mjs writes those files
+// with it each morning (readEspnNight), and /api/nights serves it live for
+// yesterday from midnight Pacific until that bake is deployed (espnNight),
+// so About Last Night is on the new night as soon as the day turns over on
+// the West Coast.
 //
 // Only a night whose every counted game is final comes back; a game still
-// on, or any box score ESPN fails to give, returns null and the page keeps
-// the last baked night until a later ask.
+// on gives a reason to skip, and any box score ESPN fails to give throws.
 
 // The stages the bake counts (bake-nights.mjs KINDS), by the names
 // parseEspnScoreboard gives ESPN's season types. Preseason and the All-Star
@@ -21,10 +21,14 @@ const scoreboardUrl = (date) =>
   `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${date.replaceAll("-", "")}`;
 
 // `slugs`: slugsByName over the season's regular-season players.
-export async function espnNight(date, season, slugs) {
+// { night } when every counted game is final, { skip: why } otherwise.
+export async function readEspnNight(date, season, slugs) {
   const slate = parseEspnScoreboard(await fetchEspn(scoreboardUrl(date)));
-  const games = (slate?.games || []).filter((g) => KINDS[g.kind]);
-  if (!games.length || games.some((g) => g.gameStatus !== 3)) return null;
+  if (!slate) throw new Error(`${date}: no scoreboard from ESPN`);
+  const games = slate.games.filter((g) => KINDS[g.kind]);
+  if (!games.length) return { skip: "no games" };
+  const unfinished = games.filter((g) => g.gameStatus !== 3).length;
+  if (unfinished) return { skip: `${unfinished} of ${games.length} games not final yet` };
 
   const boxes = await Promise.all(games.map((g) => fetchEspnBox(g.gameId)));
   const outGames = [], players = [];
@@ -48,5 +52,10 @@ export async function espnNight(date, season, slugs) {
       }
     }
   });
-  return { date, season, games: outGames, players, source: "espn", fetchedAt: new Date().toISOString() };
+  return { night: { date, season, games: outGames, players, source: "espn", fetchedAt: new Date().toISOString() } };
+}
+
+// The night, or null for any reason it can't be had yet.
+export async function espnNight(date, season, slugs) {
+  return (await readEspnNight(date, season, slugs)).night || null;
 }

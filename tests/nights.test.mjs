@@ -1,5 +1,5 @@
 // "Last night": the nightly bake (scripts/bake-nights.mjs) run against the
-// NBA-CDN-shaped fixtures in tests/fixtures/nights, and /api/nights on what
+// ESPN-shaped fixtures in tests/fixtures/nights, and /api/nights on what
 // it writes — and on ESPN's answer for a night not baked yet.
 //
 //   npm test
@@ -62,7 +62,7 @@ test("the bake writes finished nights only, once", () => {
   assert.equal(night.season, "2025-26");
   assert.ok(!night.players.some((p) => p.name === "Deep Bench Guy"), "a DNP is left out");
   const jokic = night.players.find((p) => p.slug === "jokicni01");
-  assert.equal(jokic.name, "Nikola Jokić");
+  assert.equal(jokic.name, "Nikola Jokic"); // ESPN drops the accent; the slug still matches
   assert.deepEqual([jokic.team, jokic.opp, jokic.mp, jokic.pts, jokic.drb, jokic.orb], ["DEN", "NYK", 37, 31, 12, 4]);
 });
 
@@ -178,6 +178,6 @@ test("before midnight Pacific, and once baked, ESPN isn't asked", async (t) => {
   fs.copyFileSync(path.join(OUT, "2026-01-15.json"), path.join(OUT, "2026-01-16.json"));
   const d = await get();
   assert.equal(d.date, "2026-01-16");
-  assert.equal(d.source, "cdn.nba.com");
+  assert.equal(d.source, "espn", "baked from ESPN, read from disk: `asked` stays empty");
   assert.deepEqual(asked, []);
 });
