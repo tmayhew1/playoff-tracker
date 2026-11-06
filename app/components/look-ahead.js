@@ -49,7 +49,7 @@ function lineupRows(top) {
 // The Look Ahead's way to its own awards board (LookAhead owns the board's
 // state): goToAward(award, slug) switches the board and opens the player.
 const AwardGo = createContext(null);
-const AWARD_KEY = { MVP: "mvp", ROY: "roy", "All-NBA": "allnba", "All-Star": "allstar" };
+const AWARD_KEY = { MVP: "mvp", MIP: "mip", ROY: "roy", "All-NBA": "allnba", "All-Star": "allstar" };
 
 function InjuredOut({ list }) {
   if (!list?.length) return null;
@@ -90,12 +90,18 @@ function lookAheadModel(data) {
 // served with the projection as `awardModels`): the ballot reads VA+, as
 // theirs do, and every rookie is in the field so ROY has its whole class.
 // Without them, the MVP model fit with the projection, on plain VA.
+//
+// MIP, once games have been played: each returning player's final VA/G
+// against their preseason projection (`mipExpected`), on the Awards tab's MIP
+// model. Every one of them who is above zero so far is in the field, however
+// far down the ballot, since an improver can start from well below it.
 function simAwards(data, players) {
   const am = data.awardModels;
   const ballot = (va, mp, p) => (am ? vaPlus(va, p.dpm, mp) : va);
   const ballotVa = (p) => ballot(p.va, p.row.mp, p);
   const byBallot = [...players].sort((a, b) => ballotVa(b) - ballotVa(a));
-  const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie)];
+  const mipOn = !!(am?.mip && data.inSeason);
+  const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie || (mipOn && mipExpected(p) != null && p.ytdVa > 0))];
   const rookiePool = data.params?.rookie?.pool;
   // In season, the games played are banked and only the rest is drawn
   // (lib/projection-model.js simulateAwards, `ytd`).
@@ -103,10 +109,19 @@ function simAwards(data, players) {
     ? { g: p.rest.g, va: ballot(p.restVa, p.rest.mp, p), rangeVa: p.restVa, maxG: p.maxRest, shrink: p.shrink,
       ytd: p.ytd ? { g: p.ytd.g, va: ballot(p.ytdVa, p.ytd.mp, p), rangeVa: p.ytdVa } : null }
     : { g: p.row.g, va: ballotVa(p), rangeVa: p.va });
-  const res = simulateAwards(field.map((p) => ({ key: p.slug, ...entry(p), mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null })),
+  const res = simulateAwards(field.map((p) => ({ key: p.slug, ...entry(p), mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null,
+    mipE: mipOn ? mipExpected(p) : null })),
     am ? { a: am.mvp.beta } : data.mvp.model, data.pool,
-    { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null });
+    { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null, mip: mipOn ? am.mip : null });
   return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
+}
+
+// What the preseason projection expected of a player, in VA per game — the
+// bar the MIP model measures them against. None for a rookie (nothing to
+// improve on) or a player the projection never had (no preseason read).
+export function mipExpected(p) {
+  if (p.rookie || p.unprojected || !p.preseason?.row?.g) return null;
+  return p.preseason.va / p.preseason.row.g;
 }
 
 // Projected standings (lib/projection-model.js projectWins): each roster's
@@ -153,7 +168,8 @@ export function lookAheadOdds() {
     const { bySlug } = lookAheadModel(data).awards;
     return Object.fromEntries(data.players.map((p) => {
       const r = bySlug[p.slug];
-      return [p.slug, { mvp: r?.mvp || 0, roy: p.rookie ? r?.roy || 0 : null, allnba: r?.allNba || 0, allstar: r?.allStar || 0, simulated: !!r }];
+      const mip = data.awardModels?.mip && data.inSeason && mipExpected(p) != null ? r?.mip || 0 : null;
+      return [p.slug, { mvp: r?.mvp || 0, mip, roy: p.rookie ? r?.roy || 0 : null, allnba: r?.allNba || 0, allstar: r?.allStar || 0, simulated: !!r }];
     }));
   }).catch((e) => { _odds = null; throw e; }));
 }
@@ -344,7 +360,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         })}
       </div>
 
-      <AwardsBoard awards={awards} pBySlug={pBySlug} lga={lga} hasModels={!!data.awardModels} usgAdj={usgAdj}
+      <AwardsBoard awards={awards} pBySlug={pBySlug} lga={lga} hasModels={!!data.awardModels} hasMip={!!(data.awardModels?.mip && data.inSeason)} usgAdj={usgAdj}
         sub={awardSub} setSub={setAwardSub} open={awardOpen} setOpen={setAwardOpen} />
 
       {/* Projected leaders */}
@@ -438,11 +454,14 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
 
 // The projected awards, laid out like the Awards tab's boards: one sub-page per
 // award, each player's odds beside their projected VA+ and games (minutes for
-// ROY), tap a player for the projected line. MIP has no board here — it's
-// scored against the projection itself, so there's nothing to look ahead with.
-const AWARD_SUBS = [["mvp", "MVP"], ["roy", "ROY"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
+// ROY, the season so far beside the preseason bar for MIP), tap a player for
+// the projected line. MIP only once games have been played: before that every
+// player is exactly on their projection.
+const AWARD_SUBS = [["mvp", "MVP"], ["mip", "MIP"], ["roy", "ROY"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
 const BOARD = {
   mvp: { title: "Most Valuable", col: "MVP%", odds: (r) => r.mvp, note: "The likeliest winners · 65-game rule applied" },
+  mip: { title: "Most Improved", col: "MIP%", odds: (r) => r.mip, improvers: true,
+    note: "Final VA/G against the preseason projection · rookies excluded · half the leader’s games and a positive season to count" },
   roy: { title: "Rookie of the Year", col: "ROY%", odds: (r) => r.roy, rookies: true, minutes: true, note: "Every projected rookie · from VA+ and minutes per game" },
   allnba: { title: "All-NBA", col: "Odds", odds: (r) => r.allNba, note: "The fifteen likeliest, five a team · positionless, as voted since 2023-24 · 65-game rule applied" },
   allstar: { title: "All-Star", col: "Odds", odds: (r, split) => (split ? r.allStarConf : r.allStar), cut: ALL_STAR_PLACES,
@@ -450,21 +469,24 @@ const BOARD = {
 };
 const BOARD_SHOWN = 30;
 const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleString()}`;
+const fmtSigned = (x) => (Number.isFinite(x) ? `${x < 0 ? "−" : ""}${Math.abs(x).toFixed(1)}` : "–");
 
-function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, open, setOpen }) {
+function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, setSub, open, setOpen }) {
   // All-Star: 12 a conference, as the roster is picked, or the 24 likeliest league-wide.
   const [split, setSplit] = useState(true);
-  const subs = hasModels ? AWARD_SUBS : AWARD_SUBS.filter(([k]) => k === "mvp" || k === "allnba");
-  const cfg = BOARD[sub];
+  const subs = (hasModels ? AWARD_SUBS : AWARD_SUBS.filter(([k]) => k === "mvp" || k === "allnba")).filter(([k]) => k !== "mip" || hasMip);
+  // A board the payload can't fill (MIP before opening night) falls back to MVP.
+  const cur = subs.some(([k]) => k === sub) ? sub : "mvp";
+  const cfg = BOARD[cur];
   const entries = awards.res.map((r) => ({ r, p: pBySlug[r.key], odds: cfg.odds(r, split) || 0 }))
-    .filter((e) => e.p && (!cfg.rookies || e.p.rookie));
+    .filter((e) => e.p && (!cfg.rookies || e.p.rookie) && (!cfg.improvers || mipExpected(e.p) != null));
   const vpOf = (p) => vaPlus(p.va, p.dpm, p.row.mp);
   // All-NBA keeps its three teams on top; everyone else goes by odds.
-  const teams = sub === "allnba" ? allNbaTeams(awards.res) : null;
+  const teams = cur === "allnba" ? allNbaTeams(awards.res) : null;
   const onTeams = new Set(teams ? teams.flat().map((r) => r.key) : []);
   const ranked = entries.filter((e) => !onTeams.has(e.r.key))
     .sort((a, b) => b.odds - a.odds || vpOf(b.p) - vpOf(a.p));
-  const bySplit = sub === "allstar" && split;
+  const bySplit = cur === "allstar" && split;
   const groups = teams
     ? [...teams.map((tm, ti) => ({ head: `${["First", "Second", "Third"][ti]} Team`, rows: tm.map((r) => entries.find((e) => e.r.key === r.key)).filter(Boolean) })),
       { head: "Next in line", rows: ranked.slice(0, BOARD_SHOWN - onTeams.size) }]
@@ -480,16 +502,16 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
   let rank = 0;
   return (
     <div id="la-awards" className="mb-4">
-      <div className={`mb-2 grid gap-1 ${subs.length === 4 ? "grid-cols-4" : "grid-cols-2"}`} role="tablist" aria-label="Award">
+      <div className={`mb-2 grid gap-1 ${subs.length === 5 ? "grid-cols-5" : subs.length === 4 ? "grid-cols-4" : "grid-cols-2"}`} role="tablist" aria-label="Award">
         {subs.map(([k, label]) => (
-          <button key={k} type="button" role="tab" aria-selected={sub === k} onClick={() => { setSub(k); setOpen(null); }} className={subCls(sub === k)}>{label}</button>
+          <button key={k} type="button" role="tab" aria-selected={cur === k} onClick={() => { setSub(k); setOpen(null); }} className={subCls(cur === k)}>{label}</button>
         ))}
       </div>
       <div className="border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
           <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
           <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
-          {sub === "allstar" && (
+          {cur === "allstar" && (
             <div className="mt-1.5 flex border border-stone-300" role="group" aria-label="All-Star places">
               {[[true, `${ALL_STAR_PLACES / 2} West / ${ALL_STAR_PLACES / 2} East`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
                 <button key={label} type="button" aria-pressed={split === v} onClick={() => { setSplit(v); setOpen(null); }}
@@ -503,8 +525,15 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
           <span className="w-8 sm:w-10">Team</span>
           <span className="flex-1">Player</span>
           <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
-          <span className="w-11 text-right">VA+</span>
-          <span className={`${cfg.minutes ? "w-8" : "w-6"} text-right`}>{cfg.minutes ? "MIN" : "G"}</span>
+          {cfg.improvers
+            ? <>
+              <span className="w-11 text-right" title="Preseason projected VA per game">Pre/G</span>
+              <span className="w-11 text-right" title="VA per game so far">Now/G</span>
+            </>
+            : <>
+              <span className="w-11 text-right">VA+</span>
+              <span className={`${cfg.minutes ? "w-8" : "w-6"} text-right`}>{cfg.minutes ? "MIN" : "G"}</span>
+            </>}
         </div>
         {groups.map((g, gi) => (
           <div key={gi} className={gi ? "border-t border-dashed border-stone-300" : ""}>
@@ -533,10 +562,18 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
                         {p.injury && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
                       </span>
                       <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(odds)}</span>
-                      <span className={`w-11 text-right tabular-nums ${vp < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtInt(vp)}</span>
-                      {cfg.minutes
-                        ? <span className="w-8 text-right tabular-nums text-stone-500">{fmt1(p.mpg)}</span>
-                        : <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>}
+                      {cfg.improvers ? (() => {
+                        const pre = mipExpected(p), now = p.ytd?.g ? p.ytdVa / p.ytd.g : null;
+                        return <>
+                          <span className={`w-11 text-right tabular-nums ${pre < 0 ? "text-red-600" : "text-stone-500"}`}>{fmtSigned(pre)}</span>
+                          <span className={`w-11 text-right tabular-nums ${now != null && now < 0 ? "text-red-600" : now != null && now > pre ? "text-emerald-700" : "text-stone-700"}`}>{now == null ? "–" : fmtSigned(now)}</span>
+                        </>;
+                      })() : <>
+                        <span className={`w-11 text-right tabular-nums ${vp < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtInt(vp)}</span>
+                        {cfg.minutes
+                          ? <span className="w-8 text-right tabular-nums text-stone-500">{fmt1(p.mpg)}</span>
+                          : <span className="w-6 text-right tabular-nums text-stone-500">{p.row.g}</span>}
+                      </>}
                     </div>
                   </div>
                   {isOpen && <ProjectedLine p={p} sim={r} lga={lga} />}
@@ -545,7 +582,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, usgAdj, sub, setSub, ope
             })}
           </div>
         ))}
-        {!groups.some((g) => g.rows.length) && <div className="px-3 py-3 text-[10px] italic text-stone-400">No projected {sub === "roy" ? "rookies" : "players"} yet.</div>}
+        {!groups.some((g) => g.rows.length) && <div className="px-3 py-3 text-[10px] italic text-stone-400">No projected {cur === "roy" ? "rookies" : "players"} yet.</div>}
       </div>
     </div>
   );
@@ -726,7 +763,7 @@ function Cards({ p, sim, lga }) {
       ) : def != null && <Defense def={def} g={g} vpTot={vpTot} rookie={p.dpm == null} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
       {sim && (() => {
-        const odds = [["MVP", sim.mvp], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
+        const odds = [["MVP", sim.mvp], ["MIP", p.rookie ? 0 : sim.mip], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
         return odds.length > 0 && (
           <div className="basis-full flex gap-1">
             {odds.map(([k, x]) => (
@@ -854,7 +891,11 @@ function Method({ data }) {
       )}
       {data.inSeason && <InSeasonMethod ins={data.inSeason} />}
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
-      <p><span className="font-semibold text-stone-800">The awards.</span> The same models as the Awards tab, run on the projected season. Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — and then draws each ballot from the player’s VA+: MVP from a logit on VA+, fit on {data.awardModels ? "every winner since 1980-81" : `all ${m.seasons} winners since 1980-81 (on plain VA)`}, with the 65-game rule; All-NBA as the top fifteen of that ballot{data.awardModels ? <>; Rookie of the Year among the projected rookies from VA+ and minutes per game; and All-Star as the {ALL_STAR_PLACES} likeliest selections from a logit on VA+, each fit on the real picks</> : ""}. Most Improved has no board here: it is scored against this projection, so there is nothing to look ahead with.</p>
+      <p><span className="font-semibold text-stone-800">The awards.</span> The same models as the Awards tab, run on the projected season. Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — and then draws each ballot from the player’s VA+: MVP from a logit on VA+, fit on {data.awardModels ? "every winner since 1980-81" : `all ${m.seasons} winners since 1980-81 (on plain VA)`}, with the 65-game rule; All-NBA as the top fifteen of that ballot{data.awardModels ? <>; Rookie of the Year among the projected rookies from VA+ and minutes per game; and All-Star as the {ALL_STAR_PLACES} likeliest selections from a logit on VA+, each fit on the real picks</> : ""}.{data.awardModels?.mip
+        ? data.inSeason
+          ? <> Most Improved is the Awards tab’s model turned on this season: each returning player’s final VA per game — the games played so far plus the simulated rest, on plain VA as that model was fit — against the VA per game the preseason projection gave them, as the ratio (final + {data.awardModels.mip.floor}) / (preseason + {data.awardModels.mip.floor}), among players with at least half the games of that draw’s leader and a season above zero. Rookies are left out: there is no preseason line to improve on. Fit on every winner since 1985-86, with the projection made the summer before each season.</>
+          : <> Most Improved opens once games have been played: it measures the season against this projection, so until then every player is exactly on it.</>
+        : null}</p>
       <p><span className="font-semibold text-stone-800">Injuries.</span> A player already reported out is projected for the games left after the expected return: the projected availability applied to what remains of the schedule, at the same per-game line, so someone out until March keeps their rate but loses most of their total. The minutes they give up go to their teammates in the team context. Return dates come from {data.injuries === "live" ? "ESPN’s injury report, read live, and " : ""}reporting collected {data.injuriesAsOf ? `as of ${fmtDate(data.injuriesAsOf)}` : "before the season"} (the newer of the two wins), taking the middle of a reported range; day-to-day listings are left to the projected availability. A player out for the season is off the board and named under their team.</p>
       <p><span className="font-semibold text-stone-800">Blind spots.</span> Career stage is seasons played, not age (the data has no birth dates). Undrafted rookies with no college season in the data aren’t projected. A season lost entirely to injury isn’t one of the outcomes drawn. And the league is assumed to look like {data.base}’s.</p>
       <p className="text-[9px] italic text-stone-400">Fit {data.fittedAt} · npm run fit:projections</p>
