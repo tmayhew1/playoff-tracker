@@ -136,7 +136,7 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // Rating) collapses horizontally. Tapping a grey dot re-points the whole card
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null }) {
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, quadrants = null }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -259,6 +259,20 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           {/* League baseline — where the stat is worth exactly nothing. */}
           {view.guides.map((g, i) => (
             <line key={i} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke="#e7e5e4" strokeWidth="0.4" />
+          ))}
+          {/* Optional quadrant names, pinned to the plot's corners under the
+              cloud: [top-left, top-right, bottom-left, bottom-right]. Only
+              the full scatter has quadrants, not a collapsed dot plot. */}
+          {quadrants && !collapsed && quadrants.map((q, i) => (
+            <text
+              key={`q${i}`}
+              x={i % 2 ? 98.5 : 1.5}
+              y={i < 2 ? 3.6 : height - 1.6}
+              textAnchor={i % 2 ? "end" : "start"}
+              fontSize="2.7"
+              fontStyle="italic"
+              className="fill-stone-400 pointer-events-none select-none"
+            >{q}</text>
           ))}
           {view.dots.filter((dt) => !dt.self).map((dt, i) => (
             <circle key={i} cx={dt.cx} cy={dt.cy} r={view.r} fill="#d6d3d1" fillOpacity="0.8" />
@@ -967,7 +981,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // each — no rate headline (head left undefined, so the chip drops it).
     const chips = [
       { key: "eff", sub: "Eff", selfV: me[0] },
-      { key: "impact", sub: "Impact vs fit", selfV: me[1] },
+      { key: "impact", sub: "Impact above Exp", selfV: me[1] },
     ];
     return {
       chips, fit: { slope, icpt },
@@ -985,7 +999,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Heading for the split row, naming what the card is divided by — the two
   // plotted axes on a scatter, the kind of split otherwise.
   const segHeading = effScatter
-    ? "Scoring · Impact vs fit on Eff"
+    ? "Scoring · Impact above Exp vs Eff"
     : showZones
     ? (catKey === "2-Pointers" ? "2-Pointers · by distance" : "Scoring · by shot distance")
     : scatter ? (selIdx >= 0 ? `${catKey} · ${segData[selIdx].sub} spread` : `${catKey} · ${segData[yi].sub} vs ${segData[xi].sub}`)
@@ -1231,6 +1245,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               onPickPlayer={(r) => setFocusRow(samePlayer(r, ownerRow) ? null : r)}
               sgn={sgn}
               name={self.name}
+              quadrants={["Difficult Shotmaking", "Taking and Making", "Shooting and Missing", "Efficient Shot Diet"]}
             />
           ) : scatter ? (
             <ScatterSplit
@@ -1390,7 +1405,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           </>
           )}
           {effScatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
-            {`Every ${scopeNoun} player with ≥${d.floor} G and shot-location data this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · → Eff = 3P + 2P + FT value added; ↑ Impact vs fit = Impact (the six shot-distance values summed) minus the Impact predicted from Eff by a straight-line fit across this field (Impact ≈ ${effScatter.fit.icpt >= 0 ? "" : "−"}${Math.abs(effScatter.fit.icpt).toFixed(2)} + ${effScatter.fit.slope.toFixed(2)} × Eff), both ${perGame ? "per game" : "season totals"}; vertical line = league-average Eff, horizontal = the fit (above it, his distances add more than his efficiency predicts) · the card ranks on the highlighted one — tap the other to switch, or tap it again for the shot-distance bars.`}
+            {`Every ${scopeNoun} player with ≥${d.floor} G and shot-location data this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · → Eff = 3P + 2P + FT value added; ↑ Impact above Exp = Impact (the six shot-distance values summed) minus the Impact expected from Eff by a straight-line fit across this field (Impact ≈ ${effScatter.fit.icpt >= 0 ? "" : "−"}${Math.abs(effScatter.fit.icpt).toFixed(2)} + ${effScatter.fit.slope.toFixed(2)} × Eff), both ${perGame ? "per game" : "season totals"}; vertical line = league-average Eff, horizontal = the fit (above it, his distances add more than his efficiency predicts) · the card ranks on the highlighted one — tap the other to switch, or tap it again for the shot-distance bars.`}
           </div>}
           {scatter && !effScatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {`Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`}
