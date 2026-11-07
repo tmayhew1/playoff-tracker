@@ -920,13 +920,60 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     return { efficiency: zeroed(eff / scale), impact };
   }, [segData, catKey, showZones, selfRow, lga, perGame]);
 
+  // Eff vs Impact scatter — what the six-bar Scoring card shows instead of its
+  // distance bars and shot distribution while one of the two headline totals is
+  // selected. The two are two readings of the same scoring (box-score shooting
+  // value against the six distances summed), so the useful picture is one
+  // against the other across the league, the same way Passing plots AST
+  // against TOV: every qualified player in the season with shot-location data
+  // in grey, the card's player in black. Eff on the vertical — it's the
+  // reading every season has — Impact along the bottom. Same season field,
+  // ≥1/3-GP floor and /G toggle as the other scatters.
+  const effScatter = useMemo(() => {
+    if (!TOTAL_SEGMENTS || !segTotals || segTotals.efficiency == null) return null;
+    if (selSeg?.key !== "eff" && selSeg?.key !== "impact") return null;
+    const [effSeg, impSeg] = TOTAL_SEGMENTS;
+    const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
+    const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0 && hasZoneData(r));
+    const per = (seg, r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+    // Impact on x (index 0), Eff on y (index 1).
+    const segs = [impSeg, effSeg];
+    const rows = pool
+      .filter((r) => !samePlayer(r, selfRow))
+      .map((r) => ({ row: r, v: segs.map((s) => per(s, r)) }));
+    const me = [segTotals.impact, segTotals.efficiency];
+    const extent = (vals, mine) => {
+      const lo = Math.min(0, mine, ...vals), hi = Math.max(0, mine, ...vals);
+      const pad = (hi - lo) * 0.08 || 1;
+      return [lo - pad, hi + pad];
+    };
+    // The chips under the plot: each headline total, with true shooting as the
+    // rate both of them are readings of.
+    const fga = selfRow.fga || 0, fta = selfRow.fta || 0;
+    const tsDen = 2 * (fga + 0.44 * fta);
+    const ts = tsDen > 0 ? `${(((selfRow.pts || 0) / tsDen) * 100).toFixed(1)}%` : null;
+    const chips = [
+      { key: "impact", sub: "Impact", headUnit: " · TS", head: ts, selfV: me[0] },
+      { key: "eff", sub: "Eff", headUnit: " · TS", head: ts, selfV: me[1] },
+    ];
+    return {
+      chips,
+      plot: {
+        rows, me, n: pool.length,
+        ranges: [0, 1].map((i) => extent(rows.map((q) => q.v[i]), me[i])),
+      },
+    };
+  }, [TOTAL_SEGMENTS, segTotals, selSeg, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
+
   const short = CAT_SHORT[catKey] || catKey;
   // While a bar in the split row is selected, every heading/column reads as
   // that component ("RIM", "AST") instead of the rolled-up category.
   const metricLabel = selSeg ? selSeg.sub.toUpperCase() : short;
   // Heading for the split row, naming what the card is divided by — the two
   // plotted axes on a scatter, the kind of split otherwise.
-  const segHeading = showZones
+  const segHeading = effScatter
+    ? "Scoring · Eff vs Impact"
+    : showZones
     ? (catKey === "2-Pointers" ? "2-Pointers · by distance" : "Scoring · by shot distance")
     : scatter ? (selIdx >= 0 ? `${catKey} · ${segData[selIdx].sub} spread` : `${catKey} · ${segData[yi].sub} vs ${segData[xi].sub}`)
     : `${catKey} · by stat`;
@@ -1157,7 +1204,22 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               )}
             </div>
           </div>
-          {scatter ? (
+          {effScatter ? (
+            <ScatterSplit
+              key={`${catKey}:effimpact:${self.slug || self.name}`}
+              scatter={effScatter.plot}
+              segData={effScatter.chips}
+              height={SCATTER_H}
+              xi={0}
+              yi={1}
+              selIdx={-1}
+              selectedSeg={selectedSeg}
+              onSelect={(k) => setSelectedSeg(selectedSeg === k ? null : k)}
+              onPickPlayer={(r) => setFocusRow(samePlayer(r, ownerRow) ? null : r)}
+              sgn={sgn}
+              name={self.name}
+            />
+          ) : scatter ? (
             <ScatterSplit
               key={`${catKey}:${selectedSeg || ""}:${self.slug || self.name}`}
               scatter={scatter}
@@ -1314,7 +1376,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           })()}
           </>
           )}
-          {scatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+          {effScatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+            {`Every ${scopeNoun} player with ≥${d.floor} G and shot-location data this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ↑ Eff = 3P + 2P + FT value added, → Impact = the six shot-distance values summed, both ${perGame ? "per game" : "season totals"}; lines = the league baseline · the card ranks on the highlighted one — tap the other to switch, or tap it again for the shot-distance bars.`}
+          </div>}
+          {scatter && !effScatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {`Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`}
           </div>}
         </div>
