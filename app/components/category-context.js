@@ -8,6 +8,7 @@ import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlp
 import { useGatedGo } from "../lib/gated-go";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
+import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/role-model";
 
 
 // CategoryContext: the drill-down under one VA category — the league-context
@@ -428,6 +429,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // EFF instead. Tapping the "2-Pointers" header flips it, and the header
   // total follows (Impact ↔ Eff).
   const [twoMerged, setTwoMerged] = useState(false);
+  // League-average reference line on the by-season trend of a shot-
+  // distribution reading: false = the whole league, true = only the player's
+  // role group (Guards / Wings / Bigs, lib/role-model.js). Flipped by tapping
+  // the line's legend.
+  const [refByRole, setRefByRole] = useState(false);
   // When VA+ is the active metric, the Defense drill-in folds D Rating into
   // every ranking/percentile/all-time/trend figure — so the context matches
   // the Defense group's VA+ total (Blocks + Steals + D Rating), not just the
@@ -839,6 +845,40 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
              floorA, partialSelf, careerFloor, attFloor, attLo, attHi, board, allN: boardN, allRank: boardRank, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg, seasonOnly]);
 
+  // Reference line for the by-season trend while the card reads a share of
+  // shots: the league's share from this distance, pooled over every attempt in
+  // every season the trend spans (shots, not players, are the unit — the same
+  // way a player's own share is built). `role` narrows it to the players the
+  // role model puts in the same group as this one, each season classified
+  // against its own league baseline; the player's own group is the one he
+  // logged the most minutes in across those seasons.
+  const shareRef = useMemo(() => {
+    if (!shareMode || d.mine.length === 0) return null;
+    const seasons = d.mine.map((x) => x.season);
+    const bases = new Map(seasons.map((s) => [s, seasonBaseline(poolsBySeason.get(s) || [])]));
+    const inSpan = new Set(seasons);
+    const role = playerRole((self.seasons || []).filter((s) => inSpan.has(s.season) && s.mp > 0), (s) => bases.get(s));
+    let n = 0, dn = 0, rn = 0, rd = 0;
+    for (const s of seasons) {
+      for (const r of poolsBySeason.get(s) || []) {
+        if (!(r.mp > 0) || !hasZoneData(r)) continue;
+        const num = selSeg.num(r), den = selSeg.den(r);
+        if (!(den > 0)) continue;
+        n += num; dn += den;
+        if (role && classifyRole(r, bases.get(s)) === role) { rn += num; rd += den; }
+      }
+    }
+    if (!(dn > 0)) return null;
+    return {
+      all: n / dn,
+      role: role && rd > 0 ? role : null,
+      roleV: rd > 0 ? rn / rd : null,
+      span: seasons.length > 1 ? `${seasonTag(seasons[0])}–${seasonTag(seasons[seasons.length - 1])}` : seasonTag(seasons[0]),
+    };
+  }, [shareMode, selSeg, d.mine, poolsBySeason, self]);
+  const refOnRole = refByRole && !!shareRef?.role;
+  const refV = shareRef ? (refOnRole ? shareRef.roleV : shareRef.all) : null;
+
   const segData = useMemo(() => {
     if (!SEGMENTS) return null;
     // Same season field and ≥1/3-GP floor as the ranking pool above.
@@ -1075,7 +1115,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
 
   // Trend bars: one bar per season, diverging from a shared zero baseline.
-  const ms = d.mine.map((x) => x.m);
+  // Both reference values join the scale (not just the one showing), so
+  // flipping the legend moves the line without rescaling every bar.
+  const ms = [...d.mine.map((x) => x.m), ...(shareRef ? [shareRef.all, shareRef.roleV ?? 0] : [])];
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
   const tSpan = (tHi - tLo) || 1;
   // Reserve a top band so a rank badge floats ABOVE its bar instead of being
@@ -1546,8 +1588,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
         <div className="flex items-center justify-between mb-3">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{metricLabel}{mUnit} by season</span>
-          {gToggle}
+          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{metricLabel}{mUnit} by season</span>
+          <span className="flex items-center gap-2 shrink-0">
+            {shareRef && (
+              // Legend for the dotted line, doubling as its switch: tap to
+              // narrow the average to the player's role group and back.
+              <button
+                type="button"
+                onClick={() => shareRef.role && setRefByRole((v) => !v)}
+                disabled={!shareRef.role}
+                aria-pressed={refOnRole}
+                title={shareRef.role
+                  ? (refOnRole
+                    ? `League ${metricLabel} among ${ROLE_LABEL[shareRef.role]}, ${shareRef.span} — tap for the whole league`
+                    : `League ${metricLabel}, ${shareRef.span} — tap for ${ROLE_LABEL[shareRef.role]} only`)
+                  : `League ${metricLabel}, ${shareRef.span}`}
+                className="inline-flex items-center gap-1 text-[9px] text-stone-500 tabular-nums whitespace-nowrap touch-manipulation enabled:hover:text-stone-800 disabled:cursor-default"
+              >
+                <span aria-hidden className="inline-block w-3 border-t-[1.5px] border-dotted border-stone-900" />
+                <span>lg. avg{refOnRole ? `: ${ROLE_LABEL[shareRef.role]}` : ""}</span>
+              </button>
+            )}
+            {gToggle}
+          </span>
         </div>
         {d.mine.length === 0 ? (
           <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
@@ -1579,6 +1642,27 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       className="absolute inset-x-[12%]"
                       style={{ top: `${topPct}%`, height: `${Math.max(hPct, 1)}%`, backgroundColor: i === curIdx ? "#1c1917" : "#a8a29e" }}
                     />
+                    {refV != null && (
+                      // League-average reference, one segment per column (the
+                      // 2px gutters between columns read as more dots). Drawn
+                      // over the bar: black dots, except white where the line
+                      // crosses the current season's black bar itself (not
+                      // its side margins, nor the white above a shorter bar).
+                      (() => {
+                        const top = `${zeroPct - (Math.abs(refV) / tSpan) * 100 * plotScale}%`;
+                        const seg = (style, color) => (
+                          <div aria-hidden className="absolute border-t-[1.5px] border-dotted pointer-events-none" style={{ top, borderColor: color, ...style }} />
+                        );
+                        if (!(i === curIdx && refV <= x.m)) return seg({ left: -1, right: -1 }, "#1c1917");
+                        return (
+                          <>
+                            {seg({ left: -1, width: "calc(12% + 1px)" }, "#1c1917")}
+                            {seg({ left: "12%", right: "12%" }, "#ffffff")}
+                            {seg({ right: -1, width: "calc(12% + 1px)" }, "#1c1917")}
+                          </>
+                        );
+                      })()
+                    )}
                     {topRank && (
                       // Auto-width chip centered over the bar, floating in the
                       // reserved headroom just above the bar's top — no full-
