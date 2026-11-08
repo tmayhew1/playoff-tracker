@@ -1,24 +1,24 @@
 {
   "season": "2026-27",
   "source": "basketball-reference",
-  "fetchedAt": "2026-11-07T16:49:00.792Z",
+  "fetchedAt": "2026-11-08T14:53:00.853Z",
   "rs": {
     "leagueAvg": {
       "z03": {
-        "fgm": 3639,
-        "fga": 5296
+        "fgm": 3823,
+        "fga": 5578
       },
       "z310": {
-        "fgm": 2135,
-        "fga": 4704
+        "fgm": 2250,
+        "fga": 4958
       },
       "z1016": {
-        "fgm": 966,
-        "fga": 2215
+        "fgm": 1025,
+        "fga": 2343
       },
       "z16xp": {
-        "fgm": 409,
-        "fga": 1046
+        "fgm": 435,
+        "fga": 1108
       }
     },
     "players": [
@@ -65,6 +65,90 @@
         }
       },
       {
+        "slug": "youngtr01",
+        "name": "Trae Young",
+        "team": "WAS",
+        "z03": {
+          "fgm": 10,
+          "fga": 14
+        },
+        "z310": {
+          "fgm": 9,
+          "fga": 24
+        },
+        "z1016": {
+          "fgm": 11,
+          "fga": 17
+        },
+        "z16xp": {
+          "fgm": 3,
+          "fga": 10
+        }
+      },
+      {
+        "slug": "smithja05",
+        "name": "Jabari Smith Jr.",
+        "team": "HOU",
+        "z03": {
+          "fgm": 15,
+          "fga": 23
+        },
+        "z310": {
+          "fgm": 5,
+          "fga": 9
+        },
+        "z1016": {
+          "fgm": 8,
+          "fga": 19
+        },
+        "z16xp": {
+          "fgm": 4,
+          "fga": 8
+        }
+      },
+      {
+        "slug": "duranke01",
+        "name": "Kevin Durant",
+        "team": "HOU",
+        "z03": {
+          "fgm": 13,
+          "fga": 15
+        },
+        "z310": {
+          "fgm": 5,
+          "fga": 18
+        },
+        "z1016": {
+          "fgm": 18,
+          "fga": 36
+        },
+        "z16xp": {
+          "fgm": 14,
+          "fga": 18
+        }
+      },
+      {
+        "slug": "alexani01",
+        "name": "Nickeil Alexander-Walker",
+        "team": "ATL",
+        "z03": {
+          "fgm": 22,
+          "fga": 35
+        },
+        "z310": {
+          "fgm": 7,
+          "fga": 20
+        },
+        "z1016": {
+          "fgm": 6,
+          "fga": 15
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 3
+        }
+      },
+      {
         "slug": "mcdanja02",
         "name": "Jaden McDaniels",
         "team": "MIN",
@@ -83,6 +167,90 @@
         "z16xp": {
           "fgm": 0,
           "fga": 2
+        }
+      },
+      {
+        "slug": "mitchdo01",
+        "name": "Donovan Mitchell",
+        "team": "CLE",
+        "z03": {
+          "fgm": 24,
+          "fga": 36
+        },
+        "z310": {
+          "fgm": 16,
+          "fga": 31
+        },
+        "z1016": {
+          "fgm": 6,
+          "fga": 14
+        },
+        "z16xp": {
+          "fgm": 7,
+          "fga": 12
+        }
+      },
+      {
+        "slug": "hardeja01",
+        "name": "James Harden",
+        "team": "CLE",
+        "z03": {
+          "fgm": 10,
+          "fga": 23
+        },
+        "z310": {
+          "fgm": 5,
+          "fga": 22
+        },
+        "z1016": {
+          "fgm": 5,
+          "fga": 8
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
+        }
+      },
+      {
+        "slug": "daniedy01",
+        "name": "Dyson Daniels",
+        "team": "ATL",
+        "z03": {
+          "fgm": 26,
+          "fga": 44
+        },
+        "z310": {
+          "fgm": 18,
+          "fga": 37
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 7
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
+        }
+      },
+      {
+        "slug": "thompam01",
+        "name": "Amen Thompson",
+        "team": "HOU",
+        "z03": {
+          "fgm": 40,
+          "fga": 58
+        },
+        "z310": {
+          "fgm": 16,
+          "fga": 37
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 11
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 4
         }
       },
       {
@@ -107,6 +275,111 @@
         }
       },
       {
+        "slug": "georgky01",
+        "name": "Kyshawn George",
+        "team": "WAS",
+        "z03": {
+          "fgm": 22,
+          "fga": 31
+        },
+        "z310": {
+          "fgm": 12,
+          "fga": 26
+        },
+        "z1016": {
+          "fgm": 11,
+          "fga": 20
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "gilgesh01",
+        "name": "Shai Gilgeous-Alexander",
+        "team": "OKC",
+        "z03": {
+          "fgm": 22,
+          "fga": 32
+        },
+        "z310": {
+          "fgm": 10,
+          "fga": 30
+        },
+        "z1016": {
+          "fgm": 33,
+          "fga": 70
+        },
+        "z16xp": {
+          "fgm": 15,
+          "fga": 31
+        }
+      },
+      {
+        "slug": "wagnefr01",
+        "name": "Franz Wagner",
+        "team": "ORL",
+        "z03": {
+          "fgm": 28,
+          "fga": 36
+        },
+        "z310": {
+          "fgm": 24,
+          "fga": 59
+        },
+        "z1016": {
+          "fgm": 7,
+          "fga": 15
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 6
+        }
+      },
+      {
+        "slug": "mobleev01",
+        "name": "Evan Mobley",
+        "team": "CLE",
+        "z03": {
+          "fgm": 37,
+          "fga": 49
+        },
+        "z310": {
+          "fgm": 8,
+          "fga": 22
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 7
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "okongon01",
+        "name": "Onyeka Okongwu",
+        "team": "ATL",
+        "z03": {
+          "fgm": 22,
+          "fga": 33
+        },
+        "z310": {
+          "fgm": 15,
+          "fga": 28
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 4
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "doncilu01",
         "name": "Luka Dončić",
         "team": "LAL",
@@ -125,6 +398,27 @@
         "z16xp": {
           "fgm": 7,
           "fga": 15
+        }
+      },
+      {
+        "slug": "lendeya01",
+        "name": "Yaxel Lendeborg",
+        "team": "GSW",
+        "z03": {
+          "fgm": 21,
+          "fga": 30
+        },
+        "z310": {
+          "fgm": 23,
+          "fga": 42
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 7
+        },
+        "z16xp": {
+          "fgm": 2,
+          "fga": 5
         }
       },
       {
@@ -149,24 +443,24 @@
         }
       },
       {
-        "slug": "youngtr01",
-        "name": "Trae Young",
-        "team": "WAS",
+        "slug": "harpedy01",
+        "name": "Dylan Harper",
+        "team": "SAS",
         "z03": {
-          "fgm": 10,
-          "fga": 13
+          "fgm": 40,
+          "fga": 48
         },
         "z310": {
-          "fgm": 9,
-          "fga": 22
+          "fgm": 13,
+          "fga": 31
         },
         "z1016": {
-          "fgm": 10,
-          "fga": 15
+          "fgm": 2,
+          "fga": 17
         },
         "z16xp": {
-          "fgm": 3,
-          "fga": 10
+          "fgm": 2,
+          "fga": 9
         }
       },
       {
@@ -275,27 +569,6 @@
         }
       },
       {
-        "slug": "smithja05",
-        "name": "Jabari Smith Jr.",
-        "team": "HOU",
-        "z03": {
-          "fgm": 12,
-          "fga": 19
-        },
-        "z310": {
-          "fgm": 5,
-          "fga": 9
-        },
-        "z1016": {
-          "fgm": 7,
-          "fga": 18
-        },
-        "z16xp": {
-          "fgm": 2,
-          "fga": 5
-        }
-      },
-      {
         "slug": "millebr02",
         "name": "Brandon Miller",
         "team": "CHA",
@@ -338,45 +611,87 @@
         }
       },
       {
-        "slug": "alexani01",
-        "name": "Nickeil Alexander-Walker",
-        "team": "ATL",
+        "slug": "brunsja01",
+        "name": "Jalen Brunson",
+        "team": "NYK",
         "z03": {
-          "fgm": 19,
-          "fga": 31
+          "fgm": 14,
+          "fga": 25
         },
         "z310": {
-          "fgm": 6,
-          "fga": 18
+          "fgm": 11,
+          "fga": 37
         },
         "z1016": {
-          "fgm": 5,
-          "fga": 13
+          "fgm": 15,
+          "fga": 29
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 3
+          "fgm": 14,
+          "fga": 28
         }
       },
       {
-        "slug": "duranke01",
-        "name": "Kevin Durant",
-        "team": "HOU",
+        "slug": "randlju01",
+        "name": "Julius Randle",
+        "team": "BKN",
         "z03": {
-          "fgm": 12,
-          "fga": 13
+          "fgm": 17,
+          "fga": 30
         },
         "z310": {
-          "fgm": 5,
-          "fga": 18
+          "fgm": 12,
+          "fga": 31
         },
         "z1016": {
-          "fgm": 16,
-          "fga": 32
+          "fgm": 13,
+          "fga": 23
         },
         "z16xp": {
-          "fgm": 13,
+          "fgm": 2,
+          "fga": 6
+        }
+      },
+      {
+        "slug": "wembavi01",
+        "name": "Victor Wembanyama",
+        "team": "SAS",
+        "z03": {
+          "fgm": 61,
+          "fga": 79
+        },
+        "z310": {
+          "fgm": 12,
+          "fga": 26
+        },
+        "z1016": {
+          "fgm": 7,
+          "fga": 23
+        },
+        "z16xp": {
+          "fgm": 5,
+          "fga": 16
+        }
+      },
+      {
+        "slug": "cartewe01",
+        "name": "Wendell Carter Jr.",
+        "team": "ORL",
+        "z03": {
+          "fgm": 26,
+          "fga": 26
+        },
+        "z310": {
+          "fgm": 6,
           "fga": 17
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 6
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 1
         }
       },
       {
@@ -401,24 +716,24 @@
         }
       },
       {
-        "slug": "daniedy01",
-        "name": "Dyson Daniels",
-        "team": "ATL",
+        "slug": "portemi01",
+        "name": "Michael Porter Jr.",
+        "team": "BKN",
         "z03": {
-          "fgm": 25,
-          "fga": 40
+          "fgm": 16,
+          "fga": 19
         },
         "z310": {
-          "fgm": 16,
-          "fga": 35
+          "fgm": 11,
+          "fga": 23
         },
         "z1016": {
           "fgm": 2,
-          "fga": 5
+          "fga": 2
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 5,
+          "fga": 13
         }
       },
       {
@@ -443,87 +758,24 @@
         }
       },
       {
-        "slug": "georgky01",
-        "name": "Kyshawn George",
-        "team": "WAS",
+        "slug": "vassede01",
+        "name": "Devin Vassell",
+        "team": "SAS",
         "z03": {
-          "fgm": 20,
-          "fga": 27
+          "fgm": 9,
+          "fga": 13
         },
         "z310": {
-          "fgm": 12,
-          "fga": 24
+          "fgm": 0,
+          "fga": 8
         },
         "z1016": {
-          "fgm": 10,
-          "fga": 19
+          "fgm": 13,
+          "fga": 25
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "hardeja01",
-        "name": "James Harden",
-        "team": "CLE",
-        "z03": {
-          "fgm": 10,
-          "fga": 22
-        },
-        "z310": {
-          "fgm": 5,
-          "fga": 20
-        },
-        "z1016": {
-          "fgm": 4,
-          "fga": 7
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "mitchdo01",
-        "name": "Donovan Mitchell",
-        "team": "CLE",
-        "z03": {
-          "fgm": 19,
-          "fga": 31
-        },
-        "z310": {
-          "fgm": 15,
-          "fga": 30
-        },
-        "z1016": {
-          "fgm": 4,
-          "fga": 11
-        },
-        "z16xp": {
-          "fgm": 7,
-          "fga": 12
-        }
-      },
-      {
-        "slug": "gilgesh01",
-        "name": "Shai Gilgeous-Alexander",
-        "team": "OKC",
-        "z03": {
-          "fgm": 18,
-          "fga": 27
-        },
-        "z310": {
-          "fgm": 9,
-          "fga": 28
-        },
-        "z1016": {
-          "fgm": 32,
-          "fga": 65
-        },
-        "z16xp": {
-          "fgm": 13,
-          "fga": 28
+          "fga": 5
         }
       },
       {
@@ -569,24 +821,45 @@
         }
       },
       {
-        "slug": "okongon01",
-        "name": "Onyeka Okongwu",
-        "team": "ATL",
+        "slug": "anunoog01",
+        "name": "OG Anunoby",
+        "team": "NYK",
         "z03": {
-          "fgm": 20,
-          "fga": 31
+          "fgm": 23,
+          "fga": 37
         },
         "z310": {
-          "fgm": 14,
-          "fga": 26
+          "fgm": 0,
+          "fga": 9
         },
         "z1016": {
-          "fgm": 3,
+          "fgm": 1,
           "fga": 4
         },
         "z16xp": {
           "fgm": 0,
           "fga": 0
+        }
+      },
+      {
+        "slug": "foxde01",
+        "name": "De'Aaron Fox",
+        "team": "SAS",
+        "z03": {
+          "fgm": 14,
+          "fga": 20
+        },
+        "z310": {
+          "fgm": 14,
+          "fga": 27
+        },
+        "z1016": {
+          "fgm": 7,
+          "fga": 11
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
         }
       },
       {
@@ -632,45 +905,24 @@
         }
       },
       {
-        "slug": "mobleev01",
-        "name": "Evan Mobley",
-        "team": "CLE",
+        "slug": "murraja01",
+        "name": "Jamal Murray",
+        "team": "DEN",
         "z03": {
-          "fgm": 34,
-          "fga": 45
+          "fgm": 11,
+          "fga": 18
         },
         "z310": {
-          "fgm": 7,
-          "fga": 21
+          "fgm": 12,
+          "fga": 22
         },
         "z1016": {
-          "fgm": 2,
-          "fga": 6
+          "fgm": 5,
+          "fga": 9
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "thompam01",
-        "name": "Amen Thompson",
-        "team": "HOU",
-        "z03": {
-          "fgm": 33,
-          "fga": 45
-        },
-        "z310": {
-          "fgm": 16,
-          "fga": 37
-        },
-        "z1016": {
           "fgm": 2,
-          "fga": 10
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 3
+          "fga": 17
         }
       },
       {
@@ -695,6 +947,27 @@
         }
       },
       {
+        "slug": "castlst01",
+        "name": "Stephon Castle",
+        "team": "SAS",
+        "z03": {
+          "fgm": 16,
+          "fga": 31
+        },
+        "z310": {
+          "fgm": 13,
+          "fga": 31
+        },
+        "z1016": {
+          "fgm": 6,
+          "fga": 11
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 3
+        }
+      },
+      {
         "slug": "georgke01",
         "name": "Keyonte George",
         "team": "UTA",
@@ -716,24 +989,24 @@
         }
       },
       {
-        "slug": "harpedy01",
-        "name": "Dylan Harper",
-        "team": "SAS",
+        "slug": "avdijde01",
+        "name": "Deni Avdija",
+        "team": "POR",
         "z03": {
-          "fgm": 38,
-          "fga": 46
+          "fgm": 23,
+          "fga": 36
         },
         "z310": {
-          "fgm": 11,
-          "fga": 28
+          "fgm": 22,
+          "fga": 46
         },
         "z1016": {
-          "fgm": 2,
-          "fga": 16
+          "fgm": 4,
+          "fga": 8
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 7
+          "fga": 3
         }
       },
       {
@@ -758,45 +1031,129 @@
         }
       },
       {
-        "slug": "wagnefr01",
-        "name": "Franz Wagner",
-        "team": "ORL",
+        "slug": "jokicni01",
+        "name": "Nikola Jokić",
+        "team": "DEN",
         "z03": {
-          "fgm": 28,
-          "fga": 36
+          "fgm": 17,
+          "fga": 24
         },
         "z310": {
-          "fgm": 18,
-          "fga": 49
+          "fgm": 34,
+          "fga": 58
+        },
+        "z1016": {
+          "fgm": 8,
+          "fga": 23
+        },
+        "z16xp": {
+          "fgm": 4,
+          "fga": 7
+        }
+      },
+      {
+        "slug": "wiggiaa01",
+        "name": "Aaron Wiggins",
+        "team": "ATL",
+        "z03": {
+          "fgm": 13,
+          "fga": 16
+        },
+        "z310": {
+          "fgm": 12,
+          "fga": 22
         },
         "z1016": {
           "fgm": 5,
-          "fga": 10
+          "fga": 16
         },
         "z16xp": {
           "fgm": 1,
+          "fga": 3
+        }
+      },
+      {
+        "slug": "siakapa01",
+        "name": "Pascal Siakam",
+        "team": "IND",
+        "z03": {
+          "fgm": 25,
+          "fga": 34
+        },
+        "z310": {
+          "fgm": 23,
+          "fga": 36
+        },
+        "z1016": {
+          "fgm": 14,
+          "fga": 30
+        },
+        "z16xp": {
+          "fgm": 2,
+          "fga": 7
+        }
+      },
+      {
+        "slug": "townska01",
+        "name": "Karl-Anthony Towns",
+        "team": "NYK",
+        "z03": {
+          "fgm": 40,
+          "fga": 57
+        },
+        "z310": {
+          "fgm": 9,
+          "fga": 19
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 7
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "mccolcj01",
+        "name": "CJ McCollum",
+        "team": "ATL",
+        "z03": {
+          "fgm": 11,
+          "fga": 17
+        },
+        "z310": {
+          "fgm": 14,
+          "fga": 30
+        },
+        "z1016": {
+          "fgm": 5,
+          "fga": 20
+        },
+        "z16xp": {
+          "fgm": 3,
           "fga": 6
         }
       },
       {
-        "slug": "lendeya01",
-        "name": "Yaxel Lendeborg",
-        "team": "GSW",
+        "slug": "dortlu01",
+        "name": "Luguentz Dort",
+        "team": "ATL",
         "z03": {
-          "fgm": 20,
-          "fga": 29
+          "fgm": 13,
+          "fga": 25
         },
         "z310": {
-          "fgm": 18,
-          "fga": 34
+          "fgm": 1,
+          "fga": 8
         },
         "z1016": {
           "fgm": 1,
-          "fga": 5
+          "fga": 7
         },
         "z16xp": {
-          "fgm": 2,
-          "fga": 5
+          "fgm": 1,
+          "fga": 1
         }
       },
       {
@@ -821,45 +1178,45 @@
         }
       },
       {
-        "slug": "vassede01",
-        "name": "Devin Vassell",
-        "team": "SAS",
+        "slug": "bookede01",
+        "name": "Devin Booker",
+        "team": "PHX",
         "z03": {
-          "fgm": 7,
-          "fga": 11
+          "fgm": 14,
+          "fga": 20
         },
         "z310": {
-          "fgm": 0,
-          "fga": 7
+          "fgm": 10,
+          "fga": 19
         },
         "z1016": {
-          "fgm": 13,
-          "fga": 24
+          "fgm": 17,
+          "fga": 37
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 5
+          "fgm": 14,
+          "fga": 26
         }
       },
       {
-        "slug": "wembavi01",
-        "name": "Victor Wembanyama",
-        "team": "SAS",
+        "slug": "sengual01",
+        "name": "Alperen Şengün",
+        "team": "HOU",
         "z03": {
-          "fgm": 56,
-          "fga": 74
+          "fgm": 31,
+          "fga": 44
         },
         "z310": {
-          "fgm": 12,
-          "fga": 25
+          "fgm": 18,
+          "fga": 48
         },
         "z1016": {
-          "fgm": 6,
-          "fga": 22
+          "fgm": 5,
+          "fga": 12
         },
         "z16xp": {
-          "fgm": 5,
-          "fga": 16
+          "fgm": 2,
+          "fga": 5
         }
       },
       {
@@ -905,6 +1262,27 @@
         }
       },
       {
+        "slug": "dasiltr01",
+        "name": "Tristan Da Silva",
+        "team": "ORL",
+        "z03": {
+          "fgm": 8,
+          "fga": 12
+        },
+        "z310": {
+          "fgm": 10,
+          "fga": 16
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 2
+        }
+      },
+      {
         "slug": "tatumja01",
         "name": "Jayson Tatum",
         "team": "BOS",
@@ -947,6 +1325,27 @@
         }
       },
       {
+        "slug": "braunch01",
+        "name": "Christian Braun",
+        "team": "DEN",
+        "z03": {
+          "fgm": 19,
+          "fga": 26
+        },
+        "z310": {
+          "fgm": 5,
+          "fga": 9
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z16xp": {
+          "fgm": 2,
+          "fga": 4
+        }
+      },
+      {
         "slug": "flaggco01",
         "name": "Cooper Flagg",
         "team": "DAL",
@@ -968,45 +1367,24 @@
         }
       },
       {
-        "slug": "foxde01",
-        "name": "De'Aaron Fox",
-        "team": "SAS",
+        "slug": "mitchaj01",
+        "name": "Ajay Mitchell",
+        "team": "OKC",
         "z03": {
-          "fgm": 14,
-          "fga": 20
+          "fgm": 27,
+          "fga": 41
         },
         "z310": {
-          "fgm": 14,
-          "fga": 26
+          "fgm": 20,
+          "fga": 40
         },
         "z1016": {
-          "fgm": 7,
-          "fga": 11
+          "fgm": 18,
+          "fga": 28
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "brunsja01",
-        "name": "Jalen Brunson",
-        "team": "NYK",
-        "z03": {
-          "fgm": 14,
-          "fga": 25
-        },
-        "z310": {
-          "fgm": 9,
-          "fga": 33
-        },
-        "z1016": {
-          "fgm": 9,
-          "fga": 20
-        },
-        "z16xp": {
-          "fgm": 13,
-          "fga": 23
+          "fga": 3
         }
       },
       {
@@ -1052,20 +1430,20 @@
         }
       },
       {
-        "slug": "randlju01",
-        "name": "Julius Randle",
-        "team": "BKN",
+        "slug": "podzibr01",
+        "name": "Brandin Podziemski",
+        "team": "GSW",
         "z03": {
-          "fgm": 12,
-          "fga": 22
+          "fgm": 8,
+          "fga": 11
         },
         "z310": {
-          "fgm": 11,
-          "fga": 29
+          "fgm": 12,
+          "fga": 20
         },
         "z1016": {
-          "fgm": 13,
-          "fga": 22
+          "fgm": 4,
+          "fga": 8
         },
         "z16xp": {
           "fgm": 1,
@@ -1157,27 +1535,6 @@
         }
       },
       {
-        "slug": "castlst01",
-        "name": "Stephon Castle",
-        "team": "SAS",
-        "z03": {
-          "fgm": 14,
-          "fga": 27
-        },
-        "z310": {
-          "fgm": 13,
-          "fga": 29
-        },
-        "z1016": {
-          "fgm": 5,
-          "fga": 10
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 3
-        }
-      },
-      {
         "slug": "cunnica01",
         "name": "Cade Cunningham",
         "team": "DET",
@@ -1220,45 +1577,24 @@
         }
       },
       {
-        "slug": "portemi01",
-        "name": "Michael Porter Jr.",
-        "team": "BKN",
-        "z03": {
-          "fgm": 13,
-          "fga": 16
-        },
-        "z310": {
-          "fgm": 10,
-          "fga": 21
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 4,
-          "fga": 12
-        }
-      },
-      {
-        "slug": "avdijde01",
-        "name": "Deni Avdija",
+        "slug": "lillada01",
+        "name": "Damian Lillard",
         "team": "POR",
         "z03": {
-          "fgm": 22,
-          "fga": 34
+          "fgm": 5,
+          "fga": 11
         },
         "z310": {
-          "fgm": 20,
-          "fga": 39
+          "fgm": 12,
+          "fga": 23
         },
         "z1016": {
           "fgm": 4,
-          "fga": 7
+          "fga": 8
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 3
+          "fgm": 5,
+          "fga": 6
         }
       },
       {
@@ -1283,6 +1619,27 @@
         }
       },
       {
+        "slug": "nembhan01",
+        "name": "Andrew Nembhard",
+        "team": "IND",
+        "z03": {
+          "fgm": 10,
+          "fga": 14
+        },
+        "z310": {
+          "fgm": 7,
+          "fga": 15
+        },
+        "z1016": {
+          "fgm": 8,
+          "fga": 14
+        },
+        "z16xp": {
+          "fgm": 2,
+          "fga": 12
+        }
+      },
+      {
         "slug": "davisan02",
         "name": "Anthony Davis",
         "team": "WAS",
@@ -1304,24 +1661,24 @@
         }
       },
       {
-        "slug": "anunoog01",
-        "name": "OG Anunoby",
-        "team": "NYK",
+        "slug": "johnsja05",
+        "name": "Jalen Johnson",
+        "team": "ATL",
         "z03": {
-          "fgm": 22,
-          "fga": 36
+          "fgm": 31,
+          "fga": 37
         },
         "z310": {
-          "fgm": 0,
-          "fga": 7
+          "fgm": 15,
+          "fga": 31
         },
         "z1016": {
           "fgm": 1,
-          "fga": 3
+          "fga": 17
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 1,
+          "fga": 3
         }
       },
       {
@@ -1346,27 +1703,6 @@
         }
       },
       {
-        "slug": "mccolcj01",
-        "name": "CJ McCollum",
-        "team": "ATL",
-        "z03": {
-          "fgm": 9,
-          "fga": 15
-        },
-        "z310": {
-          "fgm": 13,
-          "fga": 25
-        },
-        "z1016": {
-          "fgm": 5,
-          "fga": 20
-        },
-        "z16xp": {
-          "fgm": 3,
-          "fga": 5
-        }
-      },
-      {
         "slug": "walteja01",
         "name": "Ja'Kobe Walter",
         "team": "TOR",
@@ -1384,48 +1720,6 @@
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "cartewe01",
-        "name": "Wendell Carter Jr.",
-        "team": "ORL",
-        "z03": {
-          "fgm": 25,
-          "fga": 25
-        },
-        "z310": {
-          "fgm": 4,
-          "fga": 10
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 5
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "wiggiaa01",
-        "name": "Aaron Wiggins",
-        "team": "ATL",
-        "z03": {
-          "fgm": 12,
-          "fga": 15
-        },
-        "z310": {
-          "fgm": 12,
-          "fga": 20
-        },
-        "z1016": {
-          "fgm": 4,
-          "fga": 14
-        },
-        "z16xp": {
-          "fgm": 1,
           "fga": 2
         }
       },
@@ -1448,27 +1742,6 @@
         "z16xp": {
           "fgm": 4,
           "fga": 7
-        }
-      },
-      {
-        "slug": "dortlu01",
-        "name": "Luguentz Dort",
-        "team": "ATL",
-        "z03": {
-          "fgm": 13,
-          "fga": 24
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 7
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 6
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 1
         }
       },
       {
@@ -1556,24 +1829,66 @@
         }
       },
       {
-        "slug": "murraja01",
-        "name": "Jamal Murray",
-        "team": "DEN",
+        "slug": "coulibi01",
+        "name": "Bilal Coulibaly",
+        "team": "WAS",
         "z03": {
-          "fgm": 10,
-          "fga": 17
+          "fgm": 22,
+          "fga": 27
         },
         "z310": {
-          "fgm": 10,
-          "fga": 20
+          "fgm": 1,
+          "fga": 6
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "bridgmi02",
+        "name": "Miles Bridges",
+        "team": "PHX",
+        "z03": {
+          "fgm": 16,
+          "fga": 22
+        },
+        "z310": {
+          "fgm": 12,
+          "fga": 26
         },
         "z1016": {
           "fgm": 4,
-          "fga": 5
+          "fga": 8
         },
         "z16xp": {
-          "fgm": 2,
-          "fga": 17
+          "fgm": 1,
+          "fga": 1
+        }
+      },
+      {
+        "slug": "champju02",
+        "name": "Julian Champagnie",
+        "team": "SAS",
+        "z03": {
+          "fgm": 3,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -1619,27 +1934,6 @@
         }
       },
       {
-        "slug": "siakapa01",
-        "name": "Pascal Siakam",
-        "team": "IND",
-        "z03": {
-          "fgm": 20,
-          "fga": 29
-        },
-        "z310": {
-          "fgm": 21,
-          "fga": 33
-        },
-        "z1016": {
-          "fgm": 13,
-          "fga": 27
-        },
-        "z16xp": {
-          "fgm": 2,
-          "fga": 7
-        }
-      },
-      {
         "slug": "quickim01",
         "name": "Immanuel Quickley",
         "team": "TOR",
@@ -1661,66 +1955,45 @@
         }
       },
       {
-        "slug": "jokicni01",
-        "name": "Nikola Jokić",
-        "team": "DEN",
-        "z03": {
-          "fgm": 15,
-          "fga": 20
-        },
-        "z310": {
-          "fgm": 31,
-          "fga": 49
-        },
-        "z1016": {
-          "fgm": 8,
-          "fga": 20
-        },
-        "z16xp": {
-          "fgm": 3,
-          "fga": 6
-        }
-      },
-      {
-        "slug": "mitchaj01",
-        "name": "Ajay Mitchell",
+        "slug": "mccaija01",
+        "name": "Jared McCain",
         "team": "OKC",
         "z03": {
-          "fgm": 24,
-          "fga": 34
+          "fgm": 14,
+          "fga": 19
         },
         "z310": {
-          "fgm": 19,
-          "fga": 38
+          "fgm": 10,
+          "fga": 22
         },
         "z1016": {
-          "fgm": 17,
-          "fga": 25
+          "fgm": 4,
+          "fga": 11
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 3
+          "fga": 1
         }
       },
       {
-        "slug": "townska01",
-        "name": "Karl-Anthony Towns",
-        "team": "NYK",
+        "slug": "brookdi01",
+        "name": "Dillon Brooks",
+        "team": "PHX",
         "z03": {
-          "fgm": 35,
-          "fga": 47
+          "fgm": 12,
+          "fga": 15
         },
         "z310": {
-          "fgm": 6,
-          "fga": 13
+          "fgm": 8,
+          "fga": 25
         },
         "z1016": {
-          "fgm": 2,
-          "fga": 6
+          "fgm": 6,
+          "fga": 12
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 4,
+          "fga": 7
         }
       },
       {
@@ -1829,66 +2102,24 @@
         }
       },
       {
-        "slug": "braunch01",
-        "name": "Christian Braun",
-        "team": "DEN",
+        "slug": "camarto01",
+        "name": "Toumani Camara",
+        "team": "POR",
         "z03": {
-          "fgm": 18,
-          "fga": 24
+          "fgm": 9,
+          "fga": 11
         },
         "z310": {
-          "fgm": 4,
+          "fgm": 5,
           "fga": 8
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
-          "fgm": 2,
-          "fga": 4
-        }
-      },
-      {
-        "slug": "sengual01",
-        "name": "Alperen Şengün",
-        "team": "HOU",
-        "z03": {
-          "fgm": 29,
-          "fga": 36
-        },
-        "z310": {
-          "fgm": 16,
-          "fga": 44
-        },
-        "z1016": {
-          "fgm": 5,
-          "fga": 11
-        },
-        "z16xp": {
-          "fgm": 2,
-          "fga": 4
-        }
-      },
-      {
-        "slug": "lillada01",
-        "name": "Damian Lillard",
-        "team": "POR",
-        "z03": {
-          "fgm": 5,
-          "fga": 10
-        },
-        "z310": {
-          "fgm": 11,
-          "fga": 22
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 5
-        },
-        "z16xp": {
-          "fgm": 5,
-          "fga": 6
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -2039,24 +2270,66 @@
         }
       },
       {
-        "slug": "bookede01",
-        "name": "Devin Booker",
-        "team": "PHX",
+        "slug": "easonta01",
+        "name": "Tari Eason",
+        "team": "HOU",
         "z03": {
-          "fgm": 11,
-          "fga": 15
+          "fgm": 17,
+          "fga": 28
         },
         "z310": {
-          "fgm": 8,
-          "fga": 16
+          "fgm": 9,
+          "fga": 13
         },
         "z1016": {
-          "fgm": 16,
-          "fga": 36
+          "fgm": 0,
+          "fga": 8
         },
         "z16xp": {
-          "fgm": 12,
-          "fga": 20
+          "fgm": 2,
+          "fga": 3
+        }
+      },
+      {
+        "slug": "harteis01",
+        "name": "Isaiah Hartenstein",
+        "team": "OKC",
+        "z03": {
+          "fgm": 18,
+          "fga": 27
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 19
+        },
+        "z1016": {
+          "fgm": 4,
+          "fga": 15
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "vanvlfr01",
+        "name": "Fred VanVleet",
+        "team": "HOU",
+        "z03": {
+          "fgm": 0,
+          "fga": 2
+        },
+        "z310": {
+          "fgm": 4,
+          "fga": 9
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 5
+        },
+        "z16xp": {
+          "fgm": 7,
+          "fga": 11
         }
       },
       {
@@ -2081,27 +2354,6 @@
         }
       },
       {
-        "slug": "coulibi01",
-        "name": "Bilal Coulibaly",
-        "team": "WAS",
-        "z03": {
-          "fgm": 22,
-          "fga": 23
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 6
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
         "slug": "pritcpa01",
         "name": "Payton Pritchard",
         "team": "BOS",
@@ -2123,41 +2375,41 @@
         }
       },
       {
-        "slug": "dasiltr01",
-        "name": "Tristan Da Silva",
-        "team": "ORL",
+        "slug": "curryst01",
+        "name": "Stephen Curry",
+        "team": "GSW",
         "z03": {
           "fgm": 8,
-          "fga": 12
+          "fga": 13
         },
         "z310": {
-          "fgm": 8,
-          "fga": 11
+          "fgm": 16,
+          "fga": 26
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 6,
+          "fga": 9
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 2
+          "fgm": 5,
+          "fga": 14
         }
       },
       {
-        "slug": "champju02",
-        "name": "Julian Champagnie",
+        "slug": "johnske04",
+        "name": "Keldon Johnson",
         "team": "SAS",
         "z03": {
-          "fgm": 3,
-          "fga": 3
+          "fgm": 20,
+          "fga": 32
         },
         "z310": {
-          "fgm": 1,
-          "fga": 3
+          "fgm": 9,
+          "fga": 24
         },
         "z1016": {
           "fgm": 0,
-          "fga": 1
+          "fga": 2
         },
         "z16xp": {
           "fgm": 0,
@@ -2186,24 +2438,87 @@
         }
       },
       {
-        "slug": "nembhan01",
-        "name": "Andrew Nembhard",
+        "slug": "walkeja02",
+        "name": "Jarace Walker",
         "team": "IND",
         "z03": {
-          "fgm": 10,
-          "fga": 14
+          "fgm": 9,
+          "fga": 16
         },
         "z310": {
-          "fgm": 7,
-          "fga": 14
+          "fgm": 4,
+          "fga": 12
         },
         "z1016": {
+          "fgm": 3,
+          "fga": 5
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "bridgmi01",
+        "name": "Mikal Bridges",
+        "team": "NYK",
+        "z03": {
           "fgm": 8,
           "fga": 13
         },
-        "z16xp": {
+        "z310": {
+          "fgm": 3,
+          "fga": 5
+        },
+        "z1016": {
           "fgm": 2,
-          "fga": 11
+          "fga": 15
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 3
+        }
+      },
+      {
+        "slug": "gordoaa01",
+        "name": "Aaron Gordon",
+        "team": "DEN",
+        "z03": {
+          "fgm": 12,
+          "fga": 18
+        },
+        "z310": {
+          "fgm": 4,
+          "fga": 12
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 6
+        },
+        "z16xp": {
+          "fgm": 3,
+          "fga": 5
+        }
+      },
+      {
+        "slug": "holidjr01",
+        "name": "Jrue Holiday",
+        "team": "POR",
+        "z03": {
+          "fgm": 5,
+          "fga": 9
+        },
+        "z310": {
+          "fgm": 12,
+          "fga": 17
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -2228,24 +2543,45 @@
         }
       },
       {
-        "slug": "podzibr01",
-        "name": "Brandin Podziemski",
-        "team": "GSW",
+        "slug": "sarral01",
+        "name": "Alex Sarr",
+        "team": "WAS",
         "z03": {
-          "fgm": 8,
-          "fga": 11
+          "fgm": 25,
+          "fga": 28
         },
         "z310": {
-          "fgm": 11,
-          "fga": 18
+          "fgm": 5,
+          "fga": 15
         },
         "z1016": {
-          "fgm": 4,
-          "fga": 8
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 5
+          "fga": 3
+        }
+      },
+      {
+        "slug": "greenja05",
+        "name": "Jalen Green",
+        "team": "PHX",
+        "z03": {
+          "fgm": 19,
+          "fga": 30
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 17
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 8
+        },
+        "z16xp": {
+          "fgm": 5,
+          "fga": 10
         }
       },
       {
@@ -2291,24 +2627,45 @@
         }
       },
       {
-        "slug": "mccaija01",
-        "name": "Jared McCain",
-        "team": "OKC",
+        "slug": "watsope01",
+        "name": "Peyton Watson",
+        "team": "CLE",
         "z03": {
-          "fgm": 11,
-          "fga": 16
+          "fgm": 17,
+          "fga": 30
         },
         "z310": {
-          "fgm": 9,
-          "fga": 21
+          "fgm": 5,
+          "fga": 13
         },
         "z1016": {
-          "fgm": 3,
-          "fga": 10
+          "fgm": 6,
+          "fga": 11
         },
         "z16xp": {
           "fgm": 0,
           "fga": 0
+        }
+      },
+      {
+        "slug": "shamela01",
+        "name": "Landry Shamet",
+        "team": "NYK",
+        "z03": {
+          "fgm": 5,
+          "fga": 10
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 2
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
         }
       },
       {
@@ -2333,48 +2690,6 @@
         }
       },
       {
-        "slug": "johnsja05",
-        "name": "Jalen Johnson",
-        "team": "ATL",
-        "z03": {
-          "fgm": 25,
-          "fga": 31
-        },
-        "z310": {
-          "fgm": 11,
-          "fga": 27
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 16
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "bridgmi02",
-        "name": "Miles Bridges",
-        "team": "PHX",
-        "z03": {
-          "fgm": 16,
-          "fga": 21
-        },
-        "z310": {
-          "fgm": 10,
-          "fga": 23
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 6
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "simonan01",
         "name": "Anfernee Simons",
         "team": "PHI",
@@ -2396,41 +2711,20 @@
         }
       },
       {
-        "slug": "camarto01",
-        "name": "Toumani Camara",
+        "slug": "clingdo01",
+        "name": "Donovan Clingan",
         "team": "POR",
         "z03": {
-          "fgm": 8,
-          "fga": 9
-        },
-        "z310": {
-          "fgm": 4,
-          "fga": 6
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "harteis01",
-        "name": "Isaiah Hartenstein",
-        "team": "OKC",
-        "z03": {
-          "fgm": 18,
-          "fga": 25
+          "fgm": 25,
+          "fga": 34
         },
         "z310": {
           "fgm": 6,
-          "fga": 18
+          "fga": 13
         },
         "z1016": {
-          "fgm": 3,
-          "fga": 13
+          "fgm": 1,
+          "fga": 3
         },
         "z16xp": {
           "fgm": 0,
@@ -2480,24 +2774,45 @@
         }
       },
       {
-        "slug": "easonta01",
-        "name": "Tari Eason",
-        "team": "HOU",
+        "slug": "greendr01",
+        "name": "Draymond Green",
+        "team": "GSW",
         "z03": {
-          "fgm": 17,
-          "fga": 24
+          "fgm": 4,
+          "fga": 7
         },
         "z310": {
-          "fgm": 8,
-          "fga": 12
-        },
-        "z1016": {
-          "fgm": 0,
+          "fgm": 2,
           "fga": 8
         },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
+        },
         "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "meltode01",
+        "name": "De'Anthony Melton",
+        "team": "GSW",
+        "z03": {
+          "fgm": 6,
+          "fga": 7
+        },
+        "z310": {
           "fgm": 2,
+          "fga": 14
+        },
+        "z1016": {
+          "fgm": 1,
           "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
         }
       },
       {
@@ -2522,6 +2837,27 @@
         }
       },
       {
+        "slug": "flemiki01",
+        "name": "Kingston Flemings",
+        "team": "ATL",
+        "z03": {
+          "fgm": 19,
+          "fga": 21
+        },
+        "z310": {
+          "fgm": 3,
+          "fga": 12
+        },
+        "z1016": {
+          "fgm": 5,
+          "fga": 10
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 6
+        }
+      },
+      {
         "slug": "grantje01",
         "name": "Jerami Grant",
         "team": "MEM",
@@ -2540,6 +2876,27 @@
         "z16xp": {
           "fgm": 1,
           "fga": 3
+        }
+      },
+      {
+        "slug": "sharpda01",
+        "name": "Day'Ron Sharpe",
+        "team": "BKN",
+        "z03": {
+          "fgm": 16,
+          "fga": 27
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 13
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -2564,24 +2921,24 @@
         }
       },
       {
-        "slug": "walkeja02",
-        "name": "Jarace Walker",
+        "slug": "jacksqu01",
+        "name": "Quenton Jackson",
         "team": "IND",
         "z03": {
-          "fgm": 8,
-          "fga": 15
+          "fgm": 11,
+          "fga": 17
         },
         "z310": {
-          "fgm": 4,
-          "fga": 12
+          "fgm": 10,
+          "fga": 18
         },
         "z1016": {
-          "fgm": 2,
-          "fga": 4
+          "fgm": 3,
+          "fga": 7
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 2
+          "fgm": 1,
+          "fga": 1
         }
       },
       {
@@ -2603,48 +2960,6 @@
         "z16xp": {
           "fgm": 2,
           "fga": 5
-        }
-      },
-      {
-        "slug": "holidjr01",
-        "name": "Jrue Holiday",
-        "team": "POR",
-        "z03": {
-          "fgm": 5,
-          "fga": 9
-        },
-        "z310": {
-          "fgm": 10,
-          "fga": 12
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "brookdi01",
-        "name": "Dillon Brooks",
-        "team": "PHX",
-        "z03": {
-          "fgm": 12,
-          "fga": 14
-        },
-        "z310": {
-          "fgm": 8,
-          "fga": 24
-        },
-        "z1016": {
-          "fgm": 5,
-          "fga": 11
-        },
-        "z16xp": {
-          "fgm": 4,
-          "fga": 7
         }
       },
       {
@@ -2687,27 +3002,6 @@
         "z16xp": {
           "fgm": 6,
           "fga": 12
-        }
-      },
-      {
-        "slug": "vanvlfr01",
-        "name": "Fred VanVleet",
-        "team": "HOU",
-        "z03": {
-          "fgm": 0,
-          "fga": 2
-        },
-        "z310": {
-          "fgm": 4,
-          "fga": 9
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 4
-        },
-        "z16xp": {
-          "fgm": 6,
-          "fga": 9
         }
       },
       {
@@ -2774,20 +3068,20 @@
         }
       },
       {
-        "slug": "johnske04",
-        "name": "Keldon Johnson",
-        "team": "SAS",
+        "slug": "niangge01",
+        "name": "Georges Niang",
+        "team": "GSW",
         "z03": {
-          "fgm": 18,
-          "fga": 28
+          "fgm": 5,
+          "fga": 5
         },
         "z310": {
-          "fgm": 8,
-          "fga": 21
+          "fgm": 12,
+          "fga": 20
         },
         "z1016": {
-          "fgm": 0,
-          "fga": 2
+          "fgm": 1,
+          "fga": 3
         },
         "z16xp": {
           "fgm": 0,
@@ -2813,27 +3107,6 @@
         "z16xp": {
           "fgm": 0,
           "fga": 2
-        }
-      },
-      {
-        "slug": "gordoaa01",
-        "name": "Aaron Gordon",
-        "team": "DEN",
-        "z03": {
-          "fgm": 8,
-          "fga": 12
-        },
-        "z310": {
-          "fgm": 3,
-          "fga": 11
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 6
-        },
-        "z16xp": {
-          "fgm": 3,
-          "fga": 5
         }
       },
       {
@@ -2900,24 +3173,24 @@
         }
       },
       {
-        "slug": "sarral01",
-        "name": "Alex Sarr",
-        "team": "WAS",
+        "slug": "richaja02",
+        "name": "Jase Richardson",
+        "team": "ORL",
         "z03": {
-          "fgm": 19,
-          "fga": 21
+          "fgm": 4,
+          "fga": 12
         },
         "z310": {
-          "fgm": 5,
-          "fga": 14
+          "fgm": 7,
+          "fga": 18
         },
         "z1016": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 3,
+          "fga": 7
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 3
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -2984,6 +3257,27 @@
         }
       },
       {
+        "slug": "hezonma01",
+        "name": "Mario Hezonja",
+        "team": "CLE",
+        "z03": {
+          "fgm": 12,
+          "fga": 16
+        },
+        "z310": {
+          "fgm": 4,
+          "fga": 11
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 5
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "allenja01",
         "name": "Jarrett Allen",
         "team": "CLE",
@@ -3005,45 +3299,24 @@
         }
       },
       {
-        "slug": "bridgmi01",
-        "name": "Mikal Bridges",
-        "team": "NYK",
+        "slug": "hendesc01",
+        "name": "Scoot Henderson",
+        "team": "POR",
         "z03": {
-          "fgm": 6,
-          "fga": 11
-        },
-        "z310": {
-          "fgm": 3,
+          "fgm": 5,
           "fga": 5
         },
-        "z1016": {
-          "fgm": 1,
-          "fga": 12
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "meltode01",
-        "name": "De'Anthony Melton",
-        "team": "GSW",
-        "z03": {
-          "fgm": 6,
-          "fga": 7
-        },
         "z310": {
-          "fgm": 2,
-          "fga": 12
+          "fgm": 8,
+          "fga": 16
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 3,
+          "fga": 10
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 1
+          "fgm": 1,
+          "fga": 3
         }
       },
       {
@@ -3068,45 +3341,24 @@
         }
       },
       {
-        "slug": "curryst01",
-        "name": "Stephen Curry",
-        "team": "GSW",
+        "slug": "traorno01",
+        "name": "Nolan Traoré",
+        "team": "BKN",
         "z03": {
-          "fgm": 8,
-          "fga": 13
-        },
-        "z310": {
           "fgm": 10,
-          "fga": 19
-        },
-        "z1016": {
-          "fgm": 5,
-          "fga": 8
-        },
-        "z16xp": {
-          "fgm": 4,
-          "fga": 13
-        }
-      },
-      {
-        "slug": "clingdo01",
-        "name": "Donovan Clingan",
-        "team": "POR",
-        "z03": {
-          "fgm": 22,
-          "fga": 31
+          "fga": 15
         },
         "z310": {
-          "fgm": 6,
-          "fga": 12
+          "fgm": 13,
+          "fga": 27
         },
         "z1016": {
-          "fgm": 1,
+          "fgm": 3,
           "fga": 3
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 1,
+          "fga": 2
         }
       },
       {
@@ -3124,27 +3376,6 @@
         "z1016": {
           "fgm": 0,
           "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "watsope01",
-        "name": "Peyton Watson",
-        "team": "CLE",
-        "z03": {
-          "fgm": 13,
-          "fga": 26
-        },
-        "z310": {
-          "fgm": 5,
-          "fga": 11
-        },
-        "z1016": {
-          "fgm": 6,
-          "fga": 11
         },
         "z16xp": {
           "fgm": 0,
@@ -3173,20 +3404,20 @@
         }
       },
       {
-        "slug": "shamela01",
-        "name": "Landry Shamet",
-        "team": "NYK",
+        "slug": "maraad01",
+        "name": "Aday Mara",
+        "team": "OKC",
         "z03": {
-          "fgm": 5,
-          "fga": 10
+          "fgm": 22,
+          "fga": 33
         },
         "z310": {
-          "fgm": 0,
-          "fga": 2
+          "fgm": 10,
+          "fga": 14
         },
         "z1016": {
           "fgm": 2,
-          "fga": 2
+          "fga": 7
         },
         "z16xp": {
           "fgm": 0,
@@ -3194,45 +3425,24 @@
         }
       },
       {
-        "slug": "greenja05",
-        "name": "Jalen Green",
+        "slug": "gilleco01",
+        "name": "Collin Gillespie",
         "team": "PHX",
         "z03": {
-          "fgm": 14,
-          "fga": 22
+          "fgm": 4,
+          "fga": 6
         },
         "z310": {
-          "fgm": 6,
-          "fga": 16
+          "fgm": 0,
+          "fga": 3
         },
         "z1016": {
-          "fgm": 3,
-          "fga": 7
-        },
-        "z16xp": {
-          "fgm": 3,
-          "fga": 7
-        }
-      },
-      {
-        "slug": "jacksqu01",
-        "name": "Quenton Jackson",
-        "team": "IND",
-        "z03": {
-          "fgm": 9,
-          "fga": 15
-        },
-        "z310": {
-          "fgm": 9,
-          "fga": 17
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 7
+          "fgm": 2,
+          "fga": 5
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 1
+          "fga": 2
         }
       },
       {
@@ -3257,6 +3467,48 @@
         }
       },
       {
+        "slug": "nesmiaa01",
+        "name": "Aaron Nesmith",
+        "team": "IND",
+        "z03": {
+          "fgm": 7,
+          "fga": 12
+        },
+        "z310": {
+          "fgm": 8,
+          "fga": 17
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 5
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 3
+        }
+      },
+      {
+        "slug": "johnstr03",
+        "name": "Tre Johnson",
+        "team": "WAS",
+        "z03": {
+          "fgm": 3,
+          "fga": 4
+        },
+        "z310": {
+          "fgm": 4,
+          "fga": 9
+        },
+        "z1016": {
+          "fgm": 6,
+          "fga": 17
+        },
+        "z16xp": {
+          "fgm": 7,
+          "fga": 12
+        }
+      },
+      {
         "slug": "sandeko01",
         "name": "Kobe Sanders",
         "team": "LAC",
@@ -3275,6 +3527,27 @@
         "z16xp": {
           "fgm": 1,
           "fga": 2
+        }
+      },
+      {
+        "slug": "carrica01",
+        "name": "Bub Carrington",
+        "team": "WAS",
+        "z03": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 4
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 4
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
         }
       },
       {
@@ -3299,6 +3572,27 @@
         }
       },
       {
+        "slug": "cissosi01",
+        "name": "Sidy Cissoko",
+        "team": "POR",
+        "z03": {
+          "fgm": 6,
+          "fga": 6
+        },
+        "z310": {
+          "fgm": 2,
+          "fga": 5
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "jenkida01",
         "name": "Daniss Jenkins",
         "team": "DET",
@@ -3320,27 +3614,6 @@
         }
       },
       {
-        "slug": "flemiki01",
-        "name": "Kingston Flemings",
-        "team": "ATL",
-        "z03": {
-          "fgm": 16,
-          "fga": 18
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 11
-        },
-        "z1016": {
-          "fgm": 4,
-          "fga": 8
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 6
-        }
-      },
-      {
         "slug": "wagleke01",
         "name": "Keaton Wagler",
         "team": "LAC",
@@ -3355,6 +3628,48 @@
         "z1016": {
           "fgm": 0,
           "fga": 6
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 5
+        }
+      },
+      {
+        "slug": "clownno01",
+        "name": "Noah Clowney",
+        "team": "BKN",
+        "z03": {
+          "fgm": 6,
+          "fga": 8
+        },
+        "z310": {
+          "fgm": 3,
+          "fga": 10
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "dybanaj01",
+        "name": "AJ Dybantsa",
+        "team": "WAS",
+        "z03": {
+          "fgm": 12,
+          "fga": 18
+        },
+        "z310": {
+          "fgm": 12,
+          "fga": 27
+        },
+        "z1016": {
+          "fgm": 5,
+          "fga": 12
         },
         "z16xp": {
           "fgm": 0,
@@ -3446,27 +3761,6 @@
         }
       },
       {
-        "slug": "greendr01",
-        "name": "Draymond Green",
-        "team": "GSW",
-        "z03": {
-          "fgm": 4,
-          "fga": 7
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 4
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "hachiru01",
         "name": "Rui Hachimura",
         "team": "LAC",
@@ -3488,24 +3782,24 @@
         }
       },
       {
-        "slug": "sharpda01",
-        "name": "Day'Ron Sharpe",
-        "team": "BKN",
+        "slug": "willike04",
+        "name": "Kenrich Williams",
+        "team": "OKC",
         "z03": {
-          "fgm": 12,
-          "fga": 21
+          "fgm": 8,
+          "fga": 12
         },
         "z310": {
-          "fgm": 6,
-          "fga": 13
+          "fgm": 1,
+          "fga": 3
         },
         "z1016": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 1,
+          "fga": 2
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 0
+          "fga": 4
         }
       },
       {
@@ -3527,27 +3821,6 @@
         "z16xp": {
           "fgm": 0,
           "fga": 1
-        }
-      },
-      {
-        "slug": "hezonma01",
-        "name": "Mario Hezonja",
-        "team": "CLE",
-        "z03": {
-          "fgm": 12,
-          "fga": 15
-        },
-        "z310": {
-          "fgm": 4,
-          "fga": 11
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 5
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
         }
       },
       {
@@ -3614,27 +3887,6 @@
         }
       },
       {
-        "slug": "niangge01",
-        "name": "Georges Niang",
-        "team": "GSW",
-        "z03": {
-          "fgm": 5,
-          "fga": 5
-        },
-        "z310": {
-          "fgm": 11,
-          "fga": 17
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 3
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "elliske01",
         "name": "Keon Ellis",
         "team": "BKN",
@@ -3653,6 +3905,27 @@
         "z16xp": {
           "fgm": 0,
           "fga": 2
+        }
+      },
+      {
+        "slug": "stirtbe01",
+        "name": "Bennett Stirtz",
+        "team": "OKC",
+        "z03": {
+          "fgm": 7,
+          "fga": 9
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 4
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 1
         }
       },
       {
@@ -3677,6 +3950,27 @@
         }
       },
       {
+        "slug": "blackan01",
+        "name": "Anthony Black",
+        "team": "ORL",
+        "z03": {
+          "fgm": 8,
+          "fga": 10
+        },
+        "z310": {
+          "fgm": 11,
+          "fga": 18
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 9
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 2
+        }
+      },
+      {
         "slug": "jakucka01",
         "name": "Kasparas Jakučionis",
         "team": "MIL",
@@ -3695,6 +3989,48 @@
         "z16xp": {
           "fgm": 0,
           "fga": 0
+        }
+      },
+      {
+        "slug": "oubreke01",
+        "name": "Kelly Oubre Jr.",
+        "team": "IND",
+        "z03": {
+          "fgm": 9,
+          "fga": 15
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 12
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "johnsch06",
+        "name": "Chaney Johnson",
+        "team": "BKN",
+        "z03": {
+          "fgm": 5,
+          "fga": 10
+        },
+        "z310": {
+          "fgm": 3,
+          "fga": 8
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 4
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
         }
       },
       {
@@ -3719,104 +4055,20 @@
         }
       },
       {
-        "slug": "hendesc01",
-        "name": "Scoot Henderson",
-        "team": "POR",
-        "z03": {
-          "fgm": 4,
-          "fga": 4
-        },
-        "z310": {
-          "fgm": 6,
-          "fga": 14
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 9
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "traorno01",
-        "name": "Nolan Traoré",
-        "team": "BKN",
-        "z03": {
-          "fgm": 8,
-          "fga": 13
-        },
-        "z310": {
-          "fgm": 11,
-          "fga": 25
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "gilleco01",
-        "name": "Collin Gillespie",
-        "team": "PHX",
-        "z03": {
-          "fgm": 2,
-          "fga": 4
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 3
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 4
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "cissosi01",
-        "name": "Sidy Cissoko",
-        "team": "POR",
-        "z03": {
-          "fgm": 6,
-          "fga": 6
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 5
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "richaja02",
-        "name": "Jase Richardson",
+        "slug": "cainja01",
+        "name": "Jamal Cain",
         "team": "ORL",
         "z03": {
-          "fgm": 4,
-          "fga": 12
+          "fgm": 1,
+          "fga": 1
         },
         "z310": {
-          "fgm": 6,
-          "fga": 12
+          "fgm": 8,
+          "fga": 16
         },
         "z1016": {
           "fgm": 3,
-          "fga": 6
+          "fga": 3
         },
         "z16xp": {
           "fgm": 0,
@@ -3866,6 +4118,48 @@
         }
       },
       {
+        "slug": "richawi02",
+        "name": "Will Richard",
+        "team": "GSW",
+        "z03": {
+          "fgm": 7,
+          "fga": 11
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 4
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 1
+        }
+      },
+      {
+        "slug": "derozde01",
+        "name": "DeMar DeRozan",
+        "team": "DEN",
+        "z03": {
+          "fgm": 2,
+          "fga": 5
+        },
+        "z310": {
+          "fgm": 5,
+          "fga": 9
+        },
+        "z1016": {
+          "fgm": 15,
+          "fga": 23
+        },
+        "z16xp": {
+          "fgm": 2,
+          "fga": 13
+        }
+      },
+      {
         "slug": "willizi02",
         "name": "Ziaire Williams",
         "team": "LAL",
@@ -3887,87 +4181,24 @@
         }
       },
       {
-        "slug": "carrica01",
-        "name": "Bub Carrington",
-        "team": "WAS",
+        "slug": "brazitr01",
+        "name": "Trevon Brazile",
+        "team": "DEN",
         "z03": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 13,
+          "fga": 15
         },
         "z310": {
-          "fgm": 0,
-          "fga": 4
+          "fgm": 3,
+          "fga": 7
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 4
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
           "fga": 0
-        }
-      },
-      {
-        "slug": "maraad01",
-        "name": "Aday Mara",
-        "team": "OKC",
-        "z03": {
-          "fgm": 18,
-          "fga": 28
-        },
-        "z310": {
-          "fgm": 7,
-          "fga": 10
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 7
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "johnsch06",
-        "name": "Chaney Johnson",
-        "team": "BKN",
-        "z03": {
-          "fgm": 4,
-          "fga": 8
-        },
-        "z310": {
-          "fgm": 3,
-          "fga": 8
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 4
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "nesmiaa01",
-        "name": "Aaron Nesmith",
-        "team": "IND",
-        "z03": {
-          "fgm": 6,
-          "fga": 11
-        },
-        "z310": {
-          "fgm": 8,
-          "fga": 16
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 4
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 2
         }
       },
       {
@@ -3992,27 +4223,6 @@
         }
       },
       {
-        "slug": "clownno01",
-        "name": "Noah Clowney",
-        "team": "BKN",
-        "z03": {
-          "fgm": 6,
-          "fga": 7
-        },
-        "z310": {
-          "fgm": 3,
-          "fga": 9
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "jacksis01",
         "name": "Isaiah Jackson",
         "team": "LAC",
@@ -4034,24 +4244,24 @@
         }
       },
       {
-        "slug": "johnstr03",
-        "name": "Tre Johnson",
-        "team": "WAS",
+        "slug": "wagnemo01",
+        "name": "Moritz Wagner",
+        "team": "BKN",
         "z03": {
-          "fgm": 3,
-          "fga": 3
+          "fgm": 16,
+          "fga": 28
         },
         "z310": {
-          "fgm": 4,
-          "fga": 8
+          "fgm": 6,
+          "fga": 14
         },
         "z1016": {
-          "fgm": 6,
-          "fga": 15
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
-          "fgm": 5,
-          "fga": 8
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -4069,6 +4279,27 @@
         "z1016": {
           "fgm": 0,
           "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "huffja01",
+        "name": "Jay Huff",
+        "team": "IND",
+        "z03": {
+          "fgm": 12,
+          "fga": 14
+        },
+        "z310": {
+          "fgm": 3,
+          "fga": 4
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 3
         },
         "z16xp": {
           "fgm": 0,
@@ -4139,66 +4370,87 @@
         }
       },
       {
-        "slug": "oubreke01",
-        "name": "Kelly Oubre Jr.",
-        "team": "IND",
+        "slug": "brownmi02",
+        "name": "Mikel Brown Jr.",
+        "team": "BKN",
         "z03": {
-          "fgm": 9,
-          "fga": 14
-        },
-        "z310": {
           "fgm": 6,
           "fga": 12
         },
-        "z1016": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "willike04",
-        "name": "Kenrich Williams",
-        "team": "OKC",
-        "z03": {
-          "fgm": 7,
-          "fga": 11
-        },
         "z310": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 2,
+          "fga": 14
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 3,
+          "fga": 7
         },
         "z16xp": {
-          "fgm": 0,
+          "fgm": 3,
           "fga": 3
         }
       },
       {
-        "slug": "richawi02",
-        "name": "Will Richard",
+        "slug": "willibr03",
+        "name": "Brandon Williams",
         "team": "GSW",
         "z03": {
           "fgm": 7,
-          "fga": 11
+          "fga": 14
         },
         "z310": {
-          "fgm": 1,
-          "fga": 4
+          "fgm": 15,
+          "fga": 32
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 3
+          "fgm": 2,
+          "fga": 5
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 0
+          "fga": 3
+        }
+      },
+      {
+        "slug": "smartma01",
+        "name": "Marcus Smart",
+        "team": "HOU",
+        "z03": {
+          "fgm": 4,
+          "fga": 5
+        },
+        "z310": {
+          "fgm": 3,
+          "fga": 6
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "thomame01",
+        "name": "Meleek Thomas",
+        "team": "CLE",
+        "z03": {
+          "fgm": 10,
+          "fga": 17
+        },
+        "z310": {
+          "fgm": 2,
+          "fga": 6
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 4
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 4
         }
       },
       {
@@ -4223,37 +4475,16 @@
         }
       },
       {
-        "slug": "dybanaj01",
-        "name": "AJ Dybantsa",
-        "team": "WAS",
+        "slug": "maluakh01",
+        "name": "Khaman Maluach",
+        "team": "PHX",
         "z03": {
-          "fgm": 9,
-          "fga": 14
+          "fgm": 17,
+          "fga": 24
         },
         "z310": {
-          "fgm": 11,
-          "fga": 25
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 9
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 4
-        }
-      },
-      {
-        "slug": "brazitr01",
-        "name": "Trevon Brazile",
-        "team": "DEN",
-        "z03": {
-          "fgm": 13,
-          "fga": 15
-        },
-        "z310": {
-          "fgm": 3,
-          "fga": 6
+          "fgm": 6,
+          "fga": 12
         },
         "z1016": {
           "fgm": 0,
@@ -4265,24 +4496,45 @@
         }
       },
       {
-        "slug": "huffja01",
-        "name": "Jay Huff",
+        "slug": "toppiob01",
+        "name": "Obi Toppin",
         "team": "IND",
         "z03": {
-          "fgm": 12,
-          "fga": 14
+          "fgm": 19,
+          "fga": 23
         },
         "z310": {
-          "fgm": 3,
-          "fga": 4
+          "fgm": 2,
+          "fga": 9
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
           "fga": 0
+        }
+      },
+      {
+        "slug": "mcbrimi01",
+        "name": "Miles McBride",
+        "team": "NYK",
+        "z03": {
+          "fgm": 1,
+          "fga": 4
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 3
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 4
         }
       },
       {
@@ -4328,6 +4580,48 @@
         }
       },
       {
+        "slug": "aytonde01",
+        "name": "Deandre Ayton",
+        "team": "WAS",
+        "z03": {
+          "fgm": 18,
+          "fga": 22
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 11
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
+        }
+      },
+      {
+        "slug": "kornelu01",
+        "name": "Luke Kornet",
+        "team": "SAS",
+        "z03": {
+          "fgm": 10,
+          "fga": 17
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 5
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "johnsmo01",
         "name": "Morez Johnson Jr.",
         "team": "DAL",
@@ -4349,27 +4643,6 @@
         }
       },
       {
-        "slug": "stirtbe01",
-        "name": "Bennett Stirtz",
-        "team": "OKC",
-        "z03": {
-          "fgm": 6,
-          "fga": 7
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 2
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 3
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 1
-        }
-      },
-      {
         "slug": "robinmi01",
         "name": "Mitchell Robinson",
         "team": "BOS",
@@ -4380,27 +4653,6 @@
         "z310": {
           "fgm": 6,
           "fga": 8
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "wagnemo01",
-        "name": "Moritz Wagner",
-        "team": "BKN",
-        "z03": {
-          "fgm": 14,
-          "fga": 24
-        },
-        "z310": {
-          "fgm": 6,
-          "fga": 13
         },
         "z1016": {
           "fgm": 0,
@@ -4430,27 +4682,6 @@
         "z16xp": {
           "fgm": 0,
           "fga": 0
-        }
-      },
-      {
-        "slug": "derozde01",
-        "name": "DeMar DeRozan",
-        "team": "DEN",
-        "z03": {
-          "fgm": 2,
-          "fga": 5
-        },
-        "z310": {
-          "fgm": 4,
-          "fga": 7
-        },
-        "z1016": {
-          "fgm": 12,
-          "fga": 19
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 12
         }
       },
       {
@@ -4580,27 +4811,6 @@
         }
       },
       {
-        "slug": "aytonde01",
-        "name": "Deandre Ayton",
-        "team": "WAS",
-        "z03": {
-          "fgm": 17,
-          "fga": 21
-        },
-        "z310": {
-          "fgm": 6,
-          "fga": 11
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "walshjo01",
         "name": "Jordan Walsh",
         "team": "BOS",
@@ -4611,6 +4821,48 @@
         "z310": {
           "fgm": 0,
           "fga": 1
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "sheppre01",
+        "name": "Reed Sheppard",
+        "team": "HOU",
+        "z03": {
+          "fgm": 6,
+          "fga": 7
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 6
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "horfoal01",
+        "name": "Al Horford",
+        "team": "GSW",
+        "z03": {
+          "fgm": 3,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 4
         },
         "z1016": {
           "fgm": 1,
@@ -4643,20 +4895,20 @@
         }
       },
       {
-        "slug": "blackan01",
-        "name": "Anthony Black",
-        "team": "ORL",
+        "slug": "nancela02",
+        "name": "Larry Nance Jr.",
+        "team": "IND",
         "z03": {
-          "fgm": 8,
-          "fga": 10
+          "fgm": 5,
+          "fga": 6
         },
         "z310": {
-          "fgm": 6,
-          "fga": 9
+          "fgm": 0,
+          "fga": 2
         },
         "z1016": {
           "fgm": 0,
-          "fga": 6
+          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -4664,24 +4916,24 @@
         }
       },
       {
-        "slug": "willibr03",
-        "name": "Brandon Williams",
-        "team": "GSW",
+        "slug": "proctty01",
+        "name": "Tyrese Proctor",
+        "team": "CLE",
         "z03": {
-          "fgm": 7,
-          "fga": 14
+          "fgm": 5,
+          "fga": 8
         },
         "z310": {
-          "fgm": 13,
-          "fga": 28
+          "fgm": 2,
+          "fga": 7
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 4
+          "fgm": 0,
+          "fga": 2
         },
         "z16xp": {
-          "fgm": 0,
-          "fga": 3
+          "fgm": 1,
+          "fga": 2
         }
       },
       {
@@ -4748,48 +5000,6 @@
         }
       },
       {
-        "slug": "cainja01",
-        "name": "Jamal Cain",
-        "team": "ORL",
-        "z03": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 4,
-          "fga": 10
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 3
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "mcbrimi01",
-        "name": "Miles McBride",
-        "team": "NYK",
-        "z03": {
-          "fgm": 1,
-          "fga": 4
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 4
-        }
-      },
-      {
         "slug": "hardati02",
         "name": "Tim Hardaway Jr.",
         "team": "MIA",
@@ -4832,87 +5042,24 @@
         }
       },
       {
-        "slug": "maluakh01",
-        "name": "Khaman Maluach",
-        "team": "PHX",
+        "slug": "johnsca02",
+        "name": "Cameron Johnson",
+        "team": "DEN",
         "z03": {
-          "fgm": 14,
-          "fga": 21
+          "fgm": 5,
+          "fga": 7
         },
         "z310": {
-          "fgm": 6,
-          "fga": 12
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "smartma01",
-        "name": "Marcus Smart",
-        "team": "HOU",
-        "z03": {
           "fgm": 3,
           "fga": 4
         },
-        "z310": {
-          "fgm": 3,
+        "z1016": {
+          "fgm": 2,
           "fga": 5
         },
-        "z1016": {
+        "z16xp": {
           "fgm": 1,
           "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "brownmi02",
-        "name": "Mikel Brown Jr.",
-        "team": "BKN",
-        "z03": {
-          "fgm": 5,
-          "fga": 9
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 13
-        },
-        "z1016": {
-          "fgm": 3,
-          "fga": 7
-        },
-        "z16xp": {
-          "fgm": 2,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "kornelu01",
-        "name": "Luke Kornet",
-        "team": "SAS",
-        "z03": {
-          "fgm": 9,
-          "fga": 16
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 2
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
         }
       },
       {
@@ -4937,24 +5084,45 @@
         }
       },
       {
-        "slug": "thomame01",
-        "name": "Meleek Thomas",
-        "team": "CLE",
+        "slug": "slawsja01",
+        "name": "Jalen Slawson",
+        "team": "IND",
         "z03": {
-          "fgm": 10,
-          "fga": 15
+          "fgm": 4,
+          "fga": 6
         },
         "z310": {
-          "fgm": 2,
-          "fga": 6
+          "fgm": 3,
+          "fga": 4
         },
         "z1016": {
           "fgm": 1,
-          "fga": 4
+          "fga": 2
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 4
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "paytoga02",
+        "name": "Gary Payton II",
+        "team": "GSW",
+        "z03": {
+          "fgm": 9,
+          "fga": 13
+        },
+        "z310": {
+          "fgm": 9,
+          "fga": 16
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -4979,20 +5147,20 @@
         }
       },
       {
-        "slug": "toppiob01",
-        "name": "Obi Toppin",
-        "team": "IND",
+        "slug": "santogu01",
+        "name": "Gui Santos",
+        "team": "GSW",
         "z03": {
-          "fgm": 17,
-          "fga": 21
+          "fgm": 6,
+          "fga": 9
         },
         "z310": {
-          "fgm": 2,
-          "fga": 8
+          "fgm": 6,
+          "fga": 11
         },
         "z1016": {
           "fgm": 0,
-          "fga": 0
+          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -5042,45 +5210,24 @@
         }
       },
       {
-        "slug": "horfoal01",
-        "name": "Al Horford",
-        "team": "GSW",
+        "slug": "ighodos01",
+        "name": "Oso Ighodaro",
+        "team": "PHX",
         "z03": {
-          "fgm": 3,
-          "fga": 3
+          "fgm": 8,
+          "fga": 12
         },
         "z310": {
-          "fgm": 0,
-          "fga": 2
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "sheppre01",
-        "name": "Reed Sheppard",
-        "team": "HOU",
-        "z03": {
-          "fgm": 6,
-          "fga": 7
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 8,
+          "fga": 12
         },
         "z1016": {
           "fgm": 2,
-          "fga": 5
+          "fga": 3
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 1
+          "fga": 0
         }
       },
       {
@@ -5102,6 +5249,27 @@
         "z16xp": {
           "fgm": 2,
           "fga": 3
+        }
+      },
+      {
+        "slug": "carusal01",
+        "name": "Alex Caruso",
+        "team": "OKC",
+        "z03": {
+          "fgm": 4,
+          "fga": 5
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -5147,24 +5315,24 @@
         }
       },
       {
-        "slug": "nancela02",
-        "name": "Larry Nance Jr.",
-        "team": "IND",
+        "slug": "dunnry01",
+        "name": "Ryan Dunn",
+        "team": "PHX",
         "z03": {
-          "fgm": 5,
-          "fga": 6
+          "fgm": 7,
+          "fga": 10
         },
         "z310": {
-          "fgm": 0,
-          "fga": 2
+          "fgm": 2,
+          "fga": 9
         },
         "z1016": {
-          "fgm": 0,
+          "fgm": 1,
           "fga": 1
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 1
+          "fga": 0
         }
       },
       {
@@ -5294,58 +5462,16 @@
         }
       },
       {
-        "slug": "slawsja01",
-        "name": "Jalen Slawson",
-        "team": "IND",
+        "slug": "drumman01",
+        "name": "Andre Drummond",
+        "team": "NYK",
         "z03": {
-          "fgm": 3,
-          "fga": 5
+          "fgm": 18,
+          "fga": 34
         },
         "z310": {
-          "fgm": 2,
-          "fga": 3
-        },
-        "z1016": {
           "fgm": 1,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "paytoga02",
-        "name": "Gary Payton II",
-        "team": "GSW",
-        "z03": {
-          "fgm": 9,
-          "fga": 13
-        },
-        "z310": {
-          "fgm": 7,
-          "fga": 12
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "santogu01",
-        "name": "Gui Santos",
-        "team": "GSW",
-        "z03": {
-          "fgm": 6,
           "fga": 9
-        },
-        "z310": {
-          "fgm": 5,
-          "fga": 10
         },
         "z1016": {
           "fgm": 0,
@@ -5396,27 +5522,6 @@
         "z16xp": {
           "fgm": 0,
           "fga": 1
-        }
-      },
-      {
-        "slug": "proctty01",
-        "name": "Tyrese Proctor",
-        "team": "CLE",
-        "z03": {
-          "fgm": 5,
-          "fga": 8
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 7
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
         }
       },
       {
@@ -5504,27 +5609,6 @@
         }
       },
       {
-        "slug": "carusal01",
-        "name": "Alex Caruso",
-        "team": "OKC",
-        "z03": {
-          "fgm": 4,
-          "fga": 5
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 2
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "bogdabo01",
         "name": "Bogdan Bogdanović",
         "team": "HOU",
@@ -5546,24 +5630,24 @@
         }
       },
       {
-        "slug": "johnsca02",
-        "name": "Cameron Johnson",
-        "team": "DEN",
+        "slug": "kennalu01",
+        "name": "Luke Kennard",
+        "team": "PHX",
         "z03": {
-          "fgm": 2,
-          "fga": 4
+          "fgm": 0,
+          "fga": 0
         },
         "z310": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 2,
+          "fga": 3
         },
         "z1016": {
           "fgm": 1,
-          "fga": 3
+          "fga": 1
         },
         "z16xp": {
           "fgm": 1,
-          "fga": 2
+          "fga": 1
         }
       },
       {
@@ -5602,69 +5686,6 @@
         "z1016": {
           "fgm": 0,
           "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "ighodos01",
-        "name": "Oso Ighodaro",
-        "team": "PHX",
-        "z03": {
-          "fgm": 7,
-          "fga": 10
-        },
-        "z310": {
-          "fgm": 8,
-          "fga": 12
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "drumman01",
-        "name": "Andre Drummond",
-        "team": "NYK",
-        "z03": {
-          "fgm": 18,
-          "fga": 33
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 9
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "dunnry01",
-        "name": "Ryan Dunn",
-        "team": "PHX",
-        "z03": {
-          "fgm": 6,
-          "fga": 8
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 8
-        },
-        "z1016": {
-          "fgm": 1,
-          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -5756,6 +5777,48 @@
         }
       },
       {
+        "slug": "barneha02",
+        "name": "Harrison Barnes",
+        "team": "SAS",
+        "z03": {
+          "fgm": 2,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 2,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "dixjo01",
+        "name": "Josh Dix",
+        "team": "OKC",
+        "z03": {
+          "fgm": 4,
+          "fga": 5
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "moranja01",
         "name": "Ja Morant",
         "team": "POR",
@@ -5798,12 +5861,12 @@
         }
       },
       {
-        "slug": "kennalu01",
-        "name": "Luke Kennard",
-        "team": "PHX",
+        "slug": "peavymi01",
+        "name": "Micah Peavy",
+        "team": "OKC",
         "z03": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 3,
+          "fga": 7
         },
         "z310": {
           "fgm": 1,
@@ -5811,11 +5874,32 @@
         },
         "z1016": {
           "fgm": 1,
-          "fga": 1
+          "fga": 4
         },
         "z16xp": {
           "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
+        "slug": "zubaciv01",
+        "name": "Ivica Zubac",
+        "team": "IND",
+        "z03": {
+          "fgm": 14,
+          "fga": 18
+        },
+        "z310": {
+          "fgm": 2,
+          "fga": 11
+        },
+        "z1016": {
+          "fgm": 0,
           "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -5840,6 +5924,27 @@
         }
       },
       {
+        "slug": "baglema01",
+        "name": "Marvin Bagley III",
+        "team": "DEN",
+        "z03": {
+          "fgm": 8,
+          "fga": 13
+        },
+        "z310": {
+          "fgm": 7,
+          "fga": 11
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 1
+        }
+      },
+      {
         "slug": "essenno01",
         "name": "Noa Essengue",
         "team": "CHI",
@@ -5854,6 +5959,48 @@
         "z1016": {
           "fgm": 0,
           "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "hopkibr01",
+        "name": "Bryce Hopkins",
+        "team": "DEN",
+        "z03": {
+          "fgm": 4,
+          "fga": 6
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 7
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 1
+        }
+      },
+      {
+        "slug": "smithbr01",
+        "name": "Braden Smith",
+        "team": "IND",
+        "z03": {
+          "fgm": 2,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 7,
+          "fga": 12
+        },
+        "z1016": {
+          "fgm": 2,
+          "fga": 7
         },
         "z16xp": {
           "fgm": 0,
@@ -5903,6 +6050,27 @@
         }
       },
       {
+        "slug": "bassech01",
+        "name": "Charles Bassey",
+        "team": "GSW",
+        "z03": {
+          "fgm": 12,
+          "fga": 18
+        },
+        "z310": {
+          "fgm": 6,
+          "fga": 10
+        },
+        "z1016": {
+          "fgm": 3,
+          "fga": 3
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "goodwjo01",
         "name": "Jordan Goodwin",
         "team": "PHX",
@@ -5924,24 +6092,24 @@
         }
       },
       {
-        "slug": "hopkibr01",
-        "name": "Bryce Hopkins",
-        "team": "DEN",
+        "slug": "bryanca01",
+        "name": "Carter Bryant",
+        "team": "SAS",
         "z03": {
-          "fgm": 3,
-          "fga": 4
+          "fgm": 2,
+          "fga": 3
         },
         "z310": {
-          "fgm": 6,
-          "fga": 7
+          "fgm": 0,
+          "fga": 2
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 1
+          "fga": 0
         }
       },
       {
@@ -5987,6 +6155,27 @@
         }
       },
       {
+        "slug": "jonesty01",
+        "name": "Tyus Jones",
+        "team": "DEN",
+        "z03": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 3,
+          "fga": 4
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
+        }
+      },
+      {
         "slug": "watfotr01",
         "name": "Trendon Watford",
         "team": "NOP",
@@ -6029,24 +6218,24 @@
         }
       },
       {
-        "slug": "baglema01",
-        "name": "Marvin Bagley III",
-        "team": "DEN",
+        "slug": "kolekty01",
+        "name": "Tyler Kolek",
+        "team": "NYK",
         "z03": {
-          "fgm": 8,
-          "fga": 12
+          "fgm": 1,
+          "fga": 2
         },
         "z310": {
-          "fgm": 5,
-          "fga": 8
+          "fgm": 1,
+          "fga": 3
         },
         "z1016": {
           "fgm": 0,
-          "fga": 1
+          "fga": 2
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -6113,27 +6302,6 @@
         }
       },
       {
-        "slug": "barneha02",
-        "name": "Harrison Barnes",
-        "team": "SAS",
-        "z03": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 2
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "murrakr01",
         "name": "Kris Murray",
         "team": "MEM",
@@ -6155,62 +6323,20 @@
         }
       },
       {
-        "slug": "smithbr01",
-        "name": "Braden Smith",
-        "team": "IND",
-        "z03": {
-          "fgm": 2,
-          "fga": 3
-        },
-        "z310": {
-          "fgm": 7,
-          "fga": 11
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 5
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "bassech01",
-        "name": "Charles Bassey",
-        "team": "GSW",
-        "z03": {
-          "fgm": 12,
-          "fga": 17
-        },
-        "z310": {
-          "fgm": 5,
-          "fga": 8
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "zubaciv01",
-        "name": "Ivica Zubac",
-        "team": "IND",
+        "slug": "clarkjo01",
+        "name": "Jordan Clarkson",
+        "team": "NYK",
         "z03": {
           "fgm": 10,
           "fga": 14
         },
         "z310": {
           "fgm": 2,
-          "fga": 10
+          "fga": 8
         },
         "z1016": {
-          "fgm": 0,
-          "fga": 1
+          "fgm": 4,
+          "fga": 8
         },
         "z16xp": {
           "fgm": 0,
@@ -6232,27 +6358,6 @@
         "z1016": {
           "fgm": 1,
           "fga": 2
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "dixjo01",
-        "name": "Josh Dix",
-        "team": "OKC",
-        "z03": {
-          "fgm": 3,
-          "fga": 4
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 2
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -6302,58 +6407,37 @@
         }
       },
       {
-        "slug": "peavymi01",
-        "name": "Micah Peavy",
-        "team": "OKC",
+        "slug": "vucevni01",
+        "name": "Nikola Vučević",
+        "team": "ORL",
         "z03": {
           "fgm": 2,
-          "fga": 6
-        },
-        "z310": {
-          "fgm": 1,
           "fga": 2
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 2
-        },
-        "z16xp": {
-          "fgm": 1,
-          "fga": 2
-        }
-      },
-      {
-        "slug": "jonesty01",
-        "name": "Tyus Jones",
-        "team": "DEN",
-        "z03": {
-          "fgm": 1,
-          "fga": 3
         },
         "z310": {
           "fgm": 3,
-          "fga": 4
+          "fga": 6
         },
         "z1016": {
-          "fgm": 0,
-          "fga": 1
+          "fgm": 1,
+          "fga": 3
         },
         "z16xp": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
-        "slug": "bryanca01",
-        "name": "Carter Bryant",
-        "team": "SAS",
+        "slug": "wolfda01",
+        "name": "Danny Wolf",
+        "team": "BKN",
         "z03": {
-          "fgm": 2,
+          "fgm": 3,
           "fga": 3
         },
         "z310": {
-          "fgm": 0,
-          "fga": 1
+          "fgm": 1,
+          "fga": 3
         },
         "z1016": {
           "fgm": 0,
@@ -6365,20 +6449,41 @@
         }
       },
       {
-        "slug": "kolekty01",
-        "name": "Tyler Kolek",
-        "team": "NYK",
+        "slug": "ejiofzu01",
+        "name": "Zuby Ejiofor",
+        "team": "ATL",
         "z03": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 10,
+          "fga": 12
         },
         "z310": {
-          "fgm": 1,
+          "fgm": 0,
           "fga": 3
         },
         "z1016": {
           "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "portecr01",
+        "name": "Craig Porter Jr.",
+        "team": "CLE",
+        "z03": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z310": {
+          "fgm": 1,
           "fga": 2
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -6470,45 +6575,24 @@
         }
       },
       {
-        "slug": "vucevni01",
-        "name": "Nikola Vučević",
+        "slug": "carteje01",
+        "name": "Jevon Carter",
         "team": "ORL",
         "z03": {
-          "fgm": 2,
+          "fgm": 0,
+          "fga": 0
+        },
+        "z310": {
+          "fgm": 1,
           "fga": 2
         },
-        "z310": {
-          "fgm": 3,
-          "fga": 5
-        },
         "z1016": {
-          "fgm": 1,
-          "fga": 3
+          "fgm": 0,
+          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "clarkjo01",
-        "name": "Jordan Clarkson",
-        "team": "NYK",
-        "z03": {
-          "fgm": 9,
-          "fga": 12
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 8
-        },
-        "z1016": {
-          "fgm": 2,
-          "fga": 6
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
+          "fga": 1
         }
       },
       {
@@ -6596,6 +6680,27 @@
         }
       },
       {
+        "slug": "youngch01",
+        "name": "Chris Youngblood",
+        "team": "POR",
+        "z03": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "poolejo01",
         "name": "Jordan Poole",
         "team": "NOP",
@@ -6617,6 +6722,48 @@
         }
       },
       {
+        "slug": "bitadgo01",
+        "name": "Goga Bitadze",
+        "team": "ORL",
+        "z03": {
+          "fgm": 6,
+          "fga": 12
+        },
+        "z310": {
+          "fgm": 2,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "yangha01",
+        "name": "Yang Hansen",
+        "team": "POR",
+        "z03": {
+          "fgm": 3,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 5
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "diengou01",
         "name": "Ousmane Dieng",
         "team": "MIL",
@@ -6631,6 +6778,27 @@
         "z1016": {
           "fgm": 1,
           "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "bryanth01",
+        "name": "Thomas Bryant",
+        "team": "CLE",
+        "z03": {
+          "fgm": 4,
+          "fga": 7
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
         },
         "z16xp": {
           "fgm": 0,
@@ -6680,20 +6848,20 @@
         }
       },
       {
-        "slug": "portecr01",
-        "name": "Craig Porter Jr.",
-        "team": "CLE",
+        "slug": "rileywi01",
+        "name": "Will Riley",
+        "team": "WAS",
         "z03": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 5,
+          "fga": 5
         },
         "z310": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 0,
+          "fga": 1
         },
         "z1016": {
           "fgm": 0,
-          "fga": 0
+          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -6743,62 +6911,20 @@
         }
       },
       {
-        "slug": "ejiofzu01",
-        "name": "Zuby Ejiofor",
-        "team": "ATL",
-        "z03": {
-          "fgm": 8,
-          "fga": 9
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 3
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "carteje01",
-        "name": "Jevon Carter",
-        "team": "ORL",
+        "slug": "mannte01",
+        "name": "Terance Mann",
+        "team": "BKN",
         "z03": {
           "fgm": 0,
           "fga": 0
         },
         "z310": {
           "fgm": 1,
-          "fga": 2
+          "fga": 1
         },
         "z1016": {
           "fgm": 0,
           "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 1
-        }
-      },
-      {
-        "slug": "bitadgo01",
-        "name": "Goga Bitadze",
-        "team": "ORL",
-        "z03": {
-          "fgm": 6,
-          "fga": 12
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -6815,6 +6941,27 @@
         },
         "z310": {
           "fgm": 0,
+          "fga": 1
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "moralal01",
+        "name": "Alex Morales",
+        "team": "ORL",
+        "z03": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z310": {
+          "fgm": 1,
           "fga": 1
         },
         "z1016": {
@@ -7100,27 +7247,6 @@
         }
       },
       {
-        "slug": "wolfda01",
-        "name": "Danny Wolf",
-        "team": "BKN",
-        "z03": {
-          "fgm": 2,
-          "fga": 2
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "strusma01",
         "name": "Max Strus",
         "team": "LAC",
@@ -7163,20 +7289,20 @@
         }
       },
       {
-        "slug": "bryanth01",
-        "name": "Thomas Bryant",
-        "team": "CLE",
+        "slug": "diawamo01",
+        "name": "Mohamed Diawara",
+        "team": "NYK",
         "z03": {
-          "fgm": 3,
-          "fga": 6
+          "fgm": 2,
+          "fga": 2
         },
         "z310": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 0,
+          "fga": 0
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -7184,20 +7310,20 @@
         }
       },
       {
-        "slug": "mannte01",
-        "name": "Terance Mann",
-        "team": "BKN",
+        "slug": "tshieos01",
+        "name": "Oscar Tshiebwe",
+        "team": "HOU",
         "z03": {
-          "fgm": 0,
-          "fga": 0
+          "fgm": 5,
+          "fga": 6
         },
         "z310": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 3,
+          "fga": 3
         },
         "z1016": {
           "fgm": 0,
-          "fga": 1
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -7310,41 +7436,20 @@
         }
       },
       {
-        "slug": "moralal01",
-        "name": "Alex Morales",
-        "team": "ORL",
+        "slug": "pottemi01",
+        "name": "Micah Potter",
+        "team": "POR",
         "z03": {
-          "fgm": 1,
-          "fga": 2
+          "fgm": 0,
+          "fga": 0
         },
         "z310": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "tshieos01",
-        "name": "Oscar Tshiebwe",
-        "team": "HOU",
-        "z03": {
           "fgm": 4,
           "fga": 5
         },
-        "z310": {
-          "fgm": 3,
-          "fga": 3
-        },
         "z1016": {
           "fgm": 0,
-          "fga": 0
+          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -7373,6 +7478,27 @@
         }
       },
       {
+        "slug": "barnhbr01",
+        "name": "Brooks Barnhizer",
+        "team": "OKC",
+        "z03": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "philola01",
         "name": "Labaron Philon Jr.",
         "team": "PHI",
@@ -7387,6 +7513,27 @@
         "z1016": {
           "fgm": 0,
           "fga": 1
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "mclaujo01",
+        "name": "Jordan McLaughlin",
+        "team": "SAS",
+        "z03": {
+          "fgm": 0,
+          "fga": 4
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -7415,48 +7562,6 @@
         }
       },
       {
-        "slug": "youngch01",
-        "name": "Chris Youngblood",
-        "team": "POR",
-        "z03": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "rileywi01",
-        "name": "Will Riley",
-        "team": "WAS",
-        "z03": {
-          "fgm": 3,
-          "fga": 3
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "anderky01",
         "name": "Kyle Anderson",
         "team": "TOR",
@@ -7475,27 +7580,6 @@
         "z16xp": {
           "fgm": 1,
           "fga": 1
-        }
-      },
-      {
-        "slug": "yangha01",
-        "name": "Yang Hansen",
-        "team": "POR",
-        "z03": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 3
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
         }
       },
       {
@@ -7541,6 +7625,27 @@
         }
       },
       {
+        "slug": "reedjta01",
+        "name": "Tarris Reed Jr.",
+        "team": "SAS",
+        "z03": {
+          "fgm": 4,
+          "fga": 5
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 3
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "diallal01",
         "name": "Alpha Diallo",
         "team": "DEN",
@@ -7562,19 +7667,19 @@
         }
       },
       {
-        "slug": "barnhbr01",
-        "name": "Brooks Barnhizer",
-        "team": "OKC",
+        "slug": "carlsbr01",
+        "name": "Branden Carlson",
+        "team": "POR",
         "z03": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 2,
+          "fga": 2
         },
         "z310": {
           "fgm": 1,
           "fga": 1
         },
         "z1016": {
-          "fgm": 0,
+          "fgm": 1,
           "fga": 1
         },
         "z16xp": {
@@ -7688,27 +7793,6 @@
         }
       },
       {
-        "slug": "diawamo01",
-        "name": "Mohamed Diawara",
-        "team": "NYK",
-        "z03": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "cardwdy01",
         "name": "Dylan Cardwell",
         "team": "SAC",
@@ -7814,48 +7898,6 @@
         }
       },
       {
-        "slug": "mclaujo01",
-        "name": "Jordan McLaughlin",
-        "team": "SAS",
-        "z03": {
-          "fgm": 0,
-          "fga": 4
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 3
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "pottemi01",
-        "name": "Micah Potter",
-        "team": "POR",
-        "z03": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z310": {
-          "fgm": 2,
-          "fga": 3
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "prospol01",
         "name": "Olivier-Maxence Prosper",
         "team": "MEM",
@@ -7870,27 +7912,6 @@
         "z1016": {
           "fgm": 0,
           "fga": 1
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "reedjta01",
-        "name": "Tarris Reed Jr.",
-        "team": "SAS",
-        "z03": {
-          "fgm": 3,
-          "fga": 4
-        },
-        "z310": {
-          "fgm": 1,
-          "fga": 1
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -7916,6 +7937,48 @@
         "z16xp": {
           "fgm": 2,
           "fga": 3
+        }
+      },
+      {
+        "slug": "manntr01",
+        "name": "Tre Mann",
+        "team": "WAS",
+        "z03": {
+          "fgm": 2,
+          "fga": 4
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 1
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "knechda01",
+        "name": "Dalton Knecht",
+        "team": "NYK",
+        "z03": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
         }
       },
       {
@@ -7975,6 +8038,27 @@
         "z1016": {
           "fgm": 0,
           "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
+        "slug": "jonessp01",
+        "name": "Spencer Jones",
+        "team": "DEN",
+        "z03": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
         },
         "z16xp": {
           "fgm": 0,
@@ -8066,20 +8150,20 @@
         }
       },
       {
-        "slug": "carlsbr01",
-        "name": "Branden Carlson",
+        "slug": "kentja01",
+        "name": "Jayson Kent",
         "team": "POR",
         "z03": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 2,
+          "fga": 3
         },
         "z310": {
           "fgm": 0,
-          "fga": 0
+          "fga": 3
         },
         "z1016": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 0,
+          "fga": 0
         },
         "z16xp": {
           "fgm": 0,
@@ -8213,16 +8297,16 @@
         }
       },
       {
-        "slug": "knechda01",
-        "name": "Dalton Knecht",
-        "team": "NYK",
+        "slug": "minixri01",
+        "name": "Riley Minix",
+        "team": "CLE",
         "z03": {
           "fgm": 1,
-          "fga": 1
+          "fga": 2
         },
         "z310": {
-          "fgm": 1,
-          "fga": 1
+          "fgm": 0,
+          "fga": 0
         },
         "z1016": {
           "fgm": 0,
@@ -8654,6 +8738,27 @@
         }
       },
       {
+        "slug": "terryda01",
+        "name": "Dalen Terry",
+        "team": "OKC",
+        "z03": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 1
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "richani01",
         "name": "Nick Richards",
         "team": "MIA",
@@ -8759,6 +8864,27 @@
         }
       },
       {
+        "slug": "gillan01",
+        "name": "Anthony Gill",
+        "team": "WAS",
+        "z03": {
+          "fgm": 0,
+          "fga": 3
+        },
+        "z310": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z1016": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z16xp": {
+          "fgm": 0,
+          "fga": 0
+        }
+      },
+      {
         "slug": "edwarju01",
         "name": "Justin Edwards",
         "team": "PHI",
@@ -8840,6 +8966,27 @@
         "z16xp": {
           "fgm": 0,
           "fga": 0
+        }
+      },
+      {
+        "slug": "mccontj01",
+        "name": "T.J. McConnell",
+        "team": "IND",
+        "z03": {
+          "fgm": 0,
+          "fga": 0
+        },
+        "z310": {
+          "fgm": 1,
+          "fga": 2
+        },
+        "z1016": {
+          "fgm": 1,
+          "fga": 1
+        },
+        "z16xp": {
+          "fgm": 1,
+          "fga": 2
         }
       },
       {
@@ -8948,27 +9095,6 @@
         }
       },
       {
-        "slug": "kentja01",
-        "name": "Jayson Kent",
-        "team": "POR",
-        "z03": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "thierad01",
         "name": "Adou Thiero",
         "team": "LAL",
@@ -9032,48 +9158,6 @@
         }
       },
       {
-        "slug": "minixri01",
-        "name": "Riley Minix",
-        "team": "CLE",
-        "z03": {
-          "fgm": 0,
-          "fga": 1
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "manntr01",
-        "name": "Tre Mann",
-        "team": "WAS",
-        "z03": {
-          "fgm": 1,
-          "fga": 2
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
         "slug": "jonesda06",
         "name": "David Jones García",
         "team": "SAS",
@@ -9105,27 +9189,6 @@
         "z310": {
           "fgm": 0,
           "fga": 0
-        },
-        "z1016": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z16xp": {
-          "fgm": 0,
-          "fga": 0
-        }
-      },
-      {
-        "slug": "terryda01",
-        "name": "Dalen Terry",
-        "team": "OKC",
-        "z03": {
-          "fgm": 0,
-          "fga": 0
-        },
-        "z310": {
-          "fgm": 0,
-          "fga": 1
         },
         "z1016": {
           "fgm": 0,
