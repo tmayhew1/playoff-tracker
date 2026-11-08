@@ -816,13 +816,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         let c = careers.get(k);
         if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, attNeed: 0, m: 0, sn: 0, sd: 0, first: r.season, last: r.season }));
         c.gp += r.gp || 0;
+        // A 2-point distance ranks over the games its zones cover (see rowGames).
+        if (selSeg?.games) c.zoneGp = (c.zoneGp || 0) + selSeg.games(r);
         // A career's attempts floor is its seasons' floors summed.
         if (shotAtt) { c.att += shotAtt(r); c.attNeed += attFloorFor(r.season); }
         if (shareMode) { c.sn += selSeg.num(r); c.sd += selSeg.den(r); }
         // Per game, each season's own per-game reading back over its G — the
         // same total, except where a season's zones cover fewer games than it
         // has played (one tonight's games have moved).
-        else if (perGame) c.m += metric(r, lgaFor(r.season, poolScope), r.season) * (r.gp || 0);
+        else if (perGame && !selSeg?.games) c.m += metric(r, lgaFor(r.season, poolScope), r.season) * (r.gp || 0);
         else c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
         if (r.season < c.first) c.first = r.season;
         // Carry the name as it was spelled in the latest season on record.
@@ -832,7 +834,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       careerFloor = shotAtt ? 0 : Math.min(CAREER_GP_FLOOR, selfCareer?.gp || CAREER_GP_FLOOR);
       const list = [...careers.values()]
         .filter((c) => c === selfCareer || (c.gp >= careerFloor && c.att >= c.attNeed))
-        .map((c) => ({ r: c, m: shareMode ? (c.sd > 0 ? c.sn / c.sd : 0) : perGame ? c.m / (c.gp || 1) : c.m }))
+        .map((c) => ({ r: c, m: shareMode ? (c.sd > 0 ? c.sn / c.sd : 0) : perGame ? c.m / ((selSeg?.games ? c.zoneGp : c.gp) || 1) : c.m }))
         .sort((a, b) => b.m - a.m);
       boardN = list.length;
       const idx = selfCareer ? list.findIndex((x) => x.r === selfCareer) : -1;
@@ -1154,7 +1156,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const boardSgn = (v) => (!shareMode && careerBoard && Math.abs(v) >= 1000 ? (v > 0 ? "+" : "") + Math.round(v) : fmtM(v));
   // What the ranked figure is called in headers: "VA", or "Share".
   const mUnit = shareMode ? "" : " VA";
-  const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
+  // G and MPG beside the ranked figure. A 2-point distance is ranked over the
+  // games its zones cover — on a row tonight's games have moved, the last
+  // bake's, not the live "8+" — so its board says so; FT, 3PT and the merged
+  // 2PT are box-score readings and carry the live G.
+  const rowGames = (r) => (selSeg?.games ? (r.zoneGp ?? selSeg.games(r)) : r.gp);
+  const rowMinutes = (r) => (selSeg?.minutes ? (r.zoneMp ?? selSeg.minutes(r)) : r.mp);
+  const mpg = (r) => ((rowMinutes(r) || 0) / (rowGames(r) || 1)).toFixed(1);
 
   // Trend bars: one bar per season, diverging from a shared zero baseline.
   // Both reference values join the scale (not just the one showing), so
@@ -1216,7 +1224,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             were truncating mid-word on a phone; the initial still separates
             same-surname players. Full names stay in the aria-label below. */}
         <span className="truncate text-[10px] font-medium" title={r.name}>{compName(r.name)}</span>
-        <span className="text-right text-[9px]">{fmtG(r.gp)}</span>
+        <span className="text-right text-[9px]">{fmtG(rowGames(r))}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{fmtM(m)}</span>
         <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
