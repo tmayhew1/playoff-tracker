@@ -1605,7 +1605,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                   : `League ${metricLabel}, ${shareRef.span}`}
                 className="inline-flex items-center gap-1 text-[9px] text-stone-500 tabular-nums whitespace-nowrap touch-manipulation enabled:hover:text-stone-800 disabled:cursor-default"
               >
-                <span aria-hidden className="inline-block w-3 border-t-[1.5px] border-dotted border-stone-500" />
+                <span aria-hidden className="inline-block w-3 border-t-[1.5px] border-dotted border-stone-900" />
                 <span>lg. avg{refOnRole ? `: ${ROLE_LABEL[shareRef.role]}` : ""}</span>
               </button>
             )}
@@ -1645,12 +1645,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                     {refV != null && (
                       // League-average reference, one segment per column (the
                       // 2px gutters between columns read as more dots). Drawn
-                      // over the bar, light enough to sit on either fill.
-                      <div
-                        aria-hidden
-                        className="absolute -inset-x-px border-t-[1.5px] border-dotted pointer-events-none"
-                        style={{ top: `${zeroPct - (Math.abs(refV) / tSpan) * 100 * plotScale}%`, borderColor: "rgba(245, 245, 244, 0.95)", filter: "drop-shadow(0 0 0.5px rgba(68, 64, 60, 0.9))" }}
-                      />
+                      // over the bar: black dots, except white where the line
+                      // crosses the current season's black bar itself (not
+                      // its side margins, nor the white above a shorter bar).
+                      (() => {
+                        const top = `${zeroPct - (Math.abs(refV) / tSpan) * 100 * plotScale}%`;
+                        const seg = (style, color) => (
+                          <div aria-hidden className="absolute border-t-[1.5px] border-dotted pointer-events-none" style={{ top, borderColor: color, ...style }} />
+                        );
+                        if (!(i === curIdx && refV <= x.m)) return seg({ left: -1, right: -1 }, "#1c1917");
+                        return (
+                          <>
+                            {seg({ left: -1, width: "calc(12% + 1px)" }, "#1c1917")}
+                            {seg({ left: "12%", right: "12%" }, "#ffffff")}
+                            {seg({ right: -1, width: "calc(12% + 1px)" }, "#1c1917")}
+                          </>
+                        );
+                      })()
                     )}
                     {topRank && (
                       // Auto-width chip centered over the bar, floating in the
