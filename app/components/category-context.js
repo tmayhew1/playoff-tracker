@@ -624,7 +624,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     return SEGMENTS.map((seg) => {
       const num = (r) => attOf(seg, r);
       return {
-        key: `share:${seg.key}`, sub: `${seg.sub} share`, share: true, zone: seg.key,
+        key: `share:${seg.key}`, sub: `${seg.sub} dist.`, share: true, zone: seg.key,
         note: `share of his shots from ${seg.key === "ft" ? "the line (FTA ÷ 2.2 as trips)" : seg.dist ? `${seg.sub} (${seg.dist})` : seg.sub}`,
         era: seg.era, eraNote: seg.eraNote || "",
         num, den,
@@ -1222,7 +1222,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Share" : "VA"}</span><span className="text-right">{shareMode ? "Att" : metricLabel}</span>
+          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Dist." : "VA"}</span><span className="text-right">{shareMode ? "Att" : metricLabel}</span>
         </div>
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
