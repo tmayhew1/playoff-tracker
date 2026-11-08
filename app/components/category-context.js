@@ -610,8 +610,36 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // one of the two totals — is tapped). Clears itself if the segment list no
   // longer holds the key (e.g. switching from Scoring to 2-Pointers with
   // FT/3PT selected).
+  // Shot-distribution readings. Tapping a disc in the Shot distribution row
+  // re-points the whole card at that distance's SHARE of the player's shots
+  // (FTA ÷ 2.2 counted as trips, the same denominators the discs use) in place
+  // of value added: the leaderboard, the all-time board and the by-season
+  // trend all rank on it. A share is already a rate, so the /G toggle leaves
+  // it alone, and a career's share is attempts-weighted (num/den summed), not
+  // its seasons' shares added up.
+  const SHARE_SEGMENTS = useMemo(() => {
+    if (!showZones || !SEGMENTS) return null;
+    const attOf = (seg, r) => (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
+    const den = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
+    return SEGMENTS.map((seg) => {
+      const num = (r) => attOf(seg, r);
+      return {
+        key: `share:${seg.key}`, sub: `${seg.sub} share`, share: true, zone: seg.key,
+        note: `share of his shots from ${seg.key === "ft" ? "the line (FTA ÷ 2.2 as trips)" : seg.dist ? `${seg.sub} (${seg.dist})` : seg.sub}`,
+        era: seg.era, eraNote: seg.eraNote || "",
+        num, den,
+        // Qualify on total shot volume, not attempts at this one distance —
+        // a share ranking that only admits high-volume zone shooters would
+        // hide the low end of the scale.
+        a: den,
+        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r),
+        val: (r) => { const d = den(r); return d > 0 ? num(r) / d : 0; },
+      };
+    });
+  }, [showZones, SEGMENTS, rateMode, perGame]);
   const selSeg = (selectedSeg
-    && [...(SEGMENTS || []), ...(TOTAL_SEGMENTS || [])].find((s) => s.key === selectedSeg)) || null;
+    && [...(SEGMENTS || []), ...(TOTAL_SEGMENTS || []), ...(SHARE_SEGMENTS || [])].find((s) => s.key === selectedSeg)) || null;
+  const shareMode = !!selSeg?.share;
   // Seasons a filtered card can rank against — everything, unless the selected
   // component only exists for part of league history.
   const segEra = (season) => !selSeg?.era || selSeg.era(season);
@@ -663,7 +691,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // The metric every per-season view ranks and displays on, on the /G toggle.
   const metric = (r, lgaX, seasonOf = seasonKey) => {
     const v = metricTotal(r, lgaX, seasonOf);
-    return perGame ? v / (r.gp || 1) : v;
+    return perGame && !shareMode ? v / (r.gp || 1) : v;
   };
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
@@ -742,11 +770,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         if (!(r.mp > 0) || !segEra(r.season)) continue;
         const k = comparePlayerKey(r);
         let c = careers.get(k);
-        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, attNeed: 0, m: 0, first: r.season, last: r.season }));
+        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, attNeed: 0, m: 0, sn: 0, sd: 0, first: r.season, last: r.season }));
         c.gp += r.gp || 0;
         // A career's attempts floor is its seasons' floors summed.
         if (shotAtt) { c.att += shotAtt(r); c.attNeed += attFloorFor(r.season); }
-        c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
+        if (shareMode) { c.sn += selSeg.num(r); c.sd += selSeg.den(r); }
+        else c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
         if (r.season < c.first) c.first = r.season;
         // Carry the name as it was spelled in the latest season on record.
         if (r.season > c.last) { c.last = r.season; c.name = r.name; }
@@ -755,7 +784,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       careerFloor = shotAtt ? 0 : Math.min(CAREER_GP_FLOOR, selfCareer?.gp || CAREER_GP_FLOOR);
       const list = [...careers.values()]
         .filter((c) => c === selfCareer || (c.gp >= careerFloor && c.att >= c.attNeed))
-        .map((c) => ({ r: c, m: perGame ? c.m / (c.gp || 1) : c.m }))
+        .map((c) => ({ r: c, m: shareMode ? (c.sd > 0 ? c.sn / c.sd : 0) : perGame ? c.m / (c.gp || 1) : c.m }))
         .sort((a, b) => b.m - a.m);
       boardN = list.length;
       const idx = selfCareer ? list.findIndex((x) => x.r === selfCareer) : -1;
@@ -1037,7 +1066,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // at that scale, and dropping it keeps the value column the width the season
   // rows set — which is why the rounding is the career board's alone: a season
   // total reads the same here as in the leaderboard above.
-  const boardSgn = (v) => (careerBoard && Math.abs(v) >= 1000 ? (v > 0 ? "+" : "") + Math.round(v) : sgn(v));
+  // The card's ranked figure: value added, or — on a shot-distribution
+  // reading — the share of shots itself.
+  const fmtM = (v) => (shareMode ? `${(v * 100).toFixed(1)}%` : sgn(v));
+  const boardSgn = (v) => (!shareMode && careerBoard && Math.abs(v) >= 1000 ? (v > 0 ? "+" : "") + Math.round(v) : fmtM(v));
+  // What the ranked figure is called in headers: "VA", or "Share".
+  const mUnit = shareMode ? "" : " VA";
   const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
 
   // Trend bars: one bar per season, diverging from a shared zero baseline.
@@ -1100,7 +1134,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="truncate text-[10px] font-medium" title={r.name}>{compName(r.name)}</span>
         <span className="text-right text-[9px]">{fmtG(r.gp)}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
-        <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
+        <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{fmtM(m)}</span>
         <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
       </>
     );
@@ -1115,7 +1149,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       <button
         type="button"
         onClick={() => setFocusRow(isOwner ? null : r)}
-        aria-label={`Show ${r.name}, ranked #${rank}, ${metricLabel} value added ${sgn(m)}`}
+        aria-label={`Show ${r.name}, ranked #${rank}, ${metricLabel}${shareMode ? "" : " value added"} ${fmtM(m)}`}
         className={`${rowGrid} w-full text-left text-stone-600 rounded-sm cursor-pointer hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
       >
         {cells}
@@ -1188,14 +1222,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA</span><span className="text-right">{metricLabel}</span>
+          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Share" : "VA"}</span><span className="text-right">{shareMode ? "Att" : metricLabel}</span>
         </div>
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {shareMode ? metricLabel : `${perGame ? "per-game" : "total"} ${metricLabel} VA`} among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
       </div>
 
       {/* View 2 — the split row. Every Basic group card fans its total out into
@@ -1304,7 +1338,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 onClick={() => {
                   // A selected distance (or the total being swapped out)
                   // doesn't survive the regroup — drop it.
-                  if (selectedSeg && selectedSeg !== "ft" && selectedSeg !== "tp") setSelectedSeg(null);
+                  if (selectedSeg && !["ft", "tp", "share:ft", "share:tp"].includes(selectedSeg)) setSelectedSeg(null);
                   setTwoMerged(!twoMerged);
                 }}
                 aria-pressed={twoMerged}
@@ -1414,7 +1448,14 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                     const share = atts[i] / tot;
                     const rel = peak > 0 ? share / peak : 0;
                     return (
-                      <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%)`}>
+                      <button
+                        key={seg.key}
+                        type="button"
+                        onClick={() => setSelectedSeg(selectedSeg === `share:${seg.key}` ? null : `share:${seg.key}`)}
+                        aria-pressed={selectedSeg === `share:${seg.key}`}
+                        title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%) — tap to rank the card on this share of shots`}
+                        className={`flex flex-col items-center min-w-0 rounded pb-1 transition-colors ${selectedSeg === `share:${seg.key}` ? "bg-stone-200 ring-1 ring-stone-800" : "hover:bg-stone-100"}`}
+                      >
                         <div className="relative h-12 w-full flex items-center justify-center">
                           {share > 0 && (() => {
                             // Pie slice of the share, centred on straight up:
@@ -1439,7 +1480,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           })()}
                         </div>
                         <span className="text-[8px] tabular-nums text-stone-500 leading-none">{(share * 100).toFixed(0)}%</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -1461,7 +1502,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           the top three plus the player's own neighbourhood of the ranking. */}
       {!seasonOnly && <div className="border-t border-stone-100 pt-2">
         <div className="flex items-baseline justify-between gap-1.5 mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel} VA</span>
+          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel}{mUnit}</span>
           <div className="shrink-0 flex items-baseline gap-1.5">
             <button
               type="button"
@@ -1494,7 +1535,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         ))}
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">
           {careerBoard
-            ? `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} careers, attempts ≥ each season’s most G, summed —` : `all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G),`} ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
+            ? `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} careers, attempts ≥ each season’s most G, summed —` : `all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G),`} ${shareMode ? "every season's attempts pooled" : perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
             : `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} player seasons, attempts ≥ ${d.attLo === d.attHi ? d.attLo : `${d.attLo}–${d.attHi}`}` : `all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)`}${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
         </div>
       </div>}
@@ -1505,7 +1546,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
         <div className="flex items-center justify-between mb-3">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{metricLabel} VA by season</span>
+          <span className="uppercase tracking-wider text-[9px] text-stone-400">{metricLabel}{mUnit} by season</span>
           {gToggle}
         </div>
         {d.mine.length === 0 ? (
@@ -1532,7 +1573,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 const frac = (i + 0.5) * Math.min(1 / d.mine.length, 0.1);
                 const anchor = frac < 0.2 ? "left-0" : frac > 0.8 ? "right-0" : "left-1/2 -translate-x-1/2";
                 return (
-                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${sgn(x.m)}${topRank ? ` · #${topRank} in league` : ""}${navigable ? " · tap to open" : ""}`}>
+                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${fmtM(x.m)}${topRank ? ` · #${topRank} in league` : ""}${navigable ? " · tap to open" : ""}`}>
                     <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${zeroPct}%` }} />
                     <div
                       className="absolute inset-x-[12%]"
@@ -1556,7 +1597,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       <button
                         type="button"
                         onClick={() => seasonGo.arm(x.season)}
-                        aria-label={`${self.name} ${x.season}, ${metricLabel} value added ${sgn(x.m)} — tap to confirm opening it`}
+                        aria-label={`${self.name} ${x.season}, ${metricLabel}${shareMode ? "" : " value added"} ${fmtM(x.m)} — tap to confirm opening it`}
                         aria-expanded={isArmed}
                         className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isArmed ? "bg-stone-900/10" : "hover:bg-stone-900/5"}`}
                       />
@@ -1578,7 +1619,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           {x.team && (
                             <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(x.team) }}>{x.team}</span>
                           )}
-                          <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(x.m)}</span>
+                          <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtM(x.m)}</span>
                           <button
                             ref={seasonGo.goRef}
                             type="button"
