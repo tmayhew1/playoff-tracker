@@ -1311,7 +1311,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 title={twoMerged
                   ? "One 2-point bar against the league 2P% (bars sum to Eff) — tap to split it by distance (bars sum to Impact)"
                   : "Four 2-point distances, each against its zone FG% (bars sum to Impact) — tap to merge them into one bar against the league 2P% (bars sum to Eff)"}
-                className={`${twoMerged ? "col-span-1" : "col-span-4"} text-center uppercase tracking-wider border-x border-stone-200 rounded-sm hover:bg-stone-100 hover:text-stone-700 underline decoration-dotted underline-offset-2`}
+                className={`${twoMerged ? "col-span-1" : "col-span-4"} text-center uppercase tracking-wider border-x border-stone-200 rounded-sm hover:bg-stone-100 hover:text-stone-700`}
               >2-Pointers</button>
               <div className="col-span-1 text-center">3PT</div>
             </div>
