@@ -93,14 +93,21 @@ function attachZones(rows, zoneMap, side) {
 // baked box scores added up (_lib/season-to-date.js), the same totals
 // /api/regular-season serves the board — so a card opened from that board
 // finds its own season in the index (its rank, its bar in the by-season
-// chart) instead of a field of none.
+// chart) instead of a field of none. `inSeason` ({ season, through }) says
+// which night those rows run through, so a client laying tonight's games over
+// them (lib/live-lines.js) starts the day after, not wherever another
+// payload's bake had got to.
 async function inSeasonRows(files) {
+  const none = { rows: [], inSeason: null };
   const d = new Date(), y = d.getUTCFullYear(), start = d.getUTCMonth() >= 8 ? y : y - 1;
   const season = `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
-  if (files.includes(`regular-season-${season}.json`)) return [];
+  if (files.includes(`regular-season-${season}.json`)) return none;
   const toDate = await seasonToDate(season).catch(() => null);
-  if (!toDate || toDate.complete) return [];
-  return toDate.players.map(({ teams, last, tg, gs, ...p }) => ({ season, p: { ...p, gp: p.g, partial: true } }));
+  if (!toDate || toDate.complete) return none;
+  return {
+    rows: toDate.players.map(({ teams, last, tg, gs, ...p }) => ({ season, p: { ...p, gp: p.g, partial: true } })),
+    inSeason: toDate.through ? { season, through: toDate.through } : null,
+  };
 }
 
 export async function GET(req) {
@@ -120,7 +127,7 @@ export async function GET(req) {
   // playoff rows, "rs" for regular-season rows) of each shooting-<season>.json.
   const zoneMap = await loadZoneMap(dir, files);
   let rows, fileCount;
-  const live = scope === "playoffs" ? [] : await inSeasonRows(files);
+  const { rows: live, inSeason } = scope === "playoffs" ? { rows: [], inSeason: null } : await inSeasonRows(files);
   if (scope === "regular") {
     ({ rows, fileCount } = await loadRows(dir, files, RS_RE));
     rows.push(...live);
@@ -208,7 +215,7 @@ export async function GET(req) {
   }
   players.sort((a, b) => b.careerVa - a.careerVa);
 
-  return new Response(JSON.stringify({ scope, players, seasonsIndexed: fileCount }), {
+  return new Response(JSON.stringify({ scope, players, seasonsIndexed: fileCount, ...(inSeason ? { inSeason } : {}) }), {
     status: 200,
     headers: {
       "Content-Type": "application/json",

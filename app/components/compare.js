@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import { USG_FTA_W, ZONES, possUsed, zoneShotValue, hasZoneData } from "../scoring";
+import { USG_FTA_W, ZONES, possUsed, zoneShotValue, hasZoneData, zoneGames } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
@@ -142,14 +142,17 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
           <span className={val >= 0 ? "text-emerald-600" : "text-red-600"}>{sgn1(val)}</span>
         </>
       );
+      // Over the games the zones cover: a row tonight's games have moved holds
+      // them at the last bake (scoring.js::zoneGames).
+      const azg = zoneGames(a) || 1, bzg = zoneGames(b) || 1;
       for (const z of ZONES) {
         const azm = a[z.mKey] || 0, aza = a[z.aKey] || 0;
         const bzm = b[z.mKey] || 0, bza = b[z.aKey] || 0;
         // Winner is decided by per-game value added vs league, not raw FG% —
         // a higher zone FG% on lower volume can still add less value.
-        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]) / agp;
-        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]) / bgp;
-        push(z.label, zoneDisp(azm / agp, aza / agp, aVal), zoneDisp(bzm / bgp, bza / bgp, bVal), aVal, bVal);
+        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]) / azg;
+        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]) / bzg;
+        push(z.label, zoneDisp(azm / azg, aza / azg, aVal), zoneDisp(bzm / bzg, bza / bzg, bVal), aVal, bVal);
       }
     }
     return rows;
