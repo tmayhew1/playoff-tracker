@@ -7,6 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { addLiveLines, addLiveLinesToIndex, clockSeconds, gameFraction, liveLines } from "../app/lib/live-lines.js";
+import { zoneGames, zoneMinutes, zoneVAVec } from "../app/scoring.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≉ ${b}`);
 
@@ -64,6 +65,27 @@ test("lines add onto the baked totals; a debut joins as a new row", () => {
   // The baked rows themselves are left as they were.
   assert.equal(baked[0].g, 2);
   assert.equal(addLiveLines(baked, []), baked);
+  // The zones' coverage is held from before the first line, not moved by it.
+  assert.equal(wemby.zoneGp, 2);
+  assert.equal(wemby.zoneMp, 60);
+  assert.equal(flagg.zoneGp, 0);
+});
+
+test("a moved row's zones read per game over the games they cover", () => {
+  const lga = { zoneFG: { z03: 0.65, z310: 0.45, z1016: 0.42, z16xp: 0.4 } };
+  const baked = [{ name: "Tyrese Maxey", team: "PHI", g: 10, mp: 370, pts: 268, fgm: 90, fga: 190, tpm: 22, tpa: 65, ftm: 40, fta: 47,
+    z03m: 36, z03a: 50, z310m: 13, z310a: 30, z1016m: 7, z1016a: 19, z16xpm: 11, z16xpa: 20 }];
+  const lines = [{ name: "Tyrese Maxey", tri: "PHI", gameId: "9", date: "2026-11-08", frac: 0.3, live: true, mp: 11, pts: 9, fgm: 3, fga: 6, tpm: 1, tpa: 3, ftm: 2, fta: 2 }];
+  const [moved] = addLiveLines(baked, lines).map((r) => ({ ...r, gp: r.g }));
+  assert.equal(moved.gp, 10.3);
+  assert.equal(zoneGames(moved), 10);
+  assert.equal(zoneMinutes(moved), 370);
+  // Same per-game zone value as last night's row: 36/50 at the rim over 10 G,
+  // not over 10.3.
+  const before = zoneVAVec({ ...baked[0], gp: 10 }, lga);
+  const after = zoneVAVec(moved, lga);
+  before.forEach((v, i) => close(after[i], v));
+  close(after[0], (2 * (36 / 50 - 0.65) * 50) / 10);
 });
 
 test("the player index takes the same lines on its season-so-far rows", () => {
@@ -83,8 +105,12 @@ test("the player index takes the same lines on its season-so-far rows", () => {
   assert.equal(wemby.fga, 41);
   assert.equal(wemby.va, 35);
   close(wemby.vaPerG, 13.33);
-  // basketball-reference's zones stay where its bake left them.
+  // basketball-reference's zones stay where its bake left them, and carry the
+  // games and minutes that bake covered.
   assert.equal(wemby.z03a, 9);
+  assert.equal(wemby.zoneGp, 2);
+  assert.equal(wemby.zoneMp, 60);
+  assert.equal(wemby.mp, 70);
   assert.equal(out[0].careerVa, 65);
   assert.equal(out[0].bestVa, 35);
   // Brunson's first game of the season starts his season so far, beside the

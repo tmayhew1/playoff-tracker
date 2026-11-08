@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
+import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData, zoneGames, zoneMinutes } from "../scoring";
 import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
@@ -20,6 +20,26 @@ import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/rol
 // bars can print the actual range under their nickname ("Rim", "Float", …)
 // without restating the boundaries ZONES already owns.
 const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
+
+// A bar's value added per game. A segment says how when its G isn't the
+// row's: a 2-point distance divides by the games its zones cover (`games`,
+// scoring.js::zoneGames — fewer than G on a row tonight's games have moved),
+// and Impact sums each of its six distances' own (`perG`).
+function segPerGame(seg, r, lx, s) {
+  if (seg.perG) return seg.perG(r, lx, s);
+  return seg.val(r, lx, s) / ((seg.games ? seg.games(r) : r.gp) || 1);
+}
+
+// A distance's shots for the shot-distribution readings: FTA ÷ 2.2 as trips,
+// and a 2-point distance's attempts carried to the row's G when its zones
+// cover fewer games (a row tonight's games have moved) — so its share sits
+// beside FT and 3PT counts that include tonight, instead of shrinking under
+// them until the next bake.
+function shotTrips(seg, r) {
+  const a = (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
+  const g = seg.games ? seg.games(r) : 0;
+  return g > 0 && r.gp > g ? (a * r.gp) / g : a;
+}
 
 // Short label printed under a category's bar in the split row below a Basic
 // group's rankings ("Assists" -> AST). Box-score tags rather than CAT_SHORT's
@@ -446,11 +466,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // the mini leaderboard can't be reading a different normalization from the
   // row above it (and the fine print under it can name one of them). The FG%
   // is scale-invariant, so it's unchanged either way. Under Per G, the /G
-  // toggle off reads the season's totals, as the bar headlines do.
-  const maLabel = (made, att, r) => {
+  // toggle off reads the season's totals, as the bar headlines do. A 2-point
+  // distance passes its own games/minutes (`seg.games`/`seg.minutes`): on a
+  // row tonight's games have moved, the zones cover less than its G.
+  const maLabel = (made, att, r, seg = null) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
     if (rateMode !== "per36" && !perGame) return `${made}/${att} (${pct}%)`;
-    const div = rateMode === "per36" ? ((r.mp || 1) / 36) : (r.gp || 1);
+    const div = rateMode === "per36"
+      ? (((seg?.minutes ? seg.minutes(r) : r.mp) || 1) / 36)
+      : ((seg?.games ? seg.games(r) : r.gp) || 1);
     return `${(made / div).toFixed(1)}/${(att / div).toFixed(1)} (${pct}%)`;
   };
 
@@ -486,15 +510,24 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // (2-point zones only — "FT" and "3PT" are distances in themselves).
     // era gates the all-time/trend pools: the four 2-point zones only exist
     // from 1996-97 on, while FT and 3PT are defined every season.
-    const zone = (key, sub, group, extra) => ({
-      key, sub, group, dist: ZONE_DIST[key],
-      era: group === "2p" ? (s) => !!lgaForSeason(s)?.zoneFG : undefined,
-      eraNote: group === "2p" ? " with shot-location data (1996-97 on)" : "",
-      note: "FG% at that distance",
-      head: (r) => (extra.a(r) > 0 ? `${((extra.m(r) / extra.a(r)) * 100).toFixed(0)}%` : null),
-      rate: (r) => maLabel(extra.m(r), extra.a(r), r),
-      ...extra,
-    });
+    //
+    // The 2-point distances are basketball-reference's alone, so on a row
+    // tonight's games have moved they still stand at the last bake: `games`
+    // and `minutes` are what they cover (scoring.js::zoneGames), which every
+    // per-game reading of them divides by instead of the row's own G.
+    const zone = (key, sub, group, extra) => {
+      const base = group === "2p" ? { games: zoneGames, minutes: zoneMinutes } : {};
+      return {
+        key, sub, group, dist: ZONE_DIST[key],
+        era: group === "2p" ? (s) => !!lgaForSeason(s)?.zoneFG : undefined,
+        eraNote: group === "2p" ? " with shot-location data (1996-97 on)" : "",
+        note: "FG% at that distance",
+        head: (r) => (extra.a(r) > 0 ? `${((extra.m(r) / extra.a(r)) * 100).toFixed(0)}%` : null),
+        rate: (r) => maLabel(extra.m(r), extra.a(r), r, base),
+        ...base,
+        ...extra,
+      };
+    };
     const all = [
       zone("ft",    "FT",       "ft", { m: (r) => r.ftm || 0,    a: (r) => r.fta || 0,    val: (r, lx = lga) => ((r.ftm / (r.fta || 1)) - lx.laFT) * (r.fta || 0) }),
       zone("z03",   "Rim",      "2p", { m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) }),
@@ -609,6 +642,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         era: (s) => !!lgaForSeason(s)?.zoneFG,
         eraNote: " with shot-location data (1996-97 on)",
         val: (r, lx = lga, s = seasonKey) => ZONES.reduce((t, seg) => t + seg.val(r, lx, s), 0),
+        // FT and 3PT over the row's G, the 2-point distances over theirs.
+        perG: (r, lx = lga, s = seasonKey) => ZONES.reduce((t, seg) => t + segPerGame(seg, r, lx, s), 0),
       },
     ];
   }, [SEGMENTS, ZONES, showZones, catKey, lga, seasonKey]);
@@ -625,7 +660,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // its seasons' shares added up.
   const SHARE_SEGMENTS = useMemo(() => {
     if (!showZones || !SEGMENTS) return null;
-    const attOf = (seg, r) => (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
+    const attOf = (seg, r) => shotTrips(seg, r);
     const den = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
     return SEGMENTS.map((seg) => {
       const num = (r) => attOf(seg, r);
@@ -696,6 +731,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   };
   // The metric every per-season view ranks and displays on, on the /G toggle.
   const metric = (r, lgaX, seasonOf = seasonKey) => {
+    if (perGame && !shareMode && (selSeg?.games || selSeg?.perG)) {
+      return segEra(seasonOf) ? segPerGame(selSeg, r, lgaX, seasonOf) : 0;
+    }
     const v = metricTotal(r, lgaX, seasonOf);
     return perGame && !shareMode ? v / (r.gp || 1) : v;
   };
@@ -781,6 +819,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // A career's attempts floor is its seasons' floors summed.
         if (shotAtt) { c.att += shotAtt(r); c.attNeed += attFloorFor(r.season); }
         if (shareMode) { c.sn += selSeg.num(r); c.sd += selSeg.den(r); }
+        // Per game, each season's own per-game reading back over its G — the
+        // same total, except where a season's zones cover fewer games than it
+        // has played (one tonight's games have moved).
+        else if (perGame) c.m += metric(r, lgaFor(r.season, poolScope), r.season) * (r.gp || 0);
         else c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
         if (r.season < c.first) c.first = r.season;
         // Carry the name as it was spelled in the latest season on record.
@@ -886,7 +928,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
     const N = pool.length;
     return SEGMENTS.map((seg) => {
-      const per = (r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+      const per = (r) => (perGame ? segPerGame(seg, r, lga, seasonKey) : seg.val(r, lga, seasonKey));
       const vals = pool.map(per).sort((a, b) => a - b);
       const selfV = per(selfRow);
       const min = N ? vals[0] : 0, max = N ? vals[N - 1] : 0, med = N ? vals[Math.floor(N / 2)] : 0;
@@ -952,7 +994,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     if (!segData || !axisKeys || segData.length < 2) return null;
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
-    const per = (seg, r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+    const per = (seg, r) => (perGame ? segPerGame(seg, r, lga, seasonKey) : seg.val(r, lga, seasonKey));
     // A value per segment for every player, so the scatter, either collapsed
     // dot plot, and the disambiguation menu all read off one pass.
     const rows = pool
@@ -1024,7 +1066,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const scale = perGame ? (selfRow.gp || 1) : 1;
     // Impact always sums the six distances, whether or not the 2-point bars
     // are currently merged into one.
-    const impact = zeroed(ZONES.reduce((t, seg) => t + seg.val(selfRow, lga, seasonKey), 0) / scale);
+    const impact = zeroed(ZONES.reduce((t, seg) => t + (perGame ? segPerGame(seg, selfRow, lga, seasonKey) : seg.val(selfRow, lga, seasonKey)), 0));
     const by = valueAddByCategory(selfRow, lga);
     const eff = (by["3-Pointers"] || 0) + (by["2-Pointers"] || 0) + (by["Free Throws"] || 0);
     return { efficiency: zeroed(eff / scale), impact };
@@ -1048,7 +1090,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const [effSeg, impSeg] = TOTAL_SEGMENTS;
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0 && hasZoneData(r));
-    const per = (seg, r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+    const per = (seg, r) => (perGame ? segPerGame(seg, r, lga, seasonKey) : seg.val(r, lga, seasonKey));
     const others = pool
       .filter((r) => !samePlayer(r, selfRow))
       .map((r) => ({ row: r, eff: per(effSeg, r), imp: per(impSeg, r) }));
@@ -1472,7 +1514,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
             // shooting chances they are rather than double-counting and-ones
             // and two-shot fouls.
-            const atts = segData.map((seg) => (seg.a(selfRow) || 0) / (seg.key === "ft" ? 2.2 : 1));
+            const atts = segData.map((seg) => shotTrips(seg, selfRow));
             const tot = atts.reduce((t, a) => t + a, 0);
             if (!(tot > 0)) return null;
             const peak = Math.max(...atts) / tot;

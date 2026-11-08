@@ -1,6 +1,6 @@
 "use client";
 
-import { LEAGUE_AVERAGES, ZONES, combinedLga, hasZoneData, lgaForSeason, possUsed, valueAddByCategory } from "../scoring";
+import { LEAGUE_AVERAGES, ZONES, combinedLga, hasZoneData, lgaForSeason, possUsed, valueAddByCategory, zoneGames, zoneMinutes } from "../scoring";
 import { normalizeName, seasonTag } from "./format";
 import { VA_CATEGORY_ORDER, perGameVAVec, tunnelBreak, vaComposition } from "./va";
 
@@ -217,6 +217,12 @@ export function aggregateSeasons(seasonRows, identity = {}, lgaOf = lgaForRow) {
     for (const k of AGG_KEYS) row[k] += s[k] || 0;
   }
   row.vaPerG = row.gp > 0 ? row.va / row.gp : 0;
+  // A season tonight's games have moved holds its zones at the last bake
+  // (lib/live-lines.js); the run's zones then cover that much less than its G.
+  if (seasons.some((s) => s.zoneGp != null)) {
+    row.zoneGp = seasons.reduce((t, s) => t + zoneGames(s), 0);
+    row.zoneMp = seasons.reduce((t, s) => t + zoneMinutes(s), 0);
+  }
 
   // Era-fair per-category totals: each season against its own baselines.
   // These are what catVATotal() reads, so the panel's categories sum to the
