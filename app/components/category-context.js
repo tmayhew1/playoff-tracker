@@ -422,6 +422,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // component's value added (one shot distance, or one stat) instead of the
   // rolled-up category. null = the normal rolled-up view.
   const [selectedSeg, setSelectedSeg] = useState(null);
+  // Scoring card's 2-point split. false (default): the four 2-point distances,
+  // each against its own zone FG% — they sum, with FT and 3PT, to IMPACT.
+  // true: one 2PT bar against the league-wide 2P% — so FT + 2PT + 3PT sum to
+  // EFF instead. Tapping the "2-Pointers" header flips it, and the header
+  // total follows (Impact ↔ Eff).
+  const [twoMerged, setTwoMerged] = useState(false);
   // When VA+ is the active metric, the Defense drill-in folds D Rating into
   // every ranking/percentile/all-time/trend figure — so the context matches
   // the Defense group's VA+ total (Blocks + Steals + D Rating), not just the
@@ -466,32 +472,50 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // shot-location data before 1996-97), which is why the zone split is gated on
   // the season carrying a zoneFG baseline and the player carrying zone attempts.
   const showZones = (catKey === "Scoring" || catKey === "2-Pointers") && !!lga?.zoneFG && hasZoneData(p);
+  const ZONES = useMemo(() => {
+    if (!showZones) return null;
+    // group: "ft" | "2p" | "3p" — drives the section headers and the
+    // 2-Pointers-only filter. m/a pull the made/attempted for the FG%
+    // headline. dist is the shot-distance range printed under the nickname
+    // (2-point zones only — "FT" and "3PT" are distances in themselves).
+    // era gates the all-time/trend pools: the four 2-point zones only exist
+    // from 1996-97 on, while FT and 3PT are defined every season.
+    const zone = (key, sub, group, extra) => ({
+      key, sub, group, dist: ZONE_DIST[key],
+      era: group === "2p" ? (s) => !!lgaForSeason(s)?.zoneFG : undefined,
+      eraNote: group === "2p" ? " with shot-location data (1996-97 on)" : "",
+      note: "FG% at that distance",
+      head: (r) => (extra.a(r) > 0 ? `${((extra.m(r) / extra.a(r)) * 100).toFixed(0)}%` : null),
+      rate: (r) => maLabel(extra.m(r), extra.a(r), r),
+      ...extra,
+    });
+    const all = [
+      zone("ft",    "FT",       "ft", { m: (r) => r.ftm || 0,    a: (r) => r.fta || 0,    val: (r, lx = lga) => ((r.ftm / (r.fta || 1)) - lx.laFT) * (r.fta || 0) }),
+      zone("z03",   "Rim",      "2p", { m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) }),
+      zone("z310",  "Float",    "2p", { m: (r) => r.z310m || 0,  a: (r) => r.z310a || 0,  val: (r, lx = lga) => zoneShotValue(r.z310m || 0, r.z310a || 0, lx.zoneFG?.z310) }),
+      zone("z1016", "Mid",      "2p", { m: (r) => r.z1016m || 0, a: (r) => r.z1016a || 0, val: (r, lx = lga) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lx.zoneFG?.z1016) }),
+      zone("z16xp", "Deep Mid", "2p", { m: (r) => r.z16xpm || 0, a: (r) => r.z16xpa || 0, val: (r, lx = lga) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lx.zoneFG?.z16xp) }),
+      zone("tp",    "3PT",      "3p", { m: (r) => r.tpm || 0,    a: (r) => r.tpa || 0,    val: (r, lx = lga) => 3 * ((r.tpm / (r.tpa || 1)) - lx.la3P) * (r.tpa || 0) }),
+    ];
+    return catKey === "2-Pointers" ? all.filter((s) => s.group === "2p") : all;
+  }, [lga, catKey, showZones]);
   const SEGMENTS = useMemo(() => {
-    if (showZones) {
-      // group: "ft" | "2p" | "3p" — drives the section headers and the
-      // 2-Pointers-only filter. m/a pull the made/attempted for the FG%
-      // headline. dist is the shot-distance range printed under the nickname
-      // (2-point zones only — "FT" and "3PT" are distances in themselves).
-      // era gates the all-time/trend pools: the four 2-point zones only exist
-      // from 1996-97 on, while FT and 3PT are defined every season.
-      const zone = (key, sub, group, extra) => ({
-        key, sub, group, dist: ZONE_DIST[key],
-        era: group === "2p" ? (s) => !!lgaForSeason(s)?.zoneFG : undefined,
-        eraNote: group === "2p" ? " with shot-location data (1996-97 on)" : "",
-        note: "FG% at that distance",
-        head: (r) => (extra.a(r) > 0 ? `${((extra.m(r) / extra.a(r)) * 100).toFixed(0)}%` : null),
-        rate: (r) => maLabel(extra.m(r), extra.a(r), r),
-        ...extra,
-      });
-      const all = [
-        zone("ft",    "FT",       "ft", { m: (r) => r.ftm || 0,    a: (r) => r.fta || 0,    val: (r, lx = lga) => ((r.ftm / (r.fta || 1)) - lx.laFT) * (r.fta || 0) }),
-        zone("z03",   "Rim",      "2p", { m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) }),
-        zone("z310",  "Float",    "2p", { m: (r) => r.z310m || 0,  a: (r) => r.z310a || 0,  val: (r, lx = lga) => zoneShotValue(r.z310m || 0, r.z310a || 0, lx.zoneFG?.z310) }),
-        zone("z1016", "Mid",      "2p", { m: (r) => r.z1016m || 0, a: (r) => r.z1016a || 0, val: (r, lx = lga) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lx.zoneFG?.z1016) }),
-        zone("z16xp", "Deep Mid", "2p", { m: (r) => r.z16xpm || 0, a: (r) => r.z16xpa || 0, val: (r, lx = lga) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lx.zoneFG?.z16xp) }),
-        zone("tp",    "3PT",      "3p", { m: (r) => r.tpm || 0,    a: (r) => r.tpa || 0,    val: (r, lx = lga) => 3 * ((r.tpm / (r.tpa || 1)) - lx.la3P) * (r.tpa || 0) }),
-      ];
-      return catKey === "2-Pointers" ? all.filter((s) => s.group === "2p") : all;
+    if (ZONES) {
+      if (catKey !== "Scoring" || !twoMerged) return ZONES;
+      // Merged: the four 2-point distances fold into one 2PT bar, valued
+      // against the league-wide 2P% — the same 2P value added the Eff total
+      // (and the 2-Pointers row) uses, defined for every season.
+      const m2 = (r) => Math.max(0, (r.fgm || 0) - (r.tpm || 0));
+      const a2 = (r) => Math.max(0, (r.fga || 0) - (r.tpa || 0));
+      const two = {
+        key: "two", sub: "2PT", group: "2p",
+        note: "2P% vs the league 2P%",
+        m: m2, a: a2,
+        head: (r) => (a2(r) > 0 ? `${((m2(r) / a2(r)) * 100).toFixed(0)}%` : null),
+        rate: (r) => maLabel(m2(r), a2(r), r),
+        val: (r, lx = lga) => { const a = a2(r); return a > 0 ? 2 * ((m2(r) / a) - lx.la2P) * a : 0; },
+      };
+      return [ZONES[0], two, ZONES[ZONES.length - 1]];
     }
     const grp = VA_GROUP_BY_KEY[catKey];
     if (!grp) return null;
@@ -544,7 +568,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       });
     }
     return segs;
-  }, [lga, catKey, showZones, perGame, rateMode, withDef, defs, defScope, seasonKey]);
+  }, [ZONES, twoMerged, lga, catKey, perGame, rateMode, withDef, defs, defScope, seasonKey]);
   // The two headline totals over the six shot-distance bars are readings in
   // their own right, so they select exactly like a bar does — the season
   // leaderboard, the all-time board and the by-season trend all re-rank on
@@ -578,10 +602,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         key: "impact", sub: "Impact", note: "the six shot-distance values summed", rate: ts,
         era: (s) => !!lgaForSeason(s)?.zoneFG,
         eraNote: " with shot-location data (1996-97 on)",
-        val: (r, lx = lga, s = seasonKey) => SEGMENTS.reduce((t, seg) => t + seg.val(r, lx, s), 0),
+        val: (r, lx = lga, s = seasonKey) => ZONES.reduce((t, seg) => t + seg.val(r, lx, s), 0),
       },
     ];
-  }, [SEGMENTS, showZones, catKey, lga, seasonKey]);
+  }, [SEGMENTS, ZONES, showZones, catKey, lga, seasonKey]);
   // The component the card is currently filtered to (null unless a bar — or
   // one of the two totals — is tapped). Clears itself if the segment list no
   // longer holds the key (e.g. switching from Scoring to 2-Pointers with
@@ -927,13 +951,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // Collapse a value that rounds to zero so a sliver-negative total doesn't
     // read as a red "-0.00" (same treatment the bars get).
     const zeroed = (v) => (Math.abs(v) < 0.005 ? 0 : v);
-    const impact = zeroed(segData.reduce((s, seg) => s + seg.selfV, 0));
-    if (!showZones) return { total: impact };
+    if (!showZones) return { total: zeroed(segData.reduce((s, seg) => s + seg.selfV, 0)) };
+    const scale = perGame ? (selfRow.gp || 1) : 1;
+    // Impact always sums the six distances, whether or not the 2-point bars
+    // are currently merged into one.
+    const impact = zeroed(ZONES.reduce((t, seg) => t + seg.val(selfRow, lga, seasonKey), 0) / scale);
     const by = valueAddByCategory(selfRow, lga);
     const eff = (by["3-Pointers"] || 0) + (by["2-Pointers"] || 0) + (by["Free Throws"] || 0);
-    const scale = perGame ? (selfRow.gp || 1) : 1;
     return { efficiency: zeroed(eff / scale), impact };
-  }, [segData, catKey, showZones, selfRow, lga, perGame]);
+  }, [segData, ZONES, catKey, showZones, selfRow, lga, perGame, seasonKey]);
 
   // Eff vs Impact scatter — what the six-bar Scoring card shows instead of its
   // distance bars and shot distribution while one of the two headline totals is
@@ -1199,10 +1225,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 // re-ranks the league on that reading. Same pressed styling
                 // the bars wear, so it's clear they're the same control.
                 <>
-                  {[
-                    { key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value)` },
-                    { key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}` },
-                  ].map((t) => {
+                  {(twoMerged
+                    ? [{ key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""}, the three bars below summed (2-pointers against the league 2P%)` }]
+                    : [{ key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}` }]
+                  ).map((t) => {
                     const isSel = selectedSeg === t.key;
                     return (
                       <button
@@ -1267,10 +1293,26 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           {/* Section headers spanning their bars: FT · 2-Pointers (×4) · 3PT.
               Only the six-bar Scoring card needs them — every other split is
               all one section, so its per-bar sub-labels are enough. */}
+          {/* The "2-Pointers" header is a toggle: four distances (each vs its
+              zone FG%, summing to Impact) ↔ one 2PT bar (vs the league 2P%,
+              summing to Eff). */}
           {showZones && catKey !== "2-Pointers" && (
-            <div className="grid grid-cols-6 gap-1 text-[7px] uppercase tracking-wider text-stone-400">
+            <div className={`grid ${twoMerged ? "grid-cols-3 mx-auto" : "grid-cols-6"} gap-1 text-[7px] uppercase tracking-wider text-stone-400`} style={twoMerged ? { maxWidth: "84%" } : undefined}>
               <div className="col-span-1 text-center">FT</div>
-              <div className="col-span-4 text-center border-x border-stone-200">2-Pointers</div>
+              <button
+                type="button"
+                onClick={() => {
+                  // A selected distance (or the total being swapped out)
+                  // doesn't survive the regroup — drop it.
+                  if (selectedSeg && selectedSeg !== "ft" && selectedSeg !== "tp") setSelectedSeg(null);
+                  setTwoMerged(!twoMerged);
+                }}
+                aria-pressed={twoMerged}
+                title={twoMerged
+                  ? "One 2-point bar against the league 2P% (bars sum to Eff) — tap to split it by distance (bars sum to Impact)"
+                  : "Four 2-point distances, each against its zone FG% (bars sum to Impact) — tap to merge them into one bar against the league 2P% (bars sum to Eff)"}
+                className={`${twoMerged ? "col-span-1" : "col-span-4"} text-center uppercase tracking-wider border-x border-stone-200 rounded-sm hover:bg-stone-100 hover:text-stone-700 underline decoration-dotted underline-offset-2`}
+              >2-Pointers</button>
               <div className="col-span-1 text-center">3PT</div>
             </div>
           )}
@@ -1363,7 +1405,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
                 <div
                   className="grid gap-1 items-center mt-1 mx-auto"
-                  style={{ gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))` }}
+                  style={{
+                    gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))`,
+                    maxWidth: segData.length < 4 ? `${segData.length * 28}%` : undefined,
+                  }}
                 >
                   {segData.map((seg, i) => {
                     const share = atts[i] / tot;
