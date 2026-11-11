@@ -119,6 +119,32 @@ test("ROY goes only to rookies and All-Star fills its places", () => {
   }
 });
 
+test("MIP goes to the player furthest over their preseason bar, never to a rookie", () => {
+  // A pool that never misses: each player ends exactly where they're headed.
+  const pool = [[[0, 1]], [[0, 1]], [[0, 1]], [[0, 1]]];
+  const mip = { beta: 21.78, floor: 20 };
+  const field = [
+    // Expected 2 VA/G, on pace for 8: the clear improver.
+    { key: "leap", g: 60, va: 480, mpg: 30, mipE: 2, ytd: { g: 20, va: 160 } },
+    // Right on their bar.
+    { key: "flat", g: 60, va: 300, mpg: 30, mipE: 5, ytd: { g: 20, va: 100 } },
+    // A rookie well over anything: no preseason, no MIP.
+    { key: "rook", g: 60, va: 900, mpg: 30, rookie: true, mipE: 0, ytd: { g: 20, va: 300 } },
+    // Far over the bar but below zero on the season: not eligible.
+    { key: "neg", g: 60, va: -60, mpg: 20, mipE: -10, ytd: { g: 20, va: -20 } },
+    // Far over the bar in too few games: not eligible.
+    { key: "few", g: 10, va: 200, mpg: 30, mipE: -2, ytd: { g: 10, va: 200 } },
+    // No preseason line: never in the running.
+    { key: "none", g: 60, va: 600, mpg: 30, ytd: { g: 20, va: 200 } },
+  ];
+  const res = Object.fromEntries(simulateAwards(field, PROJ.mvp.model, pool, { sims: 400, mip }).map((r) => [r.key, r]));
+  assert.ok(Math.abs(Object.values(res).reduce((s, r) => s + r.mip, 0) - 1) < 1e-9);
+  for (const k of ["rook", "neg", "few", "none"]) assert.equal(res[k].mip, 0, k);
+  assert.ok(res.leap.mip > 0.9, `leap ${res.leap.mip}`);
+  // Without the model, no one is scored.
+  assert.ok(simulateAwards(field, PROJ.mvp.model, pool, { sims: 50 }).every((r) => r.mip === 0));
+});
+
 test("the range can be reported on another baseline than the ballot", () => {
   const pool = [[[0, 1]], [[0, 1]], [[0, 1]], [[0, 1]]];
   const [r] = simulateAwards([{ key: "a", g: 70, va: 700, rangeVa: 560, mpg: 34 }], PROJ.mvp.model, pool, { sims: 20 });
