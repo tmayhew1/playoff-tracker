@@ -2,15 +2,24 @@
 // the position basketball-reference lists.
 //
 // Two logistic stages, fit by scripts/fit-role-model.mjs and baked into
-// data/role-model.json:
+// data/role-model.json, both reading the same features (roleFeatures):
 //
-//   1. INSIDE vs OUTSIDE, from shot distribution — the share of a player's
-//      shots from each of the six distances (FT trips · rim · float · mid ·
-//      deep mid · 3PT, the same denominators the Shot distribution discs use).
-//      Trained against BR's listing: PF/C inside, PG/SG/SF outside.
-//   2. GUARD vs WING among the outside players, from AST and TOV — each as a
-//      share of the plays a player finishes or sets up (see playFeatures).
-//      Trained against BR's listing: PG/SG guards, SF/PF wings.
+//   - shot distribution — the share of a player's shots from each of the six
+//     distances (FT trips · rim · float · mid · deep mid · 3PT, the same
+//     denominators the Shot distribution discs use);
+//   - AST and TOV, each as a share of the plays a player finishes or sets up;
+//   - ORB, BLK and STL per minute.
+//
+//   1. BIG vs PERIMETER. Trained against BR's listing: PF/C vs PG/SG/SF.
+//   2. GUARD vs WING among the perimeter players. Trained against BR's
+//      listing: PG/SG guards, SF/PF wings.
+//
+// Shots alone can't make the first split: a guard who lives on drives, floaters
+// and the line and rarely shoots threes (Parker, Westbrook, Morant,
+// Gilgeous-Alexander) has a big's shot chart. What he doesn't have is a big's
+// offensive rebounds and blocks, and a big doesn't have his assists — so stage 1
+// reads those too. Defensive rebounds are left out on purpose: they follow
+// scheme as much as role and pull rebounding guards (Dončić) inside.
 //
 // Every feature is measured against its own season's league average, so the
 // model reads "shoots more threes than the league did that year" rather than
@@ -35,13 +44,17 @@ const shotAtt = (r) => [
 const hasZones = (r) => ((r.z03a || 0) + (r.z310a || 0) + (r.z1016a || 0) + (r.z16xpa || 0)) > 0;
 
 // One season's league baselines from that season's rows: shot shares pooled
-// over every attempt, AST/TOV shares pooled over every play.
+// over every attempt, AST/TOV shares pooled over every play, ORB/BLK/STL
+// pooled over every minute.
+export const RATE_KEYS = ["orb", "blk", "stl"];
 export function seasonBaseline(rows) {
   const att = new Array(SHOT_KEYS.length).fill(0);
-  let n = 0, ast = 0, tov = 0;
+  const tot = new Array(RATE_KEYS.length).fill(0);
+  let n = 0, ast = 0, tov = 0, mp = 0;
   for (const r of rows) {
     if (!(r.mp > 0)) continue;
     n += plays(r); ast += r.ast || 0; tov += r.tov || 0;
+    mp += r.mp; RATE_KEYS.forEach((k, i) => { tot[i] += r[k] || 0; });
     if (!hasZones(r)) continue;
     shotAtt(r).forEach((v, i) => { att[i] += v; });
   }
@@ -50,10 +63,11 @@ export function seasonBaseline(rows) {
     share: att.map((v) => (den > 0 ? v / den : 0)),
     astShare: n > 0 ? ast / n : 0,
     tovShare: n > 0 ? tov / n : 0,
+    rate: tot.map((v) => (mp > 0 ? v / mp : 0)),
   };
 }
 
-// Stage-1 features: shares minus the league's. Null without a zone split.
+// Shot shares minus the league's. Null without a zone split.
 export function shotFeatures(r, base) {
   if (!hasZones(r)) return null;
   const a = shotAtt(r);
@@ -68,11 +82,27 @@ export function shotFeatures(r, base) {
 // player's game is creating for others, not how big his game is.
 const plays = (r) => (r.fga || 0) + 0.475 * (r.fta || 0) + (r.ast || 0) + (r.tov || 0);
 
-// Stage-2 features: AST and TOV shares of plays minus the league's.
+// AST and TOV shares of plays minus the league's.
 export function playFeatures(r, base) {
   const n = plays(r);
   if (!(r.mp > 0) || !(n > 0)) return null;
   return [(r.ast || 0) / n - base.astShare, (r.tov || 0) / n - base.tovShare];
+}
+
+// ORB, BLK and STL per minute minus the league's.
+export function rateFeatures(r, base) {
+  if (!(r.mp > 0)) return null;
+  return RATE_KEYS.map((k, i) => (r[k] || 0) / r.mp - base.rate[i]);
+}
+
+// The full feature vector both stages read, in FEATURE_KEYS order. Null when
+// the line has no shot distribution to read.
+export const FEATURE_KEYS = [...SHOT_KEYS, "ast", "tov", ...RATE_KEYS];
+export function roleFeatures(r, base) {
+  const xs = shotFeatures(r, base);
+  const xp = playFeatures(r, base);
+  const xr = rateFeatures(r, base);
+  return xs && xp && xr ? [...xs, ...xp, ...xr] : null;
 }
 
 const sigmoid = (z) => 1 / (1 + Math.exp(-z));
@@ -85,11 +115,10 @@ export const logit = (stage, x) => {
 // The role of one stat line against its season's baseline: "G" | "W" | "B",
 // or null when the line has no shot distribution to read.
 export function classifyRole(r, base, model = MODEL) {
-  const xs = shotFeatures(r, base);
-  const xp = playFeatures(r, base);
-  if (!xs || !xp || !model?.inside) return null;
-  if (logit(model.inside, xs) >= 0.5) return "B";
-  return logit(model.guard, xp) >= 0.5 ? "G" : "W";
+  const x = roleFeatures(r, base);
+  if (!x || model?.big?.w?.length !== x.length) return null;
+  if (logit(model.big, x) >= 0.5) return "B";
+  return logit(model.guard, x) >= 0.5 ? "G" : "W";
 }
 
 // A player's role over a run of seasons: the role he played the most minutes
