@@ -81,6 +81,8 @@ export function catRateLabel(r, key, rateMode) {
   const [statOf, tag] = GROUP_STAT[key] || [];
   const v = statOf ? statOf(r) : (r[CAT_COUNTING[key][0]] || 0);
   const t = tag || CAT_COUNTING[key][1];
+  // "total": the raw season (or postseason) count, no divisor.
+  if (rateMode === "total") return `${v} ${t}`;
   return rateMode === "perG"
     ? `${(v / (r.gp || 1)).toFixed(1)} ${t}/G`
     : `${((v / (r.mp || 1)) * 36).toFixed(1)} ${t}/36`;
