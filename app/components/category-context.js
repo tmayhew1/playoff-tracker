@@ -476,9 +476,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // toggle off reads the season's totals, as the bar headlines do. A 2-point
   // distance passes its own games/minutes (`seg.games`/`seg.minutes`): on a
   // row tonight's games have moved, the zones cover less than its G.
+  // The one normalization every raw box-score figure on the card reads at.
+  // The toggle (labelled /G or /36 after the breakdown's rate mode) picks
+  // between that rate and the season (or postseason) total it sums to.
+  const rateKind = !perGame ? "total" : rateMode === "per36" ? "per36" : "perG";
   const maLabel = (made, att, r, seg = null) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
-    if (rateMode !== "per36" && !perGame) return `${made}/${att} (${pct}%)`;
+    if (!perGame) return `${made}/${att} (${pct}%)`;
     const div = rateMode === "per36"
       ? (((seg?.minutes ? seg.minutes(r) : r.mp) || 1) / 36)
       : ((seg?.games ? seg.games(r) : r.gp) || 1);
@@ -544,7 +548,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       zone("tp",    "3PT",      "3p", { m: (r) => r.tpm || 0,    a: (r) => r.tpa || 0,    val: (r, lx = lga) => 3 * ((r.tpm / (r.tpa || 1)) - lx.la3P) * (r.tpa || 0) }),
     ];
     return catKey === "2-Pointers" ? all.filter((s) => s.group === "2p") : all;
-  }, [lga, catKey, showZones]);
+  // perGame/rateMode: each zone's `rate` closes over maLabel, so without them
+  // a selected distance kept the normalization it was built under.
+  }, [lga, catKey, showZones, perGame, rateMode]);
   const SEGMENTS = useMemo(() => {
     if (ZONES) {
       if (catKey !== "Scoring" || !twoMerged) return ZONES;
@@ -571,25 +577,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // counting rate otherwise.
     const segs = (SEG_ORDER[catKey] || grp.cats).map((cat) => ({
       key: cat, sub: SEG_SUB[cat] || cat, cat,
-      note: CAT_SHOOTING[cat] ? "FG%" : `${rateMode === "perG" ? "per-game" : "per-36"} rate`,
+      note: CAT_SHOOTING[cat] ? "FG%" : rateKind === "total" ? "total" : `${rateKind === "perG" ? "per-game" : "per-36"} rate`,
       // A per-36 headline is not the reading a bare "BLK 3.7" invites, so the
       // chip's own label carries the unit in that mode. Per-game is the
       // default reading and FG% says what it is, so neither needs one.
-      headUnit: !CAT_SHOOTING[cat] && rateMode === "per36" ? "/36" : "",
+      headUnit: !CAT_SHOOTING[cat] && rateKind === "per36" ? "/36" : "",
       head: (r) => {
         if (CAT_SHOOTING[cat]) {
           const [m, a] = CAT_SHOOTING[cat](r);
           return a > 0 ? `${((m / a) * 100).toFixed(0)}%` : null;
         }
         const v = r[CAT_COUNTING[cat][0]] || 0;
-        // Per 36 is a normalization of its own, so it outranks the /G toggle:
-        // a raw season total is what "per game, off" means, and the card is
-        // being asked for a per-36 rate. Under Per G the /G toggle still picks
-        // between the per-game rate and the season total it sums to.
-        if (rateMode === "per36") return ((v / (r.mp || 1)) * 36).toFixed(1);
-        return perGame ? (v / (r.gp || 1)).toFixed(1) : String(v);
+        // Toggle off is the raw total in either rate mode; on, the rate the
+        // breakdown is set to (per 36 or per game).
+        if (!perGame) return String(v);
+        return rateMode === "per36" ? ((v / (r.mp || 1)) * 36).toFixed(1) : (v / (r.gp || 1)).toFixed(1);
       },
-      rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r) : catRateLabel(r, cat, rateMode)),
+      rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r) : catRateLabel(r, cat, rateKind)),
       val: (r, lx = lga) => catVATotal(r, lx, cat),
     }));
     // D Rating is the Defense group's fifth stat whenever VA+ is the active
@@ -598,7 +602,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // box-score estimate is baked), so it gates the all-time/trend pools.
     if (withDef) {
       segs.push({
-        key: "D Rating", sub: SEG_SUB["D Rating"], cat: "D Rating",
+        key: "D Rating", sub: SEG_SUB["D Rating"], cat: "D Rating", scaleFree: true,
         era: (s) => !!defs?.[s],
         eraNote: " with defensive ratings",
         note: "defensive rating",
@@ -636,7 +640,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     };
     return [
       {
-        key: "eff", sub: "Eff", note: "3P + 2P + FT value added", rate: ts,
+        key: "eff", sub: "Eff", note: "3P + 2P + FT value added", rate: ts, scaleFree: true,
         // One valueAddByCategory per row (the same call catVATotal makes),
         // three keys off it — the all-time pool runs to five figures.
         val: (r, lx = lga) => {
@@ -645,7 +649,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         },
       },
       {
-        key: "impact", sub: "Impact", note: "the six shot-distance values summed", rate: ts,
+        key: "impact", sub: "Impact", note: "the six shot-distance values summed", rate: ts, scaleFree: true,
         era: (s) => !!lgaForSeason(s)?.zoneFG,
         eraNote: " with shot-location data (1996-97 on)",
         val: (r, lx = lga, s = seasonKey) => ZONES.reduce((t, seg) => t + seg.val(r, lx, s), 0),
@@ -1138,6 +1142,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   }, [TOTAL_SEGMENTS, segTotals, selSeg, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
 
   const short = CAT_SHORT[catKey] || catKey;
+  // Unit on the rate column's header: "/G" whenever its numbers are per-game
+  // rates, "/36" under Per 36, nothing over totals or a scale-free reading
+  // (TS%, a defensive rating).
+  // A rolled-up group (Scoring, Rebounding, …) stays bare too: its cells
+  // already carry the unit ("5.0 STK/G"), and "REBOUNDING/G" overruns the column.
+  const rateUnit = selSeg?.scaleFree || (!selSeg && VA_GROUP_BY_KEY[catKey]) ? "" : rateKind === "perG" ? "/G" : rateKind === "per36" ? "/36" : "";
   // While a bar in the split row is selected, every heading/column reads as
   // that component ("RIM", "AST") instead of the rolled-up category.
   const metricLabel = selSeg ? selSeg.sub.toUpperCase() : short;
@@ -1234,7 +1244,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="text-right text-[9px]">{fmtG(rowGames(r))}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{fmtM(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateKind))}</span>
       </>
     );
     // Armed by the Player header: every row, the card's own included, opens
@@ -1280,6 +1290,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const gToggle = (
     <PerGameToggle
       perGame={perGame}
+      unit={rateMode === "per36" ? "/36" : "/G"}
       onToggle={() => setPerGame((v) => !v)}
       title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
     />
@@ -1338,14 +1349,20 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span className="text-right">#</span><PlayerHeader armed={nameArmed} onArm={() => setNameArmed((v) => !v)} /><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Dist." : "VA"}</span><span className="text-right">{shareMode ? "Att" : metricLabel}</span>
+          <span className="text-right">#</span><PlayerHeader armed={nameArmed} onArm={() => setNameArmed((v) => !v)} /><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Dist." : "VA"}</span><button
+            type="button"
+            onClick={() => setPerGame((v) => !v)}
+            aria-pressed={perGame}
+            title={perGame ? `Shown ${rateMode === "per36" ? "per 36" : "per game"} — tap for totals` : `Shown as totals — tap for ${rateMode === "per36" ? "per 36" : "per game"}`}
+            className="text-right uppercase tracking-wider whitespace-nowrap rounded-sm cursor-pointer hover:text-stone-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+          >{shareMode ? "Att" : metricLabel}{rateUnit}</button>
         </div>
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {shareMode ? metricLabel : `${perGame ? "per-game" : "total"} ${metricLabel} VA`} among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {shareMode ? metricLabel : `${perGame ? "per-game" : "total"} ${metricLabel} VA`} among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateKind === "total" ? "total" : `${rateKind === "perG" ? "per-game" : "per-36"} rate`}`}) · tap a player for their card.</div>
       </div>
 
       {/* View 2 — the split row. Every Basic group card fans its total out into
