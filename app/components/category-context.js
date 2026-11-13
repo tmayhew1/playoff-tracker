@@ -1145,7 +1145,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Unit on the rate column's header: "/G" whenever its numbers are per-game
   // rates, "/36" under Per 36, nothing over totals or a scale-free reading
   // (TS%, a defensive rating).
-  const rateUnit = selSeg?.scaleFree ? "" : rateKind === "perG" ? "/G" : rateKind === "per36" ? "/36" : "";
+  // A rolled-up group (Scoring, Rebounding, …) stays bare too: its cells
+  // already carry the unit ("5.0 STK/G"), and "REBOUNDING/G" overruns the column.
+  const rateUnit = selSeg?.scaleFree || (!selSeg && VA_GROUP_BY_KEY[catKey]) ? "" : rateKind === "perG" ? "/G" : rateKind === "per36" ? "/36" : "";
   // While a bar in the split row is selected, every heading/column reads as
   // that component ("RIM", "AST") instead of the rolled-up category.
   const metricLabel = selSeg ? selSeg.sub.toUpperCase() : short;
