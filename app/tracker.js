@@ -9,6 +9,7 @@ import { VAModeProvider, useVAMode } from "./lib/va-mode";
 import { shareQuery } from "./lib/share-params";
 import { ShareProvider, useShareStore } from "./lib/share-state";
 import { AwardNavProvider } from "./lib/award-nav";
+import { PlayerNavProvider } from "./lib/player-nav";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
 // code loads the first time that tab is opened, so a visit that never leaves
@@ -100,6 +101,17 @@ function Tracker({ initial }) {
   }, [setTab]);
   const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
+  // The same hand-over into By Player: an armed Player header (a box score's,
+  // a category card's rankings — lib/player-nav.js) names a player, and
+  // Explore opens their career, on whichever tab the tap happened.
+  const [playerJump, setPlayerJump] = useState(null);
+  const goToPlayer = useCallback((target) => {
+    if (!target?.name && !target?.slug) return;
+    setPlayerJump(target);
+    setTab("explore");
+  }, [setTab]);
+  const clearPlayerJump = useCallback(() => setPlayerJump(null), []);
+
   // The other direction: a player card's award box (award-boxes.js) opens the
   // Awards tab on that award, season and player.
   const [awardFocus, setAwardFocus] = useState(null);
@@ -137,6 +149,7 @@ function Tracker({ initial }) {
   return (
     <ShareProvider value={report}>
     <AwardNavProvider value={goToAward}>
+    <PlayerNavProvider value={goToPlayer}>
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4 text-center">
@@ -190,10 +203,11 @@ function Tracker({ initial }) {
           </>
         )}
 
-        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
+        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView onData={onLiveData} focus={liveFocus} onFocusHandled={clearLiveFocus} /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
       </div>
     </div>
+    </PlayerNavProvider>
     </AwardNavProvider>
     </ShareProvider>
   );

@@ -300,7 +300,7 @@ export function exploreSeasonList() {
 // once on mount: the view, scope and season it names, and the player — and
 // the comparison — to open, handed to the leaderboard / By Player as the
 // same pending navigation their own in-page jumps use.
-export function ExploreView({ jump = null, onJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
+export function ExploreView({ jump = null, onJumpHandled = null, playerJump = null, onPlayerJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
@@ -428,6 +428,15 @@ export function ExploreView({ jump = null, onJumpHandled = null, initial = null,
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
+  // The same crossing from anywhere on the page (lib/player-nav.js) — a box
+  // score on the Live tab, a category card's rankings. It may name the scope
+  // the tap was reading, so the season it opens is there to open.
+  useEffect(() => {
+    if (!playerJump) return;
+    if (["regular", "playoffs", "combined"].includes(playerJump.scope)) setScope(playerJump.scope);
+    navigatePlayerToSeason({ name: playerJump.name || null, slug: playerJump.slug || null, season: playerJump.season || null });
+    onPlayerJumpHandled?.();
+  }, [playerJump, onPlayerJumpHandled, navigatePlayerToSeason]);
 
   useEffect(() => {
     let cancelled = false;

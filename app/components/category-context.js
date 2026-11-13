@@ -6,6 +6,7 @@ import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
+import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
 import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/role-model";
@@ -401,6 +402,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const [focusRow, setFocusRow] = useState(null);
   useEffect(() => { setFocusRow(null); }, [ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
   const focused = !!focusRow;
+  // The rankings' Player header arms a bigger move: while armed, a row tap
+  // leaves the card for that player's By Player career (lib/player-nav.js)
+  // instead of re-pointing the card at them.
+  const goToPlayer = usePlayerNav();
+  const [nameArmed, setNameArmed] = useState(false);
+  useEffect(() => { setNameArmed(false); }, [focusRow, ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
 
   // Tapping a bar in the by-season trend (View 6) arms a "Go →" popup for that
   // season. Unlike the mini leaderboard above — which re-points the card in
@@ -1230,6 +1237,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
       </>
     );
+    // Armed by the Player header: every row, the card's own included, opens
+    // that player's career in Explore's By Player with this season drilled in.
+    if (nameArmed && goToPlayer) {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setNameArmed(false);
+            goToPlayer({ name: r.name, slug: r.slug || null, season: r.season || seasonKey, scope: context.scope });
+          }}
+          aria-label={`Open ${r.name} in By Player`}
+          className={`${rowGrid} w-full text-left rounded-sm cursor-pointer underline decoration-dotted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isSelf ? "bg-stone-800 text-white" : "text-stone-900 hover:bg-stone-100"}`}
+        >
+          {cells}
+        </button>
+      );
+    }
     // The player the card is currently about is marked, not a link to itself.
     if (isSelf) {
       return <div className={`${rowGrid} bg-stone-800 text-white rounded-sm`} aria-current="true">{cells}</div>;
@@ -1314,7 +1338,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Dist." : "VA"}</span><span className="text-right">{shareMode ? "Att" : metricLabel}</span>
+          <span className="text-right">#</span><PlayerHeader armed={nameArmed} onArm={() => setNameArmed((v) => !v)} /><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Dist." : "VA"}</span><span className="text-right">{shareMode ? "Att" : metricLabel}</span>
         </div>
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
