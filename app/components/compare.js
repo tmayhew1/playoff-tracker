@@ -1259,7 +1259,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
 // (the default) reads every value, rank and bar as PER-GAME value added; OFF
 // re-reads the whole card on season TOTALS, where a full season outweighs a
 // half one at the same rate.
-export function PerGameToggle({ perGame, onToggle, title }) {
+export function PerGameToggle({ perGame, onToggle, title, unit = "/G" }) {
   return (
     <button
       type="button"
@@ -1270,7 +1270,7 @@ export function PerGameToggle({ perGame, onToggle, title }) {
         : "Show values per game instead of season totals")}
       className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
     >
-      /G {perGame ? "ON" : "OFF"}
+      {unit} {perGame ? "ON" : "OFF"}
     </button>
   );
 }

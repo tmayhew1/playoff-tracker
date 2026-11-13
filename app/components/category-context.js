@@ -476,13 +476,13 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // toggle off reads the season's totals, as the bar headlines do. A 2-point
   // distance passes its own games/minutes (`seg.games`/`seg.minutes`): on a
   // row tonight's games have moved, the zones cover less than its G.
-  // The one normalization every raw box-score figure on the card reads at:
-  // Per 36 is its own, and under Per G the /G toggle picks between the
-  // per-game rate and the season (or postseason) total it sums to.
-  const rateKind = rateMode === "per36" ? "per36" : perGame ? "perG" : "total";
+  // The one normalization every raw box-score figure on the card reads at.
+  // The toggle (labelled /G or /36 after the breakdown's rate mode) picks
+  // between that rate and the season (or postseason) total it sums to.
+  const rateKind = !perGame ? "total" : rateMode === "per36" ? "per36" : "perG";
   const maLabel = (made, att, r, seg = null) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
-    if (rateMode !== "per36" && !perGame) return `${made}/${att} (${pct}%)`;
+    if (!perGame) return `${made}/${att} (${pct}%)`;
     const div = rateMode === "per36"
       ? (((seg?.minutes ? seg.minutes(r) : r.mp) || 1) / 36)
       : ((seg?.games ? seg.games(r) : r.gp) || 1);
@@ -581,7 +581,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       // A per-36 headline is not the reading a bare "BLK 3.7" invites, so the
       // chip's own label carries the unit in that mode. Per-game is the
       // default reading and FG% says what it is, so neither needs one.
-      headUnit: !CAT_SHOOTING[cat] && rateMode === "per36" ? "/36" : "",
+      headUnit: !CAT_SHOOTING[cat] && rateKind === "per36" ? "/36" : "",
       head: (r) => {
         if (CAT_SHOOTING[cat]) {
           const [m, a] = CAT_SHOOTING[cat](r);
@@ -592,8 +592,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // a raw season total is what "per game, off" means, and the card is
         // being asked for a per-36 rate. Under Per G the /G toggle still picks
         // between the per-game rate and the season total it sums to.
-        if (rateMode === "per36") return ((v / (r.mp || 1)) * 36).toFixed(1);
-        return perGame ? (v / (r.gp || 1)).toFixed(1) : String(v);
+        if (!perGame) return String(v);
+        return rateMode === "per36" ? ((v / (r.mp || 1)) * 36).toFixed(1) : (v / (r.gp || 1)).toFixed(1);
       },
       rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r) : catRateLabel(r, cat, rateKind)),
       val: (r, lx = lga) => catVATotal(r, lx, cat),
@@ -1290,6 +1290,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const gToggle = (
     <PerGameToggle
       perGame={perGame}
+      unit={rateMode === "per36" ? "/36" : "/G"}
       onToggle={() => setPerGame((v) => !v)}
       title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
     />
@@ -1352,7 +1353,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             type="button"
             onClick={() => setPerGame((v) => !v)}
             aria-pressed={perGame}
-            title={perGame ? "Shown per game — tap for totals" : "Shown as totals — tap for per game"}
+            title={perGame ? `Shown ${rateMode === "per36" ? "per 36" : "per game"} — tap for totals` : `Shown as totals — tap for ${rateMode === "per36" ? "per 36" : "per game"}`}
             className="text-right uppercase tracking-wider whitespace-nowrap rounded-sm cursor-pointer hover:text-stone-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
           >{shareMode ? "Att" : metricLabel}{rateUnit}</button>
         </div>
