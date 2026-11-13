@@ -6,9 +6,10 @@
 // least MIN_MP minutes, each feature taken relative to its own season's league
 // average (seasonBaseline):
 //
-//   inside  P(PF/C)  from the six shot-distance shares
-//   guard   P(PG/SG) from AST and TOV shares of plays, fit only on the seasons stage 1
-//           calls OUTSIDE — the split it is actually asked to make
+//   big    P(PF/C)  from every role feature (shot-distance shares, AST and TOV
+//          shares of plays, ORB/BLK/STL per minute)
+//   guard  P(PG/SG) from the same features, fit only on the seasons stage 1
+//          calls PERIMETER — the split it is actually asked to make
 //
 // Labels are basketball-reference's listed position (primary listing). The
 // model is not meant to reproduce them: it is meant to say which group a
@@ -21,7 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { seasonBaseline, shotFeatures, playFeatures, logit, classifyRole, SHOT_KEYS } from "../app/lib/role-model.js";
+import { seasonBaseline, roleFeatures, logit, classifyRole, FEATURE_KEYS } from "../app/lib/role-model.js";
 import { normalizePosition } from "../app/lib/positions.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -127,22 +128,21 @@ for (const [s, rows] of bySeason) {
   for (const r of rows) {
     const pos = normalizePosition(r.pos);
     if (!pos || (r.mp || 0) < MIN_MP) continue;
-    const xs = shotFeatures(r, bases.get(s));
-    const xp = playFeatures(r, bases.get(s));
-    if (!xs || !xp) continue;
-    train.push({ r, pos, xs, xp, w: r.mp });
+    const x = roleFeatures(r, bases.get(s));
+    if (!x) continue;
+    train.push({ r, pos, x, w: r.mp });
   }
 }
 
-const inside = fitLogistic(train.map((t) => t.xs), train.map((t) => (t.pos === "PF" || t.pos === "C" ? 1 : 0)), train.map((t) => t.w));
-const outside = train.filter((t) => logit(inside, t.xs) < 0.5);
-const guard = fitLogistic(outside.map((t) => t.xp), outside.map((t) => (t.pos === "PG" || t.pos === "SG" ? 1 : 0)), outside.map((t) => t.w));
+const big = fitLogistic(train.map((t) => t.x), train.map((t) => (t.pos === "PF" || t.pos === "C" ? 1 : 0)), train.map((t) => t.w));
+const outside = train.filter((t) => logit(big, t.x) < 0.5);
+const guard = fitLogistic(outside.map((t) => t.x), outside.map((t) => (t.pos === "PG" || t.pos === "SG" ? 1 : 0)), outside.map((t) => t.w));
 const model = {
-  fit: "minutes-weighted L2 logistic regressions on season-relative features; inside = P(PF/C) from shot shares [" + SHOT_KEYS.join(", ") + "], guard = P(PG/SG) from AST and TOV shares of plays among stage-1 outside",
+  fit: "minutes-weighted L2 logistic regressions on season-relative features; features [" + FEATURE_KEYS.join(", ") + "] = shot shares, AST/TOV shares of plays, ORB/BLK/STL per minute; big = P(PF/C), guard = P(PG/SG) among stage-1 perimeter",
   generatedAt: new Date().toISOString(),
   seasons: [seasons[0], seasons[seasons.length - 2]],
   n: train.length,
-  inside, guard,
+  big, guard,
 };
 
 // How well each stage recovers BR's listing (minutes-weighted).
@@ -152,15 +152,24 @@ const acc = (rows, pred, truth) => {
   return (100 * ok / all).toFixed(1) + "%";
 };
 console.log(`fit on ${train.length} player-seasons, ${model.seasons.join("–")}`);
-console.log("inside", JSON.stringify(inside));
+console.log("big   ", JSON.stringify(big));
 console.log("guard ", JSON.stringify(guard));
-console.log("stage 1 accuracy (PF/C vs rest):", acc(train, (t) => logit(inside, t.xs) >= 0.5, (t) => t.pos === "PF" || t.pos === "C"));
-console.log("stage 2 accuracy (PG/SG vs SF/PF, outside):", acc(outside, (t) => logit(guard, t.xp) >= 0.5, (t) => t.pos === "PG" || t.pos === "SG"));
+console.log("stage 1 accuracy (PF/C vs rest):", acc(train, (t) => logit(big, t.x) >= 0.5, (t) => t.pos === "PF" || t.pos === "C"));
+console.log("stage 2 accuracy (PG/SG vs SF/PF, perimeter):", acc(outside, (t) => logit(guard, t.x) >= 0.5, (t) => t.pos === "PG" || t.pos === "SG"));
 const share = { G: 0, W: 0, B: 0 };
 for (const t of train) share[classifyRole(t.r, bases.get(t.r.season), model)] += t.w;
 const tot = share.G + share.W + share.B;
+// Listed guards the model calls bigs — the failure a shots-only stage 1 has
+// with drive-first guards. Should stay near zero.
+let gMp = 0, gBig = 0;
+for (const t of train) {
+  if (t.pos !== "PG" && t.pos !== "SG") continue;
+  gMp += t.w;
+  if (logit(big, t.x) >= 0.5) gBig += t.w;
+}
+console.log("listed PG/SG minutes called Bigs:", (100 * gBig / gMp).toFixed(1) + "%");
 console.log("minutes by role:", Object.fromEntries(Object.entries(share).map(([k, v]) => [k, (100 * v / tot).toFixed(1) + "%"])));
-for (const name of ["LaMelo Ball", "Nikola Jokić", "Jaylen Brown", "Stephen Curry", "LeBron James", "Giannis Antetokounmpo", "Kevin Durant", "Draymond Green", "Rudy Gobert", "Jayson Tatum", "Chris Paul", "Mikal Bridges", "Shaquille O'Neal", "Kawhi Leonard", "Ben Simmons", "Brook Lopez"]) {
+for (const name of ["Shai Gilgeous-Alexander", "Tony Parker", "Russell Westbrook", "Ja Morant", "Luka Dončić", "LaMelo Ball", "Nikola Jokić", "Jaylen Brown", "Stephen Curry", "LeBron James", "Giannis Antetokounmpo", "Kevin Durant", "Draymond Green", "Rudy Gobert", "Jayson Tatum", "Chris Paul", "Mikal Bridges", "Shaquille O'Neal", "Kawhi Leonard", "Ben Simmons", "Brook Lopez"]) {
   const line = [];
   for (const [s, rows] of bySeason) {
     const r = rows.find((x) => x.name === name);
