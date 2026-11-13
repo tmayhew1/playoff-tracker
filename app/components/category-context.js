@@ -588,10 +588,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           return a > 0 ? `${((m / a) * 100).toFixed(0)}%` : null;
         }
         const v = r[CAT_COUNTING[cat][0]] || 0;
-        // Per 36 is a normalization of its own, so it outranks the /G toggle:
-        // a raw season total is what "per game, off" means, and the card is
-        // being asked for a per-36 rate. Under Per G the /G toggle still picks
-        // between the per-game rate and the season total it sums to.
+        // Toggle off is the raw total in either rate mode; on, the rate the
+        // breakdown is set to (per 36 or per game).
         if (!perGame) return String(v);
         return rateMode === "per36" ? ((v / (r.mp || 1)) * 36).toFixed(1) : (v / (r.gp || 1)).toFixed(1);
       },
