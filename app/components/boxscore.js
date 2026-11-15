@@ -242,7 +242,8 @@ export function BoxscoreTable({ rows: rowsIn, sections, expandedKey, setExpanded
 // `onFocusHandled`. `teamCat` (a SHOT_CATS key) sorts the `teamFilter`
 // team's box by that category's VA and shows its columns. `seasonSoFar`
 // passes through to the player cards (BoxscoreTable). `teamOut` are the
-// `teamFilter` team's players who sat the game out, as season per-game rows
+// `teamFilter` team's players who sat the game out (a live game's: who are
+// ruled out of it), as season per-game rows
 // (each with his `rowKey`): they go under its box, headed Out, as on the
 // pregame card.
 export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
@@ -456,7 +457,7 @@ export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBo
               <BoxscoreTable rows={teamPlayers} expandedKey={expandedPlayer} setExpandedKey={setExpandedPlayer} dimTeam={dimTeam} outlined={outlined} lga={lga} teams={teams} gameNumber={gameNumber} gameNumberFor={gameNumberFor} useTeamColor={useTeamColor} singleGame={singleGame} cat={teamCat} seasonSoFar={seasonSoFar}
                 sections={teamOut?.length ? [
                   { label: null, rows: teamPlayers },
-                  { label: "Out", rows: teamOut, tone: "text-red-700", note: "Did not play · season per game" },
+                  { label: "Out", rows: teamOut, tone: "text-red-700", note: `${isLive ? "Ruled out" : "Did not play"} · season per game` },
                 ] : undefined} />
             </div>
           )}
