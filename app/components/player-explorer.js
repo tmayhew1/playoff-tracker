@@ -6,6 +6,7 @@ import { valueAddParts } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { CompareChipLabel, ComparePanel, buildComparePlayers } from "./compare";
 import { MultiComparePicker } from "./compare-picker";
+import { repin } from "../lib/pin-stack";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { Sparkline } from "./ui/sparkline";
 import { defVAInfo, useDefRatings } from "../lib/defense";
@@ -351,6 +352,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   // white bar on iOS Safari after un-sticking. `fixedBar` holds the overlay's
   // horizontal geometry (matched to the table) or null when it shouldn't show.
   const [fixedBar, setFixedBar] = useState(null);
+  // Pinned drill-in rows stack under this header (lib/pin-stack.js).
+  useEffect(() => { repin(); }, [fixedBar]);
   const cardElRef = useRef(null);
   const headerFlowRef = useRef(null);
   const [cardMounted, setCardMounted] = useState(false);

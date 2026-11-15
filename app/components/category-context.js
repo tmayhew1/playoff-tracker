@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData, zoneGames, zoneMinutes } from "../scoring";
 import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
+import { Pinned, usePin } from "../lib/pin-stack";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
@@ -1283,49 +1284,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     );
   };
 
-  // The card's own row in the mini leaderboard stays pinned to the top of the
-  // viewport (under the board's pinned header, when one is up) for as long as
-  // the card is still on screen below it, so the views further down never
-  // lose track of who and what they describe. It lets go only at the card's
-  // end, which pushes it off. Done as a position:fixed mirror mounted on
-  // demand rather than position:sticky — same reasoning as the pinned headers
-  // (leaderboard.js), and the row's own parent ends long before the card does.
-  const cardRef = useRef(null);
-  const selfRowRef = useRef(null);
-  const [pinnedRow, setPinnedRow] = useState(null);
-  const measurePinRef = useRef(null);
-  measurePinRef.current = () => {
-    const card = cardRef.current, row = selfRowRef.current;
-    if (!card || !row) { setPinnedRow((prev) => (prev === null ? prev : null)); return; }
-    const c = card.getBoundingClientRect();
-    const r = row.getBoundingClientRect();
-    const header = document.querySelector("[data-pinned-header]");
-    const offset = header ? Math.max(0, Math.round(header.getBoundingClientRect().bottom)) : 0;
-    const show = r.top < offset && c.bottom > offset;
-    const next = show
-      ? { left: Math.round(r.left), width: Math.round(r.width), top: Math.round(Math.min(offset, c.bottom - r.height)), clip: offset }
-      : null;
-    setPinnedRow((prev) => {
-      if (!next) return prev === null ? prev : null;
-      return prev && prev.left === next.left && prev.width === next.width && prev.top === next.top && prev.clip === next.clip ? prev : next;
-    });
-  };
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; measurePinRef.current(); }); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onScroll) : null;
-    if (ro && cardRef.current) ro.observe(cardRef.current);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (ro) ro.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-  // Re-points, toggles and re-sorts move the row without a scroll event.
-  useEffect(() => { measurePinRef.current(); });
+  // The card's own row in the mini leaderboard pins under the board row and
+  // the category row (lib/pin-stack.js) until the card's end pushes it off,
+  // so the views further down never lose track of who they describe.
+  const { rowRef: selfRowRef, regionRef: cardRef, pin: pinnedRow } = usePin(3);
 
   // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
@@ -1407,25 +1369,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         ) : (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={false} />
         )))}
-        {/* The pinned mirror of the row above. Clipped at the pinned header's
-            bottom edge so the card's end slides it out underneath the header
-            rather than over it. */}
         {pinnedRow && (() => {
           const x = d.win.find((w) => w.rank === d.rank);
-          if (!x) return null;
-          return (
-            <div
-              className="fixed z-20 bg-white shadow-sm"
-              style={{
-                top: pinnedRow.top,
-                left: pinnedRow.left,
-                width: pinnedRow.width,
-                clipPath: pinnedRow.top < pinnedRow.clip ? `inset(${pinnedRow.clip - pinnedRow.top}px 0 0 0)` : undefined,
-              }}
-            >
-              {Row({ rank: x.rank, r: x.r, m: x.m, isSelf: true })}
-            </div>
-          );
+          return x ? <Pinned pin={pinnedRow} layer={3}>{Row({ rank: x.rank, r: x.r, m: x.m, isSelf: true })}</Pinned> : null;
         })()}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
