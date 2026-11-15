@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 // Stacked pinned rows. While the reader scrolls down through an open drill-in,
 // the rows that say what it is — the player's board row, the open category
@@ -109,15 +109,39 @@ export function Pinned({ pin, layer, children }) {
   );
 }
 
+// Pinned rows stacked one under another can end up printing the same figure
+// twice in a row. A row nested inside a PinnedRow's block publishes what its
+// own pinned mirror shows here ({ va, rate } as display strings, or null when
+// it isn't pinned), and the PinnedRow hands that to its `row` render function
+// so its mirror can blank whatever it would only be repeating.
+const PinEcho = createContext(null);
+
+export function usePinEcho(echo) {
+  const publish = useContext(PinEcho);
+  const va = echo?.va ?? null, rate = echo?.rate ?? null;
+  useEffect(() => {
+    if (!publish) return undefined;
+    publish(va == null && rate == null ? null : { va, rate });
+    return () => publish(null);
+  }, [publish, va, rate]);
+}
+
 // A row that pins for as long as the block under it (`children`) is on screen.
+// `row` is a node, or a function of the echo from the row pinned below it
+// (null in flow, and whenever nothing below is pinned).
 export function PinnedRow({ layer, active, row, children }) {
   const { rowRef, regionRef, pin } = usePin(layer, !!active);
-  if (!active) return <>{row}{children}</>;
+  const [echo, setEcho] = useState(null);
+  const publish = useCallback((next) => setEcho((prev) => (
+    prev === next || (prev && next && prev.va === next.va && prev.rate === next.rate) ? prev : next
+  )), []);
+  const render = (e) => (typeof row === "function" ? row(e) : row);
+  if (!active) return <>{render(null)}{children}</>;
   return (
     <>
-      <div ref={rowRef}>{row}</div>
-      <Pinned pin={pin} layer={layer}>{row}</Pinned>
-      <div ref={regionRef}>{children}</div>
+      <div ref={rowRef}>{render(null)}</div>
+      <Pinned pin={pin} layer={layer}>{render(pin ? echo : null)}</Pinned>
+      <div ref={regionRef}><PinEcho.Provider value={publish}>{children}</PinEcho.Provider></div>
     </>
   );
 }

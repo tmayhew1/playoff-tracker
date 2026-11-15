@@ -6,7 +6,7 @@ import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
-import { Pinned, usePin } from "../lib/pin-stack";
+import { Pinned, usePin, usePinEcho } from "../lib/pin-stack";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
@@ -1233,6 +1233,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const at = typeof label === "string" ? label.lastIndexOf(" (") : -1;
     return at > 0 ? <>{label.slice(0, at)}<br />{label.slice(at + 1)}</> : label;
   };
+  // The rate column's text, before twoLine breaks it for display.
+  const rateText = (r) => (selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateKind));
   const Row = ({ rank, r, m, isSelf }) => {
     const cells = (
       <>
@@ -1245,7 +1247,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="text-right text-[9px]">{fmtG(rowGames(r))}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
         <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{fmtM(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateKind))}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(rateText(r))}</span>
       </>
     );
     // Armed by the Player header: every row, the card's own included, opens
@@ -1288,6 +1290,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // the category row (lib/pin-stack.js) until the card's end pushes it off,
   // so the views further down never lose track of who they describe.
   const { rowRef: selfRowRef, regionRef: cardRef, pin: pinnedRow } = usePin(3);
+
+  // While this row is pinned, tell the category row pinned above it what it
+  // shows, so that row can drop the figures it would only be repeating.
+  const pinnedSelf = pinnedRow ? d?.win?.find((w) => w.rank === d.rank) : null;
+  usePinEcho(pinnedSelf ? { va: fmtM(pinnedSelf.m), rate: String(rateText(pinnedSelf.r) ?? "") } : null);
 
   // Compact per-game toggle shown in the by-season header. Flips the whole
   // card between total and per-game category VA (sorts, ranks, percentile,
