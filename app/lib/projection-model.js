@@ -385,16 +385,7 @@ export const tierOf = (mpg) => {
 //            From the same draw, half the places per conference among
 //            players with a `conf` (the real roster's 12 East, 12 West).
 //
-//   mip      { beta, floor } — among players with `mipE` (their preseason
-//            projected VA/G), the MIP board's conditional logit on
-//            b·log((final VA/G + c) / (mipE + c)), the final VA/G read on
-//            `rangeVa`'s baseline (plain VA, as the board was fit), over
-//            players with at least half the games of the season's leader in
-//            that draw and a positive season. Rookies have no preseason
-//            to beat and carry no `mipE`.
-//
-// which add P(ROY), P(All-Star), P(All-Star by conference) and P(MIP) to each
-// result.
+// which add P(ROY), P(All-Star) and P(All-Star by conference) to each result.
 //
 // Once the season is under way (lib/in-season.js) a player can also carry
 // `ytd` { g, va, rangeVa } — the games already played, banked as they are —
@@ -414,11 +405,10 @@ function histogram(sorted, lo, hi) {
   return { lo, hi, counts: counts.map((c) => c / sorted.length) };
 }
 
-export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82, roy = null, allStar = null, mip = null } = {}) {
+export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627, schedule = 82, roy = null, allStar = null } = {}) {
   const rand = rng(seed);
   const n = players.length;
-  const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, roy: 0, allStar: 0, allStarConf: 0, mip: 0, rankSum: 0, ranked: 0, vas: [] }));
-  const improvers = mip ? players.map((p, i) => (p.mipE != null && !p.rookie ? i : -1)).filter((i) => i >= 0) : [];
+  const tally = players.map(() => ({ mvp: 0, allNba: 0, first: 0, roy: 0, allStar: 0, allStarConf: 0, rankSum: 0, ranked: 0, vas: [] }));
   const rookies = roy ? players.map((p, i) => (p.rookie ? i : -1)).filter((i) => i >= 0) : [];
   const vpg = players.map((p) => (p.g > 0 ? p.va / p.g : 0));
   // The range can be reported on another baseline than the ballot's (VA where
@@ -427,7 +417,7 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
   // A player can bring a pool of its own — a rookie draws from the misses
   // rookie projections have made, which run wider than a veteran's.
   const tierPool = players.map((p) => (p.pool?.length ? p.pool : pool[tierOf(p.mpg ?? 0)] || pool[0] || [[0, 1]]));
-  const simVa = new Float64Array(n), simG = new Float64Array(n), simPlain = new Float64Array(n);
+  const simVa = new Float64Array(n), simG = new Float64Array(n);
   for (let s = 0; s < sims; s++) {
     for (let i = 0; i < n; i++) {
       const tp = tierPool[i];
@@ -436,8 +426,7 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       const g = Math.min(p.maxG ?? schedule, Math.max(0, Math.round(p.g * gr)));
       simG[i] = g + (y?.g || 0);
       simVa[i] = (vpg[i] + d) * g + (y?.va || 0);
-      simPlain[i] = (rpg[i] + d) * g + (y ? y.rangeVa ?? y.va : 0);
-      tally[i].vas.push(simPlain[i]);
+      tally[i].vas.push((rpg[i] + d) * g + (y ? y.rangeVa ?? y.va : 0));
     }
     const ballot = [];
     for (let i = 0; i < n; i++) {
@@ -460,17 +449,6 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
         if (u > best) { best = u; win = i; }
       }
       if (win >= 0) tally[win].roy++;
-    }
-    if (improvers.length) {
-      let maxG = 0;
-      for (let i = 0; i < n; i++) if (simG[i] > maxG) maxG = simG[i];
-      let best = -Infinity, win = -1;
-      for (const i of improvers) {
-        if (simG[i] < maxG / 2 || simPlain[i] <= 0) continue;
-        const u = mip.beta * Math.log(Math.max(0.05, simPlain[i] / simG[i] + mip.floor) / Math.max(0.05, players[i].mipE + mip.floor)) + gumbel(rand());
-        if (u > best) { best = u; win = i; }
-      }
-      if (win >= 0) tally[win].mip++;
     }
     if (allStar) {
       const sel = [];
@@ -498,7 +476,6 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       roy: t.roy / sims,
       allStar: t.allStar / sims,
       allStarConf: t.allStarConf / sims,
-      mip: t.mip / sims,
       meanRank: t.ranked ? t.rankSum / t.ranked : null,
       eligible: t.ranked / sims,
       vaLo: q(0.1), vaHi: q(0.9),
@@ -506,6 +483,33 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
       hist: histogram(v, q(0.02), q(0.98)),
     };
   });
+}
+
+// Most Improved, as the season stands: the Awards tab's MIP model
+// (scripts/bake-awards.mjs, a conditional logit on
+// b·log((VA/G + c) / (expected VA/G + c))) on each player's games so far
+// against the VA/G their preseason projection expected — no simulation, and
+// nothing from the in-season projection of the games still to come.
+//
+// `players` are { key, g, va, e, rookie? }: games and plain VA so far, and the
+// preseason VA/G (`e`, null for a player with no preseason line). Counted, as
+// on the board: not a rookie, at least half the games of the league's leader
+// so far, and above zero VA. Returns key -> P(MIP): 0 for a candidate who
+// doesn't count yet, and no entry for a rookie or a player without `e`.
+export function mipOdds(players, { beta, floor }) {
+  const maxG = Math.max(0, ...players.map((p) => p.g || 0));
+  const out = new Map(), score = [];
+  for (const p of players) {
+    if (p.rookie || p.e == null) continue;
+    out.set(p.key, 0);
+    if (!(p.g > 0) || p.g < maxG / 2 || !(p.va > 0)) continue;
+    score.push([p.key, beta * Math.log(Math.max(0.05, p.va / p.g + floor) / Math.max(0.05, p.e + floor))]);
+  }
+  if (!score.length) return out;
+  const m = Math.max(...score.map(([, u]) => u));
+  const z = score.reduce((s, [, u]) => s + Math.exp(u - m), 0);
+  for (const [k, u] of score) out.set(k, Math.exp(u - m) / z);
+  return out;
 }
 
 // All-NBA teams from simulated odds: the fifteen likeliest, five a team, in

@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  allNbaTeams, leagueContext, poolTeams, projectPlayer, projectRookie, projectWins, simulateAwards, vaPlus, AWARD_MIN_GAMES,
+  allNbaTeams, leagueContext, poolTeams, projectPlayer, projectRookie, projectWins, simulateAwards, vaPlus, mipOdds, AWARD_MIN_GAMES,
 } from "../app/lib/projection-model.js";
 import { lgaForSeason, valueAdd } from "../app/scoring.js";
 import { parseShareParams } from "../app/lib/share-params.js";
@@ -119,30 +119,31 @@ test("ROY goes only to rookies and All-Star fills its places", () => {
   }
 });
 
-test("MIP goes to the player furthest over their preseason bar, never to a rookie", () => {
-  // A pool that never misses: each player ends exactly where they're headed.
-  const pool = [[[0, 1]], [[0, 1]], [[0, 1]], [[0, 1]]];
+test("MIP reads only the games played against the preseason bar, never a rookie", () => {
   const mip = { beta: 21.78, floor: 20 };
-  const field = [
-    // Expected 2 VA/G, on pace for 8: the clear improver.
-    { key: "leap", g: 60, va: 480, mpg: 30, mipE: 2, ytd: { g: 20, va: 160 } },
+  const players = [
+    // Expected 2 VA/G, at 8 so far: the clear improver.
+    { key: "leap", g: 10, va: 80, e: 2 },
     // Right on their bar.
-    { key: "flat", g: 60, va: 300, mpg: 30, mipE: 5, ytd: { g: 20, va: 100 } },
-    // A rookie well over anything: no preseason, no MIP.
-    { key: "rook", g: 60, va: 900, mpg: 30, rookie: true, mipE: 0, ytd: { g: 20, va: 300 } },
-    // Far over the bar but below zero on the season: not eligible.
-    { key: "neg", g: 60, va: -60, mpg: 20, mipE: -10, ytd: { g: 20, va: -20 } },
-    // Far over the bar in too few games: not eligible.
-    { key: "few", g: 10, va: 200, mpg: 30, mipE: -2, ytd: { g: 10, va: 200 } },
-    // No preseason line: never in the running.
-    { key: "none", g: 60, va: 600, mpg: 30, ytd: { g: 20, va: 200 } },
+    { key: "flat", g: 10, va: 50, e: 5 },
+    // A rookie well over anything: no MIP.
+    { key: "rook", g: 10, va: 150, e: 0, rookie: true },
+    // Far over the bar but below zero: doesn't count yet.
+    { key: "neg", g: 10, va: -10, e: -10 },
+    // Far over the bar in under half the leader's games: doesn't count yet.
+    { key: "few", g: 4, va: 80, e: -2 },
+    // No preseason line: not a candidate.
+    { key: "none", g: 10, va: 120, e: null },
   ];
-  const res = Object.fromEntries(simulateAwards(field, PROJ.mvp.model, pool, { sims: 400, mip }).map((r) => [r.key, r]));
-  assert.ok(Math.abs(Object.values(res).reduce((s, r) => s + r.mip, 0) - 1) < 1e-9);
-  for (const k of ["rook", "neg", "few", "none"]) assert.equal(res[k].mip, 0, k);
-  assert.ok(res.leap.mip > 0.9, `leap ${res.leap.mip}`);
-  // Without the model, no one is scored.
-  assert.ok(simulateAwards(field, PROJ.mvp.model, pool, { sims: 50 }).every((r) => r.mip === 0));
+  const odds = mipOdds(players, mip);
+  assert.ok(Math.abs([...odds.values()].reduce((s, x) => s + x, 0) - 1) < 1e-9);
+  assert.ok(!odds.has("rook") && !odds.has("none"));
+  assert.equal(odds.get("neg"), 0);
+  assert.equal(odds.get("few"), 0);
+  assert.ok(odds.get("leap") > 0.9, `leap ${odds.get("leap")}`);
+  // The same two players, scored by hand.
+  const u = (va, g, e) => mip.beta * Math.log((va / g + mip.floor) / (e + mip.floor));
+  assert.ok(Math.abs(odds.get("leap") - 1 / (1 + Math.exp(u(50, 10, 5) - u(80, 10, 2)))) < 1e-12);
 });
 
 test("the range can be reported on another baseline than the ballot", () => {

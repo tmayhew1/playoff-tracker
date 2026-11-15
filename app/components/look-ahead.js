@@ -7,7 +7,7 @@ import { splitName, teamColor, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
 import { SeasonTiles } from "./season-tiles";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
-import { allNbaTeams, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
+import { allNbaTeams, mipOdds, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { updateTeam } from "../lib/in-season";
 import { TEAM_CONF } from "../teams";
 
@@ -81,7 +81,7 @@ function lookAheadModel(data) {
     // a name) but leaves the board and the awards.
     const live = data.rosters === "live";
     const rostered = data.players.filter((p) => !live || p.team).sort((a, b) => b.va - a.va);
-    _model.set(data, { awards: simAwards(data, rostered), teams: standings(data, rostered) });
+    _model.set(data, { awards: simAwards(data, rostered), mip: mipNow(data, rostered), teams: standings(data, rostered) });
   }
   return _model.get(data);
 }
@@ -90,18 +90,13 @@ function lookAheadModel(data) {
 // served with the projection as `awardModels`): the ballot reads VA+, as
 // theirs do, and every rookie is in the field so ROY has its whole class.
 // Without them, the MVP model fit with the projection, on plain VA.
-//
-// MIP, once games have been played: each returning player's final VA/G
-// against their preseason projection (`mipExpected`), on the Awards tab's MIP
-// model. Every one of them who is above zero so far is in the field, however
-// far down the ballot, since an improver can start from well below it.
+
 function simAwards(data, players) {
   const am = data.awardModels;
   const ballot = (va, mp, p) => (am ? vaPlus(va, p.dpm, mp) : va);
   const ballotVa = (p) => ballot(p.va, p.row.mp, p);
   const byBallot = [...players].sort((a, b) => ballotVa(b) - ballotVa(a));
-  const mipOn = !!(am?.mip && data.inSeason);
-  const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie || (mipOn && mipExpected(p) != null && p.ytdVa > 0))];
+  const field = [...byBallot.slice(0, SIM_FIELD), ...byBallot.slice(SIM_FIELD).filter((p) => p.rookie)];
   const rookiePool = data.params?.rookie?.pool;
   // In season, the games played are banked and only the rest is drawn
   // (lib/projection-model.js simulateAwards, `ytd`).
@@ -109,10 +104,9 @@ function simAwards(data, players) {
     ? { g: p.rest.g, va: ballot(p.restVa, p.rest.mp, p), rangeVa: p.restVa, maxG: p.maxRest, shrink: p.shrink,
       ytd: p.ytd ? { g: p.ytd.g, va: ballot(p.ytdVa, p.ytd.mp, p), rangeVa: p.ytdVa } : null }
     : { g: p.row.g, va: ballotVa(p), rangeVa: p.va });
-  const res = simulateAwards(field.map((p) => ({ key: p.slug, ...entry(p), mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null,
-    mipE: mipOn ? mipExpected(p) : null })),
+  const res = simulateAwards(field.map((p) => ({ key: p.slug, ...entry(p), mpg: p.mpg, rookie: !!p.rookie, conf: TEAM_CONF[p.team] || null, pool: p.rookie ? rookiePool : null })),
     am ? { a: am.mvp.beta } : data.mvp.model, data.pool,
-    { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null, mip: mipOn ? am.mip : null });
+    { sims: SIMS, roy: am?.roy || null, allStar: am ? { beta: am.allstar.beta, places: ALL_STAR_PLACES } : null });
   return { bySlug: Object.fromEntries(res.map((r) => [r.key, r])), res };
 }
 
@@ -122,6 +116,16 @@ function simAwards(data, players) {
 export function mipExpected(p) {
   if (p.rookie || p.unprojected || !p.preseason?.row?.g) return null;
   return p.preseason.va / p.preseason.row.g;
+}
+
+// Most Improved as the season stands (lib/projection-model.js mipOdds): each
+// returning player's VA/G in the games actually played against the VA/G the
+// preseason projection expected — not the in-season projection, and nothing
+// simulated. Null before opening night or without the Awards tab's fit.
+function mipNow(data, players) {
+  const model = data.awardModels?.mip;
+  if (!model || !data.inSeason) return null;
+  return mipOdds(players.map((p) => ({ key: p.slug, g: p.ytd?.g || 0, va: p.ytdVa || 0, e: mipExpected(p), rookie: !!p.rookie })), model);
 }
 
 // Projected standings (lib/projection-model.js projectWins): each roster's
@@ -165,10 +169,10 @@ function byNow(a, b) {
 let _odds = null;
 export function lookAheadOdds() {
   return (_odds ||= fetchBakedJson("/api/projections").then((data) => {
-    const { bySlug } = lookAheadModel(data).awards;
+    const { awards: { bySlug }, mip: mipBy } = lookAheadModel(data);
     return Object.fromEntries(data.players.map((p) => {
       const r = bySlug[p.slug];
-      const mip = data.awardModels?.mip && data.inSeason && mipExpected(p) != null ? r?.mip || 0 : null;
+      const mip = mipBy?.get(p.slug) ?? null;
       return [p.slug, { mvp: r?.mvp || 0, mip, roy: p.rookie ? r?.roy || 0 : null, allnba: r?.allNba || 0, allstar: r?.allStar || 0, simulated: !!r }];
     }));
   }).catch((e) => { _odds = null; throw e; }));
@@ -230,7 +234,9 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
     const live = data.rosters === "live";
     return data.players
       .filter((p) => !live || p.team)
-      .map((p) => ({ ...p, vaShown: valueAdd(p.row, lga) }))
+      // MIP odds ride on the player, so the board, the row's cards and the
+      // award boxes all read the one number (null: not a candidate).
+      .map((p) => ({ ...p, vaShown: valueAdd(p.row, lga), mip: lookAheadModel(data).mip?.get(p.slug) ?? null }))
       .sort((a, b) => b.vaShown - a.vaShown);
   }, [data, lga]);
   const offRoster = useMemo(() => (data?.rosters === "live"
@@ -460,8 +466,8 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
 const AWARD_SUBS = [["mvp", "MVP"], ["mip", "MIP"], ["roy", "ROY"], ["allnba", "All-NBA"], ["allstar", "All-Star"]];
 const BOARD = {
   mvp: { title: "Most Valuable", col: "MVP%", odds: (r) => r.mvp, note: "The likeliest winners · 65-game rule applied" },
-  mip: { title: "Most Improved", col: "MIP%", odds: (r) => r.mip, improvers: true,
-    note: "Final VA/G against the preseason projection · rookies excluded · half the leader’s games and a positive season to count" },
+  mip: { title: "Most Improved", col: "MIP%", improvers: true,
+    note: "VA/G so far against the preseason projection, as the season stands · rookies excluded · half the leader’s games and above zero to count" },
   roy: { title: "Rookie of the Year", col: "ROY%", odds: (r) => r.roy, rookies: true, minutes: true, note: "Every projected rookie · from VA+ and minutes per game" },
   allnba: { title: "All-NBA", col: "Odds", odds: (r) => r.allNba, note: "The fifteen likeliest, five a team · positionless, as voted since 2023-24 · 65-game rule applied" },
   allstar: { title: "All-Star", col: "Odds", odds: (r, split) => (split ? r.allStarConf : r.allStar), cut: ALL_STAR_PLACES,
@@ -478,8 +484,11 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, set
   // A board the payload can't fill (MIP before opening night) falls back to MVP.
   const cur = subs.some(([k]) => k === sub) ? sub : "mvp";
   const cfg = BOARD[cur];
-  const entries = awards.res.map((r) => ({ r, p: pBySlug[r.key], odds: cfg.odds(r, split) || 0 }))
-    .filter((e) => e.p && (!cfg.rookies || e.p.rookie) && (!cfg.improvers || mipExpected(e.p) != null));
+  // MIP isn't simulated, so its board is every candidate, not the simulated field.
+  const entries = cfg.improvers
+    ? Object.values(pBySlug).filter((p) => p.mip != null).map((p) => ({ r: awards.bySlug[p.slug] || { key: p.slug }, p, odds: p.mip }))
+    : awards.res.map((r) => ({ r, p: pBySlug[r.key], odds: cfg.odds(r, split) || 0 }))
+      .filter((e) => e.p && (!cfg.rookies || e.p.rookie));
   const vpOf = (p) => vaPlus(p.va, p.dpm, p.row.mp);
   // All-NBA keeps its three teams on top; everyone else goes by odds.
   const teams = cur === "allnba" ? allNbaTeams(awards.res) : null;
@@ -510,7 +519,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, set
       <div className="border border-stone-300 bg-white">
         <div className="px-3 pt-2.5 pb-1.5 border-b border-stone-200">
           <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{cfg.title} · {LOOK_AHEAD_SEASON}</div>
-          <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note} · share of {SIMS.toLocaleString()} simulated seasons{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
+          <div className="text-[9px] italic text-stone-400 mt-0.5">{typeof cfg.note === "function" ? cfg.note(split) : cfg.note}{cfg.improvers ? "" : ` · share of ${SIMS.toLocaleString()} simulated seasons`}{usgAdj ? " · priced on LG AVG" : ""} · tap a player for the projected line</div>
           {cur === "allstar" && (
             <div className="mt-1.5 flex border border-stone-300" role="group" aria-label="All-Star places">
               {[[true, `${ALL_STAR_PLACES / 2} West / ${ALL_STAR_PLACES / 2} East`], [false, `${ALL_STAR_PLACES} Total`]].map(([v, label]) => (
@@ -762,8 +771,8 @@ function Cards({ p, sim, lga }) {
         </div>
       ) : def != null && <Defense def={def} g={g} vpTot={vpTot} rookie={p.dpm == null} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
-      {sim && (() => {
-        const odds = [["MVP", sim.mvp], ["MIP", p.rookie ? 0 : sim.mip], ["ROY", p.rookie ? sim.roy : 0], ["All-NBA", sim.allNba], ["All-Star", sim.allStar]].filter(([, x]) => x > 0.005);
+      {(sim || p.mip) && (() => {
+        const odds = [["MVP", sim?.mvp], ["MIP", p.mip], ["ROY", p.rookie ? sim?.roy : 0], ["All-NBA", sim?.allNba], ["All-Star", sim?.allStar]].filter(([, x]) => x > 0.005);
         return odds.length > 0 && (
           <div className="basis-full flex gap-1">
             {odds.map(([k, x]) => (
@@ -893,7 +902,7 @@ function Method({ data }) {
       <p><span className="font-semibold text-stone-800">The price.</span> The projected line is scored with the same Value Added formula as every other season here, against the {data.base} league.</p>
       <p><span className="font-semibold text-stone-800">The awards.</span> The same models as the Awards tab, run on the projected season. Each simulated season draws every player’s miss from the real misses this projection made in past seasons — per-game VA and games missed together — and then draws each ballot from the player’s VA+: MVP from a logit on VA+, fit on {data.awardModels ? "every winner since 1980-81" : `all ${m.seasons} winners since 1980-81 (on plain VA)`}, with the 65-game rule; All-NBA as the top fifteen of that ballot{data.awardModels ? <>; Rookie of the Year among the projected rookies from VA+ and minutes per game; and All-Star as the {ALL_STAR_PLACES} likeliest selections from a logit on VA+, each fit on the real picks</> : ""}.{data.awardModels?.mip
         ? data.inSeason
-          ? <> Most Improved is the Awards tab’s model turned on this season: each returning player’s final VA per game — the games played so far plus the simulated rest, on plain VA as that model was fit — against the VA per game the preseason projection gave them, as the ratio (final + {data.awardModels.mip.floor}) / (preseason + {data.awardModels.mip.floor}), among players with at least half the games of that draw’s leader and a season above zero. Rookies are left out: there is no preseason line to improve on. Fit on every winner since 1985-86, with the projection made the summer before each season.</>
+          ? <> Most Improved is not simulated: it is the Awards tab’s model on the season as it stands — each returning player’s VA per game in the games actually played (plain VA, as that model was fit) against the VA per game the preseason projection gave them, as the ratio (so far + {data.awardModels.mip.floor}) / (preseason + {data.awardModels.mip.floor}), among players with at least half the games of the league’s leader so far and above zero VA. The in-season projection of the games still to come plays no part. Rookies are left out: there is no preseason line to improve on. Fit on every winner since 1985-86, with the projection made the summer before each season.</>
           : <> Most Improved opens once games have been played: it measures the season against this projection, so until then every player is exactly on it.</>
         : null}</p>
       <p><span className="font-semibold text-stone-800">Injuries.</span> A player already reported out is projected for the games left after the expected return: the projected availability applied to what remains of the schedule, at the same per-game line, so someone out until March keeps their rate but loses most of their total. The minutes they give up go to their teammates in the team context. Return dates come from {data.injuries === "live" ? "ESPN’s injury report, read live, and " : ""}reporting collected {data.injuriesAsOf ? `as of ${fmtDate(data.injuriesAsOf)}` : "before the season"} (the newer of the two wins), taking the middle of a reported range; day-to-day listings are left to the projected availability. A player out for the season is off the board and named under their team.</p>
