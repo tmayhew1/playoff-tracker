@@ -1234,6 +1234,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         border for its edge. */}
     {fixedBar && (
       <div
+        data-pinned-header
         className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm px-2 pt-2"
         style={{ left: fixedBar.left, width: fixedBar.width }}
       >

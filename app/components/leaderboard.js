@@ -922,6 +922,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         while scrolled into the leaderboard, aligned to the card's width. */}
     {fixedBar && (
       <div
+        data-pinned-header
         className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm"
         style={{ left: fixedBar.left, width: fixedBar.width }}
       >
