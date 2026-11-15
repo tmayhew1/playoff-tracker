@@ -65,6 +65,46 @@ export function playerTotals(games, through = "9999-12-31") {
   return [...by.values()].map((r) => ({ ...r, mp: Math.round(r.mp * 100) / 100, tg: records[r.team]?.g || r.g }));
 }
 
+// The defensive team context D Rating reads (lib/defense-math.js defVAInfo's
+// `team` map) for a season still being played, which has no regular-season
+// bake for scripts/R/recompute_derived.R to build it from. Same shape:
+//   drtg  — the team's ACTUAL defensive rating so far: opponents' points per
+//           100 possessions, with possessions counted the way basketball-
+//           reference counts them (both sides averaged), so it sits on the
+//           scale of the box-score ratings it is subtracted from,
+//   stlpm / blkpm — steals and blocks per player-minute,
+//   g     — games played.
+// A finished season's map is rebuilt by the R pipeline instead (there, drtg is
+// the minutes-weighted mean of its members' ratings, which tracks the same
+// number). Games without a box score are skipped whole.
+export function teamDefense(games, through = "9999-12-31") {
+  const sum = (side) => {
+    const t = { pts: 0, fgm: 0, fga: 0, fta: 0, orb: 0, drb: 0, tov: 0, stl: 0, blk: 0, mp: 0 };
+    for (const p of side.players || []) for (const k in t) t[k] += p[k] || 0;
+    return t;
+  };
+  // Basketball-reference's team possession estimate for one side.
+  const poss = (a, b) => a.fga + 0.4 * a.fta - 1.07 * (a.orb / ((a.orb + b.drb) || 1)) * (a.fga - a.fgm) + a.tov;
+  const acc = {};
+  for (const g of games) {
+    if (g.date > through || !g.box?.home?.players?.length || !g.box?.away?.players?.length) continue;
+    const h = sum(g.box.home), a = sum(g.box.away);
+    const n = 0.5 * (poss(h, a) + poss(a, h));
+    if (!(n > 0)) continue;
+    for (const [side, me, op] of [[g.box.home, h, a], [g.box.away, a, h]]) {
+      const r = (acc[side.tri] ||= { pa: 0, poss: 0, stl: 0, blk: 0, mp: 0, g: 0 });
+      r.pa += op.pts; r.poss += n; r.stl += me.stl; r.blk += me.blk; r.mp += me.mp; r.g += 1;
+    }
+  }
+  const out = {};
+  for (const tri of Object.keys(acc).sort()) {
+    const r = acc[tri];
+    if (!(r.poss > 0) || !(r.mp > 0)) continue;
+    out[tri] = { drtg: (100 * r.pa) / r.poss, stlpm: r.stl / r.mp, blkpm: r.blk / r.mp, g: r.g };
+  }
+  return out;
+}
+
 // { tri: { w, l, g, pf, pa } } for the games on or before `through`.
 export function teamRecords(games, through = "9999-12-31") {
   const out = {};

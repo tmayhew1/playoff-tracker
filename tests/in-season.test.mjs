@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals, teamRecords, withGames } from "../app/lib/season-to-date.js";
+import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals, teamDefense, teamRecords, withGames } from "../app/lib/season-to-date.js";
 import { addRows, missShrink, updatePlayer, updateTeam } from "../app/lib/in-season.js";
 import { simulateAwards } from "../app/lib/projection-model.js";
 import { playoffsBegun, seasonOf } from "../app/lib/regular-season-games.js";
@@ -198,4 +198,18 @@ test("tonight's finals join the season so far once, in date order", () => {
   assert.equal(bos.pts, 60);
   assert.equal(teamRecords(games).BOS.w, 2);
   assert.equal(withGames(baked, []), baked);
+});
+
+test("teamDefense: each team's actual defensive rating and stock rates so far", () => {
+  // Two sides, 100 possessions each by basketball-reference's count (no
+  // offensive rebounds, so possessions are FGA + 0.4 FTA + TOV).
+  const side = (tri, pts, stl, blk) => ({ tri, players: [{ name: "A", mp: 240, pts, fgm: 40, fga: 90, fta: 10, orb: 0, drb: 40, tov: 6, stl, blk }] });
+  const game = { date: "2026-10-21", home: { tri: "AAA", score: 110 }, away: { tri: "BBB", score: 100 }, box: { home: side("AAA", 110, 8, 5), away: side("BBB", 100, 6, 2) } };
+  const out = teamDefense([game, { date: "2026-10-22", home: { tri: "AAA" }, away: { tri: "CCC" }, box: null }]);
+  assert.deepEqual(Object.keys(out), ["AAA", "BBB"]);
+  assert.ok(Math.abs(out.AAA.drtg - 100) < 1e-9);
+  assert.ok(Math.abs(out.BBB.drtg - 110) < 1e-9);
+  assert.equal(out.AAA.stlpm, 8 / 240);
+  assert.equal(out.BBB.blkpm, 2 / 240);
+  assert.equal(out.AAA.g, 1);
 });

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { TEAMS, TEAM_CONF } from "../teams";
-import { combinedLga, valueAddParts, ZONES } from "../scoring";
+import { combinedLga, lgaForSeason, valueAddParts, ZONES, zoneGames, zoneMinutes } from "../scoring";
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
@@ -247,6 +247,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         sum[k] = (p[k] || 0) + (r ? r[k] || 0 : 0);
       }
       sum.reb = sum.drb + sum.orb;
+      // A regular-season half tonight's games have moved keeps its zones at the
+      // last bake (lib/live-lines.js), so the sum reads them over what that
+      // bake covered too.
+      if (r?.zoneGp != null) {
+        sum.zoneGp = (p.gp || 0) + zoneGames(r);
+        sum.zoneMp = (p.mp || 0) + zoneMinutes(r);
+      }
       // Two lines from two leagues, so the mix of their two baselines — which
       // for every per-minute term is exactly the two halves scored separately
       // and added, while staying one object the category bars can sum against.
@@ -281,8 +288,12 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   const ctxLive = useMemo(() => {
     const idx = ctxByScope[scope] || null;
     if (scope === "playoffs" || rsSeason !== season) return idx;
-    return addLiveLinesToIndex(idx, season, live?.lines, (row) => valueAddParts(row, lga).va);
-  }, [ctxByScope, scope, rsSeason, season, live, lga]);
+    // Priced at the standard baseline, as /api/players priced the rest of the
+    // index: useUsgAdjIndex below adds the USG-ADJ delta on top, so the
+    // mode-aware `lga` here would count it twice.
+    const std = lgaForSeason(season);
+    return addLiveLinesToIndex(idx, season, live?.lines, (row) => valueAddParts(row, std).va);
+  }, [ctxByScope, scope, rsSeason, season, live]);
   const ctxPlayers = useUsgAdjIndex(ctxLive, lgaScopeFor(scope));
   useEffect(() => {
     if (expanded == null || ctxByScope[scope]) return;

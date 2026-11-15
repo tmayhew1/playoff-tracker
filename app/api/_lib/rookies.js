@@ -32,6 +32,9 @@ export async function projectRookies(unprojected, baked) {
   const college = baked.collegeSeason ? await readData(`college-${baked.collegeSeason}.json`) : null;
   const draft = (await readData("draft-picks.json"))?.years?.[baked.draftYear] || [];
   const pickOf = new Map(draft.map((d) => [normalizeName(d.name), d.pick]));
+  // A drafted rookie's Basketball-Reference id — the slug his box scores and
+  // player card carry, so the card's award boxes find his projected odds.
+  const slugOf = new Map(draft.filter((d) => d.slug).map((d) => [normalizeName(d.name), d.slug]));
   const rows = (college?.players || []).filter((r) => r.mp > 0);
   const cctx = leagueContext(rows);
   const seen = new Map();
@@ -71,7 +74,7 @@ export async function projectRookies(unprojected, baked) {
       const years = src.years;
       const row = Object.fromEntries(Object.entries(proj.row).map(([k, v]) => [k, k === "g" ? v : round1(v)]));
       rookies.push({
-        slug: c ? `ncaa-${c.slug}` : `pick-${baked.draftYear}-${pick}`, name, team, pos: "G", exp: 0, rookie: true,
+        slug: slugOf.get(n) || (c ? `ncaa-${c.slug}` : `pick-${baked.draftYear}-${pick}`), name, team, pos: "G", exp: 0, rookie: true,
         collegeYears: years, pick: pick < UNDRAFTED_PICK ? pick : null, model: proj.model,
         mpg: round1(proj.mpg), row, va: round1(valueAdd(proj.row, lga)),
         // The college line, in the shape the page reads a last season in.

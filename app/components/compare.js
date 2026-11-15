@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import { USG_FTA_W, ZONES, possUsed, zoneShotValue, hasZoneData } from "../scoring";
+import { USG_FTA_W, ZONES, possUsed, zoneShotValue, hasZoneData, zoneGames } from "../scoring";
 import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
@@ -142,14 +142,17 @@ export function compareStatRows(a, b, key, lgaA, lgaB) {
           <span className={val >= 0 ? "text-emerald-600" : "text-red-600"}>{sgn1(val)}</span>
         </>
       );
+      // Over the games the zones cover: a row tonight's games have moved holds
+      // them at the last bake (scoring.js::zoneGames).
+      const azg = zoneGames(a) || 1, bzg = zoneGames(b) || 1;
       for (const z of ZONES) {
         const azm = a[z.mKey] || 0, aza = a[z.aKey] || 0;
         const bzm = b[z.mKey] || 0, bza = b[z.aKey] || 0;
         // Winner is decided by per-game value added vs league, not raw FG% —
         // a higher zone FG% on lower volume can still add less value.
-        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]) / agp;
-        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]) / bgp;
-        push(z.label, zoneDisp(azm / agp, aza / agp, aVal), zoneDisp(bzm / bgp, bza / bgp, bVal), aVal, bVal);
+        const aVal = zoneShotValue(azm, aza, lgaA.zoneFG[z.key]) / azg;
+        const bVal = zoneShotValue(bzm, bza, lgaB.zoneFG[z.key]) / bzg;
+        push(z.label, zoneDisp(azm / azg, aza / azg, aVal), zoneDisp(bzm / bzg, bza / bzg, bVal), aVal, bVal);
       }
     }
     return rows;
@@ -1256,7 +1259,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
 // (the default) reads every value, rank and bar as PER-GAME value added; OFF
 // re-reads the whole card on season TOTALS, where a full season outweighs a
 // half one at the same rate.
-export function PerGameToggle({ perGame, onToggle, title }) {
+export function PerGameToggle({ perGame, onToggle, title, unit = "/G" }) {
   return (
     <button
       type="button"
@@ -1267,7 +1270,7 @@ export function PerGameToggle({ perGame, onToggle, title }) {
         : "Show values per game instead of season totals")}
       className={`shrink-0 tabular-nums text-[9px] font-semibold tracking-wide px-1.5 py-0.5 rounded-sm border transition-colors ${perGame ? "bg-stone-800 text-stone-100 border-stone-800" : "bg-white text-stone-500 border-stone-300 hover:text-stone-700"}`}
     >
-      /G {perGame ? "ON" : "OFF"}
+      {unit} {perGame ? "ON" : "OFF"}
     </button>
   );
 }

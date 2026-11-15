@@ -7,6 +7,7 @@ import { VABreakdown } from "./va-breakdown";
 import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
+import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 
 
 // A shooting category's columns in the box: its makes and attempts off a
@@ -26,7 +27,7 @@ export const SHOT_CATS = {
 // against `maxAbs`, as the leaderboards draw theirs. A per-game row hands
 // its card its `totals`, the card dividing by `gp` itself, its labels on
 // the per-game / per-36 switch.
-export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs, seasonSoFar }) {
+export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, lga = LGA, teams = TEAMS, gameNumber, onPrev, onNext, useTeamColor, singleGame, cat, maxAbs, seasonSoFar, onOpenPlayer }) {
   const teamInfo = teams[p.team];
   const owner = teamInfo?.owner;
   const isDim = p.team === dimTeam;
@@ -59,9 +60,17 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
         <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
           {p.team}
         </span>
-        <span className={`flex-1 truncate ${p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}>
+        {/* Armed (the Player header, tapped first), the name crosses over to
+            Explore's By Player; unarmed the tap falls through to the row and
+            opens the card, as it always has. */}
+        <span
+          onClick={onOpenPlayer ? (e) => { e.stopPropagation(); onOpenPlayer(p); } : undefined}
+          aria-label={onOpenPlayer ? `Open ${p.name} in By Player` : undefined}
+          className={`flex-1 truncate ${onOpenPlayer ? "font-semibold text-stone-900" : p.starter ? "font-semibold text-stone-800" : "text-stone-600"}`}
+        >
           <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
-          {p.name}
+          <span className={onOpenPlayer ? "underline decoration-dotted" : ""}>{p.name}</span>
+          {onOpenPlayer && <span className="text-[8px] ml-0.5" aria-hidden>›</span>}
         </span>
         {c ? (
           <>
@@ -97,6 +106,14 @@ export const rowKeyOf = (p, i) => `${p.team}-${p.name}-${i}`;
 // his season to date (see VABreakdown).
 export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat, seasonSoFar }) {
   const maxAbs = cat ? Math.max(...rows.map((p) => Math.abs(p.catVA || 0)), 0.5) : null;
+  // Arming step for the cross-over into By Player: tap the Player header
+  // first, then a name — a bare row tap should never leave the box score.
+  const goToPlayer = usePlayerNav();
+  const [nameArmed, setNameArmed] = useState(false);
+  const openPlayer = nameArmed && goToPlayer ? (p) => {
+    setNameArmed(false);
+    goToPlayer({ name: p.name, slug: p.slug || null, season: seasonSoFar?.season || null, scope: seasonSoFar?.scope || null });
+  } : undefined;
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
   const buildRow = (arr) => (p, i) => {
@@ -122,6 +139,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
         cat={cat}
         maxAbs={maxAbs}
         seasonSoFar={seasonSoFar}
+        onOpenPlayer={openPlayer}
         onPrev={prevKey ? () => setExpandedKey(prevKey) : undefined}
         onNext={nextKey ? () => setExpandedKey(nextKey) : undefined}
       />
@@ -131,7 +149,7 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
   const header = (
     <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
       <span className="w-10">Team</span>
-      <span className="flex-1">Player</span>
+      <PlayerHeader armed={nameArmed} onArm={() => setNameArmed((v) => !v)} className="flex-1" />
       {cat ? (
         <>
           <span className="w-6 text-right">{cat}</span>

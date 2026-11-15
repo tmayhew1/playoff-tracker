@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData } from "../scoring";
+import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData, zoneGames, zoneMinutes } from "../scoring";
 import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
+import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
+import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/role-model";
 
 
 // CategoryContext: the drill-down under one VA category — the league-context
@@ -19,6 +21,26 @@ import { useLgaFor } from "../lib/va-mode";
 // bars can print the actual range under their nickname ("Rim", "Float", …)
 // without restating the boundaries ZONES already owns.
 const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
+
+// A bar's value added per game. A segment says how when its G isn't the
+// row's: a 2-point distance divides by the games its zones cover (`games`,
+// scoring.js::zoneGames — fewer than G on a row tonight's games have moved),
+// and Impact sums each of its six distances' own (`perG`).
+function segPerGame(seg, r, lx, s) {
+  if (seg.perG) return seg.perG(r, lx, s);
+  return seg.val(r, lx, s) / ((seg.games ? seg.games(r) : r.gp) || 1);
+}
+
+// A distance's shots for the shot-distribution readings: FTA ÷ 2.2 as trips,
+// and a 2-point distance's attempts carried to the row's G when its zones
+// cover fewer games (a row tonight's games have moved) — so its share sits
+// beside FT and 3PT counts that include tonight, instead of shrinking under
+// them until the next bake.
+function shotTrips(seg, r) {
+  const a = (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
+  const g = seg.games ? seg.games(r) : 0;
+  return g > 0 && r.gp > g ? (a * r.gp) / g : a;
+}
 
 // Short label printed under a category's bar in the split row below a Basic
 // group's rankings ("Assists" -> AST). Box-score tags rather than CAT_SHORT's
@@ -136,7 +158,7 @@ function dotPlotLayout(entries, selfKey, range, L, C) {
 // Rating) collapses horizontally. Tapping a grey dot re-points the whole card
 // at that player, and a tap that catches several raises a menu to pick from.
 // See the `scatter` memo in CategoryContext for what the axes are and why.
-function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null }) {
+function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, onSelect, onPickPlayer, sgn, name, refLine = null, quadrants = null }) {
   const { rows, me, ranges } = scatter;
   // Which players a tap landed on, and where to hang the menu.
   const [menu, setMenu] = useState(null);
@@ -248,6 +270,14 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
             {refLine.label}
           </div>
         )}
+        {/* Quadrant names sit in their own rows above and below the plot —
+            [top-left, top-right, bottom-left, bottom-right] — so they never
+            land on a dot or a guide line. Only the full scatter has quadrants. */}
+        {quadrants && !collapsed && (
+          <div className="flex justify-between gap-2 px-0.5 mb-1.5 text-[8px] italic leading-none text-stone-400 pointer-events-none select-none" aria-hidden="true">
+            <span>{quadrants[0]}</span><span>{quadrants[1]}</span>
+          </div>
+        )}
         <svg
           ref={svgRef}
           viewBox={`0 0 100 ${height}`}
@@ -281,6 +311,11 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
           <circle cx={view.self.cx} cy={view.self.cy} r="2.4" fill="#fff" />
           <circle cx={view.self.cx} cy={view.self.cy} r="1.5" fill="#1c1917" />
         </svg>
+        {quadrants && !collapsed && (
+          <div className="flex justify-between gap-2 px-0.5 mt-1.5 text-[8px] italic leading-none text-stone-400 pointer-events-none select-none" aria-hidden="true">
+            <span>{quadrants[2]}</span><span>{quadrants[3]}</span>
+          </div>
+        )}
         {menu && (
           // Disambiguation menu: one tap landed on several players, so name
           // them and let the next tap choose. Anything else dismisses.
@@ -326,7 +361,9 @@ function ScatterSplit({ scatter, segData, height, xi, yi, selIdx, selectedSeg, o
               className={`flex flex-col items-center gap-0.5 min-w-0 rounded px-1 py-1 border transition-colors ${isSel ? "bg-stone-200 border-stone-800 ring-1 ring-stone-800" : "bg-white border-stone-200 hover:bg-stone-100"}`}
             >
               <span className="text-[7px] uppercase tracking-wide text-stone-400 leading-none">{seg.sub}{seg.headUnit || ""}{axis && !collapsed ? ` ${axis}` : ""}</span>
-              <span className="text-[11px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
+              {seg.head !== undefined && (
+                <span className="text-[11px] font-bold text-stone-900 tabular-nums leading-none">{seg.head == null ? "–" : seg.head}</span>
+              )}
               <span className={`text-[8px] font-semibold tabular-nums leading-none ${vaColor(shown)}`}>{sgn(shown)}</span>
             </button>
           );
@@ -365,6 +402,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const [focusRow, setFocusRow] = useState(null);
   useEffect(() => { setFocusRow(null); }, [ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
   const focused = !!focusRow;
+  // The rankings' Player header arms a bigger move: while armed, a row tap
+  // leaves the card for that player's By Player career (lib/player-nav.js)
+  // instead of re-pointing the card at them.
+  const goToPlayer = usePlayerNav();
+  const [nameArmed, setNameArmed] = useState(false);
+  useEffect(() => { setNameArmed(false); }, [focusRow, ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
 
   // Tapping a bar in the by-season trend (View 6) arms a "Go →" popup for that
   // season. Unlike the mini leaderboard above — which re-points the card in
@@ -407,6 +450,17 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // component's value added (one shot distance, or one stat) instead of the
   // rolled-up category. null = the normal rolled-up view.
   const [selectedSeg, setSelectedSeg] = useState(null);
+  // Scoring card's 2-point split. false (default): the four 2-point distances,
+  // each against its own zone FG% — they sum, with FT and 3PT, to IMPACT.
+  // true: one 2PT bar against the league-wide 2P% — so FT + 2PT + 3PT sum to
+  // EFF instead. Tapping the "2-Pointers" header flips it, and the header
+  // total follows (Impact ↔ Eff).
+  const [twoMerged, setTwoMerged] = useState(false);
+  // League-average reference line on the by-season trend of a shot-
+  // distribution reading: false = the whole league, true = only the player's
+  // role group (Guards / Wings / Bigs, lib/role-model.js). Flipped by tapping
+  // the line's legend.
+  const [refByRole, setRefByRole] = useState(false);
   // When VA+ is the active metric, the Defense drill-in folds D Rating into
   // every ranking/percentile/all-time/trend figure — so the context matches
   // the Defense group's VA+ total (Blocks + Steals + D Rating), not just the
@@ -419,11 +473,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // the mini leaderboard can't be reading a different normalization from the
   // row above it (and the fine print under it can name one of them). The FG%
   // is scale-invariant, so it's unchanged either way. Under Per G, the /G
-  // toggle off reads the season's totals, as the bar headlines do.
-  const maLabel = (made, att, r) => {
+  // toggle off reads the season's totals, as the bar headlines do. A 2-point
+  // distance passes its own games/minutes (`seg.games`/`seg.minutes`): on a
+  // row tonight's games have moved, the zones cover less than its G.
+  // The one normalization every raw box-score figure on the card reads at.
+  // The toggle (labelled /G or /36 after the breakdown's rate mode) picks
+  // between that rate and the season (or postseason) total it sums to.
+  const rateKind = !perGame ? "total" : rateMode === "per36" ? "per36" : "perG";
+  const maLabel = (made, att, r, seg = null) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
-    if (rateMode !== "per36" && !perGame) return `${made}/${att} (${pct}%)`;
-    const div = rateMode === "per36" ? ((r.mp || 1) / 36) : (r.gp || 1);
+    if (!perGame) return `${made}/${att} (${pct}%)`;
+    const div = rateMode === "per36"
+      ? (((seg?.minutes ? seg.minutes(r) : r.mp) || 1) / 36)
+      : ((seg?.games ? seg.games(r) : r.gp) || 1);
     return `${(made / div).toFixed(1)}/${(att / div).toFixed(1)} (${pct}%)`;
   };
 
@@ -451,32 +513,61 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // shot-location data before 1996-97), which is why the zone split is gated on
   // the season carrying a zoneFG baseline and the player carrying zone attempts.
   const showZones = (catKey === "Scoring" || catKey === "2-Pointers") && !!lga?.zoneFG && hasZoneData(p);
-  const SEGMENTS = useMemo(() => {
-    if (showZones) {
-      // group: "ft" | "2p" | "3p" — drives the section headers and the
-      // 2-Pointers-only filter. m/a pull the made/attempted for the FG%
-      // headline. dist is the shot-distance range printed under the nickname
-      // (2-point zones only — "FT" and "3PT" are distances in themselves).
-      // era gates the all-time/trend pools: the four 2-point zones only exist
-      // from 1996-97 on, while FT and 3PT are defined every season.
-      const zone = (key, sub, group, extra) => ({
+  const ZONES = useMemo(() => {
+    if (!showZones) return null;
+    // group: "ft" | "2p" | "3p" — drives the section headers and the
+    // 2-Pointers-only filter. m/a pull the made/attempted for the FG%
+    // headline. dist is the shot-distance range printed under the nickname
+    // (2-point zones only — "FT" and "3PT" are distances in themselves).
+    // era gates the all-time/trend pools: the four 2-point zones only exist
+    // from 1996-97 on, while FT and 3PT are defined every season.
+    //
+    // The 2-point distances are basketball-reference's alone, so on a row
+    // tonight's games have moved they still stand at the last bake: `games`
+    // and `minutes` are what they cover (scoring.js::zoneGames), which every
+    // per-game reading of them divides by instead of the row's own G.
+    const zone = (key, sub, group, extra) => {
+      const base = group === "2p" ? { games: zoneGames, minutes: zoneMinutes } : {};
+      return {
         key, sub, group, dist: ZONE_DIST[key],
         era: group === "2p" ? (s) => !!lgaForSeason(s)?.zoneFG : undefined,
         eraNote: group === "2p" ? " with shot-location data (1996-97 on)" : "",
         note: "FG% at that distance",
         head: (r) => (extra.a(r) > 0 ? `${((extra.m(r) / extra.a(r)) * 100).toFixed(0)}%` : null),
-        rate: (r) => maLabel(extra.m(r), extra.a(r), r),
+        rate: (r) => maLabel(extra.m(r), extra.a(r), r, base),
+        ...base,
         ...extra,
-      });
-      const all = [
-        zone("ft",    "FT",       "ft", { m: (r) => r.ftm || 0,    a: (r) => r.fta || 0,    val: (r, lx = lga) => ((r.ftm / (r.fta || 1)) - lx.laFT) * (r.fta || 0) }),
-        zone("z03",   "Rim",      "2p", { m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) }),
-        zone("z310",  "Float",    "2p", { m: (r) => r.z310m || 0,  a: (r) => r.z310a || 0,  val: (r, lx = lga) => zoneShotValue(r.z310m || 0, r.z310a || 0, lx.zoneFG?.z310) }),
-        zone("z1016", "Mid",      "2p", { m: (r) => r.z1016m || 0, a: (r) => r.z1016a || 0, val: (r, lx = lga) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lx.zoneFG?.z1016) }),
-        zone("z16xp", "Deep Mid", "2p", { m: (r) => r.z16xpm || 0, a: (r) => r.z16xpa || 0, val: (r, lx = lga) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lx.zoneFG?.z16xp) }),
-        zone("tp",    "3PT",      "3p", { m: (r) => r.tpm || 0,    a: (r) => r.tpa || 0,    val: (r, lx = lga) => 3 * ((r.tpm / (r.tpa || 1)) - lx.la3P) * (r.tpa || 0) }),
-      ];
-      return catKey === "2-Pointers" ? all.filter((s) => s.group === "2p") : all;
+      };
+    };
+    const all = [
+      zone("ft",    "FT",       "ft", { m: (r) => r.ftm || 0,    a: (r) => r.fta || 0,    val: (r, lx = lga) => ((r.ftm / (r.fta || 1)) - lx.laFT) * (r.fta || 0) }),
+      zone("z03",   "Rim",      "2p", { m: (r) => r.z03m || 0,   a: (r) => r.z03a || 0,   val: (r, lx = lga) => zoneShotValue(r.z03m || 0, r.z03a || 0, lx.zoneFG?.z03) }),
+      zone("z310",  "Float",    "2p", { m: (r) => r.z310m || 0,  a: (r) => r.z310a || 0,  val: (r, lx = lga) => zoneShotValue(r.z310m || 0, r.z310a || 0, lx.zoneFG?.z310) }),
+      zone("z1016", "Mid",      "2p", { m: (r) => r.z1016m || 0, a: (r) => r.z1016a || 0, val: (r, lx = lga) => zoneShotValue(r.z1016m || 0, r.z1016a || 0, lx.zoneFG?.z1016) }),
+      zone("z16xp", "Deep Mid", "2p", { m: (r) => r.z16xpm || 0, a: (r) => r.z16xpa || 0, val: (r, lx = lga) => zoneShotValue(r.z16xpm || 0, r.z16xpa || 0, lx.zoneFG?.z16xp) }),
+      zone("tp",    "3PT",      "3p", { m: (r) => r.tpm || 0,    a: (r) => r.tpa || 0,    val: (r, lx = lga) => 3 * ((r.tpm / (r.tpa || 1)) - lx.la3P) * (r.tpa || 0) }),
+    ];
+    return catKey === "2-Pointers" ? all.filter((s) => s.group === "2p") : all;
+  // perGame/rateMode: each zone's `rate` closes over maLabel, so without them
+  // a selected distance kept the normalization it was built under.
+  }, [lga, catKey, showZones, perGame, rateMode]);
+  const SEGMENTS = useMemo(() => {
+    if (ZONES) {
+      if (catKey !== "Scoring" || !twoMerged) return ZONES;
+      // Merged: the four 2-point distances fold into one 2PT bar, valued
+      // against the league-wide 2P% — the same 2P value added the Eff total
+      // (and the 2-Pointers row) uses, defined for every season.
+      const m2 = (r) => Math.max(0, (r.fgm || 0) - (r.tpm || 0));
+      const a2 = (r) => Math.max(0, (r.fga || 0) - (r.tpa || 0));
+      const two = {
+        key: "two", sub: "2PT", group: "2p",
+        note: "2P% vs the league 2P%",
+        m: m2, a: a2,
+        head: (r) => (a2(r) > 0 ? `${((m2(r) / a2(r)) * 100).toFixed(0)}%` : null),
+        rate: (r) => maLabel(m2(r), a2(r), r),
+        val: (r, lx = lga) => { const a = a2(r); return a > 0 ? 2 * ((m2(r) / a) - lx.la2P) * a : 0; },
+      };
+      return [ZONES[0], two, ZONES[ZONES.length - 1]];
     }
     const grp = VA_GROUP_BY_KEY[catKey];
     if (!grp) return null;
@@ -486,25 +577,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // counting rate otherwise.
     const segs = (SEG_ORDER[catKey] || grp.cats).map((cat) => ({
       key: cat, sub: SEG_SUB[cat] || cat, cat,
-      note: CAT_SHOOTING[cat] ? "FG%" : `${rateMode === "perG" ? "per-game" : "per-36"} rate`,
+      note: CAT_SHOOTING[cat] ? "FG%" : rateKind === "total" ? "total" : `${rateKind === "perG" ? "per-game" : "per-36"} rate`,
       // A per-36 headline is not the reading a bare "BLK 3.7" invites, so the
       // chip's own label carries the unit in that mode. Per-game is the
       // default reading and FG% says what it is, so neither needs one.
-      headUnit: !CAT_SHOOTING[cat] && rateMode === "per36" ? "/36" : "",
+      headUnit: !CAT_SHOOTING[cat] && rateKind === "per36" ? "/36" : "",
       head: (r) => {
         if (CAT_SHOOTING[cat]) {
           const [m, a] = CAT_SHOOTING[cat](r);
           return a > 0 ? `${((m / a) * 100).toFixed(0)}%` : null;
         }
         const v = r[CAT_COUNTING[cat][0]] || 0;
-        // Per 36 is a normalization of its own, so it outranks the /G toggle:
-        // a raw season total is what "per game, off" means, and the card is
-        // being asked for a per-36 rate. Under Per G the /G toggle still picks
-        // between the per-game rate and the season total it sums to.
-        if (rateMode === "per36") return ((v / (r.mp || 1)) * 36).toFixed(1);
-        return perGame ? (v / (r.gp || 1)).toFixed(1) : String(v);
+        // Toggle off is the raw total in either rate mode; on, the rate the
+        // breakdown is set to (per 36 or per game).
+        if (!perGame) return String(v);
+        return rateMode === "per36" ? ((v / (r.mp || 1)) * 36).toFixed(1) : (v / (r.gp || 1)).toFixed(1);
       },
-      rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r) : catRateLabel(r, cat, rateMode)),
+      rate: (r) => (CAT_SHOOTING[cat] ? maLabel(...CAT_SHOOTING[cat](r), r) : catRateLabel(r, cat, rateKind)),
       val: (r, lx = lga) => catVATotal(r, lx, cat),
     }));
     // D Rating is the Defense group's fifth stat whenever VA+ is the active
@@ -513,7 +602,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // box-score estimate is baked), so it gates the all-time/trend pools.
     if (withDef) {
       segs.push({
-        key: "D Rating", sub: SEG_SUB["D Rating"], cat: "D Rating",
+        key: "D Rating", sub: SEG_SUB["D Rating"], cat: "D Rating", scaleFree: true,
         era: (s) => !!defs?.[s],
         eraNote: " with defensive ratings",
         note: "defensive rating",
@@ -529,7 +618,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       });
     }
     return segs;
-  }, [lga, catKey, showZones, perGame, rateMode, withDef, defs, defScope, seasonKey]);
+  }, [ZONES, twoMerged, lga, catKey, perGame, rateMode, withDef, defs, defScope, seasonKey]);
   // The two headline totals over the six shot-distance bars are readings in
   // their own right, so they select exactly like a bar does — the season
   // leaderboard, the all-time board and the by-season trend all re-rank on
@@ -551,7 +640,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     };
     return [
       {
-        key: "eff", sub: "Eff", note: "3P + 2P + FT value added", rate: ts,
+        key: "eff", sub: "Eff", note: "3P + 2P + FT value added", rate: ts, scaleFree: true,
         // One valueAddByCategory per row (the same call catVATotal makes),
         // three keys off it — the all-time pool runs to five figures.
         val: (r, lx = lga) => {
@@ -560,19 +649,49 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         },
       },
       {
-        key: "impact", sub: "Impact", note: "the six shot-distance values summed", rate: ts,
+        key: "impact", sub: "Impact", note: "the six shot-distance values summed", rate: ts, scaleFree: true,
         era: (s) => !!lgaForSeason(s)?.zoneFG,
         eraNote: " with shot-location data (1996-97 on)",
-        val: (r, lx = lga, s = seasonKey) => SEGMENTS.reduce((t, seg) => t + seg.val(r, lx, s), 0),
+        val: (r, lx = lga, s = seasonKey) => ZONES.reduce((t, seg) => t + seg.val(r, lx, s), 0),
+        // FT and 3PT over the row's G, the 2-point distances over theirs.
+        perG: (r, lx = lga, s = seasonKey) => ZONES.reduce((t, seg) => t + segPerGame(seg, r, lx, s), 0),
       },
     ];
-  }, [SEGMENTS, showZones, catKey, lga, seasonKey]);
+  }, [SEGMENTS, ZONES, showZones, catKey, lga, seasonKey]);
   // The component the card is currently filtered to (null unless a bar — or
   // one of the two totals — is tapped). Clears itself if the segment list no
   // longer holds the key (e.g. switching from Scoring to 2-Pointers with
   // FT/3PT selected).
+  // Shot-distribution readings. Tapping a disc in the Shot distribution row
+  // re-points the whole card at that distance's SHARE of the player's shots
+  // (FTA ÷ 2.2 counted as trips, the same denominators the discs use) in place
+  // of value added: the leaderboard, the all-time board and the by-season
+  // trend all rank on it. A share is already a rate, so the /G toggle leaves
+  // it alone, and a career's share is attempts-weighted (num/den summed), not
+  // its seasons' shares added up.
+  const SHARE_SEGMENTS = useMemo(() => {
+    if (!showZones || !SEGMENTS) return null;
+    const attOf = (seg, r) => shotTrips(seg, r);
+    const den = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
+    return SEGMENTS.map((seg) => {
+      const num = (r) => attOf(seg, r);
+      return {
+        key: `share:${seg.key}`, sub: `${seg.sub} dist.`, share: true, zone: seg.key,
+        note: `share of his shots from ${seg.key === "ft" ? "the line (FTA ÷ 2.2 as trips)" : seg.dist ? `${seg.sub} (${seg.dist})` : seg.sub}`,
+        era: seg.era, eraNote: seg.eraNote || "",
+        num, den,
+        // Qualify on total shot volume, not attempts at this one distance —
+        // a share ranking that only admits high-volume zone shooters would
+        // hide the low end of the scale.
+        a: den,
+        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r),
+        val: (r) => { const d = den(r); return d > 0 ? num(r) / d : 0; },
+      };
+    });
+  }, [showZones, SEGMENTS, rateMode, perGame]);
   const selSeg = (selectedSeg
-    && [...(SEGMENTS || []), ...(TOTAL_SEGMENTS || [])].find((s) => s.key === selectedSeg)) || null;
+    && [...(SEGMENTS || []), ...(TOTAL_SEGMENTS || []), ...(SHARE_SEGMENTS || [])].find((s) => s.key === selectedSeg)) || null;
+  const shareMode = !!selSeg?.share;
   // Seasons a filtered card can rank against — everything, unless the selected
   // component only exists for part of league history.
   const segEra = (season) => !selSeg?.era || selSeg.era(season);
@@ -623,8 +742,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   };
   // The metric every per-season view ranks and displays on, on the /G toggle.
   const metric = (r, lgaX, seasonOf = seasonKey) => {
+    if (perGame && !shareMode && (selSeg?.games || selSeg?.perG)) {
+      return segEra(seasonOf) ? segPerGame(selSeg, r, lgaX, seasonOf) : 0;
+    }
     const v = metricTotal(r, lgaX, seasonOf);
-    return perGame ? v / (r.gp || 1) : v;
+    return perGame && !shareMode ? v / (r.gp || 1) : v;
   };
   // Pools follow the Explore scope selector; say so in the fine print.
   const scopeNoun = context.scope === "regular" ? "regular-season"
@@ -703,11 +825,18 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         if (!(r.mp > 0) || !segEra(r.season)) continue;
         const k = comparePlayerKey(r);
         let c = careers.get(k);
-        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, attNeed: 0, m: 0, first: r.season, last: r.season }));
+        if (!c) careers.set(k, (c = { name: r.name, slug: r.slug || null, gp: 0, att: 0, attNeed: 0, m: 0, sn: 0, sd: 0, first: r.season, last: r.season }));
         c.gp += r.gp || 0;
+        // A 2-point distance ranks over the games its zones cover (see rowGames).
+        if (selSeg?.games) c.zoneGp = (c.zoneGp || 0) + selSeg.games(r);
         // A career's attempts floor is its seasons' floors summed.
         if (shotAtt) { c.att += shotAtt(r); c.attNeed += attFloorFor(r.season); }
-        c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
+        if (shareMode) { c.sn += selSeg.num(r); c.sd += selSeg.den(r); }
+        // Per game, each season's own per-game reading back over its G — the
+        // same total, except where a season's zones cover fewer games than it
+        // has played (one tonight's games have moved).
+        else if (perGame && !selSeg?.games) c.m += metric(r, lgaFor(r.season, poolScope), r.season) * (r.gp || 0);
+        else c.m += metricTotal(r, lgaFor(r.season, poolScope), r.season);
         if (r.season < c.first) c.first = r.season;
         // Carry the name as it was spelled in the latest season on record.
         if (r.season > c.last) { c.last = r.season; c.name = r.name; }
@@ -716,7 +845,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       careerFloor = shotAtt ? 0 : Math.min(CAREER_GP_FLOOR, selfCareer?.gp || CAREER_GP_FLOOR);
       const list = [...careers.values()]
         .filter((c) => c === selfCareer || (c.gp >= careerFloor && c.att >= c.attNeed))
-        .map((c) => ({ r: c, m: perGame ? c.m / (c.gp || 1) : c.m }))
+        .map((c) => ({ r: c, m: shareMode ? (c.sd > 0 ? c.sn / c.sd : 0) : perGame ? c.m / ((selSeg?.games ? c.zoneGp : c.gp) || 1) : c.m }))
         .sort((a, b) => b.m - a.m);
       boardN = list.length;
       const idx = selfCareer ? list.findIndex((x) => x.r === selfCareer) : -1;
@@ -771,6 +900,40 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
              floorA, partialSelf, careerFloor, attFloor, attLo, attHi, board, allN: boardN, allRank: boardRank, mine };
   }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg, seasonOnly]);
 
+  // Reference line for the by-season trend while the card reads a share of
+  // shots: the league's share from this distance, pooled over every attempt in
+  // every season the trend spans (shots, not players, are the unit — the same
+  // way a player's own share is built). `role` narrows it to the players the
+  // role model puts in the same group as this one, each season classified
+  // against its own league baseline; the player's own group is the one he
+  // logged the most minutes in across those seasons.
+  const shareRef = useMemo(() => {
+    if (!shareMode || d.mine.length === 0) return null;
+    const seasons = d.mine.map((x) => x.season);
+    const bases = new Map(seasons.map((s) => [s, seasonBaseline(poolsBySeason.get(s) || [])]));
+    const inSpan = new Set(seasons);
+    const role = playerRole((self.seasons || []).filter((s) => inSpan.has(s.season) && s.mp > 0), (s) => bases.get(s));
+    let n = 0, dn = 0, rn = 0, rd = 0;
+    for (const s of seasons) {
+      for (const r of poolsBySeason.get(s) || []) {
+        if (!(r.mp > 0) || !hasZoneData(r)) continue;
+        const num = selSeg.num(r), den = selSeg.den(r);
+        if (!(den > 0)) continue;
+        n += num; dn += den;
+        if (role && classifyRole(r, bases.get(s)) === role) { rn += num; rd += den; }
+      }
+    }
+    if (!(dn > 0)) return null;
+    return {
+      all: n / dn,
+      role: role && rd > 0 ? role : null,
+      roleV: rd > 0 ? rn / rd : null,
+      span: seasons.length > 1 ? `${seasonTag(seasons[0])}–${seasonTag(seasons[seasons.length - 1])}` : seasonTag(seasons[0]),
+    };
+  }, [shareMode, selSeg, d.mine, poolsBySeason, self]);
+  const refOnRole = refByRole && !!shareRef?.role;
+  const refV = shareRef ? (refOnRole ? shareRef.roleV : shareRef.all) : null;
+
   const segData = useMemo(() => {
     if (!SEGMENTS) return null;
     // Same season field and ≥1/3-GP floor as the ranking pool above.
@@ -778,7 +941,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
     const N = pool.length;
     return SEGMENTS.map((seg) => {
-      const per = (r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+      const per = (r) => (perGame ? segPerGame(seg, r, lga, seasonKey) : seg.val(r, lga, seasonKey));
       const vals = pool.map(per).sort((a, b) => a - b);
       const selfV = per(selfRow);
       const min = N ? vals[0] : 0, max = N ? vals[N - 1] : 0, med = N ? vals[Math.floor(N / 2)] : 0;
@@ -844,7 +1007,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     if (!segData || !axisKeys || segData.length < 2) return null;
     const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
     const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0);
-    const per = (seg, r) => { const v = seg.val(r, lga, seasonKey); return perGame ? v / (r.gp || 1) : v; };
+    const per = (seg, r) => (perGame ? segPerGame(seg, r, lga, seasonKey) : seg.val(r, lga, seasonKey));
     // A value per segment for every player, so the scatter, either collapsed
     // dot plot, and the disambiguation menu all read off one pass.
     const rows = pool
@@ -912,21 +1075,87 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     // Collapse a value that rounds to zero so a sliver-negative total doesn't
     // read as a red "-0.00" (same treatment the bars get).
     const zeroed = (v) => (Math.abs(v) < 0.005 ? 0 : v);
-    const impact = zeroed(segData.reduce((s, seg) => s + seg.selfV, 0));
-    if (!showZones) return { total: impact };
+    if (!showZones) return { total: zeroed(segData.reduce((s, seg) => s + seg.selfV, 0)) };
+    const scale = perGame ? (selfRow.gp || 1) : 1;
+    // Impact always sums the six distances, whether or not the 2-point bars
+    // are currently merged into one.
+    const impact = zeroed(ZONES.reduce((t, seg) => t + (perGame ? segPerGame(seg, selfRow, lga, seasonKey) : seg.val(selfRow, lga, seasonKey)), 0));
     const by = valueAddByCategory(selfRow, lga);
     const eff = (by["3-Pointers"] || 0) + (by["2-Pointers"] || 0) + (by["Free Throws"] || 0);
-    const scale = perGame ? (selfRow.gp || 1) : 1;
     return { efficiency: zeroed(eff / scale), impact };
-  }, [segData, catKey, showZones, selfRow, lga, perGame]);
+  }, [segData, ZONES, catKey, showZones, selfRow, lga, perGame, seasonKey]);
+
+  // Eff vs Impact scatter — what the six-bar Scoring card shows instead of its
+  // distance bars and shot distribution while one of the two headline totals is
+  // selected. The two are readings of the same scoring (box-score shooting
+  // value against the six distances summed), so plotted raw they fall along one
+  // tight diagonal and the cloud says little beyond "they agree". Instead the
+  // vertical is what Eff DOESN'T explain: a least-squares line predicting
+  // Impact from Eff across the season field, and each player's residual from
+  // it. Eff runs along the bottom; above the line, a player's shot-distance
+  // value beats what his box-score efficiency alone predicts, below it falls
+  // short. Every qualified player in the season with shot-location data in
+  // grey, the card's player in black — same season field, ≥1/3-GP floor and /G
+  // toggle as the other scatters.
+  const effScatter = useMemo(() => {
+    if (!TOTAL_SEGMENTS || !segTotals || segTotals.efficiency == null) return null;
+    if (selSeg?.key !== "eff" && selSeg?.key !== "impact") return null;
+    const [effSeg, impSeg] = TOTAL_SEGMENTS;
+    const floor = Math.max(1, Math.ceil((p.gp || 1) / 3));
+    const pool = (poolsBySeason.get(seasonKey) || []).filter((r) => (r.gp || 0) >= floor && r.mp > 0 && hasZoneData(r));
+    const per = (seg, r) => (perGame ? segPerGame(seg, r, lga, seasonKey) : seg.val(r, lga, seasonKey));
+    const others = pool
+      .filter((r) => !samePlayer(r, selfRow))
+      .map((r) => ({ row: r, eff: per(effSeg, r), imp: per(impSeg, r) }));
+    // Fit over the whole field, the card's player included.
+    const pts = [...others, { eff: segTotals.efficiency, imp: segTotals.impact }];
+    const n = pts.length;
+    const mx = pts.reduce((t, q) => t + q.eff, 0) / n;
+    const my = pts.reduce((t, q) => t + q.imp, 0) / n;
+    let sxy = 0, sxx = 0;
+    for (const q of pts) { sxy += (q.eff - mx) * (q.imp - my); sxx += (q.eff - mx) ** 2; }
+    const slope = sxx > 0 ? sxy / sxx : 0;
+    const icpt = my - slope * mx;
+    const resid = (q) => q.imp - (icpt + slope * q.eff);
+    // Eff on x (index 0), Impact's residual on y (index 1).
+    const rows = others.map((q) => ({ row: q.row, v: [q.eff, resid(q)] }));
+    const zeroed = (v) => (Math.abs(v) < 0.005 ? 0 : v);
+    const me = [segTotals.efficiency, zeroed(resid({ eff: segTotals.efficiency, imp: segTotals.impact }))];
+    const extent = (vals, mine) => {
+      const lo = Math.min(0, mine, ...vals), hi = Math.max(0, mine, ...vals);
+      const pad = (hi - lo) * 0.08 || 1;
+      return [lo - pad, hi + pad];
+    };
+    // The chips under the plot name the axes and carry the player's value on
+    // each — no rate headline (head left undefined, so the chip drops it).
+    const chips = [
+      { key: "eff", sub: "Eff", selfV: me[0] },
+      { key: "impact", sub: "Impact above Exp", selfV: me[1] },
+    ];
+    return {
+      chips, fit: { slope, icpt },
+      plot: {
+        rows, me, n: pool.length,
+        ranges: [0, 1].map((i) => extent(rows.map((q) => q.v[i]), me[i])),
+      },
+    };
+  }, [TOTAL_SEGMENTS, segTotals, selSeg, poolsBySeason, seasonKey, p.gp, selfRow, perGame, lga]);
 
   const short = CAT_SHORT[catKey] || catKey;
+  // Unit on the rate column's header: "/G" whenever its numbers are per-game
+  // rates, "/36" under Per 36, nothing over totals or a scale-free reading
+  // (TS%, a defensive rating).
+  // A rolled-up group (Scoring, Rebounding, …) stays bare too: its cells
+  // already carry the unit ("5.0 STK/G"), and "REBOUNDING/G" overruns the column.
+  const rateUnit = selSeg?.scaleFree || (!selSeg && VA_GROUP_BY_KEY[catKey]) ? "" : rateKind === "perG" ? "/G" : rateKind === "per36" ? "/36" : "";
   // While a bar in the split row is selected, every heading/column reads as
   // that component ("RIM", "AST") instead of the rolled-up category.
   const metricLabel = selSeg ? selSeg.sub.toUpperCase() : short;
   // Heading for the split row, naming what the card is divided by — the two
   // plotted axes on a scatter, the kind of split otherwise.
-  const segHeading = showZones
+  const segHeading = effScatter
+    ? "Scoring · Impact above Exp vs Eff"
+    : showZones
     ? (catKey === "2-Pointers" ? "2-Pointers · by distance" : "Scoring · by shot distance")
     : scatter ? (selIdx >= 0 ? `${catKey} · ${segData[selIdx].sub} spread` : `${catKey} · ${segData[yi].sub} vs ${segData[xi].sub}`)
     : `${catKey} · by stat`;
@@ -938,11 +1167,24 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // at that scale, and dropping it keeps the value column the width the season
   // rows set — which is why the rounding is the career board's alone: a season
   // total reads the same here as in the leaderboard above.
-  const boardSgn = (v) => (careerBoard && Math.abs(v) >= 1000 ? (v > 0 ? "+" : "") + Math.round(v) : sgn(v));
-  const mpg = (r) => ((r.mp || 0) / (r.gp || 1)).toFixed(1);
+  // The card's ranked figure: value added, or — on a shot-distribution
+  // reading — the share of shots itself.
+  const fmtM = (v) => (shareMode ? `${(v * 100).toFixed(1)}%` : sgn(v));
+  const boardSgn = (v) => (!shareMode && careerBoard && Math.abs(v) >= 1000 ? (v > 0 ? "+" : "") + Math.round(v) : fmtM(v));
+  // What the ranked figure is called in headers: "VA", or "Share".
+  const mUnit = shareMode ? "" : " VA";
+  // G and MPG beside the ranked figure. A 2-point distance is ranked over the
+  // games its zones cover — on a row tonight's games have moved, the last
+  // bake's, not the live "8+" — so its board says so; FT, 3PT and the merged
+  // 2PT are box-score readings and carry the live G.
+  const rowGames = (r) => (selSeg?.games ? (r.zoneGp ?? selSeg.games(r)) : r.gp);
+  const rowMinutes = (r) => (selSeg?.minutes ? (r.zoneMp ?? selSeg.minutes(r)) : r.mp);
+  const mpg = (r) => ((rowMinutes(r) || 0) / (rowGames(r) || 1)).toFixed(1);
 
   // Trend bars: one bar per season, diverging from a shared zero baseline.
-  const ms = d.mine.map((x) => x.m);
+  // Both reference values join the scale (not just the one showing), so
+  // flipping the legend moves the line without rescaling every bar.
+  const ms = [...d.mine.map((x) => x.m), ...(shareRef ? [shareRef.all, shareRef.roleV ?? 0] : [])];
   const tLo = Math.min(0, ...ms), tHi = Math.max(0, ...ms);
   const tSpan = (tHi - tLo) || 1;
   // Reserve a top band so a rank badge floats ABOVE its bar instead of being
@@ -999,12 +1241,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             were truncating mid-word on a phone; the initial still separates
             same-surname players. Full names stay in the aria-label below. */}
         <span className="truncate text-[10px] font-medium" title={r.name}>{compName(r.name)}</span>
-        <span className="text-right text-[9px]">{fmtG(r.gp)}</span>
+        <span className="text-right text-[9px]">{fmtG(rowGames(r))}</span>
         <span className="text-right text-[9px]">{mpg(r)}</span>
-        <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{sgn(m)}</span>
-        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateMode))}</span>
+        <span className={`text-right text-[10px] font-semibold ${!isSelf && m < 0 ? "text-red-600" : ""}`}>{fmtM(m)}</span>
+        <span className={`text-right text-[9px] ${isSelf ? "text-stone-200" : "text-stone-500"}`}>{twoLine(selSeg ? segRateLabel(r) : CAT_SHOOTING[catKey] ? maLabel(...CAT_SHOOTING[catKey](r), r) : catRateLabel(r, catKey, rateKind))}</span>
       </>
     );
+    // Armed by the Player header: every row, the card's own included, opens
+    // that player's career in Explore's By Player with this season drilled in.
+    if (nameArmed && goToPlayer) {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setNameArmed(false);
+            goToPlayer({ name: r.name, slug: r.slug || null, season: r.season || seasonKey, scope: context.scope });
+          }}
+          aria-label={`Open ${r.name} in By Player`}
+          className={`${rowGrid} w-full text-left rounded-sm cursor-pointer underline decoration-dotted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isSelf ? "bg-stone-800 text-white" : "text-stone-900 hover:bg-stone-100"}`}
+        >
+          {cells}
+        </button>
+      );
+    }
     // The player the card is currently about is marked, not a link to itself.
     if (isSelf) {
       return <div className={`${rowGrid} bg-stone-800 text-white rounded-sm`} aria-current="true">{cells}</div>;
@@ -1016,7 +1275,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
       <button
         type="button"
         onClick={() => setFocusRow(isOwner ? null : r)}
-        aria-label={`Show ${r.name}, ranked #${rank}, ${metricLabel} value added ${sgn(m)}`}
+        aria-label={`Show ${r.name}, ranked #${rank}, ${metricLabel}${shareMode ? "" : " value added"} ${fmtM(m)}`}
         className={`${rowGrid} w-full text-left text-stone-600 rounded-sm cursor-pointer hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
       >
         {cells}
@@ -1031,6 +1290,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const gToggle = (
     <PerGameToggle
       perGame={perGame}
+      unit={rateMode === "per36" ? "/36" : "/G"}
       onToggle={() => setPerGame((v) => !v)}
       title={perGame ? "Ranking and values shown per game — tap for season totals" : "Rank and show values per game instead of season totals"}
     />
@@ -1089,14 +1349,20 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           <span className="shrink-0 whitespace-nowrap text-stone-800 font-bold">#{d.rank}<span className="text-stone-400 font-normal"> of {d.N}</span></span>
         </div>
         <div className="grid grid-cols-[1.4rem_1fr_1.4rem_2rem_2.9rem_3.6rem] gap-x-1 px-1 pb-0.5 text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-          <span className="text-right">#</span><span>Player</span><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">VA</span><span className="text-right">{metricLabel}</span>
+          <span className="text-right">#</span><PlayerHeader armed={nameArmed} onArm={() => setNameArmed((v) => !v)} /><span className="text-right">G</span><span className="text-right">MPG</span><span className="text-right">{shareMode ? "Dist." : "VA"}</span><button
+            type="button"
+            onClick={() => setPerGame((v) => !v)}
+            aria-pressed={perGame}
+            title={perGame ? `Shown ${rateMode === "per36" ? "per 36" : "per game"} — tap for totals` : `Shown as totals — tap for ${rateMode === "per36" ? "per 36" : "per game"}`}
+            className="text-right uppercase tracking-wider whitespace-nowrap rounded-sm cursor-pointer hover:text-stone-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+          >{shareMode ? "Att" : metricLabel}{rateUnit}</button>
         </div>
         {d.win.map((x) => (
           <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}
-        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {perGame ? "per-game" : "total"} {metricLabel} VA among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateMode === "perG" ? "per-game" : "per-36"} rate`}) · tap a player for their card.</div>
+        <div className="text-[8px] italic text-stone-400 mt-0.5 px-1 leading-[1.3] min-h-[2.6em]">Ranked by {shareMode ? metricLabel : `${perGame ? "per-game" : "total"} ${metricLabel} VA`} among {d.attFloor ? `${d.N} qualified ${scopeNoun} players, attempts ≥ ${d.attFloor}` : `${scopeNoun} players with ≥${d.floor} G`} ({selSeg ? `${metricLabel} = ${selSeg.note}` : `${short} = ${rateKind === "total" ? "total" : `${rateKind === "perG" ? "per-game" : "per-36"} rate`}`}) · tap a player for their card.</div>
       </div>
 
       {/* View 2 — the split row. Every Basic group card fans its total out into
@@ -1126,10 +1392,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 // re-ranks the league on that reading. Same pressed styling
                 // the bars wear, so it's clear they're the same control.
                 <>
-                  {[
-                    { key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""} (the scoring rows' shooting value)` },
-                    { key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}` },
-                  ].map((t) => {
+                  {(twoMerged
+                    ? [{ key: "eff", label: "Eff", v: segTotals.efficiency, title: `Efficiency — 3-point + 2-point + free-throw value added${perGame ? " per game" : ""}, the three bars below summed (2-pointers against the league 2P%)` }]
+                    : [{ key: "impact", label: "Impact", v: segTotals.impact, title: `Relative impact — the six shot-distance values below, summed${perGame ? " (per game)" : ""}` }]
+                  ).map((t) => {
                     const isSel = selectedSeg === t.key;
                     return (
                       <button
@@ -1157,7 +1423,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
               )}
             </div>
           </div>
-          {scatter ? (
+          {effScatter ? (
+            <ScatterSplit
+              key={`${catKey}:effimpact:${self.slug || self.name}`}
+              scatter={effScatter.plot}
+              segData={effScatter.chips}
+              height={SCATTER_H}
+              xi={0}
+              yi={1}
+              selIdx={-1}
+              selectedSeg={selectedSeg}
+              onSelect={(k) => setSelectedSeg(selectedSeg === k ? null : k)}
+              onPickPlayer={(r) => setFocusRow(samePlayer(r, ownerRow) ? null : r)}
+              sgn={sgn}
+              name={self.name}
+              quadrants={["Difficult Shotmaking", "Taking and Making", "Shooting and Missing", "Efficient Shot Diet"]}
+            />
+          ) : scatter ? (
             <ScatterSplit
               key={`${catKey}:${selectedSeg || ""}:${self.slug || self.name}`}
               scatter={scatter}
@@ -1178,10 +1460,26 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           {/* Section headers spanning their bars: FT · 2-Pointers (×4) · 3PT.
               Only the six-bar Scoring card needs them — every other split is
               all one section, so its per-bar sub-labels are enough. */}
+          {/* The "2-Pointers" header is a toggle: four distances (each vs its
+              zone FG%, summing to Impact) ↔ one 2PT bar (vs the league 2P%,
+              summing to Eff). */}
           {showZones && catKey !== "2-Pointers" && (
-            <div className="grid grid-cols-6 gap-1 text-[7px] uppercase tracking-wider text-stone-400">
+            <div className={`grid ${twoMerged ? "grid-cols-3 mx-auto" : "grid-cols-6"} gap-1 text-[7px] uppercase tracking-wider text-stone-400`} style={twoMerged ? { maxWidth: "84%" } : undefined}>
               <div className="col-span-1 text-center">FT</div>
-              <div className="col-span-4 text-center border-x border-stone-200">2-Pointers</div>
+              <button
+                type="button"
+                onClick={() => {
+                  // A selected distance (or the total being swapped out)
+                  // doesn't survive the regroup — drop it.
+                  if (selectedSeg && !["ft", "tp", "share:ft", "share:tp"].includes(selectedSeg)) setSelectedSeg(null);
+                  setTwoMerged(!twoMerged);
+                }}
+                aria-pressed={twoMerged}
+                title={twoMerged
+                  ? "One 2-point bar against the league 2P% (bars sum to Eff) — tap to split it by distance (bars sum to Impact)"
+                  : "Four 2-point distances, each against its zone FG% (bars sum to Impact) — tap to merge them into one bar against the league 2P% (bars sum to Eff)"}
+                className={`${twoMerged ? "col-span-1" : "col-span-4"} text-center uppercase tracking-wider border-x border-stone-200 rounded-sm hover:bg-stone-100 hover:text-stone-700`}
+              >2-Pointers</button>
               <div className="col-span-1 text-center">3PT</div>
             </div>
           )}
@@ -1265,7 +1563,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
             // shooting chances they are rather than double-counting and-ones
             // and two-shot fouls.
-            const atts = segData.map((seg) => (seg.a(selfRow) || 0) / (seg.key === "ft" ? 2.2 : 1));
+            const atts = segData.map((seg) => shotTrips(seg, selfRow));
             const tot = atts.reduce((t, a) => t + a, 0);
             if (!(tot > 0)) return null;
             const peak = Math.max(...atts) / tot;
@@ -1274,13 +1572,23 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
                 <div
                   className="grid gap-1 items-center mt-1 mx-auto"
-                  style={{ gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))` }}
+                  style={{
+                    gridTemplateColumns: `repeat(${segData.length}, minmax(0, 1fr))`,
+                    maxWidth: segData.length < 4 ? `${segData.length * 28}%` : undefined,
+                  }}
                 >
                   {segData.map((seg, i) => {
                     const share = atts[i] / tot;
                     const rel = peak > 0 ? share / peak : 0;
                     return (
-                      <div key={seg.key} className="flex flex-col items-center min-w-0" title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%)`}>
+                      <button
+                        key={seg.key}
+                        type="button"
+                        onClick={() => setSelectedSeg(selectedSeg === `share:${seg.key}` ? null : `share:${seg.key}`)}
+                        aria-pressed={selectedSeg === `share:${seg.key}`}
+                        title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%) — tap to rank the card on this share of shots`}
+                        className={`flex flex-col items-center min-w-0 rounded pb-1 transition-colors ${selectedSeg === `share:${seg.key}` ? "bg-stone-200 ring-1 ring-stone-800" : "hover:bg-stone-100"}`}
+                      >
                         <div className="relative h-12 w-full flex items-center justify-center">
                           {share > 0 && (() => {
                             // Pie slice of the share, centred on straight up:
@@ -1305,7 +1613,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           })()}
                         </div>
                         <span className="text-[8px] tabular-nums text-stone-500 leading-none">{(share * 100).toFixed(0)}%</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -1314,7 +1622,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           })()}
           </>
           )}
-          {scatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
+          {effScatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3] truncate" title={`Impact above Exp = Impact minus the Impact a straight-line fit on Eff predicts across this field (Impact ≈ ${effScatter.fit.icpt.toFixed(2)} + ${effScatter.fit.slope.toFixed(2)} × Eff), ${perGame ? "per game" : "season totals"}`}>
+            {`${shortName(self.name)} in black · ↑ Impact beyond what his Eff predicts · tap a dot to open a player`}
+          </div>}
+          {scatter && !effScatter && <div className="text-[8px] italic text-stone-400 mt-1.5 px-1 leading-[1.3]">
             {`Every ${scopeNoun} player with ≥${d.floor} G this season in grey, ${shortName(self.name)} in black — tap a dot to open that player · ${selIdx >= 0 ? `each column is the count at that ${segData[selIdx].sub} value, mirrored` : "axes"} = ${perGame ? "per-game" : "total"} value added, line = the league baseline${teamRefLine ? `, dashed = the ${teamRefLine.team || "team"} defense he is held to at ${teamRefLine.drtg} DRTG${teamRefLine.weighted ? ` (their season line weighted for his ${teamRefLine.weighted} G)` : ""} (right of it he out-defends it)` : ""} · tap a stat to ${selIdx >= 0 ? "go back to the scatter" : "collapse the plot onto it and filter the card"}. Total = the ${segData.length} stats summed — the ${catKey} row above${segData.length > 2 ? ", including the D Rating chip (no axis of its own)" : ""}.`}
           </div>}
         </div>
@@ -1324,7 +1635,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           the top three plus the player's own neighbourhood of the ranking. */}
       {!seasonOnly && <div className="border-t border-stone-100 pt-2">
         <div className="flex items-baseline justify-between gap-1.5 mb-1">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel} VA</span>
+          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">All-time {metricLabel}{mUnit}</span>
           <div className="shrink-0 flex items-baseline gap-1.5">
             <button
               type="button"
@@ -1357,7 +1668,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         ))}
         <div className="text-[8px] italic text-stone-400 mt-0.5 px-1">
           {careerBoard
-            ? `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} careers, attempts ≥ each season’s most G, summed —` : `all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G),`} ${perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
+            ? `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} careers, attempts ≥ each season’s most G, summed —` : `all ${d.allN} indexed ${scopeNoun} careers (≥${d.careerFloor} G),`} ${shareMode ? "every season's attempts pooled" : perGame ? "value added per career game" : "every season summed"}${selSeg?.eraNote || ""}.`
             : `Across ${d.attFloor ? `${d.allN} qualified ${scopeNoun} player seasons, attempts ≥ ${d.attLo === d.attHi ? d.attLo : `${d.attLo}–${d.attHi}`}` : `all ${d.allN} indexed ${scopeNoun} seasons (≥${d.floorA} G)`}${d.partialSelf ? `, with ${shortName(self.name)}’s ${seasonKey} so far ranked against them` : ""}${selSeg?.eraNote || ""}.`}
         </div>
       </div>}
@@ -1368,8 +1679,29 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             by-season bars respond to it too. Extra bottom margin keeps a
             constant gap under the button so a full-height bar never crowds it. */}
         <div className="flex items-center justify-between mb-3">
-          <span className="uppercase tracking-wider text-[9px] text-stone-400">{metricLabel} VA by season</span>
-          {gToggle}
+          <span className="uppercase tracking-wider text-[9px] text-stone-400 min-w-0 truncate">{metricLabel}{mUnit} by season</span>
+          <span className="flex items-center gap-2 shrink-0">
+            {shareRef && (
+              // Legend for the dotted line, doubling as its switch: tap to
+              // narrow the average to the player's role group and back.
+              <button
+                type="button"
+                onClick={() => shareRef.role && setRefByRole((v) => !v)}
+                disabled={!shareRef.role}
+                aria-pressed={refOnRole}
+                title={shareRef.role
+                  ? (refOnRole
+                    ? `League ${metricLabel} among ${ROLE_LABEL[shareRef.role]}, ${shareRef.span} — tap for the whole league`
+                    : `League ${metricLabel}, ${shareRef.span} — tap for ${ROLE_LABEL[shareRef.role]} only`)
+                  : `League ${metricLabel}, ${shareRef.span}`}
+                className="inline-flex items-center gap-1 text-[9px] text-stone-500 tabular-nums whitespace-nowrap touch-manipulation enabled:hover:text-stone-800 disabled:cursor-default"
+              >
+                <span aria-hidden className="inline-block w-3 border-t-[1.5px] border-dotted border-stone-900" />
+                <span>lg. avg{refOnRole ? `: ${ROLE_LABEL[shareRef.role]}` : ""}</span>
+              </button>
+            )}
+            {gToggle}
+          </span>
         </div>
         {d.mine.length === 0 ? (
           <div className="text-[9px] italic text-stone-400 px-1">No seasons on record.</div>
@@ -1395,12 +1727,33 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 const frac = (i + 0.5) * Math.min(1 / d.mine.length, 0.1);
                 const anchor = frac < 0.2 ? "left-0" : frac > 0.8 ? "right-0" : "left-1/2 -translate-x-1/2";
                 return (
-                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${sgn(x.m)}${topRank ? ` · #${topRank} in league` : ""}${navigable ? " · tap to open" : ""}`}>
+                  <div key={x.season} className="flex-1 relative min-w-0" style={{ maxWidth: "10%" }} title={`${x.season}: ${fmtM(x.m)}${topRank ? ` · #${topRank} in league` : ""}${navigable ? " · tap to open" : ""}`}>
                     <div className="absolute inset-x-0 h-px bg-stone-200" style={{ top: `${zeroPct}%` }} />
                     <div
                       className="absolute inset-x-[12%]"
                       style={{ top: `${topPct}%`, height: `${Math.max(hPct, 1)}%`, backgroundColor: i === curIdx ? "#1c1917" : "#a8a29e" }}
                     />
+                    {refV != null && (
+                      // League-average reference, one segment per column (the
+                      // 2px gutters between columns read as more dots). Drawn
+                      // over the bar: black dots, except white where the line
+                      // crosses the current season's black bar itself (not
+                      // its side margins, nor the white above a shorter bar).
+                      (() => {
+                        const top = `${zeroPct - (Math.abs(refV) / tSpan) * 100 * plotScale}%`;
+                        const seg = (style, color) => (
+                          <div aria-hidden className="absolute border-t-[1.5px] border-dotted pointer-events-none" style={{ top, borderColor: color, ...style }} />
+                        );
+                        if (!(i === curIdx && refV <= x.m)) return seg({ left: -1, right: -1 }, "#1c1917");
+                        return (
+                          <>
+                            {seg({ left: -1, width: "calc(12% + 1px)" }, "#1c1917")}
+                            {seg({ left: "12%", right: "12%" }, "#ffffff")}
+                            {seg({ right: -1, width: "calc(12% + 1px)" }, "#1c1917")}
+                          </>
+                        );
+                      })()
+                    )}
                     {topRank && (
                       // Auto-width chip centered over the bar, floating in the
                       // reserved headroom just above the bar's top — no full-
@@ -1419,7 +1772,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                       <button
                         type="button"
                         onClick={() => seasonGo.arm(x.season)}
-                        aria-label={`${self.name} ${x.season}, ${metricLabel} value added ${sgn(x.m)} — tap to confirm opening it`}
+                        aria-label={`${self.name} ${x.season}, ${metricLabel}${shareMode ? "" : " value added"} ${fmtM(x.m)} — tap to confirm opening it`}
                         aria-expanded={isArmed}
                         className={`absolute inset-0 rounded-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 ${isArmed ? "bg-stone-900/10" : "hover:bg-stone-900/5"}`}
                       />
@@ -1441,7 +1794,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                           {x.team && (
                             <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(x.team) }}>{x.team}</span>
                           )}
-                          <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(x.m)}</span>
+                          <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtM(x.m)}</span>
                           <button
                             ref={seasonGo.goRef}
                             type="button"

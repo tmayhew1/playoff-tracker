@@ -656,6 +656,15 @@ export function zoneShotValue(fgm, fga, leagueFgPct) {
   return 2 * ((fgm / (fga || 1)) - (leagueFgPct || 0)) * fga;
 }
 
+// The games and minutes a row's zones cover. A row tonight's games have
+// moved (lib/live-lines.js) took on ESPN's box score, which has no shot
+// locations, so its zones are still basketball-reference's as of the last
+// bake: the lines record what the row stood at then (`zoneGp`/`zoneMp`), and
+// a zone's per-game or per-36 reading divides by that, not by a G that has
+// grown since. Every other row's zones cover its own G and minutes.
+export const zoneGames = (r) => r?.zoneGp ?? r?.gp ?? 0;
+export const zoneMinutes = (r) => r?.zoneMp ?? r?.mp ?? 0;
+
 // True when a row carries any shot-distance zone data for its season/scope.
 export function hasZoneData(r) {
   return ZONES.some((z) => (r?.[z.aKey] || 0) > 0);
@@ -668,7 +677,7 @@ export function hasZoneData(r) {
 // profile (same precedent as defVAInfo() returning null for VA+).
 export function zoneVAVec(r, lga) {
   if (!lga?.zoneFG || !hasZoneData(r)) return null;
-  const gp = r.gp || 1;
+  const gp = zoneGames(r) || 1;
   return ZONES.map((z) => zoneShotValue(r[z.mKey] || 0, r[z.aKey] || 0, lga.zoneFG[z.key]) / gp);
 }
 

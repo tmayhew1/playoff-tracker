@@ -34,6 +34,16 @@ export function gameFraction(g) {
   return Math.max(0, Math.min(1, played / total));
 }
 
+// Before a row takes on its first line: the games and minutes its zones
+// cover. ESPN's box score has no shot locations, so the zones stay at
+// basketball-reference's last bake while G and minutes move, and they read
+// against what the row stood at then (scoring.js::zoneGames / zoneMinutes).
+function holdZones(row, gp) {
+  if (row.zoneGp != null) return;
+  row.zoneGp = gp || 0;
+  row.zoneMp = row.mp || 0;
+}
+
 // Each player's line in the live games, as { name, tri, gameId, date, frac,
 // live, ...TOTAL_KEYS }. `games` carry the slate fields (gameStatus, period,
 // gameClock) and `box` ({ home, away } with players, as parseBox reads one).
@@ -73,6 +83,7 @@ export function addLiveLines(players, lines) {
       by.set(k, r);
     }
     r.team = l.tri;
+    holdZones(r, r.g);
     r.g = Math.round(((r.g || 0) + l.frac) * 1000) / 1000;
     for (const key of TOTAL_KEYS) r[key] = (r[key] || 0) + (l[key] || 0);
     if (l.live) r.live = { gameId: l.gameId, date: l.date, frac: l.frac };
@@ -87,7 +98,8 @@ export function addLiveLines(players, lines) {
 // G by each game's share, and `vaOf(row)` re-prices it. A player without one
 // yet (his first game of the season) gets one, and a debut joins as a new
 // player. Rows only basketball-reference fills (the shot-distance zones)
-// stay at its last bake until it catches up.
+// stay at its last bake until it catches up, read against the games and
+// minutes that bake covered (`zoneGp`/`zoneMp`, see holdZones).
 export function addLiveLinesToIndex(indexPlayers, season, lines, vaOf) {
   if (!lines?.length || !Array.isArray(indexPlayers)) return indexPlayers;
   const out = indexPlayers.slice();
@@ -118,6 +130,7 @@ export function addLiveLinesToIndex(indexPlayers, season, lines, vaOf) {
     moved.add(i);
     const row = out[i].seasons.find(isNow);
     row.team = l.tri;
+    holdZones(row, row.gp);
     row.gp = Math.round(((row.gp || 0) + l.frac) * 1000) / 1000;
     for (const key of TOTAL_KEYS) row[key] = (row[key] || 0) + (l[key] || 0);
   }

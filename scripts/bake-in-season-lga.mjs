@@ -11,7 +11,12 @@
 // It also marks the season in progress on app/data/def-ratings.json
 // (`inProgress`), which regresses its D Ratings toward the line by the games
 // played so far (lib/defense-math.js, DEF_SEASON_GAMES), and clears the mark
-// once the season is complete or basketball-reference's table is baked.
+// once the season is complete or basketball-reference's table is baked. While
+// it's marked, the season's `team` map (each team's actual defensive rating so
+// far and its stock rates, lib/season-to-date.js teamDefense) is written here
+// too: the R pipeline builds that map from the regular-season bake, which a
+// season in progress doesn't have, and without it D Rating falls back to
+// measuring everyone against the league line.
 //
 // No network. Run in the daily workflow after the regular-season games bake:
 //
@@ -20,7 +25,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals } from "../app/lib/season-to-date.js";
+import { gamesWithBoxes, inSeasonLga, inSeasonUsageModel, playerTotals, teamDefense } from "../app/lib/season-to-date.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LGA_PATH = path.join(ROOT, "app", "data", "league-averages.json");
@@ -46,6 +51,7 @@ const lgas = read(LGA_PATH);
 const usage = read(USAGE_PATH);
 const defs = fs.existsSync(DEF_PATH) ? read(DEF_PATH) : null;
 const inProgress = new Set();
+const teamMaps = {};
 let changed = 0, usageChanged = 0;
 for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)).sort()) {
   const dir = path.join(GAMES, season);
@@ -55,7 +61,9 @@ for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)
   if (index.complete) continue;
   if (!fs.existsSync(path.join(ROOT, "app", "data", `regular-season-${season}.json`))) inProgress.add(season);
   const months = fs.readdirSync(dir).filter((f) => /^\d{4}-\d{2}\.json$/.test(f)).map((f) => read(path.join(dir, f)));
-  const rows = playerTotals(gamesWithBoxes(index, months));
+  const games = gamesWithBoxes(index, months);
+  const rows = playerTotals(games);
+  if (inProgress.has(season)) teamMaps[season] = teamDefense(games);
   const prior = lgas[prevSeason(season)];
   if (!rows.length || !prior) continue;
   // The season's own shot-distance split, once fetch_shooting_splits.R has
@@ -74,6 +82,20 @@ for (const season of fs.readdirSync(GAMES).filter((d) => /^\d{4}-\d{2}$/.test(d)
 let defsChanged = 0;
 for (const [season, entry] of Object.entries(defs || {})) {
   const want = inProgress.has(season);
+  // The season in progress's team context — its actual team defensive
+  // ratings so far, and stock rates — so D Rating measures each player against
+  // his own team's line, as a finished season does, instead of the league's.
+  // Rounded so a day's re-run rewrites nothing that didn't move.
+  const tm = want ? teamMaps[season] : null;
+  if (tm && Object.keys(tm).length) {
+    const r = (x, d) => Math.round(x * 10 ** d) / 10 ** d;
+    const next = Object.fromEntries(Object.entries(tm).map(([k, v]) => [k, { drtg: r(v.drtg, 2), stlpm: r(v.stlpm, 5), blkpm: r(v.blkpm, 5), g: v.g }]));
+    if (JSON.stringify(entry.team) !== JSON.stringify(next)) {
+      entry.team = next;
+      console.log(`${season}: team defensive context for ${Object.keys(next).length} teams`);
+      defsChanged++;
+    }
+  }
   if (!!entry.inProgress === want) continue;
   if (want) entry.inProgress = true; else delete entry.inProgress;
   console.log(`${season}: D Ratings ${want ? "marked" : "no longer marked"} in progress`);
@@ -82,4 +104,4 @@ for (const [season, entry] of Object.entries(defs || {})) {
 if (changed && !check) fs.writeFileSync(LGA_PATH, JSON.stringify(lgas, null, 2) + "\n");
 if (usageChanged && !check) fs.writeFileSync(USAGE_PATH, JSON.stringify(usage, null, 2) + "\n");
 if (defsChanged && !check) fs.writeFileSync(DEF_PATH, JSON.stringify(defs, null, 2) + "\n");
-console.log(`${check ? "would update" : "updated"} ${changed} season baseline(s), ${usageChanged} usage model(s), ${defsChanged} in-progress mark(s)`);
+console.log(`${check ? "would update" : "updated"} ${changed} season baseline(s), ${usageChanged} usage model(s), ${defsChanged} in-progress def-ratings update(s)`);
