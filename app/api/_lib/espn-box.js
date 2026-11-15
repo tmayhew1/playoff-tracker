@@ -109,16 +109,17 @@ export async function fetchEspn(url, timeoutMs = 8000) {
 // server-side historical requests, so use ESPN. The gameId here is an ESPN
 // event id (supplied by /api/history). The site API summary covers most
 // games; some older events return empty player blocks and need the CDN
-// core (gamepackageJSON) instead.
-export async function fetchEspnBox(eventId) {
+// core (gamepackageJSON) instead. `get` is the fetch: the server's by
+// default, the browser's own when a banner falls back to asking ESPN itself.
+export async function fetchEspnBox(eventId, get = fetchEspn) {
   let parsed = null;
   try {
-    const summary = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`);
+    const summary = await get(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`);
     parsed = parseBox(summary);
   } catch {}
   if (!boxHasMinutes(parsed)) {
     try {
-      const core = await fetchEspn(`https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`);
+      const core = await get(`https://cdn.espn.com/core/nba/boxscore?xhr=1&gameId=${eventId}`);
       const box = core?.gamepackageJSON?.boxscore || core?.boxscore || null;
       const fromCore = box ? parseBox({ boxscore: box }) : null;
       if (fromCore && (!parsed || boxHasMinutes(fromCore))) parsed = fromCore;

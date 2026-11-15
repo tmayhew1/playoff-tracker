@@ -8,6 +8,8 @@ import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../l
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
+import { fetchEspnBox } from "../api/_lib/espn-box";
+import { browserJson } from "../lib/browser-espn";
 
 
 // A shooting category's columns in the box: its makes and attempts off a
@@ -274,11 +276,18 @@ export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBo
       const dq = liveGame.gameCode ? `&date=${liveGame.gameCode}` : "";
       const sq = boxSrc ? `&src=${boxSrc}` : "";
       const lq = liveGame.gameStatus === 2 ? "&live=1" : "";
-      const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}${sq}${lq}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setBox(data);
+      try {
+        const res = await fetch(`/api/boxscore?gameId=${liveGame.gameId}${dq}${sq}${lq}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        setBox(data);
+      } catch (e) {
+        // An ESPN game the server couldn't read (its IP refused): ask ESPN
+        // from here before giving up.
+        if (boxSrc !== "espn") throw e;
+        setBox(await fetchEspnBox(liveGame.gameId, (url) => browserJson(url)).catch(() => { throw e; }));
+      }
     } catch (e) {
       setError(e.message || "Load failed");
     } finally {

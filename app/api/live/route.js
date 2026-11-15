@@ -1,5 +1,4 @@
-import { LEAGUE_AVERAGES } from "../../scoring";
-import { addDays, mergeSlates, parseEspnScoreboard, parseNbaScoreboard, seasonOf, sortSlate, upNextNeeds } from "../_lib/live-games";
+import { liveSlate } from "../_lib/live-games";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -12,6 +11,9 @@ export const maxDuration = 15;
 // When nothing's on and the day's slate is done (or not started), `mode` is
 // "upnext" and `next` / `prev` hold the next slate to come and the last one
 // played, the one the feed didn't have read from ESPN a day at a time.
+//
+// Both feeds refusing at once is a 502 with the reasons in `errors`; the Live
+// tab then asks ESPN itself, from the browser (liveSlate again).
 //
 // `baselineSeason` is the season whose league averages the page scores these
 // games against: the slate's own, or on the first nights of a season, before
@@ -37,66 +39,13 @@ async function fetchJson(url, headers, timeoutMs) {
   }
 }
 
-const prevSeason = (s) => {
-  const y = Number(s.slice(0, 4)) - 1;
-  return `${y}-${String((y + 1) % 100).padStart(2, "0")}`;
-};
-// How far either way to look for a slate: past the All-Star break.
-const LOOK_DAYS = 7;
-
-// The first slate with games, stepping a day at a time from `day`. ESPN takes
-// one date per request (a range 400s over a regular season), so the week goes
-// out at once and the nearest day with games wins.
-async function nearestSlate(day, step) {
-  const days = Array.from({ length: LOOK_DAYS }, (_, i) => addDays(day, step * (i + 1)));
-  const slates = await Promise.all(days.map((d) =>
-    fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${d.replaceAll("-", "")}`, ESPN_HEADERS, 4500)
-      .then(parseEspnScoreboard)
-      .then((s) => (s?.games.length ? { date: d, games: sortSlate(s.games) } : null))
-      .catch(() => null)));
-  return slates.find(Boolean) || null;
-}
-
-const todayEt = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
-
 export async function GET() {
-  const errors = [];
-  const [nba, espn] = await Promise.all([
-    fetchJson("https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json", NBA_HEADERS, 4500)
-      .then(parseNbaScoreboard)
-      .catch((e) => { errors.push(`nba: ${e.message}`); return null; }),
-    fetchJson("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard", ESPN_HEADERS, 4500)
-      .then(parseEspnScoreboard)
-      .catch((e) => { errors.push(`espn: ${e.message}`); return null; }),
-  ]);
-
-  const { date, games, source } = mergeSlates(nba, espn);
-  // One feed failing is routine; only report when there's nothing to show.
-  const failed = !source;
-  const day = date || todayEt();
-  const season = seasonOf(day);
-  const baselineSeason = LEAGUE_AVERAGES[season] ? season : prevSeason(season);
-
-  const needs = failed ? null : upNextNeeds(games);
-  let next = null, prev = null;
-  if (needs) {
-    const own = games.length ? { date: day, games } : null;
-    [next, prev] = await Promise.all([
-      needs.next ? nearestSlate(day, 1) : own,
-      needs.prev ? nearestSlate(day, -1) : own,
-    ]);
-  }
-
-  return new Response(JSON.stringify({
-    date: day, season, baselineSeason, games, source,
-    mode: needs ? "upnext" : "live", next, prev,
-    errors: failed ? errors : [],
-    fetchedAt: new Date().toISOString(),
-  }), {
+  const { failed, ...body } = await liveSlate((url, feed) => fetchJson(url, feed === "nba" ? NBA_HEADERS : ESPN_HEADERS, 4500));
+  return new Response(JSON.stringify(body), {
     status: failed ? 502 : 200,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": failed ? "no-store" : needs ? "public, s-maxage=60, stale-while-revalidate=120" : "public, s-maxage=15, stale-while-revalidate=30",
+      "Cache-Control": failed ? "no-store" : body.mode === "upnext" ? "public, s-maxage=60, stale-while-revalidate=120" : "public, s-maxage=15, stale-while-revalidate=30",
     },
   });
 }

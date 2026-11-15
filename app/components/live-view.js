@@ -11,6 +11,8 @@ import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 import { useSeasonContext } from "../lib/use-season-context";
 import { etDate, seasonOf } from "../lib/regular-season-games";
 import { availability } from "../lib/injuries";
+import { liveSlate } from "../api/_lib/live-games";
+import { browserJson } from "../lib/browser-espn";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -530,9 +532,15 @@ export function LiveView({ onData, focus, onFocusHandled }) {
     setSyncing(true);
     setSyncError(null);
     try {
-      const res = await fetch("/api/live", { cache: "no-store" });
-      const d = await res.json().catch(() => null);
-      if (!res.ok || !d) throw new Error(d?.errors?.join("; ") || `Live feed ${res.status}`);
+      const res = await fetch("/api/live", { cache: "no-store" }).catch(() => null);
+      let d = res ? await res.json().catch(() => null) : null;
+      if (!res?.ok || !d) {
+        // The server got nothing (both feeds can refuse its IP): ask ESPN
+        // from here, and only report the server's reasons if that fails too.
+        const own = await liveSlate((url) => browserJson(url), { nba: false });
+        if (own.failed) throw new Error(d?.errors?.join("; ") || `Live feed ${res?.status ?? "unreachable"}`);
+        d = own;
+      }
       setData(d);
       setSyncedAt(new Date(d.fetchedAt || Date.now()));
     } catch (e) {

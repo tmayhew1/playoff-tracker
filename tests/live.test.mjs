@@ -5,7 +5,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addDays, isoClock, mergeSlates, parseEspnScoreboard, parseNbaScoreboard, seasonOf, upNextNeeds } from "../app/api/_lib/live-games.js";
+import { addDays, isoClock, liveSlate, mergeSlates, parseEspnScoreboard, parseNbaScoreboard, seasonOf, upNextNeeds } from "../app/api/_lib/live-games.js";
 
 const nbaGame = (gameId, status, away, home, extra = {}) => ({
   gameId, gameCode: `20261021/${away}${home}`, gameStatus: status, gameStatusText: extra.text || "",
@@ -125,4 +125,22 @@ test("days step across months and years", () => {
   assert.equal(addDays("2026-10-31", 1), "2026-11-01");
   assert.equal(addDays("2027-01-01", -1), "2026-12-31");
   assert.equal(addDays("2026-10-21", -7), "2026-10-14");
+});
+
+// liveSlate over a stubbed fetch: what /api/live answers, and what the Live
+// tab builds itself, ESPN only, when the server got a 403 from both feeds.
+test("both feeds refusing is a failure with the reasons; the browser's ESPN-only run isn't", async () => {
+  const refuse = async () => { throw new Error("403"); };
+  const down = await liveSlate(refuse);
+  assert.equal(down.failed, true);
+  assert.deepEqual(down.errors.sort(), ["espn: 403", "nba: 403"]);
+
+  const asked = [];
+  const own = await liveSlate(async (url, feed) => { asked.push(feed); return ESPN; }, { nba: false });
+  assert.equal(own.failed, false);
+  assert.equal(own.source, "espn");
+  assert.equal(own.mode, "live");
+  assert.equal(own.games[0].gameStatus, 2);
+  assert.deepEqual(own.errors, []);
+  assert.ok(asked.every((f) => f === "espn"), "the NBA CDN isn't asked from a browser");
 });

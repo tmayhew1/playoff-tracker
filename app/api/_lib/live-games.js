@@ -8,6 +8,8 @@
 // ("PT05M21.00S"), and `boxSrc: "espn"` on games whose id is an ESPN event id,
 // so the box score request skips the NBA CDN.
 
+import { LEAGUE_AVERAGES } from "../../scoring";
+
 const ESPN_TO_NBA = { GS: "GSW", NJ: "NJN", NO: "NOP", NY: "NYK", SA: "SAS", UTAH: "UTA", WSH: "WAS" };
 const toNba = (a) => ESPN_TO_NBA[a] || a;
 
@@ -145,4 +147,69 @@ export function upNextNeeds(games) {
   if (games.every((g) => g.gameStatus === 3)) return { next: true, prev: false };
   if (games.every((g) => g.gameStatus === 1)) return { next: false, prev: true };
   return null;
+}
+
+const NBA_SCOREBOARD = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json";
+const ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
+
+const prevSeason = (s) => {
+  const y = Number(s.slice(0, 4)) - 1;
+  return `${y}-${String((y + 1) % 100).padStart(2, "0")}`;
+};
+// How far either way to look for a slate: past the All-Star break.
+const LOOK_DAYS = 7;
+const todayEt = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+
+// The first slate with games, stepping a day at a time from `day`. ESPN takes
+// one date per request (a range 400s over a regular season), so the week goes
+// out at once and the nearest day with games wins.
+async function nearestSlate(get, day, step) {
+  const days = Array.from({ length: LOOK_DAYS }, (_, i) => addDays(day, step * (i + 1)));
+  const slates = await Promise.all(days.map((d) =>
+    get(`${ESPN_SCOREBOARD}?dates=${d.replaceAll("-", "")}`, "espn")
+      .then(parseEspnScoreboard)
+      .then((s) => (s?.games.length ? { date: d, games: sortSlate(s.games) } : null))
+      .catch(() => null)));
+  return slates.find(Boolean) || null;
+}
+
+// What /api/live answers, built over `get(url, feed)` (feed "nba" or "espn",
+// resolving to the parsed JSON). The route runs it with its server fetch; the
+// Live tab runs it again from the browser, ESPN only (`nba: false`, the NBA
+// CDN sends no CORS headers), when the route comes back empty-handed: both
+// feeds can 403 a datacenter IP on the same night, and neither does that to a
+// phone. `failed` is true when neither feed answered; `errors` then says why.
+export async function liveSlate(get, { nba: askNba = true } = {}) {
+  const errors = [];
+  const [nba, espn] = await Promise.all([
+    askNba
+      ? get(NBA_SCOREBOARD, "nba").then(parseNbaScoreboard).catch((e) => { errors.push(`nba: ${e.message}`); return null; })
+      : null,
+    get(ESPN_SCOREBOARD, "espn").then(parseEspnScoreboard).catch((e) => { errors.push(`espn: ${e.message}`); return null; }),
+  ]);
+
+  const { date, games, source } = mergeSlates(nba, espn);
+  // One feed failing is routine; only report when there's nothing to show.
+  const failed = !source;
+  const day = date || todayEt();
+  const season = seasonOf(day);
+  const baselineSeason = LEAGUE_AVERAGES[season] ? season : prevSeason(season);
+
+  const needs = failed ? null : upNextNeeds(games);
+  let next = null, prev = null;
+  if (needs) {
+    const own = games.length ? { date: day, games } : null;
+    [next, prev] = await Promise.all([
+      needs.next ? nearestSlate(get, day, 1) : own,
+      needs.prev ? nearestSlate(get, day, -1) : own,
+    ]);
+  }
+
+  return {
+    date: day, season, baselineSeason, games, source,
+    mode: needs ? "upnext" : "live", next, prev,
+    errors: failed ? errors : [],
+    failed,
+    fetchedAt: new Date().toISOString(),
+  };
 }
