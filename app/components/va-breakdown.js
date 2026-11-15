@@ -9,6 +9,7 @@ import { ComparePicker } from "./compare-picker";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { comparePalette, normalizeName, seasonTag, shortName, teamColor } from "../lib/format";
+import { PinnedRow } from "../lib/pin-stack";
 import { aggregateSnapshots } from "../lib/players";
 import { GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, VA_PARTITIONS_AFTER, catVATotal, groupOfCat } from "../lib/va";
 import { useLgaFor, usgAdjRows } from "../lib/va-mode";
@@ -638,7 +639,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
           const signed = (v, d) => (v > 0 ? "+" : "") + v.toFixed(d);
           return (
             <React.Fragment key={i}>
-              <div
+              <PinnedRow layer={2} active={!!(context && atSeasonLevel && isCatSel && sectionEnd)} row={(echo) => <div
                 className={`flex items-center gap-2 text-[10px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${isCatSel ? "bg-stone-200" : ""}`}
                 data-va-group={group}
                 onClick={onCatTap}
@@ -683,16 +684,17 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                     <span className={`portrait:hidden w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value, 1)}</span>
                     <span className="portrait:hidden text-stone-300 select-none">|</span>
                     {/* Per-game VA contribution stays visible in portrait too. */}
-                    <span className={`w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value / p.gp, 2)}</span>
+                    <span className={`w-12 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"} ${echo?.va === signed(c.value / p.gp, 2) ? "invisible" : ""}`}>{signed(c.value / p.gp, 2)}</span>
                   </>
                 ) : (
-                  <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(c.value, 2)}</span>
+                  <span className={`w-10 tabular-nums text-right font-semibold ${c.value < 0 ? "text-red-600" : "text-stone-700"} ${echo?.va === signed(c.value, 2) ? "invisible" : ""}`}>{signed(c.value, 2)}</span>
                 )}
-                <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums`}>{c.label}</span>
-              </div>
+                <span className={`${labelW} text-[9px] text-stone-500 text-right tabular-nums ${echo?.rate != null && echo.rate === String(c.label) ? "invisible" : ""}`}>{c.label}</span>
+              </div>}>
               {context && atSeasonLevel && isCatSel && sectionEnd && (
                 <CategoryContext p={pSeries} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
+              </PinnedRow>
               {seasonWant && seasonCat === group && seasonEnd && (
                 <SeasonSoFarContext soFar={soFar} catKey={group} scope={seasonWant.scope} defs={defs} defActive={dVA != null} defScope={defScope} />
               )}
@@ -910,7 +912,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
         const onCatTap = context && (!c.noDrill || viewMode === "detail") ? () => setOpenCat(catOpen ? null : tapKey) : undefined;
         return (
           <React.Fragment key={c.key}>
-            <div
+            <PinnedRow layer={2} active={!!(catOpen && sectionEnd)} row={(echo) => <div
               className={`flex items-center gap-2 text-[10px] py-[1px] -mx-1 px-1 ${onCatTap ? "cursor-pointer" : ""} ${catOpen ? "bg-stone-200" : ""}`}
               onClick={onCatTap}
               role={onCatTap ? "button" : undefined}
@@ -923,10 +925,14 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
                 <div className="absolute inset-y-0 left-1/2 w-px bg-stone-300" />
                 <div className="absolute inset-y-0.5" style={{ backgroundColor: isPos ? "#1c1917" : "#a8a29e", left: isPos ? "50%" : `${50 - pct}%`, width: `${pct}%` }} />
               </div>
-              <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"}`}>{signed(perG, 2)}</span>
-              <span className="w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums">{c.label}</span>
-            </div>
+              {/* Pinned over the context card's own rank row, a figure that
+                  row already prints is blanked (space kept, so the bar
+                  doesn't move). */}
+              <span className={`w-9 shrink-0 tabular-nums text-right font-semibold ${perG < 0 ? "text-red-600" : "text-stone-700"} ${echo?.va === signed(perG, 2) ? "invisible" : ""}`}>{signed(perG, 2)}</span>
+              <span className={`w-[5.5rem] shrink-0 text-[9px] text-stone-500 text-right tabular-nums ${echo?.rate != null && echo.rate === String(c.label) ? "invisible" : ""}`}>{c.label}</span>
+            </div>}>
             {catOpen && sectionEnd && <CategoryContext p={p} catKey={tapKey} lga={lga} rateMode={rateMode} context={context} defs={defs} defActive={dVA != null} defScope="rs" />}
+            </PinnedRow>
             {viewMode === "detail" && VA_PARTITIONS_AFTER.has(c.key) && <div className="my-1 border-t border-stone-200" />}
           </React.Fragment>
         );

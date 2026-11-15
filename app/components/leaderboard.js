@@ -9,6 +9,7 @@ import { fetchBakedJson } from "../lib/fetch-cache";
 import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
+import { PinnedRow, repin } from "../lib/pin-stack";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { addLiveLines, addLiveLinesToIndex } from "../lib/live-lines";
 import { useLiveLines } from "../lib/live-feed";
@@ -142,6 +143,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
       if (raf) cancelAnimationFrame(raf);
     };
   }, [cardMounted]);
+  // The pinned rows below stack under this header, so tell them when it
+  // comes and goes.
+  useEffect(() => { repin(); }, [fixedBar]);
   const defs = useDefRatings();
   const defScope = scope === "playoffs" ? "po" : "rs";
   useEffect(() => {
@@ -721,7 +725,9 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             {/* Bar wraps just the click row, not the expanded breakdown —
                 otherwise the team-color tint bleeds through behind the
                 whole VABreakdown panel. */}
-            <div className="relative overflow-hidden">
+            {/* Open, the row pins under the header for as long as its
+                breakdown is on screen (lib/pin-stack.js). */}
+            <PinnedRow layer={1} active={isOpen} row={<div className="relative overflow-hidden">
               <div
                 className="absolute inset-y-0 left-0 pointer-events-none"
                 style={{ width: `${barPct}%`, backgroundColor: barColor }}
@@ -858,7 +864,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   aria-hidden
                 />
               )}
-            </div>
+            </div>}>
             {isOpen && <CompareSlotProvider value={setRowVs}>{scope === "playoffs" ? (
               <VABreakdown
                 p={p}
@@ -899,6 +905,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 onCompareHandled={clearNavCompare}
               />
             )}</CompareSlotProvider>}
+            </PinnedRow>
           </div>
         );
       });
@@ -922,6 +929,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         while scrolled into the leaderboard, aligned to the card's width. */}
     {fixedBar && (
       <div
+        data-pinned-header
         className="fixed top-0 z-30 bg-white border-x border-b border-stone-300 shadow-sm"
         style={{ left: fixedBar.left, width: fixedBar.width }}
       >
