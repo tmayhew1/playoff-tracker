@@ -204,7 +204,8 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // games to it, the Live tab starts loading the season); with `keepInView`
 // the card keeps its place on screen as the games around it come and go.
 // Tapping a shooting line of the tape sorts the box below by that
-// category's VA, with its makes, attempts and percentage.
+// category's VA, with its makes, attempts and percentage. A final's box is
+// followed by the team's players who didn't play, under Out (with `context`).
 export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, keepInView, context }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
@@ -242,6 +243,14 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
   const ctx = team ? ctxOf([g.away, g.home].find((s) => s.tri === team)) : null;
   const records = team ? [] : [g.away, g.home].map((side) => ctxOf(side)?.record);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
+  // A final's Out: the tapped team's players this season with no minutes in
+  // the game, each his season per game, faded, as the pregame card's are.
+  const teamBox = team && g.gameStatus === 3 ? [box?.away, box?.home].find((t) => t?.tri === team) : null;
+  const played = teamBox?.players?.length ? new Set(teamBox.players.filter((p) => p.mp > 0).map((p) => normalizeName(p.name))) : null;
+  const teamOut = played && ctx?.players
+    ? seasonLines(ctx.players, lga, cat).filter((p) => !played.has(normalizeName(p.name)))
+      .map((p) => ({ ...p, rowKey: `out-${p.team}-${p.name}`, faded: true }))
+    : null;
   return (
     <div
       id={gameAnchor(g)}
@@ -283,6 +292,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         teamFilter={team}
         onTeamClear={() => pick(null)}
         teamCat={cat}
+        teamOut={teamOut}
         onBox={setBox}
         singleGame
         finalTop5
