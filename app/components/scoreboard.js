@@ -90,8 +90,10 @@ const SHOOTING = new Set(["2P", "3P", "FT"]);
 // shooting key ("2P" / "3P" / "FT") is a button for that category (`cat`,
 // the one picked, is lit). In the card's top-left corner, the games the
 // ranks run through (`context.games`), after `kicker` when given (the
-// pregame card's).
-export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, kicker }) {
+// pregame card's). With `onOpp`, the opponent's name and score are a button
+// of their own (the card around them is one already): the tap goes to it
+// rather than the card, for the caller to swap to the other team's view.
+export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, kicker, onOpp }) {
   const accent = teamColor(side.tri);
   const ink = ahead ? "#fff" : accent;
   const oppColor = tape && teamColor(tape.opp);
@@ -152,7 +154,16 @@ export function TeamScoreCard({ side, ahead, right, tape, context, cat, onCat, k
     </div>
   );
   const opponent = tape && (
-    <div className={`pb-1 flex flex-col ${right ? "items-start" : "items-end"}`}>
+    <div
+      {...(onOpp && {
+        role: "button",
+        tabIndex: 0,
+        "aria-label": `Switch to ${tape.opp}`,
+        onClick: (e) => { e.stopPropagation(); onOpp(tape.opp); },
+        onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onOpp(tape.opp); } },
+      })}
+      className={`pb-1 flex flex-col ${right ? "items-start" : "items-end"} ${onOpp ? "cursor-pointer -m-2 p-2" : ""}`}
+    >
       <span className={`text-[10px] font-bold uppercase tracking-widest ${muted}`}>{tape.opp}</span>
       {tape.oppScore != null && (
         <span className={`text-2xl font-black tabular-nums leading-none ${ahead ? muted : ""}`} style={ahead ? undefined : { color: oppColor }}>

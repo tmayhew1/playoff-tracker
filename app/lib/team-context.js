@@ -5,6 +5,7 @@
 
 import { USG_FTA_W } from "../scoring";
 import { TEAM_CONF } from "../teams";
+import { normalizeName } from "./format";
 
 const KEYS = ["pts", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "orb", "drb", "tov"];
 
@@ -155,7 +156,11 @@ const PRIOR_GAMES = 10;
 const PACE_PRIOR_GAMES = 5;
 const WINS_PER_NET = 2.7;
 const HOME_EDGE = 1.2;
-export function projectScore(totals, away, home, lga, priorWins = null) {
+// `lineups`, when given ({ [tri]: { players, out } }, lineupFactor's), moves a
+// side's offense by who is playing tonight, and the projection comes back
+// with each side's predicted shooting (`shots`: { away, home }, a box-score
+// sum each — makes and attempts by type adding up to its points).
+export function projectScore(totals, away, home, lga, priorWins = null, lineups = null) {
   const all = Object.values(totals || {});
   const sum = (f) => all.reduce((s, t) => s + f(t), 0);
   const games = sum((t) => t.gp);
@@ -168,18 +173,153 @@ export function projectScore(totals, away, home, lga, priorWins = null) {
     const net = priorWins?.[tri] != null ? (priorWins[tri] - 41) / WINS_PER_NET : 0;
     const w = gp / (gp + PRIOR_GAMES);
     const shrink = (own, prior) => (gp ? w * own + (1 - w) * prior : prior);
+    const lineup = lineups?.[tri] ? lineupFactor(lineups[tri].players, lineups[tri].out, lga, gp) : null;
     return {
-      off: shrink(gp && t.own.pts / poss(t.own), lgPPP + net / 200),
+      off: shrink(gp && t.own.pts / poss(t.own), lgPPP + net / 200) * (lineup?.factor ?? 1),
       def: shrink(gp && t.opp.pts / poss(t.opp), lgPPP - net / 200),
       pace: gp ? ((poss(t.own) + poss(t.opp)) / 2 + PACE_PRIOR_GAMES * lgPace) / (gp + PACE_PRIOR_GAMES) : lgPace,
+      mix: lineup?.mix || (gp ? teamMix(t.own) : null),
+      lineup,
     };
   };
   const [a, h] = [rate(away), rate(home)];
   const n = a.pace * h.pace / lgPace;
-  return {
+  const out = {
     away: n * a.off * h.def / lgPPP - HOME_EDGE,
     home: n * h.off * a.def / lgPPP + HOME_EDGE,
     poss: n,
+  };
+  if (lineups) {
+    out.shots = { away: shotsFor(a.mix, n, out.away), home: shotsFor(h.mix, n, out.home) };
+    out.minutes = { away: a.lineup?.minutes || null, home: h.lineup?.minutes || null };
+  }
+  return out;
+}
+
+// --- Who is playing tonight ---------------------------------------------------
+// The team figures above are the season's, whoever was on the floor for it.
+// A game's lineup is read off the players instead: each one's minutes, and in
+// them the shots he takes (twos, threes, free throws), the turnovers and
+// offensive rebounds, at his season's rates a minute, made at his season's
+// percentages (shrunk toward the league's over SHRINK_ATT attempts — a week of
+// hot shooting isn't a 50% three-point shooter). Summed, that is a shot
+// distribution and its points per possession, whatever the possession count:
+// who shoots decides the mix, the game's pace the volume.
+//
+// lineupFactor is tonight's lineup against the season's (everyone, at the
+// minutes actually played): the multiple projectScore puts on the team's
+// offense. Two things move it — the mix (the shots pass to better or worse
+// shooters: tonight's points per possession over the season's) and the load
+// (a lineup that creates fewer possessions' worth of shots a minute than the
+// season's has to stretch, each of its players taking more than his share).
+// Neither counts in full: the season's figures already hold the games a
+// player missed, and whoever takes over a star's shots is a different player
+// for it. MIX_WEIGHT and USAGE_COST are what four seasons of games (2022-23
+// to 2025-26, each projected from the games before it with the lineup that
+// then played) put on them: a tenth of the mix, and 0.18% of offense per
+// percent of stretch. Held out a season at a time that took the projected
+// margin's mean miss down 0.15 to 0.26 points a game, from about 11.3.
+const SHRINK_ATT = { two: 60, three: 80, ft: 30 };
+const MIX_WEIGHT = 0.1;
+const USAGE_COST = 0.18;
+const MAX_MINUTES = 40;
+const key = normalizeName;
+
+// Tonight's minutes for the players available: each one's minutes a game,
+// a fringe player's weighted by how often he gets in at all (under 10 a game
+// fully, a 20-minute player's absences read as injuries, not benchings),
+// scaled to the 240 there are — nobody past MAX_MINUTES, or his own average
+// if that is higher. [{ p, min }].
+export function expectedMinutes(players, teamGames = 0) {
+  const base = (players || []).filter((p) => p.g > 0 && p.mp > 0).map((p) => {
+    const mpg = p.mp / p.g;
+    const often = Math.min(1, p.g / Math.max(teamGames || p.tg || p.g, p.g));
+    const regular = Math.min(1, Math.max(0, (mpg - 10) / 10));
+    return { p, mpg, min: mpg * (often + (1 - often) * regular) };
+  });
+  let free = base, left = 240;
+  // Water-filling: scale the uncapped to what is left, cap whoever goes over.
+  for (let i = 0; i < base.length && free.length; i++) {
+    const total = free.reduce((s, x) => s + x.min, 0);
+    if (!(total > 0)) break;
+    const f = left / total;
+    const over = f > 1 ? free.filter((x) => x.min * f > Math.max(MAX_MINUTES, x.mpg)) : [];
+    if (!over.length) { for (const x of free) x.min *= f; break; }
+    for (const x of over) { x.min = Math.max(MAX_MINUTES, x.mpg); left -= x.min; }
+    free = free.filter((x) => !over.includes(x));
+  }
+  return base.map(({ p, min }) => ({ p, min }));
+}
+
+// A lineup's shooting over its minutes ([{ p, min }]), per 240: attempts and
+// makes by type, turnovers, offensive rebounds, and the possessions and
+// points they come to.
+function lineupMix(lineup, lga) {
+  const m = { fga2: 0, fgm2: 0, tpa: 0, tpm: 0, fta: 0, ftm: 0, tov: 0, orb: 0 };
+  const pct = (made, att, la, k) => (la > 0 ? (made + k * la) / (att + k) : att > 0 ? made / att : 0);
+  for (const { p, min } of lineup) {
+    if (!(min > 0) || !(p.mp > 0)) continue;
+    const r = min / p.mp;
+    const [a2, m2] = [(p.fga || 0) - (p.tpa || 0), (p.fgm || 0) - (p.tpm || 0)];
+    m.fga2 += r * a2;
+    m.fgm2 += r * a2 * pct(m2, a2, lga?.la2P, SHRINK_ATT.two);
+    m.tpa += r * (p.tpa || 0);
+    m.tpm += r * (p.tpa || 0) * pct(p.tpm || 0, p.tpa || 0, lga?.la3P, SHRINK_ATT.three);
+    m.fta += r * (p.fta || 0);
+    m.ftm += r * (p.fta || 0) * pct(p.ftm || 0, p.fta || 0, lga?.laFT, SHRINK_ATT.ft);
+    m.tov += r * (p.tov || 0);
+    m.orb += r * (p.orb || 0);
+  }
+  return withTotals(m);
+}
+
+const withTotals = (m) => ({
+  ...m,
+  poss: m.fga2 + m.tpa - m.orb + m.tov + USG_FTA_W * m.fta,
+  pts: 2 * m.fgm2 + 3 * m.tpm + m.ftm,
+});
+
+// A team's season sums as a mix: the shot distribution when its players'
+// lines aren't to hand.
+const teamMix = (t) => withTotals({
+  fga2: t.fga - t.tpa, fgm2: t.fgm - t.tpm, tpa: t.tpa, tpm: t.tpm, fta: t.fta, ftm: t.ftm, tov: t.tov, orb: t.orb,
+});
+
+// Tonight's lineup against the season's, for a team's `players` (their season
+// totals, lib/season-to-date.js playerTotals) less the ones in `out` (a Set
+// of names):
+// { factor, mix, minutes } — the multiple on the team's offense, tonight's
+// shot distribution, and each available player's minutes ({ name: min }) —
+// or null without anyone's minutes to read.
+export function lineupFactor(players, out, lga, teamGames = 0) {
+  const played = (players || []).filter((p) => p.g > 0 && p.mp > 0);
+  const gone = new Set([...(out || [])].map(key));
+  const tonight = expectedMinutes(played.filter((p) => !gone.has(key(p.name))), teamGames);
+  const total = played.reduce((s, p) => s + p.mp, 0);
+  if (!tonight.length || !(total > 0)) return null;
+  const season = lineupMix(played.map((p) => ({ p, min: 240 * p.mp / total })), lga);
+  const mix = lineupMix(tonight, lga);
+  if (!(season.poss > 0) || !(mix.poss > 0) || !(season.pts > 0)) return null;
+  const stretch = Math.min(0.5, Math.max(-0.5, season.poss / mix.poss - 1));
+  const mixRatio = (mix.pts / mix.poss) / (season.pts / season.poss);
+  return {
+    factor: Math.exp(MIX_WEIGHT * Math.log(mixRatio) - USAGE_COST * stretch),
+    mix,
+    minutes: Object.fromEntries(tonight.map(({ p, min }) => [p.name, min])),
+  };
+}
+
+// A mix over `n` possessions that comes to `pts`: the attempts are the mix's
+// at that volume, the makes scaled together to the points (the defense and
+// the court moving every percentage alike). A box-score sum, for the tape.
+function shotsFor(mix, n, pts) {
+  if (!mix || !(mix.poss > 0) || !(mix.pts > 0)) return null;
+  const s = n / mix.poss, k = pts / (s * mix.pts);
+  const made = (m, a) => Math.min(s * m * k, s * a);
+  const [fgm2, tpm, ftm] = [made(mix.fgm2, mix.fga2), made(mix.tpm, mix.tpa), made(mix.ftm, mix.fta)];
+  return {
+    pts, fgm: fgm2 + tpm, fga: s * (mix.fga2 + mix.tpa), tpm, tpa: s * mix.tpa, ftm, fta: s * mix.fta,
+    orb: s * mix.orb, drb: 0, tov: s * mix.tov,
   };
 }
 

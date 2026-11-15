@@ -6,10 +6,11 @@ import { valueAdd, valueAddByCategory } from "../scoring";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
-import { teamColor, trimFixed } from "../lib/format";
+import { normalizeName, teamColor, trimFixed } from "../lib/format";
 import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 import { useSeasonContext } from "../lib/use-season-context";
 import { etDate, seasonOf } from "../lib/regular-season-games";
+import { availability } from "../lib/injuries";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -27,6 +28,7 @@ import { etDate, seasonOf } from "../lib/regular-season-games";
 // nothing is (so a game tipping off still turns up on its own).
 const LIVE_POLL = 30000;
 const IDLE_POLL = 5 * 60000;
+const INJURY_POLL = 10 * 60000;
 
 // Live red, later grey, final black, in the slate summary.
 const STATUS_INK = { 1: "text-stone-400", 2: "text-red-600", 3: "text-stone-900" };
@@ -153,6 +155,22 @@ function seasonTape(ownCtx, oppCtx, oppTri, lga) {
   return { opp: oppTri, rows: tapeRows(o, d, a.own, scaled, a.gp, shootingShare, (x, y) => (y ? x / (x + y) : 0.5)) };
 }
 
+// The pregame tape with its shooting lines the projection's: each side's
+// predicted makes, attempts and percentage (lib/team-context.js projectScore
+// `shots`, built from the players in) and the VA they come to, the bars
+// split as a game's are (teamTape) on the season's team-games (`dist`). The
+// other three lines stay the seasons so far. `tape` is seasonTape's.
+function projectedTape(tape, own, opp, lga, dist) {
+  if (!tape || !own || !opp) return tape;
+  const [o, d] = [tapeMeasures(own, opp, lga), tapeMeasures(opp, own, lga)];
+  const shootingShare = (key) => {
+    const [po, pd] = [percentile(dist?.[key], o[key]), percentile(dist?.[key], d[key])];
+    if (po == null || pd == null) return Math.min(Math.max(0.5 + (o[key] - d[key]) / 20, 0), 1);
+    return po + pd > 0 ? po / (po + pd) : 0.5;
+  };
+  return { ...tape, rows: [...tapeRows(o, d, own, opp, 1, shootingShare, () => 0.5).slice(0, 3), ...tape.rows.slice(3)] };
+}
+
 // A tape with the opponent's score on the scoreboard (which a live game
 // keeps current) for its header.
 const withScore = (tape, oppScore) => tape && { ...tape, oppScore };
@@ -173,7 +191,8 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // team's record under its card, then the banner for the clock and the box score.
 // Tapping a card narrows the game to that team: its card alone, framed in its
 // color with its tale of the tape against the opponent, over its whole box. Tapping it
-// again brings the other side back. `focus` (About Last Night's tap) narrows
+// again brings the other side back; tapping the opponent's name and score in
+// it swaps to the opponent's. `focus` (About Last Night's tap) narrows
 // the game to the player's team and opens his card. Explore's regular-season
 // days use it too, handing in their own `lga` and `boxLoader` (a baked box).
 // `context`, when given, is (tri) -> the team's regular season through this
@@ -239,7 +258,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
             className="flex-1 flex text-left"
           >
             <TeamScoreCard side={side} ahead={side.tri === leader} right={right} tape={team ? withScore(teamTape(box, team, lga, ctx?.dist), other.score) : null} context={ctx}
-              cat={cat} onCat={(k) => setCat(cat === k ? null : k)} />
+              cat={cat} onCat={(k) => setCat(cat === k ? null : k)} onOpp={() => pick(other.tri)} />
           </button>
         ))}
         {/* In the gap, halfway down the cards. */}
@@ -285,8 +304,15 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
 // their makes, attempts and percentage, as a game's card does its box.
 // `context` is the Live tab's (tri, date) -> season so far
 // (lib/use-season-context.js), loading until it isn't. Tapping the card
-// closes it.
-function PregameCard({ g, tri, lga, context, onClose }) {
+// closes it; tapping the opponent's name and score in it swaps to the
+// opponent's card (`onSwap`).
+// `injuries` is the league's injury report (/api/injuries; null while it
+// loads, `players` null when it couldn't be read). With it the players split
+// into In and Out (the ones ruled out, faded), and the projection is
+// made for the players in on both sides: the score, and the shooting lines
+// of the tape, which are then the game's predicted ones rather than the
+// season's (projectedTape).
+function PregameCard({ g, tri, lga, context, injuries, onClose, onSwap }) {
   const date = g.gameDateTimeUTC ? etDate(g.gameDateTimeUTC) : null;
   const right = tri === g.home.tri;
   const [side, other] = right ? [g.home, g.away] : [g.away, g.home];
@@ -295,12 +321,31 @@ function PregameCard({ g, tri, lga, context, onClose }) {
     return s.record ? { ...c, record: s.record } : c;
   };
   const [ctx, oppCtx] = [ctxOf(side), ctxOf(other)];
-  const proj = ctx?.project?.(g.away.tri, g.home.tri);
-  const [own, opp] = proj ? (right ? [proj.home, proj.away] : [proj.away, proj.home]) : [null, null];
-  const tape = seasonTape(ctx, oppCtx, other.tri, lga);
+  const report = injuries?.players || null;
+  const avail = useMemo(() => availability(ctx?.players, report, tri), [ctx?.players, report, tri]);
+  const oppAvail = useMemo(() => availability(oppCtx?.players, report, other.tri), [oppCtx?.players, report, other.tri]);
+  const out = useMemo(() => new Set([...avail.out.keys(), ...oppAvail.out.keys()]), [avail, oppAvail]);
+  const proj = useMemo(() => ctx?.project?.(g.away.tri, g.home.tri, out), [ctx?.project, g.away.tri, g.home.tri, out]);
+  const sidesOf = (v) => (v ? (right ? [v.home, v.away] : [v.away, v.home]) : [null, null]);
+  const [own, opp] = sidesOf(proj);
+  const [ownShots, oppShots] = sidesOf(proj?.shots);
+  const tape = projectedTape(seasonTape(ctx, oppCtx, other.tri, lga), ownShots, oppShots, lga, ctx?.dist);
   const [cat, setCat] = useState(null);
   const [expanded, setExpanded] = useState(null);
-  const players = useMemo(() => seasonLines(ctx?.players, lga, cat), [ctx?.players, lga, cat]);
+  const sections = useMemo(() => {
+    const rows = seasonLines(ctx?.players, lga, cat).map((p) => {
+      const row = { ...p, rowKey: `${p.team}-${p.name}` };
+      return avail.out.has(normalizeName(p.name)) ? { ...row, isOut: true, faded: true } : row;
+    });
+    return [
+      { label: "In", rows: rows.filter((p) => !p.isOut), tone: "text-stone-700" },
+      { label: "Out", rows: rows.filter((p) => p.isOut), tone: "text-red-700" },
+    ];
+  }, [ctx?.players, lga, cat, avail]);
+  const players = sections.flatMap((s) => s.rows);
+  const reportNote = !injuries ? "Loading the injury report…"
+    : !report ? "Injury report unavailable · everyone shown as playing"
+    : `Injury report as of ${new Date(injuries.asOf).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
   const seasonSoFar = useMemo(() => (date ? { scope: "regular", season: seasonOf(new Date(`${date}T12:00:00Z`)) } : null), [date]);
   return (
     <div className="my-2 p-2 rounded bg-white border-2" style={{ borderColor: teamColor(tri) }}>
@@ -314,12 +359,21 @@ function PregameCard({ g, tri, lga, context, onClose }) {
           kicker="Projected"
           cat={cat}
           onCat={(k) => setCat(cat === k ? null : k)}
+          onOpp={onSwap}
         />
       </button>
       {players.length > 0 && (
         <div className="mt-2 px-1">
-          <div className="text-[9px] uppercase tracking-widest text-stone-500 py-1">Season per game{cat ? ` · by ${cat} VA` : ""}</div>
-          <BoxscoreTable rows={players} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} teams={{}} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
+          <div className="flex items-baseline justify-between gap-2 py-1 text-[9px] text-stone-500">
+            <span className="uppercase tracking-widest shrink-0">Season per game{cat ? ` · by ${cat} VA` : ""}</span>
+            <span className="truncate text-stone-400">{reportNote}</span>
+          </div>
+          <BoxscoreTable sections={sections} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} teams={{}} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
+          {ownShots && (
+            <div className="pt-2 text-[9px] leading-snug text-stone-400">
+              The score and the 2P, 3P and FT lines are projected for the players in{report ? "" : " (the full roster, without an injury report)"}; Def PPP, wTRB and POSS are the season so far.
+            </div>
+          )}
         </div>
       )}
       {!tape && (
@@ -359,7 +413,7 @@ function seasonLines(players, lga, cat) {
 // Games yet to tip, a line each. In the regular season, with `context`
 // given, a team's name opens its pregame card (PregameCard) under the line,
 // `onTeamPick` hearing it; tapping it again, or the card, closes it.
-function UpcomingList({ games, lga, context, onTeamPick }) {
+function UpcomingList({ games, lga, context, injuries, onTeamPick }) {
   const [open, setOpen] = useState({}); // gameId -> tri
   const toggle = (g, tri) => {
     setOpen((o) => ({ ...o, [g.gameId]: o[g.gameId] === tri ? null : tri }));
@@ -393,8 +447,9 @@ function UpcomingList({ games, lga, context, onTeamPick }) {
                 {tv && <span className="text-[9px] uppercase tracking-wider text-stone-500 shrink-0 truncate max-w-[40%]">{tv}</span>}
               </div>
               {open[g.gameId] && (
-                <PregameCard g={g} tri={open[g.gameId]} lga={lga} context={context}
-                  onClose={() => setOpen((o) => ({ ...o, [g.gameId]: null }))} />
+                <PregameCard key={open[g.gameId]} g={g} tri={open[g.gameId]} lga={lga} context={context} injuries={injuries}
+                  onClose={() => setOpen((o) => ({ ...o, [g.gameId]: null }))}
+                  onSwap={(tri) => setOpen((o) => ({ ...o, [g.gameId]: tri }))} />
               )}
             </div>
           );
@@ -496,9 +551,23 @@ export function LiveView({ onData, focus, onFocusHandled }) {
   const context = useSeasonContext({
     enabled: picked, season: seasonOf(), lga: data ? lgaFor(data.baselineSeason, "rs") : null,
   });
+  // The injury report, with it: read when a card is first tapped and again
+  // every INJURY_POLL, so a card left open follows a late scratch.
+  const [injuries, setInjuries] = useState(null);
+  useEffect(() => {
+    if (!picked) return;
+    let cancelled = false;
+    const load = () => fetch("/api/injuries")
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled) setInjuries(d?.asOf ? d : { asOf: new Date().toISOString(), players: null }); })
+      .catch(() => { if (!cancelled) setInjuries((cur) => cur || { asOf: new Date().toISOString(), players: null }); });
+    load();
+    const id = setInterval(load, INJURY_POLL);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [picked]);
   const upcomingList = (list) => (
     <UpcomingList games={list} lga={data ? lgaFor(data.baselineSeason, "rs") : null}
-      context={context} onTeamPick={() => setPicked(true)} />
+      context={context} injuries={injuries} onTeamPick={() => setPicked(true)} />
   );
   const gameCard = (g) => (
     <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason}
