@@ -55,7 +55,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
       )}
       <button
         onClick={onToggle}
-        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""}`}
+        className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left ${isExpanded ? "bg-stone-100" : ""} ${p.faded && !isExpanded ? "opacity-60" : ""}`}
       >
         <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badgeClass}`}>
           {p.team}
@@ -71,6 +71,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
           <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
           <span className={onOpenPlayer ? "underline decoration-dotted" : ""}>{p.name}</span>
           {onOpenPlayer && <span className="text-[8px] ml-0.5" aria-hidden>›</span>}
+          {p.tag && <span title={p.tagTitle || undefined} className={`ml-1.5 text-[8px] font-bold uppercase tracking-wider px-1 border ${p.tagTone || "border-stone-300 text-stone-500"}`}>{p.tag}</span>}
         </span>
         {c ? (
           <>
@@ -104,7 +105,8 @@ export const rowKeyOf = (p, i) => `${p.team}-${p.name}-${i}`;
 // `cat` (a SHOT_CATS key) shows that category's columns, rows carrying
 // their `catVA`. `seasonSoFar` ({ scope, season }) hands each player's card
 // his season to date (see VABreakdown).
-export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat, seasonSoFar }) {
+export function BoxscoreTable({ rows: rowsIn, sections, expandedKey, setExpandedKey, dimTeam, outlined, partitionOnCourt, lga = LGA, teams = TEAMS, gameNumber, gameNumberFor, useTeamColor, singleGame, cat, seasonSoFar }) {
+  const rows = sections ? sections.flatMap((s) => s.rows) : rowsIn;
   const maxAbs = cat ? Math.max(...rows.map((p) => Math.abs(p.catVA || 0)), 0.5) : null;
   // Arming step for the cross-over into By Player: tap the Player header
   // first, then a name — a bare row tap should never leave the box score.
@@ -117,11 +119,11 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
   // Build a row plus prev/next callbacks that navigate within the same
   // array (partition-aware: nav stays within On Court / Bench).
   const buildRow = (arr) => (p, i) => {
-    const rowKey = rowKeyOf(p, i);
+    const rowKey = p.rowKey || rowKeyOf(p, i);
     const prev = arr[i - 1];
     const next = arr[i + 1];
-    const prevKey = prev ? rowKeyOf(prev, i - 1) : null;
-    const nextKey = next ? rowKeyOf(next, i + 1) : null;
+    const prevKey = prev ? prev.rowKey || rowKeyOf(prev, i - 1) : null;
+    const nextKey = next ? next.rowKey || rowKeyOf(next, i + 1) : null;
     return (
       <PlayerRow
         key={rowKey}
@@ -192,6 +194,25 @@ export function BoxscoreTable({ rows, expandedKey, setExpandedKey, dimTeam, outl
             {bench.map(buildRow(bench))}
           </>
         )}
+      </div>
+    );
+  }
+
+  // Named groups under the one header (the pregame card's In and Out), each
+  // { label, rows, note }: `note` sits beside the label, small.
+  if (sections) {
+    return (
+      <div>
+        {header}
+        {sections.filter((s) => s.rows.length > 0).map((s, i) => (
+          <div key={s.label}>
+            <div className={`text-[9px] uppercase tracking-widest font-semibold pb-0.5 flex items-baseline justify-between gap-2 ${i ? "pt-2.5" : "pt-1.5"} ${s.tone || "text-stone-500"}`}>
+              <span>{s.label}</span>
+              {s.note && <span className="font-normal normal-case tracking-normal text-stone-400 truncate">{s.note}</span>}
+            </div>
+            {s.rows.map(buildRow(s.rows))}
+          </div>
+        ))}
       </div>
     );
   }

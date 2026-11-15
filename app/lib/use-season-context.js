@@ -23,8 +23,9 @@ const LOOK_AHEAD_SEASON = "2026-27";
 // (a month key; all of them without it) have loaded, and are null until
 // then, along with the team's season totals (seasonTotals: `season`, its
 // `games` the ranks run through), the league's spread of team-seasons
-// (`teamDist`) and `project` (away, home) -> the pregame projection
-// (projectScore, the Look Ahead's wins its prior), and the team's players'
+// (`teamDist`) and `project` (away, home, out) -> the pregame projection
+// (projectScore, the Look Ahead's wins its prior, each side's offense moved
+// by its lineup less the names in the Set `out`), and the team's players'
 // season totals (lib/season-to-date.js playerTotals: `players`, each on the
 // team he last played for). `allMonths` is the season by month (lib/regular-season-games.js
 // groupByMonth) when the caller has it; otherwise it's loaded here. Nothing
@@ -72,8 +73,12 @@ export function useSeasonContext({ enabled, season, allMonths: given = null, thr
         ranks: totals ? seasonRanks(upTo, lga, totals) : null,
         dist: upTo ? gameDistributions(upTo, lga) : null,
         teamDist: totals ? seasonDistributions(totals, lga) : null,
-        project: totals ? (away, home) => projectScore(totals, away, home, lga, projected) : null,
         players: upTo ? playerTotals(upTo.map((box) => ({ date: box.date, home: box.home, away: box.away, box }))) : null,
+      });
+      const day = cache.get(date);
+      const lineups = (teams, out) => day.players && Object.fromEntries(teams.map((t) => [t, { players: day.players.filter((p) => p.team === t), out }]));
+      Object.assign(day, {
+        project: totals ? (away, home, out = null) => projectScore(totals, away, home, lga, projected, lineups([away, home], out)) : null,
       });
     }
     const { standings, totals, ranks, dist, teamDist, project, players } = cache.get(date);

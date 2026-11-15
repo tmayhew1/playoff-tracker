@@ -70,6 +70,58 @@ export function parseEspnInjuries(json, { today = new Date().toISOString().slice
   return out;
 }
 
+// The same feed as the night's injury report, for the Live tab's pregame card
+// (/api/injuries): everyone listed, with his team and whether he is ruled out
+// — [{ name, team, out, status, injury, note, date }]. `out` is ESPN's "Out"
+// (or its fantasy OUT / OFS flag); anything else — Day-To-Day, Questionable,
+// Doubtful — is listed but expected to play. `team` is ESPN's abbreviation
+// (the caller maps it to the NBA's), null when the feed doesn't carry one.
+export function parseEspnInjuryReport(json) {
+  const out = [];
+  for (const team of json?.injuries || []) {
+    for (const it of team?.injuries || []) {
+      const name = it?.athlete?.displayName || it?.athlete?.fullName;
+      if (!name) continue;
+      const status = String(it?.status || it?.type?.description || "").trim();
+      const d = it.details || {};
+      const flag = String(d.fantasyStatus?.abbreviation || d.fantasyStatus?.description || "");
+      const parts = [d.type, d.detail && d.detail !== d.type ? d.detail : null, d.side && d.side !== "Not Specified" ? d.side.toLowerCase() : null].filter(Boolean);
+      out.push({
+        name,
+        team: it.athlete?.team?.abbreviation || team?.abbreviation || team?.team?.abbreviation || null,
+        teamName: team?.displayName || it.athlete?.team?.displayName || null,
+        out: /^out\b/i.test(status) || /^(OUT|OFS)$/i.test(flag),
+        status: status || "Listed",
+        injury: parts.length ? `${parts[0]}${parts.length > 1 ? ` (${parts.slice(1).join(", ")})` : ""}` : null,
+        note: (it.shortComment || "").trim() || null,
+        date: toTime(it.date) != null ? String(it.date).slice(0, 10) : null,
+      });
+    }
+  }
+  return out;
+}
+
+// Who is out of a team's game on `report` (/api/injuries `players`), for its
+// season's `players`: { out, listed, unplayed }. `out` and `listed` map a
+// player's name (normalized) to his entry — ruled out, or on the report but
+// expected to play; `unplayed` are the team's ruled-out players with no game
+// this season to show a line for. An entry is the team's by its tricode or,
+// where the feed carries none, by the name being one of its players'; one
+// dated before a game the player has since played in is stale and dropped.
+export function availability(players, report, tri) {
+  const res = { out: new Map(), listed: new Map(), unplayed: [] };
+  const byName = new Map((players || []).map((p) => [normalizeName(p.name), p]));
+  for (const e of report || []) {
+    const k = normalizeName(e.name), p = byName.get(k);
+    if (e.team ? e.team !== tri : !p) continue;
+    if (p && e.date && p.last > e.date) continue;
+    if (!e.out) res.listed.set(k, e);
+    else if (p) res.out.set(k, e);
+    else res.unplayed.push(e);
+  }
+  return res;
+}
+
 // One entry per player: the most recent report, the curated list winning a tie
 // (it was written from the fuller reporting). A live "Out" with no date and no
 // curated entry is taken as two weeks from now.
