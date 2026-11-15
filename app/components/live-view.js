@@ -204,8 +204,11 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // games to it, the Live tab starts loading the season); with `keepInView`
 // the card keeps its place on screen as the games around it come and go.
 // Tapping a shooting line of the tape sorts the box below by that
-// category's VA, with its makes, attempts and percentage.
-export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, keepInView, context }) {
+// category's VA, with its makes, attempts and percentage. A final's box is
+// followed by the team's players who didn't play, under Out (with `context`);
+// a live game's by the ones `injuries` (the league's report, /api/injuries)
+// rules out.
+export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, focus, onFocusHandled, onTeamPick, keepInView, context, injuries }) {
   const lga = lgaIn || lgaFor(baselineSeason, g.kind === "playoffs" ? "po" : "rs");
   const kind = KIND_LABEL[g.kind];
   // The index scope and season a player's card reads his season so far from:
@@ -242,6 +245,19 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
   const ctx = team ? ctxOf([g.away, g.home].find((s) => s.tri === team)) : null;
   const records = team ? [] : [g.away, g.home].map((side) => ctxOf(side)?.record);
   const sides = [[g.away, g.home, false], [g.home, g.away, true]].filter(([side]) => !team || side.tri === team);
+  // The tapped team's Out, each his season per game, faded, as the pregame
+  // card's are. A final's are its players this season with no minutes in the
+  // game; a live game's, where a man with none may yet check in, the ones the
+  // injury report rules out (the pregame card's own), less anyone who has
+  // played after all.
+  const isLive = g.gameStatus === 2;
+  const teamBox = team && (isLive || g.gameStatus === 3) ? [box?.away, box?.home].find((t) => t?.tri === team) : null;
+  const played = teamBox?.players?.length ? new Set(teamBox.players.filter((p) => p.mp > 0).map((p) => normalizeName(p.name))) : null;
+  const ruledOut = isLive && played && ctx?.players ? availability(ctx.players, injuries?.players, team).out : null;
+  const teamOut = played && ctx?.players && (!isLive || ruledOut.size)
+    ? seasonLines(ctx.players, lga, cat).filter((p) => !played.has(normalizeName(p.name)) && (!isLive || ruledOut.has(normalizeName(p.name))))
+      .map((p) => ({ ...p, rowKey: `out-${p.team}-${p.name}`, faded: true }))
+    : null;
   return (
     <div
       id={gameAnchor(g)}
@@ -283,6 +299,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         teamFilter={team}
         onTeamClear={() => pick(null)}
         teamCat={cat}
+        teamOut={teamOut}
         onBox={setBox}
         singleGame
         finalTop5
@@ -572,7 +589,7 @@ export function LiveView({ onData, focus, onFocusHandled }) {
   const gameCard = (g) => (
     <GameCard key={g.gameId} g={g} lgaFor={lgaFor} baselineSeason={data.baselineSeason}
       focus={g === focusGame ? focus : null} onFocusHandled={onFocusHandled}
-      onTeamPick={() => setPicked(true)}
+      onTeamPick={() => setPicked(true)} injuries={injuries}
       context={g.kind === "regular" && g.gameDateTimeUTC ? (tri) => context(tri, etDate(g.gameDateTimeUTC)) : undefined} />
   );
 
