@@ -888,9 +888,10 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
             ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
             : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
         >
-          <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+</span>
-          <span className={`tabular-nums font-bold ${vaPlus < 0 ? "text-red-600" : "text-stone-800"}`}>{vaPlus.toFixed(1)}</span>
-          <span className={`tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}> · D {(dVA > 0 ? "+" : "") + dVA.toFixed(1)}</span>
+          {/* Per game, like the bars below it. */}
+          <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+/G</span>
+          <span className={`tabular-nums font-bold ${vaPlus < 0 ? "text-red-600" : "text-stone-800"}`}>{signed(vaPlus / gp, 2)}</span>
+          <span className={`tabular-nums ${dVA < 0 ? "text-red-500" : "text-stone-400"}`}> · D {signed(dVA / gp, 2)}</span>
         </div>
       )}
       {activeRows.map((c, i) => {
