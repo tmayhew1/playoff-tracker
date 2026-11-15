@@ -8,8 +8,9 @@ import { useAwardNav, useLookAheadNav } from "../lib/award-nav";
 // rookie — All-NBA, All-Star) with this player-season's odds, and Go → into that award's page in
 // the Awards tab when the board lists them. Odds come from /api/awards/odds (scripts/bake-awards.mjs); a season the
 // bake doesn't cover shows no row at all — except the season the Look Ahead
-// projects, which reads its simulated odds instead (no MIP: it's scored
-// against that projection) and goes to its boards there.
+// projects, which reads its simulated odds instead (MIP once games have been
+// played, measured against the preseason projection) and goes to its boards
+// there.
 
 // Slots in each award-odds.json entry: [percent, rank on the board].
 const AWARDS = [
@@ -50,7 +51,7 @@ export function AwardBoxes({ slug, season }) {
   if (projected) {
     if (!ahead) return null;
     const mine = ahead[slug];
-    boxes = [AWARDS[0], ...(mine?.roy != null ? [ROY] : []), AWARDS[2], AWARDS[3]].map((a) => ({
+    boxes = [AWARDS[0], ...(mine?.roy != null ? [ROY] : mine?.mip != null ? [AWARDS[1]] : []), AWARDS[2], AWARDS[3]].map((a) => ({
       ...a,
       p: mine ? mine[a.key] * 100 : null,
       go: openLookAhead && mine?.simulated ? () => openLookAhead({ award: a.key, slug }) : null,

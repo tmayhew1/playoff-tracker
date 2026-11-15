@@ -485,6 +485,33 @@ export function simulateAwards(players, model, pool, { sims = 2000, seed = 2627,
   });
 }
 
+// Most Improved, as the season stands: the Awards tab's MIP model
+// (scripts/bake-awards.mjs, a conditional logit on
+// b·log((VA/G + c) / (expected VA/G + c))) on each player's games so far
+// against the VA/G their preseason projection expected — no simulation, and
+// nothing from the in-season projection of the games still to come.
+//
+// `players` are { key, g, va, e, rookie? }: games and plain VA so far, and the
+// preseason VA/G (`e`, null for a player with no preseason line). Counted, as
+// on the board: not a rookie, at least half the games of the league's leader
+// so far, and above zero VA. Returns key -> P(MIP): 0 for a candidate who
+// doesn't count yet, and no entry for a rookie or a player without `e`.
+export function mipOdds(players, { beta, floor }) {
+  const maxG = Math.max(0, ...players.map((p) => p.g || 0));
+  const out = new Map(), score = [];
+  for (const p of players) {
+    if (p.rookie || p.e == null) continue;
+    out.set(p.key, 0);
+    if (!(p.g > 0) || p.g < maxG / 2 || !(p.va > 0)) continue;
+    score.push([p.key, beta * Math.log(Math.max(0.05, p.va / p.g + floor) / Math.max(0.05, p.e + floor))]);
+  }
+  if (!score.length) return out;
+  const m = Math.max(...score.map(([, u]) => u));
+  const z = score.reduce((s, [, u]) => s + Math.exp(u - m), 0);
+  for (const [k, u] of score) out.set(k, Math.exp(u - m) / z);
+  return out;
+}
+
 // All-NBA teams from simulated odds: the fifteen likeliest, five a team, in
 // order of P(All-NBA) — ties broken by P(1st team).
 export function allNbaTeams(results) {

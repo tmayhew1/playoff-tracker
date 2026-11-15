@@ -154,11 +154,14 @@ async function liveStandings() {
 }
 
 // The Awards tab's fits (scripts/bake-awards.mjs) — the Look Ahead simulates
-// the same MVP, ROY and All-Star models on the projected season.
+// the same MVP, ROY, All-Star and MIP models on the projected season.
 async function readAwardModels() {
   try {
     const a = JSON.parse(await readFile(join(process.cwd(), "app", "data", "awards.json"), "utf8"));
-    return { mvp: { beta: a.mvp.model.beta }, roy: { beta: a.roy.model.beta }, allstar: { beta: a.allstar.model.beta } };
+    return {
+      mvp: { beta: a.mvp.model.beta }, roy: { beta: a.roy.model.beta }, allstar: { beta: a.allstar.model.beta },
+      mip: a.mip?.model ? { beta: a.mip.model.beta, floor: a.mip.model.floor } : null,
+    };
   } catch {
     return null;
   }
