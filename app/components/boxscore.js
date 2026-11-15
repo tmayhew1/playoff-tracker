@@ -71,7 +71,6 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
           <span className="text-stone-400 mr-1">{isExpanded ? "▾" : "▸"}</span>
           <span className={onOpenPlayer ? "underline decoration-dotted" : ""}>{p.name}</span>
           {onOpenPlayer && <span className="text-[8px] ml-0.5" aria-hidden>›</span>}
-          {p.tag && <span title={p.tagTitle || undefined} className={`ml-1.5 text-[8px] font-bold uppercase tracking-wider px-1 border ${p.tagTone || "border-stone-300 text-stone-500"}`}>{p.tag}</span>}
         </span>
         {c ? (
           <>

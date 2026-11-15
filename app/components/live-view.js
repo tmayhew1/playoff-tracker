@@ -30,9 +30,6 @@ const LIVE_POLL = 30000;
 const IDLE_POLL = 5 * 60000;
 const INJURY_POLL = 10 * 60000;
 
-// The injury report's statuses, short enough for a tag beside a name.
-const SHORT_STATUS = { "day-to-day": "DTD", questionable: "Q", doubtful: "D", probable: "P" };
-
 // Live red, later grey, final black, in the slate summary.
 const STATUS_INK = { 1: "text-stone-400", 2: "text-red-600", 3: "text-stone-900" };
 
@@ -311,8 +308,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
 // opponent's card (`onSwap`).
 // `injuries` is the league's injury report (/api/injuries; null while it
 // loads, `players` null when it couldn't be read). With it the players split
-// into In and Out — the ones ruled out, each with what he is out with, and
-// under them any who haven't played this season — and the projection is
+// into In and Out (the ones ruled out, faded), and the projection is
 // made for the players in on both sides: the score, and the shooting lines
 // of the tape, which are then the game's predicted ones rather than the
 // season's (projectedTape).
@@ -338,13 +334,8 @@ function PregameCard({ g, tri, lga, context, injuries, onClose, onSwap }) {
   const [expanded, setExpanded] = useState(null);
   const sections = useMemo(() => {
     const rows = seasonLines(ctx?.players, lga, cat).map((p) => {
-      const k = normalizeName(p.name), e = avail.out.get(k) || avail.listed.get(k);
       const row = { ...p, rowKey: `${p.team}-${p.name}` };
-      if (!e) return row;
-      const title = [e.status, e.injury, e.note].filter(Boolean).join(" · ");
-      return e.out
-        ? { ...row, isOut: true, faded: true, tag: e.injury?.split(" (")[0] || "Out", tagTitle: title, tagTone: "border-red-300 text-red-700 bg-red-50" }
-        : { ...row, tag: SHORT_STATUS[e.status.toLowerCase()] || e.status, tagTitle: title, tagTone: "border-amber-300 text-amber-700 bg-amber-50" };
+      return avail.out.has(normalizeName(p.name)) ? { ...row, isOut: true, faded: true } : row;
     });
     return [
       { label: "In", rows: rows.filter((p) => !p.isOut), tone: "text-stone-700" },
@@ -378,12 +369,6 @@ function PregameCard({ g, tri, lga, context, injuries, onClose, onSwap }) {
             <span className="truncate text-stone-400">{reportNote}</span>
           </div>
           <BoxscoreTable sections={sections} expandedKey={expanded} setExpandedKey={setExpanded} lga={lga} teams={{}} useTeamColor cat={cat} seasonSoFar={seasonSoFar} />
-          {avail.unplayed.length > 0 && (
-            <div className="pt-1.5 text-[10px] text-stone-500">
-              <span className="font-semibold text-red-700">{sections[1].rows.length ? "Also out" : "Out"}, yet to play this season:</span>{" "}
-              {avail.unplayed.map((e) => `${e.name}${e.injury ? ` (${e.injury})` : ""}`).join(", ")}
-            </div>
-          )}
           {ownShots && (
             <div className="pt-2 text-[9px] leading-snug text-stone-400">
               The score and the 2P, 3P and FT lines are projected for the players in{report ? "" : " (the full roster, without an injury report)"}; Def PPP, wTRB and POSS are the season so far.
