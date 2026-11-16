@@ -32,14 +32,18 @@ function segPerGame(seg, r, lx, s) {
 }
 
 // A distance's shots for the shot-distribution readings: FTA ÷ 2.2 as trips,
-// and a 2-point distance's attempts carried to the row's G when its zones
-// cover fewer games (a row tonight's games have moved) — so its share sits
-// beside FT and 3PT counts that include tonight, instead of shrinking under
-// them until the next bake.
-function shotTrips(seg, r) {
+// read over the games the shot-distance zones cover. ESPN's live box has no
+// shot locations, so on a row tonight's games have moved the 2-point zones
+// still stand at basketball-reference's last bake; a share can only be
+// known over those games, so when the row is split by distance (`zoned`) the
+// box-score distances (FT, 3PT) are carried back to the zones' G rather than
+// the zones guessed forward to tonight's. The shares come out the same either
+// way, but the G and per-game counts beside them stay ones we actually have.
+function shotTrips(seg, r, zoned) {
   const a = (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
-  const g = seg.games ? seg.games(r) : 0;
-  return g > 0 && r.gp > g ? (a * r.gp) / g : a;
+  if (!zoned || seg.games) return a;
+  const g = zoneGames(r);
+  return g > 0 && r.gp > g ? (a * g) / r.gp : a;
 }
 
 // Short label printed under a category's bar in the split row below a Basic
@@ -671,7 +675,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // its seasons' shares added up.
   const SHARE_SEGMENTS = useMemo(() => {
     if (!showZones || !SEGMENTS) return null;
-    const attOf = (seg, r) => shotTrips(seg, r);
+    // Split by distance, every share leans on the zones, so it reads over
+    // the games they cover (rowGames / maLabel), not the row's live G.
+    const zoned = SEGMENTS.some((seg) => seg.games);
+    const zg = zoned ? { games: zoneGames, minutes: zoneMinutes } : {};
+    const attOf = (seg, r) => shotTrips(seg, r, zoned);
     const den = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
     return SEGMENTS.map((seg) => {
       const num = (r) => attOf(seg, r);
@@ -684,8 +692,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // a share ranking that only admits high-volume zone shooters would
         // hide the low end of the scale.
         a: den,
-        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r),
+        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r, zg),
         val: (r) => { const d = den(r); return d > 0 ? num(r) / d : 0; },
+        ...zg,
       };
     });
   }, [showZones, SEGMENTS, rateMode, perGame]);
@@ -1563,7 +1572,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
             // shooting chances they are rather than double-counting and-ones
             // and two-shot fouls.
-            const atts = segData.map((seg) => shotTrips(seg, selfRow));
+            const zoned = segData.some((seg) => seg.games);
+            const atts = segData.map((seg) => shotTrips(seg, selfRow, zoned));
             const tot = atts.reduce((t, a) => t + a, 0);
             if (!(tot > 0)) return null;
             const peak = Math.max(...atts) / tot;
