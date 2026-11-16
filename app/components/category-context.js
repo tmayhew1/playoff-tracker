@@ -1589,6 +1589,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             const shares = segData.map((seg) => shareOf(seg)?.val(selfRow) || 0);
             if (!shares.some((v) => v > 0)) return null;
             const peak = Math.max(...shares);
+            // A 2-point distance's share is the last bake's while tonight's
+            // games have moved the row, so it carries a "~".
+            const stale = (seg) => !!seg.games && (selfRow.gp || 0) > seg.games(selfRow);
             return (
               <div className="mt-2 border-t border-stone-100 pt-1.5">
                 <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
@@ -1634,7 +1637,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                             );
                           })()}
                         </div>
-                        <span className="text-[8px] tabular-nums text-stone-500 leading-none">{(share * 100).toFixed(0)}%</span>
+                        <span className="text-[8px] tabular-nums text-stone-500 leading-none">{stale(seg) ? "~" : ""}{(share * 100).toFixed(0)}%</span>
                       </button>
                     );
                   })}
