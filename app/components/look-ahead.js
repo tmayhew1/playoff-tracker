@@ -774,13 +774,21 @@ function Cards({ p, sim, lga }) {
       {(sim || p.mip) && (() => {
         const odds = [["MVP", sim?.mvp], ["MIP", p.mip], ["ROY", p.rookie ? sim?.roy : 0], ["All-NBA", sim?.allNba], ["All-Star", sim?.allStar]].filter(([, x]) => x > 0.005);
         return odds.length > 0 && (
-          <div className="basis-full flex gap-1">
-            {odds.map(([k, x]) => (
-              <Card key={k} tight tag={k} tagClass={TAG.amber} title={`${k} board`}
-                onClick={goToAward ? () => goToAward(AWARD_KEY[k], p.slug) : null}>
-                {pct(x)} <span className="text-stone-400" aria-hidden>→</span>
-              </Card>
-            ))}
+          // One quiet strip: each award a muted label over its odds, split by
+          // hairlines — a tap still opens that award's board.
+          <div className="basis-full flex divide-x divide-stone-200 border border-stone-200 bg-white">
+            {odds.map(([k, x]) => {
+              const go = goToAward ? () => goToAward(AWARD_KEY[k], p.slug) : null;
+              const Tag = go ? "button" : "span";
+              return (
+                <Tag key={k} type={go ? "button" : undefined} onClick={go || undefined}
+                  title={go ? `Open the ${k} board` : `${k} odds`}
+                  className={`flex-1 min-w-0 flex flex-col items-center py-1 tabular-nums ${go ? "hover:bg-stone-100 cursor-pointer" : ""}`}>
+                  <span className="text-[8px] uppercase tracking-wider text-stone-400 truncate max-w-full">{k}</span>
+                  <span className="text-[11px] font-semibold text-stone-800">{pct(x)}</span>
+                </Tag>
+              );
+            })}
           </div>
         );
       })()}
