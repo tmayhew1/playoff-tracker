@@ -675,14 +675,22 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // its seasons' shares added up.
   const SHARE_SEGMENTS = useMemo(() => {
     if (!showZones || !SEGMENTS) return null;
-    // Split by distance, every share leans on the zones, so it reads over
-    // the games they cover (rowGames / maLabel), not the row's live G.
+    // A box-score distance (FT, 3PT, or the merged 2PT) is a share of the
+    // box score's own shots — FGA plus FTA ÷ 2.2 trips — which ESPN's live box
+    // carries, so it reads through tonight's games at the row's live G. A
+    // 2-point distance only exists in basketball-reference's bake, so its
+    // share is over the zones' own total (FT and 3PT carried back to the
+    // games the zones cover, see shotTrips) and reads at that G.
     const zoned = SEGMENTS.some((seg) => seg.games);
-    const zg = zoned ? { games: zoneGames, minutes: zoneMinutes } : {};
+    const zg = { games: zoneGames, minutes: zoneMinutes };
     const attOf = (seg, r) => shotTrips(seg, r, zoned);
-    const den = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
+    const zoneDen = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
+    const boxDen = (r) => (r.fga || 0) + (r.fta || 0) / 2.2;
     return SEGMENTS.map((seg) => {
-      const num = (r) => attOf(seg, r);
+      const fromZones = !!seg.games;
+      const num = fromZones ? (r) => attOf(seg, r) : (r) => (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
+      const den = fromZones ? zoneDen : boxDen;
+      const g = fromZones ? zg : {};
       return {
         key: `share:${seg.key}`, sub: `${seg.sub} dist.`, share: true, zone: seg.key,
         note: `share of his shots from ${seg.key === "ft" ? "the line (FTA ÷ 2.2 as trips)" : seg.dist ? `${seg.sub} (${seg.dist})` : seg.sub}`,
@@ -692,9 +700,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // a share ranking that only admits high-volume zone shooters would
         // hide the low end of the scale.
         a: den,
-        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r, zg),
+        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r, g),
         val: (r) => { const d = den(r); return d > 0 ? num(r) / d : 0; },
-        ...zg,
+        ...g,
       };
     });
   }, [showZones, SEGMENTS, rateMode, perGame]);
@@ -1572,11 +1580,15 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
             // shooting chances they are rather than double-counting and-ones
             // and two-shot fouls.
-            const zoned = segData.some((seg) => seg.games);
-            const atts = segData.map((seg) => shotTrips(seg, selfRow, zoned));
-            const tot = atts.reduce((t, a) => t + a, 0);
-            if (!(tot > 0)) return null;
-            const peak = Math.max(...atts) / tot;
+            // Each disc reads the same share its ranking does (SHARE_SEGMENTS):
+            // FT and 3PT through tonight's box, a 2-point distance through the
+            // last bake — so on a row tonight's games have moved they can sum
+            // a hair off 100% until the next bake.
+            const shareOf = (seg) => SHARE_SEGMENTS?.find((x) => x.key === `share:${seg.key}`);
+            const atts = segData.map((seg) => shareOf(seg)?.num(selfRow) || 0);
+            const shares = segData.map((seg) => shareOf(seg)?.val(selfRow) || 0);
+            if (!shares.some((v) => v > 0)) return null;
+            const peak = Math.max(...shares);
             return (
               <div className="mt-2 border-t border-stone-100 pt-1.5">
                 <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
@@ -1588,7 +1600,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                   }}
                 >
                   {segData.map((seg, i) => {
-                    const share = atts[i] / tot;
+                    const share = shares[i];
                     const rel = peak > 0 ? share / peak : 0;
                     return (
                       <button
