@@ -263,6 +263,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       {!sel ? (
         <>
           <input
+            aria-label="Search a player to compare"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -651,6 +652,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       {!sel ? (
         <>
           <input
+            aria-label="Search a player to compare"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

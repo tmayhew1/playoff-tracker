@@ -195,6 +195,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   return (
     <div>
       <input
+        aria-label="Search a player"
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -729,7 +730,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
               the narrow right-hand column wrapped its own label with it. Here
               it sits beside a short string with the whole row to grow into. */}
           <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="text-base font-bold text-stone-900">{player.name}</h3>
+            <h2 className="text-base font-bold text-stone-900">{player.name}</h2>
             {selecting && (
               <button
                 onClick={exitSelect}
@@ -859,7 +860,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           onClick={cycleSeasonSort}
           className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${seasonSorted ? "text-stone-900 font-semibold" : ""}`}
           title="Sort by season — newest first, then oldest first, then back to the default order"
-          aria-label="Sort by season"
+          aria-label="Season, sort by season"
           aria-pressed={seasonSorted}
         >
           Season{effectiveSort === "seasonDesc" ? " ▼" : effectiveSort === "seasonAsc" ? " ▲" : ""}
@@ -889,7 +890,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
           className={`w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label={metric === "vaPlus" ? "Sort by total VA+" : "Sort by total VA"}
+          aria-label={metric === "vaPlus" ? "TOT VA+, sort by total VA+" : "TOT VA, sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
           {metric === "vaPlus" ? "TOT VA+" : "TOT VA"}{effectiveSort === "totalVA" ? " ▼" : ""}
@@ -901,7 +902,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
           className={`w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label={metric === "vaPlus" ? "Sort by VA+ per game" : "Sort by VA per game"}
+          aria-label={metric === "vaPlus" ? "VA+/G, sort by VA+ per game" : "VA/G, sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
           {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▼" : ""}

@@ -64,11 +64,11 @@ function TeamTag({ side }) {
 function SectionHeader({ title, count, live, sub }) {
   return (
     <div className="flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900">
-      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
         {live && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
         {title}
         {sub && <span className="font-normal tracking-wider text-stone-500">{sub}</span>}
-      </h3>
+      </h2>
       <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">{count} game{count === 1 ? "" : "s"}</span>
     </div>
   );

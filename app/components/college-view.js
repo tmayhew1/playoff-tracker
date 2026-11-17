@@ -62,6 +62,7 @@ export function CollegeView() {
       </div>
 
       <input
+        aria-label="Search college players"
         type="text"
         value={query}
         onChange={(e) => { setQuery(e.target.value); setTeamFilter(null); setExpanded(null); }}

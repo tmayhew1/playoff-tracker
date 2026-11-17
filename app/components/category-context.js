@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useId } from "react";
 import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData, zoneGames, zoneMinutes } from "../scoring";
 import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
@@ -394,6 +394,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // computed against the standard baseline under a USG-ADJ card would be a
   // different statistic from the value it ranks.
   const lgaFor = useLgaFor();
+  // Ids for the shot-distribution discs' SVG blur filters. Unique to this
+  // card, and defined once per card rather than once per disc — the same id
+  // six times over (and again in every other open card) is a duplicate id.
+  const blobId = useId().replace(/:/g, "");
   const { poolsBySeason, allRows, self: ownerSelf } = context;
   // The card owner — the player whose breakdown row opened this drill-in.
   const ownerSeasonKey = pProp.season || context.season;
@@ -1597,6 +1601,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             return (
               <div className="mt-2 border-t border-stone-100 pt-1.5">
                 <div className="uppercase tracking-wider text-[8px] text-stone-400 px-1">Shot distribution</div>
+                <svg width="0" height="0" aria-hidden="true" focusable="false" className="absolute">
+                  <defs>
+                    <filter id={`${blobId}-soft`} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
+                    <filter id={`${blobId}-slice`} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" /></filter>
+                  </defs>
+                </svg>
                 <div
                   className="grid gap-1 items-center mt-1 mx-auto"
                   style={{
@@ -1629,12 +1639,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                               // Padded viewBox so the blur feathers out past
                               // the disc instead of clipping at its edge.
                               <svg width={d * 1.4} height={d * 1.4} viewBox="-20 -20 140 140" aria-hidden="true" className="overflow-visible">
-                                <defs>
-                                  <filter id="shot-blob-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
-                                  <filter id="shot-blob-slice" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" /></filter>
-                                </defs>
-                                <circle cx="50" cy="50" r="50" className="fill-stone-300" fillOpacity="0.7" filter="url(#shot-blob-soft)" />
-                                <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" fillOpacity={0.55 + 0.4 * rel} filter="url(#shot-blob-slice)" />
+                                <circle cx="50" cy="50" r="50" className="fill-stone-300" fillOpacity="0.7" filter={`url(#${blobId}-soft)`} />
+                                <path d={`M50 50 L${x0} ${y} A50 50 0 ${th > Math.PI ? 1 : 0} 1 ${x1} ${y} Z`} className="fill-stone-700" fillOpacity={0.55 + 0.4 * rel} filter={`url(#${blobId}-slice)`} />
                               </svg>
                             );
                           })()}

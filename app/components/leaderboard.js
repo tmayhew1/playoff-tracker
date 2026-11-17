@@ -613,7 +613,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
           className={`w-11 sm:w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label="Sort by total VA"
+          aria-label={metric === "vaPlus" ? "TOT VA+, sort by total VA+" : "TOT VA, sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
           <span className="hidden sm:inline">TOT </span>{metric === "vaPlus" ? "VA+" : "VA"}{effectiveSort === "totalVA" ? " ▾" : ""}
@@ -625,7 +625,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
           className={`w-10 sm:w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label="Sort by VA per game"
+          aria-label={metric === "vaPlus" ? "VA+/G, sort by VA+ per game" : "VA/G, sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
           {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▾" : ""}

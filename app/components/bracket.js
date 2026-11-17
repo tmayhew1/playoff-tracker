@@ -235,11 +235,11 @@ export function RoundSection({ roundKey, title, series, matchups, winners, gameW
         onClick={() => setCollapsed((c) => !c)}
         className="w-full flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
           <span className="text-stone-400 text-[10px]">{collapsed ? "▸" : "▾"}</span>
           {title}
           {allClinched && <span className="text-[9px] uppercase tracking-wider text-stone-500 font-normal">Complete</span>}
-        </h3>
+        </h2>
         <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
       </button>
       {!collapsed && sortedSeries.map((s) => (

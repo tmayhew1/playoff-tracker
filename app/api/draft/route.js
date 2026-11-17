@@ -14,7 +14,8 @@ export const runtime = "nodejs";
 export async function GET(req) {
   // No season asked for: the newest draft.
   const season = new URL(req.url).searchParams.get("season") || Object.keys(HISTORY)[0];
-  const h = HISTORY[season];
+  // Own keys only: "?season=constructor" is not a draft season.
+  const h = Object.hasOwn(HISTORY, season) ? HISTORY[season] : null;
   if (!h) {
     return Response.json({ error: "unknown draft season", seasons: Object.keys(HISTORY) }, { status: 404 });
   }

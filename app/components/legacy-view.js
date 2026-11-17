@@ -521,7 +521,7 @@ function PositionFilter({ value, onChange }) {
     // without it a narrow phone compresses the chips into unreadable slivers
     // instead of letting the row scroll.
     <div className="flex items-center gap-1 w-max">
-      <label className="text-[10px] uppercase tracking-widest text-stone-400 shrink-0">Pos</label>
+      <span className="text-[10px] uppercase tracking-widest text-stone-400 shrink-0">Pos</span>
       {value && (
         <button
           onClick={() => onChange(parent)}
@@ -629,6 +629,7 @@ function CareersBoard({ onGoToLeaderboard }) {
       </p>
 
       <input
+        aria-label="Search a player"
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -642,6 +643,7 @@ function CareersBoard({ onGoToLeaderboard }) {
           it rather than a row below. */}
       <div className="flex items-center gap-2 mb-2">
         <select
+          aria-label="Minimum career games"
           value={minGames}
           onChange={(e) => setMinGames(Number(e.target.value))}
           className="text-[11px] bg-white border border-stone-300 px-2 py-1.5 text-stone-800 shrink-0"

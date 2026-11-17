@@ -165,7 +165,7 @@ export function DraftView() {
                 <span className="text-[12px] tabular-nums text-right font-bold text-stone-900">{odds[t].ep.toFixed(1)}</span>
                 <span className="text-[12px] tabular-nums text-right text-stone-500">{x.actual ?? ""}</span>
                 <span className="text-right">
-                  <button onClick={() => cycle(t)} aria-label={`Change ${t}'s owner`}
+                  <button onClick={() => cycle(t)} type="button" aria-label={`${owners[t] || "open"}, change ${t}'s owner`}
                     className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${owners[t] ? ownerBadge(owners[t]) : "border border-dashed border-stone-300 text-stone-400"}`}>
                     {owners[t] || "open"}
                   </button>

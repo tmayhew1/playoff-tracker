@@ -115,10 +115,10 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
           <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
           {ROUND_LABELS[roundKey] || roundKey}
-        </h3>
+        </h2>
         <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
       </button>
       {open && series.map((s, i) => (
@@ -173,10 +173,10 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
           <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
           {month.label} {month.key.slice(0, 4)}
-        </h3>
+        </h2>
         <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
       </button>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl} />}
@@ -264,10 +264,10 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
           <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
           Reg Season
-        </h3>
+        </h2>
         <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
       </button>
       {open && <div className="pl-3">{months}</div>}
@@ -539,12 +539,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
               projected season reads as a different kind of page at a glance. */}
           <div className={`mb-4 p-3 border ${lookAhead ? "bg-amber-50 border-amber-400" : "bg-white border-stone-300"}`}>
             <div className="flex items-center justify-between gap-2 mb-1">
-              <label className={`text-[10px] uppercase tracking-[0.3em] block ${lookAhead ? "text-amber-800" : "text-stone-500"}`}>Season</label>
+              <label htmlFor="explore-season" className={`text-[10px] uppercase tracking-[0.3em] block ${lookAhead ? "text-amber-800" : "text-stone-500"}`}>Season</label>
               {lookAhead && (
                 <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 border border-amber-400 bg-amber-100 text-amber-800">Projected</span>
               )}
             </div>
             <select
+              id="explore-season"
               value={season}
               onChange={(e) => setSeason(e.target.value)}
               className={`w-full text-sm font-bold bg-white border px-2 py-1.5 ${lookAhead ? "text-amber-900 border-amber-400" : "text-stone-900 border-stone-300"}`}

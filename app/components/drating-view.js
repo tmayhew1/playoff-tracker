@@ -99,6 +99,7 @@ export function DRatingView() {
     <div className="text-[10px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
+          aria-label="Season"
           value={sel || ""}
           onChange={(e) => { setSeason(e.target.value); }}
           className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
@@ -119,6 +120,7 @@ export function DRatingView() {
           </button>
         )}
         <input
+          aria-label="Search players"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

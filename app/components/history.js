@@ -402,10 +402,10 @@ export function HistoryRoundSection({ round, teamsMap, lga, season }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
       >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
           <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
           {round.label}
-        </h3>
+        </h2>
       </button>
       {open && round.series.map((s, i) => (
         <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} roundKey={round.key} season={season} />

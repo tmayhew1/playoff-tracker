@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Component, useCallback, useEffect, useState } from "react";
 import { HISTORY } from "./historical";
 import dynamic from "next/dynamic";
 import { ExploreView } from "./components/explore";
@@ -18,6 +18,33 @@ const TabLoading = () => (
   <div className="py-10 text-center text-[11px] uppercase tracking-widest text-stone-400">Loading…</div>
 );
 const lazyView = (load) => dynamic(load, { loading: TabLoading });
+
+// Catches a render error inside one tab (a data shape nobody expected, a lazy
+// chunk that failed to download) so it costs that tab, not the page: the
+// header and the tab strip stay up, and the reader can retry or go elsewhere.
+// Keyed by tab where it is mounted, so switching tabs clears it.
+class TabBoundary extends Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error) {
+    console.error(error);
+  }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div role="alert" className="p-4 bg-white border border-stone-300 text-center">
+        <p className="text-sm text-stone-700 mb-3">This tab hit an error and couldn’t be shown.</p>
+        <button
+          type="button"
+          onClick={() => this.setState({ error: null })}
+          className="px-3 py-2 text-[11px] font-bold uppercase tracking-widest bg-stone-900 text-white"
+        >Try again</button>
+      </div>
+    );
+  }
+}
 const CollegeView = lazyView(() => import("./components/college-view").then((m) => m.CollegeView));
 const DRatingView = lazyView(() => import("./components/drating-view").then((m) => m.DRatingView));
 const HistoryView = lazyView(() => import("./components/history").then((m) => m.HistoryView));
@@ -165,11 +192,13 @@ function Tracker({ initial }) {
 
         {/* Share sits at the strip's right end, outside the scrolling part, so
             it stays put while the tabs scroll under it. */}
-        <div className="flex items-center border-b-2 border-stone-900 mb-5">
+        <nav aria-label="Sections" className="flex items-center border-b-2 border-stone-900 mb-5">
         <div className="flex flex-1 min-w-0 overflow-x-auto no-scrollbar">
           {TABS.map(([id, label]) => (
             <button
               key={id}
+              type="button"
+              aria-current={tab === id ? "page" : undefined}
               onClick={() => setTab(id)}
               className={`px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${tab === id ? "bg-stone-900 text-white" : "text-stone-500"}`}
             >
@@ -179,7 +208,9 @@ function Tracker({ initial }) {
           ))}
         </div>
         <ShareButton query={query} />
-        </div>
+        </nav>
+
+        <main>
 
         {/* Trey vs Spencer: which draft season, then the baseline switch (a
             season page has no selectors of its own). Explore renders its own
@@ -203,8 +234,11 @@ function Tracker({ initial }) {
           </>
         )}
 
+        <TabBoundary key={tab}>
         {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView onData={onLiveData} focus={liveFocus} onFocusHandled={clearLiveFocus} /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
+        </TabBoundary>
+        </main>
       </div>
     </div>
     </PlayerNavProvider>
