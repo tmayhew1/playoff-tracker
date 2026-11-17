@@ -10,17 +10,18 @@ import { shareSummary } from "./api/_lib/share-card";
 
 const BUILD = process.env.NEXT_PUBLIC_BUILD_ID || "";
 
-function origin() {
-  const h = headers();
+async function origin() {
+  // Next 15: request APIs are asynchronous.
+  const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host");
   const proto = h.get("x-forwarded-proto") || (host?.startsWith("localhost") ? "http" : "https");
   return host ? `${proto}://${host}` : "";
 }
 
 export async function generateMetadata({ searchParams }) {
-  const st = parseShareParams(searchParams);
+  const st = parseShareParams(await searchParams);
   const query = shareQuery(st);
-  const base = origin();
+  const base = await origin();
   // The build id rides along so a new deployment's card is a new URL — the
   // same pinning lib/fetch-cache.js gives the data routes.
   const image = `${base}/api/og${query || "?"}${query ? "&" : ""}${BUILD ? `v=${BUILD.slice(0, 12)}` : ""}`;
@@ -42,6 +43,6 @@ export async function generateMetadata({ searchParams }) {
   };
 }
 
-export default function Page({ searchParams }) {
-  return <PlayoffTracker initial={parseShareParams(searchParams)} />;
+export default async function Page({ searchParams }) {
+  return <PlayoffTracker initial={parseShareParams(await searchParams)} />;
 }

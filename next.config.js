@@ -67,9 +67,8 @@ const nextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   env: { NEXT_PUBLIC_BUILD_ID: buildId() },
-  experimental: {
-    outputFileTracingIncludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, [`./${GAMES}/${seasonUnderWay()}/*.json`]])),
-    outputFileTracingExcludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, finishedSeasonGames()])),
-  },
+  // Top-level since Next 15 (they were under `experimental` in 14).
+  outputFileTracingIncludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, [`./${GAMES}/${seasonUnderWay()}/*.json`]])),
+  outputFileTracingExcludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, finishedSeasonGames()])),
 };
 module.exports = nextConfig;
