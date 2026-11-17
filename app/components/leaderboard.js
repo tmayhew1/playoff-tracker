@@ -894,6 +894,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 player={p}
                 lga={lgaOf(p)}
                 baseline="NBA"
+                season={season}
                 context={contextFor(p)}
                 showDRating={metric === "vaPlus"}
                 pendingCompare={navCompare?.rowKey === rowKey ? navCompare.compare : null}
