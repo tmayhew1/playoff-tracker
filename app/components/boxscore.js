@@ -9,6 +9,7 @@ import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { scrollBehavior } from "../lib/motion";
+import { etDate } from "../lib/regular-season-games";
 
 
 // A shooting category's columns in the box: its makes and attempts off a
@@ -344,13 +345,12 @@ function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LG
     const now = new Date();
 
     if (isTbd) {
-      const etDate = new Date(d.getTime() - 4 * 60 * 60 * 1000);
-      const sameDay = etDate.getUTCFullYear() === now.getFullYear() &&
-                      etDate.getUTCMonth() === now.getMonth() &&
-                      etDate.getUTCDate() === now.getDate();
-      displayStatus = sameDay
-        ? "Today"
-        : `${etDate.getUTCMonth() + 1}/${etDate.getUTCDate()}`;
+      // A TBD game has no tip time, only its league (Eastern) date. Read
+      // that date in Eastern time proper — a fixed UTC−4 is an hour off from
+      // November to March, when the East is on standard time.
+      const [, em, ed] = etDate(gameDateTimeUTC).split("-").map(Number);
+      const sameDay = etDate(gameDateTimeUTC) === etDate(now.toISOString());
+      displayStatus = sameDay ? "Today" : `${em}/${ed}`;
     } else {
       const sameDay = d.getFullYear() === now.getFullYear() &&
                       d.getMonth() === now.getMonth() &&
