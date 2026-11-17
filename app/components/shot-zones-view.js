@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
+import { Render } from "./ui/render";
 
 
 // Data-browser tab for shot-distance zone splits (0-3/3-10/10-16/16ft-3PT):
@@ -159,9 +160,9 @@ export function ShotZonesView() {
             );
             return (
               <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-                <span>#</span><H k="name" label="Player" right={false} natural={1} />
-                {ZONES.map((z) => <H key={z.key} k={z.key} label={z.label} />)}
-                <H k="total" label="Total" />
+                <span>#</span><Render fn={H} k="name" label="Player" right={false} natural={1} />
+                {ZONES.map((z) => <Render fn={H} key={z.key} k={z.key} label={z.label} />)}
+                <Render fn={H} k="total" label="Total" />
               </div>
             );
           })()}

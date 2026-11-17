@@ -5,6 +5,7 @@ import { lgaForSeason } from "../scoring";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { normalizeName, teamColor } from "../lib/format";
+import { Render } from "./ui/render";
 
 
 // Data-browser tab for the D-Rating / VA+ decomposition: every player-season
@@ -152,7 +153,7 @@ export function DRatingView() {
         );
         return (
           <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-            <span>#</span><H k="name" label="Player" right={false} />
+            <span>#</span><Render fn={H} k="name" label="Player" right={false} />
             {/* MP header arms the min-minutes filter (two-step, like the
                 leaderboards' G column) instead of sorting; a second tap
                 disarms. */}
@@ -165,9 +166,9 @@ export function DRatingView() {
             >
               MP
             </button>
-            <H k="drtg" label="DRTG" /><H k="team" label="Team" />
-            <H k="ind" label="IND" /><H k="tmp" label="TM+" />
-            <H k="perG" label="D/G" />
+            <Render fn={H} k="drtg" label="DRTG" /><Render fn={H} k="team" label="Team" />
+            <Render fn={H} k="ind" label="IND" /><Render fn={H} k="tmp" label="TM+" />
+            <Render fn={H} k="perG" label="D/G" />
           </div>
         );
       })()}

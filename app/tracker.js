@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useCallback, useEffect, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState } from "react";
 import { HISTORY } from "./historical";
 import dynamic from "next/dynamic";
 import { ExploreView } from "./components/explore";
@@ -90,6 +90,18 @@ const tabFromLink = (t) => (SEASONS.includes(t) ? "tvs" : TAB_IDS.has(t) ? t : "
 
 function Tracker({ initial }) {
   const [tab, setTab] = useState(() => tabFromLink(initial?.tab));
+  // The tab strip scrolls sideways on a phone, so the open tab can sit off
+  // its edge — a shared link to College or Draft, or a jump from another
+  // tab. Bring it into the strip (never the page: only scrollLeft moves).
+  const tabStripRef = useRef(null);
+  useEffect(() => {
+    const strip = tabStripRef.current;
+    const cur = strip?.querySelector('[aria-current="page"]');
+    if (!strip || !cur) return;
+    const lo = cur.offsetLeft - strip.offsetLeft, hi = lo + cur.offsetWidth;
+    if (lo < strip.scrollLeft) strip.scrollLeft = lo;
+    else if (hi > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = hi - strip.clientWidth;
+  }, [tab]);
   const [tvsSeason, setTvsSeason] = useState(() => (SEASONS.includes(initial?.tab) ? initial.tab : SEASONS[0]));
   // Explore's part of the opening link, handed over once: ExploreView starts
   // from it on its first mount and clears it, so coming back to Explore later
@@ -193,7 +205,7 @@ function Tracker({ initial }) {
         {/* Share sits at the strip's right end, outside the scrolling part, so
             it stays put while the tabs scroll under it. */}
         <nav aria-label="Sections" className="flex items-center border-b-2 border-stone-900 mb-5">
-        <div className="flex flex-1 min-w-0 overflow-x-auto no-scrollbar">
+        <div ref={tabStripRef} className="flex flex-1 min-w-0 overflow-x-auto no-scrollbar">
           {TABS.map(([id, label]) => (
             <button
               key={id}

@@ -10,6 +10,7 @@ import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
 import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/role-model";
+import { Render } from "./ui/render";
 
 
 // CategoryContext: the drill-down under one VA category — the league-context
@@ -440,7 +441,10 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // Leaderboard rows don't carry a season field (the whole board is one
   // season) — the caller passes it on the context instead.
   const seasonKey = p.season || context.season;
-  const selfRow = { ...p, name: self.name, slug: self.slug || null };
+  // Memoized: every pool below lists it as a dependency, and a fresh object
+  // each render re-ran all of them — the five-figure all-time scan included —
+  // on any state change at all (arming a header, tapping a trend bar).
+  const selfRow = useMemo(() => ({ ...p, name: self.name, slug: self.slug || null }), [p, self.name, self.slug]);
   // "/G" toggle. On (default): every rank/percentile/trend/value in this card
   // is PER-GAME category VA. Off: the whole card re-sorts and re-labels on
   // TOTAL category VA instead (a full season outranks a half one at the rate).
@@ -921,7 +925,12 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
 
     return { floor, N, rank: selfIdx + 1, win, top: pool[0]?.r || null,
              floorA, partialSelf, careerFloor, attFloor, attLo, attHi, board, allN: boardN, allRank: boardRank, mine };
-  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defScope, selSeg, seasonOnly]);
+  // The helpers this reads (metric, shotQual, segEra, the attempts floors…)
+  // are rebuilt each render but are functions of the values listed here:
+  // selSeg and catKey decide the reading, defs/defScope/withDef the defensive
+  // layer, poolScope the baseline, poolsBySeason the floors.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonKey, p.gp, catKey, poolsBySeason, allRows, self, lga, lgaFor, selfRow, perGame, careerBoard, withDef, defs, defScope, poolScope, selSeg, seasonOnly]);
 
   // Reference line for the by-season trend while the card reads a share of
   // shots: the league's share from this distance, pooled over every attempt in
@@ -1381,7 +1390,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           >{shareMode ? "Att" : metricLabel}{rateUnit}</button>
         </div>
         {d.win.map((x) => (
-          <Row key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
+          <Render fn={Row} key={x.rank} rank={x.rank} r={x.r} m={x.m} isSelf={x.rank === d.rank} />
         ))}
         {/* Fixed two-line height so toggling total↔per-game (which reflows
             "total"/"per-game" across the line break) never shifts the page. */}

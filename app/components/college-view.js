@@ -98,13 +98,21 @@ export function CollegeView() {
         const pct = (metricVal(p) / maxMetric) * 100;
         return (
           <div key={key} className="border-b border-stone-100">
+            {/* The whole row takes a tap; the name is the real button, so
+                the per-stat card also opens from a keyboard (the row itself
+                can't be one — it holds the school's button). */}
             <div
               onClick={() => setExpanded(open ? null : key)}
               className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm cursor-pointer hover:bg-stone-50"
             >
               <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
               <span className="min-w-0">
-                <span className="font-semibold text-stone-800 block truncate">{p.name}</span>
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={(e) => { e.stopPropagation(); setExpanded(open ? null : key); }}
+                  className="font-semibold text-stone-800 block truncate max-w-full text-left rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+                >{p.name}</button>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setTeamFilter(p.school); setQuery(""); setExpanded(null); }}

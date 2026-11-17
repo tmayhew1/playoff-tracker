@@ -246,7 +246,16 @@ export function BoxscoreTable({ rows: rowsIn, sections, expandedKey, setExpanded
 // ruled out of it), as season per-game rows
 // (each with his `rowKey`): they go under its box, headed Out, as on the
 // pregame card.
-export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
+export function LiveGameBanner(props) {
+  // Nothing to show without a game. Decided out here, before any hook runs:
+  // the banner's hooks sit either side of where this check used to be, and a
+  // game arriving (or leaving) on a mounted banner would have changed how
+  // many of them ran — which React answers by throwing.
+  if (!props.liveGame) return null;
+  return <GameBanner {...props} />;
+}
+
+function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -301,7 +310,6 @@ export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBo
     }
   }, [staticBox, liveGame?.gameId, isLive, isFinal, expanded, teamFilter, finalTop5, loadBox]);
 
-  if (!liveGame) return null;
   const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC, period, gameClock } = liveGame;
   const canExpand = !!gameId && (isLive || isFinal);
 
