@@ -327,24 +327,24 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   // until the fetch resolves so the picker isn't empty on first paint.
   const FALLBACK = useMemo(() => exploreSeasonList(), []);
   const [linked] = useState(initial);
-  // Player cards wait for their award row before drawing (award-boxes.js);
-  // loading the odds once the page is idle means that wait is usually over
-  // before the first card is opened.
-  useEffect(() => {
-    const start = () => prefetchAwardOdds();
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(start, { timeout: 4000 });
-      return () => window.cancelIdleCallback?.(id);
-    }
-    const t = setTimeout(start, 1500);
-    return () => clearTimeout(t);
-  }, []);
   const [seasons, setSeasons] = useState(() => {
     const base = [LOOK_AHEAD, ...FALLBACK];
     return linked?.season && !base.includes(linked.season)
       ? [...base, linked.season].sort((a, b) => b.localeCompare(a)) : base;
   });
   const [season, setSeason] = useState(linked?.season || FALLBACK[0]);
+  // Player cards wait for their award row before drawing (award-boxes.js);
+  // loading the odds once the page is idle means that wait is usually over
+  // before the first card is opened.
+  useEffect(() => {
+    const start = () => prefetchAwardOdds(season);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(start, { timeout: 4000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(start, 1500);
+    return () => clearTimeout(t);
+  }, [season]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

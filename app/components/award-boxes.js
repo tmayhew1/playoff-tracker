@@ -38,10 +38,13 @@ function loadAhead() {
   return import("./look-ahead").then((m) => m.lookAheadOdds());
 }
 
-// Starts both loads ahead of any card being opened (Explore calls it once the
-// page is idle), so the award row is normally ready by the first tap.
-export function prefetchAwardOdds() {
-  loadOdds().then((odds) => (odds[LOOK_AHEAD_SEASON] ? null : loadAhead())).catch(() => {});
+// Starts the loads ahead of any card being opened (Explore calls it once the
+// page is idle), so the award row is normally ready by the first tap. The
+// Look Ahead's odds are a simulation (a few hundred ms of main thread on a
+// laptop, over a second on a phone), so they only start for a board that is
+// showing the projected season — its cards are the only ones that need them.
+export function prefetchAwardOdds(season) {
+  loadOdds().then((odds) => (season === LOOK_AHEAD_SEASON && !odds[LOOK_AHEAD_SEASON] ? loadAhead() : null)).catch(() => {});
 }
 
 // How long a card waits for its award row before it shows without the
