@@ -486,7 +486,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   const rateKind = !perGame ? "total" : rateMode === "per36" ? "per36" : "perG";
   const maLabel = (made, att, r, seg = null) => {
     const pct = att > 0 ? ((made / att) * 100).toFixed(1) : "0.0";
-    if (!perGame) return `${made}/${att} (${pct}%)`;
+    // Counts can be fractional (FTA ÷ 2.2 trips, zone-scaled shots): round
+    // them for display only, so the % matches the unrounded value ranked on.
+    if (!perGame) return `${Math.round(made)}/${Math.round(att)} (${pct}%)`;
     const div = rateMode === "per36"
       ? (((seg?.minutes ? seg.minutes(r) : r.mp) || 1) / 36)
       : ((seg?.games ? seg.games(r) : r.gp) || 1);
@@ -700,7 +702,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // a share ranking that only admits high-volume zone shooters would
         // hide the low end of the scale.
         a: den,
-        rate: (r) => maLabel(Math.round(num(r)), Math.round(den(r)), r, g),
+        rate: (r) => maLabel(num(r), den(r), r, g),
         val: (r) => { const d = den(r); return d > 0 ? num(r) / d : 0; },
         ...g,
       };
