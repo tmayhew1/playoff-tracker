@@ -353,7 +353,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                             withVaPlus starter={t.top.some((s) => s.slug === p.slug)}
                             key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={rosterMax} lga={lga} sim={awards.bySlug[p.slug]}
                             isOpen={expanded === p.slug} onToggle={rosterArm.rowClick(toPlayer(p), () => setExpanded(expanded === p.slug ? null : p.slug))}
-                            nameClass={rosterArm.nameClass}
+                            nameClass={rosterArm.nameClass(toPlayer(p))}
                           />
                         ))}
                         <InjuredOut list={data.injuredOut?.[t.team]} />
@@ -405,7 +405,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
           <LeaderRow
             key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={maxAbs} lga={lga} sim={awards.bySlug[p.slug]}
             isOpen={expanded === p.slug} onToggle={listArm.rowClick(toPlayer(p), () => setExpanded(expanded === p.slug ? null : p.slug))}
-            nameClass={listArm.nameClass}
+            nameClass={listArm.nameClass(toPlayer(p))}
             activeTeam={team} onTeam={(t) => { setTeam(team === t ? null : t); setExpanded(null); }}
           />
         ))}
@@ -577,7 +577,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, set
                       <TeamChip team={p.team} active={isOpen} />
                       <span className="flex-1 min-w-0 flex items-center text-stone-800">
                         <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                        <Name name={p.name} className={arm.nameClass} />
+                        <Name name={p.name} className={arm.nameClass({ name: p.name, slug: p.slug || null })} />
                         {p.injury && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
                       </span>
                       <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(odds)}</span>

@@ -286,7 +286,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                       <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
-                        <span className={arm.nameClass}>{p.name}</span>
+                        <span className={arm.nameClass({ name: p.name, slug: p.slug || null })}>{p.name}</span>
                       </span>
                       <button
                         type="button"

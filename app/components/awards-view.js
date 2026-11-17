@@ -182,7 +182,7 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
             width={Math.max(0, valOf(r)) / maxVal}
             gap={k === 25}
             isOpen={open === r.i} onToggle={arm.rowClick({ name: r.name, slug: r.slug, season: cur, scope: "regular" }, () => setOpen(open === r.i ? null : r.i))}
-            nameClass={arm.nameClass}
+            nameClass={arm.nameClass({ name: r.name, slug: r.slug })}
             onGo={onGo}
           />
         ))}
@@ -406,7 +406,7 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
                   <TeamChip team={r.team} active={isOpen} />
                   <span className="flex-1 min-w-0 flex items-center text-stone-800">
                     <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                    <Name name={r.name} className={arm.nameClass} />
+                    <Name name={r.name} className={arm.nameClass({ name: r.name, slug: r.slug })} />
                     {picked && <WinnerTag award={cfg.tag(r.pick)} />}
                   </span>
                   <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.p)}</span>

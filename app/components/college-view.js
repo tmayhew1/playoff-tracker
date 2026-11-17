@@ -116,7 +116,7 @@ export function CollegeView() {
                   type="button"
                   aria-expanded={open}
                   onClick={(e) => { e.stopPropagation(); arm.rowClick({ name: p.name }, () => setExpanded(open ? null : key))(e); }}
-                  className={`font-semibold text-stone-800 block truncate max-w-full text-left ${arm.nameClass} rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
+                  className={`font-semibold text-stone-800 block truncate max-w-full text-left ${arm.nameClass({ name: p.name })} rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
                 >{p.name}</button>
                 <button
                   type="button"

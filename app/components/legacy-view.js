@@ -722,7 +722,7 @@ function CareersBoard({ onGoToLeaderboard }) {
               <span className="min-w-0">
                 <span className="font-semibold text-stone-800 block truncate">
                   <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
-                  <span className={arm.nameClass}>{p.name}</span>{p.truncated ? <span className="text-stone-400"> *</span> : null}
+                  <span className={arm.nameClass({ name: p.name, slug: p.slug })}>{p.name}</span>{p.truncated ? <span className="text-stone-400"> *</span> : null}
                 </span>
                 <span className="text-[10px] text-stone-500 tabular-nums">
                   {p.span} · {fmt0(p.careerGames)} G

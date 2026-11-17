@@ -615,7 +615,7 @@ export function UsageView() {
           <button
             type="button"
             onClick={arm.rowClick({ name: r.name, slug: r.slug || null, season: sel, scope: scopeName[scope] }, () => setPicked(isPicked ? null : x))}
-            className={`truncate font-semibold text-left ${arm.armed ? "underline decoration-dotted" : ""}`}
+            className={`truncate font-semibold text-left ${arm.nameClass({ name: r.name, slug: r.slug || null })}`}
             style={{ color: teamInk(r.team) }}
             aria-pressed={isPicked}
             title={isPicked ? "Clear the highlight" : "Highlight this player in the plot"}

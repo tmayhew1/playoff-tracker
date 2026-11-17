@@ -264,7 +264,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                         >{p.team}</button>
                         <span className="flex-1 truncate text-stone-800">
                           <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
-                          <span className={arm.nameClass}>{p.name}</span>
+                          <span className={arm.nameClass({ name: p.name, slug: p.slug || null })}>{p.name}</span>
                         </span>
                         <span className="w-5 text-right tabular-nums text-stone-500">{p.gp}</span>
                         <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.mpg.toFixed(1)}</span>
