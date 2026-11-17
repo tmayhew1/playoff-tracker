@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { useVAMode } from "../lib/va-mode";
-import { teamColor, teamInk } from "../lib/format";
+import { teamInk } from "../lib/format";
 
 // "About Last Night": the night's best Value Added games, top of Explore,
 // folded until tapped. Lines are baked each morning (scripts/bake-nights.mjs)

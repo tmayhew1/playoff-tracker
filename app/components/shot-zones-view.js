@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { normalizeName, teamColor, teamInk } from "../lib/format";
+import { normalizeName, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
 
 

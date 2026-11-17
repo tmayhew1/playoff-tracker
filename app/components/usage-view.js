@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { MIDNIGHT_PURPLE, normalizeName, teamColor, teamInk } from "../lib/format";
+import { MIDNIGHT_PURPLE, normalizeName, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
 
 

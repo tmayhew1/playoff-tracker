@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { normalizeName, teamColor, teamInk } from "../lib/format";
+import { normalizeName, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
 
 

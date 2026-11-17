@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { bracketOdds, completeDraft, recommend, simulate } from "../lib/draft-model";
-import { ownerBadge, ownerColor, ownerDot, teamColor, teamInk } from "../lib/format";
+import { ownerBadge, ownerColor, ownerDot, teamInk } from "../lib/format";
 
 // The draft assistant. For a draft season: every team's chance to win each
 // round, its expected points under the draft's scoring, and — for whichever
