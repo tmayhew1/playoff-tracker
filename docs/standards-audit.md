@@ -30,7 +30,10 @@ both counts first and divided those — `57 / 64.36 = 88.6%` beside
 `57/64 (89.1%)`. `maLabel` now takes the unrounded counts, rounds only what it
 prints, and the percentage is the ranked one.
 
-### N2 — The six shot-distribution discs don't share a denominator · **OPEN**
+### N2 — The six shot-distribution discs don't share a denominator · **FIXED (follow-up)**
+
+> **Resolved:** every share is now of the box score's shots, a 2-point distance taking its part of the zones applied to the box score's 2PA — the fix proposed below. The six sum to exactly 100% on all 14,910 zoned player-seasons, and the disc labels are rounded together (largest remainder) so the printed numbers do too.
+
 `category-context.js` → `SHARE_SEGMENTS`, `shotTrips`
 
 On the same card Green's discs read 2 + 2 + 0 + 6 + 3 + 89 = **102%**, and the
@@ -174,7 +177,10 @@ still takes a tap anywhere).
 `prefers-reduced-motion` stops the live dot and transitions in CSS, and every
 scripted smooth scroll asks `lib/motion.js`.
 
-### A9 — Text contrast · **OPEN (design)**
+### A9 — Text contrast · **PARTLY FIXED (follow-up)**
+
+> **Resolved for the near-misses:** `stone-500` is `#6f6863` and `red-600` `#d1141b` (both ~5:1 on the page), and team-colored text goes through `teamInk()`, which darkens the 17 team colors that miss 4.5:1 on their chip by the smallest step that passes. `stone-400` captions are left as designed.
+
 The largest remaining class by far. Measured pairs:
 
 | Text | On | Ratio | Needs | Where |
@@ -195,7 +201,10 @@ Most failing text is 8–10px (captions at 7–8px, distance labels at 6px). WCA
 sets no minimum, and pinch-zoom is left on, but `text-size-adjust: 100%` means
 the phone will not help either.
 
-### A11 — Tap targets under 24px · **OPEN (design)**
+### A11 — Tap targets under 24px · **PARTLY FIXED (follow-up)**
+
+> **Resolved where it costs nothing:** column-header buttons on the leaderboard and By Player get an invisible 26px hit area (`.hit-up`), and the night steppers fill their bar. Dense table rows are left alone: enlarging them would overlap their neighbours.
+
 WCAG 2.5.8. Column-header buttons are 13–15px tall, the night steppers 20px,
 the in-table G / MP filter buttons 15px: ~900 instances on Usage and D Rating,
 35 on Explore.
@@ -242,7 +251,10 @@ loading (`frame-ancestors`, `base-uri`, `form-action`, `object-src`).
 to its own origin and uses no `dangerouslySetInnerHTML`, so
 `default-src 'self'` with nonces is achievable, but nonces need middleware.
 
-### S4 — Next.js 14 is end-of-life · **OPEN — the one to schedule**
+### S4 — Next.js 14 is end-of-life · **FIXED (follow-up)**
+
+> **Resolved:** upgraded to 15.5.29 with React kept at 18.3.1; `headers()` / `searchParams` awaited, tracing config moved out of `experimental`, PostCSS pinned to 8.5.29. `npm audit`: 0 vulnerabilities.
+
 `next@14.2.35` is the last 14.x release. `npm audit` lists 25 advisories
 against it (two rated critical) whose fixes exist only in 15.5.x and 16.x.
 Several do not apply here — no middleware, no Server Actions, no `next/image`,
@@ -260,7 +272,10 @@ set-checked before they reach a file name or a URL; share parameters are
 dropped rather than trusted (`lib/share-params.js`); numeric query values are
 clamped. No secrets in the repo; nothing user-supplied is rendered as HTML.
 
-### S6 — Workflows · **OPEN, low**
+### S6 — Workflows · **PARTLY FIXED (follow-up)**
+
+> `ci.yml` now has `permissions: contents: read`. The `inputs.*` interpolation and tag pinning in the bake workflows are still open.
+
 `inputs.*` values are interpolated into `run:` lines in four bake workflows
 (pass them through `env:` instead — only someone who can already dispatch a
 workflow can use it); `ci.yml` has no `permissions:` block (`contents: read`
@@ -296,7 +311,10 @@ rest of the app already has.
 A shared link to College or Draft opened with no tab visibly selected on a
 phone. The strip scrolls the open tab into view.
 
-### R6 — Upstream failures answer 500 · **OPEN, minor**
+### R6 — Upstream failures answer 500 · **FIXED (follow-up)**
+
+> **Resolved:** the six routes that fail on an unreachable ESPN / basketball-reference answer 502.
+
 An unreachable ESPN is a 502 from `/api/live` but a 500 from `/api/leaderboard`,
 `/api/history`, `/api/boxscore` and `/api/regular-season`. The client treats
 them alike; 502 would be the accurate status. (Their error bodies were JSON
@@ -321,13 +339,19 @@ and zoom is not locked. Lighthouse SEO: 100.
 
 ## 7. Tooling
 
-### T1 — No lockfile · **OPEN**
+### T1 — No lockfile · **FIXED (follow-up)**
+
+> **Resolved:** `package-lock.json` is committed and CI installs with `npm ci`.
+
 `package-lock.json` is git-ignored, so CI and Vercel resolve dependencies
 fresh on every build; `playwright-core` is a caret range and every transitive
 dependency floats. Committing the lockfile makes builds reproducible and lets
 `npm ci` and `npm audit` mean something.
 
-### T2 — The build's "lint" step does nothing · **OPEN**
+### T2 — The build's "lint" step does nothing · **FIXED (follow-up)**
+
+> **Resolved:** ESLint 9 with Next's rules and jsx-a11y (`eslint.config.mjs`, `npm run lint`), run by `next build` and as its own CI step. 0 errors; the deliberate existing cases are warnings.
+
 `ci.yml` says the build "also runs Next's lint and type checks", but ESLint is
 not installed, so `next build` skips it. An ad hoc run with the React Hooks
 and jsx-a11y rules is what found R1, P2, P3/A6 and A7 in a few minutes.
