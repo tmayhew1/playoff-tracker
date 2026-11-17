@@ -163,10 +163,13 @@ test("the route falls back to the baked teams when rosters can't be fetched", as
     // Everyone but the reported out-for-the-season, who are named instead.
     const out = Object.values(d.injuredOut).flat().length;
     assert.ok(out > 0);
-    assert.equal(d.players.length + out, PROJ.players.length);
+    // (Once the season is under way, players with no projection who have
+    // played join the board too, flagged `unprojected`; they are not baked.)
+    assert.equal(d.players.filter((p) => !p.unprojected).length + out, PROJ.players.length);
     assert.equal(d.injuries, "reported");
     // Every row comes back pooled, with the projection-alone kept beside it.
-    assert.ok(d.players.every((p) => p.solo && p.pool && Number.isFinite(p.va)));
+    assert.ok(d.players.every((p) => Number.isFinite(p.va)));
+    assert.ok(d.players.filter((p) => !p.unprojected).every((p) => p.solo && p.pool));
     // A traded player's "2TM" isn't a team to file anyone under.
     assert.ok(d.players.every((p) => p.team === null || !/^(TOT|\dTM)$/.test(p.team)));
   } finally {
