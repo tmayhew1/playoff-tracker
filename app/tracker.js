@@ -10,6 +10,7 @@ import { shareQuery } from "./lib/share-params";
 import { ShareProvider, useShareStore } from "./lib/share-state";
 import { AwardNavProvider } from "./lib/award-nav";
 import { PlayerNavProvider } from "./lib/player-nav";
+import { scrollBehavior } from "./lib/motion";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
 // code loads the first time that tab is opened, so a visit that never leaves
@@ -136,7 +137,7 @@ function Tracker({ initial }) {
     if (!target?.season) return;
     setExploreJump(target);
     setTab("explore");
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, [setTab]);
   const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
@@ -158,7 +159,7 @@ function Tracker({ initial }) {
     if (!target?.season || !target?.award) return;
     setAwardFocus(target);
     setTab("awards");
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, [setTab]);
   const clearAwardFocus = useCallback(() => setAwardFocus(null), []);
 

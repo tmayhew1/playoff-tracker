@@ -14,6 +14,7 @@ import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
+import { scrollBehavior } from "../lib/motion";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -87,7 +88,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     setNavRunVs(null);
     // The season row scrolls itself into view; only a plain legacy-view jump
     // wants the top of the page.
-    if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!target.season && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   };
 
   // The same jump for a RUN — a compared side that pools several seasons. It
@@ -108,7 +109,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     setNavCompare(null);
     setNavRun(seasons);
     setNavRunVs(null);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   };
 
   // Apply an incoming "open this player" navigation from the By Season
@@ -523,7 +524,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
   useEffect(() => {
     if (!pendingScroll) return;
     const el = document.querySelector(`[data-season-row="${pendingScroll}"]`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
     setPendingScroll(null);
   }, [pendingScroll]);
 

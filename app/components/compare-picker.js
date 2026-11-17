@@ -7,6 +7,7 @@ import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, c
 import { perGameVAVec, tunnelBreak, vaComposition } from "../lib/va";
 import { useRowLga } from "../lib/va-mode";
 import { COMP_METRIC_OPTS, COMP_METRIC_WORD, buildComparePlayers, comparePlayerKey } from "./compare";
+import { scrollBehavior } from "../lib/motion";
 
 
 // The compare pickers: the single-season ComparePicker (search a player,
@@ -251,7 +252,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // after the keyboard has begun opening.
   const panelRef = useRef(null);
   const onSearchFocus = () => {
-    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: scrollBehavior() }), 300);
   };
 
   return (
@@ -631,14 +632,14 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
     // Taller than the viewport counts as on screen once its top is: there is
     // no scroll position that shows all of it, and the top is where it reads.
     if (r.top >= 0 && (r.bottom <= vh || r.height >= vh)) return;
-    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    el.scrollIntoView({ block: "nearest", behavior: scrollBehavior() });
   }, [asked]);
   // The mobile keyboard covers the lower half of the viewport, which would
   // bury the results below the search box, so tapping the field DOES pin the
   // panel to the top — an explicit tap, unlike the panel's own arrival.
   // Deferred so the scroll runs after the keyboard has begun opening.
   const onSearchFocus = () => {
-    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: scrollBehavior() }), 300);
   };
 
   return (

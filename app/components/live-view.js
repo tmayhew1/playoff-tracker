@@ -11,6 +11,7 @@ import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 import { useSeasonContext } from "../lib/use-season-context";
 import { etDate, seasonOf } from "../lib/regular-season-games";
 import { availability } from "../lib/injuries";
+import { scrollBehavior } from "../lib/motion";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -504,7 +505,7 @@ function SlateSummary({ date, games }) {
                 <button
                   key={g.gameId}
                   type="button"
-                  onClick={() => document.getElementById(gameAnchor(g))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  onClick={() => document.getElementById(gameAnchor(g))?.scrollIntoView({ behavior: scrollBehavior(), block: "start" })}
                   className={`grid grid-cols-[1fr_auto_1fr] gap-x-1.5 font-bold hover:opacity-70 ${ink}`}
                 >
                   <span className="text-right whitespace-nowrap">{g.away.tri}{scored && ` ${g.away.score}`}</span>

@@ -12,6 +12,7 @@ import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useV
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { addLiveLines, addLiveLinesToIndex } from "../lib/live-lines";
 import { useLiveLines } from "../lib/live-feed";
+import { scrollBehavior } from "../lib/motion";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
@@ -322,13 +323,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     if (!pendingScrollName) return;
     const sel = `[data-player-row="${pendingScrollName.replace(/"/g, '\\"')}"]`;
     const el = document.querySelector(sel);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
     setPendingScrollName(null);
   }, [pendingScrollName]);
 
   useEffect(() => {
     if (!pendingScrollCard) return;
-    cardElRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    cardElRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
     setPendingScrollCard(false);
   }, [pendingScrollCard]);
 

@@ -116,7 +116,7 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const season = searchParams.get("season");
   if (!season || !SEASON_RE.test(season)) {
-    return new Response(JSON.stringify({ error: "valid season required (e.g. 2024-25)" }), { status: 400 });
+    return Response.json({ error: "valid season required (e.g. 2024-25)" }, { status: 400 });
   }
 
   const baked = await loadBaked(season);
@@ -160,6 +160,6 @@ export async function GET(req) {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: `regular-season: ${e.message}` }), { status: 500 });
+    return Response.json({ error: `regular-season: ${e.message}` }, { status: 500 });
   }
 }

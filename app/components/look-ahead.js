@@ -10,6 +10,7 @@ import { useSeasonLga, useVAMode } from "../lib/va-mode";
 import { allNbaTeams, mipOdds, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { updateTeam } from "../lib/in-season";
 import { TEAM_CONF } from "../teams";
+import { scrollBehavior } from "../lib/motion";
 
 // The 2026-27 Look Ahead, Explore's projected season (lib/projection-model.js
 // for the model, scripts/fit-projection-model.mjs for the fit, and
@@ -222,7 +223,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
     setAwardSub(award);
     setAwardOpen(slug);
     requestAnimationFrame(() => (document.getElementById(`la-award-${slug}`) || document.getElementById("la-awards"))
-      ?.scrollIntoView({ block: "center", behavior: "smooth" }));
+      ?.scrollIntoView({ block: "center", behavior: scrollBehavior() }));
   }, []);
   const { usgAdj } = useVAMode();
 

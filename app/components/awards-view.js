@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { teamColor, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
+import { scrollBehavior } from "../lib/motion";
 
 // The Awards tab: one sub-page per award, each a season-by-season board of the
 // award's odds, fit on the real winners (scripts/bake-awards.mjs, served by
@@ -86,7 +87,7 @@ function useFocusRow(focus, slugs, open) {
     if (!focus || done.current === focus || !slugs.includes(focus.slug)) return;
     done.current = focus;
     open(focus.slug);
-    requestAnimationFrame(() => document.getElementById(`award-row-${focus.slug}`)?.scrollIntoView({ block: "center", behavior: "smooth" }));
+    requestAnimationFrame(() => document.getElementById(`award-row-${focus.slug}`)?.scrollIntoView({ block: "center", behavior: scrollBehavior() }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus, key]);
 }

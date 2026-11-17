@@ -9,6 +9,7 @@ import { VABreakdown } from "./va-breakdown";
 import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
+import { scrollBehavior } from "../lib/motion";
 
 
 export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
@@ -65,7 +66,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
     if (!pendingScrollName) return;
     const sel = `[data-player-row="${pendingScrollName.replace(/"/g, '\\"')}"]`;
     const el = document.querySelector(sel);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
     setPendingScrollName(null);
   }, [pendingScrollName]);
 

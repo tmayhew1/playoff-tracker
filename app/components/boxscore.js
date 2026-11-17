@@ -8,6 +8,7 @@ import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../l
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
+import { scrollBehavior } from "../lib/motion";
 
 
 // A shooting category's columns in the box: its makes and attempts off a
@@ -410,7 +411,7 @@ function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LG
   useEffect(() => {
     if (!expandedPlayer || scrollTo.current !== expandedPlayer) return;
     scrollTo.current = null;
-    rootRef.current?.querySelector(`[data-row-key="${CSS.escape(expandedPlayer)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    rootRef.current?.querySelector(`[data-row-key="${CSS.escape(expandedPlayer)}"]`)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   }, [expandedPlayer]);
   // A live game always leads with its top five; a final only where the
   // caller asks (`finalTop5`: the Live tab, Explore's regular-season days).

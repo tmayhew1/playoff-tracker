@@ -18,6 +18,7 @@ import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
 import { warmSeason } from "../lib/month-tables";
 import { useSeasonContext } from "../lib/use-season-context";
+import { scrollBehavior } from "../lib/motion";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -387,7 +388,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     setMode("season");
     setSeason(target.season);
     setSeasonNav({ season: target.season, team: target.team, name: target.name || null, slug: target.slug || null });
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearSeasonNav = useCallback(() => setSeasonNav(null), []);
 
@@ -431,7 +432,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     if (!target?.name && !target?.slug) return;
     setMode("player");
     setPlayerNav(target);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   // The same crossing for a RUN — a By Season compare panel's chip pointing at
   // a side that pools several seasons (a compared run, or a selection made in
@@ -443,7 +444,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     if (!target?.seasons?.length || (!target.name && !target.slug)) return;
     setMode("player");
     setPlayerNav({ name: target.name || null, slug: target.slug || null, season: null, seasons: target.seasons });
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
   // The same crossing from anywhere on the page (lib/player-nav.js) — a box

@@ -41,3 +41,16 @@ body {
     font-size: 16px;
   }
 }
+
+/* Readers who ask their system for less motion: the live dot stops pulsing
+   and hover/colour transitions land at once. Nothing here carries meaning in
+   its movement, so nothing is lost. (Scripted scrolls check the same setting
+   — see lib/motion.js.) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
