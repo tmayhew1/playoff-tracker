@@ -4,10 +4,12 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS } from "../teams";
 import { LGA, valueAddByCategory } from "../scoring";
 import { VABreakdown } from "./va-breakdown";
-import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../lib/format";
+import { normalizeName, ownerBadge, teamColor, teamInk, trimFixed, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
+import { scrollBehavior } from "../lib/motion";
+import { etDate } from "../lib/regular-season-games";
 
 
 // A shooting category's columns in the box: its makes and attempts off a
@@ -39,7 +41,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
   // Solid team color with white ink: a pale wash of the color reads too alike
   // between two red (or two blue) teams, a full fill tells them apart.
   const badgeStyle = !badgeUseTeam ? undefined
-    : outlined?.includes(p.team) ? { backgroundColor: "#fff", color: tc, borderColor: tc }
+    : outlined?.includes(p.team) ? { backgroundColor: "#fff", color: teamInk(p.team), borderColor: tc }
     : { backgroundColor: tc, color: "#fff", borderColor: tc };
   const c = cat && SHOT_CATS[cat];
   const v = c ? p.catVA : p.va;
@@ -246,7 +248,16 @@ export function BoxscoreTable({ rows: rowsIn, sections, expandedKey, setExpanded
 // ruled out of it), as season per-game rows
 // (each with his `rowKey`): they go under its box, headed Out, as on the
 // pregame card.
-export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
+export function LiveGameBanner(props) {
+  // Nothing to show without a game. Decided out here, before any hook runs:
+  // the banner's hooks sit either side of where this check used to be, and a
+  // game arriving (or leaving) on a mounted banner would have changed how
+  // many of them ran — which React answers by throwing.
+  if (!props.liveGame) return null;
+  return <GameBanner {...props} />;
+}
+
+function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -301,7 +312,6 @@ export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBo
     }
   }, [staticBox, liveGame?.gameId, isLive, isFinal, expanded, teamFilter, finalTop5, loadBox]);
 
-  if (!liveGame) return null;
   const { home, away, gameStatus, gameStatusText, gameId, gameDateTimeUTC, period, gameClock } = liveGame;
   const canExpand = !!gameId && (isLive || isFinal);
 
@@ -335,13 +345,12 @@ export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBo
     const now = new Date();
 
     if (isTbd) {
-      const etDate = new Date(d.getTime() - 4 * 60 * 60 * 1000);
-      const sameDay = etDate.getUTCFullYear() === now.getFullYear() &&
-                      etDate.getUTCMonth() === now.getMonth() &&
-                      etDate.getUTCDate() === now.getDate();
-      displayStatus = sameDay
-        ? "Today"
-        : `${etDate.getUTCMonth() + 1}/${etDate.getUTCDate()}`;
+      // A TBD game has no tip time, only its league (Eastern) date. Read
+      // that date in Eastern time proper — a fixed UTC−4 is an hour off from
+      // November to March, when the East is on standard time.
+      const [, em, ed] = etDate(gameDateTimeUTC).split("-").map(Number);
+      const sameDay = etDate(gameDateTimeUTC) === etDate(now.toISOString());
+      displayStatus = sameDay ? "Today" : `${em}/${ed}`;
     } else {
       const sameDay = d.getFullYear() === now.getFullYear() &&
                       d.getMonth() === now.getMonth() &&
@@ -402,7 +411,7 @@ export function LiveGameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBo
   useEffect(() => {
     if (!expandedPlayer || scrollTo.current !== expandedPlayer) return;
     scrollTo.current = null;
-    rootRef.current?.querySelector(`[data-row-key="${CSS.escape(expandedPlayer)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    rootRef.current?.querySelector(`[data-row-key="${CSS.escape(expandedPlayer)}"]`)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   }, [expandedPlayer]);
   // A live game always leads with its top five; a final only where the
   // caller asks (`finalTop5`: the Live tab, Explore's regular-season days).

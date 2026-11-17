@@ -3,13 +3,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { valueAdd } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { splitName, teamColor, withAlpha } from "../lib/format";
+import { splitName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
 import { SeasonTiles } from "./season-tiles";
 import { useSeasonLga, useVAMode } from "../lib/va-mode";
 import { allNbaTeams, mipOdds, posGroup, projectWins, simulateAwards, vaPlus } from "../lib/projection-model";
 import { updateTeam } from "../lib/in-season";
 import { TEAM_CONF } from "../teams";
+import { scrollBehavior } from "../lib/motion";
+import { usePlayerArm } from "../lib/player-nav";
 
 // The 2026-27 Look Ahead, Explore's projected season (lib/projection-model.js
 // for the model, scripts/fit-projection-model.mjs for the fit, and
@@ -206,6 +208,10 @@ function useProjection() {
 // clears it.
 export function LookAhead({ target = null, onTargetHandled = null }) {
   const { data, error } = useProjection();
+  // Tap Player, then a name, to open that player's season so far in By Player:
+  // one switch for the standings' rosters, one for the players board.
+  const rosterArm = usePlayerArm(), listArm = usePlayerArm();
+  const toPlayer = (p) => ({ name: p.name, slug: p.slug || null, season: LOOK_AHEAD_SEASON, scope: "regular" });
   const [team, setTeam] = useState(null);
   const [openTeam, setOpenTeam] = useState(null); // the standings row dropped open
   // The standings' order: "proj" (projected wins) or "now" (the record). The
@@ -222,7 +228,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
     setAwardSub(award);
     setAwardOpen(slug);
     requestAnimationFrame(() => (document.getElementById(`la-award-${slug}`) || document.getElementById("la-awards"))
-      ?.scrollIntoView({ block: "center", behavior: "smooth" }));
+      ?.scrollIntoView({ block: "center", behavior: scrollBehavior() }));
   }, []);
   const { usgAdj } = useVAMode();
 
@@ -336,7 +342,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                       <div className="bg-stone-50/60 border-t border-stone-200 pl-2 sm:pl-4">
                         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
                           <span className="w-5 sm:w-6 text-right">#</span>
-                          <span className="flex-1">Player</span>
+                          {rosterArm.header("flex-1")}
                           <span className="w-6 text-right">G</span>
                           <span className="w-12 text-right">VA</span>
                           <span className="w-12 text-right">VA+</span>
@@ -346,7 +352,8 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
                           <LeaderRow
                             withVaPlus starter={t.top.some((s) => s.slug === p.slug)}
                             key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={rosterMax} lga={lga} sim={awards.bySlug[p.slug]}
-                            isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
+                            isOpen={expanded === p.slug} onToggle={rosterArm.rowClick(toPlayer(p), () => setExpanded(expanded === p.slug ? null : p.slug))}
+                            nameClass={rosterArm.nameClass(toPlayer(p))}
                           />
                         ))}
                         <InjuredOut list={data.injuredOut?.[t.team]} />
@@ -389,7 +396,7 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
-          <span className="flex-1">Player</span>
+          {listArm.header("flex-1")}
           <span className="w-6 text-right">G</span>
           <span className="w-12 text-right">VA</span>
           <span className="w-10 text-right">VA/G</span>
@@ -397,7 +404,8 @@ export function LookAhead({ target = null, onTargetHandled = null }) {
         {visible.map((p) => (
           <LeaderRow
             key={p.slug} p={p} rank={rankOf.get(p.slug)} maxAbs={maxAbs} lga={lga} sim={awards.bySlug[p.slug]}
-            isOpen={expanded === p.slug} onToggle={() => setExpanded(expanded === p.slug ? null : p.slug)}
+            isOpen={expanded === p.slug} onToggle={listArm.rowClick(toPlayer(p), () => setExpanded(expanded === p.slug ? null : p.slug))}
+            nameClass={listArm.nameClass(toPlayer(p))}
             activeTeam={team} onTeam={(t) => { setTeam(team === t ? null : t); setExpanded(null); }}
           />
         ))}
@@ -478,6 +486,8 @@ const fmtInt = (x) => `${x < 0 ? "−" : ""}${Math.round(Math.abs(x)).toLocaleSt
 const fmtSigned = (x) => (Number.isFinite(x) ? `${x < 0 ? "−" : ""}${Math.abs(x).toFixed(1)}` : "–");
 
 function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, setSub, open, setOpen }) {
+  // Tap Player, then a name, to open that player's season so far in By Player.
+  const arm = usePlayerArm();
   // All-Star: 12 a conference, as the roster is picked, or the 24 likeliest league-wide.
   const [split, setSplit] = useState(true);
   const subs = (hasModels ? AWARD_SUBS : AWARD_SUBS.filter(([k]) => k === "mvp" || k === "allnba")).filter(([k]) => k !== "mip" || hasMip);
@@ -532,7 +542,7 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, set
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
-          <span className="flex-1">Player</span>
+          {arm.header("flex-1")}
           <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
           {cfg.improvers
             ? <>
@@ -559,15 +569,15 @@ function AwardsBoard({ awards, pBySlug, lga, hasModels, hasMip, usgAdj, sub, set
                     <div
                       role="button" tabIndex={0} aria-expanded={isOpen}
                       aria-label={`${p.name} — ${isOpen ? "hide" : "show"} projected line`}
-                      onClick={() => setOpen(isOpen ? null : r.key)}
-                      onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpen(isOpen ? null : r.key); } }}
+                      onClick={arm.rowClick({ name: p.name, slug: p.slug || null, season: LOOK_AHEAD_SEASON, scope: "regular" }, () => setOpen(isOpen ? null : r.key))}
+                      onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); arm.rowClick({ name: p.name, slug: p.slug || null, season: LOOK_AHEAD_SEASON, scope: "regular" }, () => setOpen(isOpen ? null : r.key))(ev); } }}
                       className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
                     >
                       <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{rank}</span>
                       <TeamChip team={p.team} active={isOpen} />
                       <span className="flex-1 min-w-0 flex items-center text-stone-800">
                         <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                        <Name name={p.name} />
+                        <Name name={p.name} className={arm.nameClass({ name: p.name, slug: p.slug || null })} />
                         {p.injury && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
                       </span>
                       <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(odds)}</span>
@@ -605,7 +615,7 @@ const vaPlusShown = (p) => vaPlus(p.vaShown, p.dpm, p.row.mp);
 // One projected player: the bar, the line, and — tapped — the projected
 // season beside the one it grew from. Shared by the leaders table and the
 // roster each standings row drops open.
-function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null, withVaPlus = false, starter = false }) {
+function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = null, onTeam = null, withVaPlus = false, starter = false, nameClass = "" }) {
   const tc = p.team ? teamColor(p.team) : "#78716c";
   // In a team's roster the bar and the order are VA+ — VA plus projected
   // defense, the number the standings are built from — and the team chip,
@@ -634,7 +644,7 @@ function LeaderRow({ p, rank, maxAbs, lga, sim, isOpen, onToggle, activeTeam = n
           {!withVaPlus && <TeamChip team={p.team} active={activeTeam === p.team} onClick={onTeam && p.team ? (e) => { e.stopPropagation(); onTeam(p.team); } : undefined} />}
           <span className="flex-1 min-w-0 flex items-center text-stone-800">
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-            {starter ? <span className="font-bold min-w-0"><Name name={p.name} /></span> : <Name name={p.name} />}
+            {starter ? <span className="font-bold min-w-0"><Name name={p.name} className={nameClass} /></span> : <Name name={p.name} className={nameClass} />}
             {p.rookie && <span className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-amber-400 text-amber-700 bg-amber-50">R</span>}
             {p.injury && <span title={`${p.injury.injury} — out ${p.injury.missed} games`} className="ml-1 shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 border border-red-300 text-red-700 bg-red-50">INJ</span>}
           </span>
@@ -759,7 +769,7 @@ function Cards({ p, sim, lga }) {
         <div className="basis-full grid grid-cols-[minmax(6.5rem,auto)_1fr] gap-1">
           <div title={`Team context on ${p.team}: ${moved.map(([k, f]) => `${CONTEXT_LONG[k]} ${ctxPct(f)}`).join(", ")}`}
             className="row-span-2 h-[4.25rem] flex flex-col items-center justify-center gap-1 border border-stone-200 bg-white px-2 py-0.5 text-[10px] text-stone-600 tabular-nums">
-            <span style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border">{p.team}</span>
+            <span style={{ backgroundColor: withAlpha(tc, 0.14), color: p.team ? teamInk(p.team) : tc, borderColor: withAlpha(tc, 0.4) }} className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 border">{p.team}</span>
             {/* Exactly three lines tall, the rest a scroll away, snapping a line at a time. */}
             <span className="w-full h-[3.6em] overflow-y-auto no-scrollbar snap-y snap-mandatory leading-[1.2] text-center">
               {moved.map(([k, f]) => <span key={k} className="block snap-start whitespace-nowrap">{ctxPct(f)} {CONTEXT_LABEL[k]}</span>)}
@@ -771,7 +781,7 @@ function Cards({ p, sim, lga }) {
         </div>
       ) : def != null && <Defense def={def} g={g} vpTot={vpTot} rookie={p.dpm == null} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
-      {(sim || p.mip) && (() => {
+      {(sim || p.mip > 0) && (() => {
         const odds = [["MVP", sim?.mvp], ["MIP", p.mip], ["ROY", p.rookie ? sim?.roy : 0], ["All-NBA", sim?.allNba], ["All-Star", sim?.allStar]].filter(([, x]) => x > 0.005);
         return odds.length > 0 && (
           // One quiet strip: each award a muted label over its odds, split by

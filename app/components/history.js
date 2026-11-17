@@ -6,9 +6,11 @@ import { valueAddParts, potentialPoints } from "../scoring";
 import { LiveGameBanner } from "./boxscore";
 import { BreakdownList, ScoreCard } from "./scoreboard";
 import { VABreakdown } from "./va-breakdown";
-import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, withAlpha } from "../lib/format";
+import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, teamInk, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
+import { scrollBehavior } from "../lib/motion";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
@@ -47,6 +49,8 @@ export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
 
 
 export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, season }) {
+  // Tap Player, then a name, to open that player's playoff run in By Player.
+  const arm = usePlayerArm();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +69,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
     if (!pendingScrollName) return;
     const sel = `[data-player-row="${pendingScrollName.replace(/"/g, '\\"')}"]`;
     const el = document.querySelector(sel);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
     setPendingScrollName(null);
   }, [pendingScrollName]);
 
@@ -220,7 +224,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
               )}
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-10">Team</span>
-                <span className="flex-1">Player</span>
+                {arm.header("flex-1")}
                 <button
                   type="button"
                   onClick={() => setGArmed((v) => !v)}
@@ -248,7 +252,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                   : owner ? ownerBadge(owner) : "border";
                 const tc = badgeUseTeam ? teamColor(p.team) : null;
                 const badgeStyle = badgeUseTeam
-                  ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
+                  ? { backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) }
                   : undefined;
                 const rowKey = `${p.team}:${p.name}`;
                 const isOpen = expanded === rowKey;
@@ -270,11 +274,11 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => setExpanded(isOpen ? null : rowKey)}
+                        onClick={arm.rowClick({ name: p.name, slug: p.slug || null, season, scope: "playoffs" }, () => setExpanded(isOpen ? null : rowKey))}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            setExpanded(isOpen ? null : rowKey);
+                            arm.rowClick({ name: p.name, slug: p.slug || null, season, scope: "playoffs" }, () => setExpanded(isOpen ? null : rowKey))(e);
                           }
                         }}
                         className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
@@ -282,7 +286,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                       <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
-                        {p.name}
+                        <span className={arm.nameClass({ name: p.name, slug: p.slug || null })}>{p.name}</span>
                       </span>
                       <button
                         type="button"
@@ -398,15 +402,21 @@ export function HistoryRoundSection({ round, teamsMap, lga, season }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {round.label}
-        </h3>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            {round.label}
+          </span>
+        </button>
+      </h2>
       {open && round.series.map((s, i) => (
         <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} roundKey={round.key} season={season} />
       ))}

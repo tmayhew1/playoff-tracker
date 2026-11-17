@@ -231,17 +231,23 @@ export function RoundSection({ roundKey, title, series, matchups, winners, gameW
 
   return (
     <div className="mb-6">
-      <button
-        onClick={() => setCollapsed((c) => !c)}
-        className="w-full flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{collapsed ? "▸" : "▾"}</span>
-          {title}
-          {allClinched && <span className="text-[9px] uppercase tracking-wider text-stone-500 font-normal">Complete</span>}
-        </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2.5">
+        <button
+          type="button"
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed((c) => !c)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{collapsed ? "▸" : "▾"}</span>
+            {title}
+            {allClinched && <span className="text-[9px] uppercase tracking-wider text-stone-500 font-normal">Complete</span>}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">+{ROUND_BASE[roundKey]} pt{ROUND_BASE[roundKey] > 1 ? "s" : ""}/win</span>
+        </button>
+      </h2>
       {!collapsed && sortedSeries.map((s) => (
         <SeriesRow key={s.id} series={s} roundKey={roundKey} matchups={matchups} winners={winners} gameWins={gameWins} actualGameWins={actualGameWins} onPick={onPick} onGamesChange={onGamesChange} liveGame={liveGamesBySeries?.[s.id]} />
       ))}

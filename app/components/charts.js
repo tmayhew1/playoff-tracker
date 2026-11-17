@@ -85,7 +85,7 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
             it's plainly the baseline and never blurs into the dashed/
             dotted gray average reference lines. */}
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#78716c" strokeWidth="1" />
-        <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#78716c" className="tabular-nums">0</text>
+        <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#6f6863" className="tabular-nums">0</text>
         {/* Reference: dim full-width line at the average of the "other"
             games (other series in series view, other games in game view). */}
         {avgOther != null && (
@@ -150,7 +150,7 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
           <g key={`dot-${i}`}>
             <circle cx={x(i)} cy={y(v)} r={selected === i + 1 ? 5 : 3.5} fill={stroke} stroke={selected === i + 1 ? "#1c1917" : "none"} strokeWidth="1" />
             {i === topIdx && (
-              <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#dc2626" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
+              <text x={x(i)} y={y(v) - 9} fontSize="9" textAnchor="middle" fill={v < 0 ? "#d1141b" : "#44403c"} className="tabular-nums">{v.toFixed(1)}</text>
             )}
           </g>
         ))}
@@ -175,7 +175,7 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
           return (
             <text x={labelX} y={H + 9} fontSize="9" textAnchor="middle" pointerEvents="none" className="tabular-nums">
               <tspan fill={stroke} fontWeight="600">{`${up ? "▲" : "▼"} ${signStr}${rounded.toFixed(1)}`}</tspan>
-              <tspan fill="#78716c" dx="2" fontStyle="italic">{up ? "better" : "worse"}</tspan>
+              <tspan fill="#6f6863" dx="2" fontStyle="italic">{up ? "better" : "worse"}</tspan>
             </text>
           );
         })()}
@@ -237,7 +237,7 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
       ) : (
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" role="img" aria-label={label}>
           <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} stroke="#78716c" strokeWidth="1" />
-          <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#78716c" className="tabular-nums">0</text>
+          <text x={pad.l - 3} y={y(0)} fontSize="7" textAnchor="end" dominantBaseline="middle" fill="#6f6863" className="tabular-nums">0</text>
           {months.map((m, i) => {
             const cx = pad.l + slot * (i + 0.5);
             const has = m.vapg != null;
@@ -266,12 +266,12 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
                 {has && (
                   <text
                     x={cx} y={neg ? top + h + 8 : top - 3} fontSize="8" textAnchor="middle"
-                    fill={m.current ? "#1c1917" : "#78716c"} fontWeight={m.current ? 700 : 400} className="tabular-nums"
+                    fill={m.current ? "#1c1917" : "#6f6863"} fontWeight={m.current ? 700 : 400} className="tabular-nums"
                   >{m.vapg.toFixed(1)}</text>
                 )}
                 <text
                   x={cx} y={nameY} fontSize="8" textAnchor="middle"
-                  fill={m.current ? "#1c1917" : has ? "#78716c" : "#d6d3d1"} fontWeight={m.current ? 700 : 400}
+                  fill={m.current ? "#1c1917" : has ? "#6f6863" : "#d6d3d1"} fontWeight={m.current ? 700 : 400}
                 >{m.label}</text>
                 {years[i] && (
                   <text x={cx} y={H - 3} fontSize="6.5" textAnchor="middle" fill="#a8a29e" className="tabular-nums">{years[i]}</text>

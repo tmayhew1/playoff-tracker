@@ -31,12 +31,12 @@ export function VABaselineToggle({ className = "mb-4" }) {
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 shrink-0">Scoring baseline</span>
         <div className="inline-flex ml-auto shrink-0">
-          <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj} aria-label="League average scoring baseline">
+          <button type="button" onClick={() => setUsgAdj(false)} className={cls(!usgAdj)} aria-pressed={!usgAdj} aria-label="LG AVG, the league average scoring baseline">
             LG AVG
           </button>
           {/* The boards keep the bare abbreviation on their own chips
               (lib/va-mode.js); Info carries the explanation in prose. */}
-          <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj} aria-label="Usage-adjusted scoring baseline">
+          <button type="button" onClick={() => setUsgAdj(true)} className={`${cls(usgAdj)} border-l-0`} aria-pressed={usgAdj} aria-label="USG-Adjusted, the usage-adjusted scoring baseline">
             USG-Adjusted
           </button>
         </div>

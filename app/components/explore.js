@@ -5,7 +5,7 @@ import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
 import { VABaselineToggle } from "./va-baseline-toggle";
-import { teamColor, withAlpha } from "../lib/format";
+import { teamColor, teamInk, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
 import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
@@ -18,6 +18,8 @@ import { MonthAverages } from "./month-averages";
 import { bakedBox, seasonGames } from "../lib/baked-games";
 import { warmSeason } from "../lib/month-tables";
 import { useSeasonContext } from "../lib/use-season-context";
+import { scrollBehavior } from "../lib/motion";
+import { prefetchAwardOdds } from "./award-boxes";
 
 // By Season is the default mode; By Player's code loads when it's first
 // opened (see app/page.js for the same treatment of the other tabs).
@@ -111,16 +113,22 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
   if (series.length === 0) return null;
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {ROUND_LABELS[roundKey] || roundKey}
-        </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            {ROUND_LABELS[roundKey] || roundKey}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
+        </button>
+      </h2>
       {open && series.map((s, i) => (
         <ExploreSeriesRow key={i} s={s} lga={lga} season={season} />
       ))}
@@ -150,7 +158,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
   const teamControl = teams.length > 1 && (team ? (
     <button
       onClick={() => setTeam(null)}
-      style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamColor(team), borderColor: withAlpha(teamColor(team), 0.4) }}
+      style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamInk(team), borderColor: withAlpha(teamColor(team), 0.4) }}
       className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
       aria-label="Clear the team filter"
     >
@@ -169,16 +177,22 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
   ));
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {month.label} {month.key.slice(0, 4)}
-        </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            {month.label} {month.key.slice(0, 4)}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
+        </button>
+      </h2>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
@@ -260,16 +274,22 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
   // Same header as a month or a round; the months open inside it, set in a step.
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          Reg Season
-        </h3>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            Reg Season
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
+        </button>
+      </h2>
       {open && <div className="pl-3">{months}</div>}
     </div>
   );
@@ -313,6 +333,18 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
       ? [...base, linked.season].sort((a, b) => b.localeCompare(a)) : base;
   });
   const [season, setSeason] = useState(linked?.season || FALLBACK[0]);
+  // Player cards wait for their award row before drawing (award-boxes.js);
+  // loading the odds once the page is idle means that wait is usually over
+  // before the first card is opened.
+  useEffect(() => {
+    const start = () => prefetchAwardOdds(season);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(start, { timeout: 4000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(start, 1500);
+    return () => clearTimeout(t);
+  }, [season]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -369,7 +401,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     setMode("season");
     setSeason(target.season);
     setSeasonNav({ season: target.season, team: target.team, name: target.name || null, slug: target.slug || null });
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearSeasonNav = useCallback(() => setSeasonNav(null), []);
 
@@ -413,7 +445,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     if (!target?.name && !target?.slug) return;
     setMode("player");
     setPlayerNav(target);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   // The same crossing for a RUN — a By Season compare panel's chip pointing at
   // a side that pools several seasons (a compared run, or a selection made in
@@ -425,7 +457,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     if (!target?.seasons?.length || (!target.name && !target.slug)) return;
     setMode("player");
     setPlayerNav({ name: target.name || null, slug: target.slug || null, season: null, seasons: target.seasons });
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
   // The same crossing from anywhere on the page (lib/player-nav.js) — a box
@@ -539,12 +571,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
               projected season reads as a different kind of page at a glance. */}
           <div className={`mb-4 p-3 border ${lookAhead ? "bg-amber-50 border-amber-400" : "bg-white border-stone-300"}`}>
             <div className="flex items-center justify-between gap-2 mb-1">
-              <label className={`text-[10px] uppercase tracking-[0.3em] block ${lookAhead ? "text-amber-800" : "text-stone-500"}`}>Season</label>
+              <label htmlFor="explore-season" className={`text-[10px] uppercase tracking-[0.3em] block ${lookAhead ? "text-amber-800" : "text-stone-500"}`}>Season</label>
               {lookAhead && (
                 <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 border border-amber-400 bg-amber-100 text-amber-800">Projected</span>
               )}
             </div>
             <select
+              id="explore-season"
               value={season}
               onChange={(e) => setSeason(e.target.value)}
               className={`w-full text-sm font-bold bg-white border px-2 py-1.5 ${lookAhead ? "text-amber-900 border-amber-400" : "text-stone-900 border-stone-300"}`}

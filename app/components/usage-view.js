@@ -3,7 +3,9 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
+import { MIDNIGHT_PURPLE, normalizeName, teamInk } from "../lib/format";
+import { Render } from "./ui/render";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 // Data-browser tab for the USG-ADJ scoring baseline (spec §4.6): every
@@ -241,7 +243,7 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
       <div className="mt-1 h-[2.1rem] text-[9px] leading-tight">
         {shown ? (
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-semibold" style={{ color: teamColor(shown.r.team) }}>
+            <span className="font-semibold" style={{ color: teamInk(shown.r.team) }}>
               {shown.r.name} <span className="text-stone-400 font-normal text-[8px]">{shown.r.team}</span>
             </span>
             <span className="text-stone-500 tabular-nums">
@@ -274,6 +276,10 @@ export function UsageView() {
   const seasons = useMemo(() => Object.keys(USAGE_MODELS).sort().reverse(), []);
   const [season, setSeason] = useState(null);
   const [scope, setScope] = useState("rs"); // "rs" | "po"
+  // Tap Player, then a name, to open that player's season in By Player. (The
+  // header used to sort by name; every other column still sorts.)
+  const arm = usePlayerArm();
+  const scopeName = { rs: "regular", po: "playoffs", combined: "combined" };
   const [perGame, setPerGame] = useState(false);
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState(null);
@@ -432,6 +438,7 @@ export function UsageView() {
     <div className="text-[10px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
+          aria-label="Season"
           value={sel || ""}
           onChange={(e) => setSeason(e.target.value)}
           className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
@@ -462,6 +469,7 @@ export function UsageView() {
           </button>
         )}
         <input
+          aria-label="Search players"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -546,7 +554,7 @@ export function UsageView() {
         );
         return (
           <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-            <span>#</span><H k="name" label="Player" right={false} />
+            <span>#</span>{arm.header()}
             {/* MP header arms the min-minutes filter (two-step, like the
                 D Rating tab) rather than sorting; a second tap disarms.
                 Sorting by minutes stays available through the /G switch's
@@ -560,26 +568,26 @@ export function UsageView() {
             >
               MP
             </button>
-            <H k="ptsPerM" label="PTS/M" title="Points per minute" />
-            <H k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
+            <Render fn={H} k="ptsPerM" label="PTS/M" title="Points per minute" />
+            <Render fn={H} k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
             {colView === "base" ? (
               <>
-                <H k="va" label="VA" title="Scoring volume against the league's median minute — today's VA" />
-                <H k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
-                <H k="capVa" label="Cap" title="Scoring volume against min(predicted, league median)" />
+                <Render fn={H} k="va" label="VA" title="Scoring volume against the league's median minute — today's VA" />
+                <Render fn={H} k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
+                <Render fn={H} k="capVa" label="Cap" title="Scoring volume against min(predicted, league median)" />
               </>
             ) : (
               <>
-                <H k="eff" label="Eff" title="Points above the going rate on the possessions he used" />
-                <H k="vol" label="Vol" title="What he was worth for carrying more (or less) load than a median minute — Eff + Vol = VA exactly" />
-                <H
+                <Render fn={H} k="eff" label="Eff" title="Points above the going rate on the possessions he used" />
+                <Render fn={H} k="vol" label="Vol" title="What he was worth for carrying more (or less) load than a median minute — Eff + Vol = VA exactly" />
+                <Render fn={H}
                   k="splitVa"
                   label={<span className="normal-case">λ{lambda === VOLUME_CREDIT ? "*" : ""}</span>}
                   title={`Eff + λ × Vol — plain VA at λ=1, a pure per-possession charge at λ=0${lambda === VOLUME_CREDIT ? ". * this is what the USG-ADJ switch scores" : ""}`}
                 />
               </>
             )}
-            <H
+            <Render fn={H}
               k="delta"
               label="Δ"
               title={deltaVs === "spl"
@@ -606,9 +614,9 @@ export function UsageView() {
               be located in the cloud. */}
           <button
             type="button"
-            onClick={() => setPicked(isPicked ? null : x)}
-            className="truncate font-semibold text-left"
-            style={{ color: teamColor(r.team) }}
+            onClick={arm.rowClick({ name: r.name, slug: r.slug || null, season: sel, scope: scopeName[scope] }, () => setPicked(isPicked ? null : x))}
+            className={`truncate font-semibold text-left ${arm.nameClass({ name: r.name, slug: r.slug || null })}`}
+            style={{ color: teamInk(r.team) }}
             aria-pressed={isPicked}
             title={isPicked ? "Clear the highlight" : "Highlight this player in the plot"}
           >

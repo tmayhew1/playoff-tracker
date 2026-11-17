@@ -41,3 +41,24 @@ body {
     font-size: 16px;
   }
 }
+
+/* Readers who ask their system for less motion: the live dot stops pulsing
+   and hover/colour transitions land at once. Nothing here carries meaning in
+   its movement, so nothing is lost. (Scripted scrolls check the same setting
+   — see lib/motion.js.) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Bigger tap targets with no change to the look (WCAG 2.5.8, 24px).
+   A table's column-header buttons are a single 9px line, ~14px tall: the
+   invisible ::after stretches each one's hit area up into the gap above the
+   header row and down to its bottom border — never sideways, so neighbouring
+   headers keep their own, and never into the first row of the table. */
+.hit-up { position: relative; }
+.hit-up::after { content: ""; position: absolute; left: 0; right: 0; top: -8px; bottom: -4px; }

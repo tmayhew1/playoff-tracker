@@ -12,6 +12,12 @@ export const maxDuration = 15;
 // knows these ids — they must be served from the bakes.
 const BR_ID_RE = /^(\d{4})(\d{2})\d{2}0[A-Z]{3}$/;
 
+// Every id the app sends: an NBA game id ("0022600123"), an ESPN event id
+// ("401810001") or a basketball-reference one ("202504190DEN"). The id is
+// written into the upstream URLs below, so anything else — a "../", a "&" —
+// is refused rather than forwarded to the NBA CDN or ESPN as a path or query.
+const GAME_ID_RE = /^[0-9A-Za-z]{6,16}$/;
+
 async function readBaked(name) {
   try {
     return JSON.parse(await readFile(join(process.cwd(), "app", "data", name), "utf8"));
@@ -112,7 +118,7 @@ export async function GET(req) {
   const src = searchParams.get("src"); // "espn" -> skip the live-CDN attempt
   // The Live tab's in-progress games: still changing, so never cached long.
   const live = searchParams.get("live") === "1";
-  if (!gameId) return new Response(JSON.stringify({ error: "gameId required" }), { status: 400 });
+  if (!gameId || !GAME_ID_RE.test(gameId)) return Response.json({ error: "valid gameId required" }, { status: 400 });
   let body = null;
   let liveCache = true;
 
@@ -137,7 +143,7 @@ export async function GET(req) {
       body = await fetchEspnBox(gameId);
       liveCache = false;
     } catch (e) {
-      return new Response(JSON.stringify({ error: `espn: ${e.message}` }), { status: 500 });
+      return Response.json({ error: `espn: ${e.message}` }, { status: 502 });
     }
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -178,7 +184,7 @@ export async function GET(req) {
       body = await fetchEspnBox(gameId);
       liveCache = false;
     } catch (e2) {
-      return new Response(JSON.stringify({ error: `${e.message} / ${e2.message}` }), { status: 500 });
+      return Response.json({ error: `${e.message} / ${e2.message}` }, { status: 502 });
     }
   }
   return new Response(JSON.stringify(body), {

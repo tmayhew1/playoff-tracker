@@ -137,19 +137,31 @@ export function groupByDay(games) {
   return [...days.values()].sort((x, y) => x.date.localeCompare(y.date));
 }
 
+// One formatter each, built once. `toLocaleDateString` with options builds a
+// fresh Intl.DateTimeFormat on every call, which costs tens of microseconds —
+// and monthTotals asks for a label per player line, ~26,000 times a season.
+// That alone was most of the main-thread time opening a season on Explore.
+// Labels are remembered per date as well: a season has under 200 of them.
+const SHORT_DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const DAY_LABEL = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+const labelCache = (fmt) => {
+  const seen = new Map();
+  return (date) => {
+    let label = seen.get(date);
+    if (label === undefined) {
+      const [y, m, d] = date.split("-").map(Number);
+      label = fmt.format(new Date(Date.UTC(y, m - 1, d)));
+      seen.set(date, label);
+    }
+    return label;
+  };
+};
+
 // "2026-01-07" -> "Jan 7".
-export function shortDay(date) {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-}
+export const shortDay = labelCache(SHORT_DAY);
 
 // "2025-10-22" -> "Wed, Oct 22".
-export function dayLabel(date) {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric", timeZone: "UTC",
-  });
-}
+export const dayLabel = labelCache(DAY_LABEL);
 
 const STAT_KEYS = ["mp", "pts", "reb", "ast", "stl", "blk", "tov", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "drb", "orb"];
 

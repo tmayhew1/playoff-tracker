@@ -6,11 +6,12 @@ import { valueAdd, valueAddByCategory } from "../scoring";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
-import { normalizeName, teamColor, trimFixed } from "../lib/format";
+import { normalizeName, teamColor, teamInk, trimFixed } from "../lib/format";
 import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 import { useSeasonContext } from "../lib/use-season-context";
 import { etDate, seasonOf } from "../lib/regular-season-games";
 import { availability } from "../lib/injuries";
+import { scrollBehavior } from "../lib/motion";
 
 // The Live tab: today's games, the ones on now at the top. Once the day's
 // games are over (or before the first tips) it's NBA Today instead: the next
@@ -55,7 +56,7 @@ function slateTitle(date) {
 function TeamTag({ side }) {
   return (
     <span className="inline-flex items-baseline gap-1">
-      <span className="font-bold tabular-nums" style={{ color: teamColor(side.tri) }}>{side.tri}</span>
+      <span className="font-bold tabular-nums" style={{ color: teamInk(side.tri) }}>{side.tri}</span>
       {side.record && <span className="text-[9px] text-stone-400 tabular-nums">{side.record}</span>}
     </span>
   );
@@ -64,11 +65,11 @@ function TeamTag({ side }) {
 function SectionHeader({ title, count, live, sub }) {
   return (
     <div className="flex items-baseline justify-between mb-2.5 pb-1.5 border-b-2 border-stone-900">
-      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
         {live && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
         {title}
         {sub && <span className="font-normal tracking-wider text-stone-500">{sub}</span>}
-      </h3>
+      </h2>
       <span className="text-[10px] uppercase tracking-wider text-stone-500 tabular-nums">{count} game{count === 1 ? "" : "s"}</span>
     </div>
   );
@@ -282,7 +283,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
       </div>
       {records.some(Boolean) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
         {sides.map(([side, , right], i) => (
-          <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
+          <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamInk(side.tri) }}>
             {records[i] || "–"}
           </div>
         ))}
@@ -504,7 +505,7 @@ function SlateSummary({ date, games }) {
                 <button
                   key={g.gameId}
                   type="button"
-                  onClick={() => document.getElementById(gameAnchor(g))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  onClick={() => document.getElementById(gameAnchor(g))?.scrollIntoView({ behavior: scrollBehavior(), block: "start" })}
                   className={`grid grid-cols-[1fr_auto_1fr] gap-x-1.5 font-bold hover:opacity-70 ${ink}`}
                 >
                   <span className="text-right whitespace-nowrap">{g.away.tri}{scored && ` ${g.away.score}`}</span>

@@ -3,7 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { normalizeName, teamColor } from "../lib/format";
+import { normalizeName, teamInk } from "../lib/format";
+import { Render } from "./ui/render";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 // Data-browser tab for shot-distance zone splits (0-3/3-10/10-16/16ft-3PT):
@@ -46,6 +48,10 @@ export function ShotZonesView() {
   const [seasons, setSeasons] = useState([]);
   const [season, setSeason] = useState(null);
   const [scope, setScope] = useState("rs"); // "rs" | "po" | "combined"
+  // Tap Player, then a name, to open that player's season in By Player. (The
+  // header used to sort by name; every other column still sorts.)
+  const arm = usePlayerArm();
+  const scopeName = { rs: "regular", po: "playoffs", combined: "combined" };
   const [query, setQuery] = useState("");
   // Column sort: zone/total value columns are tappable; first tap sorts
   // descending by that column's value, second tap flips it.
@@ -115,6 +121,7 @@ export function ShotZonesView() {
     <div className="text-[10px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
+          aria-label="Season"
           value={sel || ""}
           onChange={(e) => { setSeason(e.target.value); }}
           className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
@@ -127,6 +134,7 @@ export function ShotZonesView() {
           <button onClick={() => setScope("po")} className={`px-1.5 py-0.5 border-l border-stone-300 ${scope === "po" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Playoffs</button>
         </div>
         <input
+          aria-label="Search players"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -157,9 +165,9 @@ export function ShotZonesView() {
             );
             return (
               <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-                <span>#</span><H k="name" label="Player" right={false} natural={1} />
-                {ZONES.map((z) => <H key={z.key} k={z.key} label={z.label} />)}
-                <H k="total" label="Total" />
+                <span>#</span>{arm.header()}
+                {ZONES.map((z) => <Render fn={H} key={z.key} k={z.key} label={z.label} />)}
+                <Render fn={H} k="total" label="Total" />
               </div>
             );
           })()}
@@ -168,9 +176,8 @@ export function ShotZonesView() {
           {list && list.map(({ r, zones, total }, i) => (
             <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[3px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
               <span className="text-stone-400 tabular-nums">{i + 1}</span>
-              <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
-                {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
-              </span>
+              {arm.name({ name: r.name, slug: r.slug || null, season: sel, scope: scopeName[scope] }, { className: "truncate font-semibold", style: { color: teamInk(r.team) } },
+                <>{r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span></>)}
               {zones.map(({ z, m, att, pct, val }) => (
                 <span key={z.key} className="text-right leading-tight">
                   <span className="block tabular-nums text-stone-500 text-[8px]">{m}/{att} ({(pct * 100).toFixed(0)}%)</span>

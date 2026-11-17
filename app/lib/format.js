@@ -312,6 +312,36 @@ export function readableOn(hex, bg, minRatio = 4.5) {
 }
 
 
+// A team's color as TEXT: the color itself where it already reads at 4.5:1,
+// otherwise walked darker in the same hue in small steps, stopping at the
+// first shade that does. It is checked against the team's own chip — the
+// team color at 14% over the stone-100 page — the darkest ground its name
+// usually sits on, so it passes on the page, on a row and in a chip alike.
+// Most teams come back unchanged; the rest go only as deep as they need.
+const inkCache = new Map();
+const PAGE = "#f5f5f4";
+const over = (fg, alpha, bg) => {
+  const [a, b] = [hexToRgb(fg), hexToRgb(bg)];
+  return rgbToHex(a.map((v, i) => alpha * v + (1 - alpha) * b[i]));
+};
+export function teamInk(tri) {
+  if (!inkCache.has(tri)) {
+    const c = teamColor(tri);
+    const bg = over(c, 0.14, PAGE);
+    let out = c;
+    if (contrastRatio(c, bg) < 4.5) {
+      const [L, A, B] = toOklab(c);
+      for (let l = L; l > 0.1; l -= 0.005) {
+        out = fromOklab([l, A, B]);
+        if (contrastRatio(out, bg) >= 4.5) break;
+      }
+    }
+    inkCache.set(tri, out);
+  }
+  return inkCache.get(tri);
+}
+
+
 // --- Comparison side color ---------------------------------------------------
 // The compared player's side of a Compare card used to be gold everywhere, so
 // it read as "the thing measured against" rather than as a team. Instead, give

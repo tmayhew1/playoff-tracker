@@ -34,6 +34,9 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  // The page background, so the browser's own chrome (Android's address bar,
+  // Safari's status bar) matches instead of framing the page in white.
+  themeColor: "#f5f5f4",
 };
 
 export default function RootLayout({ children }) {

@@ -23,7 +23,7 @@ export async function GET(req) {
     fetchEspnBox(id).catch((e) => { errors.push(`${id}: ${e.message}`); return null; })));
   const games = boxes.filter(Boolean).map((b) => ({ gameId: b.gameId, home: b.home, away: b.away }));
   if (!games.length) {
-    return Response.json({ error: `espn: ${errors.slice(0, 3).join("; ")}` }, { status: 500 });
+    return Response.json({ error: `espn: ${errors.slice(0, 3).join("; ")}` }, { status: 502 });
   }
   // A finished game's box never changes; a partial answer is asked again soon.
   const maxAge = errors.length ? 3600 : 604800;

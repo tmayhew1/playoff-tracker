@@ -1,6 +1,6 @@
 "use client";
 
-import { splitName, teamColor, withAlpha } from "../lib/format";
+import { splitName, teamColor, teamInk, withAlpha } from "../lib/format";
 
 // The team badge and two-line name the Look Ahead and MIP tables share.
 
@@ -9,7 +9,7 @@ export function TeamChip({ team, onClick, active = false }) {
     return <span className="w-8 sm:w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border border-stone-200 text-stone-400 shrink-0">FA</span>;
   }
   const tc = teamColor(team);
-  const style = { backgroundColor: withAlpha(tc, active ? 0.3 : 0.14), color: tc, borderColor: withAlpha(tc, active ? 0.8 : 0.4) };
+  const style = { backgroundColor: withAlpha(tc, active ? 0.3 : 0.14), color: teamInk(team), borderColor: withAlpha(tc, active ? 0.8 : 0.4) };
   const Tag = onClick ? "button" : "span";
   return (
     <Tag
@@ -22,10 +22,10 @@ export function TeamChip({ team, onClick, active = false }) {
   );
 }
 
-export function Name({ name }) {
+export function Name({ name, className = "" }) {
   const { first, last } = splitName(name);
   return (
-    <span className="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1]">
+    <span className={`min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1] ${className}`}>
       {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:shrink-0">{first}</span>}
       <span className="truncate text-[10px]">{last}</span>
     </span>

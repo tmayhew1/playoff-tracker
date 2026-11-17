@@ -5,8 +5,9 @@ import { VABreakdown } from "./va-breakdown";
 import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { monthBoxes, monthRows, peekBoxes, peekMonthly, seasonMonthly } from "../lib/month-tables";
-import { normalizeName, teamColor, withAlpha } from "../lib/format";
+import { normalizeName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { catVATotal } from "../lib/va";
+import { usePlayerArm } from "../lib/player-nav";
 
 // A month's league-wide leaders: every player who played in the month, best
 // Value Added per game first — the regular season's Series Averages. Box
@@ -23,6 +24,8 @@ import { catVATotal } from "../lib/va";
 const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 
 export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl }) {
+  // Tap Player, then a name, to open that player's season in By Player.
+  const arm = usePlayerArm();
   const year = month.key.slice(0, 4);
   const [open, setOpen] = useState(true);
   const [boxes, setBoxes] = useState(() => peekBoxes(season, month));
@@ -213,7 +216,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-5 text-right">#</span>
                 <span className="w-10">Team</span>
-                <span className="flex-1">Player</span>
+                {arm.header("flex-1")}
                 <span className="w-5 text-right">G</span>
                 <span className="hidden sm:block w-8 text-right">MPG</span>
                 <span className="w-8 text-right">PPG</span>
@@ -226,7 +229,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                 const tc = teamColor(p.team);
                 const isOpen = expanded === p.name;
                 const barColor = p.vapg >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
-                const toggle = () => openRow(isOpen ? null : p.name);
+                const toggle = arm.rowClick({ name: p.name, slug: p.slug || null, season, scope: "regular" }, () => openRow(isOpen ? null : p.name));
                 const other = isOpen ? viewed(p.name) : null;
                 const shown = other ? other.p : p;
                 return (
@@ -255,13 +258,13 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                             e.stopPropagation();
                             onTeam?.(team === p.team ? null : p.team);
                           }}
-                          style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
+                          style={{ backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) }}
                           className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border"
                           aria-label={team === p.team ? "Show every team" : `Show only ${p.team}`}
                         >{p.team}</button>
                         <span className="flex-1 truncate text-stone-800">
                           <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
-                          {p.name}
+                          <span className={arm.nameClass({ name: p.name, slug: p.slug || null })}>{p.name}</span>
                         </span>
                         <span className="w-5 text-right tabular-nums text-stone-500">{p.gp}</span>
                         <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{p.mpg.toFixed(1)}</span>

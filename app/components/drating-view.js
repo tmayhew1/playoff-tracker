@@ -4,7 +4,9 @@ import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { normalizeName, teamColor } from "../lib/format";
+import { normalizeName, teamInk } from "../lib/format";
+import { Render } from "./ui/render";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 // Data-browser tab for the D-Rating / VA+ decomposition: every player-season
@@ -18,6 +20,10 @@ export function DRatingView() {
   const seasons = useMemo(() => Object.keys(defs || {}).sort().reverse(), [defs]);
   const [season, setSeason] = useState(null);
   const [scope, setScope] = useState("rs"); // "rs" | "po"
+  // Tap Player, then a name, to open that player's season in By Player. (The
+  // header used to sort by name; every other column still sorts.)
+  const arm = usePlayerArm();
+  const scopeName = { rs: "regular", po: "playoffs", combined: "combined" };
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState(null);
   // Column sort: every numeric column is tappable; first tap uses the
@@ -99,6 +105,7 @@ export function DRatingView() {
     <div className="text-[10px]">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <select
+          aria-label="Season"
           value={sel || ""}
           onChange={(e) => { setSeason(e.target.value); }}
           className="text-[10px] bg-white border border-stone-300 px-1.5 py-1"
@@ -119,6 +126,7 @@ export function DRatingView() {
           </button>
         )}
         <input
+          aria-label="Search players"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -150,7 +158,7 @@ export function DRatingView() {
         );
         return (
           <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-            <span>#</span><H k="name" label="Player" right={false} />
+            <span>#</span>{arm.header()}
             {/* MP header arms the min-minutes filter (two-step, like the
                 leaderboards' G column) instead of sorting; a second tap
                 disarms. */}
@@ -163,9 +171,9 @@ export function DRatingView() {
             >
               MP
             </button>
-            <H k="drtg" label="DRTG" /><H k="team" label="Team" />
-            <H k="ind" label="IND" /><H k="tmp" label="TM+" />
-            <H k="perG" label="D/G" />
+            <Render fn={H} k="drtg" label="DRTG" /><Render fn={H} k="team" label="Team" />
+            <Render fn={H} k="ind" label="IND" /><Render fn={H} k="tmp" label="TM+" />
+            <Render fn={H} k="perG" label="D/G" />
           </div>
         );
       })()}
@@ -174,9 +182,8 @@ export function DRatingView() {
       {list && list.map(({ r, info, indG, tmpG, perG }, i) => (
         <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
           <span className="text-stone-400 tabular-nums">{i + 1}</span>
-          <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
-            {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
-          </span>
+          {arm.name({ name: r.name, slug: r.slug || null, season: sel, scope: scopeName[scope] }, { className: "truncate font-semibold", style: { color: teamInk(r.team) } },
+            <>{r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span></>)}
           {(() => {
             const mpVal = Math.round(r.mp);
             const isActive = minMpFilter === mpVal;

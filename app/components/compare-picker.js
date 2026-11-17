@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { shootProfileVec } from "../scoring";
-import { GOLD, GOLD_BG, compName, normalizeName, seasonTag, shortName, teamColor } from "../lib/format";
+import { GOLD, GOLD_BG, compName, normalizeName, seasonTag, shortName, teamColor, teamInk } from "../lib/format";
 import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, matchCareerYears, similarRuns } from "../lib/multi-season";
 import { perGameVAVec, tunnelBreak, vaComposition } from "../lib/va";
 import { useRowLga } from "../lib/va-mode";
 import { COMP_METRIC_OPTS, COMP_METRIC_WORD, buildComparePlayers, comparePlayerKey } from "./compare";
+import { scrollBehavior } from "../lib/motion";
 
 
 // The compare pickers: the single-season ComparePicker (search a player,
@@ -251,7 +252,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
   // after the keyboard has begun opening.
   const panelRef = useRef(null);
   const onSearchFocus = () => {
-    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: scrollBehavior() }), 300);
   };
 
   return (
@@ -263,6 +264,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
       {!sel ? (
         <>
           <input
+            aria-label="Search a player to compare"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -335,7 +337,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                             isBest ? "best match" : null,
                           ].filter(Boolean).join(" · ")}
                         >
-                          <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
+                          <span className="font-semibold" style={{ color: teamInk(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
                           <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                         </button>
@@ -377,7 +379,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                   aria-disabled={isSelf}
                   title={isSelf ? "The season this card is already reading — pick another of his seasons" : undefined}
                   className={`px-1.5 py-0.5 border tabular-nums ${isSelf ? "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed" : "border-stone-300 hover:border-amber-500 hover:bg-amber-50"}`}
-                  style={isSelf ? undefined : { color: teamColor(s.team) }}
+                  style={isSelf ? undefined : { color: teamInk(s.team) }}
                 >
                   {seasonTag(s.season)} {s.team} <span className={isSelf ? "text-stone-300" : "text-stone-500"}>{(s.vaPerG ?? 0).toFixed(1)}/G</span>
                 </button>
@@ -630,14 +632,14 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
     // Taller than the viewport counts as on screen once its top is: there is
     // no scroll position that shows all of it, and the top is where it reads.
     if (r.top >= 0 && (r.bottom <= vh || r.height >= vh)) return;
-    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    el.scrollIntoView({ block: "nearest", behavior: scrollBehavior() });
   }, [asked]);
   // The mobile keyboard covers the lower half of the viewport, which would
   // bury the results below the search box, so tapping the field DOES pin the
   // panel to the top — an explicit tap, unlike the panel's own arrival.
   // Deferred so the scroll runs after the keyboard has begun opening.
   const onSearchFocus = () => {
-    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 300);
+    setTimeout(() => panelRef.current?.scrollIntoView({ block: "start", behavior: scrollBehavior() }), 300);
   };
 
   return (
@@ -651,6 +653,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
       {!sel ? (
         <>
           <input
+            aria-label="Search a player to compare"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -702,7 +705,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                                 isBest ? "best match" : null,
                               ].filter(Boolean).join(" · ")}
                             >
-                              <span className="font-semibold" style={{ color: teamColor(run.team) }}>{compName(run.player.name)}</span>
+                              <span className="font-semibold" style={{ color: teamInk(run.team) }}>{compName(run.player.name)}</span>
                               <span className="text-stone-400"> {run.span}</span>
                               <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                             </button>
@@ -752,7 +755,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                   aria-checked={on}
                   className="px-1.5 py-0.5 border tabular-nums inline-flex items-center gap-1 hover:border-amber-500"
                   style={on
-                    ? { backgroundColor: GOLD_BG, borderColor: GOLD, color: tc }
+                    ? { backgroundColor: GOLD_BG, borderColor: GOLD, color: teamInk(s.team) }
                     : { backgroundColor: "#fff", borderColor: "#d6d3d1", color: "#a8a29e" }}
                 >
                   <span aria-hidden className="text-[9px] leading-none">{on ? "◼" : "⬜"}</span>

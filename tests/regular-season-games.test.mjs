@@ -109,7 +109,7 @@ test("/api/regular-season/games: a lost day is reported, losing all is an error"
   assert.match(partial.headers.get("Cache-Control"), /s-maxage=3600/);
 
   t.mock.method(globalThis, "fetch", async () => new Response("", { status: 403 }));
-  assert.equal((await route("?season=2025-26&month=202512")).status, 500);
+  assert.equal((await route("?season=2025-26&month=202512")).status, 502);
   assert.equal((await route("?season=nope&month=202512")).status, 400);
   assert.equal((await route("?season=2025-26&month=202507")).status, 400, "outside the season");
 });
@@ -186,7 +186,7 @@ test("/api/regular-season/lines answers several games at once", async (t) => {
   assert.match(res.headers.get("Cache-Control"), /s-maxage=3600/);
 
   const lines = (q) => LINES(new Request(`http://x/api/regular-season/lines${q}`));
-  assert.equal((await lines("?ids=401000002")).status, 500);
+  assert.equal((await lines("?ids=401000002")).status, 502);
   assert.equal((await lines("?ids=abc")).status, 400);
   assert.equal((await lines("")).status, 400);
   assert.equal((await lines(`?ids=${Array.from({ length: 21 }, (_, i) => 401000000 + i).join(",")}`)).status, 400);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { useVAMode } from "../lib/va-mode";
-import { teamColor } from "../lib/format";
+import { teamInk } from "../lib/format";
 
 // "About Last Night": the night's best Value Added games, top of Explore,
 // folded until tapped. Lines are baked each morning (scripts/bake-nights.mjs)
@@ -60,9 +60,9 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
           <span className="text-[10px] text-stone-400">{open ? "▾" : "▸"}</span>
         </button>
         <button onClick={() => step(data.prev)} disabled={!data.prev} aria-label="Earlier night"
-          className="px-2 text-sm text-stone-500 disabled:text-stone-200">‹</button>
+          className="-my-2 py-2 px-2.5 text-sm text-stone-500 disabled:text-stone-200">‹</button>
         <button onClick={() => step(data.next)} disabled={!data.next} aria-label="Later night"
-          className="px-2 text-sm text-stone-500 disabled:text-stone-200">›</button>
+          className="-my-2 py-2 px-2.5 text-sm text-stone-500 disabled:text-stone-200">›</button>
       </div>
       {open && (
         <div>
@@ -75,7 +75,7 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
                 <span className="text-[10px] text-stone-400 tabular-nums">{i + 1}</span>
                 <span className="min-w-0">
                   <span className="block text-[12px] font-semibold text-stone-900 truncate">
-                    {l.name} <span className="text-[10px] font-bold" style={{ color: teamColor(l.team) }}>{l.team}</span>
+                    {l.name} <span className="text-[10px] font-bold" style={{ color: teamInk(l.team) }}>{l.team}</span>
                     <span className="text-[10px] text-stone-400 font-normal"> {l.won ? "W" : "L"} vs {l.opp}</span>
                   </span>
                   <span className="block text-[10px] text-stone-500 tabular-nums">

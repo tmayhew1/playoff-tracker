@@ -43,12 +43,32 @@ function finishedSeasonGames() {
 // and its image).
 const inSeasonRoutes = ["/api/regular-season", "/api/players", "/api/projections", "/api/og", "/"];
 
+// Sent with every response. None of these change what the page loads: they
+// stop it being framed by another site (clickjacking), stop browsers guessing
+// a response's type, keep the full URL (a shared view's query string) out of
+// cross-site referrers, and switch off device features the app never asks
+// for. The Content-Security-Policy is deliberately only the directives that
+// cannot break script or style loading — a script-src policy needs per-request
+// nonces (middleware), which this app does not have.
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+];
+
 const nextConfig = {
   reactStrictMode: true,
-  env: { NEXT_PUBLIC_BUILD_ID: buildId() },
-  experimental: {
-    outputFileTracingIncludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, [`./${GAMES}/${seasonUnderWay()}/*.json`]])),
-    outputFileTracingExcludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, finishedSeasonGames()])),
+  // No "X-Powered-By: Next.js" — it only tells a scanner which advisories to try.
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
   },
+  env: { NEXT_PUBLIC_BUILD_ID: buildId() },
+  // Top-level since Next 15 (they were under `experimental` in 14).
+  outputFileTracingIncludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, [`./${GAMES}/${seasonUnderWay()}/*.json`]])),
+  outputFileTracingExcludes: Object.fromEntries(inSeasonRoutes.map((r) => [r, finishedSeasonGames()])),
 };
 module.exports = nextConfig;

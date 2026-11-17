@@ -6,12 +6,14 @@ import { combinedLga, lgaForSeason, valueAddParts, ZONES, zoneGames, zoneMinutes
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { addLiveLines, addLiveLinesToIndex } from "../lib/live-lines";
 import { useLiveLines } from "../lib/live-feed";
+import { scrollBehavior } from "../lib/motion";
+import { usePlayerNav } from "../lib/player-nav";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
@@ -56,7 +58,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // By Player with this season's row already drilled in. Unarmed, a name tap
   // keeps expanding the row in place — crossing views is never one stray tap.
   const [nameArmed, setNameArmed] = useState(false);
-  const canOpenPlayer = typeof onOpenPlayerSeason === "function";
+  // Explore hands in its own By Player jump; anywhere else (the Trey vs
+  // Spencer bracket's board) the page-wide one does the same job.
+  const pageGoToPlayer = usePlayerNav();
+  const openPlayerSeason = typeof onOpenPlayerSeason === "function"
+    ? onOpenPlayerSeason
+    : pageGoToPlayer ? (t) => pageGoToPlayer({ ...t, scope }) : null;
+  const canOpenPlayer = !!openPlayerSeason;
   // Only one column armed at a time; two dotted-underline hints at once reads
   // as ambiguous about what the next tap does.
   const armName = () => { setGArmed(false); setNameArmed((v) => !v); };
@@ -322,13 +330,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
     if (!pendingScrollName) return;
     const sel = `[data-player-row="${pendingScrollName.replace(/"/g, '\\"')}"]`;
     const el = document.querySelector(sel);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
     setPendingScrollName(null);
   }, [pendingScrollName]);
 
   useEffect(() => {
     if (!pendingScrollCard) return;
-    cardElRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    cardElRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
     setPendingScrollCard(false);
   }, [pendingScrollCard]);
 
@@ -574,7 +582,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
           <button
             type="button"
             onClick={armName}
-            className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
+            className={`flex-1 text-left hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
             title="Tap, then tap a player to open this season in their By Player career"
             aria-pressed={nameArmed}
           >
@@ -588,7 +596,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-7 sm:w-8 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-7 sm:w-8 text-right hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -612,8 +620,8 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-11 sm:w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label="Sort by total VA"
+          className={`w-11 sm:w-14 text-right whitespace-nowrap hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label={metric === "vaPlus" ? "TOT VA+, sort by total VA+" : "TOT VA, sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
           <span className="hidden sm:inline">TOT </span>{metric === "vaPlus" ? "VA+" : "VA"}{effectiveSort === "totalVA" ? " ▾" : ""}
@@ -624,8 +632,8 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-10 sm:w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
-          aria-label="Sort by VA per game"
+          className={`w-10 sm:w-11 text-right whitespace-nowrap hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          aria-label={metric === "vaPlus" ? "VA+/G, sort by VA+ per game" : "VA/G, sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
           {metric === "vaPlus" ? "VA+/G" : "VA/G"}{effectiveSort === "vaPerG" ? " ▾" : ""}
@@ -684,7 +692,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         const rowKey = `${p.team}:${p.name}`;
         const isOpen = expanded === rowKey;
         const tc = teamColor(p.team);
-        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) };
         const rowVa = vaOf(p);
         const barColor = rowVa >= 0
           ? withAlpha(tc, 0.16)
@@ -781,7 +789,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   if (!nameArmed || !canOpenPlayer) return;
                   e.stopPropagation();
                   setNameArmed(false);
-                  onOpenPlayerSeason({ season, name: p.name, slug: p.slug || null });
+                  openPlayerSeason({ season, name: p.name, slug: p.slug || null });
                 }}
                 className={`flex-1 min-w-0 flex items-center text-left cursor-pointer ${nameArmed && canOpenPlayer ? "text-stone-900 font-semibold" : "text-stone-800"}`}
                 aria-label={nameArmed && canOpenPlayer
@@ -893,6 +901,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                 player={p}
                 lga={lgaOf(p)}
                 baseline="NBA"
+                season={season}
                 context={contextFor(p)}
                 showDRating={metric === "vaPlus"}
                 pendingCompare={navCompare?.rowKey === rowKey ? navCompare.compare : null}

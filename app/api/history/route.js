@@ -75,7 +75,7 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const season = searchParams.get("season");
   if (!season || !SEASON_RE.test(season)) {
-    return new Response(JSON.stringify({ error: "valid season required (e.g. 2024-25)" }), { status: 400 });
+    return Response.json({ error: "valid season required (e.g. 2024-25)" }, { status: 400 });
   }
 
   // Prefer baked static JSON when available — produced by the bake script.
@@ -195,6 +195,6 @@ export async function GET(req) {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: `espn scoreboard: ${e.message}` }), { status: 500 });
+    return Response.json({ error: `espn scoreboard: ${e.message}` }, { status: 502 });
   }
 }
