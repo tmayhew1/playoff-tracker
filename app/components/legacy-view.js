@@ -6,6 +6,7 @@ import { teamColor } from "../lib/format";
 import { anchorCLI, gameWeight, rsCLI, seriesGameWeight, ALPHA_DEFAULT, OMEGA_DEFAULT } from "../lib/leverage";
 import { PEAK_SEASONS_DEFAULT } from "../lib/legacy";
 import { positionChips, positionParent } from "../lib/positions";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 // The all-time board. Legacy is deliberately TWO numbers rather than one
@@ -542,6 +543,8 @@ function PositionFilter({ value, onChange }) {
 }
 
 function CareersBoard({ onGoToLeaderboard }) {
+  // Tap Player, then a name, to open that player's career in By Player.
+  const arm = usePlayerArm();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [sortKey, setSortKey] = useState("total"); // "total" | "peak"
@@ -682,7 +685,7 @@ function CareersBoard({ onGoToLeaderboard }) {
       </div>
 
       <div className={`${BOARD_COLS} text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200`}>
-        <span></span><span>Player</span><span className="text-right">Yr</span>
+        <span></span>{arm.header()}<span className="text-right">Yr</span>
         {head("total", "Legacy")}
         {/* "Peak", not "Peak/G": the per-game part is spelled out in the
             paragraph above the board and in the expansion's own tile, and four
@@ -710,7 +713,7 @@ function CareersBoard({ onGoToLeaderboard }) {
             <button
               type="button"
               aria-expanded={isOpen}
-              onClick={() => setOpen(isOpen ? null : p.slug)}
+              onClick={arm.rowClick({ name: p.name, slug: p.slug }, () => setOpen(isOpen ? null : p.slug))}
               className={`w-full text-left ${BOARD_COLS} px-2 pt-1.5 text-sm ${isOpen ? "bg-stone-50" : "hover:bg-stone-50"}`}
             >
               {/* The rank the server assigned in the sorted order, not the row's
@@ -719,7 +722,7 @@ function CareersBoard({ onGoToLeaderboard }) {
               <span className="min-w-0">
                 <span className="font-semibold text-stone-800 block truncate">
                   <span className="text-stone-400 text-[9px] mr-1">{isOpen ? "▾" : "▸"}</span>
-                  {p.name}{p.truncated ? <span className="text-stone-400"> *</span> : null}
+                  <span className={arm.nameClass}>{p.name}</span>{p.truncated ? <span className="text-stone-400"> *</span> : null}
                 </span>
                 <span className="text-[10px] text-stone-500 tabular-nums">
                   {p.span} · {fmt0(p.careerGames)} G

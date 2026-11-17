@@ -5,6 +5,7 @@ import { fetchBakedJson } from "../lib/fetch-cache";
 import { teamColor, withAlpha } from "../lib/format";
 import { Name, TeamChip } from "./player-chips";
 import { scrollBehavior } from "../lib/motion";
+import { usePlayerArm } from "../lib/player-nav";
 
 // The Awards tab: one sub-page per award, each a season-by-season board of the
 // award's odds, fit on the real winners (scripts/bake-awards.mjs, served by
@@ -123,6 +124,8 @@ const WinnerTag = ({ award }) => (
 );
 
 function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
+  // Tap Player, then a name, to open that player's season in By Player.
+  const arm = usePlayerArm();
   const [sort, setSort] = useState("mip");
   const [open, setOpen] = useState(null);
 
@@ -167,7 +170,7 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
-          <span className="flex-1">Player</span>
+          {arm.header("flex-1")}
           <button type="button" onClick={() => tapSort("mip")} aria-pressed={sort === "mip"} className={`w-10 ${sortCls("mip")}`}>MIP%{sort === "mip" ? " ▾" : ""}</button>
           <span className="w-8 text-right">Vote</span>
           <button type="button" onClick={() => tapSort("pg")} aria-pressed={sort === "pg"} className={`w-12 ${sortCls("pg")}`}>Over/G{sort === "pg" ? " ▾" : ""}</button>
@@ -178,7 +181,8 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
             key={r.i} r={r} isWinner={r.slug === winSlug}
             width={Math.max(0, valOf(r)) / maxVal}
             gap={k === 25}
-            isOpen={open === r.i} onToggle={() => setOpen(open === r.i ? null : r.i)}
+            isOpen={open === r.i} onToggle={arm.rowClick({ name: r.name, slug: r.slug, season: cur, scope: "regular" }, () => setOpen(open === r.i ? null : r.i))}
+            nameClass={arm.nameClass}
             onGo={onGo}
           />
         ))}
@@ -202,7 +206,7 @@ function MipBoard({ data, season, onSeason, focus = null, onGo = null }) {
   );
 }
 
-function MipRow({ r, isWinner, width, gap, isOpen, onToggle, onGo }) {
+function MipRow({ r, isWinner, width, gap, isOpen, onToggle, onGo, nameClass = "" }) {
   const tc = teamColor(r.team);
   const over = r.actual - r.proj, overPg = r.actualPg - r.projPg;
   return (
@@ -222,7 +226,7 @@ function MipRow({ r, isWinner, width, gap, isOpen, onToggle, onGo }) {
           <TeamChip team={r.team} active={isOpen} />
           <span className="flex-1 min-w-0 flex items-center text-stone-800">
             <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-            <Name name={r.name} />
+            <Name name={r.name} className={nameClass} />
             {isWinner && <WinnerTag award="MIP" />}
           </span>
           <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.mip)}</span>
@@ -348,6 +352,8 @@ const PICK = {
 };
 
 function PickBoard({ award, data, season, onSeason, focus = null, onGo = null }) {
+  // Tap Player, then a name, to open that player's season in By Player.
+  const arm = usePlayerArm();
   const cfg = PICK[award];
   const seasons = useMemo(() => Object.keys(data.seasons).sort(), [data]);
   const [open, setOpen] = useState(null);
@@ -376,7 +382,7 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
         <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 px-1.5 sm:px-2 border-b border-stone-200">
           <span className="w-5 sm:w-6 text-right">#</span>
           <span className="w-8 sm:w-10">Team</span>
-          <span className="flex-1">Player</span>
+          {arm.header("flex-1")}
           <span className="w-10 text-right text-stone-900 font-semibold">{cfg.col} ▾</span>
           {cfg.vote && <span className="w-8 text-right">Vote</span>}
           <span className="w-11 text-right">VA+</span>
@@ -392,15 +398,15 @@ function PickBoard({ award, data, season, onSeason, focus = null, onGo = null })
                 <div
                   role="button" tabIndex={0} aria-expanded={isOpen}
                   aria-label={`${r.name} — ${isOpen ? "hide" : "show"} season line`}
-                  onClick={() => setOpen(isOpen ? null : r.slug)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(isOpen ? null : r.slug); } }}
+                  onClick={arm.rowClick({ name: r.name, slug: r.slug, season: cur, scope: "regular" }, () => setOpen(isOpen ? null : r.slug))}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); arm.rowClick({ name: r.name, slug: r.slug, season: cur, scope: "regular" }, () => setOpen(isOpen ? null : r.slug))(e); } }}
                   className="relative w-full flex items-center gap-1.5 sm:gap-2 text-[10px] py-1.5 px-1.5 sm:px-2 cursor-pointer"
                 >
                   <span className="w-5 sm:w-6 text-right tabular-nums text-stone-500">{r.rank}</span>
                   <TeamChip team={r.team} active={isOpen} />
                   <span className="flex-1 min-w-0 flex items-center text-stone-800">
                     <span className="text-stone-400 mr-1 shrink-0" aria-hidden>{isOpen ? "▾" : "▸"}</span>
-                    <Name name={r.name} />
+                    <Name name={r.name} className={arm.nameClass} />
                     {picked && <WinnerTag award={cfg.tag(r.pick)} />}
                   </span>
                   <span className="w-10 text-right tabular-nums font-bold text-stone-900">{pct(r.p)}</span>

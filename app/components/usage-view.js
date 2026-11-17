@@ -5,6 +5,7 @@ import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, 
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { MIDNIGHT_PURPLE, normalizeName, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 // Data-browser tab for the USG-ADJ scoring baseline (spec §4.6): every
@@ -275,6 +276,10 @@ export function UsageView() {
   const seasons = useMemo(() => Object.keys(USAGE_MODELS).sort().reverse(), []);
   const [season, setSeason] = useState(null);
   const [scope, setScope] = useState("rs"); // "rs" | "po"
+  // Tap Player, then a name, to open that player's season in By Player. (The
+  // header used to sort by name; every other column still sorts.)
+  const arm = usePlayerArm();
+  const scopeName = { rs: "regular", po: "playoffs", combined: "combined" };
   const [perGame, setPerGame] = useState(false);
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState(null);
@@ -549,7 +554,7 @@ export function UsageView() {
         );
         return (
           <div className={`${cols} text-[8px] uppercase tracking-wider text-stone-400 border-b border-stone-300 pb-0.5`}>
-            <span>#</span><Render fn={H} k="name" label="Player" right={false} />
+            <span>#</span>{arm.header()}
             {/* MP header arms the min-minutes filter (two-step, like the
                 D Rating tab) rather than sorting; a second tap disarms.
                 Sorting by minutes stays available through the /G switch's
@@ -609,8 +614,8 @@ export function UsageView() {
               be located in the cloud. */}
           <button
             type="button"
-            onClick={() => setPicked(isPicked ? null : x)}
-            className="truncate font-semibold text-left"
+            onClick={arm.rowClick({ name: r.name, slug: r.slug || null, season: sel, scope: scopeName[scope] }, () => setPicked(isPicked ? null : x))}
+            className={`truncate font-semibold text-left ${arm.armed ? "underline decoration-dotted" : ""}`}
             style={{ color: teamInk(r.team) }}
             aria-pressed={isPicked}
             title={isPicked ? "Clear the highlight" : "Highlight this player in the plot"}

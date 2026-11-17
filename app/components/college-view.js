@@ -4,9 +4,14 @@ import { useState, useMemo, useEffect } from "react";
 import { VACategoryBreakdown } from "./va-breakdown";
 import { normalizeName } from "../lib/format";
 import { buildScoped } from "../lib/fetch-cache";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 export function CollegeView() {
+  // Tap Player, then a name, to open that player's NBA career in By Player —
+  // there for anyone who has reached the league; otherwise By Player's search
+  // opens with the name in it and says there's no match.
+  const arm = usePlayerArm();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,7 +88,7 @@ export function CollegeView() {
 
       {/* Tap VA or VA/G to sort by that column; the caret marks the active sort. */}
       <div className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center text-[10px] uppercase tracking-wider text-stone-400 px-2 pb-1 border-b border-stone-200">
-        <span></span><span>Player</span><span className="text-right">G</span>
+        <span></span>{arm.header()}<span className="text-right">G</span>
         <button onClick={() => setSortMode("va")} className={`text-right uppercase tracking-wider ${sortMode === "va" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA{sortMode === "va" ? " ▾" : ""}</button>
         <button onClick={() => setSortMode("vaPerG")} className={`text-right uppercase tracking-wider ${sortMode === "vaPerG" ? "text-stone-900 font-bold" : "text-stone-400 hover:text-stone-600"}`}>VA/G{sortMode === "vaPerG" ? " ▾" : ""}</button>
       </div>
@@ -102,7 +107,7 @@ export function CollegeView() {
                 the per-stat card also opens from a keyboard (the row itself
                 can't be one — it holds the school's button). */}
             <div
-              onClick={() => setExpanded(open ? null : key)}
+              onClick={arm.rowClick({ name: p.name }, () => setExpanded(open ? null : key))}
               className="grid grid-cols-[1.5rem_1fr_2.5rem_3rem_3rem] gap-x-2 items-center px-2 pt-1.5 text-sm cursor-pointer hover:bg-stone-50"
             >
               <span className="text-[10px] tabular-nums text-stone-400">{i + 1}</span>
@@ -110,8 +115,8 @@ export function CollegeView() {
                 <button
                   type="button"
                   aria-expanded={open}
-                  onClick={(e) => { e.stopPropagation(); setExpanded(open ? null : key); }}
-                  className="font-semibold text-stone-800 block truncate max-w-full text-left rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500"
+                  onClick={(e) => { e.stopPropagation(); arm.rowClick({ name: p.name }, () => setExpanded(open ? null : key))(e); }}
+                  className={`font-semibold text-stone-800 block truncate max-w-full text-left ${arm.nameClass} rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
                 >{p.name}</button>
                 <button
                   type="button"

@@ -13,6 +13,7 @@ import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { addLiveLines, addLiveLinesToIndex } from "../lib/live-lines";
 import { useLiveLines } from "../lib/live-feed";
 import { scrollBehavior } from "../lib/motion";
+import { usePlayerNav } from "../lib/player-nav";
 
 
 export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav = null, onNavigateToPlayer = null, onNavHandled = null, onOpenPlayerSeason = null, onOpenPlayerRun = null, onOpenInLive = null }) {
@@ -57,7 +58,13 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
   // By Player with this season's row already drilled in. Unarmed, a name tap
   // keeps expanding the row in place — crossing views is never one stray tap.
   const [nameArmed, setNameArmed] = useState(false);
-  const canOpenPlayer = typeof onOpenPlayerSeason === "function";
+  // Explore hands in its own By Player jump; anywhere else (the Trey vs
+  // Spencer bracket's board) the page-wide one does the same job.
+  const pageGoToPlayer = usePlayerNav();
+  const openPlayerSeason = typeof onOpenPlayerSeason === "function"
+    ? onOpenPlayerSeason
+    : pageGoToPlayer ? (t) => pageGoToPlayer({ ...t, scope }) : null;
+  const canOpenPlayer = !!openPlayerSeason;
   // Only one column armed at a time; two dotted-underline hints at once reads
   // as ambiguous about what the next tap does.
   const armName = () => { setGArmed(false); setNameArmed((v) => !v); };
@@ -782,7 +789,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
                   if (!nameArmed || !canOpenPlayer) return;
                   e.stopPropagation();
                   setNameArmed(false);
-                  onOpenPlayerSeason({ season, name: p.name, slug: p.slug || null });
+                  openPlayerSeason({ season, name: p.name, slug: p.slug || null });
                 }}
                 className={`flex-1 min-w-0 flex items-center text-left cursor-pointer ${nameArmed && canOpenPlayer ? "text-stone-900 font-semibold" : "text-stone-800"}`}
                 aria-label={nameArmed && canOpenPlayer

@@ -10,6 +10,7 @@ import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, te
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
 import { scrollBehavior } from "../lib/motion";
+import { usePlayerArm } from "../lib/player-nav";
 
 
 export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
@@ -48,6 +49,8 @@ export function HistoryGameList({ games, teamsMap, lga, dimTeam }) {
 
 
 export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamColor, season }) {
+  // Tap Player, then a name, to open that player's playoff run in By Player.
+  const arm = usePlayerArm();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -221,7 +224,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
               )}
               <div className="flex items-center gap-2 text-[9px] uppercase tracking-wider text-stone-400 py-1 border-b border-stone-200">
                 <span className="w-10">Team</span>
-                <span className="flex-1">Player</span>
+                {arm.header("flex-1")}
                 <button
                   type="button"
                   onClick={() => setGArmed((v) => !v)}
@@ -271,11 +274,11 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => setExpanded(isOpen ? null : rowKey)}
+                        onClick={arm.rowClick({ name: p.name, slug: p.slug || null, season, scope: "playoffs" }, () => setExpanded(isOpen ? null : rowKey))}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            setExpanded(isOpen ? null : rowKey);
+                            arm.rowClick({ name: p.name, slug: p.slug || null, season, scope: "playoffs" }, () => setExpanded(isOpen ? null : rowKey))(e);
                           }
                         }}
                         className={`relative w-full flex items-center gap-2 text-[10px] py-1 text-left cursor-pointer ${isOpen ? "bg-stone-100/60" : ""}`}
@@ -283,7 +286,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                       <span style={badgeStyle} className={`w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center ${badge}`}>{p.team}</span>
                       <span className="flex-1 truncate text-stone-800">
                         <span className="text-stone-400 mr-1">{isOpen ? "▾" : "▸"}</span>
-                        {p.name}
+                        <span className={arm.nameClass}>{p.name}</span>
                       </span>
                       <button
                         type="button"

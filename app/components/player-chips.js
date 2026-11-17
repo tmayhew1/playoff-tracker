@@ -22,10 +22,10 @@ export function TeamChip({ team, onClick, active = false }) {
   );
 }
 
-export function Name({ name }) {
+export function Name({ name, className = "" }) {
   const { first, last } = splitName(name);
   return (
-    <span className="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1]">
+    <span className={`min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-[1.1] ${className}`}>
       {first && <span className="truncate text-[8px] text-stone-500 sm:text-[10px] sm:shrink-0">{first}</span>}
       <span className="truncate text-[10px]">{last}</span>
     </span>
