@@ -111,16 +111,22 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
   if (series.length === 0) return null;
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {ROUND_LABELS[roundKey] || roundKey}
-        </h2>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            {ROUND_LABELS[roundKey] || roundKey}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-400">{series.length} series</span>
+        </button>
+      </h2>
       {open && series.map((s, i) => (
         <ExploreSeriesRow key={i} s={s} lga={lga} season={season} />
       ))}
@@ -169,16 +175,22 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
   ));
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {month.label} {month.key.slice(0, 4)}
-        </h2>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            {month.label} {month.key.slice(0, 4)}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
+        </button>
+      </h2>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
@@ -260,16 +272,22 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
   // Same header as a month or a round; the months open inside it, set in a step.
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          Reg Season
-        </h2>
-        <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            Reg Season
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-stone-400">{data.months.reduce((n, m) => n + m.games.length, 0)} games</span>
+        </button>
+      </h2>
       {open && <div className="pl-3">{months}</div>}
     </div>
   );

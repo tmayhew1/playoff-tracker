@@ -398,15 +398,21 @@ export function HistoryRoundSection({ round, teamsMap, lga, season }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="mb-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-baseline justify-between mb-2 pb-1.5 border-b-2 border-stone-900 text-left"
-      >
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
-          <span className="text-stone-400 text-[10px]">{open ? "▾" : "▸"}</span>
-          {round.label}
-        </h2>
-      </button>
+      {/* The heading holds the button, not the other way round: a heading
+          inside a <button> is invalid, and assistive tech drops it. */}
+      <h2 className="mb-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-baseline justify-between pb-1.5 border-b-2 border-stone-900 text-left"
+        >
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-stone-900 flex items-center gap-2">
+            <span className="text-stone-400 text-[10px]" aria-hidden>{open ? "▾" : "▸"}</span>
+            {round.label}
+          </span>
+        </button>
+      </h2>
       {open && round.series.map((s, i) => (
         <HistorySeriesRow key={i} s={s} teamsMap={teamsMap} lga={lga} roundKey={round.key} season={season} />
       ))}
