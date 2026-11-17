@@ -772,7 +772,7 @@ function Cards({ p, sim, lga }) {
         </div>
       ) : def != null && <Defense def={def} g={g} vpTot={vpTot} rookie={p.dpm == null} />}
       {sim?.hist && <Spread sim={sim} g={g} tc={tc} />}
-      {(sim || p.mip) && (() => {
+      {(sim || p.mip > 0) && (() => {
         const odds = [["MVP", sim?.mvp], ["MIP", p.mip], ["ROY", p.rookie ? sim?.roy : 0], ["All-NBA", sim?.allNba], ["All-Star", sim?.allStar]].filter(([, x]) => x > 0.005);
         return odds.length > 0 && (
           // One quiet strip: each award a muted label over its odds, split by
