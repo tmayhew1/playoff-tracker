@@ -195,6 +195,6 @@ export async function GET(req) {
       },
     });
   } catch (e) {
-    return Response.json({ error: `espn scoreboard: ${e.message}` }, { status: 500 });
+    return Response.json({ error: `espn scoreboard: ${e.message}` }, { status: 502 });
   }
 }

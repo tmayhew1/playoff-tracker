@@ -95,7 +95,7 @@ export async function GET(req) {
       .catch((e) => { errors.push(`${day}: ${e.message}`); return []; })));
   const games = results.flat();
   if (!games.length && errors.length) {
-    return Response.json({ error: `espn scoreboard: ${errors.slice(0, 3).join("; ")}` }, { status: 500 });
+    return Response.json({ error: `espn scoreboard: ${errors.slice(0, 3).join("; ")}` }, { status: 502 });
   }
 
   // A finished season never changes, so it caches for a week; one still being

@@ -6,7 +6,7 @@ import { combinedLga, lgaForSeason, valueAddParts, ZONES, zoneGames, zoneMinutes
 import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, splitName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { buildScopePools, findIndexPlayer } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, usgAdjRows, useSeasonLga, useUsgAdjIndex, useVAMode } from "../lib/va-mode";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
@@ -575,7 +575,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
           <button
             type="button"
             onClick={armName}
-            className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
+            className={`flex-1 text-left hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${nameArmed ? "text-stone-900 font-bold underline" : ""}`}
             title="Tap, then tap a player to open this season in their By Player career"
             aria-pressed={nameArmed}
           >
@@ -589,7 +589,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         <button
           type="button"
           onClick={armG}
-          className={`w-7 sm:w-8 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-7 sm:w-8 text-right hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a player's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -613,7 +613,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-11 sm:w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-11 sm:w-14 text-right whitespace-nowrap hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
           aria-label={metric === "vaPlus" ? "TOT VA+, sort by total VA+" : "TOT VA, sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
@@ -625,7 +625,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-10 sm:w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-10 sm:w-11 text-right whitespace-nowrap hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
           aria-label={metric === "vaPlus" ? "VA+/G, sort by VA+ per game" : "VA/G, sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
@@ -685,7 +685,7 @@ export function PlayoffLeaderboard({ season, lga, scope = "playoffs", pendingNav
         const rowKey = `${p.team}:${p.name}`;
         const isOpen = expanded === rowKey;
         const tc = teamColor(p.team);
-        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+        const badgeStyle = { backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) };
         const rowVa = vaOf(p);
         const barColor = rowVa >= 0
           ? withAlpha(tc, 0.16)

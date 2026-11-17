@@ -6,7 +6,7 @@ import { valueAddParts, potentialPoints } from "../scoring";
 import { LiveGameBanner } from "./boxscore";
 import { BreakdownList, ScoreCard } from "./scoreboard";
 import { VABreakdown } from "./va-breakdown";
-import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, withAlpha } from "../lib/format";
+import { normalizeName, ownerBadge, ownerBg, ownerColor, ownerDot, teamColor, teamInk, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped } from "../lib/fetch-cache";
 import { scrollBehavior } from "../lib/motion";
@@ -249,7 +249,7 @@ export function SeriesAverages({ games, teamsMap, lga, dimTeam, boxSrc, useTeamC
                   : owner ? ownerBadge(owner) : "border";
                 const tc = badgeUseTeam ? teamColor(p.team) : null;
                 const badgeStyle = badgeUseTeam
-                  ? { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }
+                  ? { backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) }
                   : undefined;
                 const rowKey = `${p.team}:${p.name}`;
                 const isOpen = expanded === rowKey;

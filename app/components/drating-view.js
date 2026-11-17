@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
 import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { normalizeName, teamColor } from "../lib/format";
+import { normalizeName, teamColor, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
 
 
@@ -177,7 +177,7 @@ export function DRatingView() {
       {list && list.map(({ r, info, indG, tmpG, perG }, i) => (
         <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[2px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
           <span className="text-stone-400 tabular-nums">{i + 1}</span>
-          <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
+          <span className="truncate font-semibold" style={{ color: teamInk(r.team) }}>
             {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
           </span>
           {(() => {

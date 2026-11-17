@@ -143,7 +143,7 @@ export async function GET(req) {
       body = await fetchEspnBox(gameId);
       liveCache = false;
     } catch (e) {
-      return Response.json({ error: `espn: ${e.message}` }, { status: 500 });
+      return Response.json({ error: `espn: ${e.message}` }, { status: 502 });
     }
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -184,7 +184,7 @@ export async function GET(req) {
       body = await fetchEspnBox(gameId);
       liveCache = false;
     } catch (e2) {
-      return Response.json({ error: `${e.message} / ${e2.message}` }, { status: 500 });
+      return Response.json({ error: `${e.message} / ${e2.message}` }, { status: 502 });
     }
   }
   return new Response(JSON.stringify(body), {

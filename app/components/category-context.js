@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useId } from "react";
 import { ZONES, valueAddByCategory, lgaForSeason, zoneShotValue, hasZoneData, zoneGames, zoneMinutes } from "../scoring";
 import { PerGameToggle, comparePlayerKey } from "./compare";
 import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
-import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
@@ -30,21 +30,6 @@ const ZONE_DIST = Object.fromEntries(ZONES.map((z) => [z.key, z.label]));
 function segPerGame(seg, r, lx, s) {
   if (seg.perG) return seg.perG(r, lx, s);
   return seg.val(r, lx, s) / ((seg.games ? seg.games(r) : r.gp) || 1);
-}
-
-// A distance's shots for the shot-distribution readings: FTA ÷ 2.2 as trips,
-// read over the games the shot-distance zones cover. ESPN's live box has no
-// shot locations, so on a row tonight's games have moved the 2-point zones
-// still stand at basketball-reference's last bake; a share can only be
-// known over those games, so when the row is split by distance (`zoned`) the
-// box-score distances (FT, 3PT) are carried back to the zones' G rather than
-// the zones guessed forward to tonight's. The shares come out the same either
-// way, but the G and per-game counts beside them stay ones we actually have.
-function shotTrips(seg, r, zoned) {
-  const a = (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
-  if (!zoned || seg.games) return a;
-  const g = zoneGames(r);
-  return g > 0 && r.gp > g ? (a * g) / r.gp : a;
 }
 
 // Short label printed under a category's bar in the split row below a Basic
@@ -685,22 +670,27 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // its seasons' shares added up.
   const SHARE_SEGMENTS = useMemo(() => {
     if (!showZones || !SEGMENTS) return null;
-    // A box-score distance (FT, 3PT, or the merged 2PT) is a share of the
-    // box score's own shots — FGA plus FTA ÷ 2.2 trips — which ESPN's live box
-    // carries, so it reads through tonight's games at the row's live G. A
-    // 2-point distance only exists in basketball-reference's bake, so its
-    // share is over the zones' own total (FT and 3PT carried back to the
-    // games the zones cover, see shotTrips) and reads at that G.
-    const zoned = SEGMENTS.some((seg) => seg.games);
-    const zg = { games: zoneGames, minutes: zoneMinutes };
-    const attOf = (seg, r) => shotTrips(seg, r, zoned);
-    const zoneDen = (r) => SEGMENTS.reduce((t, seg) => t + attOf(seg, r), 0);
-    const boxDen = (r) => (r.fga || 0) + (r.fta || 0) / 2.2;
+    // Every share is of the box score's own shots — FGA plus FTA ÷ 2.2 trips
+    // — which ESPN's live box carries, so all of them read through tonight's
+    // games at the row's live G. The box score knows a player's 2-point
+    // attempts but not where they came from; basketball-reference's zones do,
+    // so a 2-point distance takes its part of the zones and applies it to the
+    // box score's 2PA. (The zones can't be used as counts: they are rebuilt
+    // from rounded percentages and miss the box score by a shot or more in
+    // about one season in eleven, which once left a card's six discs summing
+    // to 102%.) FT + 3PT + the four distances are then exactly the box
+    // score's shots, and a card's discs sum to 100%. The 2-Pointers card's
+    // four are shares of 2-point attempts, and sum to 100% the same way.
+    const trips = (r) => (r.fta || 0) / 2.2;
+    const twoPA = (r) => Math.max(0, (r.fga || 0) - (r.tpa || 0));
+    const zoneSegs = SEGMENTS.filter((seg) => seg.games);
+    const zoneSum = (r) => zoneSegs.reduce((t, seg) => t + (seg.a(r) || 0), 0);
+    const onlyZones = zoneSegs.length === SEGMENTS.length;
+    const den = onlyZones ? twoPA : (r) => (r.fga || 0) + trips(r);
     return SEGMENTS.map((seg) => {
-      const fromZones = !!seg.games;
-      const num = fromZones ? (r) => attOf(seg, r) : (r) => (seg.a(r) || 0) / (seg.key === "ft" ? 2.2 : 1);
-      const den = fromZones ? zoneDen : boxDen;
-      const g = fromZones ? zg : {};
+      const num = seg.games
+        ? (r) => { const z = zoneSum(r); return z > 0 ? ((seg.a(r) || 0) / z) * twoPA(r) : 0; }
+        : seg.key === "ft" ? trips : (r) => seg.a(r) || 0;
       return {
         key: `share:${seg.key}`, sub: `${seg.sub} dist.`, share: true, zone: seg.key,
         note: `share of his shots from ${seg.key === "ft" ? "the line (FTA ÷ 2.2 as trips)" : seg.dist ? `${seg.sub} (${seg.dist})` : seg.sub}`,
@@ -710,9 +700,8 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         // a share ranking that only admits high-volume zone shooters would
         // hide the low end of the scale.
         a: den,
-        rate: (r) => maLabel(num(r), den(r), r, g),
+        rate: (r) => maLabel(num(r), den(r), r),
         val: (r) => { const d = den(r); return d > 0 ? num(r) / d : 0; },
-        ...g,
       };
     });
   }, [showZones, SEGMENTS, rateMode, perGame]);
@@ -1343,7 +1332,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
           return (
             <span
               className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded-sm border"
-              style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
+              style={{ backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) }}
             >{p.team}</span>
           );
         })()}
@@ -1595,17 +1584,27 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
             // FTA ÷ 2.2 ≈ trips to the line, so free throws count as the
             // shooting chances they are rather than double-counting and-ones
             // and two-shot fouls.
-            // Each disc reads the same share its ranking does (SHARE_SEGMENTS):
-            // FT and 3PT through tonight's box, a 2-point distance through the
-            // last bake — so on a row tonight's games have moved they can sum
-            // a hair off 100% until the next bake.
+            // Each disc reads the same share its ranking does (SHARE_SEGMENTS),
+            // and the six sum to 100%.
             const shareOf = (seg) => SHARE_SEGMENTS?.find((x) => x.key === `share:${seg.key}`);
             const atts = segData.map((seg) => shareOf(seg)?.num(selfRow) || 0);
             const shares = segData.map((seg) => shareOf(seg)?.val(selfRow) || 0);
             if (!shares.some((v) => v > 0)) return null;
             const peak = Math.max(...shares);
-            // A 2-point distance's share is the last bake's while tonight's
-            // games have moved the row, so it carries a "~".
+            // Whole-number labels rounded together (largest remainder), so the
+            // six printed percentages add up to 100 like the shares do.
+            const labels = (() => {
+              const raw = shares.map((v) => v * 100);
+              const out = raw.map(Math.floor);
+              let left = Math.round(raw.reduce((t, v) => t + v, 0)) - out.reduce((t, v) => t + v, 0);
+              for (const i of raw.map((v, j) => j).sort((x, y) => (raw[y] - out[y]) - (raw[x] - out[x]))) {
+                if (left <= 0) break;
+                out[i] += 1; left -= 1;
+              }
+              return out;
+            })();
+            // A 2-point distance splits tonight's 2PA by the last bake's
+            // zones while tonight's games have moved the row, so it carries a "~".
             const stale = (seg) => !!seg.games && (selfRow.gp || 0) > seg.games(selfRow);
             return (
               <div className="mt-2 border-t border-stone-100 pt-1.5">
@@ -1632,7 +1631,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                         type="button"
                         onClick={() => setSelectedSeg(selectedSeg === `share:${seg.key}` ? null : `share:${seg.key}`)}
                         aria-pressed={selectedSeg === `share:${seg.key}`}
-                        title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${(share * 100).toFixed(0)}%) — tap to rank the card on this share of shots`}
+                        title={`${seg.sub}: ${Math.round(atts[i])} ${seg.key === "ft" ? "trips (FTA ÷ 2.2)" : "attempts"} (${labels[i]}%) — tap to rank the card on this share of shots`}
                         className={`flex flex-col items-center min-w-0 rounded pb-1 transition-colors ${selectedSeg === `share:${seg.key}` ? "bg-stone-200 ring-1 ring-stone-800" : "hover:bg-stone-100"}`}
                       >
                         <div className="relative h-12 w-full flex items-center justify-center">
@@ -1654,7 +1653,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                             );
                           })()}
                         </div>
-                        <span className="text-[8px] tabular-nums text-stone-500 leading-none">{stale(seg) ? "~" : ""}{(share * 100).toFixed(0)}%</span>
+                        <span className="text-[8px] tabular-nums text-stone-500 leading-none">{stale(seg) ? "~" : ""}{labels[i]}%</span>
                       </button>
                     );
                   })}
@@ -1834,7 +1833,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                         >
                           <span className="text-[9px] font-semibold tabular-nums text-stone-700">{x.season}</span>
                           {x.team && (
-                            <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamColor(x.team) }}>{x.team}</span>
+                            <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: teamInk(x.team) }}>{x.team}</span>
                           )}
                           <span className={`text-[9px] font-semibold tabular-nums ${x.m < 0 ? "text-red-600" : "text-stone-700"}`}>{fmtM(x.m)}</span>
                           <button

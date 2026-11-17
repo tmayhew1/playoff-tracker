@@ -6,7 +6,7 @@ import { valueAdd, valueAddByCategory } from "../scoring";
 import { TeamScoreCard } from "./scoreboard";
 import { gameLeader } from "../lib/leader";
 import { useVAMode } from "../lib/va-mode";
-import { normalizeName, teamColor, trimFixed } from "../lib/format";
+import { normalizeName, teamColor, teamInk, trimFixed } from "../lib/format";
 import { percentile, teamSums, tapeMeasures } from "../lib/team-context";
 import { useSeasonContext } from "../lib/use-season-context";
 import { etDate, seasonOf } from "../lib/regular-season-games";
@@ -56,7 +56,7 @@ function slateTitle(date) {
 function TeamTag({ side }) {
   return (
     <span className="inline-flex items-baseline gap-1">
-      <span className="font-bold tabular-nums" style={{ color: teamColor(side.tri) }}>{side.tri}</span>
+      <span className="font-bold tabular-nums" style={{ color: teamInk(side.tri) }}>{side.tri}</span>
       {side.record && <span className="text-[9px] text-stone-400 tabular-nums">{side.record}</span>}
     </span>
   );
@@ -283,7 +283,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
       </div>
       {records.some(Boolean) && <div className="flex gap-4 text-sm font-bold tabular-nums tracking-widest">
         {sides.map(([side, , right], i) => (
-          <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamColor(side.tri) }}>
+          <div key={side.tri} className={`flex-1 px-3 py-1.5 ${right ? "text-right" : ""}`} style={{ color: teamInk(side.tri) }}>
             {records[i] || "–"}
           </div>
         ))}

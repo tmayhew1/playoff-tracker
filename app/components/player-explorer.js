@@ -10,7 +10,7 @@ import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { Sparkline } from "./ui/sparkline";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
@@ -233,7 +233,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
               {p.teams.map((t, ti) => (
                 <React.Fragment key={t}>
                   {ti > 0 && "/"}
-                  <span className="font-semibold" style={{ color: teamColor(t) }}>{t}</span>
+                  <span className="font-semibold" style={{ color: teamInk(t) }}>{t}</span>
                 </React.Fragment>
               ))}{" "}
               · best <span className="tabular-nums text-stone-600">{p.bestVa.toFixed(1)}</span>
@@ -833,7 +833,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <button
           type="button"
           onClick={tapHash}
-          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${selecting ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-6 text-right hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${selecting ? "text-stone-900 font-bold underline" : ""}`}
           title={!selecting
             ? "Tap to pick multiple seasons — the table sorts by VA/G — then tap # again to compare them against another player’s run"
             : picked.size === 0
@@ -847,7 +847,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           <button
             type="button"
             onClick={armTeam}
-            className={`w-10 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${teamArmed ? "text-stone-900 font-bold underline" : ""}`}
+            className={`w-10 text-left hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${teamArmed ? "text-stone-900 font-bold underline" : ""}`}
             title="Tap, then tap a team card to open that team’s By Season leaderboard with this player’s row open"
             aria-pressed={teamArmed}
           >
@@ -859,7 +859,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <button
           type="button"
           onClick={cycleSeasonSort}
-          className={`flex-1 text-left uppercase tracking-wider cursor-pointer hover:text-stone-900 ${seasonSorted ? "text-stone-900 font-semibold" : ""}`}
+          className={`flex-1 text-left hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${seasonSorted ? "text-stone-900 font-semibold" : ""}`}
           title="Sort by season — newest first, then oldest first, then back to the default order"
           aria-label="Season, sort by season"
           aria-pressed={seasonSorted}
@@ -869,7 +869,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         <button
           type="button"
           onClick={armG}
-          className={`w-6 text-right uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
+          className={`w-6 text-right hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${gArmed ? "text-stone-900 font-bold underline" : ""}`}
           title="Tap, then tap a season's G to filter to at least that many games"
           aria-pressed={gArmed}
         >
@@ -890,7 +890,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setMinGames(null);
             setSortMode(sortMode === "totalVA" ? "composite" : "totalVA");
           }}
-          className={`w-14 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-14 text-right whitespace-nowrap hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "totalVA" ? "text-stone-900 font-semibold" : ""}`}
           aria-label={metric === "vaPlus" ? "TOT VA+, sort by total VA+" : "TOT VA, sort by total VA"}
           aria-pressed={effectiveSort === "totalVA"}
         >
@@ -902,7 +902,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
             setMinGames(null);
             setSortMode(sortMode === "vaPerG" ? "composite" : "vaPerG");
           }}
-          className={`w-11 text-right whitespace-nowrap uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
+          className={`w-11 text-right whitespace-nowrap hit-up uppercase tracking-wider cursor-pointer hover:text-stone-900 ${effectiveSort === "vaPerG" ? "text-stone-900 font-semibold" : ""}`}
           aria-label={metric === "vaPlus" ? "VA+/G, sort by VA+ per game" : "VA/G, sort by VA per game"}
           aria-pressed={effectiveSort === "vaPerG"}
         >
@@ -931,8 +931,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
         // deeper fill, a soft ring around it, and a chevron — so it's obvious
         // which cells the next tap acts on and that the tap goes somewhere.
         const badgeStyle = teamArmed
-          ? { backgroundColor: withAlpha(tc, 0.26), color: tc, borderColor: tc, boxShadow: `0 0 0 2px ${withAlpha(tc, 0.22)}` }
-          : { backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) };
+          ? { backgroundColor: withAlpha(tc, 0.26), color: teamInk(s.team), borderColor: tc, boxShadow: `0 0 0 2px ${withAlpha(tc, 0.22)}` }
+          : { backgroundColor: withAlpha(tc, 0.14), color: teamInk(s.team), borderColor: withAlpha(tc, 0.4) };
         const rowVa = vaOf(s);
         const rowVaPerG = rowVa / Math.max(1, s.gp);
         const barColor = rowVa >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { MIDNIGHT_PURPLE, normalizeName, teamColor } from "../lib/format";
+import { MIDNIGHT_PURPLE, normalizeName, teamColor, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
 
 
@@ -242,7 +242,7 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
       <div className="mt-1 h-[2.1rem] text-[9px] leading-tight">
         {shown ? (
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-semibold" style={{ color: teamColor(shown.r.team) }}>
+            <span className="font-semibold" style={{ color: teamInk(shown.r.team) }}>
               {shown.r.name} <span className="text-stone-400 font-normal text-[8px]">{shown.r.team}</span>
             </span>
             <span className="text-stone-500 tabular-nums">
@@ -611,7 +611,7 @@ export function UsageView() {
             type="button"
             onClick={() => setPicked(isPicked ? null : x)}
             className="truncate font-semibold text-left"
-            style={{ color: teamColor(r.team) }}
+            style={{ color: teamInk(r.team) }}
             aria-pressed={isPicked}
             title={isPicked ? "Clear the highlight" : "Highlight this player in the plot"}
           >

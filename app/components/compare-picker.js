@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { shootProfileVec } from "../scoring";
-import { GOLD, GOLD_BG, compName, normalizeName, seasonTag, shortName, teamColor } from "../lib/format";
+import { GOLD, GOLD_BG, compName, normalizeName, seasonTag, shortName, teamColor, teamInk } from "../lib/format";
 import { aggregateSeasons, careerDebuts, careerStageCenter, careerStageFactor, careerStageLabel, careerStageOf, matchCareerYears, similarRuns } from "../lib/multi-season";
 import { perGameVAVec, tunnelBreak, vaComposition } from "../lib/va";
 import { useRowLga } from "../lib/va-mode";
@@ -337,7 +337,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                             isBest ? "best match" : null,
                           ].filter(Boolean).join(" · ")}
                         >
-                          <span className="font-semibold" style={{ color: teamColor(r.team) }}>{compName(r.name)}</span>
+                          <span className="font-semibold" style={{ color: teamInk(r.team) }}>{compName(r.name)}</span>
                           <span className="text-stone-400"> {seasonTag(r.season)}</span>
                           <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                         </button>
@@ -379,7 +379,7 @@ export function ComparePicker({ context, self = null, onPick, onCancel }) {
                   aria-disabled={isSelf}
                   title={isSelf ? "The season this card is already reading — pick another of his seasons" : undefined}
                   className={`px-1.5 py-0.5 border tabular-nums ${isSelf ? "border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed" : "border-stone-300 hover:border-amber-500 hover:bg-amber-50"}`}
-                  style={isSelf ? undefined : { color: teamColor(s.team) }}
+                  style={isSelf ? undefined : { color: teamInk(s.team) }}
                 >
                   {seasonTag(s.season)} {s.team} <span className={isSelf ? "text-stone-300" : "text-stone-500"}>{(s.vaPerG ?? 0).toFixed(1)}/G</span>
                 </button>
@@ -705,7 +705,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                                 isBest ? "best match" : null,
                               ].filter(Boolean).join(" · ")}
                             >
-                              <span className="font-semibold" style={{ color: teamColor(run.team) }}>{compName(run.player.name)}</span>
+                              <span className="font-semibold" style={{ color: teamInk(run.team) }}>{compName(run.player.name)}</span>
                               <span className="text-stone-400"> {run.span}</span>
                               <span className="text-stone-500 tabular-nums text-[9px]"> {pct}%</span>
                             </button>
@@ -755,7 +755,7 @@ export function MultiComparePicker({ context, self = null, selfRow = null, onPic
                   aria-checked={on}
                   className="px-1.5 py-0.5 border tabular-nums inline-flex items-center gap-1 hover:border-amber-500"
                   style={on
-                    ? { backgroundColor: GOLD_BG, borderColor: GOLD, color: tc }
+                    ? { backgroundColor: GOLD_BG, borderColor: GOLD, color: teamInk(s.team) }
                     : { backgroundColor: "#fff", borderColor: "#d6d3d1", color: "#a8a29e" }}
                 >
                   <span aria-hidden className="text-[9px] leading-none">{on ? "◼" : "⬜"}</span>

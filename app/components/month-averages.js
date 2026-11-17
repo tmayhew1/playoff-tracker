@@ -5,7 +5,7 @@ import { VABreakdown } from "./va-breakdown";
 import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { monthBoxes, monthRows, peekBoxes, peekMonthly, seasonMonthly } from "../lib/month-tables";
-import { normalizeName, teamColor, withAlpha } from "../lib/format";
+import { normalizeName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { catVATotal } from "../lib/va";
 
 // A month's league-wide leaders: every player who played in the month, best
@@ -255,7 +255,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                             e.stopPropagation();
                             onTeam?.(team === p.team ? null : p.team);
                           }}
-                          style={{ backgroundColor: withAlpha(tc, 0.14), color: tc, borderColor: withAlpha(tc, 0.4) }}
+                          style={{ backgroundColor: withAlpha(tc, 0.14), color: teamInk(p.team), borderColor: withAlpha(tc, 0.4) }}
                           className="w-10 text-[9px] font-bold uppercase tracking-wider px-1 py-0.5 text-center border"
                           aria-label={team === p.team ? "Show every team" : `Show only ${p.team}`}
                         >{p.team}</button>

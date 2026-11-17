@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { bracketOdds, completeDraft, recommend, simulate } from "../lib/draft-model";
-import { ownerBadge, ownerColor, ownerDot, teamColor } from "../lib/format";
+import { ownerBadge, ownerColor, ownerDot, teamColor, teamInk } from "../lib/format";
 
 // The draft assistant. For a draft season: every team's chance to win each
 // round, its expected points under the draft's scoring, and — for whichever
@@ -133,7 +133,7 @@ export function DraftView() {
             <button key={a.tri} onClick={() => setOwners((o) => ({ ...o, [a.tri]: me }))}
               className="w-full flex items-center gap-2 py-1.5 border-b border-stone-100 last:border-0 text-left">
               <span className="w-4 text-[11px] text-stone-400 tabular-nums">{i + 1}</span>
-              <span className="w-10 text-[11px] font-bold" style={{ color: teamColor(a.tri) }}>{a.tri}</span>
+              <span className="w-10 text-[11px] font-bold" style={{ color: teamInk(a.tri) }}>{a.tri}</span>
               <span className="flex-1 text-[11px] text-stone-600">{teams[a.tri].conf}{teams[a.tri].seed} · {teams[a.tri].name}</span>
               <span className="text-[11px] tabular-nums text-stone-500 w-14 text-right">{a.ep.toFixed(1)} pts</span>
               <span className={`text-[12px] font-bold tabular-nums w-12 text-right ${ownerColor(me)}`}>{pct(a.winProb)}</span>
@@ -158,7 +158,7 @@ export function DraftView() {
               <div className="grid grid-cols-[2.4rem_1fr_3rem_3rem_3.2rem_4.2rem] gap-x-1 items-center px-2 py-1.5">
                 <span className="text-[10px] text-stone-500 tabular-nums">{x.conf}{x.seed}</span>
                 <button onClick={() => setOpenTeam(open ? null : t)} className="text-left truncate">
-                  <span className="text-[12px] font-bold" style={{ color: teamColor(t) }}>{t}</span>
+                  <span className="text-[12px] font-bold" style={{ color: teamInk(t) }}>{t}</span>
                   <span className="text-[10px] text-stone-400 ml-1">{open ? "▾" : "▸"} {x.strength.toFixed(1)}</span>
                 </button>
                 <span className="text-[11px] tabular-nums text-right text-stone-600">{pct(odds[t].win.r4)}</span>

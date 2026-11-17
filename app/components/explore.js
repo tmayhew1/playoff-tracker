@@ -5,7 +5,7 @@ import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
 import { VABaselineToggle } from "./va-baseline-toggle";
-import { teamColor, withAlpha } from "../lib/format";
+import { teamColor, teamInk, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
 import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
@@ -158,7 +158,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
   const teamControl = teams.length > 1 && (team ? (
     <button
       onClick={() => setTeam(null)}
-      style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamColor(team), borderColor: withAlpha(teamColor(team), 0.4) }}
+      style={{ backgroundColor: withAlpha(teamColor(team), 0.14), color: teamInk(team), borderColor: withAlpha(teamColor(team), 0.4) }}
       className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border inline-flex items-center gap-1"
       aria-label="Clear the team filter"
     >

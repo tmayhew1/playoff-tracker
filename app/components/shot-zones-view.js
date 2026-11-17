@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason, ZONES, zoneShotValue } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { normalizeName, teamColor } from "../lib/format";
+import { normalizeName, teamColor, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
 
 
@@ -171,7 +171,7 @@ export function ShotZonesView() {
           {list && list.map(({ r, zones, total }, i) => (
             <div key={(r.slug || r.name) + (r.team || "")} className={`${cols} py-[3px] border-b border-stone-100 last:border-0 ${i % 2 ? "bg-stone-50" : ""}`}>
               <span className="text-stone-400 tabular-nums">{i + 1}</span>
-              <span className="truncate font-semibold" style={{ color: teamColor(r.team) }}>
+              <span className="truncate font-semibold" style={{ color: teamInk(r.team) }}>
                 {r.name} <span className="text-stone-400 font-normal text-[8px]">{r.team}</span>
               </span>
               {zones.map(({ z, m, att, pct, val }) => (

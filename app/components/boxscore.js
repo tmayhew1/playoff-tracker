@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { TEAMS } from "../teams";
 import { LGA, valueAddByCategory } from "../scoring";
 import { VABreakdown } from "./va-breakdown";
-import { normalizeName, ownerBadge, teamColor, trimFixed, withAlpha } from "../lib/format";
+import { normalizeName, ownerBadge, teamColor, teamInk, trimFixed, withAlpha } from "../lib/format";
 import { getSortedPlayers } from "../lib/players";
 import { gameLeader } from "../lib/leader";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
@@ -41,7 +41,7 @@ export function PlayerRow({ p, rowKey, isExpanded, onToggle, dimTeam, outlined, 
   // Solid team color with white ink: a pale wash of the color reads too alike
   // between two red (or two blue) teams, a full fill tells them apart.
   const badgeStyle = !badgeUseTeam ? undefined
-    : outlined?.includes(p.team) ? { backgroundColor: "#fff", color: tc, borderColor: tc }
+    : outlined?.includes(p.team) ? { backgroundColor: "#fff", color: teamInk(p.team), borderColor: tc }
     : { backgroundColor: tc, color: "#fff", borderColor: tc };
   const c = cat && SHOT_CATS[cat];
   const v = c ? p.catVA : p.va;
