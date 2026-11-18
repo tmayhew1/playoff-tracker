@@ -164,3 +164,22 @@ test("percentile: ties count half, nothing to place in is null", () => {
   assert.equal(percentile([1, 2, 3, 4], 0), 0);
   assert.equal(percentile([], 3), null);
 });
+
+test("projectScore math: its steps rebuild the score", () => {
+  const team = (pts, allowed, gp) => ({
+    own: { pts: pts * gp, fgm: 0, fga: 100 * gp, tpm: 0, tpa: 0, ftm: 0, fta: 0, orb: 0, drb: 0, tov: 0 },
+    opp: { pts: allowed * gp, fgm: 0, fga: 100 * gp, tpm: 0, tpa: 0, ftm: 0, fta: 0, orb: 0, drb: 0, tov: 0 },
+    gp,
+  });
+  const p = projectScore({ AAA: team(120, 100, 10), BBB: team(100, 120, 6) }, "AAA", "BBB", null, { AAA: 55, BBB: 30 });
+  const { math: m } = p;
+  for (const [s, o] of [[m.away, m.home], [m.home, m.away]]) {
+    assert.ok(Math.abs(s.weight - s.gp / (s.gp + m.priorGames)) < 1e-12);
+    assert.ok(Math.abs(s.blendedOff - (s.weight * s.season.off + (1 - s.weight) * s.prior.off)) < 1e-12);
+    assert.ok(Math.abs(s.ppp - s.off * o.def / m.lgPPP) < 1e-12);
+  }
+  assert.ok(Math.abs(p.poss - m.away.pace * m.home.pace / m.lgPace) < 1e-9);
+  assert.ok(Math.abs(p.away - (p.poss * m.away.ppp - m.homeEdge)) < 1e-9);
+  assert.ok(Math.abs(p.home - (p.poss * m.home.ppp + m.homeEdge)) < 1e-9);
+  assert.equal(m.away.lineupFactor, null);
+});

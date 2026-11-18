@@ -394,9 +394,98 @@ function PregameCard({ g, tri, lga, context, injuries, onClose, onSwap }) {
           )}
         </div>
       )}
+      {proj?.math && <ProjectionMath math={proj.math} away={g.away.tri} home={g.home.tri} proj={proj} />}
       {!tape && (
         <div className="pt-2 text-center text-[10px] uppercase tracking-wider text-stone-400">
           {ctx?.project ? "No season averages until both teams have played" : "Loading the season…"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The pregame projection worked through (lib/team-context.js projectScore
+// `math`), behind a "Show the math" toggle: the league's points per
+// possession and pace, then each side's offense, defense and pace — its
+// season so far, the prior its projected wins give, the blend of the two at
+// its games played, and tonight's lineup factor on the offense — then the
+// possessions and the points they come to, away beside home.
+function ProjectionMath({ math, away, home, proj }) {
+  const [open, setOpen] = useState(false);
+  const [a, h] = [math.away, math.home];
+  const f3 = (v) => (v == null ? "–" : v.toFixed(3));
+  const f1 = (v) => (v == null ? "–" : v.toFixed(1));
+  const pct = (v) => `${Math.round(100 * v)}%`;
+  const signed = (v, d = 1) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(d)}`;
+  const rows = [
+    { section: "Prior" },
+    { label: "Projected wins", fn: (s) => (s.wins == null ? "none" : f1(s.wins)) },
+    { label: "Net rating / 100", fn: (s) => signed(s.net) },
+    { section: "Offense (points per possession)" },
+    { label: "Season so far", fn: (s) => f3(s.season?.off) },
+    { label: "Prior", fn: (s) => f3(s.prior.off) },
+    { label: "Weight on season", fn: (s) => `${s.gp}/${s.gp + math.priorGames} = ${pct(s.weight)}` },
+    { label: "Blended", fn: (s) => f3(s.blendedOff) },
+    { label: "Tonight's lineup", fn: (s) => (s.lineupFactor == null ? "–" : `×${s.lineupFactor.toFixed(3)}`) },
+    { label: "Offense", fn: (s) => f3(s.off), strong: true },
+    { section: "Defense (points allowed per possession)" },
+    { label: "Season so far", fn: (s) => f3(s.season?.def) },
+    { label: "Prior", fn: (s) => f3(s.prior.def) },
+    { label: "Defense", fn: (s) => f3(s.def), strong: true },
+    { section: "Pace (possessions per game)" },
+    { label: "Season so far", fn: (s) => f1(s.season?.pace) },
+    { label: "Weight on season", fn: (s) => `${s.gp}/${s.gp + math.pacePriorGames} = ${pct(s.paceWeight)}` },
+    { label: "Pace", fn: (s) => f1(s.pace), strong: true },
+  ];
+  const line = (own, other, edge, score) => (
+    <>{proj.poss.toFixed(1)} × {f3(own.off)} × {f3(other.def)} ÷ {f3(math.lgPPP)} {edge}{" "}
+      = <span className="font-bold text-stone-900">{score.toFixed(1)}</span></>
+  );
+  return (
+    <div className="mt-2 px-1">
+      <button onClick={() => setOpen(!open)} className="text-[10px] uppercase tracking-wider text-stone-500 hover:text-stone-900">
+        {open ? "▾" : "▸"} Show the math
+      </button>
+      {open && (
+        <div className="mt-1.5 text-[11px] text-stone-600 tabular-nums">
+          <div className="pb-1.5 text-stone-500">
+            League: {f3(math.lgPPP)} points per possession, {f1(math.lgPace)} possessions a game
+            {math.games ? ` (${math.games} team-games this season)` : " (last season's, none played yet)"}.
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="text-[9px] uppercase tracking-widest text-stone-400 border-b border-stone-200">
+                <th className="text-left font-normal py-1"></th>
+                <th className="text-right font-normal py-1">{away}</th>
+                <th className="text-right font-normal py-1">{home}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => r.section ? (
+                <tr key={i}><td colSpan={3} className="pt-2 pb-0.5 text-[9px] uppercase tracking-widest text-stone-400">{r.section}</td></tr>
+              ) : (
+                <tr key={i} className={r.strong ? "font-bold text-stone-900 border-t border-stone-100" : ""}>
+                  <td className="py-0.5 pr-2">{r.label}</td>
+                  <td className="py-0.5 text-right">{r.fn(a)}</td>
+                  <td className="py-0.5 text-right">{r.fn(h)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-2 pt-1.5 border-t border-stone-200 space-y-1">
+            <div>
+              <span className="text-stone-400">Possessions</span> {f1(a.pace)} × {f1(h.pace)} ÷ {f1(math.lgPace)}{" "}
+              = <span className="font-bold text-stone-900">{proj.poss.toFixed(1)}</span>
+            </div>
+            <div><span className="text-stone-400">{away}</span> {line(a, h, `− ${math.homeEdge}`, proj.away)}</div>
+            <div><span className="text-stone-400">{home}</span> {line(h, a, `+ ${math.homeEdge}`, proj.home)}</div>
+          </div>
+          <div className="pt-2 text-[9px] leading-snug text-stone-400">
+            Possessions × the side's offense × the other side's defense ÷ the league's, {math.homeEdge} points each way for home court.
+            Offense and defense lean on the season by games played over games + {math.priorGames}, pace over games + {math.pacePriorGames};
+            the prior is the league's moved a point of net rating per {math.winsPerNet} projected wins over 41, split between the two.
+            The lineup factor is tonight's players in against the season's.
+          </div>
         </div>
       )}
     </div>
