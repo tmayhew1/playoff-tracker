@@ -151,7 +151,9 @@ export function seasonDistributions(totals, lga) {
 // WINS_PER_NET wins to a point of net rating per 100 possessions, split evenly
 // between offense and defense. Home court is HOME_EDGE points each way.
 // League pace and points per possession are the season's own once it has
-// games, `lga`'s before. { away, home, poss } or null with neither.
+// games, `lga`'s before. { away, home, poss, math } or null with neither —
+// `math` every step in between (league figures, each side's season, prior,
+// blend, lineup factor and points per possession), for the card to show.
 const PRIOR_GAMES = 10;
 const PACE_PRIOR_GAMES = 5;
 const WINS_PER_NET = 2.7;
@@ -174,12 +176,26 @@ export function projectScore(totals, away, home, lga, priorWins = null, lineups 
     const w = gp / (gp + PRIOR_GAMES);
     const shrink = (own, prior) => (gp ? w * own + (1 - w) * prior : prior);
     const lineup = lineups?.[tri] ? lineupFactor(lineups[tri].players, lineups[tri].out, lga, gp) : null;
+    const season = gp ? {
+      off: t.own.pts / poss(t.own),
+      def: t.opp.pts / poss(t.opp),
+      pace: (poss(t.own) + poss(t.opp)) / 2 / gp,
+    } : null;
+    const prior = { off: lgPPP + net / 200, def: lgPPP - net / 200 };
+    const blendedOff = shrink(season?.off, prior.off);
     return {
-      off: shrink(gp && t.own.pts / poss(t.own), lgPPP + net / 200) * (lineup?.factor ?? 1),
-      def: shrink(gp && t.opp.pts / poss(t.opp), lgPPP - net / 200),
+      off: blendedOff * (lineup?.factor ?? 1),
+      def: shrink(season?.def, prior.def),
       pace: gp ? ((poss(t.own) + poss(t.opp)) / 2 + PACE_PRIOR_GAMES * lgPace) / (gp + PACE_PRIOR_GAMES) : lgPace,
       mix: lineup?.mix || (gp ? teamMix(t.own) : null),
       lineup,
+      // The steps behind the three figures above, for the card's "show the
+      // math" (projectionMath).
+      steps: {
+        tri, gp, wins: priorWins?.[tri] ?? null, net, weight: gp ? w : 0,
+        paceWeight: gp / (gp + PACE_PRIOR_GAMES), season, prior, blendedOff,
+        lineupFactor: lineup?.factor ?? null,
+      },
     };
   };
   const [a, h] = [rate(away), rate(home)];
@@ -188,6 +204,11 @@ export function projectScore(totals, away, home, lga, priorWins = null, lineups 
     away: n * a.off * h.def / lgPPP - HOME_EDGE,
     home: n * h.off * a.def / lgPPP + HOME_EDGE,
     poss: n,
+    math: {
+      lgPPP, lgPace, games, homeEdge: HOME_EDGE, priorGames: PRIOR_GAMES, pacePriorGames: PACE_PRIOR_GAMES, winsPerNet: WINS_PER_NET,
+      away: { ...a.steps, off: a.off, def: a.def, pace: a.pace, ppp: a.off * h.def / lgPPP },
+      home: { ...h.steps, off: h.off, def: h.def, pace: h.pace, ppp: h.off * a.def / lgPPP },
+    },
   };
   if (lineups) {
     out.shots = { away: shotsFor(a.mix, n, out.away), home: shotsFor(h.mix, n, out.home) };
