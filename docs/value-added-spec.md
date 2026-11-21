@@ -838,7 +838,13 @@ term below subtracts like from like.
 
 ### 6.2 Net rating
 
-With league line $L = 100\pi$ and team edge $E = L - \hat{T}$:
+With league line $L$ the average of the season's team defensive ratings, and
+team edge $E = L - \hat{T}$:
+
+(Not $100\pi$: $\pi$ counts possessions Hollinger's way, the ratings
+basketball-reference's way, and the two differ by 3–4 pts/100 in every season,
+which read 25+ teams a year as below-average defenses. The team average puts the
+line on the ratings' own scale, so an average defense has $E = 0$.)
 
 $$
 \mathrm{net} \;=\; \underbrace{\bigl(\hat{T} - \hat{D}\bigr)}_{\text{IND: edge over his own team}} \;+\; \underbrace{w\,E}_{\mathrm{TM}^+:\ \text{share of the team's edge vs. league}}

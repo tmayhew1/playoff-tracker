@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { lgaForSeason } from "../scoring";
-import { defVAInfo, teamLineNote, useDefRatings } from "../lib/defense";
+import { defVAInfo, leagueDRtgFor, teamLineNote, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { normalizeName, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
@@ -136,7 +136,7 @@ export function DRatingView() {
       </div>
       {lga && (
         <div className="text-[9px] text-stone-400 mb-1.5">
-          League line <span className="tabular-nums text-stone-600">{(lga.laPTSperPoss * 100).toFixed(1)}</span> ·
+          League line <span className="tabular-nums text-stone-600">{(leagueDRtgFor(defs, sel, lga, scope) ?? lga.laPTSperPoss * 100).toFixed(1)}</span> ·
           DRTG = box-score estimate, calibrated onto the play-by-play scale (within-team spread ×0.5), as the prior (≈1500 poss) — updated by on-court play-by-play as possessions accrue (2000-01+; earlier seasons all-estimate) ·
           IND = player's edge over his own team's D · TM+ = his stock-rate share of the team's edge vs the league line ·
           TEAM = that team's D over the season, weighted by the share of the season the player was there for and the

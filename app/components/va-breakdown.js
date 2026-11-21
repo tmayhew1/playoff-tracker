@@ -447,7 +447,7 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
                 className="flex items-baseline justify-center gap-2 mb-2"
                 title={dInfo?.w != null
                   ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
-                  : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+                  : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(dInfo?.laDRtg ?? lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
               >
                 {/* Per game, like the bars below; one game's card is the same either way. */}
                 <span className="text-[9px] uppercase tracking-widest text-stone-400">{multiGame ? "VA+/G" : "VA+"}</span>
@@ -900,7 +900,7 @@ export function VACategoryBreakdown({ player: p, lga, context = null, baseline =
           className="text-center text-[9px] mb-1"
           title={dInfo?.w != null
             ? `VA+ = VA + defensive net over possessions played: ${Math.round(drtg)} DRTG vs team ${dInfo.teamDrtg.toFixed(1)} + ${(dInfo.w * 100).toFixed(0)}% of team's edge vs league ${dInfo.laDRtg.toFixed(1)} (plus edges earned by stock rate; minus edges shrink with activity: 40% − earned)${teamLineNote(dInfo, p.team)}`
-            : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
+            : `VA+ = VA + defensive net rating (${Math.round(drtg)} DRTG vs ${(dInfo?.laDRtg ?? lga.laPTSperPoss * 100).toFixed(1)} league) over the possessions played`}
         >
           {/* Per game, like the bars below it. */}
           <span className="uppercase tracking-widest text-stone-400 mr-1.5">VA+/G</span>
