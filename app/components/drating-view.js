@@ -202,7 +202,7 @@ export function DRatingView() {
               >{mpVal}</button>
             );
           })()}
-          <span className="text-right tabular-nums text-stone-700">{Math.round(info.drtg)}</span>
+          <span className="text-right tabular-nums text-stone-700">{info.drtg.toFixed(1)}</span>
           <span
             className="text-right tabular-nums text-stone-500"
             title={info.teamDrtg != null ? `The team defense this rating is measured against${teamLineNote(info, r.team) || ` — ${r.team || "the team"}'s own season line`}` : undefined}

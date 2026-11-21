@@ -607,11 +607,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         note: "defensive rating",
         head: (r, lx = lga, s = seasonKey) => {
           const dr = defVAInfo(r, r.mp, lx, defs, s, defScope)?.drtg;
-          return dr == null ? null : String(Math.round(dr));
+          return dr == null ? null : dr.toFixed(1);
         },
         rate: (r, lx = lga, s = seasonKey) => {
           const dr = defVAInfo(r, r.mp, lx, defs, s, defScope)?.drtg;
-          return dr == null ? "–" : `${Math.round(dr)} DRTG`;
+          return dr == null ? "–" : `${dr.toFixed(1)} DRTG`;
         },
         val: (r, lx = lga, s = seasonKey) => defVAInfo(r, r.mp, lx, defs, s, defScope)?.dva ?? 0,
       });
@@ -1060,7 +1060,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
     const info = defVAInfo(selfRow, selfRow.mp, lga, defs, seasonKey, defScope);
     if (!info || info.w == null || info.teamDrtg == null || !(lga?.laPOSSperM > 0)) return null;
     const v = ((info.w * (info.laDRtg - info.teamDrtg)) / 100) * lga.laPOSSperM * selfRow.mp;
-    const drtg = Math.round(info.teamDrtg);
+    const drtg = info.teamDrtg.toFixed(1);
     return {
       v: perGame ? v / (selfRow.gp || 1) : v,
       drtg,
