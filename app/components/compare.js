@@ -745,7 +745,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     // needs the aggregate-aware lookup.
     if (key !== DEF_KEY) return catRateLabel(r, key, rateMode);
     const drtg = defInfoFor(r, lgaX)?.drtg;
-    return drtg == null ? "–" : `${Math.round(drtg)} DRTG`;
+    return drtg == null ? "–" : `${drtg.toFixed(1)} DRTG`;
   };
 
   // Raw-stats rows for the D Rating card, in the shape compareStatRows returns
@@ -763,7 +763,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       rows.push({ label, a: adisp, b: bdisp, win });
     };
     const none = [null, "–"];
-    const r0 = (v) => String(Math.round(v));
+    const r1 = (v) => v.toFixed(1);
     const sg1 = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
     const sg2 = (v) => (v > 0 ? "+" : "") + v.toFixed(2);
     const val = (v, disp) => (v == null ? none : [v, disp(v)]);
@@ -781,12 +781,12 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       const edge = i.laDRtg - i.teamDrtg;
       return [edge, (
         <>
-          {r0(i.teamDrtg)}{" "}
+          {r1(i.teamDrtg)}{" "}
           <span className={edge >= 0 ? "text-emerald-600" : "text-red-600"}>{sg1(edge)}</span>
         </>
       )];
     };
-    push("DRTG", val(ia?.drtg ?? null, r0), val(ib?.drtg ?? null, r0), true);
+    push("DRTG", val(ia?.drtg ?? null, r1), val(ib?.drtg ?? null, r1), true);
     push("TM VS LG", team(ia), team(ib));
     push("D VA/G", val(ia ? ia.dva / (a.gp || 1) : null, sg2), val(ib ? ib.dva / (b.gp || 1) : null, sg2));
     push("TOT D VA", val(ia?.dva ?? null, sg1), val(ib?.dva ?? null, sg1));
