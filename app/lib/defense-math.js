@@ -43,7 +43,7 @@
 // possessions the player really logged — see defRtgEntryFor and the pbpW
 // weight below. Pre-1997 (and unbaked/unjoined) seasons are simply
 // all-prior, which is exactly why the prior has to be on the right scale.
-// The league line is laPTSperPoss×100; laPOSSperM (pace/48) converts
+// The league line is the average team rating (leagueDRtgLine); laPOSSperM (pace/48) converts
 // per-possession into per-minute. Null (→ hidden in the UI) when the
 // player-season has no rating from either source.
 export const DEF_TEAM_SHARE_BASE = 0.2; // the equal 1-of-5 defender split
@@ -117,9 +117,15 @@ export const DEF_PBP_PRIOR_POSS_PO = 500;
 // — only the mix — so the shrink that matters most, the within-team one, is
 // measured the same either way.
 //
+// Refit against the team-average league line (leagueDRtgLine below), which
+// moved both: the parity point from 0.455 to 0.434, and the pooled slope from
+// 0.782 to 0.681 — the old line sat ~3 pts/100 under both axes of the pooled
+// regression, and a shared offset through the origin props the slope up. The
+// individual and team component slopes didn't move (0.198; 0.976 → 0.984).
+//
 // Refit with: node --import ./scripts/node/register.mjs scripts/fit-def-calibration.mjs
-export const DEF_EST_CAL = 0.455;
-export const DEF_EST_CAL_LG = 0.782;
+export const DEF_EST_CAL = 0.434;
+export const DEF_EST_CAL_LG = 0.681;
 
 // --- Season coverage: how much of the team's season the player was there for -
 // The team terms above — the line IND subtracts, and the edge vs league the
@@ -229,27 +235,70 @@ export function teamLineNote(info, team) {
   return ` — ${team || "the team"} rated ${info.teamSeasonDrtg.toFixed(1)} across the season, carried at ${(info.teamW * 100).toFixed(0)}% for the share of it he played and the rest at the league line`;
 }
 
+// --- The league line --------------------------------------------------------
+// Every rating here is measured against "the league": the team term pays out
+// the team's edge over it, and the estimate's league-form calibration shrinks
+// toward it. It has to be on the same scale as the ratings it is compared
+// with, and laPTSperPoss is not: it counts possessions with Hollinger's
+// FGA − ORB + TOV + 0.475·FTA, while basketball-reference's ratings (and
+// teamDefense's in-season team lines) use FGA + 0.4·FTA − 1.07·ORB%·misses
+// + TOV, which counts fewer possessions. Across every season with a team map
+// the average team rating sits 2.7–4.3 pts/100 ABOVE laPTSperPoss × 100, so
+// 25+ teams a year read as below-average defences and the team term charged
+// nearly every player in the league for it (2026-27: league dVA summed to
+// −2,300 when it should net out near zero).
+//
+// So the line is the average of the very team ratings it is compared with —
+// an average team's edge is zero by construction. Teams are weighted equally
+// (they play near-equal schedules); the playoff map averages the teams in it,
+// which is the playoff league. Without a team map (1979-80) the per-possession
+// figure is all there is.
+export const DEF_LINE_MIN_TEAMS = 8;
+
+export function leagueDRtgLine(tmap, lgaX) {
+  const vals = tmap ? Object.values(tmap).map((t) => t?.drtg).filter((v) => v > 0) : [];
+  if (vals.length >= DEF_LINE_MIN_TEAMS) return vals.reduce((a, b) => a + b, 0) / vals.length;
+  return lgaX?.laPTSperPoss > 0 ? lgaX.laPTSperPoss * 100 : null;
+}
+
+// The league line for a player-season's view, read off the same team map
+// defVAInfo uses — for the views that print it.
+export function leagueDRtgFor(defs, season, lgaX, pref = "rs") {
+  const e = defs?.[season];
+  return leagueDRtgLine(pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo), lgaX);
+}
+
 export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs", slopes = null) {
   const ent = defRtgEntryFor(defs, season, row?.slug, pref);
   if (!ent || !lgaX || !(lgaX.laPOSSperM > 0) || !(lgaX.laPTSperPoss > 0) || !(viewMp > 0)) return null;
-  const la = lgaX.laPTSperPoss * 100;
   const e = defs?.[season];
   const tmap = pref === "po" ? (e?.teamPo || e?.team) : (e?.team || e?.teamPo);
+  const la = leagueDRtgLine(tmap, lgaX);
   const t = tmap?.[row?.team];
   // How much of the team's season this player was actually present for — the
   // weight every team term below carries (see teamCoverageW). Rows carry games
   // as `g` (regular-season bakes) or `gp` (leaderboard/normalised rows).
   // A season in progress weighs both by the games so far against the whole
   // schedule instead (see DEF_SEASON_GAMES); a finished one has sampleW = 1.
+  //
+  // The two weights are kept apart. covW is coverage — how much of the team's
+  // games so far the player was there for — and decides the line his own
+  // rating is read against. sampleW then shrinks the whole result, his edge
+  // over that line and the team's edge over the league alike. (Folding
+  // sampleW into the line alone, as this once did, pulled the team line
+  // toward the league while his own on-court rating stayed put, so on a team
+  // rated worse than the league every player read as worse than his own
+  // team-mates too: the team's deficit was charged twice.)
   const games = row?.g ?? row?.gp;
   const sampleW = pref !== "po" && e?.inProgress ? teamCoverageW(games, DEF_SEASON_GAMES) : 1;
-  const teamW = sampleW < 1 ? sampleW : teamCoverageW(games, t?.g);
+  const covW = teamCoverageW(games, t?.g);
+  const teamW = sampleW * covW;
   // The prior is the CALIBRATED estimate, not the raw one, so the two sides of
   // the blend are on one scale (see DEF_EST_CAL). The team line it shrinks
   // toward is the same box-score team rating the IND term subtracts, and is
   // itself left alone — team ratings are already measured, slope 0.96 — up to
   // the coverage weight, which both sides ride together.
-  const est = calibratedEst(ent.est, t?.drtg, la, teamW, slopes);
+  const est = calibratedEst(ent.est, t?.drtg, la, covW, slopes);
   // Posterior weight on the on-court rating: poss / (poss + prior). Pure est
   // when no on-court sample exists (pre-1997, unbaked seasons); pure on-court
   // in the rare case the estimate is missing.
@@ -273,11 +322,17 @@ export function defVAInfo(row, viewMp, lgaX, defs, season, pref = "rs", slopes =
   let net, w = null, teamDrtg = null, teamSeasonDrtg = null;
   if (t && t.drtg > 0 && teamStockRate > 0 && row.mp > 0) {
     teamSeasonDrtg = pbpTeamDrtg > 0 ? pbpW * pbpTeamDrtg + (1 - pbpW) * t.drtg : t.drtg;
-    // The season line, weighted by how much of that season the player saw.
-    // teamW = 1 leaves it untouched; teamW → 0 walks it to the league line,
-    // where both terms below collapse into the plain vs-league fallback.
+    // The line his rating is read against: the season line weighted by how
+    // much of it he saw (covW = 1 leaves it untouched; covW → 0 walks it to
+    // the league line, where both terms below collapse into the plain
+    // vs-league fallback). teamDrtg is that line with the in-progress shrink
+    // on top, and his rating keeps its edge over teamLine, shrunk the same —
+    // so IND = sampleW × (teamLine − his rating) and the team term is
+    // sampleW × w × (league − teamLine). A finished season has sampleW = 1
+    // and teamDrtg = teamLine.
+    const teamLine = covW * teamSeasonDrtg + (1 - covW) * la;
     teamDrtg = teamW * teamSeasonDrtg + (1 - teamW) * la;
-    drtg = teamDrtg + sampleW * (drtg - teamDrtg);
+    drtg = teamDrtg + sampleW * (drtg - teamLine);
     const edge = la - teamDrtg;
     const clampW = (v) => Math.max(DEF_TEAM_SHARE_MIN, Math.min(DEF_TEAM_SHARE_MAX, v));
     const ratio = (((row.stl || 0) + bw * (row.blk || 0)) / row.mp) / teamStockRate;

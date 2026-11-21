@@ -16,7 +16,7 @@ import {
   valueAdd, valueAddParts, valueAddByCategory, VA_CATEGORY_KEYS,
   lgaForSeason, baselineCoverage,
 } from "../app/scoring.js";
-import { defVAInfo } from "../app/lib/defense-math.js";
+import { defVAInfo, leagueDRtgLine } from "../app/lib/defense-math.js";
 
 const DATA = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "app", "data");
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
@@ -100,4 +100,31 @@ test("a season in progress regresses its D Rating by the games played so far", (
   // A finished season is untouched whatever the games, and the weight grows with them.
   assert.ok(close(net(done, 2), net(done, 60)));
   assert.ok(net(live, 2) < net(live, 20) && net(live, 20) < net(live, 60));
+});
+
+test("the D Rating league line is the average team, so an average team's edge is zero", () => {
+  const lga = lgaForSeason("2015-16");
+  const team = { AAA: { drtg: 104, stlpm: 0.03, blkpm: 0.02, g: 82 }, BBB: { drtg: 106, stlpm: 0.03, blkpm: 0.02, g: 82 } };
+  for (let i = 0; i < 8; i++) team[`T${i}`] = { drtg: 105, stlpm: 0.03, blkpm: 0.02, g: 82 };
+  // Line from the team map, not the per-possession figure (a different possession count).
+  assert.ok(close(leagueDRtgLine(team, lga), 105));
+  assert.ok(close(leagueDRtgLine({ AAA: team.AAA }, lga), lga.laPTSperPoss * 100));
+  // A player rated exactly at his average team's line nets nothing.
+  const p = { slug: "x", team: "T0", g: 82, mp: 2000, stl: 60, blk: 40 };
+  const defs = { "2015-16": { rs: { x: 105 }, team } };
+  const info = defVAInfo(p, p.mp, lga, defs, "2015-16");
+  assert.ok(close(info.laDRtg, 105) && close(info.dva, 0), JSON.stringify(info));
+});
+
+test("in progress, the team's edge over the league is charged once, not again inside IND", () => {
+  const lga = lgaForSeason("2015-16");
+  const team = { BAD: { drtg: 110, stlpm: 0.03, blkpm: 0.02, g: 16 } };
+  for (let i = 0; i < 9; i++) team[`T${i}`] = { drtg: 105, stlpm: 0.03, blkpm: 0.02, g: 16 };
+  // On a bad defence, a player exactly as good as his team: IND is zero, so
+  // all of his dVA is his share of the team's deficit — not more.
+  const p = { slug: "x", team: "BAD", g: 16, mp: 500, stl: 15, blk: 10 };
+  const defs = { "2015-16": { rs: { x: 110 }, rsOn: { x: 110 }, teamOn: { BAD: 110 }, team, inProgress: true } };
+  const i = defVAInfo(p, p.mp, lga, defs, "2015-16");
+  assert.ok(close(i.teamDrtg - i.drtg, 0), JSON.stringify(i));
+  assert.ok(close(i.dva, (i.w * (i.laDRtg - i.teamDrtg) / 100) * lga.laPOSSperM * p.mp));
 });

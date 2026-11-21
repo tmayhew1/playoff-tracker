@@ -38,7 +38,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defVAInfo, DEF_EST_CAL, DEF_EST_CAL_LG } from "../app/lib/defense-math.js";
+import { defVAInfo, leagueDRtgFor, DEF_EST_CAL, DEF_EST_CAL_LG } from "../app/lib/defense-math.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "app", "data");
@@ -98,12 +98,12 @@ for (const r of onCourt) {
   const key = `${r.season}|${r.p.team}`;
   if (seenTeam.has(key)) continue;
   seenTeam.add(key);
-  const L = r.L.laPTSperPoss * 100;
+  const L = leagueDRtgFor(defs, r.season, r.L);
   teamPairs.push([r.team.drtg - L, r.teamOn - L, 1]);
 }
 const indPairs = onCourt.map((r) => [r.est - r.team.drtg, r.on - r.teamOn, r.p.mp]);
 const pooledPairs = onCourt.map((r) => {
-  const L = r.L.laPTSperPoss * 100;
+  const L = leagueDRtgFor(defs, r.season, r.L);
   return [r.est - L, r.on - L, r.p.mp];
 });
 
