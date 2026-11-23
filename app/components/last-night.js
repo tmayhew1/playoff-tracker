@@ -10,7 +10,9 @@ import { teamInk } from "../lib/format";
 // and scored by /api/nights, which reads the new night off ESPN from midnight
 // Pacific until that bake lands; the arrows step through earlier nights. Tapping
 // a player opens his game's card on the Live tab when that tab is showing
-// the same night (`liveNight`), and By Player on that season otherwise.
+// the same night (`liveNight`); while games are on (`liveMode` "live"), its
+// row in By Season — the night's month, its game, his line opened
+// (`onOpenInSeason`); and By Player on that season otherwise.
 // Renders nothing until a night has been baked.
 
 const TOP = 5;
@@ -19,7 +21,7 @@ const sign = (n, d = 1) => `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(d)}`;
 const nightLabel = (date) => new Date(`${date}T12:00:00Z`)
   .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
-export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
+export function LastNight({ onOpenPlayer, liveNight, onOpenInLive, liveMode, onOpenInSeason }) {
   const { usgAdj } = useVAMode();
   const [date, setDate] = useState(null);
   const [data, setData] = useState(null);
@@ -45,9 +47,15 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
   // Like the game cards' top fives, the folded list only counts real minutes.
   const lines = expanded ? data.lines : data.lines.filter((l) => l.mp > 12).slice(0, TOP);
   const step = (d) => { if (d) { setDate(d); setExpanded(false); } };
+  // A regular-season game is filed under its month in By Season; a play-in
+  // or playoff game has no month to open, so it keeps the By Player route.
+  const kindOf = Object.fromEntries((data.games || []).map((g) => [g.gameId, g.kind || "regular"]));
+  const inSeason = (l) => liveMode === "live" && onOpenInSeason && data.date !== liveNight && kindOf[l.gameId] === "regular";
   const openLine = (l) => (data.date === liveNight && onOpenInLive
     ? onOpenInLive({ date: data.date, name: l.name, team: l.team })
-    : l.slug && onOpenPlayer?.({ name: l.name, slug: l.slug, season: data.season }));
+    : inSeason(l)
+      ? onOpenInSeason({ season: data.season, date: data.date, name: l.name, team: l.team })
+      : l.slug && onOpenPlayer?.({ name: l.name, slug: l.slug, season: data.season }));
 
   return (
     <section className="mb-4 bg-white border-2 border-stone-900" aria-label="Last night's Value Added leaders">
@@ -70,7 +78,7 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive }) {
             const vsAvg = l.seasonVaPerG != null ? l.va - l.seasonVaPerG : null;
             return (
               <button key={`${l.gameId}:${l.name}`} onClick={() => openLine(l)}
-                disabled={!l.slug && data.date !== liveNight}
+                disabled={!l.slug && data.date !== liveNight && !inSeason(l)}
                 className="w-full grid grid-cols-[1.2rem_1fr_auto] gap-x-2 items-center px-3 py-1.5 border-b border-stone-100 last:border-0 text-left">
                 <span className="text-[10px] text-stone-400 tabular-nums">{i + 1}</span>
                 <span className="min-w-0">

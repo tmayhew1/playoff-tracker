@@ -248,7 +248,7 @@ function Tracker({ initial }) {
         )}
 
         <TabBoundary key={tab}>
-        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
+        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} liveMode={liveMode} onOpenInLive={goToLive} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView onData={onLiveData} focus={liveFocus} onFocusHandled={clearLiveFocus} /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
         </TabBoundary>
         </main>
