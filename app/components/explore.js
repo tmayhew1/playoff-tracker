@@ -144,9 +144,25 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // A team picked in the averages' header, by tapping a team in the averages,
 // or by tapping a side of a scoreboard narrows both the averages and the days
 // to that team's games.
-export function ExploreMonthSection({ month, allMonths, lga, season }) {
-  const [open, setOpen] = useState(false);
+//
+// `focus` ({ date, team, name }, About Last Night's tap)
+// opens the month on that team's game that day, its card narrowed to the
+// team and the player's line opened (GameCard's own focus).
+export function ExploreMonthSection({ month, allMonths, lga, season, focus = null, onFocusHandled = null }) {
+  const [open, setOpen] = useState(!!focus);
   const [team, setTeam] = useState(null);
+  useEffect(() => {
+    if (!focus) return;
+    setOpen(true);
+    setTeam(focus.team);
+  }, [focus]);
+  const focusGameId = useMemo(() => (focus
+    ? month.games.find((g) => g.date === focus.date && (g.home?.tri === focus.team || g.away?.tri === focus.team))?.gameId || null
+    : null), [focus, month]);
+  useEffect(() => {
+    if (focus && !focusGameId) onFocusHandled?.();
+  }, [focus, focusGameId, onFocusHandled]);
+  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.name } : null), [focus]);
   const teams = useMemo(() => [...new Set(month.games.flatMap((g) => [g.home?.tri, g.away?.tri]).filter(Boolean))].sort(), [month]);
   const days = useMemo(() => (open
     ? groupByDay(month.games).reverse()
@@ -217,6 +233,8 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
                 lga={lga}
                 boxLoader={() => bakedBox(season, g)}
                 onTeamPick={setTeam}
+                focus={g.gameId === focusGameId ? cardFocus : null}
+                onFocusHandled={onFocusHandled}
                 keepInView
                 context={(tri) => context(tri, g.date)}
               />
@@ -237,7 +255,11 @@ export function ExploreMonthSection({ month, allMonths, lga, season }) {
 // Eastern date, whichever source found it). `lga` is the regular-season
 // baseline these box scores are priced against. `grouped` folds the months
 // under one Reg Season section, for Combined, where the rounds follow them.
-export function RegularSeasonMonths({ season, lga, grouped = false }) {
+//
+// `focus` ({ season, date, team, name }) opens the month holding that date on
+// the team's game there (ExploreMonthSection); with no such game loaded it is
+// dropped.
+export function RegularSeasonMonths({ season, lga, grouped = false, focus = null, onFocusHandled = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
@@ -249,7 +271,7 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
       .then(({ games, errors }) => {
         if (cancelled) return;
         if (!games.length && errors.length) setError(errors[0]);
-        else setData({ months: groupByMonth(games), partial: errors.length > 0 });
+        else setData({ season, months: groupByMonth(games), partial: errors.length > 0 });
       });
     return () => { cancelled = true; };
   }, [season]);
@@ -257,14 +279,24 @@ export function RegularSeasonMonths({ season, lga, grouped = false }) {
   // With the months listed, load and score a baked season's box scores while
   // the page is idle, so a month's averages and a player's chart open at once.
   useEffect(() => (data?.months?.length ? warmSeason(season, data.months, lga) : undefined), [data, season, lga]);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!focus);
+  // The months on hand are this season's (a season change clears them a
+  // render late), so a focus isn't dropped against the last season's list.
+  const ready = data?.season === season;
+  const focusMonth = focus?.season === season && ready ? data.months.find((m) => m.key === focus.date.slice(0, 7)) : null;
+  useEffect(() => { if (focus) setOpen(true); }, [focus]);
+  useEffect(() => {
+    if (!focus) return;
+    if (focus.season !== season || (ready && !focusMonth) || error) onFocusHandled?.();
+  }, [focus, season, ready, focusMonth, error, onFocusHandled]);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
   if (!data.months.length) return <div className="text-[10px] text-stone-400 italic py-4 text-center">No regular-season games found for {season}</div>;
   const months = (
     <>
-      {[...data.months].reverse().map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season} />)}
+      {[...data.months].reverse().map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season}
+        focus={m === focusMonth ? focus : null} onFocusHandled={onFocusHandled} />)}
       {data.partial && (
         <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
@@ -460,6 +492,22 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
+  // About Last Night's tap on a regular-season line: By Season on the night's
+  // season, regular-season games showing, the night's month opened on the
+  // player's game with his line expanded (RegularSeasonMonths).
+  const [gameNav, setGameNav] = useState(null);
+  const navigateToGame = useCallback((target) => {
+    if (!target?.season || !target?.date || !target?.team) return;
+    setMode("season");
+    setSeasons((prev) => (prev.includes(target.season)
+      ? prev : [...prev, target.season].sort((a, b) => b.localeCompare(a))));
+    setSeason(target.season);
+    // Combined folds the months under Reg Season once the playoffs are on,
+    // and Playoffs has none: the regular season lists them on their own.
+    setScope((sc) => (sc === "regular" || (sc === "combined" && !playoffsBegun(target.season)) ? sc : "regular"));
+    setGameNav(target);
+  }, []);
+  const clearGameNav = useCallback(() => setGameNav(null), []);
   // The same crossing from anywhere on the page (lib/player-nav.js) — a box
   // score on the Live tab, a category card's rankings. It may name the scope
   // the tap was reading, so the season it opens is there to open.
@@ -542,7 +590,8 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   return (
     <LookAheadNavProvider value={openLookAhead}>
     <div>
-      <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive} />
+      <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive}
+        onOpenInSeason={navigateToGame} />
       <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
@@ -609,13 +658,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
             // The season under way lists its games first, then the board.
             inProgress ? (
               <>
-                <RegularSeasonMonths season={season} lga={lga} />
+                <RegularSeasonMonths season={season} lga={lga} focus={gameNav} onFocusHandled={clearGameNav} />
                 {board("regular")}
               </>
             ) : (
               <>
                 {board("regular")}
-                <RegularSeasonMonths season={season} lga={lga} />
+                <RegularSeasonMonths season={season} lga={lga} focus={gameNav} onFocusHandled={clearGameNav} />
               </>
             )
           ) : scope === "playoffs" && noPlayoffs ? (
@@ -628,7 +677,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
               {scope === "combined" && (
                 <>
                   {board(scope)}
-                  <RegularSeasonMonths season={season} lga={lga} grouped />
+                  <RegularSeasonMonths season={season} lga={lga} grouped focus={gameNav} onFocusHandled={clearGameNav} />
                 </>
               )}
               {loading && <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} playoffs…</div>}
