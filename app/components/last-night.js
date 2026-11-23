@@ -10,9 +10,9 @@ import { teamInk } from "../lib/format";
 // and scored by /api/nights, which reads the new night off ESPN from midnight
 // Pacific until that bake lands; the arrows step through earlier nights. Tapping
 // a player opens his game's card on the Live tab when that tab is showing
-// the same night (`liveNight`); while games are on (`liveMode` "live"), its
-// row in By Season — the night's month, its game, his line opened
-// (`onOpenInSeason`); and By Player on that season otherwise.
+// the same night (`liveNight`); otherwise a regular-season line opens its row
+// in By Season — the night's month, its game, his line opened
+// (`onOpenInSeason`) — and a play-in or playoff line By Player on that season.
 // Renders nothing until a night has been baked.
 
 const TOP = 5;
@@ -21,7 +21,7 @@ const sign = (n, d = 1) => `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(d)}`;
 const nightLabel = (date) => new Date(`${date}T12:00:00Z`)
   .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
-export function LastNight({ onOpenPlayer, liveNight, onOpenInLive, liveMode, onOpenInSeason }) {
+export function LastNight({ onOpenPlayer, liveNight, onOpenInLive, onOpenInSeason }) {
   const { usgAdj } = useVAMode();
   const [date, setDate] = useState(null);
   const [data, setData] = useState(null);
@@ -50,7 +50,7 @@ export function LastNight({ onOpenPlayer, liveNight, onOpenInLive, liveMode, onO
   // A regular-season game is filed under its month in By Season; a play-in
   // or playoff game has no month to open, so it keeps the By Player route.
   const kindOf = Object.fromEntries((data.games || []).map((g) => [g.gameId, g.kind || "regular"]));
-  const inSeason = (l) => liveMode === "live" && onOpenInSeason && data.date !== liveNight && kindOf[l.gameId] === "regular";
+  const inSeason = (l) => onOpenInSeason && data.date !== liveNight && kindOf[l.gameId] === "regular";
   const openLine = (l) => (data.date === liveNight && onOpenInLive
     ? onOpenInLive({ date: data.date, name: l.name, team: l.team })
     : inSeason(l)

@@ -145,7 +145,7 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // or by tapping a side of a scoreboard narrows both the averages and the days
 // to that team's games.
 //
-// `focus` ({ date, team, name }, About Last Night's tap while games are on)
+// `focus` ({ date, team, name }, About Last Night's tap)
 // opens the month on that team's game that day, its card narrowed to the
 // team and the player's line opened (GameCard's own focus).
 export function ExploreMonthSection({ month, allMonths, lga, season, focus = null, onFocusHandled = null }) {
@@ -352,7 +352,7 @@ export function exploreSeasonList() {
 // once on mount: the view, scope and season it names, and the player — and
 // the comparison — to open, handed to the leaderboard / By Player as the
 // same pending navigation their own in-page jumps use.
-export function ExploreView({ jump = null, onJumpHandled = null, playerJump = null, onPlayerJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, liveMode = null, onOpenInLive = null }) {
+export function ExploreView({ jump = null, onJumpHandled = null, playerJump = null, onPlayerJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
@@ -492,7 +492,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
-  // About Last Night's tap while games are on: By Season on the night's
+  // About Last Night's tap on a regular-season line: By Season on the night's
   // season, regular-season games showing, the night's month opened on the
   // player's game with his line expanded (RegularSeasonMonths).
   const [gameNav, setGameNav] = useState(null);
@@ -591,7 +591,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     <LookAheadNavProvider value={openLookAhead}>
     <div>
       <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive}
-        liveMode={liveMode} onOpenInSeason={navigateToGame} />
+        onOpenInSeason={navigateToGame} />
       <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
