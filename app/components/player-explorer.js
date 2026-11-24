@@ -15,6 +15,7 @@ import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
 import { scrollBehavior } from "../lib/motion";
+import { useIndexWithLiveLines } from "../lib/season-so-far";
 
 
 // "By Player" mode: search the cross-season index from /api/players and show a
@@ -31,7 +32,15 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
   // career table, the league pools the drill-ins rank against, and the
   // closest-comps candidates, so one pass keeps all three agreeing with the
   // leaderboard (lib/va-mode.js).
-  const index = useUsgAdjIndex(cache[scope] || null, lgaScopeFor(scope));
+  //
+  // The season in progress's rows run through the night the index was baked;
+  // the games since — last night's until the daily backfill lands, tonight's
+  // as they're played — ride on top, the same ESPN lines the By Season board
+  // adds (lib/season-so-far.js useIndexWithLiveLines). Playoffs carry no
+  // season-so-far rows, so no `inSeason`.
+  const entry = cache[scope] || null;
+  const withLive = useIndexWithLiveLines(entry?.players || null, entry?.inSeason || null);
+  const index = useUsgAdjIndex(withLive, lgaScopeFor(scope));
   const loading = !index && !error;
 
   useEffect(() => {
@@ -39,7 +48,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     let cancelled = false;
     setError(null);
     fetchBakedJson(`/api/players?scope=${scope}`)
-      .then((d) => { if (!cancelled) setCache((c) => ({ ...c, [scope]: d.players || [] })); })
+      .then((d) => { if (!cancelled) setCache((c) => ({ ...c, [scope]: { players: d.players || [], inSeason: d.inSeason || null } })); })
       .catch((e) => { if (!cancelled) setError(e.message || "Load failed"); });
     return () => { cancelled = true; };
   }, [scope, cache]);

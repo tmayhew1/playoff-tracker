@@ -48,15 +48,7 @@ export function useSeasonSoFar(p, want, enabled) {
   // season-so-far rows to lay them on.
   const own = raw?.scope === scope ? raw : null;
   const liveSeason = enabled && scope === "regular" && own?.inSeason?.season === want?.season ? own.inSeason : null;
-  const live = useLiveLines(liveSeason?.season || null, liveSeason?.through || null);
-  const moved = useMemo(() => {
-    if (!own) return null;
-    if (!liveSeason || !live?.lines?.length) return own.players;
-    // At the standard baseline, as /api/players priced the rest of the index;
-    // useUsgAdjIndex below re-prices every row for the active mode.
-    const std = lgaForSeason(liveSeason.season);
-    return addLiveLinesToIndex(own.players, liveSeason.season, live.lines, (row) => valueAddParts(row, std).va);
-  }, [own, liveSeason, live]);
+  const moved = useIndexWithLiveLines(own?.players || null, liveSeason);
   const index = useUsgAdjIndex(moved, lgaScopeFor(scope));
   return useMemo(() => {
     if (!enabled || !want) return null;
@@ -67,4 +59,21 @@ export function useSeasonSoFar(p, want, enabled) {
     const context = { ...poolsFor(index), self, scope, season: want.season };
     return { row: { ...row, name: self.name, slug: self.slug || null }, context, lga: rowLga(row) };
   }, [enabled, want, index, p, scope, rowLga]);
+}
+
+// A /api/players index with the games its season-so-far rows don't cover yet
+// laid on top: `inSeason` ({ season, through }, the index's own) switches the
+// feed on, and every game since `through` — last night's, before the daily
+// bake folds it in, and tonight's as it's played — moves that season's rows
+// (lib/live-lines.js addLiveLinesToIndex). Priced at the standard baseline, as
+// /api/players priced the rest of the index; the caller's useUsgAdjIndex
+// re-prices every row for the active mode. Null `inSeason` (playoffs, a
+// finished season) hands the index back as it came.
+export function useIndexWithLiveLines(players, inSeason) {
+  const live = useLiveLines((players && inSeason?.season) || null, (players && inSeason?.through) || null);
+  return useMemo(() => {
+    if (!players || !inSeason || !live?.lines?.length) return players;
+    const std = lgaForSeason(inSeason.season);
+    return addLiveLinesToIndex(players, inSeason.season, live.lines, (row) => valueAddParts(row, std).va);
+  }, [players, inSeason, live]);
 }
