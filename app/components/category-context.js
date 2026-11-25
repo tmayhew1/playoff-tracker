@@ -1357,7 +1357,7 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
                 aria-label={`Open ${self.name}'s recent ${seasonKey} games`}
                 className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
               >
-                Go <span aria-hidden>→</span>
+                Go
               </button>
             ) : (
               <button
