@@ -135,6 +135,7 @@ export async function seasonMonthly(season, allMonths, lga, onProgress = () => {
 
 export const RECENT_GAMES = 10;
 const RECENT_MONTHS = 2;
+const RECENT_CHUNK = 5;
 
 // `iso` (YYYY-MM-DD) less `k` calendar months.
 function monthsBefore(iso, k) {
@@ -149,9 +150,12 @@ function monthsBefore(iso, k) {
 //
 // - `recent`: his last ten games — or, when fewer than ten fall inside the
 //   two months before the season's latest night (today, for a season still
-//   being played), the ones that do. The chart's last bar and the breakdown.
-// - `bars`: every month of the season up to then, holding only his games
-//   before `recent`, then `recent` itself as the last bar (key "recent").
+//   being played), the ones that do. The breakdown, and the chart's dark bars.
+// - `bars`: his season in runs of five, counted back from his latest game —
+//   "L5", "6–10", "11–15"… — the oldest run whatever is left over. A run
+//   never straddles the start of `recent`, so a short `recent` (seven games:
+//   "L5", "6–7") is read on its own. Each is { key, label, title, games,
+//   recent }, `title` naming it in words ("11–15 games ago").
 // - `line`: the game-by-game line: the ten games, or — when `recent` is
 //   short — his last nine, with one empty slot where the two months begin.
 //
@@ -182,11 +186,24 @@ export function recentGames(season, allMonths, lga, name, today = new Date().toI
   const before = games.slice(0, games.length - n);
   const older = short && RECENT_GAMES - 1 - n > 0 ? before.slice(-(RECENT_GAMES - 1 - n)) : [];
   const line = older.length ? [...older, null, ...recent] : recent;
-  const lastMonth = recent[0].date.slice(0, 7);
-  const bars = allMonths
-    .filter((m) => m.key <= lastMonth)
-    .map((m) => ({ key: m.key, label: m.label.slice(0, 3), year: m.key.slice(0, 4), games: before.filter((g) => g.date.startsWith(m.key)) }));
-  bars.push({ key: "recent", label: `L${n}`, year: null, games: recent });
+  const bars = [];
+  // `list` oldest first, its newest game `ago` games back (1: his latest).
+  const runs = (list, ago, isRecent) => {
+    for (let end = list.length; end > 0; end -= RECENT_CHUNK) {
+      const games = list.slice(Math.max(0, end - RECENT_CHUNK), end);
+      const a = ago + (list.length - end), b = a + games.length - 1;
+      const span = a === b ? `${a}` : `${a}–${b}`;
+      bars.unshift({
+        key: `g${a}-${b}`,
+        label: a === 1 ? `L${b}` : span,
+        title: a === 1 ? `Last ${b} game${b === 1 ? "" : "s"}` : `${span} games ago`,
+        games,
+        recent: isRecent,
+      });
+    }
+  };
+  runs(recent, 1, true);
+  runs(before, n + 1, false);
   return { recent, bars, line, short };
 }
 
