@@ -10,7 +10,7 @@ import { CompareSlotProvider, useShareReport } from "../lib/share-state";
 import { Sparkline } from "./ui/sparkline";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, normalizeName, shortName, teamColor, teamInk, withAlpha } from "../lib/format";
+import { GOLD, GOLD_BG, MIDNIGHT_PURPLE, NEGATIVE_EDGE, fmtG, normalizeName, shortName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { aggregateSeasons, careerYearsOf } from "../lib/multi-season";
 import { buildScopePools } from "../lib/players";
 import { UsgAdjChip, lgaScopeFor, useRowLga, useSeasonLga, usgAdjRows, useUsgAdjIndex } from "../lib/va-mode";
@@ -1078,8 +1078,8 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
                     setGArmed(false);
                   }}
                   className={`w-6 text-right tabular-nums cursor-pointer ${gArmed || minGames === s.gp ? "hover:text-stone-900 hover:underline" : ""} ${minGames === s.gp ? "font-semibold text-stone-900" : gArmed ? "text-stone-700 underline decoration-dotted" : "text-stone-500"}`}
-                  aria-label={gArmed ? `Filter to seasons with at least ${s.gp} games` : `${s.gp} games (tap the G header to enable filtering)`}
-                >{s.gp}</button>
+                  aria-label={gArmed ? `Filter to seasons with at least ${fmtG(s.gp)} games` : `${fmtG(s.gp)} games (tap the G header to enable filtering)`}
+                >{fmtG(s.gp)}</button>
                 <span className="hidden sm:block w-8 text-right tabular-nums font-bold text-stone-900">{(s.pts / gp).toFixed(1)}</span>
                 <span className={`hidden sm:block w-9 text-right tabular-nums font-semibold ${eff / gp < 0 ? "text-red-600" : "text-stone-700"}`}>{(eff / gp).toFixed(1)}</span>
                 <span className="hidden sm:block w-8 text-right tabular-nums text-stone-600">{((s.drb + s.orb) / gp).toFixed(1)}</span>
@@ -1221,7 +1221,7 @@ export function PlayerDetail({ player, scope, contextData, onBack, onNavigateToP
           // each tap goes from here: Compare → down there reads the years, a
           // season tapped up here takes them as the pool instead.
           ? yearTicks
-            ? `${boxPicks.size} career year${boxPicks.size === 1 ? "" : "s"} ticked below · ${boxGames} G${boxHidden ? ` · ${boxHidden} hidden by the current filter` : ""} — Compare → reads them, or tap a season here to pool exactly these.`
+            ? `${boxPicks.size} career year${boxPicks.size === 1 ? "" : "s"} ticked below · ${fmtG(boxGames)} G${boxHidden ? ` · ${boxHidden} hidden by the current filter` : ""} — Compare → reads them, or tap a season here to pool exactly these.`
             : picked.size === 0
             // Said once, at the moment the mode is armed and nothing is ticked
             // yet: the rows tick now, and the ✕ is what hands them back.
