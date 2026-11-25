@@ -6,12 +6,13 @@ import dynamic from "next/dynamic";
 import { ExploreView } from "./components/explore";
 import { VABaselineToggle } from "./components/va-baseline-toggle";
 import { VAModeProvider, useVAMode } from "./lib/va-mode";
-import { shareQuery } from "./lib/share-params";
+import { parseShareParams, shareQuery } from "./lib/share-params";
 import { ShareProvider, useShareStore } from "./lib/share-state";
 import { AwardNavProvider } from "./lib/award-nav";
 import { PlayerNavProvider } from "./lib/player-nav";
 import { GamesNavProvider } from "./lib/games-nav";
 import { scrollBehavior } from "./lib/motion";
+import { currentEntryKey, entryFromState, pushJump, replaceUrl, restoreScroll, saveScroll, shownEntryKey } from "./lib/nav-history";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
 // code loads the first time that tab is opened, so a visit that never leaves
@@ -24,7 +25,7 @@ const lazyView = (load) => dynamic(load, { loading: TabLoading });
 // Catches a render error inside one tab (a data shape nobody expected, a lazy
 // chunk that failed to download) so it costs that tab, not the page: the
 // header and the tab strip stay up, and the reader can retry or go elsewhere.
-// Keyed by tab where it is mounted, so switching tabs clears it.
+// One per mounted tab, so the error stays with the tab it happened in.
 class TabBoundary extends Component {
   state = { error: null };
   static getDerivedStateFromError(error) {
@@ -89,9 +90,15 @@ const TAB_IDS = new Set(TABS.map(([id]) => id));
 // the season itself (?tab=2025-26), so links from before the merge open it.
 const tabFromLink = (t) => (SEASONS.includes(t) ? "tvs" : TAB_IDS.has(t) ? t : "explore");
 
+// How many tabs a jump leaves mounted behind the one showing, so Back returns
+// to them as they were (see Tracker).
+const MAX_KEPT = 3;
+
 
 function Tracker({ initial }) {
   const [tab, setTab] = useState(() => tabFromLink(initial?.tab));
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
   // The tab strip scrolls sideways on a phone, so the open tab can sit off
   // its edge — a shared link to College or Draft, or a jump from another
   // tab. Bring it into the strip (never the page: only scrollLeft moves).
@@ -115,19 +122,77 @@ function Tracker({ initial }) {
   // reports its part (lib/share-state.js) and the merged state is written
   // here. That makes any URL shareable, and keeps the view across a reload —
   // BuildWatch reloads an open tab whenever a new deployment lands.
-  // replaceState, so navigating inside the page doesn't stack history entries.
+  // replaceState, so navigating inside the page doesn't stack history entries;
+  // only a jump adds one (below).
   const { state: share, report } = useShareStore();
   const { usgAdj } = useVAMode();
   const query = shareQuery({ ...share, tab: tab === "tvs" ? tvsSeason : tab, usg: usgAdj });
   useEffect(() => {
-    try {
-      if (window.location.search !== query) {
-        window.history.replaceState(null, "", window.location.pathname + query);
-      }
-    } catch {
-      // sandboxed frames can refuse history writes — the view still works
-    }
+    if (window.location.search !== query) replaceUrl(window.location.pathname + query);
   }, [query]);
+
+  // Back and Forward across jumps (lib/nav-history.js). A jump pushes a history
+  // entry, and the tab it left from stays mounted, hidden, so going Back shows
+  // it exactly as it was: the open career, the paged-in rows, the search typed.
+  // `kept` lists those tabs with the entry each belongs to. An entry whose view
+  // isn't kept (an older one, a jump inside Explore, a reload since) is rebuilt
+  // from its URL the way an opening link is, by remounting that tab.
+  const [kept, setKept] = useState([]);
+  const keptRef = useRef(kept);
+  keptRef.current = kept;
+  const [epochs, setEpochs] = useState({});
+  useEffect(() => { currentEntryKey(); }, []);
+  const startJump = useCallback((toTab) => {
+    const from = pushJump();
+    if (!from) return;
+    const fromTab = tabRef.current;
+    if (toTab && toTab !== fromTab) {
+      setKept((k) => [{ tab: fromTab, key: from }, ...k.filter((x) => x.tab !== fromTab && x.tab !== toTab)].slice(0, MAX_KEPT));
+    }
+  }, []);
+
+  const [restore, setRestore] = useState(null);
+  useEffect(() => {
+    if (!restore) return;
+    return restoreScroll(restore.y);
+  }, [restore]);
+  useEffect(() => {
+    const onPop = (e) => {
+      const entry = entryFromState(e.state);
+      const fromKey = shownEntryKey(), fromTab = tabRef.current;
+      const linked = parseShareParams(new URLSearchParams(window.location.search));
+      const toTab = tabFromLink(linked.tab);
+      const hit = entry?.k ? keptRef.current.find((x) => x.key === entry.k && x.tab === toTab) : null;
+      setKept((k) => {
+        const rest = k.filter((x) => x.tab !== toTab && x.tab !== fromTab);
+        return (fromKey && fromTab !== toTab ? [{ tab: fromTab, key: fromKey }, ...rest] : rest).slice(0, MAX_KEPT);
+      });
+      if (!hit) {
+        // Not kept: rebuild the tab from the entry's URL.
+        if (toTab === "explore") setExploreInit(linked);
+        if (toTab === "tvs" && SEASONS.includes(linked.tab)) setTvsSeason(linked.tab);
+        setEpochs((ep) => ({ ...ep, [toTab]: (ep[toTab] || 0) + 1 }));
+      }
+      setTab(toTab);
+      currentEntryKey();
+      setRestore({ y: entry?.y || 0 });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  // Keep the entry's scroll position current, so Back can return to it.
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+    let t = 0;
+    const onScroll = () => {
+      clearTimeout(t);
+      t = setTimeout(() => saveScroll(), 150);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { clearTimeout(t); window.removeEventListener("scroll", onScroll); };
+  }, []);
+  // A tap on the tab strip isn't a jump: no history entry, and the tabs kept
+  // for Back stay as they are (one tapped back into shows as it was left).
 
   // A cross-tab jump: Legacy (and MIP) hand over a player-season and which half of it
   // was being read, and Explore opens its leaderboard there. Held here because
@@ -136,10 +201,11 @@ function Tracker({ initial }) {
   const [exploreJump, setExploreJump] = useState(null);
   const goToLeaderboard = useCallback((target) => {
     if (!target?.season) return;
+    startJump("explore");
     setExploreJump(target);
     setTab("explore");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
-  }, [setTab]);
+  }, [startJump]);
   const clearExploreJump = useCallback(() => setExploreJump(null), []);
 
   // The same hand-over into By Player: an armed Player header (a box score's,
@@ -148,9 +214,10 @@ function Tracker({ initial }) {
   const [playerJump, setPlayerJump] = useState(null);
   const goToPlayer = useCallback((target) => {
     if (!target?.name && !target?.slug) return;
+    startJump("explore");
     setPlayerJump(target);
     setTab("explore");
-  }, [setTab]);
+  }, [startJump]);
   const clearPlayerJump = useCallback(() => setPlayerJump(null), []);
 
   // And into By Season's game list: a category card's "Recent games" names a
@@ -159,10 +226,11 @@ function Tracker({ initial }) {
   const [gameJump, setGameJump] = useState(null);
   const goToRecentGames = useCallback((target) => {
     if (!target?.season || !target?.team) return;
+    startJump("explore");
     setGameJump(target);
     setTab("explore");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
-  }, [setTab]);
+  }, [startJump]);
   const clearGameJump = useCallback(() => setGameJump(null), []);
 
   // The other direction: a player card's award box (award-boxes.js) opens the
@@ -170,10 +238,11 @@ function Tracker({ initial }) {
   const [awardFocus, setAwardFocus] = useState(null);
   const goToAward = useCallback((target) => {
     if (!target?.season || !target?.award) return;
+    startJump("awards");
     setAwardFocus(target);
     setTab("awards");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
-  }, [setTab]);
+  }, [startJump]);
   const clearAwardFocus = useCallback(() => setAwardFocus(null), []);
 
   // The Live tab reads "NBA Today" once the night's games are over (see
@@ -194,9 +263,10 @@ function Tracker({ initial }) {
   // About Last Night's tap: the Live tab, with that player's card open.
   const [liveFocus, setLiveFocus] = useState(null);
   const goToLive = useCallback((target) => {
+    startJump("live");
     setLiveFocus(target);
     setTab("live");
-  }, [setTab]);
+  }, [startJump]);
   const clearLiveFocus = useCallback(() => setLiveFocus(null), []);
 
   return (
@@ -261,10 +331,17 @@ function Tracker({ initial }) {
           </>
         )}
 
-        <TabBoundary key={tab}>
-        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} gameJump={gameJump} onGameJumpHandled={clearGameJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
-          : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView onData={onLiveData} focus={liveFocus} onFocusHandled={clearLiveFocus} /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
-        </TabBoundary>
+        {/* The showing tab, and any kept for Back, hidden. One list in a fixed
+            order, keyed by tab, so a kept tab coming back into view is the
+            same instance rather than a fresh mount. */}
+        {TABS.map(([id]) => (id === tab || kept.some((x) => x.tab === id)) && (
+          <div key={`${id}:${epochs[id] || 0}`} hidden={id !== tab}>
+            <TabBoundary>
+              {id === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} gameJump={gameJump} onGameJumpHandled={clearGameJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
+                : id === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : id === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : id === "college" ? <CollegeView /> : id === "drating" ? <DRatingView /> : id === "live" ? <LiveView onData={onLiveData} focus={liveFocus} onFocusHandled={clearLiveFocus} /> : id === "usage" ? <UsageView /> : id === "draft" ? <DraftView /> : id === "shotzones" ? <ShotZonesView /> : id === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
+            </TabBoundary>
+          </div>
+        ))}
         </main>
       </div>
     </div>

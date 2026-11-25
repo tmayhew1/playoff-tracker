@@ -11,6 +11,7 @@ import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
 import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
 import dynamic from "next/dynamic";
 import { useShareReport } from "../lib/share-state";
+import { pushJump } from "../lib/nav-history";
 import { LookAheadNavProvider } from "../lib/award-nav";
 import { LastNight } from "./last-night";
 import { GameCard } from "./live-view";
@@ -424,6 +425,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   // Ahead, the player open on it; the target waits here until it's up.
   const [laTarget, setLaTarget] = useState(null);
   const openLookAhead = useCallback((target) => {
+    pushJump();
     setLaTarget(target);
     setMode("season");
     setSeason(LOOK_AHEAD);
@@ -455,6 +457,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   // player's season and hand the target down for the leaderboard to open.
   const navigateSeasonToPlayer = useCallback((target) => {
     if (!target) return;
+    pushJump();
     setMode("season");
     setSeason(target.season);
     setSeasonNav(target);
@@ -469,6 +472,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   // apply; a target without one still just filters to the team.
   const navigateSeasonToTeam = useCallback((target) => {
     if (!target?.season || !target?.team) return;
+    pushJump();
     setMode("season");
     setSeason(target.season);
     setSeasonNav({ season: target.season, team: target.team, name: target.name || null, slug: target.slug || null });
@@ -526,11 +530,19 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   // target the season crossing uses.
   const navigatePlayerToRun = useCallback((target) => {
     if (!target?.seasons?.length || (!target.name && !target.slug)) return;
+    pushJump();
     setMode("player");
     setPlayerNav({ name: target.name || null, slug: target.slug || null, season: null, seasons: target.seasons });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }, []);
   const clearPlayerNav = useCallback(() => setPlayerNav(null), []);
+  // The same crossing from a tap on this page — a history step Back can undo.
+  // (An arrival from another tab already took its step in the tracker.)
+  const jumpPlayerToSeason = useCallback((target) => {
+    if (!target?.name && !target?.slug) return;
+    pushJump();
+    navigatePlayerToSeason(target);
+  }, [navigatePlayerToSeason]);
   // About Last Night's tap on a regular-season line: By Season on the night's
   // season, regular-season games showing, the night's month opened on the
   // player's game with his line expanded (RegularSeasonMonths).
@@ -547,6 +559,11 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     setGameNav(target);
   }, []);
   const clearGameNav = useCallback(() => setGameNav(null), []);
+  const jumpToGame = useCallback((target) => {
+    if (!target?.season || !target?.team) return;
+    pushJump();
+    navigateToGame(target);
+  }, [navigateToGame]);
   // The same from anywhere on the page (lib/games-nav.js): a category card's
   // "Recent games", which names no date — the months find his latest game.
   useEffect(() => {
@@ -624,7 +641,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
 
   // The season's VA leaderboard, in whichever scope it's asked for.
   const board = (sc) => (
-    <PlayoffLeaderboard season={season} lga={lga} scope={sc} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={navigatePlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} onOpenInLive={onOpenInLive} />
+    <PlayoffLeaderboard season={season} lga={lga} scope={sc} pendingNav={seasonNav} onNavigateToPlayer={navigateSeasonToPlayer} onNavHandled={clearSeasonNav} onOpenPlayerSeason={jumpPlayerToSeason} onOpenPlayerRun={navigatePlayerToRun} onOpenInLive={onOpenInLive} />
   );
 
   const tabCls = (active) =>
@@ -636,8 +653,8 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   return (
     <LookAheadNavProvider value={openLookAhead}>
     <div>
-      <LastNight onOpenPlayer={navigatePlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive}
-        onOpenInSeason={navigateToGame} />
+      <LastNight onOpenPlayer={jumpPlayerToSeason} liveNight={liveNight} onOpenInLive={onOpenInLive}
+        onOpenInSeason={jumpToGame} />
       <div className="mb-2 flex gap-2">
         <button onClick={() => setMode("season")} className={tabCls(mode === "season")}>By Season</button>
         <button onClick={() => setMode("player")} className={tabCls(mode === "player")}>By Player</button>
@@ -689,7 +706,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
             {!lookAhead && (
               <button
                 type="button"
-                onClick={() => setSeason(LOOK_AHEAD)}
+                onClick={() => { pushJump(); setSeason(LOOK_AHEAD); }}
                 className="mt-2 w-full flex items-center justify-between gap-2 px-2 py-1.5 border border-amber-400 bg-amber-50 text-left hover:bg-amber-100"
               >
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-800">{LOOK_AHEAD_SEASON} Look Ahead</span>

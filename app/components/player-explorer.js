@@ -7,6 +7,7 @@ import { VABreakdown, VACategoryBreakdown } from "./va-breakdown";
 import { CompareChipLabel, ComparePanel, buildComparePlayers } from "./compare";
 import { MultiComparePicker } from "./compare-picker";
 import { CompareSlotProvider, useShareReport } from "../lib/share-state";
+import { pushJump } from "../lib/nav-history";
 import { Sparkline } from "./ui/sparkline";
 import { defVAInfo, useDefRatings } from "../lib/defense";
 import { fetchBakedJson } from "../lib/fetch-cache";
@@ -90,6 +91,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     const nm = normalizeName(target.name || "");
     const found = index.find((p) => (target.slug && p.slug === target.slug) || normalizeName(p.name) === nm);
     if (!found) return;
+    pushJump();
     setSelectedKey(keyOf(found));
     setNavSeason(target.season || null);
     setNavCompare(target.season ? target.compare || null : null);
@@ -113,6 +115,7 @@ export function PlayerExplorer({ scope = "playoffs", onOpenTeamSeason = null, pe
     const have = new Set(found.seasons.map((s) => s.season));
     const seasons = target.seasons.filter((s) => have.has(s));
     if (!seasons.length) return;
+    pushJump();
     setSelectedKey(keyOf(found));
     setNavSeason(null);
     setNavCompare(null);
