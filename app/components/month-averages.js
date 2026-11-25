@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { VABreakdown } from "./va-breakdown";
 import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson } from "../lib/fetch-cache";
@@ -8,6 +8,7 @@ import { monthBoxes, monthRows, peekBoxes, peekMonthly, seasonMonthly } from "..
 import { normalizeName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { catVATotal } from "../lib/va";
 import { usePlayerArm } from "../lib/player-nav";
+import { scrollBehavior } from "../lib/motion";
 
 // A month's league-wide leaders: every player who played in the month, best
 // Value Added per game first — the regular season's Series Averages. Box
@@ -23,7 +24,10 @@ import { usePlayerArm } from "../lib/player-nav";
 // (`teamControl`) sits in this header beside the minimum-games chip.
 const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 
-export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl }) {
+// `focusName` (a category card's "Recent games") opens that player's row and
+// brings it to the top of the screen once the month's box scores are in, then
+// `onFocusHandled` lets the jump go.
+export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null }) {
   // Tap Player, then a name, to open that player's season in By Player.
   const arm = usePlayerArm();
   const year = month.key.slice(0, 4);
@@ -168,10 +172,36 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
   const min = minGames === undefined ? qualifier : minGames;
   const filtered = rows ? rows.filter((r) => (!min || r.gp >= min) && (!team || r.team === team)) : [];
   const visible = showAll ? filtered : filtered.slice(0, 10);
+
+  const rootRef = useRef(null);
+  const scrollTo = useRef(null);
+  useEffect(() => {
+    if (!focusName) return;
+    if (error) { onFocusHandled?.(); return; }
+    if (!rows) return;
+    const key = normalizeName(focusName);
+    const hit = rows.find((r) => normalizeName(r.name) === key && (!team || r.team === team));
+    if (hit) {
+      // Shown whatever the table's cut: under the games qualifier, or past the top ten.
+      const shown = hit.gp >= (min || 0);
+      if (!shown) setMinGames(null);
+      const place = rows.filter((r) => (!shown || !min || r.gp >= min) && (!team || r.team === team)).indexOf(hit);
+      if (place >= 10) setShowAll(true);
+      setOpen(true);
+      openRow(hit.name);
+      scrollTo.current = hit.name;
+    }
+    onFocusHandled?.();
+  }, [focusName, rows, error]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!expanded || scrollTo.current !== expanded) return;
+    scrollTo.current = null;
+    requestAnimationFrame(() => rootRef.current?.querySelector(`[data-avg-row="${CSS.escape(expanded)}"]`)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }));
+  }, [expanded]);
   const maxAbs = Math.max(...visible.map((r) => Math.abs(r.vapg)), 0.5);
 
   return (
-    <div className="mb-3 border border-stone-300 bg-white">
+    <div ref={rootRef} className="mb-3 border border-stone-300 bg-white">
       <div className="flex items-center gap-1.5 pr-2">
         <button
           onClick={() => setOpen((o) => !o)}
@@ -233,7 +263,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                 const other = isOpen ? viewed(p.name) : null;
                 const shown = other ? other.p : p;
                 return (
-                  <div key={p.name} className="border-b border-stone-100 last:border-0">
+                  <div key={p.name} data-avg-row={p.name} className="border-b border-stone-100 last:border-0">
                     <div className="relative overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 pointer-events-none"
