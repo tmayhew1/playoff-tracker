@@ -404,6 +404,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // "Recent games" in the card's top corner: By Season's game list, on the
   // shown player's team, his latest game open (lib/games-nav.js).
   const goToRecentGames = useGamesNav();
+  // Two taps, like the trend bars' Go: the first turns the words into a Go.
+  const recentGo = useGatedGo();
+  useEffect(() => { recentGo.disarm(); }, [recentGo.disarm, focusRow, catKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [nameArmed, setNameArmed] = useState(false);
   useEffect(() => { setNameArmed(false); }, [focusRow, ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
 
@@ -1345,15 +1348,28 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         {/* A season's regular-season games, read on the team he played for
             (a single team — a traded player's TOT/2TM row has none to open). */}
         {goToRecentGames && context.scope !== "playoffs" && /^[A-Z]{2,4}$/.test(p.team || "") && p.team !== "TOT" && (
-          <button
-            type="button"
-            onClick={() => goToRecentGames({ season: seasonKey, team: p.team, name: self.name })}
-            aria-label={`Open ${self.name}'s recent ${seasonKey} games`}
-            className={`${focused ? "" : "ml-auto "}order-last shrink-0 inline-flex items-baseline gap-1.5 border border-stone-300 rounded-sm px-1.5 py-0.5 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
-          >
-            <span className="text-[8px] font-bold uppercase tracking-wider text-stone-500 whitespace-nowrap">Recent games</span>
-            <span className="text-[8px] uppercase tracking-wider text-stone-500 whitespace-nowrap" aria-hidden>Go →</span>
-          </button>
+          <span className={`${focused ? "" : "ml-auto "}order-last shrink-0 inline-flex`}>
+            {recentGo.isArmed() ? (
+              <button
+                ref={recentGo.goRef}
+                type="button"
+                onClick={() => recentGo.confirm(() => goToRecentGames({ season: seasonKey, team: p.team, name: self.name, recent: true }))}
+                aria-label={`Open ${self.name}'s recent ${seasonKey} games`}
+                className="text-[9px] font-semibold inline-flex items-center gap-0.5 rounded-sm bg-stone-900 text-white px-1.5 py-[1px] hover:brightness-125 touch-manipulation"
+              >
+                Go <span aria-hidden>→</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => recentGo.arm()}
+                aria-label={`${self.name}'s recent ${seasonKey} games — tap, then Go`}
+                className="text-[8px] tracking-wider text-stone-500 whitespace-nowrap hover:text-stone-900 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500 touch-manipulation"
+              >
+                recent games <span aria-hidden>→</span>
+              </button>
+            )}
+          </span>
         )}
         {focused && (
           <button

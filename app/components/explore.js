@@ -147,7 +147,9 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 //
 // `focus` ({ date, team, name }, About Last Night's tap)
 // opens the month on that team's game that day, its card narrowed to the
-// team and the player's line opened (GameCard's own focus).
+// team and the player's line opened (GameCard's own focus). A `recent` focus
+// (a category card's "Recent games") opens the player's row in the month's
+// averages instead, and leaves the game on his team with no line opened.
 export function ExploreMonthSection({ month, allMonths, lga, season, focus = null, onFocusHandled = null }) {
   const [open, setOpen] = useState(!!focus);
   const [team, setTeam] = useState(null);
@@ -162,7 +164,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
   useEffect(() => {
     if (focus && !focusGameId) onFocusHandled?.();
   }, [focus, focusGameId, onFocusHandled]);
-  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.name } : null), [focus]);
+  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.recent ? null : focus.name } : null), [focus]);
   const teams = useMemo(() => [...new Set(month.games.flatMap((g) => [g.home?.tri, g.away?.tri]).filter(Boolean))].sort(), [month]);
   const days = useMemo(() => (open
     ? groupByDay(month.games).reverse()
@@ -209,7 +211,8 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
           <span className="text-[10px] uppercase tracking-wider text-stone-400">{open ? teamGames : month.games.length} games</span>
         </button>
       </h2>
-      {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl} />}
+      {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl}
+        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={onFocusHandled} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">
