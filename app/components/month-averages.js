@@ -29,7 +29,7 @@ const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 // brings it to the top of the screen once the month's box scores are in, then
 // `onFocusHandled` lets the jump go. That row reads his recent games rather
 // than the month (lib/month-tables.js recentGames): the line his last ten
-// games, the bars his season in runs of five counted back from his latest.
+// games, the bars his season in runs of ten counted back from his latest.
 export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null }) {
   // Tap Player, then a name, to open that player's season in By Player.
   const arm = usePlayerArm();
@@ -98,7 +98,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
     if (!viewKey || !monthly) return null;
     if (name === recentName && recent) {
       const bar = recent.bars.find((b) => b.key === viewKey);
-      return bar?.games.length ? { month: { key: bar.key, label: bar.label }, title: bar.title, dates: gameDates(bar.games), p: gamesCard(bar.games) } : null;
+      return bar?.games.length ? { month: { key: bar.key, label: bar.title }, title: bar.title, gp: bar.games.length, p: gamesCard(bar.games) } : null;
     }
     const m = allMonths.find((x) => x.key === viewKey);
     const mBoxes = m && peekBoxes(season, m);
@@ -176,14 +176,10 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
     };
   };
   const recentLabel = (n) => `Last ${n} Game${n === 1 ? "" : "s"}`;
-  // A run's first and last nights: "Oct 22 – Nov 1".
-  const gameDates = (games) => {
-    const a = games[0].ctx.dateLabel, b = games[games.length - 1].ctx.dateLabel;
-    return a && b ? (a === b ? a : `${a} – ${b}`) : null;
-  };
 
-  // The recent row's chart: his season in runs of five, the runs that make
-  // up the line and breakdown dark; another run's bar reads those games.
+  // The recent row's chart: his season in runs of ten, each named by its
+  // first and last nights; the run(s) that make up the line and breakdown
+  // dark, another run's bar reads those games.
   const recentChart = (other) => (color, category) => {
     const isCurrent = (b) => (other ? b.key === other.month.key : b.recent);
     const vapg = (games) => {
@@ -196,7 +192,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
       <>
         {other && (
           <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-widest text-stone-700">
-            <span className="italic">{other.title}{other.dates && <span className="normal-case tracking-normal font-normal text-stone-400"> · {other.dates}</span>}</span>
+            <span className="italic">{other.title}<span className="normal-case tracking-normal font-normal text-stone-400"> · {other.gp} game{other.gp === 1 ? "" : "s"}</span></span>
             <button
               onClick={() => setViewKey(null)}
               className="normal-case tracking-normal font-normal text-stone-400 hover:text-stone-700"
@@ -207,10 +203,11 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
         )}
         <MonthlyVAChart
           color={color}
-          label={category ? `${category} VA / Game · Every 5 Games` : "VA / Game · Every 5 Games"}
+          label={category ? `${category} VA / Game · Every 10 Games` : "VA / Game · Every 10 Games"}
           months={recent.bars.map((b) => ({
             key: b.key,
-            label: b.label,
+            label: b.from,
+            sub: b.to ? `– ${b.to}` : null,
             vapg: vapg(b.games),
             gp: b.games.length,
             current: isCurrent(b),

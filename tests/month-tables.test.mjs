@@ -95,21 +95,24 @@ test("a player's recent games: the last ten, his season in runs of five, and a s
   const total = (name) => months.reduce((n, m) => n + (monthRows(SEASON, m, peekBoxes(SEASON, m), lga).find((r) => r.name === name)?.gp || 0), 0);
   const all = names.map((name) => ({ name, r: recentGames(SEASON, months, lga, name, "2099-01-01") }));
 
-  // Played into April: his last ten, the line those ten, the bars his season in fives counted back.
+  // Played into April: his last ten, the line those ten, the bars his season in tens counted back.
   const regular = all.find(({ name, r }) => !r.short && total(name) > 40);
   const { r } = regular;
   assert.equal(r.recent.length, 10);
   assert.equal(r.line.length, 10);
   assert.ok(r.line.every(Boolean));
-  assert.deepEqual(r.bars.slice(-3).map((b) => b.label), ["11–15", "6–10", "L5"]);
-  assert.deepEqual(r.bars.slice(-3).map((b) => b.recent), [false, true, true]);
-  assert.equal(r.bars.at(-2).title, "6–10 games ago");
-  assert.deepEqual(r.bars.slice(-2).flatMap((b) => b.games), r.recent);
-  assert.ok(r.bars.slice(1).every((b) => b.games.length === 5), "only the oldest run is short");
+  assert.deepEqual(r.bars.at(-1).games, r.recent);
+  assert.deepEqual(r.bars.map((b) => b.recent), r.bars.map((_, i) => i === r.bars.length - 1));
+  assert.ok(r.bars.slice(1).every((b) => b.games.length === 10), "only the oldest run is short");
   assert.equal(r.bars.reduce((n, b) => n + b.games.length, 0), total(regular.name));
+  const last = r.bars.at(-1);
+  assert.equal(last.from, r.recent[0].ctx.dateLabel);
+  assert.equal(last.to, r.recent[9].ctx.dateLabel);
+  assert.equal(last.title, `${last.from} – ${last.to}`);
+  assert.match(last.from, /^[A-Z][a-z]{2} \d{1,2}$/);
   const dates = r.recent.map((g) => g.date);
   assert.deepEqual(dates, [...dates].sort());
-  assert.ok(r.bars.slice(0, -2).every((b) => b.games.every((g) => g.date <= dates[0])));
+  assert.ok(r.bars.slice(0, -1).every((b) => b.games.every((g) => g.date <= dates[0])));
 
   // Fewer than ten in the season's last two months: those are the last bar,
   // and the line is nine games with one gap where the two months begin.
@@ -119,8 +122,8 @@ test("a player's recent games: the last ten, his season in runs of five, and a s
   const lastNight = index.games.reduce((d, g) => (g.date > d ? g.date : d), "");
   const from = new Date(Date.UTC(+lastNight.slice(0, 4), +lastNight.slice(5, 7) - 3, +lastNight.slice(8, 10))).toISOString().slice(0, 10);
   assert.deepEqual(s.bars.filter((b) => b.recent).flatMap((b) => b.games), s.recent);
-  assert.equal(s.bars.at(-1).label, `L${Math.min(5, s.recent.length)}`);
-  assert.equal(s.bars.find((b) => !b.recent && b === s.bars.at(-1 - s.bars.filter((x) => x.recent).length)).label.split("–")[0], `${s.recent.length + 1}`, "the runs before start after the short run");
+  assert.deepEqual(s.bars.at(-1).games, s.recent, "the short run is a bar of its own");
+  assert.equal(s.bars.at(-2).games.length, 10, "the runs before count back from it");
   assert.equal(s.line.length, 10);
   assert.equal(s.line.filter((g) => g === null).length, 1);
   assert.equal(s.line.filter(Boolean).length, 9);

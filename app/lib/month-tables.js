@@ -135,7 +135,7 @@ export async function seasonMonthly(season, allMonths, lga, onProgress = () => {
 
 export const RECENT_GAMES = 10;
 const RECENT_MONTHS = 2;
-const RECENT_CHUNK = 5;
+const RECENT_CHUNK = 10;
 
 // `iso` (YYYY-MM-DD) less `k` calendar months.
 function monthsBefore(iso, k) {
@@ -151,11 +151,11 @@ function monthsBefore(iso, k) {
 // - `recent`: his last ten games — or, when fewer than ten fall inside the
 //   two months before the season's latest night (today, for a season still
 //   being played), the ones that do. The breakdown, and the chart's dark bars.
-// - `bars`: his season in runs of five, counted back from his latest game —
-//   "L5", "6–10", "11–15"… — the oldest run whatever is left over. A run
-//   never straddles the start of `recent`, so a short `recent` (seven games:
-//   "L5", "6–7") is read on its own. Each is { key, label, title, games,
-//   recent }, `title` naming it in words ("11–15 games ago").
+// - `bars`: his season in runs of ten, counted back from his latest game,
+//   the oldest run whatever is left over. A run never straddles the start of
+//   `recent`, so a short `recent` is a run of its own. Each is { key, from,
+//   to, title, games, recent }: `from` and `to` its first and last nights
+//   ("Oct 24", "Nov 12"), `title` the two together.
 // - `line`: the game-by-game line: the ten games, or — when `recent` is
 //   short — his last nine, with one empty slot where the two months begin.
 //
@@ -192,11 +192,12 @@ export function recentGames(season, allMonths, lga, name, today = new Date().toI
     for (let end = list.length; end > 0; end -= RECENT_CHUNK) {
       const games = list.slice(Math.max(0, end - RECENT_CHUNK), end);
       const a = ago + (list.length - end), b = a + games.length - 1;
-      const span = a === b ? `${a}` : `${a}–${b}`;
+      const from = games[0].ctx.dateLabel || "", to = games[games.length - 1].ctx.dateLabel || "";
       bars.unshift({
         key: `g${a}-${b}`,
-        label: a === 1 ? `L${b}` : span,
-        title: a === 1 ? `Last ${b} game${b === 1 ? "" : "s"}` : `${span} games ago`,
+        from,
+        to: to === from ? null : to,
+        title: to === from ? from : `${from} – ${to}`,
         games,
         recent: isRecent,
       });

@@ -216,7 +216,8 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
 export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game by Month", note = null, onSelect = null }) {
   const vals = months.map((m) => m.vapg).filter((v) => v != null);
   const years = months.map((m, i) => (m.year && (i === 0 || months[i - 1].year !== m.year) ? m.year : null));
-  const hasYears = years.some(Boolean);
+  // A bar's `sub` is a second line under its name (a run of games: its last night).
+  const hasYears = years.some(Boolean) || months.some((m) => m.sub);
   const W = 320, H = hasYears ? 102 : 92;
   // A negative month's value sits under its bar, so leave room above the
   // month names for it.
@@ -233,6 +234,7 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
   // from the newest, and smaller values over the bars.
   const thin = slot < 24;
   const valueSize = thin ? 6.5 : 8;
+  const nameSize = slot < 36 ? 7 : 8;
   return (
     <div className="mt-1 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
@@ -274,11 +276,17 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
                   >{m.vapg.toFixed(1)}</text>
                 )}
                 {(!thin || m.current || (months.length - 1 - i) % 2 === 0) && <text
-                  x={cx} y={nameY} fontSize={thin ? 7 : 8} textAnchor="middle"
+                  x={cx} y={nameY} fontSize={nameSize} textAnchor="middle"
                   fill={m.current ? "#1c1917" : has ? "#6f6863" : "#d6d3d1"} fontWeight={m.current ? 700 : 400}
                 >{m.label}</text>}
                 {years[i] && (
                   <text x={cx} y={H - 3} fontSize="6.5" textAnchor="middle" fill="#a8a29e" className="tabular-nums">{years[i]}</text>
+                )}
+                {!years[i] && m.sub && (!thin || m.current || (months.length - 1 - i) % 2 === 0) && (
+                  <text
+                    x={cx} y={H - 3} fontSize={nameSize} textAnchor="middle"
+                    fill={m.current ? "#1c1917" : "#6f6863"} fontWeight={m.current ? 700 : 400}
+                  >{m.sub}</text>
                 )}
               </g>
             );
