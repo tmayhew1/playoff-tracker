@@ -194,7 +194,7 @@ export function monthTotals(boxes, lga) {
           snap[k] = line[k] || 0;
         }
         r.byGame.push(snap);
-        r.gameContext.push({ opp: other?.tri, dateLabel: box.date ? shortDay(box.date) : null });
+        r.gameContext.push({ opp: other?.tri, date: box.date || null, dateLabel: box.date ? shortDay(box.date) : null });
       }
     }
   }

@@ -87,3 +87,40 @@ test("a season that isn't baked isn't warmed", async () => {
   assert.deepEqual(asked.slice(n).filter((u) => !u.startsWith("/regular-season-games/2030-31/index.json")), [], "only the index is asked");
   assert.equal(peekBoxes("2030-31", fake[0]), null);
 });
+
+test("a player's recent games: the last ten, the months before them, and a short run's gap", { skip: !fs.existsSync(path.join(BAKED, SEASON)) }, async () => {
+  const { recentGames } = await import("../app/lib/month-tables.js");
+  await seasonMonthly(SEASON, months, lga);
+  const names = [...peekMonthly(SEASON, months, lga).byName.keys()];
+  const total = (name) => months.reduce((n, m) => n + (monthRows(SEASON, m, peekBoxes(SEASON, m), lga).find((r) => r.name === name)?.gp || 0), 0);
+  const all = names.map((name) => ({ name, r: recentGames(SEASON, months, lga, name, "2099-01-01") }));
+
+  // Played into April: his last ten, the line those ten, the bars the season split before and after them.
+  const regular = all.find(({ name, r }) => !r.short && total(name) > 40);
+  const { r } = regular;
+  assert.equal(r.recent.length, 10);
+  assert.equal(r.line.length, 10);
+  assert.ok(r.line.every(Boolean));
+  assert.equal(r.bars.at(-1).key, "recent");
+  assert.equal(r.bars.at(-1).label, "L10");
+  assert.equal(r.bars.reduce((n, b) => n + b.games.length, 0), total(regular.name));
+  const dates = r.recent.map((g) => g.date);
+  assert.deepEqual(dates, [...dates].sort());
+  assert.ok(r.bars.slice(0, -1).every((b) => b.games.every((g) => g.date <= dates[0])));
+
+  // Fewer than ten in the season's last two months: those are the last bar,
+  // and the line is nine games with one gap where the two months begin.
+  const short = all.find(({ r }) => r?.short && r.recent.length < 8);
+  assert.ok(short, "some player had a short run");
+  const s = short.r;
+  const lastNight = index.games.reduce((d, g) => (g.date > d ? g.date : d), "");
+  const from = new Date(Date.UTC(+lastNight.slice(0, 4), +lastNight.slice(5, 7) - 3, +lastNight.slice(8, 10))).toISOString().slice(0, 10);
+  assert.equal(s.bars.at(-1).label, `L${s.recent.length}`);
+  assert.equal(s.line.length, 10);
+  assert.equal(s.line.filter((g) => g === null).length, 1);
+  assert.equal(s.line.filter(Boolean).length, 9);
+  const gap = s.line.indexOf(null);
+  assert.deepEqual(s.line.slice(gap + 1), s.recent);
+  assert.ok(s.recent[0].date >= from, "the run is inside the two months before the last night");
+  assert.ok(s.line[gap - 1].date < from);
+});

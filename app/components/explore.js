@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
@@ -148,8 +148,10 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // `focus` ({ date, team, name }, About Last Night's tap)
 // opens the month on that team's game that day, its card narrowed to the
 // team and the player's line opened (GameCard's own focus). A `recent` focus
-// (a category card's "Recent games") opens the player's row in the month's
-// averages instead, and leaves the game on his team with no line opened.
+// (a category card's "Recent games") also opens the player's row in the
+// month's averages, on his last ten games, and that row is where the screen
+// stops: the game's line opens in place, without scrolling to it. The jump is
+// let go once both have taken it.
 export function ExploreMonthSection({ month, allMonths, lga, season, focus = null, onFocusHandled = null }) {
   const [open, setOpen] = useState(!!focus);
   const [team, setTeam] = useState(null);
@@ -164,7 +166,21 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
   useEffect(() => {
     if (focus && !focusGameId) onFocusHandled?.();
   }, [focus, focusGameId, onFocusHandled]);
-  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.recent ? null : focus.name } : null), [focus]);
+  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.name, scroll: !focus.recent } : null), [focus]);
+  // A recent focus goes to two places — the averages row and the game's
+  // line — so it is handed back only once both have handled it.
+  // Reset as the focus arrives (in render, not an effect: a child whose data
+  // is already in can hand it back in the same commit, before ours run).
+  const pending = useRef({ focus: null, left: null });
+  if (pending.current.focus !== focus) pending.current = { focus, left: focus?.recent ? new Set(["avg", "card"]) : null };
+  const handledBy = useCallback((who) => () => {
+    const { left } = pending.current;
+    if (!left) { onFocusHandled?.(); return; }
+    left.delete(who);
+    if (!left.size) onFocusHandled?.();
+  }, [onFocusHandled]);
+  const avgHandled = useMemo(() => handledBy("avg"), [handledBy]);
+  const cardHandled = useMemo(() => handledBy("card"), [handledBy]);
   const teams = useMemo(() => [...new Set(month.games.flatMap((g) => [g.home?.tri, g.away?.tri]).filter(Boolean))].sort(), [month]);
   const days = useMemo(() => (open
     ? groupByDay(month.games).reverse()
@@ -212,7 +228,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
         </button>
       </h2>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl}
-        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={onFocusHandled} />}
+        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={avgHandled} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">
@@ -237,7 +253,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
                 boxLoader={() => bakedBox(season, g)}
                 onTeamPick={setTeam}
                 focus={g.gameId === focusGameId ? cardFocus : null}
-                onFocusHandled={onFocusHandled}
+                onFocusHandled={cardHandled}
                 keepInView
                 context={(tri) => context(tri, g.date)}
               />
