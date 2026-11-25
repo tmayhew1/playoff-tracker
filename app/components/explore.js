@@ -5,7 +5,7 @@ import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
 import { VABaselineToggle } from "./va-baseline-toggle";
-import { teamColor, teamInk, withAlpha } from "../lib/format";
+import { normalizeName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { useSeasonLga } from "../lib/va-mode";
 import { buildScoped, fetchJsonCached } from "../lib/fetch-cache";
 import { dayLabel, groupByDay, groupByMonth, playoffsBegun, seasonMonths, seasonOf } from "../lib/regular-season-games";
@@ -15,7 +15,7 @@ import { LookAheadNavProvider } from "../lib/award-nav";
 import { LastNight } from "./last-night";
 import { GameCard } from "./live-view";
 import { MonthAverages } from "./month-averages";
-import { bakedBox, seasonGames } from "../lib/baked-games";
+import { bakedBox, loadBoxes, seasonGames } from "../lib/baked-games";
 import { warmSeason } from "../lib/month-tables";
 import { useSeasonContext } from "../lib/use-season-context";
 import { scrollBehavior } from "../lib/motion";
@@ -247,6 +247,27 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
 }
 
 
+// The date of `name`'s latest game for `team` among `months` (the season's
+// finals, by month): the team's games newest first, a few at a time, until a
+// box score has him on the floor. Box scores are cached (lib/baked-games.js),
+// so the month opened next reads the same ones. Null when the team has no
+// games; the team's latest when none of the ones looked at has him in it.
+const RECENT_LOOK = 15;
+async function latestGameDate(season, months, { team, name }) {
+  const games = months.flatMap((m) => m.games)
+    .filter((g) => g.home?.tri === team || g.away?.tri === team)
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.gameDateTimeUTC || "").localeCompare(a.gameDateTimeUTC || ""))
+    .slice(0, RECENT_LOOK);
+  if (!games.length) return null;
+  if (!name) return games[0].date;
+  const key = normalizeName(name);
+  const boxes = await loadBoxes(season, games, () => {}, () => false).catch(() => []);
+  const hit = boxes.find((b) => [b.home, b.away].some((side) => side?.tri === team
+    && side.players?.some((p) => p.mp > 0 && p.name && normalizeName(p.name) === key)));
+  return (hit || games[0]).date;
+}
+
+
 // Every regular-season game of `season`, by month. A baked season
 // (lib/baked-games.js) opens from its static index; months the bake hasn't
 // reached — the season in progress, or a season not baked — are asked of
@@ -258,7 +279,8 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
 //
 // `focus` ({ season, date, team, name }) opens the month holding that date on
 // the team's game there (ExploreMonthSection); with no such game loaded it is
-// dropped.
+// dropped. Without a `date` it opens the player's latest game for the team
+// (a category card's "Recent games"), worked out once the months are in.
 export function RegularSeasonMonths({ season, lga, grouped = false, focus = null, onFocusHandled = null }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -283,12 +305,26 @@ export function RegularSeasonMonths({ season, lga, grouped = false, focus = null
   // The months on hand are this season's (a season change clears them a
   // render late), so a focus isn't dropped against the last season's list.
   const ready = data?.season === season;
-  const focusMonth = focus?.season === season && ready ? data.months.find((m) => m.key === focus.date.slice(0, 7)) : null;
+  // A dateless focus, given the date of the player's latest game. Kept beside
+  // the focus it answers, so a newer focus never reads an older answer.
+  const [dated, setDated] = useState(null);
+  useEffect(() => {
+    if (!focus || focus.date || focus.season !== season || !ready) return;
+    let cancelled = false;
+    latestGameDate(season, data.months, focus).then((date) => {
+      if (cancelled) return;
+      if (date) setDated({ from: focus, focus: { ...focus, date } });
+      else onFocusHandled?.();
+    });
+    return () => { cancelled = true; };
+  }, [focus, season, ready, data, onFocusHandled]);
+  const target = focus?.date ? focus : dated?.from === focus ? dated.focus : null;
+  const focusMonth = target?.season === season && ready ? data.months.find((m) => m.key === target.date.slice(0, 7)) : null;
   useEffect(() => { if (focus) setOpen(true); }, [focus]);
   useEffect(() => {
     if (!focus) return;
-    if (focus.season !== season || (ready && !focusMonth) || error) onFocusHandled?.();
-  }, [focus, season, ready, focusMonth, error, onFocusHandled]);
+    if (focus.season !== season || (ready && target && !focusMonth) || error) onFocusHandled?.();
+  }, [focus, target, season, ready, focusMonth, error, onFocusHandled]);
 
   if (error) return <div className="text-[10px] text-red-600 py-4 text-center px-2 break-words">Couldn’t load regular-season games — {error}</div>;
   if (!data) return <div className="text-[10px] text-stone-500 italic py-4 text-center">Loading {season} regular season…</div>;
@@ -296,7 +332,7 @@ export function RegularSeasonMonths({ season, lga, grouped = false, focus = null
   const months = (
     <>
       {[...data.months].reverse().map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season}
-        focus={m === focusMonth ? focus : null} onFocusHandled={onFocusHandled} />)}
+        focus={m === focusMonth ? target : null} onFocusHandled={onFocusHandled} />)}
       {data.partial && (
         <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}
@@ -352,7 +388,7 @@ export function exploreSeasonList() {
 // once on mount: the view, scope and season it names, and the player — and
 // the comparison — to open, handed to the leaderboard / By Player as the
 // same pending navigation their own in-page jumps use.
-export function ExploreView({ jump = null, onJumpHandled = null, playerJump = null, onPlayerJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
+export function ExploreView({ jump = null, onJumpHandled = null, playerJump = null, onPlayerJumpHandled = null, gameJump = null, onGameJumpHandled = null, initial = null, onInitHandled = null, liveNight = null, onOpenInLive = null }) {
   // Season list is fetched from /api/seasons so newly-baked old seasons
   // (filled in by the daily-backfill workflow) show up automatically on
   // next deploy. exploreSeasonList() is the synchronous fallback used
@@ -497,7 +533,7 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
   // player's game with his line expanded (RegularSeasonMonths).
   const [gameNav, setGameNav] = useState(null);
   const navigateToGame = useCallback((target) => {
-    if (!target?.season || !target?.date || !target?.team) return;
+    if (!target?.season || !target?.team) return;
     setMode("season");
     setSeasons((prev) => (prev.includes(target.season)
       ? prev : [...prev, target.season].sort((a, b) => b.localeCompare(a))));
@@ -508,6 +544,13 @@ export function ExploreView({ jump = null, onJumpHandled = null, playerJump = nu
     setGameNav(target);
   }, []);
   const clearGameNav = useCallback(() => setGameNav(null), []);
+  // The same from anywhere on the page (lib/games-nav.js): a category card's
+  // "Recent games", which names no date — the months find his latest game.
+  useEffect(() => {
+    if (!gameJump) return;
+    navigateToGame(gameJump);
+    onGameJumpHandled?.();
+  }, [gameJump, onGameJumpHandled, navigateToGame]);
   // The same crossing from anywhere on the page (lib/player-nav.js) — a box
   // score on the Live tab, a category card's rankings. It may name the scope
   // the tap was reading, so the season it opens is there to open.

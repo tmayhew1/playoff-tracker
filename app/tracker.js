@@ -10,6 +10,7 @@ import { shareQuery } from "./lib/share-params";
 import { ShareProvider, useShareStore } from "./lib/share-state";
 import { AwardNavProvider } from "./lib/award-nav";
 import { PlayerNavProvider } from "./lib/player-nav";
+import { GamesNavProvider } from "./lib/games-nav";
 import { scrollBehavior } from "./lib/motion";
 
 // Explore is the landing tab and ships in the page bundle. Every other tab's
@@ -152,6 +153,18 @@ function Tracker({ initial }) {
   }, [setTab]);
   const clearPlayerJump = useCallback(() => setPlayerJump(null), []);
 
+  // And into By Season's game list: a category card's "Recent games" names a
+  // player-season and team, and Explore opens that team's games on the
+  // player's latest one (lib/games-nav.js).
+  const [gameJump, setGameJump] = useState(null);
+  const goToRecentGames = useCallback((target) => {
+    if (!target?.season || !target?.team) return;
+    setGameJump(target);
+    setTab("explore");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: scrollBehavior() });
+  }, [setTab]);
+  const clearGameJump = useCallback(() => setGameJump(null), []);
+
   // The other direction: a player card's award box (award-boxes.js) opens the
   // Awards tab on that award, season and player.
   const [awardFocus, setAwardFocus] = useState(null);
@@ -190,6 +203,7 @@ function Tracker({ initial }) {
     <ShareProvider value={report}>
     <AwardNavProvider value={goToAward}>
     <PlayerNavProvider value={goToPlayer}>
+    <GamesNavProvider value={goToRecentGames}>
     <div className="min-h-screen bg-stone-100">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <header className="mb-4 text-center">
@@ -248,12 +262,13 @@ function Tracker({ initial }) {
         )}
 
         <TabBoundary key={tab}>
-        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
+        {tab === "explore" ? <ExploreView jump={exploreJump} onJumpHandled={clearExploreJump} playerJump={playerJump} onPlayerJumpHandled={clearPlayerJump} gameJump={gameJump} onGameJumpHandled={clearGameJump} initial={exploreInit} onInitHandled={clearExploreInit} liveNight={liveNight} onOpenInLive={goToLive} />
           : tab === "legacy" ? <LegacyView onGoToLeaderboard={goToLeaderboard} /> : tab === "awards" ? <AwardsView onGoToLeaderboard={goToLeaderboard} focus={awardFocus} onFocusHandled={clearAwardFocus} /> : tab === "college" ? <CollegeView /> : tab === "drating" ? <DRatingView /> : tab === "live" ? <LiveView onData={onLiveData} focus={liveFocus} onFocusHandled={clearLiveFocus} /> : tab === "usage" ? <UsageView /> : tab === "draft" ? <DraftView /> : tab === "shotzones" ? <ShotZonesView /> : tab === "info" ? <InfoView /> : <HistoryView season={tvsSeason} />}
         </TabBoundary>
         </main>
       </div>
     </div>
+    </GamesNavProvider>
     </PlayerNavProvider>
     </AwardNavProvider>
     </ShareProvider>

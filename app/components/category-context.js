@@ -7,6 +7,7 @@ import { DEF_TEAM_NOTE_W, defVAInfo, teamLineNote } from "../lib/defense";
 import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
+import { useGamesNav } from "../lib/games-nav";
 import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
 import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/role-model";
@@ -400,6 +401,9 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
   // leaves the card for that player's By Player career (lib/player-nav.js)
   // instead of re-pointing the card at them.
   const goToPlayer = usePlayerNav();
+  // "Recent games" in the card's top corner: By Season's game list, on the
+  // shown player's team, his latest game open (lib/games-nav.js).
+  const goToRecentGames = useGamesNav();
   const [nameArmed, setNameArmed] = useState(false);
   useEffect(() => { setNameArmed(false); }, [focusRow, ownerSelf?.slug, ownerSelf?.name, ownerSeasonKey, catKey]);
 
@@ -1338,6 +1342,19 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         })()}
         <span className="font-bold text-stone-900 text-[11px] truncate">{self.name}</span>
         <span className="shrink-0 text-stone-400 text-[9px] tabular-nums">{seasonKey}</span>
+        {/* A season's regular-season games, read on the team he played for
+            (a single team — a traded player's TOT/2TM row has none to open). */}
+        {goToRecentGames && context.scope !== "playoffs" && /^[A-Z]{2,4}$/.test(p.team || "") && p.team !== "TOT" && (
+          <button
+            type="button"
+            onClick={() => goToRecentGames({ season: seasonKey, team: p.team, name: self.name })}
+            aria-label={`Open ${self.name}'s recent ${seasonKey} games`}
+            className={`${focused ? "" : "ml-auto "}order-last shrink-0 inline-flex items-baseline gap-1.5 border border-stone-300 rounded-sm px-1.5 py-0.5 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stone-500`}
+          >
+            <span className="text-[8px] font-bold uppercase tracking-wider text-stone-500 whitespace-nowrap">Recent games</span>
+            <span className="text-[8px] uppercase tracking-wider text-stone-500 whitespace-nowrap" aria-hidden>Go →</span>
+          </button>
+        )}
         {focused && (
           <button
             type="button"
