@@ -29,7 +29,7 @@ const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 // brings it to the top of the screen once the month's box scores are in, then
 // `onFocusHandled` lets the jump go. That row reads his recent games rather
 // than the month (lib/month-tables.js recentGames): the line his last ten
-// games, the bars his season by month, then the ten.
+// games, the bars his season by month.
 export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null }) {
   // Tap Player, then a name, to open that player's season in By Player.
   const arm = usePlayerArm();
