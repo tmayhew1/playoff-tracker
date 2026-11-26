@@ -177,10 +177,10 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
   };
   const recentLabel = (n) => `Last ${n} Game${n === 1 ? "" : "s"}`;
 
-  // The recent row's chart: his season by month, then his last ten (dark:
-  // the line and breakdown); a month's bar drills into that month.
+  // The recent row's chart: his season by month, no bar dark until one is
+  // tapped — a month's bar drills into that month.
   const recentChart = (other) => (color, category) => {
-    const isCurrent = (b) => (other ? b.key === other.month.key : b.recent);
+    const isCurrent = (b) => !!other && b.key === other.month.key;
     const vapg = (games) => {
       if (!games.length) return null;
       const agg = aggregateSnapshots(games[0].snap, games.map((g) => g.snap));
@@ -210,11 +210,9 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
             vapg: vapg(b.games),
             gp: b.games.length,
             current: isCurrent(b),
-            home: b.recent,
           }))}
           onSelect={(i) => {
-            const bar = recent.bars[i];
-            setViewKey(bar.recent ? null : bar.key);
+            setViewKey(recent.bars[i].key);
           }}
         />
       </>

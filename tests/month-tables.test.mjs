@@ -95,17 +95,15 @@ test("a player's recent games: the last ten, his season by month, and a short ru
   const total = (name) => months.reduce((n, m) => n + (monthRows(SEASON, m, peekBoxes(SEASON, m), lga).find((r) => r.name === name)?.gp || 0), 0);
   const all = names.map((name) => ({ name, r: recentGames(SEASON, months, lga, name, "2099-01-01") }));
 
-  // Played into April: his last ten, the line those ten, the bars each whole month then the ten.
+  // Played into April: his last ten, the line those ten, the bars each whole month.
   const regular = all.find(({ name, r }) => !r.short && total(name) > 40);
   const { r } = regular;
   assert.equal(r.recent.length, 10);
   assert.equal(r.line.length, 10);
   assert.ok(r.line.every(Boolean));
-  assert.deepEqual(r.bars.map((b) => b.label), ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "L10"]);
-  assert.equal(r.bars.at(-1).key, "recent");
-  assert.deepEqual(r.bars.at(-1).games, r.recent);
+  assert.deepEqual(r.bars.map((b) => b.label), ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr"]);
   assert.equal(r.bars.find((b) => b.key === "2025-01").title, "January 2025");
-  for (const b of r.bars.slice(0, -1)) {
+  for (const b of r.bars) {
     const m = months.find((x) => x.key === b.key);
     assert.equal(b.games.length, monthRows(SEASON, m, peekBoxes(SEASON, m), lga).find((x) => x.name === regular.name)?.gp || 0, `${b.key}: the whole month`);
   }
@@ -119,8 +117,6 @@ test("a player's recent games: the last ten, his season by month, and a short ru
   const s = short.r;
   const lastNight = index.games.reduce((d, g) => (g.date > d ? g.date : d), "");
   const from = new Date(Date.UTC(+lastNight.slice(0, 4), +lastNight.slice(5, 7) - 3, +lastNight.slice(8, 10))).toISOString().slice(0, 10);
-  assert.equal(s.bars.at(-1).label, `L${s.recent.length}`);
-  assert.deepEqual(s.bars.at(-1).games, s.recent);
   assert.equal(s.line.length, 10);
   assert.equal(s.line.filter((g) => g === null).length, 1);
   assert.equal(s.line.filter(Boolean).length, 9);

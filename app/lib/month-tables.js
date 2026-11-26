@@ -149,11 +149,10 @@ function monthsBefore(iso, k) {
 //
 // - `recent`: his last ten games — or, when fewer than ten fall inside the
 //   two months before the season's latest night (today, for a season still
-//   being played), the ones that do. The breakdown, and the chart's dark bars.
+//   being played), the ones that do. The breakdown.
 // - `bars`: each month of the season through his latest game, holding all
-//   his games that month (a month he sat out is empty), then `recent` as the
-//   last bar (key "recent", "L10"). Each is { key, label, year, title, games,
-//   recent }; a month's bar drills into that month.
+//   his games that month (a month he sat out is empty). Each is { key,
+//   label, year, title, games }; a month's bar drills into that month.
 // - `line`: the game-by-game line: the ten games, or — when `recent` is
 //   short — his last nine, with one empty slot where the two months begin.
 //
@@ -193,9 +192,7 @@ export function recentGames(season, allMonths, lga, name, today = new Date().toI
       year: m.key.slice(0, 4),
       title: `${m.label} ${m.key.slice(0, 4)}`,
       games: games.filter((g) => g.date.startsWith(m.key)),
-      recent: false,
     }));
-  bars.push({ key: "recent", label: `L${n}`, year: null, title: `Last ${n} game${n === 1 ? "" : "s"}`, games: recent, recent: true });
   return { recent, bars, line, short };
 }
 
