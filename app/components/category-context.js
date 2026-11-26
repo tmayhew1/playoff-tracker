@@ -1346,9 +1346,11 @@ export function CategoryContext({ p: pProp, catKey, lga, rateMode, context, defs
         <span className="font-bold text-stone-900 text-[11px] truncate">{self.name}</span>
         <span className="shrink-0 text-stone-400 text-[9px] tabular-nums">{seasonKey}</span>
         {/* A season's regular-season games, read on the team he played for
-            (a single team — a traded player's TOT/2TM row has none to open). */}
-        {goToRecentGames && context.scope !== "playoffs" && /^[A-Z]{2,4}$/.test(p.team || "") && p.team !== "TOT" && (
-          <span className={`${focused ? "" : "ml-auto "}order-last shrink-0 inline-flex`}>
+            (a single team — a traded player's TOT/2TM row has none to open).
+            Only on the card's own player: re-pointed at another, the header
+            has the ← back control instead, and both won't fit. */}
+        {goToRecentGames && !focused && context.scope !== "playoffs" && /^[A-Z]{2,4}$/.test(p.team || "") && p.team !== "TOT" && (
+          <span className="ml-auto order-last shrink-0 inline-flex">
             {recentGo.isArmed() ? (
               <button
                 ref={recentGo.goRef}
