@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { LiveGameBanner } from "./boxscore";
 import { SeriesAverages } from "./history";
 import { PlayoffLeaderboard } from "./leaderboard";
@@ -148,11 +148,14 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // `focus` ({ date, team, name }, About Last Night's tap)
 // opens the month on that team's game that day, its card narrowed to the
 // team and the player's line opened (GameCard's own focus). A `recent` focus
-// (a category card's "Recent games") opens the player's row in the month's
-// averages instead, and leaves the game on his team with no line opened.
+// (a category card's "Recent games") also opens the player's row in the
+// month's averages, on his last ten games, and that row is where the screen
+// stops: the game's line opens in place, without scrolling to it. The jump is
+// let go once both have taken it.
 // Tapping the selected game's label in an open averages row's breakdown opens
-// that game the same way.
-export function ExploreMonthSection({ month, allMonths, lga, season, focus: outerFocus = null, onFocusHandled: outerHandled = null }) {
+// that game the same way: here when it's this month's, otherwise through
+// `onOpenElsewhere` (RegularSeasonMonths finds its month).
+export function ExploreMonthSection({ month, allMonths, lga, season, focus: outerFocus = null, onFocusHandled: outerHandled = null, onOpenElsewhere = null }) {
   // A game opened from the month's own averages (a breakdown's selected game)
   // takes the same path as an outside focus: that team's card, his line open.
   const [ownFocus, setOwnFocus] = useState(null);
@@ -174,7 +177,21 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus: oute
   useEffect(() => {
     if (focus && !focusGameId) onFocusHandled?.();
   }, [focus, focusGameId, onFocusHandled]);
-  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.recent ? null : focus.name } : null), [focus]);
+  const cardFocus = useMemo(() => (focus ? { team: focus.team, name: focus.name, scroll: !focus.recent } : null), [focus]);
+  // A recent focus goes to two places — the averages row and the game's
+  // line — so it is handed back only once both have handled it.
+  // Reset as the focus arrives (in render, not an effect: a child whose data
+  // is already in can hand it back in the same commit, before ours run).
+  const pending = useRef({ focus: null, left: null });
+  if (pending.current.focus !== focus) pending.current = { focus, left: focus?.recent ? new Set(["avg", "card"]) : null };
+  const handledBy = useCallback((who) => () => {
+    const { left } = pending.current;
+    if (!left) { onFocusHandled?.(); return; }
+    left.delete(who);
+    if (!left.size) onFocusHandled?.();
+  }, [onFocusHandled]);
+  const avgHandled = useMemo(() => handledBy("avg"), [handledBy]);
+  const cardHandled = useMemo(() => handledBy("card"), [handledBy]);
   const teams = useMemo(() => [...new Set(month.games.flatMap((g) => [g.home?.tri, g.away?.tri]).filter(Boolean))].sort(), [month]);
   const days = useMemo(() => (open
     ? groupByDay(month.games).reverse()
@@ -222,8 +239,8 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus: oute
         </button>
       </h2>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl}
-        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={onFocusHandled}
-        onOpenGame={(f) => setOwnFocus({ ...f })} />}
+        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={avgHandled}
+        onOpenGame={(f) => (f.date?.startsWith(month.key) ? setOwnFocus({ ...f }) : onOpenElsewhere?.(f))} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">
@@ -248,7 +265,7 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus: oute
                 boxLoader={() => bakedBox(season, g)}
                 onTeamPick={setTeam}
                 focus={g.gameId === focusGameId ? cardFocus : null}
-                onFocusHandled={onFocusHandled}
+                onFocusHandled={cardHandled}
                 keepInView
                 context={(tri) => context(tri, g.date)}
               />
@@ -295,7 +312,17 @@ async function latestGameDate(season, months, { team, name }) {
 // the team's game there (ExploreMonthSection); with no such game loaded it is
 // dropped. Without a `date` it opens the player's latest game for the team
 // (a category card's "Recent games"), worked out once the months are in.
-export function RegularSeasonMonths({ season, lga, grouped = false, focus = null, onFocusHandled = null }) {
+export function RegularSeasonMonths({ season, lga, grouped = false, focus: outerFocus = null, onFocusHandled: outerHandled = null }) {
+  // A game opened from one month's averages but played in another (a
+  // breakdown read on another month, or on his last ten): routed to its
+  // month like an outside focus.
+  const [ownFocus, setOwnFocus] = useState(null);
+  const focus = ownFocus || outerFocus;
+  const onFocusHandled = useCallback(() => {
+    if (ownFocus) setOwnFocus(null);
+    else outerHandled?.();
+  }, [ownFocus, outerHandled]);
+  const openElsewhere = useCallback((f) => setOwnFocus({ ...f, season }), [season]);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
@@ -346,7 +373,7 @@ export function RegularSeasonMonths({ season, lga, grouped = false, focus = null
   const months = (
     <>
       {[...data.months].reverse().map((m) => <ExploreMonthSection key={m.key} month={m} allMonths={data.months} lga={lga} season={season}
-        focus={m === focusMonth ? target : null} onFocusHandled={onFocusHandled} />)}
+        focus={m === focusMonth ? target : null} onFocusHandled={onFocusHandled} onOpenElsewhere={openElsewhere} />)}
       {data.partial && (
         <div className="text-[10px] text-stone-400 italic pb-3 text-center">Some days didn’t load — try again later</div>
       )}

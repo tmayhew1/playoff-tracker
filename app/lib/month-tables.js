@@ -131,6 +131,75 @@ export async function seasonMonthly(season, allMonths, lga, onProgress = () => {
   return out;
 }
 
+// --- A player's recent games ------------------------------------------------------
+
+export const RECENT_GAMES = 10;
+const RECENT_MONTHS = 2;
+
+// `iso` (YYYY-MM-DD) less `k` calendar months.
+function monthsBefore(iso, k) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 - k, d)).toISOString().slice(0, 10);
+}
+
+// A player's season read up to his latest games, for an averages row opened
+// on them (a category card's "Recent games"), off the months' own tables —
+// so only once the season is loaded (seasonMonthly). Each game is
+// { date, va, snap, ctx }.
+//
+// - `recent`: his last ten games — or, when fewer than ten fall inside the
+//   two months before the season's latest night (today, for a season still
+//   being played), the ones that do. The breakdown.
+// - `bars`: each month of the season through his latest game, holding all
+//   his games that month (a month he sat out is empty). Each is { key,
+//   label, year, title, games }; a month's bar drills into that month.
+// - `line`: the game-by-game line: the ten games, or — when `recent` is
+//   short — his last nine, with one empty slot where the two months begin.
+//
+// `through` (a month key) reads the season only as far as that month's end —
+// a past month's averages row opens on his last ten as of then.
+//
+// Null when he has no games in the season.
+export function recentGames(season, allMonths, lga, name, { today = new Date().toISOString().slice(0, 10), through = null } = {}) {
+  const games = [];
+  let lastNight = "";
+  const upTo = (allMonths || []).filter((m) => !through || m.key <= through);
+  for (const m of upTo) {
+    for (const g of m.games) if (g.date > lastNight) lastNight = g.date;
+    const boxes = peekBoxes(season, m);
+    const r = boxes && monthRows(season, m, boxes, lga).find((x) => x.name === name);
+    if (!r) continue;
+    r.byGame.forEach((snap, i) => {
+      const ctx = r.gameContext[i] || {};
+      games.push({ date: ctx.date || `${m.key}-00`, va: r.games[i], snap, ctx });
+    });
+  }
+  if (!games.length) return null;
+  games.sort((a, b) => a.date.localeCompare(b.date));
+  const anchor = today && today < lastNight ? today : lastNight;
+  const from = monthsBefore(anchor, RECENT_MONTHS);
+  const inWindow = games.filter((g) => g.date >= from).length;
+  // A player who hasn't played in two months (out for the season) reads on
+  // his last ten, wherever they fell.
+  const short = inWindow > 0 && inWindow < RECENT_GAMES && games.length > inWindow;
+  const n = short ? inWindow : Math.min(RECENT_GAMES, games.length);
+  const recent = games.slice(-n);
+  const before = games.slice(0, games.length - n);
+  const older = short && RECENT_GAMES - 1 - n > 0 ? before.slice(-(RECENT_GAMES - 1 - n)) : [];
+  const line = older.length ? [...older, null, ...recent] : recent;
+  const lastMonth = games[games.length - 1].date.slice(0, 7);
+  const bars = upTo
+    .filter((m) => m.key <= lastMonth)
+    .map((m) => ({
+      key: m.key,
+      label: m.label.slice(0, 3),
+      year: m.key.slice(0, 4),
+      title: `${m.label} ${m.key.slice(0, 4)}`,
+      games: games.filter((g) => g.date.startsWith(m.key)),
+    }));
+  return { recent, bars, line, short };
+}
+
 // --- Warming ahead of time ---------------------------------------------------------
 
 const idle = () => new Promise((resolve) => {

@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { VABreakdown } from "./va-breakdown";
 import { MonthlyVAChart } from "./charts";
 import { fetchBakedJson } from "../lib/fetch-cache";
-import { monthBoxes, monthRows, peekBoxes, peekMonthly, seasonMonthly } from "../lib/month-tables";
+import { monthBoxes, monthRows, peekBoxes, peekMonthly, recentGames, seasonMonthly } from "../lib/month-tables";
+import { aggregateSnapshots } from "../lib/players";
 import { normalizeName, teamColor, teamInk, withAlpha } from "../lib/format";
 import { catVATotal } from "../lib/va";
 import { usePlayerArm } from "../lib/player-nav";
@@ -26,9 +27,11 @@ const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 
 // `focusName` (a category card's "Recent games") opens that player's row and
 // brings it to the top of the screen once the month's box scores are in, then
-// `onFocusHandled` lets the jump go. `onOpenGame({ date, team, name })` opens
-// a game from an open row's breakdown (its selected game's label) among the
-// month's day cards.
+// `onFocusHandled` lets the jump go. Every open row reads the player's last
+// ten games as of this month's end (lib/month-tables.js recentGames), with
+// his season by month in the bars above to drill into a month. `onOpenGame({ date, team, name })`
+// opens a game from an open row's breakdown (its selected game's label) —
+// this month's, or another month's read from the chart.
 export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null, onOpenGame = null }) {
   // Tap Player, then a name, to open that player's season in By Player.
   const arm = usePlayerArm();
@@ -55,6 +58,10 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
   // time a row is opened, and again under a new baseline.
   const [monthly, setMonthly] = useState(() => peekMonthly(season, allMonths, lga));
   const [seasonProgress, setSeasonProgress] = useState(null);
+  // The open row's last ten games through this month, once the season is in.
+  const recentName = expanded;
+  const recent = useMemo(() => (expanded && monthly ? recentGames(season, allMonths, lga, expanded, { through: month.key }) : null),
+    [expanded, monthly, season, allMonths, lga, month.key]);
 
   useEffect(() => {
     if (!open || boxes) return;
@@ -90,6 +97,10 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
   // { month, p } with that month's row, or null to read this month.
   const viewed = (name) => {
     if (!viewKey || !monthly) return null;
+    if (name === recentName && recent) {
+      const bar = recent.bars.find((b) => b.key === viewKey);
+      return bar?.games.length ? { month: { key: bar.key, label: bar.title }, title: bar.title, gp: bar.games.length, p: gamesCard(bar.games) } : null;
+    }
     const m = allMonths.find((x) => x.key === viewKey);
     const mBoxes = m && peekBoxes(season, m);
     const p = mBoxes && monthRows(season, m, mBoxes, lga).find((r) => r.name === name);
@@ -114,6 +125,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
       const v = catVATotal(r, lga, category) / (r.gp || 1);
       return Number.isFinite(v) ? v : null;
     };
+    if (name === recentName && recent) return recentChart(other)(color, category);
     const currentKey = other ? other.month.key : month.key;
     return (
       <>
@@ -143,6 +155,65 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
           onSelect={(i) => {
             const key = monthly.months[i].key;
             setViewKey(key === month.key ? null : key);
+          }}
+        />
+      </>
+    );
+  };
+
+  // A run of games (recentGames' entries, null for the line's gap) as an
+  // open row's card: the games' totals, with the line, each game's own
+  // stats and its date for the chart's drill-in.
+  const gamesCard = (line) => {
+    const played = line.filter(Boolean);
+    const last = played[played.length - 1].snap;
+    const p = aggregateSnapshots({ name: last.name, team: last.team }, played.map((g) => g.snap));
+    return {
+      ...p,
+      vapg: p.va / (p.gp || 1),
+      games: line.map((g) => (g ? g.va : null)),
+      byGame: line.map((g) => (g ? g.snap : null)),
+      gameContext: line.map((g) => (g ? g.ctx : null)),
+    };
+  };
+  const recentLabel = (n) => `Last ${n} Game${n === 1 ? "" : "s"}`;
+
+  // The recent row's chart: his season by month, no bar dark until one is
+  // tapped — a month's bar drills into that month.
+  const recentChart = (other) => (color, category) => {
+    const isCurrent = (b) => !!other && b.key === other.month.key;
+    const vapg = (games) => {
+      if (!games.length) return null;
+      const agg = aggregateSnapshots(games[0].snap, games.map((g) => g.snap));
+      const v = (category ? catVATotal(agg, lga, category) : agg.va) / (agg.gp || 1);
+      return Number.isFinite(v) ? v : null;
+    };
+    return (
+      <>
+        {other && (
+          <div className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-widest text-stone-700">
+            <span className="italic">{other.title}<span className="normal-case tracking-normal font-normal text-stone-400"> · {other.gp} game{other.gp === 1 ? "" : "s"}</span></span>
+            <button
+              onClick={() => setViewKey(null)}
+              className="normal-case tracking-normal font-normal text-stone-400 hover:text-stone-700"
+            >
+              ← {recentLabel(recent.recent.length)}
+            </button>
+          </div>
+        )}
+        <MonthlyVAChart
+          color={color}
+          label={category ? `${category} VA / Game by Month` : undefined}
+          months={recent.bars.map((b) => ({
+            key: b.key,
+            label: b.label,
+            year: b.year,
+            vapg: vapg(b.games),
+            gp: b.games.length,
+            current: isCurrent(b),
+          }))}
+          onSelect={(i) => {
+            setViewKey(recent.bars[i].key);
           }}
         />
       </>
@@ -263,7 +334,12 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                 const barColor = p.vapg >= 0 ? withAlpha(tc, 0.16) : withAlpha("#dc2626", 0.10);
                 const toggle = arm.rowClick({ name: p.name, slug: p.slug || null, season, scope: "regular" }, () => openRow(isOpen ? null : p.name));
                 const other = isOpen ? viewed(p.name) : null;
-                const shown = other ? other.p : p;
+                // His recent games, once the season they span is in.
+                const isRecent = isOpen && p.name === recentName;
+                const recentCard = isRecent && recent ? gamesCard(recent.line) : null;
+                const recentHead = recentCard && gamesCard(recent.recent);
+                const shown = other ? other.p : recentHead ? { ...recentHead, games: recentCard.games, byGame: recentCard.byGame, gameContext: recentCard.gameContext } : p;
+                const cardMonth = other ? other.month : month;
                 return (
                   <div key={p.name} data-avg-row={p.name} className="border-b border-stone-100 last:border-0">
                     <div className="relative overflow-hidden">
@@ -307,9 +383,12 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                         <span className={`w-9 text-right tabular-nums font-bold ${p.vapg < 0 ? "text-red-600" : "text-stone-900"}`}>{p.vapg.toFixed(2)}</span>
                       </div>
                     </div>
-                    {isOpen && (
+                    {isRecent && !monthly && (
+                      <div className="px-2 py-3 border-t border-stone-200">{monthChart(p.name, null)()}</div>
+                    )}
+                    {isOpen && !(isRecent && !monthly) && (
                       <VABreakdown
-                        key={other ? other.month.key : month.key}
+                        key={other ? other.month.key : recentCard ? "recent" : month.key}
                         p={shown}
                         lga={lga}
                         teams={{}}
@@ -319,7 +398,10 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                         gameSeries={shown.games}
                         byGame={shown.byGame}
                         gameContext={shown.gameContext}
-                        breakdownTitle={`${(other ? other.month : month).label} ${(other ? other.month : month).key.slice(0, 4)} Breakdown`}
+                        breakdownTitle={recentCard && !other
+                          ? `${recentLabel(recent.recent.length)} Breakdown`
+                          : other?.title ? `${other.title} Breakdown`
+                          : `${cardMonth.label} ${cardMonth.key.slice(0, 4)} Breakdown`}
                         leadChart={monthChart(p.name, other)}
                         display={display}
                         onDisplayChange={setDisplay}
@@ -327,7 +409,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => openRow(visible[i - 1].name) : undefined}
                         onNext={i < visible.length - 1 ? () => openRow(visible[i + 1].name) : undefined}
-                        onOpenGame={onOpenGame && !other ? (ctx) => onOpenGame({ date: ctx.date, team: ctx.team, name: p.name }) : null}
+                        onOpenGame={onOpenGame ? (ctx) => onOpenGame({ date: ctx.date, team: ctx.team, name: p.name }) : null}
                       />
                     )}
                   </div>

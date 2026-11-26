@@ -68,7 +68,9 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
         })()}
         {/* Selected column shading sits behind everything else */}
         {selected != null && padded[selected - 1] != null && (() => {
-          const colW = innerW / (n - 1);
+          // At least a finger's width: a long run's columns are a few units
+          // wide, and the shade would read as a sliver.
+          const colW = Math.max(innerW / (n - 1), 26);
           return (
             <rect
               x={x(selected - 1) - colW / 2}
@@ -229,6 +231,11 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
   const slot = innerW / Math.max(months.length, 1);
   const barW = Math.min(26, slot * 0.62);
   const nameY = H - 4 - (hasYears ? 10 : 0);
+  // Many narrow bars (a season in runs of five): every other name, counted
+  // from the newest, and smaller values over the bars.
+  const thin = slot < 24;
+  const valueSize = thin ? 6.5 : 8;
+  const nameSize = slot < 36 ? 7 : 8;
   return (
     <div className="mt-1 mb-3">
       <div className="text-[9px] uppercase tracking-widest text-stone-500 mb-1 text-center">{label}</div>
@@ -265,14 +272,14 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
                 )}
                 {has && (
                   <text
-                    x={cx} y={neg ? top + h + 8 : top - 3} fontSize="8" textAnchor="middle"
+                    x={cx} y={neg ? top + h + valueSize : top - 3} fontSize={valueSize} textAnchor="middle"
                     fill={m.current ? "#1c1917" : "#6f6863"} fontWeight={m.current ? 700 : 400} className="tabular-nums"
                   >{m.vapg.toFixed(1)}</text>
                 )}
-                <text
-                  x={cx} y={nameY} fontSize="8" textAnchor="middle"
+                {(!thin || m.current || (months.length - 1 - i) % 2 === 0) && <text
+                  x={cx} y={nameY} fontSize={nameSize} textAnchor="middle"
                   fill={m.current ? "#1c1917" : has ? "#6f6863" : "#d6d3d1"} fontWeight={m.current ? 700 : 400}
-                >{m.label}</text>
+                >{m.label}</text>}
                 {years[i] && (
                   <text x={cx} y={H - 3} fontSize="6.5" textAnchor="middle" fill="#a8a29e" className="tabular-nums">{years[i]}</text>
                 )}

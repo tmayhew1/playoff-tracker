@@ -240,7 +240,8 @@ export function BoxscoreTable({ rows: rowsIn, sections, expandedKey, setExpanded
 // opening the full box. `onBox` hears each box as it loads. `singleGame`
 // shows player cards as one game's (see VABreakdown), numbered by
 // `gameNumberFor`. `focusPlayer`, a name on the `teamFilter` team, opens
-// that player's card once the box loads, scrolls to it, then calls
+// that player's card once the box loads, scrolls to it (unless
+// `focusScroll` is false), then calls
 // `onFocusHandled`. `teamCat` (a SHOT_CATS key) sorts the `teamFilter`
 // team's box by that category's VA and shows its columns. `seasonSoFar`
 // passes through to the player cards (BoxscoreTable). `teamOut` are the
@@ -257,7 +258,7 @@ export function LiveGameBanner(props) {
   return <GameBanner {...props} />;
 }
 
-function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
+function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LGA, teams = TEAMS, useTeamColor, boxSrc, boxLoader, hideScore, teamFilter, onTeamClear, onBox, singleGame, gameNumberFor, focusPlayer, focusScroll = true, onFocusHandled, finalTop5, teamCat, seasonSoFar }) {
   const gameNumber = gameLabel ? Number((gameLabel.match(/\d+/) || [])[0]) || null : null;
   const [expanded, setExpanded] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -403,11 +404,12 @@ function GameBanner({ teamOut, liveGame, gameLabel, dimTeam, staticBox, lga = LG
     if (!focusPlayer || !box || !teamPlayers) return;
     const i = teamPlayers.findIndex((p) => normalizeName(p.name) === normalizeName(focusPlayer));
     if (i >= 0) {
-      scrollTo.current = rowKeyOf(teamPlayers[i], i);
-      setExpandedPlayer(scrollTo.current);
+      const key = rowKeyOf(teamPlayers[i], i);
+      if (focusScroll) scrollTo.current = key;
+      setExpandedPlayer(key);
     }
     onFocusHandled?.();
-  }, [focusPlayer, box, teamPlayers, onFocusHandled]);
+  }, [focusPlayer, focusScroll, box, teamPlayers, onFocusHandled]);
   useEffect(() => {
     if (!expandedPlayer || scrollTo.current !== expandedPlayer) return;
     scrollTo.current = null;

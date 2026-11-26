@@ -194,7 +194,8 @@ const gameAnchor = (g) => `live-game-${g.gameId}`;
 // color with its tale of the tape against the opponent, over its whole box. Tapping it
 // again brings the other side back; tapping the opponent's name and score in
 // it swaps to the opponent's. `focus` (About Last Night's tap) narrows
-// the game to the player's team and opens his card. Explore's regular-season
+// the game to the player's team and opens his card (`focus.scroll: false`
+// opens it where it is, without scrolling to it). Explore's regular-season
 // days use it too, handing in their own `lga` and `boxLoader` (a baked box).
 // `context`, when given, is (tri) -> the team's regular season through this
 // game (lib/use-season-context.js: { record, place, conf, ranks, dist }) or
@@ -307,6 +308,7 @@ export function GameCard({ g, lgaFor, baselineSeason, lga: lgaIn, boxLoader, foc
         seasonSoFar={seasonSoFar}
         gameNumberFor={gameNumberFor}
         focusPlayer={focus?.name}
+        focusScroll={focus?.scroll !== false}
         onFocusHandled={onFocusHandled}
       />
     </div>
