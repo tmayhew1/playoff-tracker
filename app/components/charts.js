@@ -68,7 +68,9 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
         })()}
         {/* Selected column shading sits behind everything else */}
         {selected != null && padded[selected - 1] != null && (() => {
-          const colW = innerW / (n - 1);
+          // At least a finger's width: a long run's columns are a few units
+          // wide, and the shade would read as a sliver.
+          const colW = Math.max(innerW / (n - 1), 26);
           return (
             <rect
               x={x(selected - 1) - colW / 2}
@@ -216,8 +218,7 @@ export function GameVAChart({ values, color = "#57534e", selected, onSelect, par
 export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game by Month", note = null, onSelect = null }) {
   const vals = months.map((m) => m.vapg).filter((v) => v != null);
   const years = months.map((m, i) => (m.year && (i === 0 || months[i - 1].year !== m.year) ? m.year : null));
-  // A bar's `sub` is a second line under its name (a run of games: its last night).
-  const hasYears = years.some(Boolean) || months.some((m) => m.sub);
+  const hasYears = years.some(Boolean);
   const W = 320, H = hasYears ? 102 : 92;
   // A negative month's value sits under its bar, so leave room above the
   // month names for it.
@@ -281,12 +282,6 @@ export function MonthlyVAChart({ months, color = "#57534e", label = "VA / Game b
                 >{m.label}</text>}
                 {years[i] && (
                   <text x={cx} y={H - 3} fontSize="6.5" textAnchor="middle" fill="#a8a29e" className="tabular-nums">{years[i]}</text>
-                )}
-                {!years[i] && m.sub && (!thin || m.current || (months.length - 1 - i) % 2 === 0) && (
-                  <text
-                    x={cx} y={H - 3} fontSize={nameSize} textAnchor="middle"
-                    fill={m.current ? "#1c1917" : "#6f6863"} fontWeight={m.current ? 700 : 400}
-                  >{m.sub}</text>
                 )}
               </g>
             );

@@ -135,7 +135,6 @@ export async function seasonMonthly(season, allMonths, lga, onProgress = () => {
 
 export const RECENT_GAMES = 10;
 const RECENT_MONTHS = 2;
-const RECENT_CHUNK = 10;
 
 // `iso` (YYYY-MM-DD) less `k` calendar months.
 function monthsBefore(iso, k) {
@@ -151,11 +150,10 @@ function monthsBefore(iso, k) {
 // - `recent`: his last ten games — or, when fewer than ten fall inside the
 //   two months before the season's latest night (today, for a season still
 //   being played), the ones that do. The breakdown, and the chart's dark bars.
-// - `bars`: his season in runs of ten, counted back from his latest game,
-//   the oldest run whatever is left over. A run never straddles the start of
-//   `recent`, so a short `recent` is a run of its own. Each is { key, from,
-//   to, title, games, recent }: `from` and `to` its first and last nights
-//   ("Oct 24", "Nov 12"), `title` the two together.
+// - `bars`: each month of the season through his latest game, holding all
+//   his games that month (a month he sat out is empty), then `recent` as the
+//   last bar (key "recent", "L10"). Each is { key, label, year, title, games,
+//   recent }; a month's bar drills into that month.
 // - `line`: the game-by-game line: the ten games, or — when `recent` is
 //   short — his last nine, with one empty slot where the two months begin.
 //
@@ -186,25 +184,18 @@ export function recentGames(season, allMonths, lga, name, today = new Date().toI
   const before = games.slice(0, games.length - n);
   const older = short && RECENT_GAMES - 1 - n > 0 ? before.slice(-(RECENT_GAMES - 1 - n)) : [];
   const line = older.length ? [...older, null, ...recent] : recent;
-  const bars = [];
-  // `list` oldest first, its newest game `ago` games back (1: his latest).
-  const runs = (list, ago, isRecent) => {
-    for (let end = list.length; end > 0; end -= RECENT_CHUNK) {
-      const games = list.slice(Math.max(0, end - RECENT_CHUNK), end);
-      const a = ago + (list.length - end), b = a + games.length - 1;
-      const from = games[0].ctx.dateLabel || "", to = games[games.length - 1].ctx.dateLabel || "";
-      bars.unshift({
-        key: `g${a}-${b}`,
-        from,
-        to: to === from ? null : to,
-        title: to === from ? from : `${from} – ${to}`,
-        games,
-        recent: isRecent,
-      });
-    }
-  };
-  runs(recent, 1, true);
-  runs(before, n + 1, false);
+  const lastMonth = games[games.length - 1].date.slice(0, 7);
+  const bars = (allMonths || [])
+    .filter((m) => m.key <= lastMonth)
+    .map((m) => ({
+      key: m.key,
+      label: m.label.slice(0, 3),
+      year: m.key.slice(0, 4),
+      title: `${m.label} ${m.key.slice(0, 4)}`,
+      games: games.filter((g) => g.date.startsWith(m.key)),
+      recent: false,
+    }));
+  bars.push({ key: "recent", label: `L${n}`, year: null, title: `Last ${n} game${n === 1 ? "" : "s"}`, games: recent, recent: true });
   return { recent, bars, line, short };
 }
 

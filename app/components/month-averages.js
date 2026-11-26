@@ -29,7 +29,7 @@ const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 // brings it to the top of the screen once the month's box scores are in, then
 // `onFocusHandled` lets the jump go. That row reads his recent games rather
 // than the month (lib/month-tables.js recentGames): the line his last ten
-// games, the bars his season in runs of ten counted back from his latest.
+// games, the bars his season by month, then the ten.
 export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null }) {
   // Tap Player, then a name, to open that player's season in By Player.
   const arm = usePlayerArm();
@@ -177,9 +177,8 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
   };
   const recentLabel = (n) => `Last ${n} Game${n === 1 ? "" : "s"}`;
 
-  // The recent row's chart: his season in runs of ten, each named by its
-  // first and last nights; the run(s) that make up the line and breakdown
-  // dark, another run's bar reads those games.
+  // The recent row's chart: his season by month, then his last ten (dark:
+  // the line and breakdown); a month's bar drills into that month.
   const recentChart = (other) => (color, category) => {
     const isCurrent = (b) => (other ? b.key === other.month.key : b.recent);
     const vapg = (games) => {
@@ -203,11 +202,11 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
         )}
         <MonthlyVAChart
           color={color}
-          label={category ? `${category} VA / Game · Every 10 Games` : "VA / Game · Every 10 Games"}
+          label={category ? `${category} VA / Game by Month` : undefined}
           months={recent.bars.map((b) => ({
             key: b.key,
-            label: b.from,
-            sub: b.to ? `– ${b.to}` : null,
+            label: b.label,
+            year: b.year,
             vapg: vapg(b.games),
             gp: b.games.length,
             current: isCurrent(b),
@@ -403,7 +402,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                         gameContext={shown.gameContext}
                         breakdownTitle={recentCard && !other
                           ? `${recentLabel(recent.recent.length)} Breakdown`
-                          : other?.title ? other.title
+                          : other?.title ? `${other.title} Breakdown`
                           : `${cardMonth.label} ${cardMonth.key.slice(0, 4)} Breakdown`}
                         leadChart={monthChart(p.name, other)}
                         display={display}
