@@ -27,9 +27,9 @@ const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 
 // `focusName` (a category card's "Recent games") opens that player's row and
 // brings it to the top of the screen once the month's box scores are in, then
-// `onFocusHandled` lets the jump go. That row reads his recent games rather
-// than the month (lib/month-tables.js recentGames): the line his last ten
-// games, the bars his season by month. `onOpenGame({ date, team, name })`
+// `onFocusHandled` lets the jump go. Every open row reads the player's last
+// ten games as of this month's end (lib/month-tables.js recentGames), with
+// his season by month in the bars above to drill into a month. `onOpenGame({ date, team, name })`
 // opens a game from an open row's breakdown (its selected game's label) —
 // this month's, or another month's read from the chart.
 export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null, onOpenGame = null }) {
@@ -58,11 +58,10 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
   // time a row is opened, and again under a new baseline.
   const [monthly, setMonthly] = useState(() => peekMonthly(season, allMonths, lga));
   const [seasonProgress, setSeasonProgress] = useState(null);
-  // The player whose row a "Recent games" jump opened: while it's the open
-  // row, it reads his recent games.
-  const [recentName, setRecentName] = useState(null);
-  const recent = useMemo(() => (recentName && monthly ? recentGames(season, allMonths, lga, recentName) : null),
-    [recentName, monthly, season, allMonths, lga]);
+  // The open row's last ten games through this month, once the season is in.
+  const recentName = expanded;
+  const recent = useMemo(() => (expanded && monthly ? recentGames(season, allMonths, lga, expanded, { through: month.key }) : null),
+    [expanded, monthly, season, allMonths, lga, month.key]);
 
   useEffect(() => {
     if (!open || boxes) return;
@@ -263,7 +262,6 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
       if (place >= 10) setShowAll(true);
       setOpen(true);
       openRow(hit.name);
-      setRecentName(hit.name);
       scrollTo.current = hit.name;
     }
     onFocusHandled?.();

@@ -93,7 +93,7 @@ test("a player's recent games: the last ten, his season by month, and a short ru
   await seasonMonthly(SEASON, months, lga);
   const names = [...peekMonthly(SEASON, months, lga).byName.keys()];
   const total = (name) => months.reduce((n, m) => n + (monthRows(SEASON, m, peekBoxes(SEASON, m), lga).find((r) => r.name === name)?.gp || 0), 0);
-  const all = names.map((name) => ({ name, r: recentGames(SEASON, months, lga, name, "2099-01-01") }));
+  const all = names.map((name) => ({ name, r: recentGames(SEASON, months, lga, name, { today: "2099-01-01" }) }));
 
   // Played into April: his last ten, the line those ten, the bars each whole month.
   const regular = all.find(({ name, r }) => !r.short && total(name) > 40);
@@ -109,6 +109,12 @@ test("a player's recent games: the last ten, his season by month, and a short ru
   }
   const dates = r.recent.map((g) => g.date);
   assert.deepEqual(dates, [...dates].sort());
+
+  // Read through January: his last ten as of Jan 31, the bars Oct–Jan.
+  const jan = recentGames(SEASON, months, lga, regular.name, { today: "2099-01-01", through: "2025-01" });
+  assert.deepEqual(jan.bars.map((b) => b.label), ["Oct", "Nov", "Dec", "Jan"]);
+  assert.ok(jan.recent.every((g) => g.date <= "2025-01-31"));
+  assert.ok(jan.recent.at(-1).date >= "2025-01-20", "up to the end of the month");
 
   // Fewer than ten in the season's last two months: those are the last bar,
   // and the line is nine games with one gap where the two months begin.

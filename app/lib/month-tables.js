@@ -156,11 +156,15 @@ function monthsBefore(iso, k) {
 // - `line`: the game-by-game line: the ten games, or — when `recent` is
 //   short — his last nine, with one empty slot where the two months begin.
 //
+// `through` (a month key) reads the season only as far as that month's end —
+// a past month's averages row opens on his last ten as of then.
+//
 // Null when he has no games in the season.
-export function recentGames(season, allMonths, lga, name, today = new Date().toISOString().slice(0, 10)) {
+export function recentGames(season, allMonths, lga, name, { today = new Date().toISOString().slice(0, 10), through = null } = {}) {
   const games = [];
   let lastNight = "";
-  for (const m of allMonths || []) {
+  const upTo = (allMonths || []).filter((m) => !through || m.key <= through);
+  for (const m of upTo) {
     for (const g of m.games) if (g.date > lastNight) lastNight = g.date;
     const boxes = peekBoxes(season, m);
     const r = boxes && monthRows(season, m, boxes, lga).find((x) => x.name === name);
@@ -184,7 +188,7 @@ export function recentGames(season, allMonths, lga, name, today = new Date().toI
   const older = short && RECENT_GAMES - 1 - n > 0 ? before.slice(-(RECENT_GAMES - 1 - n)) : [];
   const line = older.length ? [...older, null, ...recent] : recent;
   const lastMonth = games[games.length - 1].date.slice(0, 7);
-  const bars = (allMonths || [])
+  const bars = upTo
     .filter((m) => m.key <= lastMonth)
     .map((m) => ({
       key: m.key,
