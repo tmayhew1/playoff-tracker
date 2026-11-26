@@ -150,7 +150,17 @@ export function ExploreRoundSection({ roundKey, series, lga, season }) {
 // team and the player's line opened (GameCard's own focus). A `recent` focus
 // (a category card's "Recent games") opens the player's row in the month's
 // averages instead, and leaves the game on his team with no line opened.
-export function ExploreMonthSection({ month, allMonths, lga, season, focus = null, onFocusHandled = null }) {
+// Tapping the selected game's label in an open averages row's breakdown opens
+// that game the same way.
+export function ExploreMonthSection({ month, allMonths, lga, season, focus: outerFocus = null, onFocusHandled: outerHandled = null }) {
+  // A game opened from the month's own averages (a breakdown's selected game)
+  // takes the same path as an outside focus: that team's card, his line open.
+  const [ownFocus, setOwnFocus] = useState(null);
+  const focus = ownFocus || outerFocus;
+  const onFocusHandled = useCallback(() => {
+    if (ownFocus) setOwnFocus(null);
+    else outerHandled?.();
+  }, [ownFocus, outerHandled]);
   const [open, setOpen] = useState(!!focus);
   const [team, setTeam] = useState(null);
   useEffect(() => {
@@ -212,7 +222,8 @@ export function ExploreMonthSection({ month, allMonths, lga, season, focus = nul
         </button>
       </h2>
       {open && <MonthAverages month={month} allMonths={allMonths} lga={lga} season={season} team={team} onTeam={setTeam} teamControl={teamControl}
-        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={onFocusHandled} />}
+        focusName={focus?.recent && focusGameId ? focus.name : null} onFocusHandled={onFocusHandled}
+        onOpenGame={(f) => setOwnFocus({ ...f })} />}
       {open && days.map((d) => (
         <div key={d.date} className="mb-3 p-2 bg-stone-50 border border-stone-200 rounded">
           <div className="flex items-baseline justify-between px-0.5">

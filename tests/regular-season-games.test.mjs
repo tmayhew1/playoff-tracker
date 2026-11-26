@@ -136,7 +136,7 @@ test("month totals: one row per player, best VA per game first", () => {
   assert.ok(Math.abs(star.va - expect) < 1e-9);
   assert.equal(star.games.length, 2);
   assert.equal(star.byGame[1].pts, 30);
-  assert.deepEqual(star.gameContext, [{ opp: "NYK", dateLabel: "Jan 7" }, { opp: "LAL", dateLabel: null }]);
+  assert.deepEqual(star.gameContext, [{ opp: "NYK", team: "BOS", date: "2026-01-07", dateLabel: "Jan 7" }, { opp: "LAL", team: "BOS", date: null, dateLabel: null }]);
   const mover = rows.find((r) => r.name === "Mover");
   assert.equal(mover.team, "LAL", "a traded player sits under his latest team");
   assert.equal(mover.gp, 2);

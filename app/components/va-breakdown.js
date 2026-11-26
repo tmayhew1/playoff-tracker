@@ -18,7 +18,7 @@ import { CategoryContext } from "./category-context";
 import { AwardBoxes, useAwardBoxes } from "./award-boxes";
 
 
-export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null, seasonSoFar: seasonWant = null, rates = false }) {
+export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS, rate = false, gameNumber, gameSeries, byGame, gameContext, partitions, onPrev, onNext, useTeamColor = false, breakdownTitle, gameTileLabel = "Game", enableSeriesDrill = false, regularSeasonTotals = null, playerConf = null, context = null, season = null, defScope = "rs", showDRating = true, pendingCompare = null, onCompareHandled = null, leadChart = null, singleGame = false, display = null, onDisplayChange = null, seasonSoFar: seasonWant = null, rates = false, onOpenGame = null }) {
   // Tap a game on the chart to swap in that game's stats. When the chart
   // spans multiple series (playoff leaderboard), tapping is a two-step
   // drill: first tap selects the series the game belongs to (series
@@ -399,7 +399,22 @@ export function VABreakdown({ p: pSeries, lga = LGA, rsLga = null, teams = TEAMS
               const ctx = gameContext?.[selectedGame - 1];
               const num = ctx?.seriesGameNumber || selectedGame;
               const opp = ctx?.opp;
-              return <span className="italic">{`${ctx?.dateLabel || `Game ${num}`}${opp ? ` vs ${opp}` : ""}`}</span>;
+              const label = `${ctx?.dateLabel || `Game ${num}`}${opp ? ` vs ${opp}` : ""}`;
+              // Where the game itself is on the page (a month's day cards),
+              // the label opens it.
+              if (onOpenGame && ctx?.date) {
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onOpenGame(ctx)}
+                    aria-label={`Open the ${label} game`}
+                    className="italic uppercase tracking-widest underline decoration-dotted decoration-stone-400 underline-offset-2 hover:text-stone-900"
+                  >
+                    {label} <span aria-hidden className="not-italic">→</span>
+                  </button>
+                );
+              }
+              return <span className="italic">{label}</span>;
             }
             if (canDrillToSeries && selectedSeriesIdx != null) {
               const ctx = gameContext.find((g) => g?.seriesIdx === selectedSeriesIdx);
