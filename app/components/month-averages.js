@@ -29,8 +29,10 @@ const DEFAULT_DISPLAY = { view: "basic", category: null, rate: "perG" };
 // brings it to the top of the screen once the month's box scores are in, then
 // `onFocusHandled` lets the jump go. That row reads his recent games rather
 // than the month (lib/month-tables.js recentGames): the line his last ten
-// games, the bars his season by month.
-export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null }) {
+// games, the bars his season by month. `onOpenGame({ date, team, name })`
+// opens a game from an open row's breakdown (its selected game's label) —
+// this month's, or another month's read from the chart.
+export function MonthAverages({ month, allMonths, lga, season, team = null, onTeam, teamControl, focusName = null, onFocusHandled = null, onOpenGame = null }) {
   // Tap Player, then a name, to open that player's season in By Player.
   const arm = usePlayerArm();
   const year = month.key.slice(0, 4);
@@ -409,6 +411,7 @@ export function MonthAverages({ month, allMonths, lga, season, team = null, onTe
                         regularSeasonTotals={rsLookup ? (rsLookup.byName[p.name] || rsLookup.byNorm[normalizeName(p.name)] || null) : null}
                         onPrev={i > 0 ? () => openRow(visible[i - 1].name) : undefined}
                         onNext={i < visible.length - 1 ? () => openRow(visible[i + 1].name) : undefined}
+                        onOpenGame={onOpenGame ? (ctx) => onOpenGame({ date: ctx.date, team: ctx.team, name: p.name }) : null}
                       />
                     )}
                   </div>
