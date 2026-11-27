@@ -6,7 +6,7 @@ import { defVAInfo } from "../lib/defense";
 import { GOLD, GOLD_BG, comparePalette, formatPercentile, normalizeName, seasonTag, shortName, teamColor, withAlpha } from "../lib/format";
 import { useGatedGo } from "../lib/gated-go";
 import { aggregateSeasons, rowSeasonLabel, seasonSpanLabel } from "../lib/multi-season";
-import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal } from "../lib/va";
+import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, GROUP_STAT, SHOT_ATT_PER_G, VA_CATEGORY_ORDER, VA_GROUPS, catRateLabel, catVATotal } from "../lib/va";
 import { useRowLga } from "../lib/va-mode";
 
 
@@ -499,23 +499,43 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
     // over the pool computes every group + category at once; the >=5 G floor
     // matches the all-time rank in the context card. The pool max per key
     // marks the #1 season, the only one allowed to display a flat 100.
+    //
+    // A shooting category (3P, 2P, FT) ranks only QUALIFIED seasons — the
+    // category card's attempts floor, SHOT_ATT_PER_G per game the season had —
+    // so the field isn't padded with near-zero-attempt seasons sitting at ~0
+    // VA. Those otherwise land mid-pack and squash every real shooter's
+    // percentile toward the middle. A non-qualifier's value is left null and
+    // skipped for that key only; groups and counting categories keep the
+    // whole pool.
     const pool = context.allRows.filter((r) => (r.gp || 0) >= 5 && r.mp > 0);
+    const maxGpBySeason = new Map();
+    for (const r of context.allRows) {
+      if ((r.gp || 0) > (maxGpBySeason.get(r.season) || 0)) maxGpBySeason.set(r.season, r.gp);
+    }
+    const shotKeys = MEMBER_KEYS.filter((k) => CAT_SHOOTING[k]);
     const maxByKey = {};
+    const nByKey = {};
     const poolVals = pool.map((r) => {
       const lgaX = lgaOf(r);
       const dva = dvaOf(r, lgaX, r.season);
+      const attFloor = Math.ceil(SHOT_ATT_PER_G * (maxGpBySeason.get(r.season) || 0));
       const out = {};
       for (const key of ALL_KEYS) {
+        if (shotKeys.includes(key) && (CAT_SHOOTING[key](r)[1] || 0) < attFloor) {
+          out[key] = null;
+          continue;
+        }
         out[key] = valOf(r, lgaX, key, dva, pctPerGame);
+        nByKey[key] = (nByKey[key] || 0) + 1;
         if (maxByKey[key] == null || out[key] > maxByKey[key]) maxByKey[key] = out[key];
       }
       return out;
     });
     const pctFor = (v, key) => {
-      if (!poolVals.length) return null;
+      if (!nByKey[key]) return null;
       let below = 0;
-      for (const pv of poolVals) if (pv[key] < v) below++;
-      return (below / poolVals.length) * 100;
+      for (const pv of poolVals) if (pv[key] != null && pv[key] < v) below++;
+      return (below / nByKey[key]) * 100;
     };
     const rows = {};
     const adva = dvaOf(a, lgaA, a.season);
@@ -1049,7 +1069,7 @@ export function ComparePanel({ a: aProp, b: bProp, bSeasons, context, rateMode, 
       <div className="mt-1 text-center text-[9px] italic text-stone-400">
         {(mode === "values"
           ? `${perGame ? "Per-game" : isMulti ? "Run-total" : "Season-total"} VA, each vs their own ${isMulti ? "run’s blended league baseline" : "season’s league baseline"}`
-          : `Percentile of ${pctPerGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era`
+          : `Percentile of ${pctPerGame ? "per-game" : "season-total"} VA across every indexed player-season, ≥5 G, each vs their own era; 3P/2P/FT among seasons with ≥1 attempt per team game`
             // The switch is on totals but the rank isn't, and a reader
             // comparing the two strips deserves to be told why.
             + (pctPerGame !== perGame ? " — a pooled run has no rank against single seasons, so percentiles stay per game" : ""))

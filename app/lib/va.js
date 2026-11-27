@@ -32,6 +32,12 @@ export const CAT_SHOOTING = {
   "Free Throws": (r) => [r.ftm, r.fta],
 };
 
+// Attempts floor for ranking a shooting reading: at least this many attempts
+// per game the SEASON has had (most G anyone in that season's pool logged).
+// Used by the category card's boards and Compare's percentiles alike, so a
+// 2-for-2 season never props up (or drags down) a shooting rank.
+export const SHOT_ATT_PER_G = 1;
+
 // Short label for a category (used in headings — "Pts", "3P", etc.).
 export const CAT_SHORT = {
   "Points": "Pts", "2-Pointers": "2P", "3-Pointers": "3P", "Free Throws": "FT",
