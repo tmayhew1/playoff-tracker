@@ -8,7 +8,7 @@ import { GOLD, GOLD_BG, compName, fmtG, seasonTag, shortName, teamColor, teamInk
 import { useGatedGo } from "../lib/gated-go";
 import { PlayerHeader, usePlayerNav } from "../lib/player-nav";
 import { useGamesNav } from "../lib/games-nav";
-import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
+import { CAT_COUNTING, CAT_SHOOTING, CAT_SHORT, SHOT_ATT_PER_G, VA_GROUP_BY_KEY, catRateLabel, catVATotal, samePlayer } from "../lib/va";
 import { useLgaFor } from "../lib/va-mode";
 import { ROLE_LABEL, classifyRole, playerRole, seasonBaseline } from "../lib/role-model";
 import { Render } from "./ui/render";
@@ -80,7 +80,7 @@ const CAREER_GP_FLOOR = 100;
 // (82 in a full regular season, a bit more for a mid-season trade, ~100 for a
 // combined line with a deep playoff run, 6 six games into a season). Scaling by
 // the player's own games let a hot 20-game stint (Marshon Brooks) clear it.
-const SHOT_ATT_PER_G = 1;
+// (SHOT_ATT_PER_G lives in lib/va.js, shared with Compare's percentiles.)
 
 // What a career row prints where a season row prints its season: "’08–’26",
 // or just "’14" for a one-season career. A season missed entirely sits inside
