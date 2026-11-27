@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
+import { REPLACEMENT, REPLACEMENT_LAMBDA, USAGE_MODELS, USG_FTA_W, VOLUME_CREDIT, cappedVolumeVA, replacementScoring, fittedLineLga, lgaForSeason, possUsed, splitVolumeVA, usageModelFor, usageSplit, volumeVA } from "../scoring";
 import { fetchBakedJson } from "../lib/fetch-cache";
 import { MIDNIGHT_PURPLE, normalizeName, teamInk } from "../lib/format";
 import { Render } from "./ui/render";
@@ -26,6 +26,17 @@ import { usePlayerArm } from "../lib/player-nav";
 // TOT ⁄ per-game switch. The nine other categories are identical under all
 // three baselines, so Δ here IS the whole difference between a player's VA
 // totals — this table accounts for the entire gap between the boards.
+//
+// The One view (spec §4.9) is the replacement-possession candidate, and it is
+// the one view that is NOT a Points-only column: it replaces the whole scoring
+// block, Points + 2P + 3P + FT, because the Points term already carries the
+// efficiency those three pay for a second time. So its Δ is measured against
+// today's whole scoring block (SCR = VA + CONV), not against VA alone:
+//
+//   SCR    today's scoring block — Points volume + 2P/3P/FT
+//   CONV   2P/3P/FT alone, the shot-conversion part of efficiency
+//   MIX    shot diet and foul drawing at league conversion (xPTS − ē·USG)
+//   ONE    CONV + MIX + λ*·VOL, with λ* measured rather than chosen
 //
 // CAP ≥ max(VA, USG) is not a coincidence but the identity in scoring.js:
 // capping the baseline means taking whichever of the two terms is larger, so
@@ -54,8 +65,11 @@ const DOT_R = 0.7, TAP_R = 3.4, PLOT_H = 70;
 // Amber-600 rather than the shared GOLD (amber-500): this is a thin line and
 // 7px type on white, where amber-500 is too pale to read.
 const CAP_LINE = "#d97706";
+// Teal-700 for the replacement-possession line: distinct from the amber cap
+// and the purple dial, and dark enough for 7px type on white.
+const ONE_LINE = "#0f766e";
 
-function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel, scopeLabel }) {
+function UsageScatter({ rows, model, mu, lambda, oneLambda, selected, onSelect, seasonLabel, scopeLabel }) {
   const svgRef = useRef(null);
   const [menu, setMenu] = useState(null);
   const [hover, setHover] = useState(null);
@@ -78,6 +92,9 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
     // flat at λ = 1 (today's baseline) and through the origin at λ = 0.
     const rate = model.muUsg > 0 ? mu / model.muUsg : 0;
     const lamY = (x) => rate * (1 - lambda) * x + lambda * mu;
+    // The replacement-possession baseline is the same family at the measured
+    // λ*: through the median-minute point with slope e_m.
+    const oneY = (x) => rate * (1 - oneLambda) * x + oneLambda * mu;
     return {
       X, Y, xMax, yMax, dots, xStar, inRange,
       fit: { x1: X(0), y1: Y(model.a), x2: X(xMax), y2: Y(model.a + model.b * xMax) },
@@ -86,8 +103,11 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
       lam: rate > 0
         ? { x1: X(0), y1: Y(lamY(0)), x2: X(xMax), y2: Y(lamY(xMax)), px: X(model.muUsg), py: Y(mu) }
         : null,
+      one: rate > 0 && oneLambda != null
+        ? { x1: X(0), y1: Y(oneY(0)), x2: X(xMax), y2: Y(oneY(xMax)) }
+        : null,
     };
-  }, [rows, model, mu, lambda]);
+  }, [rows, model, mu, lambda, oneLambda]);
 
   if (!view) return null;
 
@@ -170,6 +190,9 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
             </>
           )}
           <line x1={view.fit.x1} y1={view.fit.y1} x2={view.fit.x2} y2={view.fit.y2} stroke="#1c1917" strokeWidth="0.45" />
+          {view.one && (
+            <line x1={view.one.x1} y1={view.one.y1} x2={view.one.x2} y2={view.one.y2} stroke={ONE_LINE} strokeWidth="0.45" strokeDasharray="0.8 0.8" />
+          )}
           {view.kinkX != null && (
             <circle cx={view.kinkX} cy={view.med} r="0.9" fill={CAP_LINE} stroke="#fff" strokeWidth="0.3" />
           )}
@@ -236,6 +259,7 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
         <span style={{ color: CAP_LINE }}><span className="font-bold">━</span> cap = the lower of the two
           {view.xStar != null && view.inRange ? `, bending at ${view.xStar.toFixed(2)}` : ""}</span>
         <span style={{ color: MIDNIGHT_PURPLE }}><span className="font-bold">──</span> λ = {lambda.toFixed(2)}, pivoting on the median minute</span>
+        {view.one && <span style={{ color: ONE_LINE }}><span className="font-bold">┄</span> one baseline, measured λ* = {oneLambda.toFixed(2)}</span>}
         {view.inRange && <span className="text-stone-400 italic">shaded = where the cap changes anything</span>}
       </div>
 
@@ -254,6 +278,8 @@ function UsageScatter({ rows, model, mu, lambda, selected, onSelect, seasonLabel
               {" · "}<span className="text-stone-400">USG</span> <span className={shown.usgVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.usgVa > 0 ? "+" : "") + shown.usgVa.toFixed(1)}</span>
               {" · "}<span className="text-stone-400">CAP</span> <span className={shown.capVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.capVa > 0 ? "+" : "") + shown.capVa.toFixed(1)}</span>
               {" · "}<span className="text-stone-400">λ</span> <span className={shown.splitVa < 0 ? "text-red-600" : "text-stone-700"}>{(shown.splitVa > 0 ? "+" : "") + shown.splitVa.toFixed(1)}</span>
+              {shown.hasOne && <>{" · "}<span className="text-stone-400">ONE</span> <span className={shown.one < 0 ? "text-red-600" : "text-stone-700"}>{(shown.one > 0 ? "+" : "") + shown.one.toFixed(1)}</span>
+                <span className="text-stone-400"> vs {(shown.scr > 0 ? "+" : "") + shown.scr.toFixed(1)} today</span></>}
             </span>
           </div>
         ) : (
@@ -295,12 +321,13 @@ export function UsageView() {
   // alternatives always have their own column; this only picks which gap is
   // spelled out and sortable. Opens on the capped candidate — the one being
   // reviewed.
-  const [deltaVs, setDeltaVs] = useState("cap"); // "cap" | "usg" | "spl"
+  const [deltaVs, setDeltaVs] = useState("cap"); // "cap" | "usg" | "spl" | "one"
   // Which trio of candidate columns the table shows: the three whole baselines,
   // or the split of today's own volume term into what it pays for efficiency
   // and what it pays for load. Nine columns is what fits a phone; twelve is a
   // spreadsheet nobody can read.
-  const [colView, setColView] = useState("base"); // "base" | "split"
+  // "one" swaps in the replacement-possession candidate's parts (spec §4.9).
+  const [colView, setColView] = useState("base"); // "base" | "split" | "one"
   // The volume credit λ. 1 is plain VA exactly, 0 charges purely per
   // possession used. Opens where the USG-ADJ switch itself sits, so the λ
   // column reads as what that switch does until the dial is moved.
@@ -361,6 +388,12 @@ export function UsageView() {
       const capVa = cappedVolumeVA(r, lgaUsg);
       const sp = usageSplit(r, lgaUsg);
       const splitVa = splitVolumeVA(r, lgaUsg, lambda);
+      // The one-baseline candidate replaces the whole scoring block, so it is
+      // compared with today's whole block, SCR = Points volume + 2P/3P/FT.
+      const rp = replacementScoring(r, lgaUsg);
+      const conv = rp?.conv ?? 0;
+      const scr = va + conv;
+      const one = rp ? rp.total : scr;
       out.push({
         r, gp, usgPerM,
         eff: sp?.eff ?? 0, vol: sp?.vol ?? 0, splitVa,
@@ -369,7 +402,9 @@ export function UsageView() {
         ptsPerM: (r.pts || 0) / r.mp,
         pred: lgaUsg.usgModel.a + lgaUsg.usgModel.b * usgPerM,
         va, usgVa, capVa,
-        delta: (deltaVs === "cap" ? capVa : deltaVs === "spl" ? splitVa : usgVa) - va,
+        hasOne: !!rp, scr, conv, mix: rp?.mix ?? 0, load: rp?.load ?? 0, one,
+        delta: deltaVs === "one" ? one - scr
+          : (deltaVs === "cap" ? capVa : deltaVs === "spl" ? splitVa : usgVa) - va,
       });
     }
     return out;
@@ -418,6 +453,10 @@ export function UsageView() {
       : sort.key === "eff" ? scaled(x.eff, x.gp)
       : sort.key === "vol" ? scaled(x.vol, x.gp)
       : sort.key === "splitVa" ? scaled(x.splitVa, x.gp)
+      : sort.key === "scr" ? scaled(x.scr, x.gp)
+      : sort.key === "conv" ? scaled(x.conv, x.gp)
+      : sort.key === "mix" ? scaled(x.mix, x.gp)
+      : sort.key === "one" ? scaled(x.one, x.gp)
       : scaled(x.delta, x.gp)
     );
     out.sort((a, b) => {
@@ -432,7 +471,12 @@ export function UsageView() {
   // The three point columns share one scale: totals, or divided by games.
   const pts = (v, gp) => (perGame ? (gp > 0 ? v / gp : 0) : v);
   const sgn = (v) => (v > 0 ? "+" : "") + v.toFixed(perGame ? 2 : 1);
-  const cols = "grid grid-cols-[1.2rem_minmax(0,1fr)_1.9rem_2.0rem_2.0rem_2.5rem_2.5rem_2.5rem_2.4rem] gap-x-[3px] items-center";
+  // The One view drops PRED (it reads the fitted line, which the candidate
+  // never uses) to make room for a fourth point column; same nine tracks.
+  const isOne = colView === "one";
+  const cols = isOne
+    ? "grid grid-cols-[1.2rem_minmax(0,1fr)_1.9rem_2.0rem_2.5rem_2.3rem_2.3rem_2.5rem_2.4rem] gap-x-[3px] items-center"
+    : "grid grid-cols-[1.2rem_minmax(0,1fr)_1.9rem_2.0rem_2.0rem_2.5rem_2.5rem_2.5rem_2.4rem] gap-x-[3px] items-center";
 
   return (
     <div className="text-[10px]">
@@ -485,12 +529,22 @@ export function UsageView() {
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Whole baselines, or today's volume term split into its two halves">
           <button onClick={() => setColView("base")} className={`px-1.5 py-0.5 ${colView === "base" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Baselines</button>
           <button onClick={() => setColView("split")} className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "split" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Split</button>
+          {REPLACEMENT_LAMBDA != null && (
+            <button
+              onClick={() => { setColView("one"); setDeltaVs("one"); setSort({ key: "delta", dir: -1 }); }}
+              className={`px-1.5 py-0.5 border-l border-stone-300 ${colView === "one" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}
+              title="One baseline for the whole scoring block: each possession beyond a median minute's share charged at what a teammate would have scored with it"
+            >One</button>
+          )}
         </div>
         <div className="inline-flex text-[9px] uppercase tracking-wider border border-stone-300 rounded-sm overflow-hidden" title="Which candidate the Δ column measures against today's VA">
           <span className="px-1 py-0.5 bg-stone-100 text-stone-400">Δ</span>
           <button onClick={() => setDeltaVs("cap")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "cap" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Cap</button>
           <button onClick={() => setDeltaVs("usg")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "usg" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>Usg</button>
           <button onClick={() => setDeltaVs("spl")} className={`px-1.5 py-0.5 border-l border-stone-300 normal-case ${deltaVs === "spl" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>λ</button>
+          {REPLACEMENT_LAMBDA != null && (
+            <button onClick={() => setDeltaVs("one")} className={`px-1.5 py-0.5 border-l border-stone-300 ${deltaVs === "one" ? "bg-stone-700 text-white" : "bg-white text-stone-500"}`}>One</button>
+          )}
         </div>
         <label className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider text-stone-500">
           <span>Volume credit <span className="normal-case">λ</span></span>
@@ -520,10 +574,33 @@ export function UsageView() {
           load than a median minute — and λ pays the second half at the dial&apos;s rate
           (λ=1 is plain VA to the decimal, λ=0 charges purely per possession used;
           the USG-ADJ switch ships λ={VOLUME_CREDIT}) ·
-          Δ = {deltaVs === "cap" ? "CAP" : deltaVs === "spl" ? "λ" : "USG"} − VA, exactly what
-          adopting that baseline moves this player&apos;s total VA by (the other nine
-          categories don&apos;t change)
+          {deltaVs === "one"
+            ? <>Δ = ONE − SCR, exactly what adopting the one baseline moves this player&apos;s total VA
+              by (it replaces Points and 2P/3P/FT together; the other six categories don&apos;t change)</>
+            : <>Δ = {deltaVs === "cap" ? "CAP" : deltaVs === "spl" ? "λ" : "USG"} − VA, exactly what
+              adopting that baseline moves this player&apos;s total VA by (the other nine
+              categories don&apos;t change)</>}
           {scope === "po" && " · playoff rows are scored against the season's regular-season line, as all VA baselines are"}
+        </div>
+      )}
+      {isOne && REPLACEMENT && model && lga && (
+        <div className="text-[9px] text-stone-500 mb-1.5 border-l-2 pl-1.5" style={{ borderColor: ONE_LINE }}>
+          <span className="font-semibold text-stone-700">One baseline.</span> Minutes buy a median
+          minute&apos;s share of possessions ({model.muUsg.toFixed(3)}/min), charged at the median
+          rate {lga.laPTSperM.toFixed(3)} PTS/min. Every possession beyond that share is taken from a
+          teammate and charged at what the teammate would have scored with it,
+          e<sub>m</sub> = <span className="tabular-nums text-stone-700">{((lga.laPTSperM / model.muUsg) * (1 - REPLACEMENT_LAMBDA)).toFixed(3)}</span> per
+          possession against ē = <span className="tabular-nums text-stone-700">{(lga.laPTSperM / model.muUsg).toFixed(3)}</span>.
+          So the volume credit is measured, not chosen: λ* = 1 − e<sub>m</sub>/ē
+          = <span className="tabular-nums font-semibold text-stone-800">{REPLACEMENT_LAMBDA.toFixed(2)}</span>
+          {" "}(95% {REPLACEMENT.lambdaCI[0].toFixed(2)}–{REPLACEMENT.lambdaCI[1].toFixed(2)}), from{" "}
+          {REPLACEMENT.pairs.toLocaleString()} same-team consecutive seasons since 1980, with teammates&apos;
+          usage as the instrument: when teammates take more, a player takes less
+          ({REPLACEMENT.firstStage.toFixed(2)} per unit) and his efficiency doesn&apos;t measurably move.
+          (Plain VA is λ = 1; the USG-ADJ switch is λ = {VOLUME_CREDIT}.) ·
+          SCR = today&apos;s scoring block, Points + 2P/3P/FT, which counts efficiency twice ·
+          CONV = 2P/3P/FT · MIX = shot diet and foul drawing, valued at league conversion ·
+          ONE = CONV + MIX + λ* × VOL, each make counted once
         </div>
       )}
       {showPlot && plotRows && plotRows.length > 0 && (
@@ -532,6 +609,7 @@ export function UsageView() {
           model={lgaUsg.usgModel}
           mu={lga.laPTSperM}
           lambda={lambda}
+          oneLambda={REPLACEMENT_LAMBDA}
           selected={picked}
           onSelect={setPicked}
           seasonLabel={sel}
@@ -540,7 +618,7 @@ export function UsageView() {
       )}
       {(() => {
         const NATURAL = { name: 1, ptsPerM: -1, pred: -1, va: -1, usgVa: -1, capVa: -1, eff: -1, vol: -1, splitVa: -1,
-          delta: -1 };
+          scr: -1, conv: -1, mix: -1, one: -1, delta: -1 };
         const H = ({ k, label, right = true, title }) => (
           <button
             type="button"
@@ -569,8 +647,15 @@ export function UsageView() {
               MP
             </button>
             <Render fn={H} k="ptsPerM" label="PTS/M" title="Points per minute" />
-            <Render fn={H} k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />
-            {colView === "base" ? (
+            {!isOne && <Render fn={H} k="pred" label="Pred" title="Points per minute the season's line predicts at this player's usage" />}
+            {isOne ? (
+              <>
+                <Render fn={H} k="scr" label="Scr" title="Today's scoring block: Points volume + 2P/3P/FT" />
+                <Render fn={H} k="conv" label="Conv" title="2P/3P/FT: makes above league conversion on the attempts taken" />
+                <Render fn={H} k="mix" label="Mix" title="Shot diet and foul drawing, valued at league conversion" />
+                <Render fn={H} k="one" label="One" title="The whole scoring block against one baseline: Conv + Mix + λ* × load" />
+              </>
+            ) : colView === "base" ? (
               <>
                 <Render fn={H} k="va" label="VA" title="Scoring volume against the league's median minute — today's VA" />
                 <Render fn={H} k="usgVa" label="USG" title="Scoring volume against the fitted line at his own usage" />
@@ -600,7 +685,7 @@ export function UsageView() {
       {!list && <div className="py-4 text-center text-stone-400 italic">Loading…</div>}
       {list && list.length === 0 && <div className="py-4 text-center text-stone-400 italic">No players match.</div>}
       {list && list.map((x, i) => {
-        const { r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, eff, vol, splitVa, delta, key } = x;
+        const { r, gp, ptsPerM, pred, usgPerM, va, usgVa, capVa, eff, vol, splitVa, scr, conv, mix, load, one, delta, key } = x;
         const isPicked = picked?.key === key;
         return (
         <div
@@ -644,11 +729,23 @@ export function UsageView() {
           {/* The usage this prediction was read off, on the cell it produced —
               the model's one input, and the reason two players with the same
               PTS/min can carry different baselines. */}
-          <span
-            className="text-right tabular-nums text-stone-500"
-            title={`${usgPerM.toFixed(3)} possessions used per minute`}
-          >{pred.toFixed(3)}</span>
-          {colView === "base" ? (
+          {!isOne && (
+            <span
+              className="text-right tabular-nums text-stone-500"
+              title={`${usgPerM.toFixed(3)} possessions used per minute`}
+            >{pred.toFixed(3)}</span>
+          )}
+          {isOne ? (
+            <>
+              <span className={`text-right tabular-nums ${scr < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(scr, gp))}</span>
+              <span className={`text-right tabular-nums ${conv < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(conv, gp))}</span>
+              <span className={`text-right tabular-nums ${mix < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(mix, gp))}</span>
+              <span
+                className={`text-right tabular-nums ${one < 0 ? "text-red-600" : "text-stone-700"}`}
+                title={`${usgPerM.toFixed(3)} poss. used/min · load ${sgn(pts(load, gp))}`}
+              >{sgn(pts(one, gp))}</span>
+            </>
+          ) : colView === "base" ? (
             <>
               <span className={`text-right tabular-nums ${va < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(va, gp))}</span>
               <span className={`text-right tabular-nums ${usgVa < 0 ? "text-red-600" : "text-stone-700"}`}>{sgn(pts(usgVa, gp))}</span>
