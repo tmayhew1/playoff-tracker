@@ -490,6 +490,74 @@ export function usgAdjDelta(p, lga) {
 }
 
 
+// --- Under review: one baseline, the replacement possession (spec §4.9) ------
+// Every candidate above re-prices the Points term and leaves 2P/3P/FT beside
+// it. But the Points term already contains efficiency — its `eff` half is
+// PTS − ē·USG — so the shot categories pay the same makes a second time. This
+// candidate replaces the whole scoring block (Points + 2P + 3P + FT) with ONE
+// term against ONE baseline built from the three things a scoring line is:
+//
+//   B = μ·MP + e_m·(USG − ū·MP)
+//
+//   MP    buys a median minute's share of possessions, ū per minute, charged
+//         at what a median minute scores with them, μ_PTS (= ē·ū)
+//   USG   every possession beyond that share is taken from a teammate, and is
+//         charged at e_m — what the TEAMMATE would have scored with it; one
+//         left unused is credited back at the same price
+//   PTS   is scored against B
+//
+// so  Scoring = PTS − B = eff + λ*·vol,  λ* = 1 − e_m/ē
+//
+// — the λ family above, except λ is no longer a dial: it is how much of a
+// possession's value is lost when it changes hands, and it is MEASURED
+// (scripts/fit-usage-model.mjs, `replacement` in usage-model.json). Plain VA is
+// λ = 1, a teammate scores nothing with the possession; USG-ADJ is λ = ½.
+//
+// The single term splits exactly into what it pays for:
+//
+//   conv   the existing 2P/3P/FT categories — makes above league % on the
+//          attempts taken (shotConversionVA)
+//   mix    eff − conv = xPTS − ē·USG: the shot diet, valued at league
+//          conversion — threes, rim attempts, and the trips to the line that
+//          the volume term never saw (spec §4.6, the +0.34 residual)
+//   load   λ*·vol, what carrying more of the offence is worth beyond what a
+//          teammate would have done with those possessions
+//
+// Linear in MP, USG and the makes, so additive over games like every other
+// candidate on the dial. Wired to the Usage tab only.
+export const REPLACEMENT = USAGE_MODEL_DATA.replacement || null;
+export const REPLACEMENT_LAMBDA = REPLACEMENT?.lambda ?? null;
+
+// The 2P/3P/FT categories together, in points — the `efficiency` part of
+// valueAddParts, which reads it from here so the two can never drift.
+export function shotConversionVA(p, lga) {
+  const { tpm = 0, tpa = 0, fgm = 0, fga = 0, ftm = 0, fta = 0 } = p || {};
+  const twoPm = fgm - tpm, twoPa = fga - tpa;
+  const tpAdd = ((tpm / (tpa || 1)) - lga.la3P) * tpa;
+  const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
+  const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
+  return 3 * tpAdd + 2 * twoAdd + ftAdd;
+}
+
+// The whole scoring block under the replacement-possession baseline, and its
+// three parts. Needs a baseline object carrying the usage model (ū); null when
+// the season has none or no λ* has been fit. `lambda` is overridable only so
+// tests and the tab can read the CI's ends.
+export function replacementScoring(p, lga, lambda = REPLACEMENT_LAMBDA) {
+  const s = usageSplit(p, lga);
+  if (!s || lambda == null) return null;
+  const conv = shotConversionVA(p, lga);
+  const load = lambda * s.vol;
+  return {
+    conv,
+    mix: s.eff - conv,
+    load,
+    total: s.eff + load,
+    em: s.rate * (1 - lambda),   // e_m, points per possession a teammate returns
+  };
+}
+
+
 // --- Rebound credit (γ) -----------------------------------------------------
 // A rebound is the one box-score event that is guaranteed to be allocated and
 // rivalrous: every miss produces exactly one, and exactly one of the ten
@@ -526,14 +594,10 @@ export function reboundGamma(reb, mp, lga, rate) {
 // Returns the total Value Added plus its efficiency component
 // (3·tpAdd + 2·twoAdd + ftAdd), so callers can aggregate either.
 export function valueAddParts(p, lga = LGA) {
-  const { mp, pts, ast, stl, blk, tov, drb, orb, tpm, tpa, fgm, fga, ftm, fta } = p;
+  const { mp, stl, blk, tov, drb, orb } = p;
   if (!mp || mp <= 0) return { va: 0, efficiency: 0 };
-  const twoPm = fgm - tpm, twoPa = fga - tpa;
-  const tpAdd = ((tpm / (tpa || 1)) - lga.la3P) * tpa;
-  const twoAdd = ((twoPm / (twoPa || 1)) - lga.la2P) * twoPa;
-  const ftAdd = ((ftm / (fta || 1)) - lga.laFT) * fta;
   const volume = volumeVA(p, lga);
-  const efficiency = 3 * tpAdd + 2 * twoAdd + ftAdd;
+  const efficiency = shotConversionVA(p, lga);
   const astVal = playmakingVA(p, lga);
   const stlVal = ((stl / mp) - lga.laSTLperM) * mp * lga.laPTSperPoss;
   const blkVal = ((blk / mp) - lga.laBLKperM) * mp * lga.laPTSperPoss * lga.laDRBrate;

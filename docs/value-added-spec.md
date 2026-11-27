@@ -739,6 +739,85 @@ it (centered, minutes-weighted), and it is **off** by default at $N=1$.
 
 ---
 
+### 4.9 One baseline: the replacement possession — under review
+
+A candidate to **retire the USG-ADJ switch** by making its λ a measurement
+rather than a setting. Wired to the Usage tab only (the **One** view); base VA
+and the switch are unchanged.
+
+**The baseline.** One baseline for the whole scoring block (Points, 2P, 3P and
+FT together), built from minutes, possessions and points:
+
+$$
+B \;=\; \mu_{\mathrm{PTS}}\,\mathrm{MP} \;+\; e_m\bigl(\mathrm{USG} - \bar u\,\mathrm{MP}\bigr),
+\qquad
+\mathrm{Scoring} \;=\; \mathrm{PTS} - B .
+$$
+
+Minutes buy a median minute's share of possessions ($\bar u$ per minute), charged
+at what a median minute scores ($\mu_{\mathrm{PTS}} = \bar e\,\bar u$). Every
+possession beyond that share is taken from a teammate and charged at $e_m$,
+what **the teammate** would have scored with it; a possession left unused is
+credited back at the same price. Since $\mathrm{PTS} - B = \mathrm{eff} + (1 - e_m/\bar e)\,\mathrm{vol}$
+(§4.6's split), this is the §4.6 family with
+
+$$
+\lambda^{*} \;=\; 1 - \frac{e_m}{\bar e}.
+$$
+
+Plain VA ($\lambda = 1$) assumes a possession handed to a teammate would have
+returned nothing; the switch ($\lambda = \tfrac12$) assumes half the league rate.
+
+**Efficiency, counted once.** The Points term's efficiency half is
+$\mathrm{PTS} - \bar e\,\mathrm{USG}$; the 2P/3P/FT terms pay
+$\mathrm{PTS} - x\mathrm{PTS}$ (makes above league conversion) on top of it,
+so today every make above league rate is paid twice. Under the one baseline,
+the scoring block splits exactly into
+
+| part | definition | |
+|---|---|---|
+| conv | $\mathrm{PTS} - x\mathrm{PTS}$ | the existing 2P/3P/FT categories |
+| mix | $x\mathrm{PTS} - \bar e\,\mathrm{USG}$ | shot diet and foul drawing at league conversion — the +0.34 FTA/FGA residual §4.6 found |
+| load | $\lambda^{*}\bar e\,(\mathrm{USG} - \bar u\,\mathrm{MP})$ | carrying load beyond what a teammate would have done with it |
+
+with $x\mathrm{PTS} = 3p_3\,\mathrm{3PA} + 2p_2\,\mathrm{2PA} + p_F\,\mathrm{FTA}$.
+Linear in MP, USG and the makes, so additive over games.
+
+**Measuring $e_m$.** Write $e_m = \bar e\,(1 + k)$ with $k$ the usage–efficiency
+slope at the median minute, both in units relative to the season's own
+$\bar e$ and $\bar u$. `scripts/fit-usage-model.mjs` estimates it on players
+who stayed with one team in consecutive seasons (≥500 MP and ≥50 possessions
+used in both), first-differenced to remove the player's own talent, weighted
+by the smaller MP. The player's own usage is endogenous (a hot shooting year
+earns more shots), so the change in his **teammates'** usage rate instruments
+it. The first stage is the within-team zero-sum: −0.59. Bootstrap 95% CI.
+
+| estimate | $k$ | $\lambda^{*}$ |
+|---|---|---|
+| IV (shipped) | $+0.015$ (95% $-0.029$ to $+0.058$) | $0$ (95% $0$–$0.03$) |
+| plain first difference | $-0.015$ | $0.015$ |
+
+9,220 player pairs, 1980-81 to 2025-26. Per-season fits were tried and rejected:
+a season pair is ~200 players, and its IV estimate swings from −0.37 to +0.62
+on first stages as weak as −0.09. The era adjustment rides on $\bar e$, which is
+per season. A positive $k$ would make $\lambda^{*}$ negative, charging a player
+for carrying load, so it is floored at zero.
+
+**Corroboration at team level.** Load nets out within a roster. Its spread
+(SD) per 36 is 4.2 points across players and 0.62 across teams, while team
+offensive rating tracks the summed efficiency half ($r = 0.79$).
+
+**What it implies, and the case against.** At the measured $\lambda^{*} \approx 0$,
+scoring VA is points above $\bar e$ on the possessions used, and minutes drop
+out of the scoring baseline altogether ($\mu_{\mathrm{PTS}}\mathrm{MP} = \bar e\,\bar u\,\mathrm{MP}$).
+2016-17 per game: Harden $+3.21$, Westbrook $+0.55$, against $+15.05$ and
+$+16.24$ for today's scoring block. That is the "drops volume scorers off the
+board" outcome §4.6 rejected, now with evidence behind it. What the box score
+cannot see is the case for some load credit: a high-usage player absorbs
+late-clock possessions (which land in *his* efficiency) and draws defenders
+from teammates (partly paid in Assists). If that is to be paid, it should be
+measured on its own, not by setting λ.
+
 ## 5. Exact decomposition
 
 The category vector is the summand of the master equation:

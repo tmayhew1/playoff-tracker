@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import {
   valueAdd, valueAddParts, valueAddByCategory, VA_CATEGORY_KEYS,
   lgaForSeason, baselineCoverage,
+  fittedLineLga, usageSplit, volumeVA, shotConversionVA, replacementScoring, REPLACEMENT_LAMBDA,
 } from "../app/scoring.js";
 import { defVAInfo, leagueDRtgLine } from "../app/lib/defense-math.js";
 
@@ -127,4 +128,41 @@ test("in progress, the team's edge over the league is charged once, not again in
   const i = defVAInfo(p, p.mp, lga, defs, "2015-16");
   assert.ok(close(i.teamDrtg - i.drtg, 0), JSON.stringify(i));
   assert.ok(close(i.dva, (i.w * (i.laDRtg - i.teamDrtg) / 100) * lga.laPOSSperM * p.mp));
+});
+
+// The one-baseline candidate (spec §4.9). Its whole claim is bookkeeping:
+// the parts add up, each make is counted once, and at the ends of the λ range
+// it reproduces the two baselines it sits between.
+test("replacement possession: parts sum, and the ends are plain VA and pure efficiency", () => {
+  assert.ok(REPLACEMENT_LAMBDA != null && REPLACEMENT_LAMBDA >= 0 && REPLACEMENT_LAMBDA <= 1);
+  for (const s of RS_SEASONS) {
+    const lga = fittedLineLga(s);
+    for (const p of read(`regular-season-${s}.json`).players) {
+      if (!(p.mp > 0)) continue;
+      const one = replacementScoring(p, lga);
+      if (!one) continue;
+      const sp = usageSplit(p, lga);
+      const tag = `${s} ${p.name}`;
+      assert.ok(close(one.conv + one.mix + one.load, one.total), tag);
+      // conv + mix is the efficiency half: PTS − ē·USG, once.
+      assert.ok(close(one.conv + one.mix, sp.eff), tag);
+      assert.ok(close(one.conv, shotConversionVA(p, lga)), tag);
+      // λ = 1: today's Points term, without the 2P/3P/FT second count.
+      const plain = volumeVA(p, lgaForSeason(s));
+      assert.ok(close(replacementScoring(p, lga, 1).total, plain, 1e-6), tag);
+      // λ = 0: points above ē on every possession used.
+      assert.ok(close(replacementScoring(p, lga, 0).total, sp.eff), tag);
+    }
+  }
+});
+
+test("replacement possession: pinned Harden and Westbrook 2016-17 at λ = 0", () => {
+  const lga = fittedLineLga("2016-17");
+  const rows = read("regular-season-2016-17.json").players;
+  const per = (slug) => {
+    const p = rows.find((r) => r.slug === slug);
+    return replacementScoring(p, lga, 0).total / p.g;
+  };
+  assert.ok(close(per("hardeja01"), 3.211, 0.01), String(per("hardeja01")));
+  assert.ok(close(per("westbru01"), 0.553, 0.01), String(per("westbru01")));
 });
